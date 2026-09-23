@@ -1,0 +1,133 @@
+name: Release Preview
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_branch:
+        description: 'Branch to preview release from'
+        type: choice
+        options:
+          - 'release/v0.0.1-alpha'
+          - 'main'
+        required: true
+        default: 'release/v0.0.1-alpha'
+      release_type:
+        description: 'Release Type'
+        type: choice
+        options:
+          - 'prerelease'
+          - 'graduate'
+          - 'auto'
+        required: true
+        default: 'prerelease'
+      preid:
+        description: 'Prerelease ID (prerelease type only)'
+        type: choice
+        options:
+          - 'alpha'
+          - 'beta'
+          - 'rc'
+          - 'next'
+        required: false
+        default: 'alpha'
+
+permissions:
+  contents: read
+
+env:
+  CI: true
+  PNPM_VERSION: 9.15.4
+  NODE_VERSION: 22.x
+
+jobs:
+  preview:
+    name: Preview Versions
+    runs-on: [self-hosted, linux, arm64, blackbox]
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.target_branch }}
+          fetch-depth: 0
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        timeout-minutes: 15
+        run: pnpm install --frozen-lockfile
+
+      - name: Config Git
+        run: |
+          git config --global user.email "preview@suites.dev"
+          git config --global user.name "Release Preview Bot"
+
+      - name: Show changed packages
+        run: |
+          echo "## Changed Packages" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          npx lerna changed --json 2>/dev/null | jq -r '.[] | "- **\(.name)** (current: `v\(.version)`)"' >> $GITHUB_STEP_SUMMARY || echo "No changed packages" >> $GITHUB_STEP_SUMMARY
+
+      - name: Preview Versions (Prerelease)
+        if: ${{ inputs.release_type == 'prerelease' }}
+        timeout-minutes: 10
+        run: |
+          npx lerna version --yes \
+            --conventional-commits \
+            --conventional-prerelease \
+            --preid ${{ inputs.preid }} \
+            --no-git-tag-version \
+            --no-push \
+            --allow-branch ${{ inputs.target_branch }}
+
+      - name: Preview Versions (Graduate)
+        if: ${{ inputs.release_type == 'graduate' }}
+        timeout-minutes: 10
+        run: |
+          npx lerna version --yes \
+            --conventional-graduate \
+            --no-git-tag-version \
+            --no-push \
+            --allow-branch ${{ inputs.target_branch }}
+
+      - name: Preview Versions (Auto)
+        if: ${{ inputs.release_type == 'auto' }}
+        timeout-minutes: 10
+        run: |
+          npx lerna version --yes \
+            --conventional-commits \
+            --no-git-tag-version \
+            --no-push \
+            --allow-branch ${{ inputs.target_branch }}
+
+      - name: Proposed versions
+        run: |
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Proposed Versions" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          npx lerna ls --json | jq -r '.[] | "- **\(.name)** -> `v\(.version)`"' >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo '```diff' >> $GITHUB_STEP_SUMMARY
+          git diff packages/*/package.json | head -100 >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+      - name: Cleanup
+        if: always()
+        run: |
+          git reset --hard HEAD
+          git clean -fd
+
+      - name: Footer
+        run: |
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "---" >> $GITHUB_STEP_SUMMARY
+          echo "This is a preview only. No changes committed or pushed." >> $GITHUB_STEP_SUMMARY

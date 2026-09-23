@@ -1,0 +1,19 @@
+{
+	"schemaVersion": 1,
+	"artifactRole": "acquisition-intent",
+	"runId": "01M25KNEH3C9BC4HVE743DBF2T",
+	"acquisitionId": "4967a661-6ea6-4a4b-936d-314df5c03494",
+	"playwrightTestId": "936b029611cc371ee95b-2c00b5c353780a522c49",
+	"project": "per-test",
+	"retry": 0,
+	"worker": 4,
+	"attemptId": "903517d6273d2527a99322de307d1cde",
+	"traceId": "903517d6273d2527a99322de307d1cde",
+	"target": {
+		"kind": "system",
+		"id": "system"
+	},
+	"isolation": "per-test",
+	"groupName": null,
+	"startedAt": "2026-09-10T12:11:19.356Z"
+}

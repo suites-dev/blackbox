@@ -1,0 +1,29 @@
+{
+	"schemaVersion": 2,
+	"artifactRole": "assertion-observations",
+	"runId": "01M25KNEH3C9BC4HVE743DBF2T",
+	"attemptId": "e4e80c4177ba626bf638e4cc38865a2f",
+	"playwrightTestId": "c771ecd7169f45f8e2fe-882b052d6171ab2eb6fb",
+	"scenarioId": "fixture-control.group-cleanup-restores-a-clean-fixture-state-after-a-subscriptio",
+	"project": "per-worker",
+	"retry": 0,
+	"planComplete": true,
+	"scenarioResult": true,
+	"scenarioResultReason": null,
+	"assertions": [
+		{
+			"assertionId": "fixture-control.group-cleanup-restores-a-clean-fixture-state-after-a-subscriptio/step:2",
+			"ordinal": 2,
+			"title": "Assert 200 with empty redis, subscriptions, and queue",
+			"declaration": {
+				"path": "tests/suites/fixture-control.suite.ts",
+				"line": 158,
+				"column": 4
+			},
+			"evaluation": true,
+			"reason": null,
+			"titleCorroborated": false,
+			"terminalAttribution": "no-attributable-expect-failure"
+		}
+	]
+}

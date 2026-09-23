@@ -1,0 +1,29 @@
+{
+	"schemaVersion": 2,
+	"artifactRole": "assertion-observations",
+	"runId": "01M25KNEH3C9BC4HVE743DBF2T",
+	"attemptId": "b083ef47ce587639d8415c2fc768c741",
+	"playwrightTestId": "16c3faa07c6fdef3bf8c-b2a1f53e7a4247749557",
+	"scenarioId": "subscription-rejection.rejects-malformed-subscription-bodies-with-400-invalid-body",
+	"project": "per-worker",
+	"retry": 0,
+	"planComplete": false,
+	"scenarioResult": true,
+	"scenarioResultReason": null,
+	"assertions": [
+		{
+			"assertionId": "subscription-rejection.rejects-malformed-subscription-bodies-with-400-invalid-body/step:1",
+			"ordinal": 1,
+			"title": "Assert 400 invalid-body for an empty body",
+			"declaration": {
+				"path": "tests/suites/subscription-rejection.suite.ts",
+				"line": 121,
+				"column": 4
+			},
+			"evaluation": true,
+			"reason": null,
+			"titleCorroborated": false,
+			"terminalAttribution": "no-attributable-expect-failure"
+		}
+	]
+}

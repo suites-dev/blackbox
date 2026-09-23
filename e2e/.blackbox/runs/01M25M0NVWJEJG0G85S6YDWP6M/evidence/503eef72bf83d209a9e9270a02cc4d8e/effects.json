@@ -1,0 +1,58 @@
+{
+	"type": "effects",
+	"flowId": "phase-0-payment-intent-verdict",
+	"attemptId": "503eef72bf83d209a9e9270a02cc4d8e",
+	"outcome": "captured",
+	"observed": {
+		"schemaVersion": 2,
+		"entry": {
+			"service": "payment-mock",
+			"request": "POST /v1/payment_intents",
+			"status": 201
+		},
+		"entryResolution": {
+			"status": "resolved"
+		},
+		"summary": {
+			"counts": {
+				"inbound": 1,
+				"outboundHttp": 0,
+				"sql": 0,
+				"cache": 0,
+				"messaging": 0
+			},
+			"services": [
+				"payment-mock"
+			],
+			"edges": []
+		},
+		"services": {
+			"payment-mock": {
+				"inbound": [
+					{
+						"method": "POST",
+						"path": "/v1/payment_intents",
+						"status": 201,
+						"count": 1,
+						"origin": "sut"
+					}
+				]
+			}
+		},
+		"errors": []
+	},
+	"expectedPath": null,
+	"captureReason": "no-baseline-comparison-requested",
+	"entryResolution": {
+		"status": "resolved"
+	},
+	"rootSpan": {
+		"spanId": "4d2232c942633f22",
+		"name": "POST /v1/payment_intents",
+		"service": "payment-mock",
+		"error": false,
+		"durationMs": 1.379
+	},
+	"semanticStepId": "act",
+	"runtimeActSpanId": "8b0655f5f865c32d"
+}

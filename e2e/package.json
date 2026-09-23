@@ -1,0 +1,45 @@
+{
+  "name": "@suites/blackbox-e2e-harness",
+  "version": "0.0.0",
+  "type": "module",
+  "private": true,
+  "description": "Live YAML catalog consumer: Compose acquisition, harness-owned Node instrumentation, Playwright effects and retained evidence.",
+  "scripts": {
+    "blackbox": "blackbox",
+    "odc-report": "blackbox report --json",
+    "odc-report:html": "blackbox report --open",
+    "trace-collector": "NODE_OPTIONS=\"${NODE_OPTIONS:+$NODE_OPTIONS }--conditions=blackbox-source\" tsx ../packages/collection-http/src/server.ts",
+    "test": "playwright test",
+    "generate:meta:s3": "playwright test --config gates/s3/playwright.config.ts",
+    "generate:meta:phase-0-verdicts": "playwright test --config gates/phase-0-verdicts/playwright.config.ts",
+    "meta:s3": "tsx gates/s3/meta.spec.ts",
+    "meta:phase-0-verdicts": "tsx gates/phase-0-verdicts/meta.spec.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@playwright-opentelemetry/trace-api": "^0.12.1",
+    "@suites/blackbox-analyzer": "workspace:*",
+    "@suites/blackbox-capture-node": "workspace:*",
+    "@suites/blackbox-cli": "workspace:*",
+    "@suites/blackbox-catalog": "workspace:*",
+    "@suites/blackbox-protocol": "workspace:*",
+    "@suites/blackbox-report": "workspace:*",
+    "@suites/blackbox-runner-playwright": "workspace:*",
+    "@suites/blackbox-collection-http": "workspace:*",
+    "@suites/blackbox-spec-gherkin": "workspace:*",
+    "@suites/blackbox-system": "workspace:*",
+    "h3": "2.0.1-rc.22",
+    "testcontainers": "^10.18.0",
+    "tsx": "^4.22.3",
+    "yaml": "^2.7.0"
+  },
+  "devDependencies": {
+    "@jridgewell/trace-mapping": "^0.3.31",
+    "@oclif/core": "^4.14.0",
+    "@playwright/test": "catalog:",
+    "@types/node": "^22.13.0",
+    "acorn": "^8.17.0",
+    "ast-v8-to-istanbul": "^1.0.5",
+    "playwright-opentelemetry": "^0.12.1"
+  }
+}

@@ -1,0 +1,44 @@
+{
+	"schemaVersion": 2,
+	"runId": "01M25M0NVWJEJG0G85S6YDWP6M",
+	"appendOnly": true,
+	"attempts": [
+		{
+			"attemptId": "503eef72bf83d209a9e9270a02cc4d8e",
+			"scenarioId": "payment-intent-verdict-triad.records-a-payment-intent-for-a-valid-request",
+			"playwrightTestId": "119b2e1344f43fa7fc46-011e459b154c46ff88a1",
+			"files": [
+				{
+					"path": ".blackbox/runs/01M25M0NVWJEJG0G85S6YDWP6M/evidence/503eef72bf83d209a9e9270a02cc4d8e/attempt.json",
+					"digest": "a8317044b2a92cd96c3e4590515a820f409c7bb0"
+				},
+				{
+					"path": ".blackbox/runs/01M25M0NVWJEJG0G85S6YDWP6M/evidence/503eef72bf83d209a9e9270a02cc4d8e/decisions.json",
+					"digest": "addf8a386e429be72ff65c7c44674413c67e99b5"
+				},
+				{
+					"path": ".blackbox/runs/01M25M0NVWJEJG0G85S6YDWP6M/evidence/503eef72bf83d209a9e9270a02cc4d8e/trace-summary.json",
+					"digest": "833ce9e4aaa496b930da29befe0dd8fe1e753d24"
+				},
+				{
+					"path": ".blackbox/runs/01M25M0NVWJEJG0G85S6YDWP6M/evidence/503eef72bf83d209a9e9270a02cc4d8e/effects.json",
+					"digest": "bb64747dece4b8689410ef1d2240a8ddb5a08167"
+				},
+				{
+					"path": ".blackbox/runs/01M25M0NVWJEJG0G85S6YDWP6M/evidence/503eef72bf83d209a9e9270a02cc4d8e/assertions.json",
+					"digest": "2f094832be66d05871236bf7f6f0a34a0e3c946c"
+				},
+				{
+					"path": ".blackbox/runs/01M25M0NVWJEJG0G85S6YDWP6M/evidence/503eef72bf83d209a9e9270a02cc4d8e/projection-comparison.json",
+					"digest": "c7443b1939cc54ad986a6c9c1a4ac3a38dd7c51e"
+				}
+			]
+		}
+	],
+	"runFiles": [
+		{
+			"path": ".blackbox/runs/01M25M0NVWJEJG0G85S6YDWP6M/evidence/execution-outcomes.json",
+			"digest": "9294098da81d9f0d1d85cff9622b3290ceaf1680"
+		}
+	]
+}

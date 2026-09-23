@@ -1,0 +1,17 @@
+.blackbox/*
+!.blackbox/catalog/
+!.blackbox/instrumentation/
+.blackbox/compose/**/node_modules/
+.blackbox/instrumentation/**/node_modules/
+.blackbox/runs/
+.blackbox/reports/
+.blackbox/cache/
+.blackbox/tmp/
+test-results
+trace-store
+*.d.ts
+# The consolidation sim's compose catalog type declaration is hand-maintained
+# source (A4/A5), not generated build output; the blanket *.d.ts rule above
+# exists for actual build artifacts elsewhere under e2e/, and must not also
+# swallow this file.
+!blackbox-consolidation-2026-09-12/docker-compose.yml.d.ts

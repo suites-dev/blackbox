@@ -1,0 +1,9 @@
+{
+	"attemptId": "7ba85a5bb78b1b541ac02c90061b4ac0",
+	"acquisitionId": "1e729427-ac92-4e82-b9b3-386615a91ba7",
+	"scenarioId": "concurrency.serializes-concurrent-subscribe-calls-for-one-user-into-one-crea",
+	"playwrightTestId": "ab20711e520f4abff31a-6d85b1dce71a1f12bdc1",
+	"project": "per-test",
+	"retry": 0,
+	"recordedAt": "2026-09-10T12:11:49.476Z"
+}

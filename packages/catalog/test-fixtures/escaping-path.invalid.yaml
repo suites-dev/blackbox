@@ -1,0 +1,32 @@
+schemaVersion: 1
+catalog:
+  default: api
+  entries:
+    api:
+      kind: subsystem
+      acquisition:
+        adapter: docker-compose@1
+        files: [../outside.yml]
+      isolation: per-test
+      entrypoint:
+        participant: api
+        protocol: http
+        containerPort: 8080
+        readiness: { path: /health, timeoutMs: 30000 }
+      participants:
+        api: { service: api, role: entrypoint, runtime: node, activation: node-runtime }
+      observation:
+        policyId: api-v1
+        boundaries:
+          - { id: effects.http, kind: http, authoritativeFor: [HTTP effects] }
+        requiredBoundaries: [effects.http]
+        terminalObservationWindowMs: 500
+        redaction:
+          requestBodies: not-captured
+          headers: [authorization]
+          dynamicIdentifiers: normalized
+activations:
+  node-runtime:
+    ref: ../bootstrap.mjs
+    adapter: node-factory
+    version: 1

@@ -1,0 +1,167 @@
+{
+	"schemaVersion": 1,
+	"artifactRole": "canonical-run-result",
+	"generatedAt": "2026-09-10T12:17:42.981Z",
+	"runId": "01M25M0NVWJEJG0G85S6YDWP6M",
+	"flowId": "phase-0-payment-intent-verdict",
+	"title": "phase-0-payment-intent-verdict",
+	"authoringSource": "suite",
+	"axes": {
+		"execution": "passed",
+		"evidence": "complete",
+		"contractState": "unchanged",
+		"verdict": "satisfied"
+	},
+	"verdict": {
+		"value": "satisfied",
+		"authority": "deterministic-analyzer",
+		"reason": "all-required-evaluations-true",
+		"scope": "flow-run",
+		"summary": "Every required proof obligation was satisfied for phase-0-payment-intent-verdict's flow run."
+	},
+	"qualification": {
+		"sealed": true,
+		"fresh": true,
+		"digestsMatch": true,
+		"scopeComplete": true,
+		"evidenceComplete": true,
+		"qualifies": true
+	},
+	"scope": {
+		"requiredScenarios": 1,
+		"executedScenarios": 1,
+		"attempts": 1,
+		"projects": [
+			"phase-0-verdicts"
+		],
+		"filtered": false
+	},
+	"firstDivergence": null,
+	"obligations": [
+		{
+			"id": "phase-0-payment-intent-verdict::contract",
+			"scenarioId": null,
+			"source": "effects.candidate",
+			"evaluation": true,
+			"reason": null
+		},
+		{
+			"id": "payment-intent-verdict-triad.records-a-payment-intent-for-a-valid-request::absence::effects.postgres",
+			"scenarioId": "payment-intent-verdict-triad.records-a-payment-intent-for-a-valid-request",
+			"source": "effects.postgres",
+			"evaluation": true,
+			"reason": null
+		},
+		{
+			"id": "payment-intent-verdict-triad.records-a-payment-intent-for-a-valid-request::absence::effects.redis",
+			"scenarioId": "payment-intent-verdict-triad.records-a-payment-intent-for-a-valid-request",
+			"source": "effects.redis",
+			"evaluation": true,
+			"reason": null
+		},
+		{
+			"id": "payment-intent-verdict-triad.records-a-payment-intent-for-a-valid-request::absence::effects.sqs",
+			"scenarioId": "payment-intent-verdict-triad.records-a-payment-intent-for-a-valid-request",
+			"source": "effects.sqs",
+			"evaluation": true,
+			"reason": null
+		},
+		{
+			"id": "payment-intent-verdict-triad.records-a-payment-intent-for-a-valid-request::assertion",
+			"scenarioId": "payment-intent-verdict-triad.records-a-payment-intent-for-a-valid-request",
+			"source": "playwright.assertion",
+			"evaluation": true,
+			"reason": null
+		},
+		{
+			"id": "payment-intent-verdict-triad.records-a-payment-intent-for-a-valid-request::effect::http::POST::/v1/payment_intents",
+			"scenarioId": "payment-intent-verdict-triad.records-a-payment-intent-for-a-valid-request",
+			"source": "effects.http",
+			"evaluation": true,
+			"reason": null
+		}
+	],
+	"findings": [],
+	"assumptions": [
+		{
+			"id": "instrumentation-captured-all-boundaries",
+			"text": "Instrumentation captured every declared boundary; an effect the observation policy does not cover cannot be represented as evidence."
+		},
+		{
+			"id": "collector-delivered-before-seal",
+			"text": "Every effect the instrumentation captured was delivered to the collector before the run sealed; the seal's window end is a floor on sealing, not just a fact about it."
+		},
+		{
+			"id": "source-maps-match-running-code",
+			"text": "The source maps read by the analyzer match the code that actually executed in the sealed run."
+		},
+		{
+			"id": "clock-ordering-sufficient",
+			"text": "The clock ordering available to the analyzer is sufficient to place attempt, evidence, and window boundaries correctly relative to one another."
+		},
+		{
+			"id": "declared-boundary-matches-actual",
+			"text": "The boundary declared in the observation policy (its kind and authoritativeFor claims) matches what the instrumented code actually does at runtime."
+		}
+	],
+	"perProjectResults": [
+		{
+			"project": "phase-0-verdicts",
+			"verdict": "satisfied",
+			"contractState": "unchanged"
+		}
+	],
+	"attempts": [
+		{
+			"attemptId": "503eef72bf83d209a9e9270a02cc4d8e",
+			"scenarioId": "payment-intent-verdict-triad.records-a-payment-intent-for-a-valid-request",
+			"project": "phase-0-verdicts",
+			"retry": 0,
+			"final": true,
+			"executionOutcome": "passed",
+			"evidenceComplete": true,
+			"evidenceStatus": "valid",
+			"evidenceFiles": [
+				{
+					"name": "attempt.json",
+					"path": "evidence/503eef72bf83d209a9e9270a02cc4d8e/attempt.json"
+				},
+				{
+					"name": "decisions.json",
+					"path": "evidence/503eef72bf83d209a9e9270a02cc4d8e/decisions.json"
+				},
+				{
+					"name": "trace-summary.json",
+					"path": "evidence/503eef72bf83d209a9e9270a02cc4d8e/trace-summary.json"
+				},
+				{
+					"name": "effects.json",
+					"path": "evidence/503eef72bf83d209a9e9270a02cc4d8e/effects.json"
+				},
+				{
+					"name": "assertions.json",
+					"path": "evidence/503eef72bf83d209a9e9270a02cc4d8e/assertions.json"
+				},
+				{
+					"name": "projection-comparison.json",
+					"path": "evidence/503eef72bf83d209a9e9270a02cc4d8e/projection-comparison.json"
+				}
+			]
+		}
+	],
+	"nextValidAction": null,
+	"artifacts": {
+		"manifest": "manifest.json",
+		"proofPlan": "proof-plans/phase-0-payment-intent-verdict.json",
+		"behaviorModel": "behavior-models/phase-0-payment-intent-verdict.json",
+		"observationPolicy": "observation-policy.json",
+		"evidenceIndex": "evidence/index.json",
+		"seal": "seal.json",
+		"report": "report.html",
+		"approvalContext": null,
+		"candidateContract": null,
+		"contractDiff": null
+	},
+	"recommendation": null,
+	"developerDecision": null
+}

@@ -1,0 +1,204 @@
+{
+	"schemaVersion": 1,
+	"artifactRole": "canonical-run-result",
+	"generatedAt": "2026-09-10T12:18:28.844Z",
+	"runId": "01M25M21N4VVPCDTXQKCE13WRE",
+	"flowId": "phase-0-payment-intent-verdict",
+	"title": "phase-0-payment-intent-verdict",
+	"authoringSource": "suite",
+	"axes": {
+		"execution": "failed",
+		"evidence": "incomplete",
+		"contractState": "indeterminate",
+		"verdict": "indeterminate"
+	},
+	"verdict": {
+		"value": "indeterminate",
+		"authority": "deterministic-analyzer",
+		"reason": "evidence-not-qualified",
+		"scope": "flow-run",
+		"summary": "phase-0-payment-intent-verdict's evidence was not fit for judgment (evidence-not-qualified)."
+	},
+	"qualification": {
+		"sealed": false,
+		"fresh": true,
+		"digestsMatch": true,
+		"scopeComplete": true,
+		"evidenceComplete": false,
+		"qualifies": false
+	},
+	"scope": {
+		"requiredScenarios": 1,
+		"executedScenarios": 1,
+		"attempts": 1,
+		"projects": [
+			"phase-0-verdicts"
+		],
+		"filtered": false
+	},
+	"firstDivergence": null,
+	"obligations": [
+		{
+			"id": "phase-0-payment-intent-verdict::contract",
+			"scenarioId": null,
+			"source": "effects.candidate",
+			"evaluation": "unknown",
+			"reason": "capture-error"
+		},
+		{
+			"id": "payment-intent-verdict-triad.records-a-payment-intent-for-a-valid-request::absence::effects.postgres",
+			"scenarioId": "payment-intent-verdict-triad.records-a-payment-intent-for-a-valid-request",
+			"source": "effects.postgres",
+			"evaluation": "unknown",
+			"reason": "capture-error"
+		},
+		{
+			"id": "payment-intent-verdict-triad.records-a-payment-intent-for-a-valid-request::absence::effects.redis",
+			"scenarioId": "payment-intent-verdict-triad.records-a-payment-intent-for-a-valid-request",
+			"source": "effects.redis",
+			"evaluation": "unknown",
+			"reason": "capture-error"
+		},
+		{
+			"id": "payment-intent-verdict-triad.records-a-payment-intent-for-a-valid-request::absence::effects.sqs",
+			"scenarioId": "payment-intent-verdict-triad.records-a-payment-intent-for-a-valid-request",
+			"source": "effects.sqs",
+			"evaluation": "unknown",
+			"reason": "capture-error"
+		},
+		{
+			"id": "payment-intent-verdict-triad.records-a-payment-intent-for-a-valid-request::assertion",
+			"scenarioId": "payment-intent-verdict-triad.records-a-payment-intent-for-a-valid-request",
+			"source": "playwright.assertion",
+			"evaluation": "unknown",
+			"reason": "assertion-not-reached"
+		},
+		{
+			"id": "payment-intent-verdict-triad.records-a-payment-intent-for-a-valid-request::effect::http::POST::/v1/payment_intents",
+			"scenarioId": "payment-intent-verdict-triad.records-a-payment-intent-for-a-valid-request",
+			"source": "effects.http",
+			"evaluation": "unknown",
+			"reason": "capture-error"
+		}
+	],
+	"findings": [
+		{
+			"id": "finding.qualification-gap.627f57dfcb8d",
+			"severity": "blocking",
+			"authority": "deterministic-analyzer",
+			"scenarioId": null,
+			"summary": "Required acquisition observation gap: acquisition 3f7c0ac0-7638-4cd4-84a2-4c6de34fc03c observation incomplete: participant payment-mock has missing spans: payment-mock:spans (not-emitted).",
+			"affectsVerdict": true
+		},
+		{
+			"id": "finding.qualification-gap.66108f1294c1",
+			"severity": "blocking",
+			"authority": "deterministic-analyzer",
+			"scenarioId": null,
+			"summary": "Required acquisition observation gap: acquisition 3f7c0ac0-7638-4cd4-84a2-4c6de34fc03c observation incomplete: participant payment-mock spanCount is null; no count was established.",
+			"affectsVerdict": true
+		},
+		{
+			"id": "finding.qualification-gap.586b861d9f93",
+			"severity": "blocking",
+			"authority": "deterministic-analyzer",
+			"scenarioId": null,
+			"summary": "Required acquisition observation gap: acquisition 3f7c0ac0-7638-4cd4-84a2-4c6de34fc03c observation incomplete: required participant payment-mock status is missing, not observed.",
+			"affectsVerdict": true
+		},
+		{
+			"id": "finding.qualification-gap.38ab1084cddc",
+			"severity": "blocking",
+			"authority": "deterministic-analyzer",
+			"scenarioId": null,
+			"summary": "Required evidence gap for effects.json on attempt 0b30f9d3e6ef4e719b683cec5512b1b3: producer-incomplete: capture projection was incomplete (settle-timeout); effects, absence, and contract evaluation cannot qualify this attempt.",
+			"affectsVerdict": true
+		}
+	],
+	"assumptions": [
+		{
+			"id": "instrumentation-captured-all-boundaries",
+			"text": "Instrumentation captured every declared boundary; an effect the observation policy does not cover cannot be represented as evidence."
+		},
+		{
+			"id": "collector-delivered-before-seal",
+			"text": "Every effect the instrumentation captured was delivered to the collector before the run sealed; the seal's window end is a floor on sealing, not just a fact about it."
+		},
+		{
+			"id": "source-maps-match-running-code",
+			"text": "The source maps read by the analyzer match the code that actually executed in the sealed run."
+		},
+		{
+			"id": "clock-ordering-sufficient",
+			"text": "The clock ordering available to the analyzer is sufficient to place attempt, evidence, and window boundaries correctly relative to one another."
+		},
+		{
+			"id": "declared-boundary-matches-actual",
+			"text": "The boundary declared in the observation policy (its kind and authoritativeFor claims) matches what the instrumented code actually does at runtime."
+		}
+	],
+	"perProjectResults": [
+		{
+			"project": "phase-0-verdicts",
+			"verdict": "indeterminate",
+			"contractState": "indeterminate"
+		}
+	],
+	"attempts": [
+		{
+			"attemptId": "0b30f9d3e6ef4e719b683cec5512b1b3",
+			"scenarioId": "payment-intent-verdict-triad.records-a-payment-intent-for-a-valid-request",
+			"project": "phase-0-verdicts",
+			"retry": 0,
+			"final": true,
+			"executionOutcome": "failed",
+			"evidenceComplete": false,
+			"evidenceStatus": "incomplete",
+			"evidenceFiles": [
+				{
+					"name": "attempt.json",
+					"path": "evidence/0b30f9d3e6ef4e719b683cec5512b1b3/attempt.json"
+				},
+				{
+					"name": "decisions.json",
+					"path": "evidence/0b30f9d3e6ef4e719b683cec5512b1b3/decisions.json"
+				},
+				{
+					"name": "trace-summary.json",
+					"path": "evidence/0b30f9d3e6ef4e719b683cec5512b1b3/trace-summary.json"
+				},
+				{
+					"name": "effects.json",
+					"path": "evidence/0b30f9d3e6ef4e719b683cec5512b1b3/effects.json"
+				},
+				{
+					"name": "assertions.json",
+					"path": "evidence/0b30f9d3e6ef4e719b683cec5512b1b3/assertions.json"
+				},
+				{
+					"name": "projection-comparison.json",
+					"path": "evidence/0b30f9d3e6ef4e719b683cec5512b1b3/projection-comparison.json"
+				}
+			]
+		}
+	],
+	"nextValidAction": {
+		"code": "rerun",
+		"summary": "Required run or acquisition evidence is unavailable. Repair capture and rerun.",
+		"commandAfterAuthorization": null
+	},
+	"artifacts": {
+		"manifest": "manifest.json",
+		"proofPlan": "proof-plans/phase-0-payment-intent-verdict.json",
+		"behaviorModel": "behavior-models/phase-0-payment-intent-verdict.json",
+		"observationPolicy": "observation-policy.json",
+		"evidenceIndex": "evidence/index.json",
+		"seal": "seal.json",
+		"report": "report.html",
+		"approvalContext": null,
+		"candidateContract": null,
+		"contractDiff": null
+	},
+	"recommendation": null,
+	"developerDecision": null
+}

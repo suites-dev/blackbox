@@ -1,0 +1,71 @@
+{
+	"schemaVersion": 1,
+	"attemptId": "50e4e533750e7816b38d7fd06e1d7b27",
+	"traceId": "50e4e533750e7816b38d7fd06e1d7b27",
+	"rootSpan": null,
+	"entryResolution": {
+		"status": "ambiguous",
+		"reason": "multiple-act-bound-candidates"
+	},
+	"actStep": {
+		"phase": "when",
+		"title": "Act: POST /subscriptions for carol twice in parallel",
+		"error": false,
+		"semanticStepId": "act",
+		"runtimeActSpanId": "54b811f9cd82d70e"
+	},
+	"steps": [
+		{
+			"phase": "when",
+			"title": "Act: POST /subscriptions for carol twice in parallel",
+			"error": false,
+			"semanticStepId": null,
+			"runtimeActSpanId": null
+		},
+		{
+			"phase": "then",
+			"title": "Assert: exactly one 201 creation and one 409 duplicate, in either order",
+			"error": false,
+			"semanticStepId": null,
+			"runtimeActSpanId": null
+		},
+		{
+			"phase": "unknown",
+			"title": "Expect \"toEqual\"",
+			"error": false,
+			"semanticStepId": null,
+			"runtimeActSpanId": null
+		},
+		{
+			"phase": "then",
+			"title": "Assert: fixture state holds exactly one fraud audit, payment intent, queue message, and subscription",
+			"error": false,
+			"semanticStepId": null,
+			"runtimeActSpanId": null
+		},
+		{
+			"phase": "unknown",
+			"title": "Expect \"toBe\"",
+			"error": false,
+			"semanticStepId": null,
+			"runtimeActSpanId": null
+		},
+		{
+			"phase": "unknown",
+			"title": "Expect \"toMatchObject\"",
+			"error": false,
+			"semanticStepId": null,
+			"runtimeActSpanId": null
+		},
+		{
+			"phase": "unknown",
+			"title": "Expect \"toMatchSnapshot\"",
+			"error": false,
+			"semanticStepId": null,
+			"runtimeActSpanId": null
+		}
+	],
+	"spanCount": 32,
+	"capturedEffectCount": 24,
+	"redactionsApplied": null
+}

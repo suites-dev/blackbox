@@ -1,0 +1,118 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://blackbox.suites.dev/schemas/report-registry-v1.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "kind",
+    "schemaVersion",
+    "reports",
+    "failures"
+  ],
+  "properties": {
+    "kind": {
+      "const": "report-registry"
+    },
+    "schemaVersion": {
+      "const": 1
+    },
+    "reports": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "kind",
+          "id",
+          "type",
+          "title",
+          "description",
+          "state",
+          "createdAt"
+        ],
+        "properties": {
+          "kind": {
+            "const": "report-summary"
+          },
+          "id": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "oneOf": [
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["kind", "value"],
+                "properties": {
+                  "kind": {"const": "available"},
+                  "value": {"type": "string"}
+                }
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["kind"],
+                "properties": {
+                  "kind": {"const": "unavailable"}
+                }
+              }
+            ]
+          },
+          "state": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "failures": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "type",
+          "failure"
+        ],
+        "properties": {
+          "type": {
+            "type": "string"
+          },
+          "failure": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "kind",
+              "code",
+              "message"
+            ],
+            "properties": {
+              "kind": {
+                "const": "report-failure"
+              },
+              "code": {
+                "enum": [
+                  "not-found",
+                  "invalid-request",
+                  "artifact-unavailable",
+                  "provider-error"
+                ]
+              },
+              "message": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

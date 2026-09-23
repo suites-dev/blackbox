@@ -1,0 +1,49 @@
+{
+	"schemaVersion": 3,
+	"runId": "01M25KNEH3C9BC4HVE743DBF2T",
+	"attemptId": "687b6d2959198a2f907cde9db5239e78",
+	"flowId": "payment-mock-subsystem",
+	"scenarioId": "payment-mock-subsystem.starts-from-a-clean-state-because-the-container-is-per-test",
+	"playwrightTestId": "035dad0ffab30e40b0c2-5942dc07c8be519e4490",
+	"project": "subsystem",
+	"retry": 0,
+	"worker": 9,
+	"startedAt": "2026-09-10T12:12:36.431Z",
+	"finishedAt": "2026-09-10T12:12:42.657Z",
+	"outcome": "passed",
+	"partial": false,
+	"traceId": "687b6d2959198a2f907cde9db5239e78",
+	"declarationFile": {
+		"path": "tests/subsystem/payment-mock.spec.ts",
+		"digest": "83162c8b5b8a3f220dac6b89ffdc77fe621632a8"
+	},
+	"entryFile": "subsystem/payment-mock.spec.ts",
+	"effects": [
+		{
+			"serviceId": "payment-mock",
+			"effect": {
+				"effectId": "effect-1",
+				"boundary": "http",
+				"operation": "GET",
+				"target": "/fixture/state",
+				"status": "200",
+				"origin": "fixture-control",
+				"attributes": {
+					"direction": "inbound"
+				}
+			}
+		}
+	],
+	"requestedArtifacts": [
+		"decisions.json",
+		"effects.json",
+		"assertions.json"
+	],
+	"entryResolution": {
+		"status": "excluded",
+		"reason": "declared-act-fixture-control"
+	},
+	"rootSpan": null,
+	"semanticStepId": "act",
+	"runtimeActSpanId": "59b8e0f22a586679"
+}

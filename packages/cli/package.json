@@ -1,0 +1,41 @@
+{
+  "name": "@suites/blackbox-cli",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Blackbox command-line facade for Sandboxes, Testing, and Assurance.",
+  "bin": {
+    "blackbox": "./bin/run.js"
+  },
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc --project tsconfig.build.json",
+    "lint": "eslint src bin",
+    "test": "node --test 'dist/**/*.test.js'"
+  },
+  "dependencies": {
+    "@oclif/core": "^4.14.0",
+    "@suites/blackbox-catalog-internal": "workspace:*",
+    "@suites/blackbox-capsule-internal": "workspace:*",
+    "@suites/blackbox-report-server-internal": "workspace:*"
+  },
+  "oclif": {
+    "bin": "blackbox",
+    "dirname": "blackbox",
+    "commands": "./dist/commands",
+    "topicSeparator": " "
+  },
+  "imports": {
+    "#reporting/*": "./dist/reporting/*.js",
+    "#capsule-output": "./dist/capsule-output.js"
+  }
+}

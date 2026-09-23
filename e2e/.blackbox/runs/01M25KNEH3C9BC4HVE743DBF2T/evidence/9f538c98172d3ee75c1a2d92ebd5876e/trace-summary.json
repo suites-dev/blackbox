@@ -1,0 +1,134 @@
+{
+	"schemaVersion": 1,
+	"attemptId": "9f538c98172d3ee75c1a2d92ebd5876e",
+	"traceId": "9f538c98172d3ee75c1a2d92ebd5876e",
+	"rootSpan": null,
+	"entryResolution": {
+		"status": "excluded",
+		"reason": "declared-act-fixture-control"
+	},
+	"actStep": {
+		"phase": "when",
+		"title": "Act: POST /fixture/reset with the fresh profile",
+		"error": false,
+		"semanticStepId": "act",
+		"runtimeActSpanId": "3fad6448e3b95897"
+	},
+	"steps": [
+		{
+			"phase": "given",
+			"title": "Arrange: reset the shared stack to the fresh profile",
+			"error": false,
+			"semanticStepId": null,
+			"runtimeActSpanId": null
+		},
+		{
+			"phase": "unknown",
+			"title": "Expect \"toBe\"",
+			"error": false,
+			"semanticStepId": null,
+			"runtimeActSpanId": null
+		},
+		{
+			"phase": "when",
+			"title": "Act: POST /fixture/reset with the fresh profile",
+			"error": false,
+			"semanticStepId": null,
+			"runtimeActSpanId": null
+		},
+		{
+			"phase": "then",
+			"title": "Assert: 200 with a clean state after the fresh reset",
+			"error": false,
+			"semanticStepId": null,
+			"runtimeActSpanId": null
+		},
+		{
+			"phase": "unknown",
+			"title": "Expect \"toBe\"",
+			"error": false,
+			"semanticStepId": null,
+			"runtimeActSpanId": null
+		},
+		{
+			"phase": "unknown",
+			"title": "Expect \"toEqual\"",
+			"error": false,
+			"semanticStepId": null,
+			"runtimeActSpanId": null
+		},
+		{
+			"phase": "unknown",
+			"title": "Expect \"toBe\"",
+			"error": false,
+			"semanticStepId": null,
+			"runtimeActSpanId": null
+		},
+		{
+			"phase": "when",
+			"title": "Act: POST /fixture/reset with the comparison-absent profile",
+			"error": false,
+			"semanticStepId": null,
+			"runtimeActSpanId": null
+		},
+		{
+			"phase": "then",
+			"title": "Assert: 200 with a clean state after the comparison-absent reset",
+			"error": false,
+			"semanticStepId": null,
+			"runtimeActSpanId": null
+		},
+		{
+			"phase": "unknown",
+			"title": "Expect \"toBe\"",
+			"error": false,
+			"semanticStepId": null,
+			"runtimeActSpanId": null
+		},
+		{
+			"phase": "unknown",
+			"title": "Expect \"toEqual\"",
+			"error": false,
+			"semanticStepId": null,
+			"runtimeActSpanId": null
+		},
+		{
+			"phase": "unknown",
+			"title": "Expect \"toBe\"",
+			"error": false,
+			"semanticStepId": null,
+			"runtimeActSpanId": null
+		},
+		{
+			"phase": "when",
+			"title": "Act: POST /fixture/reset with an unknown profile name",
+			"error": false,
+			"semanticStepId": null,
+			"runtimeActSpanId": null
+		},
+		{
+			"phase": "then",
+			"title": "Assert: 400 invalid-profile for the unknown profile",
+			"error": false,
+			"semanticStepId": null,
+			"runtimeActSpanId": null
+		},
+		{
+			"phase": "unknown",
+			"title": "Expect \"toBe\"",
+			"error": false,
+			"semanticStepId": null,
+			"runtimeActSpanId": null
+		},
+		{
+			"phase": "unknown",
+			"title": "Expect \"toMatchObject\"",
+			"error": false,
+			"semanticStepId": null,
+			"runtimeActSpanId": null
+		}
+	],
+	"spanCount": 113,
+	"capturedEffectCount": 55,
+	"redactionsApplied": null
+}

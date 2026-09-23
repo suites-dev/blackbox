@@ -1,0 +1,95 @@
+{
+	"schemaVersion": 1,
+	"artifactRole": "observation-plan",
+	"runId": "01M25KNEH3C9BC4HVE743DBF2T",
+	"acquisitionId": "d25daca4-5993-40c9-9878-112174b678c8",
+	"observationPolicyDigest": "1fa7b4b1273c0ca0e351a378c1e44b0f039c6795",
+	"intent": {
+		"acquisitionId": "d25daca4-5993-40c9-9878-112174b678c8",
+		"path": ".blackbox/runs/01M25KNEH3C9BC4HVE743DBF2T/acquisitions/d25daca4-5993-40c9-9878-112174b678c8/intent.json",
+		"digest": "0cbc330942642b75df4ce8f6e2c4539ab634f215"
+	},
+	"target": {
+		"kind": "subsystem",
+		"id": "payment-mock"
+	},
+	"sandbox": {
+		"sandboxId": "sandbox-7451b85f-5eb0-46aa-97aa-93b38b1c049e",
+		"lifetime": "per-test",
+		"ownerId": "d25daca4-5993-40c9-9878-112174b678c8",
+		"establishedBy": "d25daca4-5993-40c9-9878-112174b678c8"
+	},
+	"environment": {
+		"source": "image",
+		"configRefs": [],
+		"environmentVariables": [
+			{
+				"name": "BLACKBOX_COVERAGE_PORT",
+				"source": "instrumentation"
+			},
+			{
+				"name": "FIXTURE_CONTROL_TOKEN",
+				"source": "shared"
+			},
+			{
+				"name": "NODE_OPTIONS",
+				"source": "instrumentation"
+			},
+			{
+				"name": "NODE_PATH",
+				"source": "instrumentation"
+			},
+			{
+				"name": "OTEL_BSP_SCHEDULE_DELAY",
+				"source": "instrumentation"
+			},
+			{
+				"name": "OTEL_EXPORTER_OTLP_ENDPOINT",
+				"source": "instrumentation"
+			},
+			{
+				"name": "OTEL_EXPORTER_OTLP_PROTOCOL",
+				"source": "instrumentation"
+			},
+			{
+				"name": "OTEL_LOGS_EXPORTER",
+				"source": "instrumentation"
+			},
+			{
+				"name": "OTEL_METRICS_EXPORTER",
+				"source": "instrumentation"
+			},
+			{
+				"name": "OTEL_NODE_RESOURCE_DETECTORS",
+				"source": "instrumentation"
+			},
+			{
+				"name": "OTEL_SERVICE_NAME",
+				"source": "instrumentation"
+			},
+			{
+				"name": "OTEL_TRACES_EXPORTER",
+				"source": "instrumentation"
+			},
+			{
+				"name": "PORT",
+				"source": "target"
+			}
+		]
+	},
+	"participants": [
+		{
+			"participantId": "payment-mock",
+			"kind": "service",
+			"instrumentation": {
+				"state": "applied",
+				"provider": "opentelemetry-node",
+				"version": "0.55.3"
+			},
+			"telemetry": {
+				"requirement": "required",
+				"boundaryIds": []
+			}
+		}
+	]
+}

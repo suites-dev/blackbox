@@ -1,0 +1,49 @@
+{
+	"schemaVersion": 3,
+	"artifactRole": "reporter-attempt-outcome",
+	"runId": "01M25KNEH3C9BC4HVE743DBF2T",
+	"flowId": "subscription-rejection",
+	"playwrightTestId": "936b029611cc371ee95b-2c00b5c353780a522c49",
+	"project": "per-test",
+	"scenarioId": "subscription-rejection.rejects-an-unknown-user-with-404-and-leaves-no-side-effects",
+	"retry": 0,
+	"attemptId": "903517d6273d2527a99322de307d1cde",
+	"outcome": "passed",
+	"status": "passed",
+	"recordedAt": "2026-09-10T12:11:52.707Z",
+	"planComplete": true,
+	"assertions": [
+		{
+			"assertionId": "subscription-rejection.rejects-an-unknown-user-with-404-and-leaves-no-side-effects/step:1",
+			"ordinal": 1,
+			"title": "Assert 404 with the unknown-user outcome",
+			"declaration": {
+				"path": "tests/suites/subscription-rejection.suite.ts",
+				"line": 31,
+				"column": 4
+			},
+			"evaluation": true,
+			"reason": null,
+			"titleCorroborated": false,
+			"terminalAttribution": "no-attributable-expect-failure"
+		},
+		{
+			"assertionId": "subscription-rejection.rejects-an-unknown-user-with-404-and-leaves-no-side-effects/step:2",
+			"ordinal": 2,
+			"title": "Assert fixture state is untouched, no fraud, payment, redis, or queue effects",
+			"declaration": {
+				"path": "tests/suites/subscription-rejection.suite.ts",
+				"line": 41,
+				"column": 4
+			},
+			"evaluation": true,
+			"reason": null,
+			"titleCorroborated": false,
+			"terminalAttribution": "no-attributable-expect-failure"
+		}
+	],
+	"requestedArtifacts": [
+		"effects.json",
+		"assertions.json"
+	]
+}

@@ -1,0 +1,76 @@
+{
+	"schemaVersion": 2,
+	"artifactRole": "attempt-fragment-draft",
+	"runId": "01M25KNEH3C9BC4HVE743DBF2T",
+	"attemptId": "245aacb120f4abfead852ed6eef59fc3",
+	"flowId": "fixture-control",
+	"scenarioId": "fixture-control.rejects-fixture-control-access-without-a-token-or-with-a-wrong-t",
+	"playwrightTestId": "b4201a13beca0831b244-604c182745a568e3fd90",
+	"project": "per-test",
+	"retry": 0,
+	"worker": 1,
+	"startedAt": "2026-09-10T12:11:43.808Z",
+	"capturedAt": "2026-09-10T12:11:46.121Z",
+	"traceId": "245aacb120f4abfead852ed6eef59fc3",
+	"declarationFile": {
+		"path": "tests/suites/fixture-control.suite.ts",
+		"digest": "50a1d6306307e7d45e4aa5e6d99c3c97df5a4272"
+	},
+	"entryFile": "per-test/fixture-control.spec.ts",
+	"effects": [
+		{
+			"serviceId": "payment-mock",
+			"effect": {
+				"effectId": "effect-1",
+				"boundary": "http",
+				"operation": "GET",
+				"target": "/fixture/state",
+				"status": "401",
+				"origin": "sut",
+				"attributes": {
+					"direction": "inbound"
+				}
+			}
+		},
+		{
+			"serviceId": "public-api",
+			"effect": {
+				"effectId": "effect-2",
+				"boundary": "http",
+				"operation": "GET",
+				"target": "/fixture/state",
+				"status": "401",
+				"origin": "fixture-control",
+				"attributes": {
+					"direction": "inbound"
+				}
+			}
+		},
+		{
+			"serviceId": "public-api",
+			"effect": {
+				"effectId": "effect-3",
+				"boundary": "http",
+				"operation": "GET",
+				"target": "/fixture/state",
+				"status": "401",
+				"origin": "sut",
+				"attributes": {
+					"direction": "inbound"
+				}
+			}
+		}
+	],
+	"entryResolution": {
+		"status": "resolved"
+	},
+	"rootSpan": {
+		"spanId": "ad859b41911fe6d7",
+		"name": "GET /fixture/state",
+		"service": "public-api",
+		"error": false,
+		"durationMs": 1.397
+	},
+	"semanticStepId": "act",
+	"runtimeActSpanId": "fa9fefc95a8d0a73"
+}

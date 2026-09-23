@@ -1,0 +1,83 @@
+{
+	"schemaVersion": 1,
+	"attemptId": "f7388c0d6350dbde23ea5300def9a37a",
+	"traceId": "f7388c0d6350dbde23ea5300def9a37a",
+	"rootSpan": {
+		"spanId": "9a049cc5c09d85ee",
+		"name": "POST /subscriptions",
+		"service": "public-api",
+		"error": false,
+		"durationMs": 7.678
+	},
+	"entryResolution": {
+		"status": "resolved"
+	},
+	"actStep": {
+		"phase": "when",
+		"title": "Act: POST /subscriptions for ghost-user",
+		"error": false,
+		"semanticStepId": "act",
+		"runtimeActSpanId": "7b1d837ce272a4e8"
+	},
+	"steps": [
+		{
+			"phase": "when",
+			"title": "Act: POST /subscriptions for ghost-user",
+			"error": false,
+			"semanticStepId": null,
+			"runtimeActSpanId": null
+		},
+		{
+			"phase": "then",
+			"title": "Assert: 404 with the unknown-user outcome",
+			"error": false,
+			"semanticStepId": null,
+			"runtimeActSpanId": null
+		},
+		{
+			"phase": "unknown",
+			"title": "Expect \"toBe\"",
+			"error": false,
+			"semanticStepId": null,
+			"runtimeActSpanId": null
+		},
+		{
+			"phase": "unknown",
+			"title": "Expect \"toEqual\"",
+			"error": false,
+			"semanticStepId": null,
+			"runtimeActSpanId": null
+		},
+		{
+			"phase": "then",
+			"title": "Assert: fixture state is untouched, no fraud, payment, redis, or queue effects",
+			"error": false,
+			"semanticStepId": null,
+			"runtimeActSpanId": null
+		},
+		{
+			"phase": "unknown",
+			"title": "Expect \"toBe\"",
+			"error": false,
+			"semanticStepId": null,
+			"runtimeActSpanId": null
+		},
+		{
+			"phase": "unknown",
+			"title": "Expect \"toMatchObject\"",
+			"error": false,
+			"semanticStepId": null,
+			"runtimeActSpanId": null
+		},
+		{
+			"phase": "unknown",
+			"title": "Expect \"toMatchSnapshot\"",
+			"error": false,
+			"semanticStepId": null,
+			"runtimeActSpanId": null
+		}
+	],
+	"spanCount": 13,
+	"capturedEffectCount": 9,
+	"redactionsApplied": null
+}

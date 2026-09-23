@@ -1,0 +1,228 @@
+{
+	"schemaVersion": 2,
+	"runId": "01M23JNQ6G9X2CYTFR8Q7ZSXS9",
+	"attemptId": "b301f82aba1aae850b6ca180e9e09b20",
+	"flowId": "creates-a-local-only-subscription-for-dora-without-fraud-payment",
+	"scenarioId": "subscription-creation.creates-a-local-only-subscription-for-dora-without-fraud-payment",
+	"playwrightTestId": "2be0dfcf8cf709fb4273-ae88c8e64e2636ab3006",
+	"project": "per-test",
+	"retry": 0,
+	"worker": 3,
+	"startedAt": "2026-09-09T17:16:21.232Z",
+	"finishedAt": "2026-09-09T17:16:32.646Z",
+	"outcome": "passed",
+	"partial": false,
+	"traceId": "b301f82aba1aae850b6ca180e9e09b20",
+	"declarationFile": {
+		"path": "tests/suites/subscription-creation.suite.ts",
+		"digest": "9873eb1a75df4a8bb23fb2e4293d9027a6fa267a"
+	},
+	"entryFile": "per-test/subscription-creation.spec.ts",
+	"effects": [
+		{
+			"serviceId": "payment-mock",
+			"effect": {
+				"effectId": "effect-1",
+				"boundary": "http",
+				"operation": "GET",
+				"target": "/fixture/state",
+				"status": "200",
+				"origin": "fixture-control",
+				"attributes": {
+					"direction": "inbound"
+				}
+			}
+		},
+		{
+			"serviceId": "public-api",
+			"effect": {
+				"effectId": "effect-2",
+				"boundary": "http",
+				"operation": "GET",
+				"target": "/fixture/state",
+				"status": "200",
+				"origin": "fixture-control",
+				"attributes": {
+					"direction": "inbound"
+				}
+			}
+		},
+		{
+			"serviceId": "public-api",
+			"effect": {
+				"effectId": "effect-3",
+				"boundary": "http",
+				"operation": "POST",
+				"target": "/subscriptions",
+				"status": "201",
+				"origin": "sut",
+				"attributes": {
+					"direction": "inbound"
+				}
+			}
+		},
+		{
+			"serviceId": "public-api",
+			"effect": {
+				"effectId": "effect-4",
+				"boundary": "http",
+				"operation": "POST",
+				"target": "localstack:/",
+				"status": "200",
+				"origin": "fixture-control",
+				"attributes": {
+					"direction": "outbound",
+					"callee": "localstack"
+				}
+			}
+		},
+		{
+			"serviceId": "public-api",
+			"effect": {
+				"effectId": "effect-5",
+				"boundary": "http",
+				"operation": "GET",
+				"target": "payment-mock:/fixture/state",
+				"status": "200",
+				"origin": "fixture-control",
+				"attributes": {
+					"direction": "outbound",
+					"callee": "payment-mock"
+				}
+			}
+		},
+		{
+			"serviceId": "public-api",
+			"effect": {
+				"effectId": "effect-6",
+				"boundary": "postgres",
+				"operation": "SELECT",
+				"target": "fraud_audit",
+				"status": null,
+				"origin": "fixture-control",
+				"attributes": {
+					"statement": "SELECT id::text, user_id AS \"userId\", decision, hint_profile AS \"hintProfile\" FROM fraud_audit ORDER BY id"
+				}
+			}
+		},
+		{
+			"serviceId": "public-api",
+			"effect": {
+				"effectId": "effect-7",
+				"boundary": "postgres",
+				"operation": "SELECT",
+				"target": "subscriptions",
+				"status": null,
+				"origin": "fixture-control",
+				"attributes": {
+					"statement": "SELECT id, user_id AS \"userId\", tier, status, payment_intent_id AS \"paymentIntentId\", order_id AS \"orderId\" FROM subscriptions ORDER BY user_id"
+				}
+			}
+		},
+		{
+			"serviceId": "public-api",
+			"effect": {
+				"effectId": "effect-8",
+				"boundary": "postgres",
+				"operation": "INSERT",
+				"target": "subscriptions",
+				"status": null,
+				"origin": "sut",
+				"attributes": {
+					"statement": "INSERT INTO subscriptions (id, user_id, tier, status, payment_intent_id, order_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, status"
+				}
+			}
+		},
+		{
+			"serviceId": "public-api",
+			"effect": {
+				"effectId": "effect-9",
+				"boundary": "postgres",
+				"operation": "SELECT",
+				"target": "subscriptions",
+				"status": null,
+				"origin": "sut",
+				"attributes": {
+					"statement": "SELECT u.user_id AS \"userId\", u.tier, u.execution_path AS \"executionPath\", EXISTS (SELECT ? FROM subscriptions s WHERE s.user_id = u.user_id) AS \"hasSubscription\" FROM users u WHERE u.user_id = $1"
+				}
+			}
+		},
+		{
+			"serviceId": "public-api",
+			"effect": {
+				"effectId": "effect-10",
+				"boundary": "redis",
+				"operation": "KEYS",
+				"target": "<redacted>",
+				"status": null,
+				"origin": "fixture-control",
+				"attributes": {}
+			}
+		},
+		{
+			"serviceId": "public-api",
+			"effect": {
+				"effectId": "effect-11",
+				"boundary": "redis",
+				"operation": "MGET",
+				"target": "<redacted>",
+				"status": null,
+				"origin": "fixture-control",
+				"attributes": {}
+			}
+		},
+		{
+			"serviceId": "public-api",
+			"effect": {
+				"effectId": "effect-12",
+				"boundary": "redis",
+				"operation": "GET",
+				"target": "hint:returning:dora",
+				"status": null,
+				"origin": "sut",
+				"attributes": {}
+			}
+		},
+		{
+			"serviceId": "public-api",
+			"effect": {
+				"effectId": "effect-13",
+				"boundary": "redis",
+				"operation": "GET",
+				"target": "user:dora:tier",
+				"status": null,
+				"origin": "sut",
+				"attributes": {}
+			}
+		},
+		{
+			"serviceId": "public-api",
+			"effect": {
+				"effectId": "effect-14",
+				"boundary": "redis",
+				"operation": "SET",
+				"target": "reg:dora",
+				"status": null,
+				"origin": "sut",
+				"attributes": {}
+			}
+		},
+		{
+			"serviceId": "public-api",
+			"effect": {
+				"effectId": "effect-15",
+				"boundary": "redis",
+				"operation": "SET",
+				"target": "user:dora:tier",
+				"status": null,
+				"origin": "sut",
+				"attributes": {}
+			}
+		}
+	],
+	"requestedArtifacts": [
+		"decisions.json",
+		"effects.json",
+		"assertions.json"
+	]
+}

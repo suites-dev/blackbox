@@ -1,0 +1,432 @@
+{
+	"schemaVersion": 3,
+	"runId": "01M25KTSPT4C01G78WCVTJC2QB",
+	"attemptId": "b78b0471cf8eaed584989543bac107a9",
+	"flowId": "s3-gate-project-disagree",
+	"scenarioId": "s3-gate-project-scoped-candidate-disagreement.plants-one-extra-real-sut-effect-only-under-the-disagreement-pro",
+	"playwrightTestId": "bffe99747a9b87995e8f-6d46d0431c72c56ba253",
+	"project": "per-worker",
+	"retry": 0,
+	"worker": 1,
+	"startedAt": "2026-09-10T12:15:17.180Z",
+	"finishedAt": "2026-09-10T12:15:28.947Z",
+	"outcome": "passed",
+	"partial": false,
+	"traceId": "b78b0471cf8eaed584989543bac107a9",
+	"declarationFile": {
+		"path": "proofs/s3-gate/planted-project-disagree.suite.ts",
+		"digest": "137a727cd91d5b1c16fc1db921c6fa17799c6d8d"
+	},
+	"entryFile": "s3-gate/per-worker.spec.ts",
+	"effects": [
+		{
+			"serviceId": "fraud-check",
+			"effect": {
+				"effectId": "effect-1",
+				"boundary": "http",
+				"operation": "POST",
+				"target": "/assess",
+				"status": "200",
+				"origin": "sut",
+				"attributes": {
+					"direction": "inbound"
+				}
+			}
+		},
+		{
+			"serviceId": "fraud-check",
+			"effect": {
+				"effectId": "effect-2",
+				"boundary": "http",
+				"operation": "POST",
+				"target": "/assess",
+				"status": "200",
+				"origin": "sut",
+				"attributes": {
+					"direction": "inbound"
+				}
+			}
+		},
+		{
+			"serviceId": "fraud-check",
+			"effect": {
+				"effectId": "effect-3",
+				"boundary": "postgres",
+				"operation": "INSERT",
+				"target": "fraud_audit",
+				"status": null,
+				"origin": "sut",
+				"attributes": {
+					"statement": "INSERT INTO fraud_audit (user_id, decision, hint_profile) VALUES ($1, $2, $3)"
+				}
+			}
+		},
+		{
+			"serviceId": "fraud-check",
+			"effect": {
+				"effectId": "effect-4",
+				"boundary": "postgres",
+				"operation": "INSERT",
+				"target": "fraud_audit",
+				"status": null,
+				"origin": "sut",
+				"attributes": {
+					"statement": "INSERT INTO fraud_audit (user_id, decision, hint_profile) VALUES ($1, $2, $3)"
+				}
+			}
+		},
+		{
+			"serviceId": "order-service",
+			"effect": {
+				"effectId": "effect-5",
+				"boundary": "http",
+				"operation": "POST",
+				"target": "/orders",
+				"status": "201",
+				"origin": "sut",
+				"attributes": {
+					"direction": "inbound"
+				}
+			}
+		},
+		{
+			"serviceId": "order-service",
+			"effect": {
+				"effectId": "effect-6",
+				"boundary": "http",
+				"operation": "POST",
+				"target": "/orders",
+				"status": "201",
+				"origin": "sut",
+				"attributes": {
+					"direction": "inbound"
+				}
+			}
+		},
+		{
+			"serviceId": "order-service",
+			"effect": {
+				"effectId": "effect-7",
+				"boundary": "http",
+				"operation": "POST",
+				"target": "localstack:/",
+				"status": "200",
+				"origin": "sut",
+				"attributes": {
+					"direction": "outbound",
+					"callee": "localstack"
+				}
+			}
+		},
+		{
+			"serviceId": "payment-mock",
+			"effect": {
+				"effectId": "effect-8",
+				"boundary": "http",
+				"operation": "POST",
+				"target": "/v1/payment_intents",
+				"status": "201",
+				"origin": "sut",
+				"attributes": {
+					"direction": "inbound"
+				}
+			}
+		},
+		{
+			"serviceId": "payment-mock",
+			"effect": {
+				"effectId": "effect-9",
+				"boundary": "http",
+				"operation": "POST",
+				"target": "/v1/payment_intents",
+				"status": "201",
+				"origin": "sut",
+				"attributes": {
+					"direction": "inbound"
+				}
+			}
+		},
+		{
+			"serviceId": "public-api",
+			"effect": {
+				"effectId": "effect-10",
+				"boundary": "http",
+				"operation": "POST",
+				"target": "/subscriptions",
+				"status": "201",
+				"origin": "sut",
+				"attributes": {
+					"direction": "inbound"
+				}
+			}
+		},
+		{
+			"serviceId": "public-api",
+			"effect": {
+				"effectId": "effect-11",
+				"boundary": "http",
+				"operation": "POST",
+				"target": "/subscriptions",
+				"status": "201",
+				"origin": "sut",
+				"attributes": {
+					"direction": "inbound"
+				}
+			}
+		},
+		{
+			"serviceId": "public-api",
+			"effect": {
+				"effectId": "effect-12",
+				"boundary": "http",
+				"operation": "POST",
+				"target": "fraud-check:/assess",
+				"status": "200",
+				"origin": "sut",
+				"attributes": {
+					"direction": "outbound",
+					"callee": "fraud-check"
+				}
+			}
+		},
+		{
+			"serviceId": "public-api",
+			"effect": {
+				"effectId": "effect-13",
+				"boundary": "http",
+				"operation": "POST",
+				"target": "fraud-check:/assess",
+				"status": "200",
+				"origin": "sut",
+				"attributes": {
+					"direction": "outbound",
+					"callee": "fraud-check"
+				}
+			}
+		},
+		{
+			"serviceId": "public-api",
+			"effect": {
+				"effectId": "effect-14",
+				"boundary": "http",
+				"operation": "POST",
+				"target": "order-service:/orders",
+				"status": "201",
+				"origin": "sut",
+				"attributes": {
+					"direction": "outbound",
+					"callee": "order-service"
+				}
+			}
+		},
+		{
+			"serviceId": "public-api",
+			"effect": {
+				"effectId": "effect-15",
+				"boundary": "http",
+				"operation": "POST",
+				"target": "order-service:/orders",
+				"status": "201",
+				"origin": "sut",
+				"attributes": {
+					"direction": "outbound",
+					"callee": "order-service"
+				}
+			}
+		},
+		{
+			"serviceId": "public-api",
+			"effect": {
+				"effectId": "effect-16",
+				"boundary": "http",
+				"operation": "POST",
+				"target": "payment-mock:/v1/payment_intents",
+				"status": "201",
+				"origin": "sut",
+				"attributes": {
+					"direction": "outbound",
+					"callee": "payment-mock"
+				}
+			}
+		},
+		{
+			"serviceId": "public-api",
+			"effect": {
+				"effectId": "effect-17",
+				"boundary": "http",
+				"operation": "POST",
+				"target": "payment-mock:/v1/payment_intents",
+				"status": "201",
+				"origin": "sut",
+				"attributes": {
+					"direction": "outbound",
+					"callee": "payment-mock"
+				}
+			}
+		},
+		{
+			"serviceId": "public-api",
+			"effect": {
+				"effectId": "effect-18",
+				"boundary": "postgres",
+				"operation": "INSERT",
+				"target": "subscriptions",
+				"status": null,
+				"origin": "sut",
+				"attributes": {
+					"statement": "INSERT INTO subscriptions (id, user_id, tier, status, payment_intent_id, order_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, status"
+				}
+			}
+		},
+		{
+			"serviceId": "public-api",
+			"effect": {
+				"effectId": "effect-19",
+				"boundary": "postgres",
+				"operation": "INSERT",
+				"target": "subscriptions",
+				"status": null,
+				"origin": "sut",
+				"attributes": {
+					"statement": "INSERT INTO subscriptions (id, user_id, tier, status, payment_intent_id, order_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, status"
+				}
+			}
+		},
+		{
+			"serviceId": "public-api",
+			"effect": {
+				"effectId": "effect-20",
+				"boundary": "postgres",
+				"operation": "SELECT",
+				"target": "subscriptions",
+				"status": null,
+				"origin": "sut",
+				"attributes": {
+					"statement": "SELECT u.user_id AS \"userId\", u.tier, u.execution_path AS \"executionPath\", EXISTS (SELECT ? FROM subscriptions s WHERE s.user_id = u.user_id) AS \"hasSubscription\" FROM users u WHERE u.user_id = $1"
+				}
+			}
+		},
+		{
+			"serviceId": "public-api",
+			"effect": {
+				"effectId": "effect-21",
+				"boundary": "postgres",
+				"operation": "SELECT",
+				"target": "subscriptions",
+				"status": null,
+				"origin": "sut",
+				"attributes": {
+					"statement": "SELECT u.user_id AS \"userId\", u.tier, u.execution_path AS \"executionPath\", EXISTS (SELECT ? FROM subscriptions s WHERE s.user_id = u.user_id) AS \"hasSubscription\" FROM users u WHERE u.user_id = $1"
+				}
+			}
+		},
+		{
+			"serviceId": "public-api",
+			"effect": {
+				"effectId": "effect-22",
+				"boundary": "redis",
+				"operation": "GET",
+				"target": "hint:long:carol",
+				"status": null,
+				"origin": "sut",
+				"attributes": {}
+			}
+		},
+		{
+			"serviceId": "public-api",
+			"effect": {
+				"effectId": "effect-23",
+				"boundary": "redis",
+				"operation": "GET",
+				"target": "hint:short:bob",
+				"status": null,
+				"origin": "sut",
+				"attributes": {}
+			}
+		},
+		{
+			"serviceId": "public-api",
+			"effect": {
+				"effectId": "effect-24",
+				"boundary": "redis",
+				"operation": "GET",
+				"target": "user:bob:tier",
+				"status": null,
+				"origin": "sut",
+				"attributes": {}
+			}
+		},
+		{
+			"serviceId": "public-api",
+			"effect": {
+				"effectId": "effect-25",
+				"boundary": "redis",
+				"operation": "GET",
+				"target": "user:carol:tier",
+				"status": null,
+				"origin": "sut",
+				"attributes": {}
+			}
+		},
+		{
+			"serviceId": "public-api",
+			"effect": {
+				"effectId": "effect-26",
+				"boundary": "redis",
+				"operation": "SET",
+				"target": "hint:long:carol",
+				"status": null,
+				"origin": "sut",
+				"attributes": {}
+			}
+		},
+		{
+			"serviceId": "public-api",
+			"effect": {
+				"effectId": "effect-27",
+				"boundary": "redis",
+				"operation": "SET",
+				"target": "hint:short:bob",
+				"status": null,
+				"origin": "sut",
+				"attributes": {}
+			}
+		},
+		{
+			"serviceId": "public-api",
+			"effect": {
+				"effectId": "effect-28",
+				"boundary": "redis",
+				"operation": "SET",
+				"target": "user:bob:tier",
+				"status": null,
+				"origin": "sut",
+				"attributes": {}
+			}
+		},
+		{
+			"serviceId": "public-api",
+			"effect": {
+				"effectId": "effect-29",
+				"boundary": "redis",
+				"operation": "SET",
+				"target": "user:carol:tier",
+				"status": null,
+				"origin": "sut",
+				"attributes": {}
+			}
+		}
+	],
+	"requestedArtifacts": [
+		"decisions.json",
+		"effects.json",
+		"assertions.json"
+	],
+	"entryResolution": {
+		"status": "ambiguous",
+		"reason": "multiple-act-bound-candidates"
+	},
+	"rootSpan": null,
+	"semanticStepId": "act",
+	"runtimeActSpanId": "1ed3c40c69cbc338"
+}

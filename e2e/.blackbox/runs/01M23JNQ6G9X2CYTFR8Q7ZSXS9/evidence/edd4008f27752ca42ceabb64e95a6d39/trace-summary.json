@@ -1,0 +1,97 @@
+{
+	"schemaVersion": 1,
+	"attemptId": "edd4008f27752ca42ceabb64e95a6d39",
+	"traceId": "edd4008f27752ca42ceabb64e95a6d39",
+	"rootSpan": {
+		"spanId": "a85105f7e0a3bb20",
+		"name": "POST /subscriptions",
+		"service": "public-api",
+		"error": false,
+		"durationMs": 3.457
+	},
+	"entryResolution": {
+		"status": "resolved"
+	},
+	"actStep": {
+		"phase": "when",
+		"title": "Act: POST /subscriptions for eve",
+		"error": false,
+		"semanticStepId": "act",
+		"runtimeActSpanId": "14b08eaf60015c54"
+	},
+	"steps": [
+		{
+			"phase": "given",
+			"title": "Arrange: seed the comparison-returning profile",
+			"error": false,
+			"semanticStepId": null,
+			"runtimeActSpanId": null
+		},
+		{
+			"phase": "unknown",
+			"title": "Expect \"toBe\"",
+			"error": false,
+			"semanticStepId": null,
+			"runtimeActSpanId": null
+		},
+		{
+			"phase": "when",
+			"title": "Act: POST /subscriptions for eve",
+			"error": false,
+			"semanticStepId": null,
+			"runtimeActSpanId": null
+		},
+		{
+			"phase": "then",
+			"title": "Assert: 201 local-only subscription with null payment and order references",
+			"error": false,
+			"semanticStepId": null,
+			"runtimeActSpanId": null
+		},
+		{
+			"phase": "unknown",
+			"title": "Expect \"toBe\"",
+			"error": false,
+			"semanticStepId": null,
+			"runtimeActSpanId": null
+		},
+		{
+			"phase": "unknown",
+			"title": "Expect \"toMatchObject\"",
+			"error": false,
+			"semanticStepId": null,
+			"runtimeActSpanId": null
+		},
+		{
+			"phase": "then",
+			"title": "Assert: fixture state keeps the preloaded returning hint and adds eve's registration keys",
+			"error": false,
+			"semanticStepId": null,
+			"runtimeActSpanId": null
+		},
+		{
+			"phase": "unknown",
+			"title": "Expect \"toBe\"",
+			"error": false,
+			"semanticStepId": null,
+			"runtimeActSpanId": null
+		},
+		{
+			"phase": "unknown",
+			"title": "Expect \"toMatchObject\"",
+			"error": false,
+			"semanticStepId": null,
+			"runtimeActSpanId": null
+		},
+		{
+			"phase": "unknown",
+			"title": "Expect \"toMatchSnapshot\"",
+			"error": false,
+			"semanticStepId": null,
+			"runtimeActSpanId": null
+		}
+	],
+	"spanCount": 59,
+	"capturedEffectCount": 34,
+	"redactionsApplied": null
+}

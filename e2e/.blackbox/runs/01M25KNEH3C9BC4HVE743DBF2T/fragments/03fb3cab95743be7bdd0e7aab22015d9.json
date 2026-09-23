@@ -1,0 +1,48 @@
+{
+	"schemaVersion": 2,
+	"artifactRole": "attempt-fragment-draft",
+	"runId": "01M25KNEH3C9BC4HVE743DBF2T",
+	"attemptId": "03fb3cab95743be7bdd0e7aab22015d9",
+	"flowId": "payment-mock-subsystem",
+	"scenarioId": "payment-mock-subsystem.reports-ready-on-get-health",
+	"playwrightTestId": "035dad0ffab30e40b0c2-36f35216846c15f06d57",
+	"project": "subsystem",
+	"retry": 0,
+	"worker": 9,
+	"startedAt": "2026-09-10T12:12:15.131Z",
+	"capturedAt": "2026-09-10T12:12:17.023Z",
+	"traceId": "03fb3cab95743be7bdd0e7aab22015d9",
+	"declarationFile": {
+		"path": "tests/subsystem/payment-mock.spec.ts",
+		"digest": "83162c8b5b8a3f220dac6b89ffdc77fe621632a8"
+	},
+	"entryFile": "subsystem/payment-mock.spec.ts",
+	"effects": [
+		{
+			"serviceId": "payment-mock",
+			"effect": {
+				"effectId": "effect-1",
+				"boundary": "http",
+				"operation": "GET",
+				"target": "/health",
+				"status": "200",
+				"origin": "sut",
+				"attributes": {
+					"direction": "inbound"
+				}
+			}
+		}
+	],
+	"entryResolution": {
+		"status": "resolved"
+	},
+	"rootSpan": {
+		"spanId": "fc556bccea765897",
+		"name": "GET /health",
+		"service": "payment-mock",
+		"error": false,
+		"durationMs": 0.513
+	},
+	"semanticStepId": "act",
+	"runtimeActSpanId": "92625f0725b4b722"
+}

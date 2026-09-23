@@ -1,0 +1,25 @@
+name: Coverage
+
+# The pull request run in ci.yml reports the head of a branch; Codecov also
+# needs the default branches measured so a project status has a base to
+# compare against. Both use the same distributed test and merge workflow.
+on:
+  push:
+    branches:
+      - main
+      - release/v0.0.1-alpha
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: coverage-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  coverage:
+    name: Package Tests and Coverage
+    uses: ./.github/workflows/test-packages.yml
+    secrets:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}

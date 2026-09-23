@@ -1,0 +1,563 @@
+{
+	"schemaVersion": 3,
+	"runId": "01M25KNEH3C9BC4HVE743DBF2T",
+	"attemptId": "120962cbcb095f5067a822f22ef23a6e",
+	"flowId": "fixture-control",
+	"scenarioId": "fixture-control.resets-to-the-fresh-and-comparison-absent-profiles-and-rejects-a",
+	"playwrightTestId": "b4201a13beca0831b244-4773a456e28879b49c0a",
+	"project": "per-test",
+	"retry": 0,
+	"worker": 1,
+	"startedAt": "2026-09-10T12:12:17.003Z",
+	"finishedAt": "2026-09-10T12:12:26.543Z",
+	"outcome": "passed",
+	"partial": false,
+	"traceId": "120962cbcb095f5067a822f22ef23a6e",
+	"declarationFile": {
+		"path": "tests/suites/fixture-control.suite.ts",
+		"digest": "50a1d6306307e7d45e4aa5e6d99c3c97df5a4272"
+	},
+	"entryFile": "per-test/fixture-control.spec.ts",
+	"effects": [
+		{
+			"serviceId": "payment-mock",
+			"effect": {
+				"effectId": "effect-1",
+				"boundary": "http",
+				"operation": "GET",
+				"target": "/fixture/state",
+				"status": "200",
+				"origin": "fixture-control",
+				"attributes": {
+					"direction": "inbound"
+				}
+			}
+		},
+		{
+			"serviceId": "payment-mock",
+			"effect": {
+				"effectId": "effect-2",
+				"boundary": "http",
+				"operation": "GET",
+				"target": "/fixture/state",
+				"status": "200",
+				"origin": "fixture-control",
+				"attributes": {
+					"direction": "inbound"
+				}
+			}
+		},
+		{
+			"serviceId": "payment-mock",
+			"effect": {
+				"effectId": "effect-3",
+				"boundary": "http",
+				"operation": "POST",
+				"target": "/fixture/reset",
+				"status": "200",
+				"origin": "fixture-control",
+				"attributes": {
+					"direction": "inbound"
+				}
+			}
+		},
+		{
+			"serviceId": "payment-mock",
+			"effect": {
+				"effectId": "effect-4",
+				"boundary": "http",
+				"operation": "POST",
+				"target": "/fixture/reset",
+				"status": "200",
+				"origin": "fixture-control",
+				"attributes": {
+					"direction": "inbound"
+				}
+			}
+		},
+		{
+			"serviceId": "public-api",
+			"effect": {
+				"effectId": "effect-5",
+				"boundary": "http",
+				"operation": "POST",
+				"target": "/fixture/reset",
+				"status": "200",
+				"origin": "fixture-control",
+				"attributes": {
+					"direction": "inbound"
+				}
+			}
+		},
+		{
+			"serviceId": "public-api",
+			"effect": {
+				"effectId": "effect-6",
+				"boundary": "http",
+				"operation": "POST",
+				"target": "/fixture/reset",
+				"status": "200",
+				"origin": "fixture-control",
+				"attributes": {
+					"direction": "inbound"
+				}
+			}
+		},
+		{
+			"serviceId": "public-api",
+			"effect": {
+				"effectId": "effect-7",
+				"boundary": "http",
+				"operation": "POST",
+				"target": "/fixture/reset",
+				"status": "400",
+				"origin": "fixture-control",
+				"attributes": {
+					"direction": "inbound"
+				}
+			}
+		},
+		{
+			"serviceId": "public-api",
+			"effect": {
+				"effectId": "effect-8",
+				"boundary": "http",
+				"operation": "POST",
+				"target": "localstack:/",
+				"status": "200",
+				"origin": "fixture-control",
+				"attributes": {
+					"direction": "outbound",
+					"callee": "localstack"
+				}
+			}
+		},
+		{
+			"serviceId": "public-api",
+			"effect": {
+				"effectId": "effect-9",
+				"boundary": "http",
+				"operation": "GET",
+				"target": "payment-mock:/fixture/state",
+				"status": "200",
+				"origin": "fixture-control",
+				"attributes": {
+					"direction": "outbound",
+					"callee": "payment-mock"
+				}
+			}
+		},
+		{
+			"serviceId": "public-api",
+			"effect": {
+				"effectId": "effect-10",
+				"boundary": "http",
+				"operation": "GET",
+				"target": "payment-mock:/fixture/state",
+				"status": "200",
+				"origin": "fixture-control",
+				"attributes": {
+					"direction": "outbound",
+					"callee": "payment-mock"
+				}
+			}
+		},
+		{
+			"serviceId": "public-api",
+			"effect": {
+				"effectId": "effect-11",
+				"boundary": "http",
+				"operation": "POST",
+				"target": "payment-mock:/fixture/reset",
+				"status": "200",
+				"origin": "fixture-control",
+				"attributes": {
+					"direction": "outbound",
+					"callee": "payment-mock"
+				}
+			}
+		},
+		{
+			"serviceId": "public-api",
+			"effect": {
+				"effectId": "effect-12",
+				"boundary": "http",
+				"operation": "POST",
+				"target": "payment-mock:/fixture/reset",
+				"status": "200",
+				"origin": "fixture-control",
+				"attributes": {
+					"direction": "outbound",
+					"callee": "payment-mock"
+				}
+			}
+		},
+		{
+			"serviceId": "public-api",
+			"effect": {
+				"effectId": "effect-13",
+				"boundary": "postgres",
+				"operation": "BEGIN",
+				"target": null,
+				"status": null,
+				"origin": "fixture-control",
+				"attributes": {
+					"statement": "BEGIN"
+				}
+			}
+		},
+		{
+			"serviceId": "public-api",
+			"effect": {
+				"effectId": "effect-14",
+				"boundary": "postgres",
+				"operation": "BEGIN",
+				"target": null,
+				"status": null,
+				"origin": "fixture-control",
+				"attributes": {
+					"statement": "BEGIN"
+				}
+			}
+		},
+		{
+			"serviceId": "public-api",
+			"effect": {
+				"effectId": "effect-15",
+				"boundary": "postgres",
+				"operation": "COMMIT",
+				"target": null,
+				"status": null,
+				"origin": "fixture-control",
+				"attributes": {
+					"statement": "COMMIT"
+				}
+			}
+		},
+		{
+			"serviceId": "public-api",
+			"effect": {
+				"effectId": "effect-16",
+				"boundary": "postgres",
+				"operation": "COMMIT",
+				"target": null,
+				"status": null,
+				"origin": "fixture-control",
+				"attributes": {
+					"statement": "COMMIT"
+				}
+			}
+		},
+		{
+			"serviceId": "public-api",
+			"effect": {
+				"effectId": "effect-17",
+				"boundary": "postgres",
+				"operation": "DELETE",
+				"target": "users",
+				"status": null,
+				"origin": "fixture-control",
+				"attributes": {
+					"statement": "DELETE FROM users"
+				}
+			}
+		},
+		{
+			"serviceId": "public-api",
+			"effect": {
+				"effectId": "effect-18",
+				"boundary": "postgres",
+				"operation": "DELETE",
+				"target": "users",
+				"status": null,
+				"origin": "fixture-control",
+				"attributes": {
+					"statement": "DELETE FROM users"
+				}
+			}
+		},
+		{
+			"serviceId": "public-api",
+			"effect": {
+				"effectId": "effect-19",
+				"boundary": "postgres",
+				"operation": "INSERT",
+				"target": "users",
+				"status": null,
+				"origin": "fixture-control",
+				"attributes": {
+					"statement": "INSERT INTO users (user_id, tier, execution_path) VALUES ($1, $2, $3)"
+				}
+			}
+		},
+		{
+			"serviceId": "public-api",
+			"effect": {
+				"effectId": "effect-20",
+				"boundary": "postgres",
+				"operation": "INSERT",
+				"target": "users",
+				"status": null,
+				"origin": "fixture-control",
+				"attributes": {
+					"statement": "INSERT INTO users (user_id, tier, execution_path) VALUES ($1, $2, $3)"
+				}
+			}
+		},
+		{
+			"serviceId": "public-api",
+			"effect": {
+				"effectId": "effect-21",
+				"boundary": "postgres",
+				"operation": "INSERT",
+				"target": "users",
+				"status": null,
+				"origin": "fixture-control",
+				"attributes": {
+					"statement": "INSERT INTO users (user_id, tier, execution_path) VALUES ($1, $2, $3)"
+				}
+			}
+		},
+		{
+			"serviceId": "public-api",
+			"effect": {
+				"effectId": "effect-22",
+				"boundary": "postgres",
+				"operation": "INSERT",
+				"target": "users",
+				"status": null,
+				"origin": "fixture-control",
+				"attributes": {
+					"statement": "INSERT INTO users (user_id, tier, execution_path) VALUES ($1, $2, $3)"
+				}
+			}
+		},
+		{
+			"serviceId": "public-api",
+			"effect": {
+				"effectId": "effect-23",
+				"boundary": "postgres",
+				"operation": "INSERT",
+				"target": "users",
+				"status": null,
+				"origin": "fixture-control",
+				"attributes": {
+					"statement": "INSERT INTO users (user_id, tier, execution_path) VALUES ($1, $2, $3)"
+				}
+			}
+		},
+		{
+			"serviceId": "public-api",
+			"effect": {
+				"effectId": "effect-24",
+				"boundary": "postgres",
+				"operation": "INSERT",
+				"target": "users",
+				"status": null,
+				"origin": "fixture-control",
+				"attributes": {
+					"statement": "INSERT INTO users (user_id, tier, execution_path) VALUES ($1, $2, $3)"
+				}
+			}
+		},
+		{
+			"serviceId": "public-api",
+			"effect": {
+				"effectId": "effect-25",
+				"boundary": "postgres",
+				"operation": "INSERT",
+				"target": "users",
+				"status": null,
+				"origin": "fixture-control",
+				"attributes": {
+					"statement": "INSERT INTO users (user_id, tier, execution_path) VALUES ($1, $2, $3)"
+				}
+			}
+		},
+		{
+			"serviceId": "public-api",
+			"effect": {
+				"effectId": "effect-26",
+				"boundary": "postgres",
+				"operation": "INSERT",
+				"target": "users",
+				"status": null,
+				"origin": "fixture-control",
+				"attributes": {
+					"statement": "INSERT INTO users (user_id, tier, execution_path) VALUES ($1, $2, $3)"
+				}
+			}
+		},
+		{
+			"serviceId": "public-api",
+			"effect": {
+				"effectId": "effect-27",
+				"boundary": "postgres",
+				"operation": "INSERT",
+				"target": "users",
+				"status": null,
+				"origin": "fixture-control",
+				"attributes": {
+					"statement": "INSERT INTO users (user_id, tier, execution_path) VALUES ($1, $2, $3)"
+				}
+			}
+		},
+		{
+			"serviceId": "public-api",
+			"effect": {
+				"effectId": "effect-28",
+				"boundary": "postgres",
+				"operation": "INSERT",
+				"target": "users",
+				"status": null,
+				"origin": "fixture-control",
+				"attributes": {
+					"statement": "INSERT INTO users (user_id, tier, execution_path) VALUES ($1, $2, $3)"
+				}
+			}
+		},
+		{
+			"serviceId": "public-api",
+			"effect": {
+				"effectId": "effect-29",
+				"boundary": "postgres",
+				"operation": "SELECT",
+				"target": "fraud_audit",
+				"status": null,
+				"origin": "fixture-control",
+				"attributes": {
+					"statement": "SELECT id::text, user_id AS \"userId\", decision, hint_profile AS \"hintProfile\" FROM fraud_audit ORDER BY id"
+				}
+			}
+		},
+		{
+			"serviceId": "public-api",
+			"effect": {
+				"effectId": "effect-30",
+				"boundary": "postgres",
+				"operation": "SELECT",
+				"target": "fraud_audit",
+				"status": null,
+				"origin": "fixture-control",
+				"attributes": {
+					"statement": "SELECT id::text, user_id AS \"userId\", decision, hint_profile AS \"hintProfile\" FROM fraud_audit ORDER BY id"
+				}
+			}
+		},
+		{
+			"serviceId": "public-api",
+			"effect": {
+				"effectId": "effect-31",
+				"boundary": "postgres",
+				"operation": "SELECT",
+				"target": "subscriptions",
+				"status": null,
+				"origin": "fixture-control",
+				"attributes": {
+					"statement": "SELECT id, user_id AS \"userId\", tier, status, payment_intent_id AS \"paymentIntentId\", order_id AS \"orderId\" FROM subscriptions ORDER BY user_id"
+				}
+			}
+		},
+		{
+			"serviceId": "public-api",
+			"effect": {
+				"effectId": "effect-32",
+				"boundary": "postgres",
+				"operation": "SELECT",
+				"target": "subscriptions",
+				"status": null,
+				"origin": "fixture-control",
+				"attributes": {
+					"statement": "SELECT id, user_id AS \"userId\", tier, status, payment_intent_id AS \"paymentIntentId\", order_id AS \"orderId\" FROM subscriptions ORDER BY user_id"
+				}
+			}
+		},
+		{
+			"serviceId": "public-api",
+			"effect": {
+				"effectId": "effect-33",
+				"boundary": "postgres",
+				"operation": "TRUNCATE",
+				"target": "subscriptions",
+				"status": null,
+				"origin": "fixture-control",
+				"attributes": {
+					"statement": "TRUNCATE subscriptions, fraud_audit RESTART IDENTITY"
+				}
+			}
+		},
+		{
+			"serviceId": "public-api",
+			"effect": {
+				"effectId": "effect-34",
+				"boundary": "postgres",
+				"operation": "TRUNCATE",
+				"target": "subscriptions",
+				"status": null,
+				"origin": "fixture-control",
+				"attributes": {
+					"statement": "TRUNCATE subscriptions, fraud_audit RESTART IDENTITY"
+				}
+			}
+		},
+		{
+			"serviceId": "public-api",
+			"effect": {
+				"effectId": "effect-35",
+				"boundary": "redis",
+				"operation": "FLUSHDB",
+				"target": "<none>",
+				"status": null,
+				"origin": "fixture-control",
+				"attributes": {}
+			}
+		},
+		{
+			"serviceId": "public-api",
+			"effect": {
+				"effectId": "effect-36",
+				"boundary": "redis",
+				"operation": "FLUSHDB",
+				"target": "<none>",
+				"status": null,
+				"origin": "fixture-control",
+				"attributes": {}
+			}
+		},
+		{
+			"serviceId": "public-api",
+			"effect": {
+				"effectId": "effect-37",
+				"boundary": "redis",
+				"operation": "KEYS",
+				"target": "<redacted>",
+				"status": null,
+				"origin": "fixture-control",
+				"attributes": {}
+			}
+		},
+		{
+			"serviceId": "public-api",
+			"effect": {
+				"effectId": "effect-38",
+				"boundary": "redis",
+				"operation": "KEYS",
+				"target": "<redacted>",
+				"status": null,
+				"origin": "fixture-control",
+				"attributes": {}
+			}
+		}
+	],
+	"requestedArtifacts": [
+		"effects.json",
+		"assertions.json"
+	],
+	"entryResolution": {
+		"status": "excluded",
+		"reason": "declared-act-fixture-control"
+	},
+	"rootSpan": null,
+	"semanticStepId": "act",
+	"runtimeActSpanId": "26166ae689c28b33"
+}

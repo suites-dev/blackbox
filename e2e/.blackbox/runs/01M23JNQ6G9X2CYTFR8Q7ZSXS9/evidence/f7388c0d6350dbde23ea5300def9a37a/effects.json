@@ -1,0 +1,130 @@
+{
+	"type": "effects",
+	"flowId": "rejects-an-unknown-user-with-404-and-leaves-no-side-effects",
+	"attemptId": "f7388c0d6350dbde23ea5300def9a37a",
+	"observed": {
+		"schemaVersion": 2,
+		"entry": {
+			"service": "public-api",
+			"request": "POST /subscriptions",
+			"status": 404
+		},
+		"entryResolution": {
+			"status": "resolved"
+		},
+		"summary": {
+			"counts": {
+				"inbound": 3,
+				"outboundHttp": 1,
+				"sql": 3,
+				"cache": 2,
+				"messaging": 0
+			},
+			"services": [
+				"payment-mock",
+				"public-api"
+			],
+			"edges": [
+				{
+					"caller": "public-api",
+					"callee": "localstack"
+				},
+				{
+					"caller": "public-api",
+					"callee": "payment-mock"
+				}
+			]
+		},
+		"services": {
+			"payment-mock": {
+				"inbound": [
+					{
+						"method": "GET",
+						"path": "/fixture/state",
+						"status": 200,
+						"count": 1,
+						"origin": "fixture-control"
+					}
+				]
+			},
+			"public-api": {
+				"inbound": [
+					{
+						"method": "GET",
+						"path": "/fixture/state",
+						"status": 200,
+						"count": 1,
+						"origin": "fixture-control"
+					},
+					{
+						"method": "POST",
+						"path": "/subscriptions",
+						"status": 404,
+						"count": 1,
+						"origin": "sut"
+					}
+				],
+				"outboundHttp": [
+					{
+						"callee": "localstack",
+						"method": "POST",
+						"path": "/",
+						"status": 200,
+						"count": "1+",
+						"origin": "fixture-control"
+					},
+					{
+						"callee": "payment-mock",
+						"method": "GET",
+						"path": "/fixture/state",
+						"status": 200,
+						"count": 1,
+						"origin": "fixture-control"
+					}
+				],
+				"sql": [
+					{
+						"operation": "SELECT",
+						"table": "fraud_audit",
+						"statement": "SELECT id::text, user_id AS \"userId\", decision, hint_profile AS \"hintProfile\" FROM fraud_audit ORDER BY id",
+						"count": 1,
+						"origin": "fixture-control"
+					},
+					{
+						"operation": "SELECT",
+						"table": "subscriptions",
+						"statement": "SELECT id, user_id AS \"userId\", tier, status, payment_intent_id AS \"paymentIntentId\", order_id AS \"orderId\" FROM subscriptions ORDER BY user_id",
+						"count": 1,
+						"origin": "fixture-control"
+					},
+					{
+						"operation": "SELECT",
+						"table": "subscriptions",
+						"statement": "SELECT u.user_id AS \"userId\", u.tier, u.execution_path AS \"executionPath\", EXISTS (SELECT ? FROM subscriptions s WHERE s.user_id = u.user_id) AS \"hasSubscription\" FROM users u WHERE u.user_id = $1",
+						"count": 1,
+						"origin": "sut"
+					}
+				],
+				"cache": [
+					{
+						"system": "redis",
+						"command": "KEYS",
+						"keyPattern": "<redacted>",
+						"count": 1,
+						"origin": "fixture-control"
+					},
+					{
+						"system": "redis",
+						"command": "GET",
+						"keyPattern": "user:ghost-user:tier",
+						"count": 1,
+						"origin": "sut"
+					}
+				]
+			}
+		},
+		"errors": []
+	},
+	"expectedPath": "/Users/omer/projects/suites/blackbox/e2e/tests/per-test/effects/subscription-rejection.spec.ts/effects-rejects-an-unknown-user-with-404-and-leaves-no-side-effects.yaml",
+	"outcome": "verified"
+}

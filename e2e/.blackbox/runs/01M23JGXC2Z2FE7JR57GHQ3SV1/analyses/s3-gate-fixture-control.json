@@ -1,0 +1,307 @@
+{
+	"schemaVersion": 1,
+	"artifactRole": "canonical-run-result",
+	"generatedAt": "2026-09-09T17:14:32.709Z",
+	"runId": "01M23JGXC2Z2FE7JR57GHQ3SV1",
+	"flowId": "s3-gate-fixture-control",
+	"title": "s3-gate-fixture-control",
+	"authoringSource": "suite",
+	"axes": {
+		"execution": "passed",
+		"evidence": "incomplete",
+		"contractState": "unbaselined",
+		"verdict": "indeterminate"
+	},
+	"verdict": {
+		"value": "indeterminate",
+		"authority": "deterministic-analyzer",
+		"reason": "effects-contract-absent",
+		"scope": "flow-run",
+		"summary": "s3-gate-fixture-control's evidence was not fit for judgment (effects-contract-absent)."
+	},
+	"qualification": {
+		"sealed": true,
+		"fresh": true,
+		"digestsMatch": true,
+		"scopeComplete": true,
+		"evidenceComplete": false,
+		"qualifies": false
+	},
+	"scope": {
+		"requiredScenarios": 1,
+		"executedScenarios": 1,
+		"attempts": 2,
+		"projects": [
+			"per-test",
+			"per-worker"
+		],
+		"filtered": false
+	},
+	"firstDivergence": null,
+	"obligations": [
+		{
+			"id": "s3-gate-fixture-control-origin-marking.captures-a-fixture-control-read-origin-marked-never-coalesced-wi::assertion",
+			"scenarioId": "s3-gate-fixture-control-origin-marking.captures-a-fixture-control-read-origin-marked-never-coalesced-wi",
+			"source": "playwright.assertion",
+			"evaluation": "unknown",
+			"reason": "capture-error"
+		}
+	],
+	"findings": [
+		{
+			"id": "finding.qualification-gap.b84e976b3ff9",
+			"severity": "blocking",
+			"authority": "deterministic-analyzer",
+			"scenarioId": null,
+			"summary": "Required acquisition observation gap: acquisition 46758207-670e-4680-8462-e47386e82333 observation incomplete: participant localstack has missing spans: localstack:spans (not-emitted).",
+			"affectsVerdict": true
+		},
+		{
+			"id": "finding.qualification-gap.3dd4c96f0f13",
+			"severity": "blocking",
+			"authority": "deterministic-analyzer",
+			"scenarioId": null,
+			"summary": "Required acquisition observation gap: acquisition 46758207-670e-4680-8462-e47386e82333 observation incomplete: participant localstack spanCount is null; no count was established.",
+			"affectsVerdict": true
+		},
+		{
+			"id": "finding.qualification-gap.7c60c4476a7e",
+			"severity": "blocking",
+			"authority": "deterministic-analyzer",
+			"scenarioId": null,
+			"summary": "Required acquisition observation gap: acquisition 46758207-670e-4680-8462-e47386e82333 observation incomplete: participant postgres has missing spans: postgres:spans (not-emitted).",
+			"affectsVerdict": true
+		},
+		{
+			"id": "finding.qualification-gap.f1b074a9596c",
+			"severity": "blocking",
+			"authority": "deterministic-analyzer",
+			"scenarioId": null,
+			"summary": "Required acquisition observation gap: acquisition 46758207-670e-4680-8462-e47386e82333 observation incomplete: participant postgres spanCount is null; no count was established.",
+			"affectsVerdict": true
+		},
+		{
+			"id": "finding.qualification-gap.d1663c9b2319",
+			"severity": "blocking",
+			"authority": "deterministic-analyzer",
+			"scenarioId": null,
+			"summary": "Required acquisition observation gap: acquisition 46758207-670e-4680-8462-e47386e82333 observation incomplete: participant redis has missing spans: redis:spans (not-emitted).",
+			"affectsVerdict": true
+		},
+		{
+			"id": "finding.qualification-gap.686db2248cc9",
+			"severity": "blocking",
+			"authority": "deterministic-analyzer",
+			"scenarioId": null,
+			"summary": "Required acquisition observation gap: acquisition 46758207-670e-4680-8462-e47386e82333 observation incomplete: participant redis spanCount is null; no count was established.",
+			"affectsVerdict": true
+		},
+		{
+			"id": "finding.qualification-gap.871047fb509d",
+			"severity": "blocking",
+			"authority": "deterministic-analyzer",
+			"scenarioId": null,
+			"summary": "Required acquisition observation gap: acquisition 46758207-670e-4680-8462-e47386e82333 observation incomplete: required participant localstack status is missing, not observed.",
+			"affectsVerdict": true
+		},
+		{
+			"id": "finding.qualification-gap.52cf045746e0",
+			"severity": "blocking",
+			"authority": "deterministic-analyzer",
+			"scenarioId": null,
+			"summary": "Required acquisition observation gap: acquisition 46758207-670e-4680-8462-e47386e82333 observation incomplete: required participant postgres status is missing, not observed.",
+			"affectsVerdict": true
+		},
+		{
+			"id": "finding.qualification-gap.fb2ca52a5119",
+			"severity": "blocking",
+			"authority": "deterministic-analyzer",
+			"scenarioId": null,
+			"summary": "Required acquisition observation gap: acquisition 46758207-670e-4680-8462-e47386e82333 observation incomplete: required participant redis status is missing, not observed.",
+			"affectsVerdict": true
+		},
+		{
+			"id": "finding.qualification-gap.aad774cd3fe4",
+			"severity": "blocking",
+			"authority": "deterministic-analyzer",
+			"scenarioId": null,
+			"summary": "Required acquisition observation gap: acquisition e956504e-e522-4f11-989d-b5704d6b1658 observation incomplete: participant localstack has missing spans: localstack:spans (not-emitted).",
+			"affectsVerdict": true
+		},
+		{
+			"id": "finding.qualification-gap.2f5b7cfd4a8d",
+			"severity": "blocking",
+			"authority": "deterministic-analyzer",
+			"scenarioId": null,
+			"summary": "Required acquisition observation gap: acquisition e956504e-e522-4f11-989d-b5704d6b1658 observation incomplete: participant localstack spanCount is null; no count was established.",
+			"affectsVerdict": true
+		},
+		{
+			"id": "finding.qualification-gap.affb8c909a4b",
+			"severity": "blocking",
+			"authority": "deterministic-analyzer",
+			"scenarioId": null,
+			"summary": "Required acquisition observation gap: acquisition e956504e-e522-4f11-989d-b5704d6b1658 observation incomplete: participant postgres has missing spans: postgres:spans (not-emitted).",
+			"affectsVerdict": true
+		},
+		{
+			"id": "finding.qualification-gap.3cd1adeb59c3",
+			"severity": "blocking",
+			"authority": "deterministic-analyzer",
+			"scenarioId": null,
+			"summary": "Required acquisition observation gap: acquisition e956504e-e522-4f11-989d-b5704d6b1658 observation incomplete: participant postgres spanCount is null; no count was established.",
+			"affectsVerdict": true
+		},
+		{
+			"id": "finding.qualification-gap.d74bfef736c6",
+			"severity": "blocking",
+			"authority": "deterministic-analyzer",
+			"scenarioId": null,
+			"summary": "Required acquisition observation gap: acquisition e956504e-e522-4f11-989d-b5704d6b1658 observation incomplete: participant redis has missing spans: redis:spans (not-emitted).",
+			"affectsVerdict": true
+		},
+		{
+			"id": "finding.qualification-gap.afaf2158944e",
+			"severity": "blocking",
+			"authority": "deterministic-analyzer",
+			"scenarioId": null,
+			"summary": "Required acquisition observation gap: acquisition e956504e-e522-4f11-989d-b5704d6b1658 observation incomplete: participant redis spanCount is null; no count was established.",
+			"affectsVerdict": true
+		},
+		{
+			"id": "finding.qualification-gap.0a297c6c4e85",
+			"severity": "blocking",
+			"authority": "deterministic-analyzer",
+			"scenarioId": null,
+			"summary": "Required acquisition observation gap: acquisition e956504e-e522-4f11-989d-b5704d6b1658 observation incomplete: required participant localstack status is missing, not observed.",
+			"affectsVerdict": true
+		},
+		{
+			"id": "finding.qualification-gap.790f72d8f20e",
+			"severity": "blocking",
+			"authority": "deterministic-analyzer",
+			"scenarioId": null,
+			"summary": "Required acquisition observation gap: acquisition e956504e-e522-4f11-989d-b5704d6b1658 observation incomplete: required participant postgres status is missing, not observed.",
+			"affectsVerdict": true
+		},
+		{
+			"id": "finding.qualification-gap.4e73cede00c4",
+			"severity": "blocking",
+			"authority": "deterministic-analyzer",
+			"scenarioId": null,
+			"summary": "Required acquisition observation gap: acquisition e956504e-e522-4f11-989d-b5704d6b1658 observation incomplete: required participant redis status is missing, not observed.",
+			"affectsVerdict": true
+		}
+	],
+	"assumptions": [
+		{
+			"id": "instrumentation-captured-all-boundaries",
+			"text": "Instrumentation captured every declared boundary; an effect the observation policy does not cover cannot be represented as evidence."
+		},
+		{
+			"id": "collector-delivered-before-seal",
+			"text": "Every effect the instrumentation captured was delivered to the collector before the run sealed; the seal's window end is a floor on sealing, not just a fact about it."
+		},
+		{
+			"id": "source-maps-match-running-code",
+			"text": "The source maps read by the analyzer match the code that actually executed in the sealed run."
+		},
+		{
+			"id": "clock-ordering-sufficient",
+			"text": "The clock ordering available to the analyzer is sufficient to place attempt, evidence, and window boundaries correctly relative to one another."
+		},
+		{
+			"id": "declared-boundary-matches-actual",
+			"text": "The boundary declared in the observation policy (its kind and authoritativeFor claims) matches what the instrumented code actually does at runtime."
+		}
+	],
+	"perProjectResults": [
+		{
+			"project": "per-test",
+			"verdict": "indeterminate",
+			"contractState": "unbaselined"
+		},
+		{
+			"project": "per-worker",
+			"verdict": "indeterminate",
+			"contractState": "unbaselined"
+		}
+	],
+	"attempts": [
+		{
+			"attemptId": "9d0979bd45049b942f1539d2caeb28a0",
+			"scenarioId": "s3-gate-fixture-control-origin-marking.captures-a-fixture-control-read-origin-marked-never-coalesced-wi",
+			"project": "per-test",
+			"retry": 0,
+			"final": true,
+			"executionOutcome": "passed",
+			"evidenceComplete": false,
+			"evidenceStatus": "incomplete",
+			"evidenceFiles": [
+				{
+					"name": "attempt.json",
+					"path": "evidence/9d0979bd45049b942f1539d2caeb28a0/attempt.json"
+				},
+				{
+					"name": "decisions.json",
+					"path": "evidence/9d0979bd45049b942f1539d2caeb28a0/decisions.json"
+				},
+				{
+					"name": "trace-summary.json",
+					"path": "evidence/9d0979bd45049b942f1539d2caeb28a0/trace-summary.json"
+				},
+				{
+					"name": "assertions.json",
+					"path": "evidence/9d0979bd45049b942f1539d2caeb28a0/assertions.json"
+				}
+			]
+		},
+		{
+			"attemptId": "65312bcc9c4edea4c80ed1a074514fcb",
+			"scenarioId": "s3-gate-fixture-control-origin-marking.captures-a-fixture-control-read-origin-marked-never-coalesced-wi",
+			"project": "per-worker",
+			"retry": 0,
+			"final": true,
+			"executionOutcome": "passed",
+			"evidenceComplete": false,
+			"evidenceStatus": "incomplete",
+			"evidenceFiles": [
+				{
+					"name": "attempt.json",
+					"path": "evidence/65312bcc9c4edea4c80ed1a074514fcb/attempt.json"
+				},
+				{
+					"name": "decisions.json",
+					"path": "evidence/65312bcc9c4edea4c80ed1a074514fcb/decisions.json"
+				},
+				{
+					"name": "trace-summary.json",
+					"path": "evidence/65312bcc9c4edea4c80ed1a074514fcb/trace-summary.json"
+				},
+				{
+					"name": "assertions.json",
+					"path": "evidence/65312bcc9c4edea4c80ed1a074514fcb/assertions.json"
+				}
+			]
+		}
+	],
+	"nextValidAction": {
+		"code": "rerun",
+		"summary": "Required run or acquisition evidence is unavailable. Repair capture and rerun.",
+		"commandAfterAuthorization": null
+	},
+	"artifacts": {
+		"manifest": "manifest.json",
+		"proofPlan": "proof-plans/s3-gate-fixture-control.json",
+		"behaviorModel": "behavior-models/s3-gate-fixture-control.json",
+		"observationPolicy": "observation-policy.json",
+		"evidenceIndex": "evidence/index.json",
+		"seal": "seal.json",
+		"report": "report.html",
+		"approvalContext": null,
+		"candidateContract": null,
+		"contractDiff": null
+	},
+	"recommendation": null,
+	"developerDecision": null
+}

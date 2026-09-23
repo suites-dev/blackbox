@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 1,
+  "flowId": "s3-gate-project-disagree",
+  "compiledAt": "2026-09-09T17:12:52.433Z",
+  "inputs": {
+    "authoringSource": "suite",
+    "requirementDigest": null,
+    "behaviorModelDigest": "7044631d415e6c1bd5bf20cf2e23c63476ebf199",
+    "suiteDigest": "8d15b294cf3b09be4db4d8b22c4e81e1d4c03fe4",
+    "acceptedEffectsDigest": null,
+    "observationDigest": "1fa7b4b1273c0ca0e351a378c1e44b0f039c6795"
+  },
+  "requiredScope": {
+    "projects": [
+      "per-test",
+      "per-worker"
+    ],
+    "scenarios": [
+      "s3-gate-project-scoped-candidate-disagreement.plants-one-extra-real-sut-effect-only-under-the-disagreement-pro"
+    ],
+    "selectionMustBeComplete": true,
+    "predeclaredAssertions": [
+      {
+        "scenarioId": "s3-gate-project-scoped-candidate-disagreement.plants-one-extra-real-sut-effect-only-under-the-disagreement-pro",
+        "assertionIds": [
+          "s3-gate-project-scoped-candidate-disagreement.plants-one-extra-real-sut-effect-only-under-the-disagreement-pro/step:1",
+          "s3-gate-project-scoped-candidate-disagreement.plants-one-extra-real-sut-effect-only-under-the-disagreement-pro/step:2",
+          "s3-gate-project-scoped-candidate-disagreement.plants-one-extra-real-sut-effect-only-under-the-disagreement-pro/step:3"
+        ]
+      }
+    ]
+  },
+  "obligations": [
+    {
+      "id": "s3-gate-project-scoped-candidate-disagreement.plants-one-extra-real-sut-effect-only-under-the-disagreement-pro::assertion",
+      "scenarioId": "s3-gate-project-scoped-candidate-disagreement.plants-one-extra-real-sut-effect-only-under-the-disagreement-pro",
+      "kind": "assertion",
+      "source": "playwright.assertion",
+      "required": true,
+      "semanticStepId": null
+    }
+  ],
+  "qualification": {
+    "requireSealedEvidence": true,
+    "requireFreshDigests": true,
+    "requireCompleteScope": true,
+    "requireCompleteEvidence": true
+  }
+}

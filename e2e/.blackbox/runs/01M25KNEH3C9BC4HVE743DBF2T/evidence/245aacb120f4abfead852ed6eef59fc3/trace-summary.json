@@ -1,0 +1,118 @@
+{
+	"schemaVersion": 1,
+	"attemptId": "245aacb120f4abfead852ed6eef59fc3",
+	"traceId": "245aacb120f4abfead852ed6eef59fc3",
+	"rootSpan": {
+		"spanId": "ad859b41911fe6d7",
+		"name": "GET /fixture/state",
+		"service": "public-api",
+		"error": false,
+		"durationMs": 1.397
+	},
+	"entryResolution": {
+		"status": "resolved"
+	},
+	"actStep": {
+		"phase": "when",
+		"title": "Act: GET /fixture/state without an authorization header",
+		"error": false,
+		"semanticStepId": "act",
+		"runtimeActSpanId": "fa9fefc95a8d0a73"
+	},
+	"steps": [
+		{
+			"phase": "when",
+			"title": "Act: GET /fixture/state without an authorization header",
+			"error": false,
+			"semanticStepId": null,
+			"runtimeActSpanId": null
+		},
+		{
+			"phase": "then",
+			"title": "Assert: 401 fixture-control-unauthorized without a token",
+			"error": false,
+			"semanticStepId": null,
+			"runtimeActSpanId": null
+		},
+		{
+			"phase": "unknown",
+			"title": "Expect \"toBe\"",
+			"error": false,
+			"semanticStepId": null,
+			"runtimeActSpanId": null
+		},
+		{
+			"phase": "unknown",
+			"title": "Expect \"toMatchObject\"",
+			"error": false,
+			"semanticStepId": null,
+			"runtimeActSpanId": null
+		},
+		{
+			"phase": "when",
+			"title": "Act: GET /fixture/state with a wrong bearer token",
+			"error": false,
+			"semanticStepId": null,
+			"runtimeActSpanId": null
+		},
+		{
+			"phase": "then",
+			"title": "Assert: 401 fixture-control-unauthorized with a wrong token",
+			"error": false,
+			"semanticStepId": null,
+			"runtimeActSpanId": null
+		},
+		{
+			"phase": "unknown",
+			"title": "Expect \"toBe\"",
+			"error": false,
+			"semanticStepId": null,
+			"runtimeActSpanId": null
+		},
+		{
+			"phase": "unknown",
+			"title": "Expect \"toMatchObject\"",
+			"error": false,
+			"semanticStepId": null,
+			"runtimeActSpanId": null
+		},
+		{
+			"phase": "when",
+			"title": "Act: GET payment-mock /fixture/state without an authorization header",
+			"error": false,
+			"semanticStepId": null,
+			"runtimeActSpanId": null
+		},
+		{
+			"phase": "then",
+			"title": "Assert: payment-mock also answers 401 fixture-control-unauthorized",
+			"error": false,
+			"semanticStepId": null,
+			"runtimeActSpanId": null
+		},
+		{
+			"phase": "unknown",
+			"title": "Expect \"toBe\"",
+			"error": false,
+			"semanticStepId": null,
+			"runtimeActSpanId": null
+		},
+		{
+			"phase": "unknown",
+			"title": "Expect \"toMatchObject\"",
+			"error": false,
+			"semanticStepId": null,
+			"runtimeActSpanId": null
+		},
+		{
+			"phase": "unknown",
+			"title": "Expect \"toMatchSnapshot\"",
+			"error": false,
+			"semanticStepId": null,
+			"runtimeActSpanId": null
+		}
+	],
+	"spanCount": 3,
+	"capturedEffectCount": 3,
+	"redactionsApplied": null
+}

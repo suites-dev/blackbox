@@ -1,0 +1,90 @@
+{
+	"schemaVersion": 1,
+	"attemptId": "165a64014d21c072fd077b1fcee86c99",
+	"traceId": "165a64014d21c072fd077b1fcee86c99",
+	"rootSpan": {
+		"spanId": "5b6e9a37237705f1",
+		"name": "POST /subscriptions",
+		"service": "public-api",
+		"error": false,
+		"durationMs": 2.198
+	},
+	"entryResolution": {
+		"status": "resolved"
+	},
+	"actStep": {
+		"phase": "when",
+		"title": "Act: POST /subscriptions for ghost-user",
+		"error": false,
+		"semanticStepId": "act",
+		"runtimeActSpanId": "bbdbab41a3ade7ff"
+	},
+	"steps": [
+		{
+			"phase": "given",
+			"title": "Arrange: reset the shared stack to the fresh profile",
+			"error": false,
+			"semanticStepId": null,
+			"runtimeActSpanId": null
+		},
+		{
+			"phase": "unknown",
+			"title": "Expect \"toBe\"",
+			"error": false,
+			"semanticStepId": null,
+			"runtimeActSpanId": null
+		},
+		{
+			"phase": "when",
+			"title": "Act: POST /subscriptions for ghost-user",
+			"error": false,
+			"semanticStepId": null,
+			"runtimeActSpanId": null
+		},
+		{
+			"phase": "then",
+			"title": "Assert: 404 with the unknown-user outcome",
+			"error": false,
+			"semanticStepId": null,
+			"runtimeActSpanId": null
+		},
+		{
+			"phase": "unknown",
+			"title": "Expect \"toBe\"",
+			"error": false,
+			"semanticStepId": null,
+			"runtimeActSpanId": null
+		},
+		{
+			"phase": "unknown",
+			"title": "Expect \"toEqual\"",
+			"error": false,
+			"semanticStepId": null,
+			"runtimeActSpanId": null
+		},
+		{
+			"phase": "then",
+			"title": "Assert: fixture state is untouched, no fraud, payment, redis, or queue effects",
+			"error": false,
+			"semanticStepId": null,
+			"runtimeActSpanId": null
+		},
+		{
+			"phase": "unknown",
+			"title": "Expect \"toBe\"",
+			"error": false,
+			"semanticStepId": null,
+			"runtimeActSpanId": null
+		},
+		{
+			"phase": "unknown",
+			"title": "Expect \"toMatchObject\"",
+			"error": false,
+			"semanticStepId": null,
+			"runtimeActSpanId": null
+		}
+	],
+	"spanCount": 54,
+	"capturedEffectCount": 27,
+	"redactionsApplied": null
+}

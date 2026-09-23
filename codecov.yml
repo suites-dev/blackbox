@@ -1,0 +1,104 @@
+comment:
+  layout: 'reach, diff, flags, components, files'
+  behavior: default
+  require_changes: true
+
+coverage:
+  status:
+    # Alpha reports coverage for visibility. It does not yet define a coverage
+    # threshold or publish Codecov status checks as release gates.
+    project: false
+    patch: false
+
+# The Alpha gate covers the 18 supported packages listed in vitest.config.ts,
+# so per-package granularity comes from
+# path attribution (components), not from separate uploads (flags). Components
+# remain useful for informational attribution without creating status checks.
+component_management:
+  individual_components:
+    - component_id: analyzer
+      name: analyzer
+      paths:
+        - packages/analyzer/**
+    - component_id: blackbox
+      name: blackbox
+      paths:
+        - packages/blackbox/**
+    - component_id: capture-node
+      name: capture-node
+      paths:
+        - packages/capture-node/**
+    - component_id: cli
+      name: cli
+      paths:
+        - packages/cli/**
+    - component_id: cli-contract
+      name: cli-contract
+      paths:
+        - packages/cli-contract/**
+    - component_id: collection-http
+      name: collection-http
+      paths:
+        - packages/collection-http/**
+    - component_id: config
+      name: config
+      paths:
+        - packages/catalog/**
+    - component_id: execution
+      name: execution
+      paths:
+        - packages/execution/**
+    - component_id: protocol
+      name: protocol
+      paths:
+        - packages/protocol/**
+    - component_id: report
+      name: report
+      paths:
+        - packages/report/**
+    - component_id: runner-playwright
+      name: runner-playwright
+      paths:
+        - packages/runner-playwright/**
+    - component_id: spec
+      name: spec
+      paths:
+        - packages/spec/**
+    - component_id: spec-gherkin
+      name: spec-gherkin
+      paths:
+        - packages/spec-gherkin/**
+    - component_id: spec-playwright
+      name: spec-playwright
+      paths:
+        - packages/spec-playwright/**
+    - component_id: system
+      name: system
+      paths:
+        - packages/system/**
+    - component_id: testbed
+      name: testbed
+      paths:
+        - packages/testbed/**
+
+ignore:
+  - '**/types.ts' # Type definition files
+  - '**/*.d.ts' # TypeScript declaration files
+  - '**/index.ts' # Barrel exports
+  - '**/*.md' # Documentation files
+  # Repo-specific: everything the root tsconfig already treats as non-harness
+  # code, plus the test sources themselves.
+  - '**/*.test.ts'
+  - '**/*.fixture.ts'
+  - 'packages/*/node-agent/**' # separate npm project, mounted into containers
+  # The broader-test tree after the src/ + tests/ split. Unit tests sit beside
+  # their source as packages/*/src/*.test.ts and are covered by '**/*.test.ts'
+  # above; everything under tests/ is fixture corpora and integration material.
+  # Excluding the directory rather than each fixture spelling means a new
+  # fixture shape cannot silently start counting as source.
+  - 'packages/*/tests/**'
+  # One pre-move directory that test runs still write into.
+  - 'packages/*/test-fixtures/**'
+  - 'e2e/**' # demo system under test, exercised by a different runner
+  - 'examples/**'
+  - 'scripts/**'

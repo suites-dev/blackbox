@@ -1,0 +1,29 @@
+services:
+  payment-mock:
+    image: sut-payment-mock:local
+    build:
+      context: ../../sut
+      dockerfile: src/payment-mock/Dockerfile
+    init: true
+    restart: 'no'
+    working_dir: /app
+    command: ['node', 'dist/payment-mock/server.js']
+    environment:
+      FIXTURE_CONTROL_TOKEN: ${FIXTURE_CONTROL_TOKEN:-demo-fixture-token}
+      PORT: 8080
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'env',
+          '-u',
+          'NODE_OPTIONS',
+          'node',
+          '-e',
+          "const s=require('node:net').connect(8080,'127.0.0.1',()=>{s.destroy();process.exit(0)});s.setTimeout(2000,()=>process.exit(1));s.on('error',()=>process.exit(1))",
+        ]
+      interval: 1s
+      timeout: 3s
+      retries: 60
+    ports:
+      - '127.0.0.1::8080'

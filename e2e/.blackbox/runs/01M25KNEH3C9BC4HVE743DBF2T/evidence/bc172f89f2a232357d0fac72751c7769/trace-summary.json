@@ -1,0 +1,62 @@
+{
+	"schemaVersion": 1,
+	"attemptId": "bc172f89f2a232357d0fac72751c7769",
+	"traceId": "bc172f89f2a232357d0fac72751c7769",
+	"rootSpan": {
+		"spanId": "f21107d5048e7942",
+		"name": "GET /health",
+		"service": "public-api",
+		"error": false,
+		"durationMs": 3.612
+	},
+	"entryResolution": {
+		"status": "resolved"
+	},
+	"actStep": {
+		"phase": "when",
+		"title": "Act: GET public-api /health",
+		"error": false,
+		"semanticStepId": "act",
+		"runtimeActSpanId": "4befbb531b241cf3"
+	},
+	"steps": [
+		{
+			"phase": "when",
+			"title": "Act: GET public-api /health",
+			"error": false,
+			"semanticStepId": null,
+			"runtimeActSpanId": null
+		},
+		{
+			"phase": "then",
+			"title": "Assert: 200 with status ready",
+			"error": false,
+			"semanticStepId": null,
+			"runtimeActSpanId": null
+		},
+		{
+			"phase": "unknown",
+			"title": "Expect \"toBe\"",
+			"error": false,
+			"semanticStepId": null,
+			"runtimeActSpanId": null
+		},
+		{
+			"phase": "unknown",
+			"title": "Expect \"toEqual\"",
+			"error": false,
+			"semanticStepId": null,
+			"runtimeActSpanId": null
+		},
+		{
+			"phase": "unknown",
+			"title": "Expect \"toMatchSnapshot\"",
+			"error": false,
+			"semanticStepId": null,
+			"runtimeActSpanId": null
+		}
+	],
+	"spanCount": 5,
+	"capturedEffectCount": 3,
+	"redactionsApplied": null
+}

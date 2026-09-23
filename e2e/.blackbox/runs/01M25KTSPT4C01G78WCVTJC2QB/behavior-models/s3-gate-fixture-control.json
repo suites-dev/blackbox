@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "flowId": "s3-gate-fixture-control",
+  "authoringSource": "suite",
+  "source": {
+    "declaration": {
+      "path": "/private/tmp/blackbox-phase0-proof.HO0ohJ/e2e/proofs/s3-gate/planted-fixture-control.suite.ts",
+      "digest": "57ea39132793ca30127207b41ab69ab91d25d51e"
+    },
+    "entry": {
+      "path": "/private/tmp/blackbox-phase0-proof.HO0ohJ/e2e/tests/s3-gate/per-test.spec.ts",
+      "digest": "017ca263def1aaef4a30dba86d1eb926edb54161"
+    }
+  },
+  "feature": {
+    "title": "S3 gate: fixture-control origin marking",
+    "description": "",
+    "scenarios": [
+      {
+        "id": "s3-gate-fixture-control.captures-a-fixture-control-read-origin-marked-never-coalesced-wi",
+        "title": "captures a fixture-control read origin-marked, never coalesced with the real SUT effect beside it (item 9 / PM Proposal A)",
+        "steps": [
+          "When POST /subscriptions for bob (real SUT effect)",
+          "Then 201 with an active subscription for bob",
+          "When (planted, fixture-control): GET /fixture/state with the control-plane marker",
+          "Then the fixture-control read itself succeeds",
+          "Then (S3 gate): the real effect and the fixture-control effect both appear, distinctly origin-marked"
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,50 @@
+{
+	"schemaVersion": 1,
+	"artifactRole": "attempt-fragment-draft",
+	"runId": "01M23JNQ6G9X2CYTFR8Q7ZSXS9",
+	"attemptId": "9f97ea6b8d8eea467b72817357976f63",
+	"flowId": "fraud-check-reports-ready-on-get-health",
+	"scenarioId": "health.fraud-check-reports-ready-on-get-health",
+	"playwrightTestId": "6c705246398d2be6220f-ca88f3cd08a3e96c7670",
+	"project": "per-test",
+	"retry": 0,
+	"worker": 2,
+	"startedAt": "2026-09-09T17:16:20.245Z",
+	"capturedAt": "2026-09-09T17:16:22.205Z",
+	"traceId": "9f97ea6b8d8eea467b72817357976f63",
+	"declarationFile": {
+		"path": "tests/suites/health.suite.ts",
+		"digest": "f59b991cdd51cd2f99b5a817572cc024aebbcef9"
+	},
+	"entryFile": "per-test/health.spec.ts",
+	"effects": [
+		{
+			"serviceId": "fraud-check",
+			"effect": {
+				"effectId": "effect-1",
+				"boundary": "http",
+				"operation": "GET",
+				"target": "/health",
+				"status": "200",
+				"origin": "sut",
+				"attributes": {
+					"direction": "inbound"
+				}
+			}
+		},
+		{
+			"serviceId": "fraud-check",
+			"effect": {
+				"effectId": "effect-2",
+				"boundary": "postgres",
+				"operation": "SELECT",
+				"target": null,
+				"status": null,
+				"origin": "sut",
+				"attributes": {
+					"statement": "SELECT ?"
+				}
+			}
+		}
+	]
+}

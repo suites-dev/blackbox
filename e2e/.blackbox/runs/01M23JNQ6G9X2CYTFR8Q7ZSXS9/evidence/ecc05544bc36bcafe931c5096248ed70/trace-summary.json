@@ -1,0 +1,90 @@
+{
+	"schemaVersion": 1,
+	"attemptId": "ecc05544bc36bcafe931c5096248ed70",
+	"traceId": "ecc05544bc36bcafe931c5096248ed70",
+	"rootSpan": {
+		"spanId": "3f0c011b75bd387d",
+		"name": "POST /subscriptions",
+		"service": "public-api",
+		"error": false,
+		"durationMs": 3.13
+	},
+	"entryResolution": {
+		"status": "resolved"
+	},
+	"actStep": {
+		"phase": "when",
+		"title": "Act: POST /subscriptions for dora",
+		"error": false,
+		"semanticStepId": "act",
+		"runtimeActSpanId": "1483eb26c7cdfe09"
+	},
+	"steps": [
+		{
+			"phase": "given",
+			"title": "Arrange: reset the shared stack to the fresh profile",
+			"error": false,
+			"semanticStepId": null,
+			"runtimeActSpanId": null
+		},
+		{
+			"phase": "unknown",
+			"title": "Expect \"toBe\"",
+			"error": false,
+			"semanticStepId": null,
+			"runtimeActSpanId": null
+		},
+		{
+			"phase": "when",
+			"title": "Act: POST /subscriptions for dora",
+			"error": false,
+			"semanticStepId": null,
+			"runtimeActSpanId": null
+		},
+		{
+			"phase": "then",
+			"title": "Assert: 201 with an active subscription and null payment and order references",
+			"error": false,
+			"semanticStepId": null,
+			"runtimeActSpanId": null
+		},
+		{
+			"phase": "unknown",
+			"title": "Expect \"toBe\"",
+			"error": false,
+			"semanticStepId": null,
+			"runtimeActSpanId": null
+		},
+		{
+			"phase": "unknown",
+			"title": "Expect \"toEqual\"",
+			"error": false,
+			"semanticStepId": null,
+			"runtimeActSpanId": null
+		},
+		{
+			"phase": "then",
+			"title": "Assert: fixture state shows redis and postgres writes only, no downstream effects",
+			"error": false,
+			"semanticStepId": null,
+			"runtimeActSpanId": null
+		},
+		{
+			"phase": "unknown",
+			"title": "Expect \"toBe\"",
+			"error": false,
+			"semanticStepId": null,
+			"runtimeActSpanId": null
+		},
+		{
+			"phase": "unknown",
+			"title": "Expect \"toMatchObject\"",
+			"error": false,
+			"semanticStepId": null,
+			"runtimeActSpanId": null
+		}
+	],
+	"spanCount": 55,
+	"capturedEffectCount": 32,
+	"redactionsApplied": null
+}

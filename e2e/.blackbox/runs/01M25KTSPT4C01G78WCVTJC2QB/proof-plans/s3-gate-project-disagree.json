@@ -1,0 +1,55 @@
+{
+  "schemaVersion": 1,
+  "flowId": "s3-gate-project-disagree",
+  "compiledAt": "2026-09-10T12:14:13.956Z",
+  "inputs": {
+    "authoringSource": "suite",
+    "requirementDigest": null,
+    "behaviorModelDigest": "43a60ff418c46f063997126d7a251b1504082c1b",
+    "suiteDigest": "00d1e1aeec3411e5ab2660725c989b14b36fe66e",
+    "acceptedEffectsDigest": null,
+    "observationDigest": "1fa7b4b1273c0ca0e351a378c1e44b0f039c6795"
+  },
+  "requiredScope": {
+    "projects": [
+      "per-test",
+      "per-worker"
+    ],
+    "scenarios": [
+      "s3-gate-project-scoped-candidate-disagreement.plants-one-extra-real-sut-effect-only-under-the-disagreement-pro"
+    ],
+    "selectionMustBeComplete": true,
+    "predeclaredAssertions": [
+      {
+        "scenarioId": "s3-gate-project-scoped-candidate-disagreement.plants-one-extra-real-sut-effect-only-under-the-disagreement-pro",
+        "assertionIds": [
+          "s3-gate-project-scoped-candidate-disagreement.plants-one-extra-real-sut-effect-only-under-the-disagreement-pro/step:1",
+          "s3-gate-project-scoped-candidate-disagreement.plants-one-extra-real-sut-effect-only-under-the-disagreement-pro/step:2",
+          "s3-gate-project-scoped-candidate-disagreement.plants-one-extra-real-sut-effect-only-under-the-disagreement-pro/step:3"
+        ]
+      }
+    ],
+    "scenarioIdentityMappings": [
+      {
+        "semanticScenarioId": "s3-gate-project-disagree.plants-one-extra-real-sut-effect-only-under-the-disagreement-pro",
+        "nativeScenarioId": "s3-gate-project-scoped-candidate-disagreement.plants-one-extra-real-sut-effect-only-under-the-disagreement-pro"
+      }
+    ]
+  },
+  "obligations": [
+    {
+      "id": "s3-gate-project-scoped-candidate-disagreement.plants-one-extra-real-sut-effect-only-under-the-disagreement-pro::assertion",
+      "scenarioId": "s3-gate-project-scoped-candidate-disagreement.plants-one-extra-real-sut-effect-only-under-the-disagreement-pro",
+      "kind": "assertion",
+      "source": "playwright.assertion",
+      "required": true,
+      "semanticStepId": null
+    }
+  ],
+  "qualification": {
+    "requireSealedEvidence": true,
+    "requireFreshDigests": true,
+    "requireCompleteScope": true,
+    "requireCompleteEvidence": true
+  }
+}

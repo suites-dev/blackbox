@@ -1,0 +1,31 @@
+{
+	"flowId": "rejects-malformed-subscription-bodies-with-400-invalid-body",
+	"authoringSource": "suite",
+	"suite": {
+		"path": "tests/suites/subscription-rejection.suite.ts",
+		"digest": "741a595873d93d4bccef00785c20a593bf5937b0"
+	},
+	"requirement": null,
+	"baseline": {
+		"path": "tests/per-test/effects/subscription-rejection.spec.ts/effects-rejects-malformed-subscription-bodies-with-400-invalid-body.yaml",
+		"digest": "4f5da8568ca747f86faacad859aa4ab013a6ee21"
+	},
+	"entries": [
+		{
+			"project": "per-test",
+			"entryPath": "per-test/subscription-rejection.spec.ts"
+		}
+	],
+	"candidate": null,
+	"behaviorModelDigest": "pending-s3",
+	"observationDigest": "pending-s3",
+	"proofPlanDigest": "pending-s3",
+	"completeness": {
+		"plannedScenarios": [],
+		"executedScenarios": [],
+		"complete": false,
+		"reasons": [
+			"planned-scope-unknown-pending-proof-plans"
+		]
+	}
+}

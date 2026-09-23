@@ -1,0 +1,84 @@
+{
+	"schemaVersion": 1,
+	"artifactRole": "observation-result",
+	"runId": "01M25KNEH3C9BC4HVE743DBF2T",
+	"acquisitionId": "13fbed56-aa44-466b-b062-dc1d169040eb",
+	"finishedAt": "2026-09-10T12:13:26.166Z",
+	"status": "completed",
+	"planDigest": "0cf9efbc079030b14a748b6095c4f399d4b02ad2",
+	"failure": null,
+	"collector": {
+		"status": "healthy",
+		"spanCount": 101
+	},
+	"participants": [
+		{
+			"participantId": "fraud-check",
+			"status": "missing",
+			"spanCount": null,
+			"missingSpans": [
+				{
+					"logicalKey": "fraud-check:spans",
+					"reason": "not-emitted"
+				}
+			]
+		},
+		{
+			"participantId": "localstack",
+			"status": "missing",
+			"spanCount": null,
+			"missingSpans": [
+				{
+					"logicalKey": "localstack:spans",
+					"reason": "not-emitted"
+				}
+			]
+		},
+		{
+			"participantId": "order-service",
+			"status": "missing",
+			"spanCount": null,
+			"missingSpans": [
+				{
+					"logicalKey": "order-service:spans",
+					"reason": "not-emitted"
+				}
+			]
+		},
+		{
+			"participantId": "payment-mock",
+			"status": "observed",
+			"spanCount": 2,
+			"missingSpans": []
+		},
+		{
+			"participantId": "postgres",
+			"status": "missing",
+			"spanCount": null,
+			"missingSpans": [
+				{
+					"logicalKey": "postgres:spans",
+					"reason": "not-emitted"
+				}
+			]
+		},
+		{
+			"participantId": "public-api",
+			"status": "observed",
+			"spanCount": 39,
+			"missingSpans": []
+		},
+		{
+			"participantId": "redis",
+			"status": "missing",
+			"spanCount": null,
+			"missingSpans": [
+				{
+					"logicalKey": "redis:spans",
+					"reason": "not-emitted"
+				}
+			]
+		}
+	],
+	"unexpectedParticipantIds": []
+}

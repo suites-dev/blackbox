@@ -1,0 +1,57 @@
+{
+	"type": "effects",
+	"flowId": "payment-mock-subsystem",
+	"attemptId": "03fb3cab95743be7bdd0e7aab22015d9",
+	"observed": {
+		"schemaVersion": 2,
+		"entry": {
+			"service": "payment-mock",
+			"request": "GET /health",
+			"status": 200
+		},
+		"entryResolution": {
+			"status": "resolved"
+		},
+		"summary": {
+			"counts": {
+				"inbound": 1,
+				"outboundHttp": 0,
+				"sql": 0,
+				"cache": 0,
+				"messaging": 0
+			},
+			"services": [
+				"payment-mock"
+			],
+			"edges": []
+		},
+		"services": {
+			"payment-mock": {
+				"inbound": [
+					{
+						"method": "GET",
+						"path": "/health",
+						"status": 200,
+						"count": 1,
+						"origin": "sut"
+					}
+				]
+			}
+		},
+		"errors": []
+	},
+	"expectedPath": "/private/tmp/blackbox-phase0-proof.HO0ohJ/e2e/tests/subsystem/effects/payment-mock.spec.ts/effects-payment-mock-subsystem--flow-9ea784feaeff925bba0b40b570b0c64565d3c879--scenario-13b705ce482ac4ef15315a1e0b790b6fb9ac56f6.yaml",
+	"entryResolution": {
+		"status": "resolved"
+	},
+	"rootSpan": {
+		"spanId": "fc556bccea765897",
+		"name": "GET /health",
+		"service": "payment-mock",
+		"error": false,
+		"durationMs": 0.513
+	},
+	"semanticStepId": "act",
+	"runtimeActSpanId": "92625f0725b4b722",
+	"outcome": "verified"
+}

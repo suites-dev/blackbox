@@ -1,0 +1,35 @@
+{
+	"schemaVersion": 3,
+	"artifactRole": "reporter-attempt-outcome",
+	"runId": "01M25KNEH3C9BC4HVE743DBF2T",
+	"flowId": "payment-mock-subsystem-dist-wrapper",
+	"playwrightTestId": "1b9ca96bf231cda8c08d-abf7c15ba6be3d6e4f55",
+	"project": "subsystem",
+	"scenarioId": "payment-mock-subsystem-dist-wrapper.reports-ready-on-get-health-from-the-lean-dist-wrapper",
+	"retry": 0,
+	"attemptId": "2e7edd9ebedc5d2c938575d14d8461bb",
+	"outcome": "passed",
+	"status": "passed",
+	"recordedAt": "2026-09-10T12:12:12.719Z",
+	"planComplete": true,
+	"assertions": [
+		{
+			"assertionId": "payment-mock-subsystem-dist-wrapper.reports-ready-on-get-health-from-the-lean-dist-wrapper/step:1",
+			"ordinal": 1,
+			"title": "Assert 200 with status ready",
+			"declaration": {
+				"path": "tests/subsystem/payment-mock-dist.spec.ts",
+				"line": 18,
+				"column": 3
+			},
+			"evaluation": true,
+			"reason": null,
+			"titleCorroborated": false,
+			"terminalAttribution": "no-attributable-expect-failure"
+		}
+	],
+	"requestedArtifacts": [
+		"effects.json",
+		"assertions.json"
+	]
+}

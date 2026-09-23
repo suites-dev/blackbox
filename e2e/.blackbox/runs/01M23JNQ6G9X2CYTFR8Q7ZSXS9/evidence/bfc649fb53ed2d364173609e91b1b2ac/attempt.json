@@ -1,0 +1,40 @@
+{
+	"schemaVersion": 2,
+	"runId": "01M23JNQ6G9X2CYTFR8Q7ZSXS9",
+	"attemptId": "bfc649fb53ed2d364173609e91b1b2ac",
+	"flowId": "payment-mock-reports-ready-on-get-health",
+	"scenarioId": "health.payment-mock-reports-ready-on-get-health",
+	"playwrightTestId": "6c705246398d2be6220f-2465bac7087b54961dcd",
+	"project": "per-test",
+	"retry": 0,
+	"worker": 2,
+	"startedAt": "2026-09-09T17:17:08.649Z",
+	"finishedAt": "2026-09-09T17:17:18.075Z",
+	"outcome": "passed",
+	"partial": false,
+	"traceId": "bfc649fb53ed2d364173609e91b1b2ac",
+	"declarationFile": {
+		"path": "tests/suites/health.suite.ts",
+		"digest": "f59b991cdd51cd2f99b5a817572cc024aebbcef9"
+	},
+	"entryFile": "per-test/health.spec.ts",
+	"effects": [
+		{
+			"serviceId": "payment-mock",
+			"effect": {
+				"effectId": "effect-1",
+				"boundary": "http",
+				"operation": "GET",
+				"target": "/health",
+				"status": "200",
+				"origin": "sut",
+				"attributes": {
+					"direction": "inbound"
+				}
+			}
+		}
+	],
+	"requestedArtifacts": [
+		"effects.json"
+	]
+}

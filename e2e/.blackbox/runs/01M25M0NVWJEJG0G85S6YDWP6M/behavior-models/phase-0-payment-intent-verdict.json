@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "flowId": "phase-0-payment-intent-verdict",
+  "authoringSource": "suite",
+  "source": {
+    "declaration": {
+      "path": "/private/tmp/blackbox-phase0-proof.HO0ohJ/e2e/proofs/phase-0-verdicts/verdicts.spec.ts",
+      "digest": "974d86a14f1d6c98103381f9d753ac5fc53e86bf"
+    },
+    "entry": null
+  },
+  "feature": {
+    "title": "Payment intent verdict triad",
+    "description": "",
+    "scenarios": [
+      {
+        "id": "phase-0-payment-intent-verdict.records-a-payment-intent-for-a-valid-request",
+        "title": "records a payment intent for a valid request",
+        "steps": [
+          "When POST /v1/payment_intents",
+          "Then payment intent request has the expected status"
+        ]
+      }
+    ]
+  }
+}

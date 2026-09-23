@@ -1,0 +1,36 @@
+{
+	"schemaVersion": 3,
+	"artifactRole": "reporter-attempt-outcome",
+	"runId": "01M25M1C9EY49M98NSB9C6T1GA",
+	"flowId": "phase-0-payment-intent-verdict",
+	"playwrightTestId": "119b2e1344f43fa7fc46-011e459b154c46ff88a1",
+	"project": "phase-0-verdicts",
+	"scenarioId": "payment-intent-verdict-triad.records-a-payment-intent-for-a-valid-request",
+	"retry": 0,
+	"attemptId": "4581a0391102df00a041d6300c0e90a2",
+	"outcome": "passed",
+	"status": "passed",
+	"recordedAt": "2026-09-10T12:18:00.309Z",
+	"planComplete": true,
+	"assertions": [
+		{
+			"assertionId": "payment-intent-verdict-triad.records-a-payment-intent-for-a-valid-request/step:1",
+			"ordinal": 1,
+			"title": "Assert payment intent request has the expected status",
+			"declaration": {
+				"path": "proofs/phase-0-verdicts/verdicts.spec.ts",
+				"line": 48,
+				"column": 3
+			},
+			"evaluation": true,
+			"reason": null,
+			"titleCorroborated": false,
+			"terminalAttribution": "no-attributable-expect-failure"
+		}
+	],
+	"requestedArtifacts": [
+		"decisions.json",
+		"effects.json",
+		"assertions.json"
+	]
+}

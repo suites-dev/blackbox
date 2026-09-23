@@ -1,0 +1,18 @@
+services:
+  echo:
+    image: nginx:alpine
+    environment:
+      SANDBOX_ID: ${SANDBOX_ID:?SANDBOX_ID is required}
+    command:
+      - /bin/sh
+      - -c
+      - >-
+        printf '%s\n' "$SANDBOX_ID" > /usr/share/nginx/html/index.html &&
+        exec nginx -g 'daemon off;'
+    ports:
+      - '80'
+    volumes:
+      - proof-state:/var/cache/blackbox-proof
+
+volumes:
+  proof-state:

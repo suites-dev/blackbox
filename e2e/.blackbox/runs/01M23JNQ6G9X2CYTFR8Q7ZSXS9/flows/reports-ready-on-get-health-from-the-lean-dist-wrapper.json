@@ -1,0 +1,31 @@
+{
+	"flowId": "reports-ready-on-get-health-from-the-lean-dist-wrapper",
+	"authoringSource": "suite",
+	"suite": {
+		"path": "tests/subsystem/payment-mock-dist.spec.ts",
+		"digest": "2cb315a5166a4e30882bf8ee56814290c15101c6"
+	},
+	"requirement": null,
+	"baseline": {
+		"path": "tests/subsystem/effects/payment-mock-dist.spec.ts/effects-reports-ready-on-get-health-from-the-lean-dist-wrapper.yaml",
+		"digest": "1c9baf1d5736593f733e7a3be438532c2dcaf1f4"
+	},
+	"entries": [
+		{
+			"project": "subsystem",
+			"entryPath": "subsystem/payment-mock-dist.spec.ts"
+		}
+	],
+	"candidate": null,
+	"behaviorModelDigest": "pending-s3",
+	"observationDigest": "pending-s3",
+	"proofPlanDigest": "pending-s3",
+	"completeness": {
+		"plannedScenarios": [],
+		"executedScenarios": [],
+		"complete": false,
+		"reasons": [
+			"planned-scope-unknown-pending-proof-plans"
+		]
+	}
+}

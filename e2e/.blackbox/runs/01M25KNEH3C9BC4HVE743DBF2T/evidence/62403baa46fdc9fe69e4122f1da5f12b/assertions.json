@@ -1,0 +1,57 @@
+{
+	"schemaVersion": 2,
+	"artifactRole": "assertion-observations",
+	"runId": "01M25KNEH3C9BC4HVE743DBF2T",
+	"attemptId": "62403baa46fdc9fe69e4122f1da5f12b",
+	"playwrightTestId": "1b9ca96bf231cda8c08d-50c45533cc2bd17e83b1",
+	"scenarioId": "payment-mock-subsystem-dist-wrapper.runs-the-payment-intent-and-refund-lifecycle-on-the-dist-wrapper",
+	"project": "subsystem",
+	"retry": 0,
+	"planComplete": true,
+	"scenarioResult": true,
+	"scenarioResultReason": null,
+	"assertions": [
+		{
+			"assertionId": "payment-mock-subsystem-dist-wrapper.runs-the-payment-intent-and-refund-lifecycle-on-the-dist-wrapper/step:1",
+			"ordinal": 1,
+			"title": "Assert 201 with a succeeded payment intent",
+			"declaration": {
+				"path": "tests/subsystem/payment-mock-dist.spec.ts",
+				"line": 34,
+				"column": 3
+			},
+			"evaluation": true,
+			"reason": null,
+			"titleCorroborated": false,
+			"terminalAttribution": "no-attributable-expect-failure"
+		},
+		{
+			"assertionId": "payment-mock-subsystem-dist-wrapper.runs-the-payment-intent-and-refund-lifecycle-on-the-dist-wrapper/step:3",
+			"ordinal": 3,
+			"title": "Assert 201 with a succeeded refund",
+			"declaration": {
+				"path": "tests/subsystem/payment-mock-dist.spec.ts",
+				"line": 48,
+				"column": 3
+			},
+			"evaluation": true,
+			"reason": null,
+			"titleCorroborated": false,
+			"terminalAttribution": "no-attributable-expect-failure"
+		},
+		{
+			"assertionId": "payment-mock-subsystem-dist-wrapper.runs-the-payment-intent-and-refund-lifecycle-on-the-dist-wrapper/step:4",
+			"ordinal": 4,
+			"title": "Assert fixture state holds exactly one intent and one refund",
+			"declaration": {
+				"path": "tests/subsystem/payment-mock-dist.spec.ts",
+				"line": 59,
+				"column": 3
+			},
+			"evaluation": true,
+			"reason": null,
+			"titleCorroborated": false,
+			"terminalAttribution": "no-attributable-expect-failure"
+		}
+	]
+}

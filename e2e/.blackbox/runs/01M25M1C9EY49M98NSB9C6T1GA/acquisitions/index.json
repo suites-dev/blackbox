@@ -1,0 +1,25 @@
+{
+	"schemaVersion": 1,
+	"artifactRole": "acquisition-index",
+	"runId": "01M25M1C9EY49M98NSB9C6T1GA",
+	"entries": [
+		{
+			"acquisitionId": "bad53e9d-40a1-4605-83e3-3a233fdcbe5a",
+			"intent": {
+				"acquisitionId": "bad53e9d-40a1-4605-83e3-3a233fdcbe5a",
+				"path": ".blackbox/runs/01M25M1C9EY49M98NSB9C6T1GA/acquisitions/bad53e9d-40a1-4605-83e3-3a233fdcbe5a/intent.json",
+				"digest": "9791aa33b6afd3b2dbfdd631f8d38175f9a990f9"
+			},
+			"plan": {
+				"acquisitionId": "bad53e9d-40a1-4605-83e3-3a233fdcbe5a",
+				"path": ".blackbox/runs/01M25M1C9EY49M98NSB9C6T1GA/acquisitions/bad53e9d-40a1-4605-83e3-3a233fdcbe5a/observation-plan.json",
+				"digest": "d7dfe4b5a8df711b2941b54b5e1cecd7e8c2d0a9"
+			},
+			"result": {
+				"acquisitionId": "bad53e9d-40a1-4605-83e3-3a233fdcbe5a",
+				"path": ".blackbox/runs/01M25M1C9EY49M98NSB9C6T1GA/acquisitions/bad53e9d-40a1-4605-83e3-3a233fdcbe5a/observation-result.json",
+				"digest": "04a6d9e75c3f0f93a0e83a3db03bb32bdd17a215"
+			}
+		}
+	]
+}

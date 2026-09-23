@@ -1,0 +1,97 @@
+name: Publish Packages
+
+# Manual only, and deliberately so: publishing to npm is the repository
+# owner's action. Nothing here fires on a push.
+on:
+  workflow_dispatch:
+    inputs:
+      dist_tag:
+        description: 'Distribution Tag'
+        type: choice
+        options:
+          - 'alpha'
+          - 'beta'
+          - 'rc'
+          - 'next'
+          - 'latest'
+        required: true
+        default: 'alpha'
+      target_branch:
+        description: 'Branch to publish from'
+        type: choice
+        options:
+          - 'release/v0.0.1-alpha'
+          - 'main'
+        required: true
+        default: 'release/v0.0.1-alpha'
+
+permissions:
+  contents: read
+  id-token: write
+
+# One top-level env block only. A second one replaces the first in YAML.
+env:
+  CI: true
+  PNPM_VERSION: 9.15.4
+  NODE_VERSION: 22.x
+
+jobs:
+  publish:
+    name: Publish to npm
+    runs-on: [self-hosted, linux, arm64, blackbox]
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.inputs.target_branch }}
+          fetch-depth: 0
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          registry-url: https://registry.npmjs.org/
+          cache: pnpm
+
+      - name: Install dependencies
+        timeout-minutes: 15
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        timeout-minutes: 15
+        run: pnpm build
+
+      - name: Capture versions for report
+        run: |
+          echo "## Publishing to npm" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Dist Tag:** \`${{ github.event.inputs.dist_tag }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Branch:** \`${{ github.event.inputs.target_branch }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          npx lerna ls --json | jq -r '.[] | "- **\(.name)** -> `v\(.version)`"' >> $GITHUB_STEP_SUMMARY
+
+      # pnpm (not lerna) does the publish: it natively rewrites catalog: and
+      # workspace: specifiers to concrete ranges, and supports OIDC provenance.
+      - name: Publish
+        timeout-minutes: 15
+        run: pnpm -r --filter './packages/**' publish --tag ${{ github.event.inputs.dist_tag }} --access public --no-git-checks
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_CONFIG_PROVENANCE: 'true'
+
+      - name: Publish summary
+        if: success()
+        run: |
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Publish successful" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Installation command:**" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
+          echo "npm install @suites/blackbox@${{ github.event.inputs.dist_tag }}" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY

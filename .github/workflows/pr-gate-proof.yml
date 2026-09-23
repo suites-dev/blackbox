@@ -1,0 +1,75 @@
+name: PR Gate controlled proof (non-gating)
+
+# Diagnostic only: never a required release check. Each matrix leg feeds the
+# real aggregator one controlled `needs` fixture and asserts the verdict the
+# fixture must produce, so hosted runs prove the passing, failing, cancelled,
+# skipped, and missing-lane paths of `.github/scripts/pr-gate.mjs` (#106).
+# Runs on pull requests that touch the gate and on manual dispatch.
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - .github/scripts/pr-gate.mjs
+      - .github/scripts/pr-gate.test.mjs
+      - .github/scripts/pr-gate-fixtures/**
+      - .github/workflows/pr-gate-proof.yml
+      - .github/workflows/ci.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  controlled-proof:
+    name: Controlled proof (${{ matrix.scenario }})
+    runs-on: [self-hosted, linux, arm64, blackbox]
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        scenario: [passing, failing, cancelled, skipped, missing]
+    env:
+      SCENARIO: ${{ matrix.scenario }}
+      RECEIPT_DIR: ci-evidence/pr-gate-proof/${{ matrix.scenario }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+
+      - name: Run the aggregator on the controlled fixture
+        id: gate
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ''
+          PR_GATE_RECEIPT: ${{ env.RECEIPT_DIR }}/receipt.json
+        run: >-
+          node .github/scripts/pr-gate.mjs evaluate
+          --needs-file ".github/scripts/pr-gate-fixtures/${SCENARIO}.json"
+
+      - name: Assert the verdict the scenario requires
+        env:
+          GATE_OUTCOME: ${{ steps.gate.outcome }}
+          GATE_VERDICT: ${{ steps.gate.outputs.verdict }}
+        run: |
+          if [[ "$SCENARIO" == passing ]]; then expected=success; else expected=failure; fi
+          echo "scenario=$SCENARIO expected=$expected outcome=$GATE_OUTCOME verdict=$GATE_VERDICT"
+          [[ "$GATE_VERDICT" == "$expected" ]] || { echo "verdict mismatch"; exit 1; }
+          [[ "$GATE_OUTCOME" == "$expected" ]] || { echo "exit code mismatch"; exit 1; }
+          node -e '
+            const receipt = JSON.parse(require("node:fs").readFileSync(process.argv[1], "utf8"));
+            if (receipt.verdict !== process.argv[2]) { throw new Error(`receipt verdict ${receipt.verdict}`); }
+          ' "$RECEIPT_DIR/receipt.json" "$expected"
+
+      - name: Retain proof receipt and summary
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr-gate-proof-${{ matrix.scenario }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ci-evidence/pr-gate-proof/
+          include-hidden-files: true
+          retention-days: 14
+          if-no-files-found: error

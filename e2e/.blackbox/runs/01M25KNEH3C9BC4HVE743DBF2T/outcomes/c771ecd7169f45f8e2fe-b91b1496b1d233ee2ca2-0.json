@@ -1,0 +1,62 @@
+{
+	"schemaVersion": 3,
+	"artifactRole": "reporter-attempt-outcome",
+	"runId": "01M25KNEH3C9BC4HVE743DBF2T",
+	"flowId": "fixture-control",
+	"playwrightTestId": "c771ecd7169f45f8e2fe-b91b1496b1d233ee2ca2",
+	"project": "per-worker",
+	"scenarioId": "fixture-control.rejects-fixture-control-access-without-a-token-or-with-a-wrong-t",
+	"retry": 0,
+	"attemptId": "be744a44dab9614d510991b5550d0a49",
+	"outcome": "passed",
+	"status": "passed",
+	"recordedAt": "2026-09-10T12:11:47.395Z",
+	"planComplete": true,
+	"assertions": [
+		{
+			"assertionId": "fixture-control.rejects-fixture-control-access-without-a-token-or-with-a-wrong-t/step:1",
+			"ordinal": 1,
+			"title": "Assert 401 fixture-control-unauthorized without a token",
+			"declaration": {
+				"path": "tests/suites/fixture-control.suite.ts",
+				"line": 46,
+				"column": 4
+			},
+			"evaluation": true,
+			"reason": null,
+			"titleCorroborated": false,
+			"terminalAttribution": "no-attributable-expect-failure"
+		},
+		{
+			"assertionId": "fixture-control.rejects-fixture-control-access-without-a-token-or-with-a-wrong-t/step:3",
+			"ordinal": 3,
+			"title": "Assert 401 fixture-control-unauthorized with a wrong token",
+			"declaration": {
+				"path": "tests/suites/fixture-control.suite.ts",
+				"line": 59,
+				"column": 4
+			},
+			"evaluation": true,
+			"reason": null,
+			"titleCorroborated": false,
+			"terminalAttribution": "no-attributable-expect-failure"
+		},
+		{
+			"assertionId": "fixture-control.rejects-fixture-control-access-without-a-token-or-with-a-wrong-t/step:5",
+			"ordinal": 5,
+			"title": "Assert payment-mock also answers 401 fixture-control-unauthorized",
+			"declaration": {
+				"path": "tests/suites/fixture-control.suite.ts",
+				"line": 70,
+				"column": 4
+			},
+			"evaluation": true,
+			"reason": null,
+			"titleCorroborated": false,
+			"terminalAttribution": "no-attributable-expect-failure"
+		}
+	],
+	"requestedArtifacts": [
+		"assertions.json"
+	]
+}

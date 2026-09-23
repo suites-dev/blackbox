@@ -1,0 +1,27 @@
+{
+  "name": "@suites/blackbox-report-server-internal",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Internal local report registry, viewer, and HTTP server.",
+  "files": ["dist", "schema"],
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "blackbox-source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc --project tsconfig.build.json",
+    "lint": "eslint .",
+    "test": "vitest run --config vitest.config.ts"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

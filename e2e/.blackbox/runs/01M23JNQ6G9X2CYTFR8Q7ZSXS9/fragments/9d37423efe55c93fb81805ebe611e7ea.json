@@ -1,0 +1,77 @@
+{
+	"schemaVersion": 1,
+	"artifactRole": "attempt-fragment-draft",
+	"runId": "01M23JNQ6G9X2CYTFR8Q7ZSXS9",
+	"attemptId": "9d37423efe55c93fb81805ebe611e7ea",
+	"flowId": "public-api-reports-ready-on-get-health",
+	"scenarioId": "health.public-api-reports-ready-on-get-health",
+	"playwrightTestId": "6c705246398d2be6220f-29a6bc1d9bba4456030c",
+	"project": "per-test",
+	"retry": 0,
+	"worker": 2,
+	"startedAt": "2026-09-09T17:15:53.113Z",
+	"capturedAt": "2026-09-09T17:15:54.897Z",
+	"traceId": "9d37423efe55c93fb81805ebe611e7ea",
+	"declarationFile": {
+		"path": "tests/suites/health.suite.ts",
+		"digest": "f59b991cdd51cd2f99b5a817572cc024aebbcef9"
+	},
+	"entryFile": "per-test/health.spec.ts",
+	"effects": [
+		{
+			"serviceId": "public-api",
+			"effect": {
+				"effectId": "effect-1",
+				"boundary": "http",
+				"operation": "GET",
+				"target": "/health",
+				"status": "200",
+				"origin": "sut",
+				"attributes": {
+					"direction": "inbound"
+				}
+			}
+		},
+		{
+			"serviceId": "public-api",
+			"effect": {
+				"effectId": "effect-2",
+				"boundary": "http",
+				"operation": "POST",
+				"target": "localstack:/",
+				"status": "200",
+				"origin": "sut",
+				"attributes": {
+					"direction": "outbound",
+					"callee": "localstack"
+				}
+			}
+		},
+		{
+			"serviceId": "public-api",
+			"effect": {
+				"effectId": "effect-3",
+				"boundary": "postgres",
+				"operation": "SELECT",
+				"target": null,
+				"status": null,
+				"origin": "sut",
+				"attributes": {
+					"statement": "SELECT ?"
+				}
+			}
+		},
+		{
+			"serviceId": "public-api",
+			"effect": {
+				"effectId": "effect-4",
+				"boundary": "redis",
+				"operation": "PING",
+				"target": "<none>",
+				"status": null,
+				"origin": "sut",
+				"attributes": {}
+			}
+		}
+	]
+}

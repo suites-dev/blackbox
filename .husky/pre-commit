@@ -1,0 +1,15 @@
+# eslint runs with `projectService: true` and the strict type-checked rule set,
+# so it builds the full TypeScript program no matter how few files lint-staged
+# hands it. Peak resident size for this repo is about 4.9 GB, just over Node's
+# default heap, which is why a large staged set used to die with an allocation
+# failure instead of reporting anything. lint-staged invokes the eslint binary
+# directly rather than through the root `lint` script, so it does not inherit
+# that script's own NODE_OPTIONS and needs the ceiling raised here too.
+#
+# The structural fix is smaller per-package TypeScript programs, which is what
+# the per-package tsconfig and lint-config work is for. Until that lands, this
+# keeps the hook from crashing.
+export NODE_OPTIONS="--max-old-space-size=8192"
+
+pnpm lint-staged
+pnpm typecheck

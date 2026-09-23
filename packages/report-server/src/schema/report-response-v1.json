@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://blackbox.suites.dev/schemas/report-response-v1.json",
+  "oneOf": [
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "code",
+        "message"
+      ],
+      "properties": {
+        "kind": {
+          "const": "report-failure"
+        },
+        "code": {
+          "enum": [
+            "not-found",
+            "invalid-request",
+            "artifact-unavailable",
+            "provider-error"
+          ]
+        },
+        "message": {
+          "type": "string"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "document"
+      ],
+      "properties": {
+        "kind": {
+          "const": "report-document"
+        },
+        "document": {}
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "artifact",
+        "document"
+      ],
+      "properties": {
+        "kind": {
+          "const": "report-artifact"
+        },
+        "artifact": {
+          "type": "string"
+        },
+        "document": {}
+      }
+    }
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "name": "@suites/blackbox-sandbox-internal",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Internal catalog-independent Docker Compose sandbox engine.",
+  "files": [
+    "dist"
+  ],
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "blackbox-source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc --project tsconfig.build.json",
+    "lint": "eslint .",
+    "test": "vitest run --config vitest.config.ts",
+    "test:docker": "BLACKBOX_SANDBOX_DOCKER_TEST=1 vitest run --config vitest.config.ts src/acquisition/concurrency.docker.test.ts"
+  },
+  "dependencies": {
+    "testcontainers": "catalog:"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

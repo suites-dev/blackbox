@@ -1,0 +1,34 @@
+{
+	"flowId": "s3-gate-fixture-control",
+	"authoringSource": "suite",
+	"suite": {
+		"path": "proofs/s3-gate/planted-fixture-control.suite.ts",
+		"digest": "57ea39132793ca30127207b41ab69ab91d25d51e"
+	},
+	"requirement": null,
+	"baselines": [],
+	"entries": [
+		{
+			"project": "per-test",
+			"entryPath": "tests/s3-gate/per-test.spec.ts"
+		},
+		{
+			"project": "per-worker",
+			"entryPath": "tests/s3-gate/per-worker.spec.ts"
+		}
+	],
+	"candidate": null,
+	"behaviorModelDigest": "ccf05b0a01ca1c3ee45367b55d43eec0690a94f9",
+	"observationDigest": "1fa7b4b1273c0ca0e351a378c1e44b0f039c6795",
+	"proofPlanDigest": "795ec8e1746065909cdb671b359338f7193888a0",
+	"completeness": {
+		"plannedScenarios": [
+			"s3-gate-fixture-control-origin-marking.captures-a-fixture-control-read-origin-marked-never-coalesced-wi"
+		],
+		"executedScenarios": [
+			"s3-gate-fixture-control-origin-marking.captures-a-fixture-control-read-origin-marked-never-coalesced-wi"
+		],
+		"complete": true,
+		"reasons": []
+	}
+}

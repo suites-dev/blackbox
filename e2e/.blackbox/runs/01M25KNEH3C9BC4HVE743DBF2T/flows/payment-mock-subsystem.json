@@ -1,0 +1,56 @@
+{
+	"flowId": "payment-mock-subsystem",
+	"authoringSource": "suite",
+	"suite": {
+		"path": "tests/subsystem/payment-mock.spec.ts",
+		"digest": "83162c8b5b8a3f220dac6b89ffdc77fe621632a8"
+	},
+	"requirement": null,
+	"baselines": [
+		{
+			"scenarioId": "payment-mock-subsystem.reports-ready-on-get-health",
+			"artifact": {
+				"path": "tests/subsystem/effects/payment-mock.spec.ts/effects-payment-mock-subsystem--flow-9ea784feaeff925bba0b40b570b0c64565d3c879--scenario-13b705ce482ac4ef15315a1e0b790b6fb9ac56f6.yaml",
+				"digest": "cbf91fbfdd077868b22b16e6d3411b24b44834ed"
+			}
+		},
+		{
+			"scenarioId": "payment-mock-subsystem.runs-the-payment-intent-and-refund-lifecycle-on-a-lone-container",
+			"artifact": {
+				"path": "tests/subsystem/effects/payment-mock.spec.ts/effects-payment-mock-subsystem--flow-9ea784feaeff925bba0b40b570b0c64565d3c879--scenario-068073fca12496cdde5d63a7140d5352769cb080.yaml",
+				"digest": "dffd7216c2dee29daadbda956dbcb0319d66f840"
+			}
+		},
+		{
+			"scenarioId": "payment-mock-subsystem.starts-from-a-clean-state-because-the-container-is-per-test",
+			"artifact": {
+				"path": "tests/subsystem/effects/payment-mock.spec.ts/effects-payment-mock-subsystem--flow-9ea784feaeff925bba0b40b570b0c64565d3c879--scenario-b99f7ad63338c3a01e916b65b26d4fce1724a111.yaml",
+				"digest": "ad9eecb0e9a539f7b5a1b7f0fe3d24ad62772423"
+			}
+		}
+	],
+	"entries": [
+		{
+			"project": "subsystem",
+			"entryPath": "tests/subsystem/payment-mock.spec.ts"
+		}
+	],
+	"candidate": null,
+	"behaviorModelDigest": "0b416f9da853e34b130cb191f3b05c9f6fdcf25d",
+	"observationDigest": "1fa7b4b1273c0ca0e351a378c1e44b0f039c6795",
+	"proofPlanDigest": "0da6cd3a95f5bd90d3e3eb53c372e60ddd99c2b0",
+	"completeness": {
+		"plannedScenarios": [
+			"payment-mock-subsystem.reports-ready-on-get-health",
+			"payment-mock-subsystem.runs-the-payment-intent-and-refund-lifecycle-on-a-lone-container",
+			"payment-mock-subsystem.starts-from-a-clean-state-because-the-container-is-per-test"
+		],
+		"executedScenarios": [
+			"payment-mock-subsystem.reports-ready-on-get-health",
+			"payment-mock-subsystem.runs-the-payment-intent-and-refund-lifecycle-on-a-lone-container",
+			"payment-mock-subsystem.starts-from-a-clean-state-because-the-container-is-per-test"
+		],
+		"complete": true,
+		"reasons": []
+	}
+}

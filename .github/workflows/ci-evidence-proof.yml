@@ -1,0 +1,101 @@
+name: CI evidence diagnostic proof (non-gating)
+
+# Diagnostic only: do not make this workflow a required release check. The
+# ci-evidence-negative-control label deliberately makes the job fail so the
+# same wrapper and test can demonstrate both hosted failure and success paths.
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+    paths:
+      - .github/actions/ci-evidence/**
+      - .github/scripts/ci-evidence.mjs
+      - .github/scripts/ci-evidence-signal-proof.mjs
+      - .github/scripts/ci-evidence.test.mjs
+      - .github/scripts/ci-evidence-proof.test.mjs
+      - .github/workflows/ci-evidence-proof.yml
+
+permissions:
+  contents: read
+
+jobs:
+  diagnostic-proof-only:
+    name: Diagnostic proof only (never a release gate)
+    runs-on: [self-hosted, linux, arm64, blackbox]
+    timeout-minutes: 10
+    env:
+      EVIDENCE_DIR: .ci-evidence/proof/node-test
+      SIGNAL_EVIDENCE_DIR: .ci-evidence/proof/wrapper-sigterm
+      JUNIT_PATH: .ci-proof/junit.xml
+      COVERAGE_PATH: .ci-proof/coverage
+      BLACKBOX_CI_PROOF_EXPECT_FAILURE: ${{ contains(github.event.pull_request.labels.*.name, 'ci-evidence-negative-control') && '1' || '0' }}
+    steps:
+      - name: Check out pull request
+        uses: actions/checkout@v5
+
+      - name: Set up Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+
+      - name: Prepare native Node report directories
+        run: mkdir -p "$(dirname "$JUNIT_PATH")" "$COVERAGE_PATH"
+
+      - name: Run the real Node test through the evidence wrapper
+        id: test
+        continue-on-error: true
+        env:
+          NODE_V8_COVERAGE: ${{ env.COVERAGE_PATH }}
+        run: |
+          node .github/scripts/ci-evidence.mjs run \
+            --lane proof \
+            --project node-test \
+            --evidence-dir "$EVIDENCE_DIR" \
+            --test-case-identifiers ci-evidence-controlled-proof \
+            -- node --test \
+              --test-reporter=junit \
+              --test-reporter-destination="$JUNIT_PATH" \
+              .github/scripts/ci-evidence-proof.test.mjs
+
+      - name: Upload the real proof evidence
+        if: always()
+        uses: ./.github/actions/ci-evidence
+        with:
+          lane: proof
+          project: node-test
+          evidence-dir: ${{ env.EVIDENCE_DIR }}
+          expected: |
+            junit=${{ env.JUNIT_PATH }}
+            coverage-raw=${{ env.COVERAGE_PATH }}
+            log=${{ env.EVIDENCE_DIR }}/logs/command.log
+          test-case-identifiers: ci-evidence-controlled-proof
+
+      # This signals the wrapper process, not the GitHub Actions job itself.
+      - name: Exercise wrapper SIGTERM cleanup
+        id: signal-proof
+        timeout-minutes: 2
+        run: node .github/scripts/ci-evidence-signal-proof.mjs run --evidence-dir "$SIGNAL_EVIDENCE_DIR"
+
+      - name: Upload wrapper SIGTERM evidence
+        id: signal-evidence
+        if: always()
+        uses: ./.github/actions/ci-evidence
+        with:
+          lane: proof
+          project: wrapper-sigterm
+          evidence-dir: ${{ env.SIGNAL_EVIDENCE_DIR }}
+          expected: |
+            log=${{ env.SIGNAL_EVIDENCE_DIR }}/logs/command.log
+            proof=${{ env.SIGNAL_EVIDENCE_DIR }}-proof.json
+          test-case-identifiers: ci-evidence-hosted-sigterm
+
+      - name: Verify wrapper SIGTERM evidence
+        if: always()
+        env:
+          SIGNAL_EVIDENCE_OUTCOME: ${{ steps.signal-evidence.outcome }}
+        run: node .github/scripts/ci-evidence-signal-proof.mjs verify --evidence-dir "$SIGNAL_EVIDENCE_DIR"
+
+      - name: Preserve the wrapped test result
+        if: always() && steps.test.outcome != 'success'
+        run: |
+          echo 'The diagnostic negative control failed as requested; evidence was uploaded.' >&2
+          exit 1

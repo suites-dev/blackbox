@@ -1,0 +1,35 @@
+{
+	"schemaVersion": 3,
+	"artifactRole": "reporter-attempt-outcome",
+	"runId": "01M25KNEH3C9BC4HVE743DBF2T",
+	"flowId": "fixture-control",
+	"playwrightTestId": "b4201a13beca0831b244-4880676256a8969578c6",
+	"project": "per-test",
+	"scenarioId": "fixture-control.group-cleanup-restores-a-clean-fixture-state-after-a-subscriptio",
+	"retry": 0,
+	"attemptId": "a51ac21e41c5503ece8e56217acbcf9f",
+	"outcome": "passed",
+	"status": "passed",
+	"recordedAt": "2026-09-10T12:12:50.104Z",
+	"planComplete": true,
+	"assertions": [
+		{
+			"assertionId": "fixture-control.group-cleanup-restores-a-clean-fixture-state-after-a-subscriptio/step:2",
+			"ordinal": 2,
+			"title": "Assert 200 with empty redis, subscriptions, and queue",
+			"declaration": {
+				"path": "tests/suites/fixture-control.suite.ts",
+				"line": 158,
+				"column": 4
+			},
+			"evaluation": true,
+			"reason": null,
+			"titleCorroborated": false,
+			"terminalAttribution": "no-attributable-expect-failure"
+		}
+	],
+	"requestedArtifacts": [
+		"effects.json",
+		"assertions.json"
+	]
+}

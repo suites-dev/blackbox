@@ -1,0 +1,9 @@
+{
+	"attemptId": "9d37423efe55c93fb81805ebe611e7ea",
+	"acquisitionId": "30b00260-f025-4376-bdbc-c07e9f74ca1f",
+	"scenarioId": "health.public-api-reports-ready-on-get-health",
+	"playwrightTestId": "6c705246398d2be6220f-29a6bc1d9bba4456030c",
+	"project": "per-test",
+	"retry": 0,
+	"recordedAt": "2026-09-09T17:16:01.201Z"
+}

@@ -1,0 +1,294 @@
+{
+  "schemaVersion": 1,
+  "purpose": "Provenance and disposition record for the historical Blackbox agent-skills bundle reviewed by issue #149.",
+  "sourceInventory": {
+    "repositoryPath": "tests/conformance/import-inventory.json",
+    "repository": "suites-dev/blackbox",
+    "commit": "732ecf29e42214a4fd436889dc8898f169335bae",
+    "sha256": "8435a7dcad5baf2bcd07e5a8c8453932b8ca7a5c50331825009ddc101723b629",
+    "sourceBundle": "Blackbox-Complete-Bundle",
+    "sourceRoot": "agent-skills/",
+    "sourceBundleRevision": null,
+    "markdownFileCount": 67,
+    "skillFileCount": 29,
+    "activeSkillCount": 22,
+    "deferredSkillCount": 7,
+    "allSourceHashesVerified": true
+  },
+  "policy": "Historical source content is provenance, not current product authority. Each skill source has an explicit disposition; active material is adapted into the portable discovery skill and deferred material is not routed by default.",
+  "skills": [
+    {
+      "sourcePath": "agent-skills/future/skills/blackbox-agent-repair/SKILL.md",
+      "sourceSha256": "dce77c72e45002de46fc03ef4387d79a1b719ef1bc4bb444cddad7f5e0cef337",
+      "verifiedSourceSha256": "dce77c72e45002de46fc03ef4387d79a1b719ef1bc4bb444cddad7f5e0cef337",
+      "sourceClass": "deferred",
+      "disposition": "deferred-not-routed",
+      "targets": [],
+      "rationale": "Autonomous repair lifecycle is a future workflow and is outside the active Alpha discovery skill."
+    },
+    {
+      "sourcePath": "agent-skills/future/skills/blackbox-approval/SKILL.md",
+      "sourceSha256": "ebbd70a5a89851504d40d060d7cc2ee5df67e02130cbc56765f68ef0db91db3e",
+      "verifiedSourceSha256": "ebbd70a5a89851504d40d060d7cc2ee5df67e02130cbc56765f68ef0db91db3e",
+      "sourceClass": "deferred",
+      "disposition": "deferred-not-routed",
+      "targets": [],
+      "rationale": "Approval packets and protected promotion are future workflows, not active Alpha discovery behavior."
+    },
+    {
+      "sourcePath": "agent-skills/future/skills/blackbox-compare-runs/SKILL.md",
+      "sourceSha256": "008a9448e577e4753de4534277999fb07dc8ddaa7a0614e5765a088f1626425c",
+      "verifiedSourceSha256": "008a9448e577e4753de4534277999fb07dc8ddaa7a0614e5765a088f1626425c",
+      "sourceClass": "deferred",
+      "disposition": "deferred-not-routed",
+      "targets": [],
+      "rationale": "Canonical run comparison is deferred until its comparison-group contract exists."
+    },
+    {
+      "sourcePath": "agent-skills/future/skills/blackbox-contracts/SKILL.md",
+      "sourceSha256": "9000fd4fe6feb05885ab5f3cb442ee00ffb077ea8bfc69e1c5a9fdcd62106a09",
+      "verifiedSourceSha256": "9000fd4fe6feb05885ab5f3cb442ee00ffb077ea8bfc69e1c5a9fdcd62106a09",
+      "sourceClass": "deferred",
+      "disposition": "deferred-not-routed",
+      "targets": [],
+      "rationale": "Contract-promotion workflows are excluded from active Alpha concepts."
+    },
+    {
+      "sourcePath": "agent-skills/future/skills/blackbox-pr-verification/SKILL.md",
+      "sourceSha256": "3a5848140a75a860947429f81f666e870740ceb7d56b9f2e47bcf46366920fea",
+      "verifiedSourceSha256": "3a5848140a75a860947429f81f666e870740ceb7d56b9f2e47bcf46366920fea",
+      "sourceClass": "deferred",
+      "disposition": "deferred-not-routed",
+      "targets": [],
+      "rationale": "PR verification is a future workflow and is not a discovery route."
+    },
+    {
+      "sourcePath": "agent-skills/future/skills/blackbox-proof-plan/SKILL.md",
+      "sourceSha256": "5455065e8889439f2422f19b1db266c0e5123246dc3c939b79437c981397657d",
+      "verifiedSourceSha256": "5455065e8889439f2422f19b1db266c0e5123246dc3c939b79437c981397657d",
+      "sourceClass": "deferred",
+      "disposition": "deferred-not-routed",
+      "targets": [],
+      "rationale": "Proof-plan workflow is outside active Alpha."
+    },
+    {
+      "sourcePath": "agent-skills/future/skills/blackbox-requirements/SKILL.md",
+      "sourceSha256": "fafb4acc6b21728f572eb0d59b6fac62d6dba55f0450b48817aa7218a23530bd",
+      "verifiedSourceSha256": "fafb4acc6b21728f572eb0d59b6fac62d6dba55f0450b48817aa7218a23530bd",
+      "sourceClass": "deferred",
+      "disposition": "deferred-not-routed",
+      "targets": [],
+      "rationale": "Requirements workflow is outside active Alpha."
+    },
+    {
+      "sourcePath": "agent-skills/skills/blackbox-artifact-reader/SKILL.md",
+      "sourceSha256": "905c641ecd952a7642815673d71a97d71b0df3b73b01a107bd24df67ba66ae43",
+      "verifiedSourceSha256": "905c641ecd952a7642815673d71a97d71b0df3b73b01a107bd24df67ba66ae43",
+      "sourceClass": "active",
+      "disposition": "adapted-and-consolidated",
+      "targets": ["skills/discovery/references/evidence-and-reports.md"],
+      "rationale": "Retains exact identity, schema/version, source-pointer, reference, and missing-data discipline; old artifact-family assumptions are not active contracts."
+    },
+    {
+      "sourcePath": "agent-skills/skills/blackbox-async-flows/SKILL.md",
+      "sourceSha256": "d1743c930e70994e08509b4617ffb6067735c2f561f30983bc59d340550fcbc1",
+      "verifiedSourceSha256": "d1743c930e70994e08509b4617ffb6067735c2f561f30983bc59d340550fcbc1",
+      "sourceClass": "active",
+      "disposition": "retained-as-reference",
+      "targets": ["skills/discovery/references/async-workflows.md"],
+      "rationale": "Preserves bounded terminal conditions, correlation, retry isolation, and limits on absence and exact-count claims; removes proposed async DSL behavior."
+    },
+    {
+      "sourcePath": "agent-skills/skills/blackbox-capsule/SKILL.md",
+      "sourceSha256": "30ac6af2ac27eb56a4decee7ac87a80d54ce5154badda1c28dfbc191cd7c9608",
+      "verifiedSourceSha256": "30ac6af2ac27eb56a4decee7ac87a80d54ce5154badda1c28dfbc191cd7c9608",
+      "sourceClass": "active",
+      "disposition": "adapted-and-consolidated",
+      "targets": ["skills/discovery/references/capsule-experiments.md"],
+      "rationale": "Preserves bounded experiment design, separate Activity outcomes, exact identities, Checkpoint authority, teardown, and Capsule-to-test handoff; removes unaccepted argv examples."
+    },
+    {
+      "sourcePath": "agent-skills/skills/blackbox-ci/SKILL.md",
+      "sourceSha256": "676ed8c3a2a9304f604cfd79e9dfe812025bcfffde0e80a5d7135c3f67c60ddb",
+      "verifiedSourceSha256": "676ed8c3a2a9304f604cfd79e9dfe812025bcfffde0e80a5d7135c3f67c60ddb",
+      "sourceClass": "active",
+      "disposition": "retained-as-reference",
+      "targets": ["skills/discovery/references/ci.md"],
+      "rationale": "Preserves native Playwright, failure-safe evidence retention, per-job identity, scoped cleanup, and honest gate semantics."
+    },
+    {
+      "sourcePath": "agent-skills/skills/blackbox-cli/SKILL.md",
+      "sourceSha256": "1b5757b7e0a6876188b42b48e61cc02dba8d1d33728ea0e8cb7d4f7df6a9b762",
+      "verifiedSourceSha256": "1b5757b7e0a6876188b42b48e61cc02dba8d1d33728ea0e8cb7d4f7df6a9b762",
+      "sourceClass": "active",
+      "disposition": "adapted-and-consolidated",
+      "targets": [
+        "skills/discovery/SKILL.md",
+        "skills/discovery/references/capsule-experiments.md"
+      ],
+      "rationale": "Retains capability inspection and honest stop/handoff. Historical flags, envelopes, output formats, and installer details are excluded where the accepted contract has not settled them."
+    },
+    {
+      "sourcePath": "agent-skills/skills/blackbox-configure/SKILL.md",
+      "sourceSha256": "00c1fb488675a7b15957a12594e498f9476a5e77d48c45676c3cfa5021291c6c",
+      "verifiedSourceSha256": "00c1fb488675a7b15957a12594e498f9476a5e77d48c45676c3cfa5021291c6c",
+      "sourceClass": "active",
+      "disposition": "adapted-and-consolidated",
+      "targets": ["skills/discovery/references/topology-and-catalog.md"],
+      "rationale": "Replaces the historical TypeScript catalog with the canonical YAML authority, ordered plain Compose references, and shared language-neutral plan."
+    },
+    {
+      "sourcePath": "agent-skills/skills/blackbox-effects/SKILL.md",
+      "sourceSha256": "7435b13ad176cf3123a6f86ba43bc1dcefdc5fb763d944387df5a333a1ff1a5b",
+      "verifiedSourceSha256": "7435b13ad176cf3123a6f86ba43bc1dcefdc5fb763d944387df5a333a1ff1a5b",
+      "sourceClass": "active",
+      "disposition": "adapted-and-consolidated",
+      "targets": ["skills/discovery/references/effects-and-baselines.md"],
+      "rationale": "Preserves effect semantics, scoped counts, correlation, and capture limits; schema-specific matcher names remain version-directed."
+    },
+    {
+      "sourcePath": "agent-skills/skills/blackbox-evidence-query/SKILL.md",
+      "sourceSha256": "ab98dab7467836d0ff9af014d4942cd83d3e8b4ef9a0badff6bd2d95fdb84477",
+      "verifiedSourceSha256": "ab98dab7467836d0ff9af014d4942cd83d3e8b4ef9a0badff6bd2d95fdb84477",
+      "sourceClass": "active",
+      "disposition": "adapted-and-consolidated",
+      "targets": ["skills/discovery/references/evidence-and-reports.md"],
+      "rationale": "Preserves narrow schema-directed queries and missing-value distinctions without importing historical query recipes or treating extraction as verification."
+    },
+    {
+      "sourcePath": "agent-skills/skills/blackbox-findings/SKILL.md",
+      "sourceSha256": "51bf3033f99aee2b4afa182c6d13b60c7bac5688e92a05e13cb6214d3a675ac3",
+      "verifiedSourceSha256": "51bf3033f99aee2b4afa182c6d13b60c7bac5688e92a05e13cb6214d3a675ac3",
+      "sourceClass": "active",
+      "disposition": "adapted-and-consolidated",
+      "targets": [
+        "skills/discovery/references/evidence-and-reports.md",
+        "skills/discovery/references/troubleshooting-and-repair.md"
+      ],
+      "rationale": "Preserves finding-to-evidence tracing and distinguishes product defects from capture, configuration, and runner failures."
+    },
+    {
+      "sourcePath": "agent-skills/skills/blackbox-instrumentation/SKILL.md",
+      "sourceSha256": "7055f00766660278d683f2939306ff11081d15b336e4bbe0dfabce8aa0df24c8",
+      "verifiedSourceSha256": "7055f00766660278d683f2939306ff11081d15b336e4bbe0dfabce8aa0df24c8",
+      "sourceClass": "active",
+      "disposition": "adapted-and-consolidated",
+      "targets": ["skills/discovery/references/runtime-observation.md"],
+      "rationale": "Reorients to Alex-owned instrumentation, generic OTLP, Node activation, and the provisional activation ABI; removes bundled application instrumentation assumptions."
+    },
+    {
+      "sourcePath": "agent-skills/skills/blackbox-odc/SKILL.md",
+      "sourceSha256": "30bd76c7e3f01ef6be1e9f477a841189236d5cb12ff34c3c3d05c3a5b57eeca8",
+      "verifiedSourceSha256": "30bd76c7e3f01ef6be1e9f477a841189236d5cb12ff34c3c3d05c3a5b57eeca8",
+      "sourceClass": "active",
+      "disposition": "deferred-not-routed",
+      "targets": [],
+      "rationale": "ODC is optional Post-Alpha. The active skill only records its non-gating boundary and does not route to ODC workflows."
+    },
+    {
+      "sourcePath": "agent-skills/skills/blackbox-playwright/SKILL.md",
+      "sourceSha256": "89ac7073367815def4445b0733c4d43af91fa13e99365f449a75c4107159074a",
+      "verifiedSourceSha256": "89ac7073367815def4445b0733c4d43af91fa13e99365f449a75c4107159074a",
+      "sourceClass": "active",
+      "disposition": "adapted-and-consolidated",
+      "targets": ["skills/discovery/references/playwright-and-authoring.md"],
+      "rationale": "Preserves native runner use, test boundaries, fixtures, physical attempts, retries, and failure semantics; historical exports/options are not promised."
+    },
+    {
+      "sourcePath": "agent-skills/skills/blackbox-project-discovery/SKILL.md",
+      "sourceSha256": "79e18a89fc261e9275c7f67a990780efabce4d5807d9b66bc371f35a8b2feee1",
+      "verifiedSourceSha256": "79e18a89fc261e9275c7f67a990780efabce4d5807d9b66bc371f35a8b2feee1",
+      "sourceClass": "active",
+      "disposition": "adapted-and-consolidated",
+      "targets": ["skills/discovery/references/topology-and-catalog.md"],
+      "rationale": "Consolidates source-backed topology discovery, inferred-edge labeling, readiness, state, dependencies, and unresolved-boundary reporting."
+    },
+    {
+      "sourcePath": "agent-skills/skills/blackbox-repair-loop/SKILL.md",
+      "sourceSha256": "5bacfa527a7c10a80b4538cafce57cbc859887e2cdedbc2b12933de53af2e10d",
+      "verifiedSourceSha256": "5bacfa527a7c10a80b4538cafce57cbc859887e2cdedbc2b12933de53af2e10d",
+      "sourceClass": "active",
+      "disposition": "adapted-and-consolidated",
+      "targets": ["skills/discovery/references/troubleshooting-and-repair.md"],
+      "rationale": "Retains evidence-backed, bounded implementation diagnosis and fresh rerun guidance without autonomous repair or blanket reapproval rules."
+    },
+    {
+      "sourcePath": "agent-skills/skills/blackbox-report-reader/SKILL.md",
+      "sourceSha256": "100f769f162e908c65f9662371594e8890f118ecd0f391e522a9d8e27f692404",
+      "verifiedSourceSha256": "100f769f162e908c65f9662371594e8890f118ecd0f391e522a9d8e27f692404",
+      "sourceClass": "active",
+      "disposition": "adapted-and-consolidated",
+      "targets": ["skills/discovery/references/evidence-and-reports.md"],
+      "rationale": "Preserves read-only report interpretation, exact run selection, retries, evaluator distinctions, and original evidence pointers."
+    },
+    {
+      "sourcePath": "agent-skills/skills/blackbox-router/SKILL.md",
+      "sourceSha256": "1225fc69a63ac6991b811b6dffad45ff30f6eb474a8c7874c4b91c994d423900",
+      "verifiedSourceSha256": "1225fc69a63ac6991b811b6dffad45ff30f6eb474a8c7874c4b91c994d423900",
+      "sourceClass": "active",
+      "disposition": "adapted-and-consolidated",
+      "targets": ["skills/discovery/SKILL.md"],
+      "rationale": "Becomes the single discovery entrypoint with progressive routes to relevant references; no default routes to ODC or deferred workflows."
+    },
+    {
+      "sourcePath": "agent-skills/skills/blackbox-snapshots/SKILL.md",
+      "sourceSha256": "66e9bb58b6047f242dc207f2b6acea24672a89aebc90369e939eef9ab2a66e80",
+      "verifiedSourceSha256": "66e9bb58b6047f242dc207f2b6acea24672a89aebc90369e939eef9ab2a66e80",
+      "sourceClass": "active",
+      "disposition": "adapted-and-consolidated",
+      "targets": ["skills/discovery/references/effects-and-baselines.md"],
+      "rationale": "Replaces source-era snapshot update flow with the accepted exact-run baseline selector and separates observed candidates from accepted behavior."
+    },
+    {
+      "sourcePath": "agent-skills/skills/blackbox-test-authoring/SKILL.md",
+      "sourceSha256": "e5e5916e2453ade5974d926e4f0b76c65fecbbbc9a5e53b52966a9d2e99094bf",
+      "verifiedSourceSha256": "e5e5916e2453ade5974d926e4f0b76c65fecbbbc9a5e53b52966a9d2e99094bf",
+      "sourceClass": "active",
+      "disposition": "adapted-and-consolidated",
+      "targets": ["skills/discovery/references/playwright-and-authoring.md"],
+      "rationale": "Preserves claim-to-evidence planning, test boundaries, fixture independence, async completion, and explicit unverified claims."
+    },
+    {
+      "sourcePath": "agent-skills/skills/blackbox-troubleshoot/SKILL.md",
+      "sourceSha256": "22f2daf59df9ae9be39b77d8ab52c2d95a76034140e4a3ac28d98df5e1db0779",
+      "verifiedSourceSha256": "22f2daf59df9ae9be39b77d8ab52c2d95a76034140e4a3ac28d98df5e1db0779",
+      "sourceClass": "active",
+      "disposition": "adapted-and-consolidated",
+      "targets": ["skills/discovery/references/troubleshooting-and-repair.md"],
+      "rationale": "Preserves stage-directed diagnosis, bounded evidence-backed repair, and scoped resource cleanup; removes historical commands as promises."
+    },
+    {
+      "sourcePath": "agent-skills/skills/blackbox-validate-setup/SKILL.md",
+      "sourceSha256": "ee231b14c0e1bd30fd21f825232b52406d46c1f269ffcf737456dda2b2cc0748",
+      "verifiedSourceSha256": "ee231b14c0e1bd30fd21f825232b52406d46c1f269ffcf737456dda2b2cc0748",
+      "sourceClass": "active",
+      "disposition": "adapted-and-consolidated",
+      "targets": [
+        "skills/discovery/references/topology-and-catalog.md",
+        "skills/discovery/references/runtime-observation.md"
+      ],
+      "rationale": "Consolidates static catalog validation and optional authorized live probing while distinguishing authored, validated, exercised, and observed states."
+    },
+    {
+      "sourcePath": "agent-skills/skills/blackbox-verification/SKILL.md",
+      "sourceSha256": "9eed4b0342fbff11a38c17785bdb3195a3e81a530beaa82685368728a5cf07eb",
+      "verifiedSourceSha256": "9eed4b0342fbff11a38c17785bdb3195a3e81a530beaa82685368728a5cf07eb",
+      "sourceClass": "active",
+      "disposition": "adapted-and-consolidated",
+      "targets": [
+        "skills/discovery/references/evidence-and-reports.md",
+        "skills/discovery/references/effects-and-baselines.md"
+      ],
+      "rationale": "Preserves claim-relative evidence limits and evaluator authority; prevents agent explanations from becoming canonical verdicts."
+    },
+    {
+      "sourcePath": "agent-skills/skills/blackbox-walkthrough/SKILL.md",
+      "sourceSha256": "6c9a140fd2890843611f714645eb07cdbbfca0489c7eb6c41254e7cb6067dcec",
+      "verifiedSourceSha256": "6c9a140fd2890843611f714645eb07cdbbfca0489c7eb6c41254e7cb6067dcec",
+      "sourceClass": "active",
+      "disposition": "retired-name-consolidated",
+      "targets": ["skills/discovery/SKILL.md"],
+      "rationale": "Replaced by the public discovery name and current Alpha workflow; no walkthrough name or install command is retained."
+    }
+  ]
+}

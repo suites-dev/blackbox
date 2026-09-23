@@ -1,0 +1,43 @@
+{
+	"schemaVersion": 2,
+	"artifactRole": "assertion-observations",
+	"runId": "01M25KNEH3C9BC4HVE743DBF2T",
+	"attemptId": "121404c269c8700a54812986a122107e",
+	"playwrightTestId": "16c3faa07c6fdef3bf8c-6fefe7f7bc54019351a6",
+	"scenarioId": "subscription-rejection.rejects-a-second-subscription-for-the-same-user-with-409-before",
+	"project": "per-worker",
+	"retry": 0,
+	"planComplete": true,
+	"scenarioResult": true,
+	"scenarioResultReason": null,
+	"assertions": [
+		{
+			"assertionId": "subscription-rejection.rejects-a-second-subscription-for-the-same-user-with-409-before/step:2",
+			"ordinal": 2,
+			"title": "Assert 409 with the duplicate-subscription outcome",
+			"declaration": {
+				"path": "tests/suites/subscription-rejection.suite.ts",
+				"line": 73,
+				"column": 4
+			},
+			"evaluation": true,
+			"reason": null,
+			"titleCorroborated": false,
+			"terminalAttribution": "no-attributable-expect-failure"
+		},
+		{
+			"assertionId": "subscription-rejection.rejects-a-second-subscription-for-the-same-user-with-409-before/step:3",
+			"ordinal": 3,
+			"title": "Assert fixture state still holds only the first subscription's effects",
+			"declaration": {
+				"path": "tests/suites/subscription-rejection.suite.ts",
+				"line": 83,
+				"column": 4
+			},
+			"evaluation": true,
+			"reason": null,
+			"titleCorroborated": false,
+			"terminalAttribution": "no-attributable-expect-failure"
+		}
+	]
+}

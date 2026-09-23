@@ -1,0 +1,205 @@
+{
+	"type": "effects",
+	"flowId": "fixture-control",
+	"attemptId": "eaa57bf01335c6bc1cf0549a3b647ed1",
+	"outcome": "captured",
+	"observed": {
+		"schemaVersion": 2,
+		"entry": {
+			"service": "payment-mock",
+			"request": "POST /v1/payment_intents",
+			"status": 201
+		},
+		"entryResolution": {
+			"status": "resolved"
+		},
+		"summary": {
+			"counts": {
+				"inbound": 8,
+				"outboundHttp": 2,
+				"sql": 11,
+				"cache": 2,
+				"messaging": 0
+			},
+			"services": [
+				"payment-mock",
+				"public-api"
+			],
+			"edges": [
+				{
+					"caller": "public-api",
+					"callee": "localstack"
+				},
+				{
+					"caller": "public-api",
+					"callee": "payment-mock"
+				}
+			]
+		},
+		"services": {
+			"payment-mock": {
+				"inbound": [
+					{
+						"method": "GET",
+						"path": "/fixture/state",
+						"status": 200,
+						"count": 2,
+						"origin": "fixture-control"
+					},
+					{
+						"method": "POST",
+						"path": "/fixture/reset",
+						"status": 200,
+						"count": 1,
+						"origin": "fixture-control"
+					},
+					{
+						"method": "POST",
+						"path": "/v1/payment_intents",
+						"status": 201,
+						"count": 1,
+						"origin": "sut"
+					},
+					{
+						"method": "POST",
+						"path": "/v1/refunds",
+						"status": 201,
+						"count": 1,
+						"origin": "sut"
+					},
+					{
+						"method": "POST",
+						"path": "/v1/refunds",
+						"status": 404,
+						"count": 1,
+						"origin": "sut"
+					},
+					{
+						"method": "POST",
+						"path": "/v1/refunds",
+						"status": 409,
+						"count": 1,
+						"origin": "sut"
+					}
+				]
+			},
+			"public-api": {
+				"inbound": [
+					{
+						"method": "POST",
+						"path": "/fixture/reset",
+						"status": 200,
+						"count": 1,
+						"origin": "fixture-control"
+					}
+				],
+				"outboundHttp": [
+					{
+						"callee": "localstack",
+						"method": "POST",
+						"path": "/",
+						"status": 200,
+						"count": "1+",
+						"origin": "fixture-control"
+					},
+					{
+						"callee": "payment-mock",
+						"method": "GET",
+						"path": "/fixture/state",
+						"status": 200,
+						"count": 1,
+						"origin": "fixture-control"
+					},
+					{
+						"callee": "payment-mock",
+						"method": "POST",
+						"path": "/fixture/reset",
+						"status": 200,
+						"count": 1,
+						"origin": "fixture-control"
+					}
+				],
+				"sql": [
+					{
+						"operation": "BEGIN",
+						"statement": "BEGIN",
+						"count": 1,
+						"origin": "fixture-control"
+					},
+					{
+						"operation": "COMMIT",
+						"statement": "COMMIT",
+						"count": 1,
+						"origin": "fixture-control"
+					},
+					{
+						"operation": "DELETE",
+						"table": "users",
+						"statement": "DELETE FROM users",
+						"count": 1,
+						"origin": "fixture-control"
+					},
+					{
+						"operation": "INSERT",
+						"table": "users",
+						"statement": "INSERT INTO users (user_id, tier, execution_path) VALUES ($1, $2, $3)",
+						"count": 5,
+						"origin": "fixture-control"
+					},
+					{
+						"operation": "SELECT",
+						"table": "fraud_audit",
+						"statement": "SELECT id::text, user_id AS \"userId\", decision, hint_profile AS \"hintProfile\" FROM fraud_audit ORDER BY id",
+						"count": 1,
+						"origin": "fixture-control"
+					},
+					{
+						"operation": "SELECT",
+						"table": "subscriptions",
+						"statement": "SELECT id, user_id AS \"userId\", tier, status, payment_intent_id AS \"paymentIntentId\", order_id AS \"orderId\" FROM subscriptions ORDER BY user_id",
+						"count": 1,
+						"origin": "fixture-control"
+					},
+					{
+						"operation": "TRUNCATE",
+						"table": "subscriptions",
+						"statement": "TRUNCATE subscriptions, fraud_audit RESTART IDENTITY",
+						"count": 1,
+						"origin": "fixture-control"
+					}
+				],
+				"cache": [
+					{
+						"system": "redis",
+						"command": "FLUSHDB",
+						"keyPattern": "<none>",
+						"count": 1,
+						"origin": "fixture-control"
+					},
+					{
+						"system": "redis",
+						"command": "KEYS",
+						"keyPattern": "<redacted>",
+						"count": 1,
+						"origin": "fixture-control"
+					}
+				]
+			}
+		},
+		"errors": []
+	},
+	"expectedPath": null,
+	"captureReason": "no-baseline-comparison-requested",
+	"entryResolution": {
+		"status": "resolved"
+	},
+	"rootSpan": {
+		"spanId": "2b7c0fd0fb651544",
+		"name": "POST /v1/payment_intents",
+		"service": "payment-mock",
+		"error": false,
+		"durationMs": 0.48
+	},
+	"semanticStepId": "act",
+	"runtimeActSpanId": "fbc54f0e5a93e9bd"
+}

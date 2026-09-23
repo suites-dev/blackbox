@@ -1,0 +1,1543 @@
+{
+	"schemaVersion": 1,
+	"artifactRole": "effects-projection-comparison",
+	"runId": "01M25KNEH3C9BC4HVE743DBF2T",
+	"attemptId": "d50124a1e5baa337d1858ee4ed586419",
+	"outcome": "equal",
+	"differences": [],
+	"live": {
+		"snapshot": {
+			"schemaVersion": 2,
+			"entry": {
+				"service": "public-api",
+				"request": "POST /subscriptions",
+				"status": 201
+			},
+			"entryResolution": {
+				"status": "resolved"
+			},
+			"summary": {
+				"counts": {
+					"inbound": 6,
+					"outboundHttp": 3,
+					"sql": 15,
+					"cache": 10,
+					"messaging": 0
+				},
+				"services": [
+					"payment-mock",
+					"public-api"
+				],
+				"edges": [
+					{
+						"caller": "public-api",
+						"callee": "localstack"
+					},
+					{
+						"caller": "public-api",
+						"callee": "payment-mock"
+					}
+				]
+			},
+			"services": {
+				"payment-mock": {
+					"inbound": [
+						{
+							"method": "GET",
+							"path": "/fixture/state",
+							"status": 200,
+							"count": 2,
+							"origin": "fixture-control"
+						},
+						{
+							"method": "POST",
+							"path": "/fixture/reset",
+							"status": 200,
+							"count": 1,
+							"origin": "fixture-control"
+						}
+					]
+				},
+				"public-api": {
+					"inbound": [
+						{
+							"method": "GET",
+							"path": "/fixture/state",
+							"status": 200,
+							"count": 1,
+							"origin": "fixture-control"
+						},
+						{
+							"method": "POST",
+							"path": "/fixture/reset",
+							"status": 200,
+							"count": 1,
+							"origin": "fixture-control"
+						},
+						{
+							"method": "POST",
+							"path": "/subscriptions",
+							"status": 201,
+							"count": 1,
+							"origin": "sut"
+						}
+					],
+					"outboundHttp": [
+						{
+							"callee": "localstack",
+							"method": "POST",
+							"path": "/",
+							"status": 200,
+							"count": "1+",
+							"origin": "fixture-control"
+						},
+						{
+							"callee": "payment-mock",
+							"method": "GET",
+							"path": "/fixture/state",
+							"status": 200,
+							"count": 2,
+							"origin": "fixture-control"
+						},
+						{
+							"callee": "payment-mock",
+							"method": "POST",
+							"path": "/fixture/reset",
+							"status": 200,
+							"count": 1,
+							"origin": "fixture-control"
+						}
+					],
+					"sql": [
+						{
+							"operation": "BEGIN",
+							"statement": "BEGIN",
+							"count": 1,
+							"origin": "fixture-control"
+						},
+						{
+							"operation": "COMMIT",
+							"statement": "COMMIT",
+							"count": 1,
+							"origin": "fixture-control"
+						},
+						{
+							"operation": "DELETE",
+							"table": "users",
+							"statement": "DELETE FROM users",
+							"count": 1,
+							"origin": "fixture-control"
+						},
+						{
+							"operation": "INSERT",
+							"table": "users",
+							"statement": "INSERT INTO users (user_id, tier, execution_path) VALUES ($1, $2, $3)",
+							"count": 5,
+							"origin": "fixture-control"
+						},
+						{
+							"operation": "SELECT",
+							"table": "fraud_audit",
+							"statement": "SELECT id::text, user_id AS \"userId\", decision, hint_profile AS \"hintProfile\" FROM fraud_audit ORDER BY id",
+							"count": 2,
+							"origin": "fixture-control"
+						},
+						{
+							"operation": "SELECT",
+							"table": "subscriptions",
+							"statement": "SELECT id, user_id AS \"userId\", tier, status, payment_intent_id AS \"paymentIntentId\", order_id AS \"orderId\" FROM subscriptions ORDER BY user_id",
+							"count": 2,
+							"origin": "fixture-control"
+						},
+						{
+							"operation": "TRUNCATE",
+							"table": "subscriptions",
+							"statement": "TRUNCATE subscriptions, fraud_audit RESTART IDENTITY",
+							"count": 1,
+							"origin": "fixture-control"
+						},
+						{
+							"operation": "INSERT",
+							"table": "subscriptions",
+							"statement": "INSERT INTO subscriptions (id, user_id, tier, status, payment_intent_id, order_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, status",
+							"count": 1,
+							"origin": "sut"
+						},
+						{
+							"operation": "SELECT",
+							"table": "subscriptions",
+							"statement": "SELECT u.user_id AS \"userId\", u.tier, u.execution_path AS \"executionPath\", EXISTS (SELECT ? FROM subscriptions s WHERE s.user_id = u.user_id) AS \"hasSubscription\" FROM users u WHERE u.user_id = $1",
+							"count": 1,
+							"origin": "sut"
+						}
+					],
+					"cache": [
+						{
+							"system": "redis",
+							"command": "FLUSHDB",
+							"keyPattern": "<none>",
+							"count": 1,
+							"origin": "fixture-control"
+						},
+						{
+							"system": "redis",
+							"command": "KEYS",
+							"keyPattern": "<redacted>",
+							"count": 2,
+							"origin": "fixture-control"
+						},
+						{
+							"system": "redis",
+							"command": "MGET",
+							"keyPattern": "<redacted>",
+							"count": 2,
+							"origin": "fixture-control"
+						},
+						{
+							"system": "redis",
+							"command": "SET",
+							"keyPattern": "hint:returning:eve",
+							"count": 1,
+							"origin": "fixture-control"
+						},
+						{
+							"system": "redis",
+							"command": "GET",
+							"keyPattern": "hint:returning:eve",
+							"count": 1,
+							"origin": "sut"
+						},
+						{
+							"system": "redis",
+							"command": "GET",
+							"keyPattern": "user:eve:tier",
+							"count": 1,
+							"origin": "sut"
+						},
+						{
+							"system": "redis",
+							"command": "SET",
+							"keyPattern": "reg:eve",
+							"count": 1,
+							"origin": "sut"
+						},
+						{
+							"system": "redis",
+							"command": "SET",
+							"keyPattern": "user:eve:tier",
+							"count": 1,
+							"origin": "sut"
+						}
+					]
+				}
+			},
+			"errors": []
+		},
+		"binding": {
+			"entryResolution": {
+				"status": "resolved"
+			},
+			"rootSpan": {
+				"spanId": "4aec4ae205056c0a",
+				"name": "POST /subscriptions",
+				"service": "public-api",
+				"error": false,
+				"durationMs": 3.703
+			},
+			"semanticStepId": "act",
+			"runtimeActSpanId": "92e4659aef215a39"
+		},
+		"effects": [
+			{
+				"serviceId": "payment-mock",
+				"effect": {
+					"effectId": "effect-1",
+					"boundary": "http",
+					"operation": "GET",
+					"target": "/fixture/state",
+					"status": "200",
+					"origin": "fixture-control",
+					"attributes": {
+						"direction": "inbound"
+					}
+				}
+			},
+			{
+				"serviceId": "payment-mock",
+				"effect": {
+					"effectId": "effect-2",
+					"boundary": "http",
+					"operation": "GET",
+					"target": "/fixture/state",
+					"status": "200",
+					"origin": "fixture-control",
+					"attributes": {
+						"direction": "inbound"
+					}
+				}
+			},
+			{
+				"serviceId": "payment-mock",
+				"effect": {
+					"effectId": "effect-3",
+					"boundary": "http",
+					"operation": "POST",
+					"target": "/fixture/reset",
+					"status": "200",
+					"origin": "fixture-control",
+					"attributes": {
+						"direction": "inbound"
+					}
+				}
+			},
+			{
+				"serviceId": "public-api",
+				"effect": {
+					"effectId": "effect-4",
+					"boundary": "http",
+					"operation": "GET",
+					"target": "/fixture/state",
+					"status": "200",
+					"origin": "fixture-control",
+					"attributes": {
+						"direction": "inbound"
+					}
+				}
+			},
+			{
+				"serviceId": "public-api",
+				"effect": {
+					"effectId": "effect-5",
+					"boundary": "http",
+					"operation": "POST",
+					"target": "/fixture/reset",
+					"status": "200",
+					"origin": "fixture-control",
+					"attributes": {
+						"direction": "inbound"
+					}
+				}
+			},
+			{
+				"serviceId": "public-api",
+				"effect": {
+					"effectId": "effect-6",
+					"boundary": "http",
+					"operation": "POST",
+					"target": "/subscriptions",
+					"status": "201",
+					"origin": "sut",
+					"attributes": {
+						"direction": "inbound"
+					}
+				}
+			},
+			{
+				"serviceId": "public-api",
+				"effect": {
+					"effectId": "effect-7",
+					"boundary": "http",
+					"operation": "POST",
+					"target": "localstack:/",
+					"status": "200",
+					"origin": "fixture-control",
+					"attributes": {
+						"direction": "outbound",
+						"callee": "localstack"
+					}
+				}
+			},
+			{
+				"serviceId": "public-api",
+				"effect": {
+					"effectId": "effect-8",
+					"boundary": "http",
+					"operation": "GET",
+					"target": "payment-mock:/fixture/state",
+					"status": "200",
+					"origin": "fixture-control",
+					"attributes": {
+						"direction": "outbound",
+						"callee": "payment-mock"
+					}
+				}
+			},
+			{
+				"serviceId": "public-api",
+				"effect": {
+					"effectId": "effect-9",
+					"boundary": "http",
+					"operation": "GET",
+					"target": "payment-mock:/fixture/state",
+					"status": "200",
+					"origin": "fixture-control",
+					"attributes": {
+						"direction": "outbound",
+						"callee": "payment-mock"
+					}
+				}
+			},
+			{
+				"serviceId": "public-api",
+				"effect": {
+					"effectId": "effect-10",
+					"boundary": "http",
+					"operation": "POST",
+					"target": "payment-mock:/fixture/reset",
+					"status": "200",
+					"origin": "fixture-control",
+					"attributes": {
+						"direction": "outbound",
+						"callee": "payment-mock"
+					}
+				}
+			},
+			{
+				"serviceId": "public-api",
+				"effect": {
+					"effectId": "effect-11",
+					"boundary": "postgres",
+					"operation": "BEGIN",
+					"target": null,
+					"status": null,
+					"origin": "fixture-control",
+					"attributes": {
+						"statement": "BEGIN"
+					}
+				}
+			},
+			{
+				"serviceId": "public-api",
+				"effect": {
+					"effectId": "effect-12",
+					"boundary": "postgres",
+					"operation": "COMMIT",
+					"target": null,
+					"status": null,
+					"origin": "fixture-control",
+					"attributes": {
+						"statement": "COMMIT"
+					}
+				}
+			},
+			{
+				"serviceId": "public-api",
+				"effect": {
+					"effectId": "effect-13",
+					"boundary": "postgres",
+					"operation": "DELETE",
+					"target": "users",
+					"status": null,
+					"origin": "fixture-control",
+					"attributes": {
+						"statement": "DELETE FROM users"
+					}
+				}
+			},
+			{
+				"serviceId": "public-api",
+				"effect": {
+					"effectId": "effect-14",
+					"boundary": "postgres",
+					"operation": "INSERT",
+					"target": "users",
+					"status": null,
+					"origin": "fixture-control",
+					"attributes": {
+						"statement": "INSERT INTO users (user_id, tier, execution_path) VALUES ($1, $2, $3)"
+					}
+				}
+			},
+			{
+				"serviceId": "public-api",
+				"effect": {
+					"effectId": "effect-15",
+					"boundary": "postgres",
+					"operation": "INSERT",
+					"target": "users",
+					"status": null,
+					"origin": "fixture-control",
+					"attributes": {
+						"statement": "INSERT INTO users (user_id, tier, execution_path) VALUES ($1, $2, $3)"
+					}
+				}
+			},
+			{
+				"serviceId": "public-api",
+				"effect": {
+					"effectId": "effect-16",
+					"boundary": "postgres",
+					"operation": "INSERT",
+					"target": "users",
+					"status": null,
+					"origin": "fixture-control",
+					"attributes": {
+						"statement": "INSERT INTO users (user_id, tier, execution_path) VALUES ($1, $2, $3)"
+					}
+				}
+			},
+			{
+				"serviceId": "public-api",
+				"effect": {
+					"effectId": "effect-17",
+					"boundary": "postgres",
+					"operation": "INSERT",
+					"target": "users",
+					"status": null,
+					"origin": "fixture-control",
+					"attributes": {
+						"statement": "INSERT INTO users (user_id, tier, execution_path) VALUES ($1, $2, $3)"
+					}
+				}
+			},
+			{
+				"serviceId": "public-api",
+				"effect": {
+					"effectId": "effect-18",
+					"boundary": "postgres",
+					"operation": "INSERT",
+					"target": "users",
+					"status": null,
+					"origin": "fixture-control",
+					"attributes": {
+						"statement": "INSERT INTO users (user_id, tier, execution_path) VALUES ($1, $2, $3)"
+					}
+				}
+			},
+			{
+				"serviceId": "public-api",
+				"effect": {
+					"effectId": "effect-19",
+					"boundary": "postgres",
+					"operation": "SELECT",
+					"target": "fraud_audit",
+					"status": null,
+					"origin": "fixture-control",
+					"attributes": {
+						"statement": "SELECT id::text, user_id AS \"userId\", decision, hint_profile AS \"hintProfile\" FROM fraud_audit ORDER BY id"
+					}
+				}
+			},
+			{
+				"serviceId": "public-api",
+				"effect": {
+					"effectId": "effect-20",
+					"boundary": "postgres",
+					"operation": "SELECT",
+					"target": "fraud_audit",
+					"status": null,
+					"origin": "fixture-control",
+					"attributes": {
+						"statement": "SELECT id::text, user_id AS \"userId\", decision, hint_profile AS \"hintProfile\" FROM fraud_audit ORDER BY id"
+					}
+				}
+			},
+			{
+				"serviceId": "public-api",
+				"effect": {
+					"effectId": "effect-21",
+					"boundary": "postgres",
+					"operation": "SELECT",
+					"target": "subscriptions",
+					"status": null,
+					"origin": "fixture-control",
+					"attributes": {
+						"statement": "SELECT id, user_id AS \"userId\", tier, status, payment_intent_id AS \"paymentIntentId\", order_id AS \"orderId\" FROM subscriptions ORDER BY user_id"
+					}
+				}
+			},
+			{
+				"serviceId": "public-api",
+				"effect": {
+					"effectId": "effect-22",
+					"boundary": "postgres",
+					"operation": "SELECT",
+					"target": "subscriptions",
+					"status": null,
+					"origin": "fixture-control",
+					"attributes": {
+						"statement": "SELECT id, user_id AS \"userId\", tier, status, payment_intent_id AS \"paymentIntentId\", order_id AS \"orderId\" FROM subscriptions ORDER BY user_id"
+					}
+				}
+			},
+			{
+				"serviceId": "public-api",
+				"effect": {
+					"effectId": "effect-23",
+					"boundary": "postgres",
+					"operation": "TRUNCATE",
+					"target": "subscriptions",
+					"status": null,
+					"origin": "fixture-control",
+					"attributes": {
+						"statement": "TRUNCATE subscriptions, fraud_audit RESTART IDENTITY"
+					}
+				}
+			},
+			{
+				"serviceId": "public-api",
+				"effect": {
+					"effectId": "effect-24",
+					"boundary": "postgres",
+					"operation": "INSERT",
+					"target": "subscriptions",
+					"status": null,
+					"origin": "sut",
+					"attributes": {
+						"statement": "INSERT INTO subscriptions (id, user_id, tier, status, payment_intent_id, order_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, status"
+					}
+				}
+			},
+			{
+				"serviceId": "public-api",
+				"effect": {
+					"effectId": "effect-25",
+					"boundary": "postgres",
+					"operation": "SELECT",
+					"target": "subscriptions",
+					"status": null,
+					"origin": "sut",
+					"attributes": {
+						"statement": "SELECT u.user_id AS \"userId\", u.tier, u.execution_path AS \"executionPath\", EXISTS (SELECT ? FROM subscriptions s WHERE s.user_id = u.user_id) AS \"hasSubscription\" FROM users u WHERE u.user_id = $1"
+					}
+				}
+			},
+			{
+				"serviceId": "public-api",
+				"effect": {
+					"effectId": "effect-26",
+					"boundary": "redis",
+					"operation": "FLUSHDB",
+					"target": "<none>",
+					"status": null,
+					"origin": "fixture-control",
+					"attributes": {}
+				}
+			},
+			{
+				"serviceId": "public-api",
+				"effect": {
+					"effectId": "effect-27",
+					"boundary": "redis",
+					"operation": "KEYS",
+					"target": "<redacted>",
+					"status": null,
+					"origin": "fixture-control",
+					"attributes": {}
+				}
+			},
+			{
+				"serviceId": "public-api",
+				"effect": {
+					"effectId": "effect-28",
+					"boundary": "redis",
+					"operation": "KEYS",
+					"target": "<redacted>",
+					"status": null,
+					"origin": "fixture-control",
+					"attributes": {}
+				}
+			},
+			{
+				"serviceId": "public-api",
+				"effect": {
+					"effectId": "effect-29",
+					"boundary": "redis",
+					"operation": "MGET",
+					"target": "<redacted>",
+					"status": null,
+					"origin": "fixture-control",
+					"attributes": {}
+				}
+			},
+			{
+				"serviceId": "public-api",
+				"effect": {
+					"effectId": "effect-30",
+					"boundary": "redis",
+					"operation": "MGET",
+					"target": "<redacted>",
+					"status": null,
+					"origin": "fixture-control",
+					"attributes": {}
+				}
+			},
+			{
+				"serviceId": "public-api",
+				"effect": {
+					"effectId": "effect-31",
+					"boundary": "redis",
+					"operation": "SET",
+					"target": "hint:returning:eve",
+					"status": null,
+					"origin": "fixture-control",
+					"attributes": {}
+				}
+			},
+			{
+				"serviceId": "public-api",
+				"effect": {
+					"effectId": "effect-32",
+					"boundary": "redis",
+					"operation": "GET",
+					"target": "hint:returning:eve",
+					"status": null,
+					"origin": "sut",
+					"attributes": {}
+				}
+			},
+			{
+				"serviceId": "public-api",
+				"effect": {
+					"effectId": "effect-33",
+					"boundary": "redis",
+					"operation": "GET",
+					"target": "user:eve:tier",
+					"status": null,
+					"origin": "sut",
+					"attributes": {}
+				}
+			},
+			{
+				"serviceId": "public-api",
+				"effect": {
+					"effectId": "effect-34",
+					"boundary": "redis",
+					"operation": "SET",
+					"target": "reg:eve",
+					"status": null,
+					"origin": "sut",
+					"attributes": {}
+				}
+			},
+			{
+				"serviceId": "public-api",
+				"effect": {
+					"effectId": "effect-35",
+					"boundary": "redis",
+					"operation": "SET",
+					"target": "user:eve:tier",
+					"status": null,
+					"origin": "sut",
+					"attributes": {}
+				}
+			}
+		]
+	},
+	"postHoc": {
+		"snapshot": {
+			"schemaVersion": 2,
+			"entry": {
+				"service": "public-api",
+				"request": "POST /subscriptions",
+				"status": 201
+			},
+			"entryResolution": {
+				"status": "resolved"
+			},
+			"summary": {
+				"counts": {
+					"inbound": 6,
+					"outboundHttp": 3,
+					"sql": 15,
+					"cache": 10,
+					"messaging": 0
+				},
+				"services": [
+					"payment-mock",
+					"public-api"
+				],
+				"edges": [
+					{
+						"caller": "public-api",
+						"callee": "localstack"
+					},
+					{
+						"caller": "public-api",
+						"callee": "payment-mock"
+					}
+				]
+			},
+			"services": {
+				"payment-mock": {
+					"inbound": [
+						{
+							"method": "GET",
+							"path": "/fixture/state",
+							"status": 200,
+							"count": 2,
+							"origin": "fixture-control"
+						},
+						{
+							"method": "POST",
+							"path": "/fixture/reset",
+							"status": 200,
+							"count": 1,
+							"origin": "fixture-control"
+						}
+					]
+				},
+				"public-api": {
+					"inbound": [
+						{
+							"method": "GET",
+							"path": "/fixture/state",
+							"status": 200,
+							"count": 1,
+							"origin": "fixture-control"
+						},
+						{
+							"method": "POST",
+							"path": "/fixture/reset",
+							"status": 200,
+							"count": 1,
+							"origin": "fixture-control"
+						},
+						{
+							"method": "POST",
+							"path": "/subscriptions",
+							"status": 201,
+							"count": 1,
+							"origin": "sut"
+						}
+					],
+					"outboundHttp": [
+						{
+							"callee": "localstack",
+							"method": "POST",
+							"path": "/",
+							"status": 200,
+							"count": "1+",
+							"origin": "fixture-control"
+						},
+						{
+							"callee": "payment-mock",
+							"method": "GET",
+							"path": "/fixture/state",
+							"status": 200,
+							"count": 2,
+							"origin": "fixture-control"
+						},
+						{
+							"callee": "payment-mock",
+							"method": "POST",
+							"path": "/fixture/reset",
+							"status": 200,
+							"count": 1,
+							"origin": "fixture-control"
+						}
+					],
+					"sql": [
+						{
+							"operation": "BEGIN",
+							"statement": "BEGIN",
+							"count": 1,
+							"origin": "fixture-control"
+						},
+						{
+							"operation": "COMMIT",
+							"statement": "COMMIT",
+							"count": 1,
+							"origin": "fixture-control"
+						},
+						{
+							"operation": "DELETE",
+							"table": "users",
+							"statement": "DELETE FROM users",
+							"count": 1,
+							"origin": "fixture-control"
+						},
+						{
+							"operation": "INSERT",
+							"table": "users",
+							"statement": "INSERT INTO users (user_id, tier, execution_path) VALUES ($1, $2, $3)",
+							"count": 5,
+							"origin": "fixture-control"
+						},
+						{
+							"operation": "SELECT",
+							"table": "fraud_audit",
+							"statement": "SELECT id::text, user_id AS \"userId\", decision, hint_profile AS \"hintProfile\" FROM fraud_audit ORDER BY id",
+							"count": 2,
+							"origin": "fixture-control"
+						},
+						{
+							"operation": "SELECT",
+							"table": "subscriptions",
+							"statement": "SELECT id, user_id AS \"userId\", tier, status, payment_intent_id AS \"paymentIntentId\", order_id AS \"orderId\" FROM subscriptions ORDER BY user_id",
+							"count": 2,
+							"origin": "fixture-control"
+						},
+						{
+							"operation": "TRUNCATE",
+							"table": "subscriptions",
+							"statement": "TRUNCATE subscriptions, fraud_audit RESTART IDENTITY",
+							"count": 1,
+							"origin": "fixture-control"
+						},
+						{
+							"operation": "INSERT",
+							"table": "subscriptions",
+							"statement": "INSERT INTO subscriptions (id, user_id, tier, status, payment_intent_id, order_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, status",
+							"count": 1,
+							"origin": "sut"
+						},
+						{
+							"operation": "SELECT",
+							"table": "subscriptions",
+							"statement": "SELECT u.user_id AS \"userId\", u.tier, u.execution_path AS \"executionPath\", EXISTS (SELECT ? FROM subscriptions s WHERE s.user_id = u.user_id) AS \"hasSubscription\" FROM users u WHERE u.user_id = $1",
+							"count": 1,
+							"origin": "sut"
+						}
+					],
+					"cache": [
+						{
+							"system": "redis",
+							"command": "FLUSHDB",
+							"keyPattern": "<none>",
+							"count": 1,
+							"origin": "fixture-control"
+						},
+						{
+							"system": "redis",
+							"command": "KEYS",
+							"keyPattern": "<redacted>",
+							"count": 2,
+							"origin": "fixture-control"
+						},
+						{
+							"system": "redis",
+							"command": "MGET",
+							"keyPattern": "<redacted>",
+							"count": 2,
+							"origin": "fixture-control"
+						},
+						{
+							"system": "redis",
+							"command": "SET",
+							"keyPattern": "hint:returning:eve",
+							"count": 1,
+							"origin": "fixture-control"
+						},
+						{
+							"system": "redis",
+							"command": "GET",
+							"keyPattern": "hint:returning:eve",
+							"count": 1,
+							"origin": "sut"
+						},
+						{
+							"system": "redis",
+							"command": "GET",
+							"keyPattern": "user:eve:tier",
+							"count": 1,
+							"origin": "sut"
+						},
+						{
+							"system": "redis",
+							"command": "SET",
+							"keyPattern": "reg:eve",
+							"count": 1,
+							"origin": "sut"
+						},
+						{
+							"system": "redis",
+							"command": "SET",
+							"keyPattern": "user:eve:tier",
+							"count": 1,
+							"origin": "sut"
+						}
+					]
+				}
+			},
+			"errors": []
+		},
+		"binding": {
+			"entryResolution": {
+				"status": "resolved"
+			},
+			"rootSpan": {
+				"spanId": "4aec4ae205056c0a",
+				"name": "POST /subscriptions",
+				"service": "public-api",
+				"error": false,
+				"durationMs": 3.703
+			},
+			"semanticStepId": "act",
+			"runtimeActSpanId": "92e4659aef215a39"
+		},
+		"effects": [
+			{
+				"serviceId": "payment-mock",
+				"effect": {
+					"effectId": "effect-1",
+					"boundary": "http",
+					"operation": "GET",
+					"target": "/fixture/state",
+					"status": "200",
+					"origin": "fixture-control",
+					"attributes": {
+						"direction": "inbound"
+					}
+				}
+			},
+			{
+				"serviceId": "payment-mock",
+				"effect": {
+					"effectId": "effect-2",
+					"boundary": "http",
+					"operation": "GET",
+					"target": "/fixture/state",
+					"status": "200",
+					"origin": "fixture-control",
+					"attributes": {
+						"direction": "inbound"
+					}
+				}
+			},
+			{
+				"serviceId": "payment-mock",
+				"effect": {
+					"effectId": "effect-3",
+					"boundary": "http",
+					"operation": "POST",
+					"target": "/fixture/reset",
+					"status": "200",
+					"origin": "fixture-control",
+					"attributes": {
+						"direction": "inbound"
+					}
+				}
+			},
+			{
+				"serviceId": "public-api",
+				"effect": {
+					"effectId": "effect-4",
+					"boundary": "http",
+					"operation": "GET",
+					"target": "/fixture/state",
+					"status": "200",
+					"origin": "fixture-control",
+					"attributes": {
+						"direction": "inbound"
+					}
+				}
+			},
+			{
+				"serviceId": "public-api",
+				"effect": {
+					"effectId": "effect-5",
+					"boundary": "http",
+					"operation": "POST",
+					"target": "/fixture/reset",
+					"status": "200",
+					"origin": "fixture-control",
+					"attributes": {
+						"direction": "inbound"
+					}
+				}
+			},
+			{
+				"serviceId": "public-api",
+				"effect": {
+					"effectId": "effect-6",
+					"boundary": "http",
+					"operation": "POST",
+					"target": "/subscriptions",
+					"status": "201",
+					"origin": "sut",
+					"attributes": {
+						"direction": "inbound"
+					}
+				}
+			},
+			{
+				"serviceId": "public-api",
+				"effect": {
+					"effectId": "effect-7",
+					"boundary": "http",
+					"operation": "POST",
+					"target": "localstack:/",
+					"status": "200",
+					"origin": "fixture-control",
+					"attributes": {
+						"direction": "outbound",
+						"callee": "localstack"
+					}
+				}
+			},
+			{
+				"serviceId": "public-api",
+				"effect": {
+					"effectId": "effect-8",
+					"boundary": "http",
+					"operation": "GET",
+					"target": "payment-mock:/fixture/state",
+					"status": "200",
+					"origin": "fixture-control",
+					"attributes": {
+						"direction": "outbound",
+						"callee": "payment-mock"
+					}
+				}
+			},
+			{
+				"serviceId": "public-api",
+				"effect": {
+					"effectId": "effect-9",
+					"boundary": "http",
+					"operation": "GET",
+					"target": "payment-mock:/fixture/state",
+					"status": "200",
+					"origin": "fixture-control",
+					"attributes": {
+						"direction": "outbound",
+						"callee": "payment-mock"
+					}
+				}
+			},
+			{
+				"serviceId": "public-api",
+				"effect": {
+					"effectId": "effect-10",
+					"boundary": "http",
+					"operation": "POST",
+					"target": "payment-mock:/fixture/reset",
+					"status": "200",
+					"origin": "fixture-control",
+					"attributes": {
+						"direction": "outbound",
+						"callee": "payment-mock"
+					}
+				}
+			},
+			{
+				"serviceId": "public-api",
+				"effect": {
+					"effectId": "effect-11",
+					"boundary": "postgres",
+					"operation": "BEGIN",
+					"target": null,
+					"status": null,
+					"origin": "fixture-control",
+					"attributes": {
+						"statement": "BEGIN"
+					}
+				}
+			},
+			{
+				"serviceId": "public-api",
+				"effect": {
+					"effectId": "effect-12",
+					"boundary": "postgres",
+					"operation": "COMMIT",
+					"target": null,
+					"status": null,
+					"origin": "fixture-control",
+					"attributes": {
+						"statement": "COMMIT"
+					}
+				}
+			},
+			{
+				"serviceId": "public-api",
+				"effect": {
+					"effectId": "effect-13",
+					"boundary": "postgres",
+					"operation": "DELETE",
+					"target": "users",
+					"status": null,
+					"origin": "fixture-control",
+					"attributes": {
+						"statement": "DELETE FROM users"
+					}
+				}
+			},
+			{
+				"serviceId": "public-api",
+				"effect": {
+					"effectId": "effect-14",
+					"boundary": "postgres",
+					"operation": "INSERT",
+					"target": "users",
+					"status": null,
+					"origin": "fixture-control",
+					"attributes": {
+						"statement": "INSERT INTO users (user_id, tier, execution_path) VALUES ($1, $2, $3)"
+					}
+				}
+			},
+			{
+				"serviceId": "public-api",
+				"effect": {
+					"effectId": "effect-15",
+					"boundary": "postgres",
+					"operation": "INSERT",
+					"target": "users",
+					"status": null,
+					"origin": "fixture-control",
+					"attributes": {
+						"statement": "INSERT INTO users (user_id, tier, execution_path) VALUES ($1, $2, $3)"
+					}
+				}
+			},
+			{
+				"serviceId": "public-api",
+				"effect": {
+					"effectId": "effect-16",
+					"boundary": "postgres",
+					"operation": "INSERT",
+					"target": "users",
+					"status": null,
+					"origin": "fixture-control",
+					"attributes": {
+						"statement": "INSERT INTO users (user_id, tier, execution_path) VALUES ($1, $2, $3)"
+					}
+				}
+			},
+			{
+				"serviceId": "public-api",
+				"effect": {
+					"effectId": "effect-17",
+					"boundary": "postgres",
+					"operation": "INSERT",
+					"target": "users",
+					"status": null,
+					"origin": "fixture-control",
+					"attributes": {
+						"statement": "INSERT INTO users (user_id, tier, execution_path) VALUES ($1, $2, $3)"
+					}
+				}
+			},
+			{
+				"serviceId": "public-api",
+				"effect": {
+					"effectId": "effect-18",
+					"boundary": "postgres",
+					"operation": "INSERT",
+					"target": "users",
+					"status": null,
+					"origin": "fixture-control",
+					"attributes": {
+						"statement": "INSERT INTO users (user_id, tier, execution_path) VALUES ($1, $2, $3)"
+					}
+				}
+			},
+			{
+				"serviceId": "public-api",
+				"effect": {
+					"effectId": "effect-19",
+					"boundary": "postgres",
+					"operation": "SELECT",
+					"target": "fraud_audit",
+					"status": null,
+					"origin": "fixture-control",
+					"attributes": {
+						"statement": "SELECT id::text, user_id AS \"userId\", decision, hint_profile AS \"hintProfile\" FROM fraud_audit ORDER BY id"
+					}
+				}
+			},
+			{
+				"serviceId": "public-api",
+				"effect": {
+					"effectId": "effect-20",
+					"boundary": "postgres",
+					"operation": "SELECT",
+					"target": "fraud_audit",
+					"status": null,
+					"origin": "fixture-control",
+					"attributes": {
+						"statement": "SELECT id::text, user_id AS \"userId\", decision, hint_profile AS \"hintProfile\" FROM fraud_audit ORDER BY id"
+					}
+				}
+			},
+			{
+				"serviceId": "public-api",
+				"effect": {
+					"effectId": "effect-21",
+					"boundary": "postgres",
+					"operation": "SELECT",
+					"target": "subscriptions",
+					"status": null,
+					"origin": "fixture-control",
+					"attributes": {
+						"statement": "SELECT id, user_id AS \"userId\", tier, status, payment_intent_id AS \"paymentIntentId\", order_id AS \"orderId\" FROM subscriptions ORDER BY user_id"
+					}
+				}
+			},
+			{
+				"serviceId": "public-api",
+				"effect": {
+					"effectId": "effect-22",
+					"boundary": "postgres",
+					"operation": "SELECT",
+					"target": "subscriptions",
+					"status": null,
+					"origin": "fixture-control",
+					"attributes": {
+						"statement": "SELECT id, user_id AS \"userId\", tier, status, payment_intent_id AS \"paymentIntentId\", order_id AS \"orderId\" FROM subscriptions ORDER BY user_id"
+					}
+				}
+			},
+			{
+				"serviceId": "public-api",
+				"effect": {
+					"effectId": "effect-23",
+					"boundary": "postgres",
+					"operation": "TRUNCATE",
+					"target": "subscriptions",
+					"status": null,
+					"origin": "fixture-control",
+					"attributes": {
+						"statement": "TRUNCATE subscriptions, fraud_audit RESTART IDENTITY"
+					}
+				}
+			},
+			{
+				"serviceId": "public-api",
+				"effect": {
+					"effectId": "effect-24",
+					"boundary": "postgres",
+					"operation": "INSERT",
+					"target": "subscriptions",
+					"status": null,
+					"origin": "sut",
+					"attributes": {
+						"statement": "INSERT INTO subscriptions (id, user_id, tier, status, payment_intent_id, order_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, status"
+					}
+				}
+			},
+			{
+				"serviceId": "public-api",
+				"effect": {
+					"effectId": "effect-25",
+					"boundary": "postgres",
+					"operation": "SELECT",
+					"target": "subscriptions",
+					"status": null,
+					"origin": "sut",
+					"attributes": {
+						"statement": "SELECT u.user_id AS \"userId\", u.tier, u.execution_path AS \"executionPath\", EXISTS (SELECT ? FROM subscriptions s WHERE s.user_id = u.user_id) AS \"hasSubscription\" FROM users u WHERE u.user_id = $1"
+					}
+				}
+			},
+			{
+				"serviceId": "public-api",
+				"effect": {
+					"effectId": "effect-26",
+					"boundary": "redis",
+					"operation": "FLUSHDB",
+					"target": "<none>",
+					"status": null,
+					"origin": "fixture-control",
+					"attributes": {}
+				}
+			},
+			{
+				"serviceId": "public-api",
+				"effect": {
+					"effectId": "effect-27",
+					"boundary": "redis",
+					"operation": "KEYS",
+					"target": "<redacted>",
+					"status": null,
+					"origin": "fixture-control",
+					"attributes": {}
+				}
+			},
+			{
+				"serviceId": "public-api",
+				"effect": {
+					"effectId": "effect-28",
+					"boundary": "redis",
+					"operation": "KEYS",
+					"target": "<redacted>",
+					"status": null,
+					"origin": "fixture-control",
+					"attributes": {}
+				}
+			},
+			{
+				"serviceId": "public-api",
+				"effect": {
+					"effectId": "effect-29",
+					"boundary": "redis",
+					"operation": "MGET",
+					"target": "<redacted>",
+					"status": null,
+					"origin": "fixture-control",
+					"attributes": {}
+				}
+			},
+			{
+				"serviceId": "public-api",
+				"effect": {
+					"effectId": "effect-30",
+					"boundary": "redis",
+					"operation": "MGET",
+					"target": "<redacted>",
+					"status": null,
+					"origin": "fixture-control",
+					"attributes": {}
+				}
+			},
+			{
+				"serviceId": "public-api",
+				"effect": {
+					"effectId": "effect-31",
+					"boundary": "redis",
+					"operation": "SET",
+					"target": "hint:returning:eve",
+					"status": null,
+					"origin": "fixture-control",
+					"attributes": {}
+				}
+			},
+			{
+				"serviceId": "public-api",
+				"effect": {
+					"effectId": "effect-32",
+					"boundary": "redis",
+					"operation": "GET",
+					"target": "hint:returning:eve",
+					"status": null,
+					"origin": "sut",
+					"attributes": {}
+				}
+			},
+			{
+				"serviceId": "public-api",
+				"effect": {
+					"effectId": "effect-33",
+					"boundary": "redis",
+					"operation": "GET",
+					"target": "user:eve:tier",
+					"status": null,
+					"origin": "sut",
+					"attributes": {}
+				}
+			},
+			{
+				"serviceId": "public-api",
+				"effect": {
+					"effectId": "effect-34",
+					"boundary": "redis",
+					"operation": "SET",
+					"target": "reg:eve",
+					"status": null,
+					"origin": "sut",
+					"attributes": {}
+				}
+			},
+			{
+				"serviceId": "public-api",
+				"effect": {
+					"effectId": "effect-35",
+					"boundary": "redis",
+					"operation": "SET",
+					"target": "user:eve:tier",
+					"status": null,
+					"origin": "sut",
+					"attributes": {}
+				}
+			}
+		]
+	},
+	"postHocTraceSummary": {
+		"schemaVersion": 1,
+		"attemptId": "d50124a1e5baa337d1858ee4ed586419",
+		"traceId": "d50124a1e5baa337d1858ee4ed586419",
+		"rootSpan": {
+			"spanId": "4aec4ae205056c0a",
+			"name": "POST /subscriptions",
+			"service": "public-api",
+			"error": false,
+			"durationMs": 3.703
+		},
+		"entryResolution": {
+			"status": "resolved"
+		},
+		"actStep": {
+			"phase": "when",
+			"title": "Act: POST /subscriptions for eve",
+			"error": false,
+			"semanticStepId": "act",
+			"runtimeActSpanId": "92e4659aef215a39"
+		},
+		"steps": [
+			{
+				"phase": "given",
+				"title": "Arrange: seed the comparison-returning profile",
+				"error": false,
+				"semanticStepId": null,
+				"runtimeActSpanId": null
+			},
+			{
+				"phase": "unknown",
+				"title": "Expect \"toBe\"",
+				"error": false,
+				"semanticStepId": null,
+				"runtimeActSpanId": null
+			},
+			{
+				"phase": "when",
+				"title": "Act: POST /subscriptions for eve",
+				"error": false,
+				"semanticStepId": null,
+				"runtimeActSpanId": null
+			},
+			{
+				"phase": "then",
+				"title": "Assert: 201 local-only subscription with null payment and order references",
+				"error": false,
+				"semanticStepId": null,
+				"runtimeActSpanId": null
+			},
+			{
+				"phase": "unknown",
+				"title": "Expect \"toBe\"",
+				"error": false,
+				"semanticStepId": null,
+				"runtimeActSpanId": null
+			},
+			{
+				"phase": "unknown",
+				"title": "Expect \"toMatchObject\"",
+				"error": false,
+				"semanticStepId": null,
+				"runtimeActSpanId": null
+			},
+			{
+				"phase": "then",
+				"title": "Assert: fixture state keeps the preloaded returning hint and adds eve's registration keys",
+				"error": false,
+				"semanticStepId": null,
+				"runtimeActSpanId": null
+			},
+			{
+				"phase": "unknown",
+				"title": "Expect \"toBe\"",
+				"error": false,
+				"semanticStepId": null,
+				"runtimeActSpanId": null
+			},
+			{
+				"phase": "unknown",
+				"title": "Expect \"toMatchObject\"",
+				"error": false,
+				"semanticStepId": null,
+				"runtimeActSpanId": null
+			},
+			{
+				"phase": "unknown",
+				"title": "Expect \"toMatchSnapshot\"",
+				"error": false,
+				"semanticStepId": null,
+				"runtimeActSpanId": null
+			}
+		],
+		"spanCount": 118,
+		"capturedEffectCount": 34,
+		"redactionsApplied": null
+	}
+}

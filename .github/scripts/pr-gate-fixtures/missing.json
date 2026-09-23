@@ -1,0 +1,22 @@
+{
+  "consumer": {
+    "result": "success",
+    "outputs": {}
+  },
+  "catalog-package": {
+    "result": "success",
+    "outputs": {}
+  },
+  "build": {
+    "result": "success",
+    "outputs": {}
+  },
+  "deps": {
+    "result": "success",
+    "outputs": {}
+  },
+  "test": {
+    "result": "success",
+    "outputs": {}
+  }
+}

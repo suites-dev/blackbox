@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Run analysis index · Blackbox</title>
+<style>
+:root {
+	--ground:#f7f7f5;--surface:#fff;--surface-2:#f0f1ee;--ink:#1d2023;--muted:#555d65;--faint:#606870;
+	--line:#dedfdb;--line-strong:#c8cac5;--block:#a82d26;--block-bg:#fae9e7;--review:#245db8;--review-bg:#eaf1fb;
+	--caution:#72500b;--caution-bg:#f8efd9;--ok:#276b3d;--ok-bg:#e8f3eb;--mono-bg:#f4f4f1;
+}
+@media (prefers-color-scheme:dark) {
+	:root:not([data-theme="light"]) { --ground:#15171a;--surface:#1e2226;--surface-2:#25292e;--ink:#eceeeb;--muted:#b1b8bf;--faint:#a0a8b0;--line:#363c43;--line-strong:#4b535d;--block:#f08a80;--block-bg:#402725;--review:#8bb4f0;--review-bg:#233752;--caution:#e0b558;--caution-bg:#3c3220;--ok:#7dcb94;--ok-bg:#21382a;--mono-bg:#25292e; }
+}
+:root[data-theme="dark"] { --ground:#15171a;--surface:#1e2226;--surface-2:#25292e;--ink:#eceeeb;--muted:#b1b8bf;--faint:#a0a8b0;--line:#363c43;--line-strong:#4b535d;--block:#f08a80;--block-bg:#402725;--review:#8bb4f0;--review-bg:#233752;--caution:#e0b558;--caution-bg:#3c3220;--ok:#7dcb94;--ok-bg:#21382a;--mono-bg:#25292e; }
+*{box-sizing:border-box}html,body{margin:0}body{background:var(--ground);color:var(--ink);font:14px/1.5 -apple-system,"Segoe UI",Helvetica,Arial,sans-serif}
+.mono,code{font-family:ui-monospace,"SF Mono",Consolas,monospace}
+.quiet{color:var(--muted)}
+header{padding:20px 24px;border-bottom:1px solid var(--line);background:var(--surface)}
+.eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--faint);font-weight:700}
+header h1{margin:4px 0 8px;font-size:20px}
+.run-meta{display:flex;gap:14px;flex-wrap:wrap;color:var(--muted);font-size:12px;margin-bottom:12px}
+.axes{display:grid;grid-template-columns:repeat(4,minmax(120px,1fr));gap:14px}
+.axis-k{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--faint);font-weight:700}
+.axis-v{font-weight:700;margin-top:2px}
+main{max-width:960px;margin:0 auto;padding:20px 24px 60px}
+main.pending{max-width:640px;text-align:center;padding-top:80px;color:var(--muted)}
+.banner{border:1px solid var(--caution);background:var(--caution-bg);color:var(--caution);border-radius:8px;padding:12px 16px;margin-bottom:18px}
+.banner p{margin:6px 0}
+.qual-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:6px;margin-top:8px}
+.qual-row{display:flex;justify-content:space-between;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:4px 8px;font-size:12px}
+.block{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:16px 18px;margin-bottom:16px}
+.block h2{margin:0 0 10px;font-size:15px;text-transform:uppercase;letter-spacing:.06em;color:var(--faint)}
+.block h3{margin:0 0 6px}
+.verdict-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+.scope-tag{font-size:12px;color:var(--muted)}
+.lead{margin:0 0 10px;max-width:70ch}
+.facts{margin:0;display:grid;gap:6px}
+.facts div{display:grid;grid-template-columns:170px minmax(0,1fr);gap:10px}
+.facts dt{color:var(--muted)}
+.facts dd{margin:0}
+.fineprint{font-size:12px;color:var(--muted);margin:8px 0 0}
+.pill{display:inline-block;border-radius:999px;padding:2px 9px;font-size:11px;font-weight:700;letter-spacing:.02em;white-space:nowrap}
+.pill.ok{color:var(--ok);background:var(--ok-bg)}
+.pill.block{color:var(--block);background:var(--block-bg)}
+.pill.review{color:var(--review);background:var(--review-bg)}
+.pill.evidence{color:var(--caution);background:var(--caution-bg)}
+.authority{display:inline-block;border:1px solid var(--line-strong);border-radius:5px;padding:1px 7px;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.command{font-family:ui-monospace,monospace;background:var(--mono-bg);border:1px solid var(--line);border-radius:6px;padding:8px 10px;margin-top:6px;overflow-wrap:anywhere}
+.assumptions{margin-bottom:16px}
+.assumptions summary{cursor:pointer;color:var(--muted);font-size:13px}
+.assumptions ul{margin:8px 0 0;padding-left:18px}
+.table-wrap{overflow:auto}
+.data-table{border-collapse:collapse;width:100%;font-size:12.5px}
+.data-table th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--faint);font-weight:700;padding:8px 10px;border-bottom:1px solid var(--line)}
+.data-table td{padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+.effect-line{font-family:ui-monospace,monospace;font-size:12px;padding-left:10px;border-left:2px solid var(--line);color:var(--muted);margin-bottom:6px}
+.effect-line.added{color:var(--ok);border-left-color:var(--ok)}
+.effect-line.removed{color:var(--block);border-left-color:var(--block)}
+.finding-row{border-top:1px solid var(--line);padding:10px 0}
+.finding-row:first-of-type{border-top:0}
+.finding-row:target{outline:2px solid var(--review);outline-offset:4px;border-radius:6px}
+.finding-head{display:flex;gap:8px;align-items:center;margin-bottom:4px}
+.finding-id-link{color:inherit;text-decoration:none}
+.finding-id-link:hover{text-decoration:underline}
+.pointer{margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
+a{color:var(--review)}
+</style>
+</head>
+<body>
+<header>
+		<div class="eyebrow">Deterministic multi-flow analysis</div>
+		<h1>Run analysis index</h1>
+		<div class="run-meta">
+			<span class="mono">run 01M23JNQ6G9X2CYTFR8Q7ZSXS9</span>
+			<span>schema v1</span>
+			<span>20 flows</span>
+		</div>
+	</header><main>
+		<section class="block" id="flow-index">
+		<h2>Flows</h2>
+		<p class="fineprint">This run contains one independent row per indexed flow. The index is routing metadata and carries no aggregate verdict.</p>
+		<div class="table-wrap"><table class="data-table"><thead><tr><th>Flow</th><th>Status</th></tr></thead><tbody><tr><td><a href="#flow-concurrency-carol" class="mono">concurrency-carol</a></td><td>not analyzable</td></tr><tr><td><a href="#flow-creates-a-local-only-subscription-for-dora-without-fraud-payment" class="mono">creates-a-local-only-subscription-for-dora-without-fraud-payment</a></td><td>not analyzable</td></tr><tr><td><a href="#flow-creates-an-active-subscription-for-a-full-path-user-with-fraud-p" class="mono">creates-an-active-subscription-for-a-full-path-user-with-fraud-p</a></td><td>not analyzable</td></tr><tr><td><a href="#flow-fraud-check-reports-ready-on-get-health" class="mono">fraud-check-reports-ready-on-get-health</a></td><td>not analyzable</td></tr><tr><td><a href="#flow-group-cleanup-restores-a-clean-fixture-state-after-a-subscriptio" class="mono">group-cleanup-restores-a-clean-fixture-state-after-a-subscriptio</a></td><td>not analyzable</td></tr><tr><td><a href="#flow-order-service-reports-ready-on-get-health" class="mono">order-service-reports-ready-on-get-health</a></td><td>not analyzable</td></tr><tr><td><a href="#flow-payment-mock-records-payment-intents-and-refunds-and-rejects-unk" class="mono">payment-mock-records-payment-intents-and-refunds-and-rejects-unk</a></td><td>not analyzable</td></tr><tr><td><a href="#flow-payment-mock-reports-ready-on-get-health" class="mono">payment-mock-reports-ready-on-get-health</a></td><td>not analyzable</td></tr><tr><td><a href="#flow-public-api-reports-ready-on-get-health" class="mono">public-api-reports-ready-on-get-health</a></td><td>not analyzable</td></tr><tr><td><a href="#flow-rejects-a-second-subscription-for-the-same-user-with-409-before" class="mono">rejects-a-second-subscription-for-the-same-user-with-409-before</a></td><td>not analyzable</td></tr><tr><td><a href="#flow-rejects-an-unknown-user-with-404-and-leaves-no-side-effects" class="mono">rejects-an-unknown-user-with-404-and-leaves-no-side-effects</a></td><td>not analyzable</td></tr><tr><td><a href="#flow-rejects-fixture-control-access-without-a-token-or-with-a-wrong-t" class="mono">rejects-fixture-control-access-without-a-token-or-with-a-wrong-t</a></td><td>not analyzable</td></tr><tr><td><a href="#flow-rejects-malformed-subscription-bodies-with-400-invalid-body" class="mono">rejects-malformed-subscription-bodies-with-400-invalid-body</a></td><td>not analyzable</td></tr><tr><td><a href="#flow-reports-ready-on-get-health" class="mono">reports-ready-on-get-health</a></td><td>not analyzable</td></tr><tr><td><a href="#flow-reports-ready-on-get-health-from-the-lean-dist-wrapper" class="mono">reports-ready-on-get-health-from-the-lean-dist-wrapper</a></td><td>not analyzable</td></tr><tr><td><a href="#flow-resets-to-the-fresh-and-comparison-absent-profiles-and-rejects-a" class="mono">resets-to-the-fresh-and-comparison-absent-profiles-and-rejects-a</a></td><td>not analyzable</td></tr><tr><td><a href="#flow-runs-the-payment-intent-and-refund-lifecycle-on-a-lone-container" class="mono">runs-the-payment-intent-and-refund-lifecycle-on-a-lone-container</a></td><td>not analyzable</td></tr><tr><td><a href="#flow-runs-the-payment-intent-and-refund-lifecycle-on-the-dist-wrapper" class="mono">runs-the-payment-intent-and-refund-lifecycle-on-the-dist-wrapper</a></td><td>not analyzable</td></tr><tr><td><a href="#flow-serves-eve-from-the-preloaded-returning-hint-under-the-compariso" class="mono">serves-eve-from-the-preloaded-returning-hint-under-the-compariso</a></td><td>not analyzable</td></tr><tr><td><a href="#flow-starts-from-a-clean-state-because-the-container-is-per-test" class="mono">starts-from-a-clean-state-because-the-container-is-per-test</a></td><td>not analyzable</td></tr></tbody></table></div>
+	</section>
+		<article class="flow-report" id="flow-concurrency-carol">
+		<section class="block flow-blocker">
+			<h2>Flow not analyzable</h2>
+			<dl class="facts">
+				<div><dt>Flow</dt><dd class="mono">concurrency-carol</dd></div>
+				<div><dt>Blocker code</dt><dd class="mono">no-retained-proof-plan</dd></div>
+				<div><dt>Details</dt><dd>run 01M23JNQ6G9X2CYTFR8Q7ZSXS9 retained no proof-plan.json; nothing was predeclared before it executed</dd></div>
+			</dl>
+			<p class="fineprint">No Analysis document was produced for this flow, so this row has no verdict to render.</p>
+		</section>
+	</article><article class="flow-report" id="flow-creates-a-local-only-subscription-for-dora-without-fraud-payment">
+		<section class="block flow-blocker">
+			<h2>Flow not analyzable</h2>
+			<dl class="facts">
+				<div><dt>Flow</dt><dd class="mono">creates-a-local-only-subscription-for-dora-without-fraud-payment</dd></div>
+				<div><dt>Blocker code</dt><dd class="mono">no-retained-proof-plan</dd></div>
+				<div><dt>Details</dt><dd>run 01M23JNQ6G9X2CYTFR8Q7ZSXS9 retained no proof-plan.json; nothing was predeclared before it executed</dd></div>
+			</dl>
+			<p class="fineprint">No Analysis document was produced for this flow, so this row has no verdict to render.</p>
+		</section>
+	</article><article class="flow-report" id="flow-creates-an-active-subscription-for-a-full-path-user-with-fraud-p">
+		<section class="block flow-blocker">
+			<h2>Flow not analyzable</h2>
+			<dl class="facts">
+				<div><dt>Flow</dt><dd class="mono">creates-an-active-subscription-for-a-full-path-user-with-fraud-p</dd></div>
+				<div><dt>Blocker code</dt><dd class="mono">no-retained-proof-plan</dd></div>
+				<div><dt>Details</dt><dd>run 01M23JNQ6G9X2CYTFR8Q7ZSXS9 retained no proof-plan.json; nothing was predeclared before it executed</dd></div>
+			</dl>
+			<p class="fineprint">No Analysis document was produced for this flow, so this row has no verdict to render.</p>
+		</section>
+	</article><article class="flow-report" id="flow-fraud-check-reports-ready-on-get-health">
+		<section class="block flow-blocker">
+			<h2>Flow not analyzable</h2>
+			<dl class="facts">
+				<div><dt>Flow</dt><dd class="mono">fraud-check-reports-ready-on-get-health</dd></div>
+				<div><dt>Blocker code</dt><dd class="mono">no-retained-proof-plan</dd></div>
+				<div><dt>Details</dt><dd>run 01M23JNQ6G9X2CYTFR8Q7ZSXS9 retained no proof-plan.json; nothing was predeclared before it executed</dd></div>
+			</dl>
+			<p class="fineprint">No Analysis document was produced for this flow, so this row has no verdict to render.</p>
+		</section>
+	</article><article class="flow-report" id="flow-group-cleanup-restores-a-clean-fixture-state-after-a-subscriptio">
+		<section class="block flow-blocker">
+			<h2>Flow not analyzable</h2>
+			<dl class="facts">
+				<div><dt>Flow</dt><dd class="mono">group-cleanup-restores-a-clean-fixture-state-after-a-subscriptio</dd></div>
+				<div><dt>Blocker code</dt><dd class="mono">no-retained-proof-plan</dd></div>
+				<div><dt>Details</dt><dd>run 01M23JNQ6G9X2CYTFR8Q7ZSXS9 retained no proof-plan.json; nothing was predeclared before it executed</dd></div>
+			</dl>
+			<p class="fineprint">No Analysis document was produced for this flow, so this row has no verdict to render.</p>
+		</section>
+	</article><article class="flow-report" id="flow-order-service-reports-ready-on-get-health">
+		<section class="block flow-blocker">
+			<h2>Flow not analyzable</h2>
+			<dl class="facts">
+				<div><dt>Flow</dt><dd class="mono">order-service-reports-ready-on-get-health</dd></div>
+				<div><dt>Blocker code</dt><dd class="mono">no-retained-proof-plan</dd></div>
+				<div><dt>Details</dt><dd>run 01M23JNQ6G9X2CYTFR8Q7ZSXS9 retained no proof-plan.json; nothing was predeclared before it executed</dd></div>
+			</dl>
+			<p class="fineprint">No Analysis document was produced for this flow, so this row has no verdict to render.</p>
+		</section>
+	</article><article class="flow-report" id="flow-payment-mock-records-payment-intents-and-refunds-and-rejects-unk">
+		<section class="block flow-blocker">
+			<h2>Flow not analyzable</h2>
+			<dl class="facts">
+				<div><dt>Flow</dt><dd class="mono">payment-mock-records-payment-intents-and-refunds-and-rejects-unk</dd></div>
+				<div><dt>Blocker code</dt><dd class="mono">no-retained-proof-plan</dd></div>
+				<div><dt>Details</dt><dd>run 01M23JNQ6G9X2CYTFR8Q7ZSXS9 retained no proof-plan.json; nothing was predeclared before it executed</dd></div>
+			</dl>
+			<p class="fineprint">No Analysis document was produced for this flow, so this row has no verdict to render.</p>
+		</section>
+	</article><article class="flow-report" id="flow-payment-mock-reports-ready-on-get-health">
+		<section class="block flow-blocker">
+			<h2>Flow not analyzable</h2>
+			<dl class="facts">
+				<div><dt>Flow</dt><dd class="mono">payment-mock-reports-ready-on-get-health</dd></div>
+				<div><dt>Blocker code</dt><dd class="mono">no-retained-proof-plan</dd></div>
+				<div><dt>Details</dt><dd>run 01M23JNQ6G9X2CYTFR8Q7ZSXS9 retained no proof-plan.json; nothing was predeclared before it executed</dd></div>
+			</dl>
+			<p class="fineprint">No Analysis document was produced for this flow, so this row has no verdict to render.</p>
+		</section>
+	</article><article class="flow-report" id="flow-public-api-reports-ready-on-get-health">
+		<section class="block flow-blocker">
+			<h2>Flow not analyzable</h2>
+			<dl class="facts">
+				<div><dt>Flow</dt><dd class="mono">public-api-reports-ready-on-get-health</dd></div>
+				<div><dt>Blocker code</dt><dd class="mono">no-retained-proof-plan</dd></div>
+				<div><dt>Details</dt><dd>run 01M23JNQ6G9X2CYTFR8Q7ZSXS9 retained no proof-plan.json; nothing was predeclared before it executed</dd></div>
+			</dl>
+			<p class="fineprint">No Analysis document was produced for this flow, so this row has no verdict to render.</p>
+		</section>
+	</article><article class="flow-report" id="flow-rejects-a-second-subscription-for-the-same-user-with-409-before">
+		<section class="block flow-blocker">
+			<h2>Flow not analyzable</h2>
+			<dl class="facts">
+				<div><dt>Flow</dt><dd class="mono">rejects-a-second-subscription-for-the-same-user-with-409-before</dd></div>
+				<div><dt>Blocker code</dt><dd class="mono">no-retained-proof-plan</dd></div>
+				<div><dt>Details</dt><dd>run 01M23JNQ6G9X2CYTFR8Q7ZSXS9 retained no proof-plan.json; nothing was predeclared before it executed</dd></div>
+			</dl>
+			<p class="fineprint">No Analysis document was produced for this flow, so this row has no verdict to render.</p>
+		</section>
+	</article><article class="flow-report" id="flow-rejects-an-unknown-user-with-404-and-leaves-no-side-effects">
+		<section class="block flow-blocker">
+			<h2>Flow not analyzable</h2>
+			<dl class="facts">
+				<div><dt>Flow</dt><dd class="mono">rejects-an-unknown-user-with-404-and-leaves-no-side-effects</dd></div>
+				<div><dt>Blocker code</dt><dd class="mono">no-retained-proof-plan</dd></div>
+				<div><dt>Details</dt><dd>run 01M23JNQ6G9X2CYTFR8Q7ZSXS9 retained no proof-plan.json; nothing was predeclared before it executed</dd></div>
+			</dl>
+			<p class="fineprint">No Analysis document was produced for this flow, so this row has no verdict to render.</p>
+		</section>
+	</article><article class="flow-report" id="flow-rejects-fixture-control-access-without-a-token-or-with-a-wrong-t">
+		<section class="block flow-blocker">
+			<h2>Flow not analyzable</h2>
+			<dl class="facts">
+				<div><dt>Flow</dt><dd class="mono">rejects-fixture-control-access-without-a-token-or-with-a-wrong-t</dd></div>
+				<div><dt>Blocker code</dt><dd class="mono">no-retained-proof-plan</dd></div>
+				<div><dt>Details</dt><dd>run 01M23JNQ6G9X2CYTFR8Q7ZSXS9 retained no proof-plan.json; nothing was predeclared before it executed</dd></div>
+			</dl>
+			<p class="fineprint">No Analysis document was produced for this flow, so this row has no verdict to render.</p>
+		</section>
+	</article><article class="flow-report" id="flow-rejects-malformed-subscription-bodies-with-400-invalid-body">
+		<section class="block flow-blocker">
+			<h2>Flow not analyzable</h2>
+			<dl class="facts">
+				<div><dt>Flow</dt><dd class="mono">rejects-malformed-subscription-bodies-with-400-invalid-body</dd></div>
+				<div><dt>Blocker code</dt><dd class="mono">no-retained-proof-plan</dd></div>
+				<div><dt>Details</dt><dd>run 01M23JNQ6G9X2CYTFR8Q7ZSXS9 retained no proof-plan.json; nothing was predeclared before it executed</dd></div>
+			</dl>
+			<p class="fineprint">No Analysis document was produced for this flow, so this row has no verdict to render.</p>
+		</section>
+	</article><article class="flow-report" id="flow-reports-ready-on-get-health">
+		<section class="block flow-blocker">
+			<h2>Flow not analyzable</h2>
+			<dl class="facts">
+				<div><dt>Flow</dt><dd class="mono">reports-ready-on-get-health</dd></div>
+				<div><dt>Blocker code</dt><dd class="mono">no-retained-proof-plan</dd></div>
+				<div><dt>Details</dt><dd>run 01M23JNQ6G9X2CYTFR8Q7ZSXS9 retained no proof-plan.json; nothing was predeclared before it executed</dd></div>
+			</dl>
+			<p class="fineprint">No Analysis document was produced for this flow, so this row has no verdict to render.</p>
+		</section>
+	</article><article class="flow-report" id="flow-reports-ready-on-get-health-from-the-lean-dist-wrapper">
+		<section class="block flow-blocker">
+			<h2>Flow not analyzable</h2>
+			<dl class="facts">
+				<div><dt>Flow</dt><dd class="mono">reports-ready-on-get-health-from-the-lean-dist-wrapper</dd></div>
+				<div><dt>Blocker code</dt><dd class="mono">no-retained-proof-plan</dd></div>
+				<div><dt>Details</dt><dd>run 01M23JNQ6G9X2CYTFR8Q7ZSXS9 retained no proof-plan.json; nothing was predeclared before it executed</dd></div>
+			</dl>
+			<p class="fineprint">No Analysis document was produced for this flow, so this row has no verdict to render.</p>
+		</section>
+	</article><article class="flow-report" id="flow-resets-to-the-fresh-and-comparison-absent-profiles-and-rejects-a">
+		<section class="block flow-blocker">
+			<h2>Flow not analyzable</h2>
+			<dl class="facts">
+				<div><dt>Flow</dt><dd class="mono">resets-to-the-fresh-and-comparison-absent-profiles-and-rejects-a</dd></div>
+				<div><dt>Blocker code</dt><dd class="mono">no-retained-proof-plan</dd></div>
+				<div><dt>Details</dt><dd>run 01M23JNQ6G9X2CYTFR8Q7ZSXS9 retained no proof-plan.json; nothing was predeclared before it executed</dd></div>
+			</dl>
+			<p class="fineprint">No Analysis document was produced for this flow, so this row has no verdict to render.</p>
+		</section>
+	</article><article class="flow-report" id="flow-runs-the-payment-intent-and-refund-lifecycle-on-a-lone-container">
+		<section class="block flow-blocker">
+			<h2>Flow not analyzable</h2>
+			<dl class="facts">
+				<div><dt>Flow</dt><dd class="mono">runs-the-payment-intent-and-refund-lifecycle-on-a-lone-container</dd></div>
+				<div><dt>Blocker code</dt><dd class="mono">no-retained-proof-plan</dd></div>
+				<div><dt>Details</dt><dd>run 01M23JNQ6G9X2CYTFR8Q7ZSXS9 retained no proof-plan.json; nothing was predeclared before it executed</dd></div>
+			</dl>
+			<p class="fineprint">No Analysis document was produced for this flow, so this row has no verdict to render.</p>
+		</section>
+	</article><article class="flow-report" id="flow-runs-the-payment-intent-and-refund-lifecycle-on-the-dist-wrapper">
+		<section class="block flow-blocker">
+			<h2>Flow not analyzable</h2>
+			<dl class="facts">
+				<div><dt>Flow</dt><dd class="mono">runs-the-payment-intent-and-refund-lifecycle-on-the-dist-wrapper</dd></div>
+				<div><dt>Blocker code</dt><dd class="mono">no-retained-proof-plan</dd></div>
+				<div><dt>Details</dt><dd>run 01M23JNQ6G9X2CYTFR8Q7ZSXS9 retained no proof-plan.json; nothing was predeclared before it executed</dd></div>
+			</dl>
+			<p class="fineprint">No Analysis document was produced for this flow, so this row has no verdict to render.</p>
+		</section>
+	</article><article class="flow-report" id="flow-serves-eve-from-the-preloaded-returning-hint-under-the-compariso">
+		<section class="block flow-blocker">
+			<h2>Flow not analyzable</h2>
+			<dl class="facts">
+				<div><dt>Flow</dt><dd class="mono">serves-eve-from-the-preloaded-returning-hint-under-the-compariso</dd></div>
+				<div><dt>Blocker code</dt><dd class="mono">no-retained-proof-plan</dd></div>
+				<div><dt>Details</dt><dd>run 01M23JNQ6G9X2CYTFR8Q7ZSXS9 retained no proof-plan.json; nothing was predeclared before it executed</dd></div>
+			</dl>
+			<p class="fineprint">No Analysis document was produced for this flow, so this row has no verdict to render.</p>
+		</section>
+	</article><article class="flow-report" id="flow-starts-from-a-clean-state-because-the-container-is-per-test">
+		<section class="block flow-blocker">
+			<h2>Flow not analyzable</h2>
+			<dl class="facts">
+				<div><dt>Flow</dt><dd class="mono">starts-from-a-clean-state-because-the-container-is-per-test</dd></div>
+				<div><dt>Blocker code</dt><dd class="mono">no-retained-proof-plan</dd></div>
+				<div><dt>Details</dt><dd>run 01M23JNQ6G9X2CYTFR8Q7ZSXS9 retained no proof-plan.json; nothing was predeclared before it executed</dd></div>
+			</dl>
+			<p class="fineprint">No Analysis document was produced for this flow, so this row has no verdict to render.</p>
+		</section>
+	</article>
+	</main>
+</body>
+</html>

@@ -1,0 +1,31 @@
+{
+	"flowId": "rejects-fixture-control-access-without-a-token-or-with-a-wrong-t",
+	"authoringSource": "suite",
+	"suite": {
+		"path": "tests/suites/fixture-control.suite.ts",
+		"digest": "5f0b5069d2d494f57bd4503fe0aa9b358c1f4d97"
+	},
+	"requirement": null,
+	"baseline": {
+		"path": "tests/per-test/effects/fixture-control.spec.ts/effects-rejects-fixture-control-access-without-a-token-or-with-a-wrong-t.yaml",
+		"digest": "0450b3cc9fe48226300ca8a5ccd25976a6f0a0f7"
+	},
+	"entries": [
+		{
+			"project": "per-test",
+			"entryPath": "per-test/fixture-control.spec.ts"
+		}
+	],
+	"candidate": null,
+	"behaviorModelDigest": "pending-s3",
+	"observationDigest": "pending-s3",
+	"proofPlanDigest": "pending-s3",
+	"completeness": {
+		"plannedScenarios": [],
+		"executedScenarios": [],
+		"complete": false,
+		"reasons": [
+			"planned-scope-unknown-pending-proof-plans"
+		]
+	}
+}

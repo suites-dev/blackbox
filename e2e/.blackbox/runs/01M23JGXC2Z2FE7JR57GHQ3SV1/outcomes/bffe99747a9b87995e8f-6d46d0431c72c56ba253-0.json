@@ -1,0 +1,62 @@
+{
+	"schemaVersion": 2,
+	"artifactRole": "reporter-attempt-outcome",
+	"runId": "01M23JGXC2Z2FE7JR57GHQ3SV1",
+	"playwrightTestId": "bffe99747a9b87995e8f-6d46d0431c72c56ba253",
+	"project": "per-worker",
+	"scenarioId": "s3-gate-project-scoped-candidate-disagreement.plants-one-extra-real-sut-effect-only-under-the-disagreement-pro",
+	"retry": 0,
+	"attemptId": "459a222b089d88621fd4e11665d9d5a0",
+	"outcome": "passed",
+	"status": "passed",
+	"recordedAt": "2026-09-09T17:14:06.918Z",
+	"planComplete": true,
+	"assertions": [
+		{
+			"assertionId": "s3-gate-project-scoped-candidate-disagreement.plants-one-extra-real-sut-effect-only-under-the-disagreement-pro/step:1",
+			"ordinal": 1,
+			"title": "Assert 201 with an active subscription for bob",
+			"declaration": {
+				"path": "proofs/s3-gate/planted-project-disagree.suite.ts",
+				"line": 65,
+				"column": 4
+			},
+			"evaluation": true,
+			"reason": null,
+			"titleCorroborated": false,
+			"terminalAttribution": "no-attributable-expect-failure"
+		},
+		{
+			"assertionId": "s3-gate-project-scoped-candidate-disagreement.plants-one-extra-real-sut-effect-only-under-the-disagreement-pro/step:2",
+			"ordinal": 2,
+			"title": "Assert 201 with an active subscription for carol when planted",
+			"declaration": {
+				"path": "proofs/s3-gate/planted-project-disagree.suite.ts",
+				"line": 68,
+				"column": 4
+			},
+			"evaluation": true,
+			"reason": null,
+			"titleCorroborated": false,
+			"terminalAttribution": "no-attributable-expect-failure"
+		},
+		{
+			"assertionId": "s3-gate-project-scoped-candidate-disagreement.plants-one-extra-real-sut-effect-only-under-the-disagreement-pro/step:3",
+			"ordinal": 3,
+			"title": "Assert (S3 gate): this project's re-projected effects reflect exactly what THIS project did",
+			"declaration": {
+				"path": "proofs/s3-gate/planted-project-disagree.suite.ts",
+				"line": 74,
+				"column": 4
+			},
+			"evaluation": true,
+			"reason": null,
+			"titleCorroborated": true,
+			"terminalAttribution": "no-attributable-expect-failure"
+		}
+	],
+	"requestedArtifacts": [
+		"decisions.json",
+		"assertions.json"
+	]
+}

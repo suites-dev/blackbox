@@ -1,0 +1,59 @@
+{
+	"type": "effects",
+	"flowId": "runs-the-payment-intent-and-refund-lifecycle-on-a-lone-container",
+	"attemptId": "0ea4a7e154121cb3a82174b00e061dc0",
+	"observed": {
+		"schemaVersion": 2,
+		"entry": {
+			"service": "payment-mock",
+			"request": "POST /v1/payment_intents",
+			"status": 201
+		},
+		"entryResolution": {
+			"status": "resolved"
+		},
+		"summary": {
+			"counts": {
+				"inbound": 3,
+				"outboundHttp": 0,
+				"sql": 0,
+				"cache": 0,
+				"messaging": 0
+			},
+			"services": [
+				"payment-mock"
+			],
+			"edges": []
+		},
+		"services": {
+			"payment-mock": {
+				"inbound": [
+					{
+						"method": "GET",
+						"path": "/fixture/state",
+						"status": 200,
+						"count": 1,
+						"origin": "fixture-control"
+					},
+					{
+						"method": "POST",
+						"path": "/v1/payment_intents",
+						"status": 201,
+						"count": 1,
+						"origin": "sut"
+					},
+					{
+						"method": "POST",
+						"path": "/v1/refunds",
+						"status": 201,
+						"count": 1,
+						"origin": "sut"
+					}
+				]
+			}
+		},
+		"errors": []
+	},
+	"expectedPath": "/Users/omer/projects/suites/blackbox/e2e/tests/subsystem/effects/payment-mock.spec.ts/effects-runs-the-payment-intent-and-refund-lifecycle-on-a-lone-container.yaml",
+	"outcome": "verified"
+}

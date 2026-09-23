@@ -1,0 +1,62 @@
+{
+	"schemaVersion": 2,
+	"artifactRole": "reporter-attempt-outcome",
+	"runId": "01M23JGXC2Z2FE7JR57GHQ3SV1",
+	"playwrightTestId": "d2078630a9a7980b9db5-056e072e062be740077d",
+	"project": "per-test",
+	"scenarioId": "s3-gate-fixture-control-origin-marking.captures-a-fixture-control-read-origin-marked-never-coalesced-wi",
+	"retry": 0,
+	"attemptId": "9d0979bd45049b942f1539d2caeb28a0",
+	"outcome": "passed",
+	"status": "passed",
+	"recordedAt": "2026-09-09T17:13:18.110Z",
+	"planComplete": true,
+	"assertions": [
+		{
+			"assertionId": "s3-gate-fixture-control-origin-marking.captures-a-fixture-control-read-origin-marked-never-coalesced-wi/step:1",
+			"ordinal": 1,
+			"title": "Assert 201 with an active subscription for bob",
+			"declaration": {
+				"path": "proofs/s3-gate/planted-fixture-control.suite.ts",
+				"line": 58,
+				"column": 4
+			},
+			"evaluation": true,
+			"reason": null,
+			"titleCorroborated": false,
+			"terminalAttribution": "no-attributable-expect-failure"
+		},
+		{
+			"assertionId": "s3-gate-fixture-control-origin-marking.captures-a-fixture-control-read-origin-marked-never-coalesced-wi/step:3",
+			"ordinal": 3,
+			"title": "Assert the fixture-control read itself succeeds",
+			"declaration": {
+				"path": "proofs/s3-gate/planted-fixture-control.suite.ts",
+				"line": 75,
+				"column": 4
+			},
+			"evaluation": true,
+			"reason": null,
+			"titleCorroborated": false,
+			"terminalAttribution": "no-attributable-expect-failure"
+		},
+		{
+			"assertionId": "s3-gate-fixture-control-origin-marking.captures-a-fixture-control-read-origin-marked-never-coalesced-wi/step:4",
+			"ordinal": 4,
+			"title": "Assert (S3 gate): the real effect and the fixture-control effect both appear, distinctly origin-marked",
+			"declaration": {
+				"path": "proofs/s3-gate/planted-fixture-control.suite.ts",
+				"line": 79,
+				"column": 4
+			},
+			"evaluation": true,
+			"reason": null,
+			"titleCorroborated": true,
+			"terminalAttribution": "no-attributable-expect-failure"
+		}
+	],
+	"requestedArtifacts": [
+		"decisions.json",
+		"assertions.json"
+	]
+}

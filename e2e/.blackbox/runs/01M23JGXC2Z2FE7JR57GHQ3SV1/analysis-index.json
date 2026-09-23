@@ -1,0 +1,27 @@
+{
+	"schemaVersion": 1,
+	"artifactRole": "analysis-index",
+	"runId": "01M23JGXC2Z2FE7JR57GHQ3SV1",
+	"flows": [
+		{
+			"flowId": "s3-gate-arrange-wins",
+			"kind": "analyzed",
+			"analysisPath": "analyses/s3-gate-arrange-wins.json"
+		},
+		{
+			"flowId": "s3-gate-fixture-control",
+			"kind": "analyzed",
+			"analysisPath": "analyses/s3-gate-fixture-control.json"
+		},
+		{
+			"flowId": "s3-gate-project-disagree",
+			"kind": "analyzed",
+			"analysisPath": "analyses/s3-gate-project-disagree.json"
+		},
+		{
+			"flowId": "s3-gate-qualified-project-disagree",
+			"kind": "analyzed",
+			"analysisPath": "analyses/s3-gate-qualified-project-disagree.json"
+		}
+	]
+}

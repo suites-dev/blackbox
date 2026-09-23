@@ -1,0 +1,9 @@
+{
+	"attemptId": "0f77c98f6aa07cfdb640fd80cbf08a30",
+	"acquisitionId": "392593e1-9531-45df-b7cb-302ae0957131",
+	"scenarioId": "subscription-rejection.rejects-an-unknown-user-with-404-and-leaves-no-side-effects",
+	"playwrightTestId": "16c3faa07c6fdef3bf8c-8587996589daf6be6867",
+	"project": "per-worker",
+	"retry": 0,
+	"recordedAt": "2026-09-09T17:16:04.420Z"
+}

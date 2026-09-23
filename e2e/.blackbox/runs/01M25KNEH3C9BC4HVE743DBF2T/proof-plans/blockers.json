@@ -1,0 +1,178 @@
+[
+  {
+    "code": "proof-plan-behavior-model-unavailable",
+    "message": "flow \"fixture-control\" behavior model unavailable: one or more suite steps were not statically recovered",
+    "entryFile": "per-test/fixture-control.spec.ts",
+    "playwrightTestId": "b4201a13beca0831b244-604c182745a568e3fd90",
+    "declarationFile": "tests/suites/fixture-control.suite.ts",
+    "declarationLine": 26
+  },
+  {
+    "code": "proof-plan-behavior-model-unavailable",
+    "message": "flow \"fixture-control\" behavior model unavailable: one or more suite steps were not statically recovered",
+    "entryFile": "per-test/fixture-control.spec.ts",
+    "playwrightTestId": "b4201a13beca0831b244-4773a456e28879b49c0a",
+    "declarationFile": "tests/suites/fixture-control.suite.ts",
+    "declarationLine": 78
+  },
+  {
+    "code": "proof-plan-behavior-model-unavailable",
+    "message": "flow \"fixture-control\" behavior model unavailable: one or more suite steps were not statically recovered",
+    "entryFile": "per-test/fixture-control.spec.ts",
+    "playwrightTestId": "b4201a13beca0831b244-4880676256a8969578c6",
+    "declarationFile": "tests/suites/fixture-control.suite.ts",
+    "declarationLine": 141
+  },
+  {
+    "code": "proof-plan-behavior-model-unavailable",
+    "message": "flow \"fixture-control\" behavior model unavailable: one or more suite steps were not statically recovered",
+    "entryFile": "per-test/fixture-control.spec.ts",
+    "playwrightTestId": "b4201a13beca0831b244-40c59631f597356130db",
+    "declarationFile": "tests/suites/fixture-control.suite.ts",
+    "declarationLine": 171
+  },
+  {
+    "code": "proof-plan-behavior-model-unavailable",
+    "message": "flow \"fixture-control\" behavior model unavailable: one or more suite steps were not statically recovered",
+    "entryFile": "per-worker/fixture-control.spec.ts",
+    "playwrightTestId": "c771ecd7169f45f8e2fe-b91b1496b1d233ee2ca2",
+    "declarationFile": "tests/suites/fixture-control.suite.ts",
+    "declarationLine": 26
+  },
+  {
+    "code": "proof-plan-behavior-model-unavailable",
+    "message": "flow \"fixture-control\" behavior model unavailable: one or more suite steps were not statically recovered",
+    "entryFile": "per-worker/fixture-control.spec.ts",
+    "playwrightTestId": "c771ecd7169f45f8e2fe-6357137907732b791aea",
+    "declarationFile": "tests/suites/fixture-control.suite.ts",
+    "declarationLine": 78
+  },
+  {
+    "code": "proof-plan-behavior-model-unavailable",
+    "message": "flow \"fixture-control\" behavior model unavailable: one or more suite steps were not statically recovered",
+    "entryFile": "per-worker/fixture-control.spec.ts",
+    "playwrightTestId": "c771ecd7169f45f8e2fe-882b052d6171ab2eb6fb",
+    "declarationFile": "tests/suites/fixture-control.suite.ts",
+    "declarationLine": 141
+  },
+  {
+    "code": "proof-plan-behavior-model-unavailable",
+    "message": "flow \"fixture-control\" behavior model unavailable: one or more suite steps were not statically recovered",
+    "entryFile": "per-worker/fixture-control.spec.ts",
+    "playwrightTestId": "c771ecd7169f45f8e2fe-914b1f0498378f20e793",
+    "declarationFile": "tests/suites/fixture-control.suite.ts",
+    "declarationLine": 171
+  },
+  {
+    "code": "proof-plan-behavior-model-unavailable",
+    "message": "flow \"health\" behavior model unavailable: one or more test declarations were not recovered",
+    "entryFile": "per-test/health.spec.ts",
+    "playwrightTestId": "6c705246398d2be6220f-29a6bc1d9bba4456030c",
+    "declarationFile": "tests/suites/health.suite.ts",
+    "declarationLine": 27
+  },
+  {
+    "code": "proof-plan-behavior-model-unavailable",
+    "message": "flow \"health\" behavior model unavailable: one or more test declarations were not recovered",
+    "entryFile": "per-test/health.spec.ts",
+    "playwrightTestId": "6c705246398d2be6220f-ca88f3cd08a3e96c7670",
+    "declarationFile": "tests/suites/health.suite.ts",
+    "declarationLine": 27
+  },
+  {
+    "code": "proof-plan-behavior-model-unavailable",
+    "message": "flow \"health\" behavior model unavailable: one or more test declarations were not recovered",
+    "entryFile": "per-test/health.spec.ts",
+    "playwrightTestId": "6c705246398d2be6220f-a5ba2a2915458cdccc3a",
+    "declarationFile": "tests/suites/health.suite.ts",
+    "declarationLine": 27
+  },
+  {
+    "code": "proof-plan-behavior-model-unavailable",
+    "message": "flow \"health\" behavior model unavailable: one or more test declarations were not recovered",
+    "entryFile": "per-test/health.spec.ts",
+    "playwrightTestId": "6c705246398d2be6220f-2465bac7087b54961dcd",
+    "declarationFile": "tests/suites/health.suite.ts",
+    "declarationLine": 27
+  },
+  {
+    "code": "proof-plan-behavior-model-unavailable",
+    "message": "flow \"health\" behavior model unavailable: one or more test declarations were not recovered",
+    "entryFile": "per-worker/health.spec.ts",
+    "playwrightTestId": "d1bf5212fc8f8f62b54d-b1e05c0b3ee6edfd93ee",
+    "declarationFile": "tests/suites/health.suite.ts",
+    "declarationLine": 27
+  },
+  {
+    "code": "proof-plan-behavior-model-unavailable",
+    "message": "flow \"health\" behavior model unavailable: one or more test declarations were not recovered",
+    "entryFile": "per-worker/health.spec.ts",
+    "playwrightTestId": "d1bf5212fc8f8f62b54d-1e1daa19626dcd7bbfc6",
+    "declarationFile": "tests/suites/health.suite.ts",
+    "declarationLine": 27
+  },
+  {
+    "code": "proof-plan-behavior-model-unavailable",
+    "message": "flow \"health\" behavior model unavailable: one or more test declarations were not recovered",
+    "entryFile": "per-worker/health.spec.ts",
+    "playwrightTestId": "d1bf5212fc8f8f62b54d-f751bfc7864c4432ec4e",
+    "declarationFile": "tests/suites/health.suite.ts",
+    "declarationLine": 27
+  },
+  {
+    "code": "proof-plan-behavior-model-unavailable",
+    "message": "flow \"health\" behavior model unavailable: one or more test declarations were not recovered",
+    "entryFile": "per-worker/health.spec.ts",
+    "playwrightTestId": "d1bf5212fc8f8f62b54d-64d32dd7ca0689ffcc67",
+    "declarationFile": "tests/suites/health.suite.ts",
+    "declarationLine": 27
+  },
+  {
+    "code": "proof-plan-behavior-model-unavailable",
+    "message": "flow \"subscription-rejection\" behavior model unavailable: one or more suite steps were not statically recovered",
+    "entryFile": "per-test/subscription-rejection.spec.ts",
+    "playwrightTestId": "936b029611cc371ee95b-2c00b5c353780a522c49",
+    "declarationFile": "tests/suites/subscription-rejection.suite.ts",
+    "declarationLine": 21
+  },
+  {
+    "code": "proof-plan-behavior-model-unavailable",
+    "message": "flow \"subscription-rejection\" behavior model unavailable: one or more suite steps were not statically recovered",
+    "entryFile": "per-test/subscription-rejection.spec.ts",
+    "playwrightTestId": "936b029611cc371ee95b-3a151cbeb2ce66ce1e7e",
+    "declarationFile": "tests/suites/subscription-rejection.suite.ts",
+    "declarationLine": 56
+  },
+  {
+    "code": "proof-plan-behavior-model-unavailable",
+    "message": "flow \"subscription-rejection\" behavior model unavailable: one or more suite steps were not statically recovered",
+    "entryFile": "per-test/subscription-rejection.spec.ts",
+    "playwrightTestId": "936b029611cc371ee95b-18cf142de6ae144affbd",
+    "declarationFile": "tests/suites/subscription-rejection.suite.ts",
+    "declarationLine": 103
+  },
+  {
+    "code": "proof-plan-behavior-model-unavailable",
+    "message": "flow \"subscription-rejection\" behavior model unavailable: one or more suite steps were not statically recovered",
+    "entryFile": "per-worker/subscription-rejection.spec.ts",
+    "playwrightTestId": "16c3faa07c6fdef3bf8c-8587996589daf6be6867",
+    "declarationFile": "tests/suites/subscription-rejection.suite.ts",
+    "declarationLine": 21
+  },
+  {
+    "code": "proof-plan-behavior-model-unavailable",
+    "message": "flow \"subscription-rejection\" behavior model unavailable: one or more suite steps were not statically recovered",
+    "entryFile": "per-worker/subscription-rejection.spec.ts",
+    "playwrightTestId": "16c3faa07c6fdef3bf8c-6fefe7f7bc54019351a6",
+    "declarationFile": "tests/suites/subscription-rejection.suite.ts",
+    "declarationLine": 56
+  },
+  {
+    "code": "proof-plan-behavior-model-unavailable",
+    "message": "flow \"subscription-rejection\" behavior model unavailable: one or more suite steps were not statically recovered",
+    "entryFile": "per-worker/subscription-rejection.spec.ts",
+    "playwrightTestId": "16c3faa07c6fdef3bf8c-b2a1f53e7a4247749557",
+    "declarationFile": "tests/suites/subscription-rejection.suite.ts",
+    "declarationLine": 103
+  }
+]

@@ -1,0 +1,112 @@
+name: Retain CI evidence
+description: Capture a lane receipt and inventory, then upload the lane evidence bundle.
+
+inputs:
+  lane:
+    description: Stable CI lane name, such as test or lint.
+    required: true
+  project:
+    description: Matrix project or aggregate project name.
+    required: true
+  evidence-dir:
+    description: Workspace-relative evidence bundle directory.
+    required: true
+  command:
+    description: Exact command represented by the receipt when no command wrapper result exists.
+    required: false
+    default: ''
+  result:
+    description: Upstream result used by aggregate collectors when no wrapper result exists.
+    required: false
+    default: ''
+  expected:
+    description: Newline-separated evidence expectations in kind=path form.
+    required: false
+    default: ''
+  input-root:
+    description: Workspace-relative downloaded artifact root for aggregate inventories.
+    required: false
+    default: ''
+  expected-projects:
+    description: Newline-separated matrix projects expected by an aggregate collector.
+    required: false
+    default: ''
+  setup-result:
+    description: Outcome of the setup step represented by this receipt.
+    required: false
+    default: success
+  upload-result:
+    description: Outcome of an upstream report upload (for example Codecov).
+    required: false
+    default: not-run
+  working-directory:
+    description: Workspace-relative directory in which the represented command ran.
+    required: false
+    default: .
+  test-case-identifiers:
+    description: Newline-separated test case or matrix identifiers.
+    required: false
+    default: ''
+
+runs:
+  using: composite
+  steps:
+    - name: Build evidence receipt and inventory
+      id: collect
+      if: always()
+      continue-on-error: true
+      shell: bash
+      env:
+        BLACKBOX_CI_LANE: ${{ inputs.lane }}
+        BLACKBOX_CI_PROJECT: ${{ inputs.project }}
+        BLACKBOX_CI_EVIDENCE_DIR: ${{ inputs.evidence-dir }}
+        BLACKBOX_CI_COMMAND: ${{ inputs.command }}
+        BLACKBOX_CI_RESULT: ${{ inputs.result }}
+        BLACKBOX_CI_EXPECTED: ${{ inputs.expected }}
+        BLACKBOX_CI_INPUT_ROOT: ${{ inputs.input-root }}
+        BLACKBOX_CI_EXPECTED_PROJECTS: ${{ inputs.expected-projects }}
+        BLACKBOX_CI_SETUP_RESULT: ${{ inputs.setup-result }}
+        BLACKBOX_CI_UPLOAD_RESULT: ${{ inputs.upload-result }}
+        BLACKBOX_CI_WORKING_DIRECTORY: ${{ inputs.working-directory }}
+        BLACKBOX_CI_TEST_CASE_IDENTIFIERS: ${{ inputs.test-case-identifiers }}
+      run: |
+        args=(
+          collect
+          --lane "$BLACKBOX_CI_LANE"
+          --project "$BLACKBOX_CI_PROJECT"
+          --evidence-dir "$BLACKBOX_CI_EVIDENCE_DIR"
+          --command "$BLACKBOX_CI_COMMAND"
+          --result "$BLACKBOX_CI_RESULT"
+          --expected "$BLACKBOX_CI_EXPECTED"
+          --input-root "$BLACKBOX_CI_INPUT_ROOT"
+          --expected-projects "$BLACKBOX_CI_EXPECTED_PROJECTS"
+          --setup-result "$BLACKBOX_CI_SETUP_RESULT"
+          --upload-result "$BLACKBOX_CI_UPLOAD_RESULT"
+          --working-directory "$BLACKBOX_CI_WORKING_DIRECTORY"
+          --test-case-identifiers "$BLACKBOX_CI_TEST_CASE_IDENTIFIERS"
+        )
+        node "$GITHUB_WORKSPACE/.github/scripts/ci-evidence.mjs" "${args[@]}"
+
+    - name: Upload evidence bundle
+      id: upload
+      if: always()
+      continue-on-error: true
+      uses: actions/upload-artifact@v4
+      with:
+        name: ci-evidence-${{ github.run_id }}-${{ github.run_attempt }}-${{ inputs.lane }}-${{ inputs.project }}
+        path: ${{ inputs.evidence-dir }}
+        retention-days: 14
+        if-no-files-found: error
+
+    - name: Enforce evidence gate
+      if: always()
+      shell: bash
+      env:
+        COLLECT_OUTCOME: ${{ steps.collect.outcome }}
+        UPLOAD_OUTCOME: ${{ steps.upload.outcome }}
+      run: |
+        if [[ "$COLLECT_OUTCOME" != success || "$UPLOAD_OUTCOME" != success ]]; then
+          printf 'CI evidence gate failed (collector=%s, upload=%s).\n' \
+            "$COLLECT_OUTCOME" "$UPLOAD_OUTCOME" >&2
+          exit 1
+        fi

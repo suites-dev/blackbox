@@ -1,0 +1,29 @@
+{
+	"schemaVersion": 2,
+	"artifactRole": "assertion-observations",
+	"runId": "01M25KNEH3C9BC4HVE743DBF2T",
+	"attemptId": "687b6d2959198a2f907cde9db5239e78",
+	"playwrightTestId": "035dad0ffab30e40b0c2-5942dc07c8be519e4490",
+	"scenarioId": "payment-mock-subsystem.starts-from-a-clean-state-because-the-container-is-per-test",
+	"project": "subsystem",
+	"retry": 0,
+	"planComplete": true,
+	"scenarioResult": true,
+	"scenarioResultReason": null,
+	"assertions": [
+		{
+			"assertionId": "payment-mock-subsystem.starts-from-a-clean-state-because-the-container-is-per-test/step:1",
+			"ordinal": 1,
+			"title": "Assert empty intents and refunds",
+			"declaration": {
+				"path": "tests/subsystem/payment-mock.spec.ts",
+				"line": 89,
+				"column": 3
+			},
+			"evaluation": true,
+			"reason": null,
+			"titleCorroborated": false,
+			"terminalAttribution": "no-attributable-expect-failure"
+		}
+	]
+}

@@ -1,0 +1,171 @@
+{
+	"schemaVersion": 1,
+	"artifactRole": "canonical-run-result",
+	"generatedAt": "2026-09-10T12:13:28.665Z",
+	"runId": "01M25KNEH3C9BC4HVE743DBF2T",
+	"flowId": "payment-mock-subsystem-dist-wrapper",
+	"title": "payment-mock-subsystem-dist-wrapper",
+	"authoringSource": "suite",
+	"axes": {
+		"execution": "passed",
+		"evidence": "incomplete",
+		"contractState": "unbaselined",
+		"verdict": "indeterminate"
+	},
+	"verdict": {
+		"value": "indeterminate",
+		"authority": "deterministic-analyzer",
+		"reason": "effects-contract-absent",
+		"scope": "flow-run",
+		"summary": "payment-mock-subsystem-dist-wrapper's evidence was not fit for judgment (effects-contract-absent)."
+	},
+	"qualification": {
+		"sealed": true,
+		"fresh": true,
+		"digestsMatch": true,
+		"scopeComplete": true,
+		"evidenceComplete": false,
+		"qualifies": false
+	},
+	"scope": {
+		"requiredScenarios": 2,
+		"executedScenarios": 2,
+		"attempts": 2,
+		"projects": [
+			"subsystem"
+		],
+		"filtered": false
+	},
+	"firstDivergence": null,
+	"obligations": [
+		{
+			"id": "payment-mock-subsystem-dist-wrapper.reports-ready-on-get-health-from-the-lean-dist-wrapper::assertion",
+			"scenarioId": "payment-mock-subsystem-dist-wrapper.reports-ready-on-get-health-from-the-lean-dist-wrapper",
+			"source": "playwright.assertion",
+			"evaluation": true,
+			"reason": null
+		},
+		{
+			"id": "payment-mock-subsystem-dist-wrapper.runs-the-payment-intent-and-refund-lifecycle-on-the-dist-wrapper::assertion",
+			"scenarioId": "payment-mock-subsystem-dist-wrapper.runs-the-payment-intent-and-refund-lifecycle-on-the-dist-wrapper",
+			"source": "playwright.assertion",
+			"evaluation": true,
+			"reason": null
+		}
+	],
+	"findings": [],
+	"assumptions": [
+		{
+			"id": "instrumentation-captured-all-boundaries",
+			"text": "Instrumentation captured every declared boundary; an effect the observation policy does not cover cannot be represented as evidence."
+		},
+		{
+			"id": "collector-delivered-before-seal",
+			"text": "Every effect the instrumentation captured was delivered to the collector before the run sealed; the seal's window end is a floor on sealing, not just a fact about it."
+		},
+		{
+			"id": "source-maps-match-running-code",
+			"text": "The source maps read by the analyzer match the code that actually executed in the sealed run."
+		},
+		{
+			"id": "clock-ordering-sufficient",
+			"text": "The clock ordering available to the analyzer is sufficient to place attempt, evidence, and window boundaries correctly relative to one another."
+		},
+		{
+			"id": "declared-boundary-matches-actual",
+			"text": "The boundary declared in the observation policy (its kind and authoritativeFor claims) matches what the instrumented code actually does at runtime."
+		}
+	],
+	"perProjectResults": [
+		{
+			"project": "subsystem",
+			"verdict": "indeterminate",
+			"contractState": "unbaselined"
+		}
+	],
+	"attempts": [
+		{
+			"attemptId": "2e7edd9ebedc5d2c938575d14d8461bb",
+			"scenarioId": "payment-mock-subsystem-dist-wrapper.reports-ready-on-get-health-from-the-lean-dist-wrapper",
+			"project": "subsystem",
+			"retry": 0,
+			"final": true,
+			"executionOutcome": "passed",
+			"evidenceComplete": false,
+			"evidenceStatus": "incomplete",
+			"evidenceFiles": [
+				{
+					"name": "attempt.json",
+					"path": "evidence/2e7edd9ebedc5d2c938575d14d8461bb/attempt.json"
+				},
+				{
+					"name": "trace-summary.json",
+					"path": "evidence/2e7edd9ebedc5d2c938575d14d8461bb/trace-summary.json"
+				},
+				{
+					"name": "effects.json",
+					"path": "evidence/2e7edd9ebedc5d2c938575d14d8461bb/effects.json"
+				},
+				{
+					"name": "assertions.json",
+					"path": "evidence/2e7edd9ebedc5d2c938575d14d8461bb/assertions.json"
+				},
+				{
+					"name": "projection-comparison.json",
+					"path": "evidence/2e7edd9ebedc5d2c938575d14d8461bb/projection-comparison.json"
+				}
+			]
+		},
+		{
+			"attemptId": "62403baa46fdc9fe69e4122f1da5f12b",
+			"scenarioId": "payment-mock-subsystem-dist-wrapper.runs-the-payment-intent-and-refund-lifecycle-on-the-dist-wrapper",
+			"project": "subsystem",
+			"retry": 0,
+			"final": true,
+			"executionOutcome": "passed",
+			"evidenceComplete": false,
+			"evidenceStatus": "incomplete",
+			"evidenceFiles": [
+				{
+					"name": "attempt.json",
+					"path": "evidence/62403baa46fdc9fe69e4122f1da5f12b/attempt.json"
+				},
+				{
+					"name": "trace-summary.json",
+					"path": "evidence/62403baa46fdc9fe69e4122f1da5f12b/trace-summary.json"
+				},
+				{
+					"name": "effects.json",
+					"path": "evidence/62403baa46fdc9fe69e4122f1da5f12b/effects.json"
+				},
+				{
+					"name": "assertions.json",
+					"path": "evidence/62403baa46fdc9fe69e4122f1da5f12b/assertions.json"
+				},
+				{
+					"name": "projection-comparison.json",
+					"path": "evidence/62403baa46fdc9fe69e4122f1da5f12b/projection-comparison.json"
+				}
+			]
+		}
+	],
+	"nextValidAction": {
+		"code": "rerun",
+		"summary": "Evidence was missing, stale, or invalid. Repair capture and rerun before considering any contract candidate.",
+		"commandAfterAuthorization": null
+	},
+	"artifacts": {
+		"manifest": "manifest.json",
+		"proofPlan": "proof-plans/payment-mock-subsystem-dist-wrapper.json",
+		"behaviorModel": "behavior-models/payment-mock-subsystem-dist-wrapper.json",
+		"observationPolicy": "observation-policy.json",
+		"evidenceIndex": "evidence/index.json",
+		"seal": "seal.json",
+		"report": "report.html",
+		"approvalContext": null,
+		"candidateContract": null,
+		"contractDiff": null
+	},
+	"recommendation": null,
+	"developerDecision": null
+}

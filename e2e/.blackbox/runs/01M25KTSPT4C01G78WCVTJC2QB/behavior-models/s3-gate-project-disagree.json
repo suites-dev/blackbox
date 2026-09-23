@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "flowId": "s3-gate-project-disagree",
+  "authoringSource": "suite",
+  "source": {
+    "declaration": {
+      "path": "/private/tmp/blackbox-phase0-proof.HO0ohJ/e2e/proofs/s3-gate/planted-project-disagree.suite.ts",
+      "digest": "137a727cd91d5b1c16fc1db921c6fa17799c6d8d"
+    },
+    "entry": {
+      "path": "/private/tmp/blackbox-phase0-proof.HO0ohJ/e2e/tests/s3-gate/per-test.spec.ts",
+      "digest": "017ca263def1aaef4a30dba86d1eb926edb54161"
+    }
+  },
+  "feature": {
+    "title": "S3 gate: project-scoped candidate disagreement",
+    "description": "",
+    "scenarios": [
+      {
+        "id": "s3-gate-project-disagree.plants-one-extra-real-sut-effect-only-under-the-disagreement-pro",
+        "title": "plants one extra real SUT effect only under the disagreement project, for the SAME scenario as every other project",
+        "steps": [
+          "When POST /subscriptions for bob; optionally carol under the disagreement project",
+          "Then 201 with an active subscription for bob",
+          "Then 201 with an active subscription for carol when planted",
+          "Then (S3 gate): this project's re-projected effects reflect exactly what THIS project did"
+        ]
+      }
+    ]
+  }
+}

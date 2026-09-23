@@ -1,0 +1,33 @@
+{
+	"schemaVersion": 2,
+	"artifactRole": "reporter-attempt-outcome",
+	"runId": "01M23JNQ6G9X2CYTFR8Q7ZSXS9",
+	"playwrightTestId": "c771ecd7169f45f8e2fe-6357137907732b791aea",
+	"project": "per-worker",
+	"scenarioId": "fixture-control.resets-to-the-fresh-and-comparison-absent-profiles-and-rejects-a",
+	"retry": 0,
+	"attemptId": "935a40874f60ae72bb96df773b6c8b46",
+	"outcome": "passed",
+	"status": "passed",
+	"recordedAt": "2026-09-09T17:15:56.286Z",
+	"planComplete": false,
+	"assertions": [
+		{
+			"assertionId": "fixture-control.resets-to-the-fresh-and-comparison-absent-profiles-and-rejects-a/step:3",
+			"ordinal": 3,
+			"title": "Assert 400 invalid-profile for the unknown profile",
+			"declaration": {
+				"path": "tests/suites/fixture-control.suite.ts",
+				"line": 135,
+				"column": 4
+			},
+			"evaluation": true,
+			"reason": null,
+			"titleCorroborated": false,
+			"terminalAttribution": "no-attributable-expect-failure"
+		}
+	],
+	"requestedArtifacts": [
+		"assertions.json"
+	]
+}

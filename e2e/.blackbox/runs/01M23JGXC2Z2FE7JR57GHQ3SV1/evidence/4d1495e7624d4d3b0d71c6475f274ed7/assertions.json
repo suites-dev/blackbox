@@ -1,0 +1,57 @@
+{
+	"schemaVersion": 2,
+	"artifactRole": "assertion-observations",
+	"runId": "01M23JGXC2Z2FE7JR57GHQ3SV1",
+	"attemptId": "4d1495e7624d4d3b0d71c6475f274ed7",
+	"playwrightTestId": "bffe99747a9b87995e8f-e54012653f1307944fec",
+	"scenarioId": "s3-gate-arrange-vs-act-correlation.binds-entry-correlation-to-the-act-request-never-an-earlier-arra",
+	"project": "per-worker",
+	"retry": 0,
+	"planComplete": true,
+	"scenarioResult": true,
+	"scenarioResultReason": null,
+	"assertions": [
+		{
+			"assertionId": "s3-gate-arrange-vs-act-correlation.binds-entry-correlation-to-the-act-request-never-an-earlier-arra/step:1",
+			"ordinal": 1,
+			"title": "Assert the Arrange request itself succeeds",
+			"declaration": {
+				"path": "proofs/s3-gate/planted-arrange-wins.suite.ts",
+				"line": 48,
+				"column": 4
+			},
+			"evaluation": true,
+			"reason": null,
+			"titleCorroborated": false,
+			"terminalAttribution": "no-attributable-expect-failure"
+		},
+		{
+			"assertionId": "s3-gate-arrange-vs-act-correlation.binds-entry-correlation-to-the-act-request-never-an-earlier-arra/step:3",
+			"ordinal": 3,
+			"title": "Assert 201 with an active subscription for bob",
+			"declaration": {
+				"path": "proofs/s3-gate/planted-arrange-wins.suite.ts",
+				"line": 59,
+				"column": 4
+			},
+			"evaluation": true,
+			"reason": null,
+			"titleCorroborated": false,
+			"terminalAttribution": "no-attributable-expect-failure"
+		},
+		{
+			"assertionId": "s3-gate-arrange-vs-act-correlation.binds-entry-correlation-to-the-act-request-never-an-earlier-arra/step:4",
+			"ordinal": 4,
+			"title": "Assert (S3 gate): entry correlates to the Act request, and BOTH real requests are still present as effects",
+			"declaration": {
+				"path": "proofs/s3-gate/planted-arrange-wins.suite.ts",
+				"line": 63,
+				"column": 4
+			},
+			"evaluation": true,
+			"reason": null,
+			"titleCorroborated": true,
+			"terminalAttribution": "no-attributable-expect-failure"
+		}
+	]
+}

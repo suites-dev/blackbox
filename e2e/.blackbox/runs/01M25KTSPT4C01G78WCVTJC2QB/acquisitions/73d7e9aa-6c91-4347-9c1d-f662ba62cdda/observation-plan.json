@@ -1,0 +1,193 @@
+{
+	"schemaVersion": 1,
+	"artifactRole": "observation-plan",
+	"runId": "01M25KTSPT4C01G78WCVTJC2QB",
+	"acquisitionId": "73d7e9aa-6c91-4347-9c1d-f662ba62cdda",
+	"observationPolicyDigest": "1fa7b4b1273c0ca0e351a378c1e44b0f039c6795",
+	"intent": {
+		"acquisitionId": "73d7e9aa-6c91-4347-9c1d-f662ba62cdda",
+		"path": ".blackbox/runs/01M25KTSPT4C01G78WCVTJC2QB/acquisitions/73d7e9aa-6c91-4347-9c1d-f662ba62cdda/intent.json",
+		"digest": "fbadc978c38abe344bf70e250c59a04cc77812b3"
+	},
+	"target": {
+		"kind": "system",
+		"id": "system"
+	},
+	"sandbox": {
+		"sandboxId": "sandbox-ad2cc4c8-a3a0-4b4f-8fb7-01280e42c450",
+		"lifetime": "per-test",
+		"ownerId": "73d7e9aa-6c91-4347-9c1d-f662ba62cdda",
+		"establishedBy": "73d7e9aa-6c91-4347-9c1d-f662ba62cdda"
+	},
+	"environment": {
+		"source": "compose",
+		"configRefs": [
+			{
+				"path": "docker-compose.yml"
+			}
+		],
+		"environmentVariables": [
+			{
+				"name": "AWS_ACCESS_KEY_ID",
+				"source": "compose"
+			},
+			{
+				"name": "AWS_DEFAULT_REGION",
+				"source": "compose"
+			},
+			{
+				"name": "AWS_REGION",
+				"source": "compose"
+			},
+			{
+				"name": "AWS_SECRET_ACCESS_KEY",
+				"source": "compose"
+			},
+			{
+				"name": "DATABASE_URL",
+				"source": "compose"
+			},
+			{
+				"name": "FIXTURE_CONTROL_TOKEN",
+				"source": "compose"
+			},
+			{
+				"name": "FRAUD_CHECK_URL",
+				"source": "compose"
+			},
+			{
+				"name": "ORDER_SERVICE_URL",
+				"source": "compose"
+			},
+			{
+				"name": "PAYMENT_MOCK_URL",
+				"source": "compose"
+			},
+			{
+				"name": "PORT",
+				"source": "compose"
+			},
+			{
+				"name": "POSTGRES_DB",
+				"source": "compose"
+			},
+			{
+				"name": "POSTGRES_PASSWORD",
+				"source": "compose"
+			},
+			{
+				"name": "POSTGRES_USER",
+				"source": "compose"
+			},
+			{
+				"name": "REDIS_URL",
+				"source": "compose"
+			},
+			{
+				"name": "SERVICES",
+				"source": "compose"
+			},
+			{
+				"name": "SQS_ENDPOINT",
+				"source": "compose"
+			},
+			{
+				"name": "SQS_QUEUE_NAME",
+				"source": "compose"
+			}
+		]
+	},
+	"participants": [
+		{
+			"participantId": "fraud-check",
+			"kind": "service",
+			"instrumentation": {
+				"state": "applied",
+				"provider": "opentelemetry-node",
+				"version": "0.55.3"
+			},
+			"telemetry": {
+				"requirement": "required",
+				"boundaryIds": []
+			}
+		},
+		{
+			"participantId": "localstack",
+			"kind": "infra",
+			"instrumentation": {
+				"state": "unsupported",
+				"provider": null,
+				"version": null
+			},
+			"telemetry": {
+				"requirement": "required",
+				"boundaryIds": []
+			}
+		},
+		{
+			"participantId": "order-service",
+			"kind": "service",
+			"instrumentation": {
+				"state": "applied",
+				"provider": "opentelemetry-node",
+				"version": "0.55.3"
+			},
+			"telemetry": {
+				"requirement": "required",
+				"boundaryIds": []
+			}
+		},
+		{
+			"participantId": "payment-mock",
+			"kind": "service",
+			"instrumentation": {
+				"state": "applied",
+				"provider": "opentelemetry-node",
+				"version": "0.55.3"
+			},
+			"telemetry": {
+				"requirement": "required",
+				"boundaryIds": []
+			}
+		},
+		{
+			"participantId": "postgres",
+			"kind": "infra",
+			"instrumentation": {
+				"state": "unsupported",
+				"provider": null,
+				"version": null
+			},
+			"telemetry": {
+				"requirement": "required",
+				"boundaryIds": []
+			}
+		},
+		{
+			"participantId": "public-api",
+			"kind": "service",
+			"instrumentation": {
+				"state": "applied",
+				"provider": "opentelemetry-node",
+				"version": "0.55.3"
+			},
+			"telemetry": {
+				"requirement": "required",
+				"boundaryIds": []
+			}
+		},
+		{
+			"participantId": "redis",
+			"kind": "infra",
+			"instrumentation": {
+				"state": "unsupported",
+				"provider": null,
+				"version": null
+			},
+			"telemetry": {
+				"requirement": "required",
+				"boundaryIds": []
+			}
+		}
+	]
+}

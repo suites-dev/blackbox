@@ -1,0 +1,356 @@
+{
+	"schemaVersion": 1,
+	"artifactRole": "effects-projection-comparison",
+	"runId": "01M25KNEH3C9BC4HVE743DBF2T",
+	"attemptId": "bc172f89f2a232357d0fac72751c7769",
+	"outcome": "equal",
+	"differences": [],
+	"live": {
+		"snapshot": {
+			"schemaVersion": 2,
+			"entry": {
+				"service": "public-api",
+				"request": "GET /health",
+				"status": 200
+			},
+			"entryResolution": {
+				"status": "resolved"
+			},
+			"summary": {
+				"counts": {
+					"inbound": 1,
+					"outboundHttp": 0,
+					"sql": 1,
+					"cache": 1,
+					"messaging": 0
+				},
+				"services": [
+					"public-api"
+				],
+				"edges": [
+					{
+						"caller": "public-api",
+						"callee": "localstack"
+					}
+				]
+			},
+			"services": {
+				"public-api": {
+					"inbound": [
+						{
+							"method": "GET",
+							"path": "/health",
+							"status": 200,
+							"count": 1,
+							"origin": "sut"
+						}
+					],
+					"outboundHttp": [
+						{
+							"callee": "localstack",
+							"method": "POST",
+							"path": "/",
+							"status": 200,
+							"count": "1+",
+							"origin": "sut"
+						}
+					],
+					"sql": [
+						{
+							"operation": "SELECT",
+							"statement": "SELECT ?",
+							"count": 1,
+							"origin": "sut"
+						}
+					],
+					"cache": [
+						{
+							"system": "redis",
+							"command": "PING",
+							"keyPattern": "<none>",
+							"count": 1,
+							"origin": "sut"
+						}
+					]
+				}
+			},
+			"errors": []
+		},
+		"binding": {
+			"entryResolution": {
+				"status": "resolved"
+			},
+			"rootSpan": {
+				"spanId": "f21107d5048e7942",
+				"name": "GET /health",
+				"service": "public-api",
+				"error": false,
+				"durationMs": 3.612
+			},
+			"semanticStepId": "act",
+			"runtimeActSpanId": "4befbb531b241cf3"
+		},
+		"effects": [
+			{
+				"serviceId": "public-api",
+				"effect": {
+					"effectId": "effect-1",
+					"boundary": "http",
+					"operation": "GET",
+					"target": "/health",
+					"status": "200",
+					"origin": "sut",
+					"attributes": {
+						"direction": "inbound"
+					}
+				}
+			},
+			{
+				"serviceId": "public-api",
+				"effect": {
+					"effectId": "effect-2",
+					"boundary": "http",
+					"operation": "POST",
+					"target": "localstack:/",
+					"status": "200",
+					"origin": "sut",
+					"attributes": {
+						"direction": "outbound",
+						"callee": "localstack"
+					}
+				}
+			},
+			{
+				"serviceId": "public-api",
+				"effect": {
+					"effectId": "effect-3",
+					"boundary": "postgres",
+					"operation": "SELECT",
+					"target": null,
+					"status": null,
+					"origin": "sut",
+					"attributes": {
+						"statement": "SELECT ?"
+					}
+				}
+			},
+			{
+				"serviceId": "public-api",
+				"effect": {
+					"effectId": "effect-4",
+					"boundary": "redis",
+					"operation": "PING",
+					"target": "<none>",
+					"status": null,
+					"origin": "sut",
+					"attributes": {}
+				}
+			}
+		]
+	},
+	"postHoc": {
+		"snapshot": {
+			"schemaVersion": 2,
+			"entry": {
+				"service": "public-api",
+				"request": "GET /health",
+				"status": 200
+			},
+			"entryResolution": {
+				"status": "resolved"
+			},
+			"summary": {
+				"counts": {
+					"inbound": 1,
+					"outboundHttp": 0,
+					"sql": 1,
+					"cache": 1,
+					"messaging": 0
+				},
+				"services": [
+					"public-api"
+				],
+				"edges": [
+					{
+						"caller": "public-api",
+						"callee": "localstack"
+					}
+				]
+			},
+			"services": {
+				"public-api": {
+					"inbound": [
+						{
+							"method": "GET",
+							"path": "/health",
+							"status": 200,
+							"count": 1,
+							"origin": "sut"
+						}
+					],
+					"outboundHttp": [
+						{
+							"callee": "localstack",
+							"method": "POST",
+							"path": "/",
+							"status": 200,
+							"count": "1+",
+							"origin": "sut"
+						}
+					],
+					"sql": [
+						{
+							"operation": "SELECT",
+							"statement": "SELECT ?",
+							"count": 1,
+							"origin": "sut"
+						}
+					],
+					"cache": [
+						{
+							"system": "redis",
+							"command": "PING",
+							"keyPattern": "<none>",
+							"count": 1,
+							"origin": "sut"
+						}
+					]
+				}
+			},
+			"errors": []
+		},
+		"binding": {
+			"entryResolution": {
+				"status": "resolved"
+			},
+			"rootSpan": {
+				"spanId": "f21107d5048e7942",
+				"name": "GET /health",
+				"service": "public-api",
+				"error": false,
+				"durationMs": 3.612
+			},
+			"semanticStepId": "act",
+			"runtimeActSpanId": "4befbb531b241cf3"
+		},
+		"effects": [
+			{
+				"serviceId": "public-api",
+				"effect": {
+					"effectId": "effect-1",
+					"boundary": "http",
+					"operation": "GET",
+					"target": "/health",
+					"status": "200",
+					"origin": "sut",
+					"attributes": {
+						"direction": "inbound"
+					}
+				}
+			},
+			{
+				"serviceId": "public-api",
+				"effect": {
+					"effectId": "effect-2",
+					"boundary": "http",
+					"operation": "POST",
+					"target": "localstack:/",
+					"status": "200",
+					"origin": "sut",
+					"attributes": {
+						"direction": "outbound",
+						"callee": "localstack"
+					}
+				}
+			},
+			{
+				"serviceId": "public-api",
+				"effect": {
+					"effectId": "effect-3",
+					"boundary": "postgres",
+					"operation": "SELECT",
+					"target": null,
+					"status": null,
+					"origin": "sut",
+					"attributes": {
+						"statement": "SELECT ?"
+					}
+				}
+			},
+			{
+				"serviceId": "public-api",
+				"effect": {
+					"effectId": "effect-4",
+					"boundary": "redis",
+					"operation": "PING",
+					"target": "<none>",
+					"status": null,
+					"origin": "sut",
+					"attributes": {}
+				}
+			}
+		]
+	},
+	"postHocTraceSummary": {
+		"schemaVersion": 1,
+		"attemptId": "bc172f89f2a232357d0fac72751c7769",
+		"traceId": "bc172f89f2a232357d0fac72751c7769",
+		"rootSpan": {
+			"spanId": "f21107d5048e7942",
+			"name": "GET /health",
+			"service": "public-api",
+			"error": false,
+			"durationMs": 3.612
+		},
+		"entryResolution": {
+			"status": "resolved"
+		},
+		"actStep": {
+			"phase": "when",
+			"title": "Act: GET public-api /health",
+			"error": false,
+			"semanticStepId": "act",
+			"runtimeActSpanId": "4befbb531b241cf3"
+		},
+		"steps": [
+			{
+				"phase": "when",
+				"title": "Act: GET public-api /health",
+				"error": false,
+				"semanticStepId": null,
+				"runtimeActSpanId": null
+			},
+			{
+				"phase": "then",
+				"title": "Assert: 200 with status ready",
+				"error": false,
+				"semanticStepId": null,
+				"runtimeActSpanId": null
+			},
+			{
+				"phase": "unknown",
+				"title": "Expect \"toBe\"",
+				"error": false,
+				"semanticStepId": null,
+				"runtimeActSpanId": null
+			},
+			{
+				"phase": "unknown",
+				"title": "Expect \"toEqual\"",
+				"error": false,
+				"semanticStepId": null,
+				"runtimeActSpanId": null
+			},
+			{
+				"phase": "unknown",
+				"title": "Expect \"toMatchSnapshot\"",
+				"error": false,
+				"semanticStepId": null,
+				"runtimeActSpanId": null
+			}
+		],
+		"spanCount": 58,
+		"capturedEffectCount": 3,
+		"redactionsApplied": null
+	}
+}

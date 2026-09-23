@@ -1,0 +1,57 @@
+{
+	"schemaVersion": 2,
+	"artifactRole": "assertion-observations",
+	"runId": "01M23JNQ6G9X2CYTFR8Q7ZSXS9",
+	"attemptId": "4db08b46dde15b58e9e6c1d879b5442d",
+	"playwrightTestId": "2be0dfcf8cf709fb4273-33c10a4e908b3a852d16",
+	"scenarioId": "subscription-creation.creates-an-active-subscription-for-a-full-path-user-with-fraud-p",
+	"project": "per-test",
+	"retry": 0,
+	"planComplete": true,
+	"scenarioResult": true,
+	"scenarioResultReason": null,
+	"assertions": [
+		{
+			"assertionId": "subscription-creation.creates-an-active-subscription-for-a-full-path-user-with-fraud-p/step:1",
+			"ordinal": 1,
+			"title": "Assert 201 with an active pro subscription linked to a payment intent and an order",
+			"declaration": {
+				"path": "tests/suites/subscription-creation.suite.ts",
+				"line": 32,
+				"column": 4
+			},
+			"evaluation": true,
+			"reason": null,
+			"titleCorroborated": false,
+			"terminalAttribution": "no-attributable-expect-failure"
+		},
+		{
+			"assertionId": "subscription-creation.creates-an-active-subscription-for-a-full-path-user-with-fraud-p/step:2",
+			"ordinal": 2,
+			"title": "Assert fixture state records fraud audit, payment intent, redis keys, and one queued message",
+			"declaration": {
+				"path": "tests/suites/subscription-creation.suite.ts",
+				"line": 45,
+				"column": 4
+			},
+			"evaluation": true,
+			"reason": null,
+			"titleCorroborated": false,
+			"terminalAttribution": "no-attributable-expect-failure"
+		},
+		{
+			"assertionId": "subscription-creation.creates-an-active-subscription-for-a-full-path-user-with-fraud-p/step:3",
+			"ordinal": 3,
+			"title": "Assert draining the queue yields exactly one subscribe message for alice",
+			"declaration": {
+				"path": "tests/suites/subscription-creation.suite.ts",
+				"line": 73,
+				"column": 4
+			},
+			"evaluation": true,
+			"reason": null,
+			"titleCorroborated": false,
+			"terminalAttribution": "no-attributable-expect-failure"
+		}
+	]
+}

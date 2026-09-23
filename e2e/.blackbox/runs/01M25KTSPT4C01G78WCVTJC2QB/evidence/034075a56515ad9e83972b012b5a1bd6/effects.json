@@ -1,0 +1,58 @@
+{
+	"type": "effects",
+	"flowId": "s3-gate-qualified-project-disagree",
+	"attemptId": "034075a56515ad9e83972b012b5a1bd6",
+	"outcome": "captured",
+	"observed": {
+		"schemaVersion": 2,
+		"entry": {
+			"service": "payment-mock",
+			"request": "POST /v1/payment_intents",
+			"status": 201
+		},
+		"entryResolution": {
+			"status": "resolved"
+		},
+		"summary": {
+			"counts": {
+				"inbound": 1,
+				"outboundHttp": 0,
+				"sql": 0,
+				"cache": 0,
+				"messaging": 0
+			},
+			"services": [
+				"payment-mock"
+			],
+			"edges": []
+		},
+		"services": {
+			"payment-mock": {
+				"inbound": [
+					{
+						"method": "POST",
+						"path": "/v1/payment_intents",
+						"status": 201,
+						"count": 1,
+						"origin": "sut"
+					}
+				]
+			}
+		},
+		"errors": []
+	},
+	"expectedPath": null,
+	"captureReason": "no-baseline-comparison-requested",
+	"entryResolution": {
+		"status": "resolved"
+	},
+	"rootSpan": {
+		"spanId": "e85affd963e85c16",
+		"name": "POST /v1/payment_intents",
+		"service": "payment-mock",
+		"error": false,
+		"durationMs": 1.059
+	},
+	"semanticStepId": "act",
+	"runtimeActSpanId": "5cad7f4bb8bb399e"
+}

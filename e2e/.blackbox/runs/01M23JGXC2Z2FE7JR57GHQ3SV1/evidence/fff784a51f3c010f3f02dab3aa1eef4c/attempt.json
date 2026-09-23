@@ -1,0 +1,41 @@
+{
+	"schemaVersion": 2,
+	"runId": "01M23JGXC2Z2FE7JR57GHQ3SV1",
+	"attemptId": "fff784a51f3c010f3f02dab3aa1eef4c",
+	"flowId": "s3-gate-qualified-project-disagree",
+	"scenarioId": "s3-gate-qualified-subsystem-project-disagreement.captures-distinct-payment-intent-outcomes-per-project",
+	"playwrightTestId": "69397d93a9cb61144346-1292503c786c4620d562",
+	"project": "subsystem-disagree",
+	"retry": 0,
+	"worker": 3,
+	"startedAt": "2026-09-09T17:12:59.079Z",
+	"finishedAt": "2026-09-09T17:13:02.992Z",
+	"outcome": "passed",
+	"partial": false,
+	"traceId": "fff784a51f3c010f3f02dab3aa1eef4c",
+	"declarationFile": {
+		"path": "tests/s3-gate/qualified-project-disagree.spec.ts",
+		"digest": "5ad9530ef2f17d10d59dda970085a4b8fdb16b2a"
+	},
+	"entryFile": "s3-gate/qualified-project-disagree.spec.ts",
+	"effects": [
+		{
+			"serviceId": "payment-mock",
+			"effect": {
+				"effectId": "effect-1",
+				"boundary": "http",
+				"operation": "POST",
+				"target": "/v1/payment_intents",
+				"status": "400",
+				"origin": "sut",
+				"attributes": {
+					"direction": "inbound"
+				}
+			}
+		}
+	],
+	"requestedArtifacts": [
+		"decisions.json",
+		"assertions.json"
+	]
+}

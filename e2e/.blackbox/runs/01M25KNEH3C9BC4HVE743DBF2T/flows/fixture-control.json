@@ -1,0 +1,66 @@
+{
+	"flowId": "fixture-control",
+	"authoringSource": "suite",
+	"suite": {
+		"path": "tests/suites/fixture-control.suite.ts",
+		"digest": "50a1d6306307e7d45e4aa5e6d99c3c97df5a4272"
+	},
+	"requirement": null,
+	"baselines": [
+		{
+			"scenarioId": "fixture-control.group-cleanup-restores-a-clean-fixture-state-after-a-subscriptio",
+			"artifact": {
+				"path": "tests/per-test/effects/fixture-control.spec.ts/effects-fixture-control--flow-88cd600a4d7f2f1915fb4f9b898714e30c7dcc08--scenario-fc8dd6d0f5acdaf0d890c53ec15ee3fc951de21e.yaml",
+				"digest": "00c54037add6eb9fa2fd536ff175a800b3c65258"
+			}
+		},
+		{
+			"scenarioId": "fixture-control.payment-mock-records-payment-intents-and-refunds-and-rejects-unk",
+			"artifact": {
+				"path": "tests/per-test/effects/fixture-control.spec.ts/effects-fixture-control--flow-88cd600a4d7f2f1915fb4f9b898714e30c7dcc08--scenario-44ebb232a79db761b7a03479eb0f5bba79679545.yaml",
+				"digest": "9cb69f7773eddea4722b7fc6c1030913d37f54bd"
+			}
+		},
+		{
+			"scenarioId": "fixture-control.rejects-fixture-control-access-without-a-token-or-with-a-wrong-t",
+			"artifact": {
+				"path": "tests/per-test/effects/fixture-control.spec.ts/effects-fixture-control--flow-88cd600a4d7f2f1915fb4f9b898714e30c7dcc08--scenario-b39da81cf518bcd9336ca3c2f5ceb2b829fedcf2.yaml",
+				"digest": "0450b3cc9fe48226300ca8a5ccd25976a6f0a0f7"
+			}
+		},
+		{
+			"scenarioId": "fixture-control.resets-to-the-fresh-and-comparison-absent-profiles-and-rejects-a",
+			"artifact": {
+				"path": "tests/per-test/effects/fixture-control.spec.ts/effects-fixture-control--flow-88cd600a4d7f2f1915fb4f9b898714e30c7dcc08--scenario-17dadf1683cdd75bd8f6aa9c8f4c5c9a245f7e26.yaml",
+				"digest": "81f3389ff38c75c92150a69b9202bf9392533a19"
+			}
+		}
+	],
+	"entries": [
+		{
+			"project": "per-test",
+			"entryPath": "per-test/fixture-control.spec.ts"
+		},
+		{
+			"project": "per-worker",
+			"entryPath": "per-worker/fixture-control.spec.ts"
+		}
+	],
+	"candidate": null,
+	"behaviorModelDigest": "pending-s3",
+	"observationDigest": "pending-s3",
+	"proofPlanDigest": "pending-s3",
+	"completeness": {
+		"plannedScenarios": [],
+		"executedScenarios": [
+			"fixture-control.group-cleanup-restores-a-clean-fixture-state-after-a-subscriptio",
+			"fixture-control.payment-mock-records-payment-intents-and-refunds-and-rejects-unk",
+			"fixture-control.rejects-fixture-control-access-without-a-token-or-with-a-wrong-t",
+			"fixture-control.resets-to-the-fresh-and-comparison-absent-profiles-and-rejects-a"
+		],
+		"complete": false,
+		"reasons": [
+			"planned-scope-unknown-pending-proof-plans"
+		]
+	}
+}

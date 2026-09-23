@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 1,
+  "flowId": "s3-gate-arrange-wins",
+  "compiledAt": "2026-09-09T17:12:52.433Z",
+  "inputs": {
+    "authoringSource": "suite",
+    "requirementDigest": null,
+    "behaviorModelDigest": "ad219951ed390cd7f62552bd03dde950eecbd849",
+    "suiteDigest": "cc47dcc33d3c95d89e49859f886089ed02475413",
+    "acceptedEffectsDigest": null,
+    "observationDigest": "1fa7b4b1273c0ca0e351a378c1e44b0f039c6795"
+  },
+  "requiredScope": {
+    "projects": [
+      "per-test",
+      "per-worker"
+    ],
+    "scenarios": [
+      "s3-gate-arrange-vs-act-correlation.binds-entry-correlation-to-the-act-request-never-an-earlier-arra"
+    ],
+    "selectionMustBeComplete": true,
+    "predeclaredAssertions": [
+      {
+        "scenarioId": "s3-gate-arrange-vs-act-correlation.binds-entry-correlation-to-the-act-request-never-an-earlier-arra",
+        "assertionIds": [
+          "s3-gate-arrange-vs-act-correlation.binds-entry-correlation-to-the-act-request-never-an-earlier-arra/step:1",
+          "s3-gate-arrange-vs-act-correlation.binds-entry-correlation-to-the-act-request-never-an-earlier-arra/step:3",
+          "s3-gate-arrange-vs-act-correlation.binds-entry-correlation-to-the-act-request-never-an-earlier-arra/step:4"
+        ]
+      }
+    ]
+  },
+  "obligations": [
+    {
+      "id": "s3-gate-arrange-vs-act-correlation.binds-entry-correlation-to-the-act-request-never-an-earlier-arra::assertion",
+      "scenarioId": "s3-gate-arrange-vs-act-correlation.binds-entry-correlation-to-the-act-request-never-an-earlier-arra",
+      "kind": "assertion",
+      "source": "playwright.assertion",
+      "required": true,
+      "semanticStepId": null
+    }
+  ],
+  "qualification": {
+    "requireSealedEvidence": true,
+    "requireFreshDigests": true,
+    "requireCompleteScope": true,
+    "requireCompleteEvidence": true
+  }
+}

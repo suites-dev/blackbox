@@ -1,0 +1,210 @@
+{
+	"schemaVersion": 1,
+	"artifactRole": "effects-projection-comparison",
+	"runId": "01M25KNEH3C9BC4HVE743DBF2T",
+	"attemptId": "2e7edd9ebedc5d2c938575d14d8461bb",
+	"outcome": "equal",
+	"differences": [],
+	"live": {
+		"snapshot": {
+			"schemaVersion": 2,
+			"entry": {
+				"service": "payment-mock-dist",
+				"request": "GET /health",
+				"status": 200
+			},
+			"entryResolution": {
+				"status": "resolved"
+			},
+			"summary": {
+				"counts": {
+					"inbound": 1,
+					"outboundHttp": 0,
+					"sql": 0,
+					"cache": 0,
+					"messaging": 0
+				},
+				"services": [
+					"payment-mock-dist"
+				],
+				"edges": []
+			},
+			"services": {
+				"payment-mock-dist": {
+					"inbound": [
+						{
+							"method": "GET",
+							"path": "/health",
+							"status": 200,
+							"count": 1,
+							"origin": "sut"
+						}
+					]
+				}
+			},
+			"errors": []
+		},
+		"binding": {
+			"entryResolution": {
+				"status": "resolved"
+			},
+			"rootSpan": {
+				"spanId": "af728162f728b857",
+				"name": "GET /health",
+				"service": "payment-mock-dist",
+				"error": false,
+				"durationMs": 0.267
+			},
+			"semanticStepId": "act",
+			"runtimeActSpanId": "30cdae29498be40e"
+		},
+		"effects": [
+			{
+				"serviceId": "payment-mock-dist",
+				"effect": {
+					"effectId": "effect-1",
+					"boundary": "http",
+					"operation": "GET",
+					"target": "/health",
+					"status": "200",
+					"origin": "sut",
+					"attributes": {
+						"direction": "inbound"
+					}
+				}
+			}
+		]
+	},
+	"postHoc": {
+		"snapshot": {
+			"schemaVersion": 2,
+			"entry": {
+				"service": "payment-mock-dist",
+				"request": "GET /health",
+				"status": 200
+			},
+			"entryResolution": {
+				"status": "resolved"
+			},
+			"summary": {
+				"counts": {
+					"inbound": 1,
+					"outboundHttp": 0,
+					"sql": 0,
+					"cache": 0,
+					"messaging": 0
+				},
+				"services": [
+					"payment-mock-dist"
+				],
+				"edges": []
+			},
+			"services": {
+				"payment-mock-dist": {
+					"inbound": [
+						{
+							"method": "GET",
+							"path": "/health",
+							"status": 200,
+							"count": 1,
+							"origin": "sut"
+						}
+					]
+				}
+			},
+			"errors": []
+		},
+		"binding": {
+			"entryResolution": {
+				"status": "resolved"
+			},
+			"rootSpan": {
+				"spanId": "af728162f728b857",
+				"name": "GET /health",
+				"service": "payment-mock-dist",
+				"error": false,
+				"durationMs": 0.267
+			},
+			"semanticStepId": "act",
+			"runtimeActSpanId": "30cdae29498be40e"
+		},
+		"effects": [
+			{
+				"serviceId": "payment-mock-dist",
+				"effect": {
+					"effectId": "effect-1",
+					"boundary": "http",
+					"operation": "GET",
+					"target": "/health",
+					"status": "200",
+					"origin": "sut",
+					"attributes": {
+						"direction": "inbound"
+					}
+				}
+			}
+		]
+	},
+	"postHocTraceSummary": {
+		"schemaVersion": 1,
+		"attemptId": "2e7edd9ebedc5d2c938575d14d8461bb",
+		"traceId": "2e7edd9ebedc5d2c938575d14d8461bb",
+		"rootSpan": {
+			"spanId": "af728162f728b857",
+			"name": "GET /health",
+			"service": "payment-mock-dist",
+			"error": false,
+			"durationMs": 0.267
+		},
+		"entryResolution": {
+			"status": "resolved"
+		},
+		"actStep": {
+			"phase": "when",
+			"title": "Act: GET /health",
+			"error": false,
+			"semanticStepId": "act",
+			"runtimeActSpanId": "30cdae29498be40e"
+		},
+		"steps": [
+			{
+				"phase": "when",
+				"title": "Act: GET /health",
+				"error": false,
+				"semanticStepId": null,
+				"runtimeActSpanId": null
+			},
+			{
+				"phase": "then",
+				"title": "Assert: 200 with status ready",
+				"error": false,
+				"semanticStepId": null,
+				"runtimeActSpanId": null
+			},
+			{
+				"phase": "unknown",
+				"title": "Expect \"toBe\"",
+				"error": false,
+				"semanticStepId": null,
+				"runtimeActSpanId": null
+			},
+			{
+				"phase": "unknown",
+				"title": "Expect \"toEqual\"",
+				"error": false,
+				"semanticStepId": null,
+				"runtimeActSpanId": null
+			},
+			{
+				"phase": "unknown",
+				"title": "Expect \"toMatchSnapshot\"",
+				"error": false,
+				"semanticStepId": null,
+				"runtimeActSpanId": null
+			}
+		],
+		"spanCount": 51,
+		"capturedEffectCount": 1,
+		"redactionsApplied": null
+	}
+}

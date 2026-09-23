@@ -1,0 +1,323 @@
+{
+	"schemaVersion": 1,
+	"artifactRole": "canonical-run-result",
+	"generatedAt": "2026-09-10T12:15:37.411Z",
+	"runId": "01M25KTSPT4C01G78WCVTJC2QB",
+	"flowId": "s3-gate-arrange-wins",
+	"title": "s3-gate-arrange-wins",
+	"authoringSource": "suite",
+	"axes": {
+		"execution": "passed",
+		"evidence": "incomplete",
+		"contractState": "unbaselined",
+		"verdict": "indeterminate"
+	},
+	"verdict": {
+		"value": "indeterminate",
+		"authority": "deterministic-analyzer",
+		"reason": "effects-contract-absent",
+		"scope": "flow-run",
+		"summary": "s3-gate-arrange-wins's evidence was not fit for judgment (effects-contract-absent)."
+	},
+	"qualification": {
+		"sealed": true,
+		"fresh": true,
+		"digestsMatch": true,
+		"scopeComplete": true,
+		"evidenceComplete": false,
+		"qualifies": false
+	},
+	"scope": {
+		"requiredScenarios": 1,
+		"executedScenarios": 1,
+		"attempts": 2,
+		"projects": [
+			"per-test",
+			"per-worker"
+		],
+		"filtered": false
+	},
+	"firstDivergence": null,
+	"obligations": [
+		{
+			"id": "s3-gate-arrange-vs-act-correlation.binds-entry-correlation-to-the-act-request-never-an-earlier-arra::assertion",
+			"scenarioId": "s3-gate-arrange-vs-act-correlation.binds-entry-correlation-to-the-act-request-never-an-earlier-arra",
+			"source": "playwright.assertion",
+			"evaluation": true,
+			"reason": null
+		}
+	],
+	"findings": [
+		{
+			"id": "finding.qualification-gap.9b7527eb7fdd",
+			"severity": "blocking",
+			"authority": "deterministic-analyzer",
+			"scenarioId": null,
+			"summary": "Required acquisition observation gap: acquisition 73d7e9aa-6c91-4347-9c1d-f662ba62cdda observation incomplete: participant localstack has missing spans: localstack:spans (not-emitted).",
+			"affectsVerdict": true
+		},
+		{
+			"id": "finding.qualification-gap.18ef51987389",
+			"severity": "blocking",
+			"authority": "deterministic-analyzer",
+			"scenarioId": null,
+			"summary": "Required acquisition observation gap: acquisition 73d7e9aa-6c91-4347-9c1d-f662ba62cdda observation incomplete: participant localstack spanCount is null; no count was established.",
+			"affectsVerdict": true
+		},
+		{
+			"id": "finding.qualification-gap.98804302f40b",
+			"severity": "blocking",
+			"authority": "deterministic-analyzer",
+			"scenarioId": null,
+			"summary": "Required acquisition observation gap: acquisition 73d7e9aa-6c91-4347-9c1d-f662ba62cdda observation incomplete: participant postgres has missing spans: postgres:spans (not-emitted).",
+			"affectsVerdict": true
+		},
+		{
+			"id": "finding.qualification-gap.360af49e00f3",
+			"severity": "blocking",
+			"authority": "deterministic-analyzer",
+			"scenarioId": null,
+			"summary": "Required acquisition observation gap: acquisition 73d7e9aa-6c91-4347-9c1d-f662ba62cdda observation incomplete: participant postgres spanCount is null; no count was established.",
+			"affectsVerdict": true
+		},
+		{
+			"id": "finding.qualification-gap.7b765b69e82d",
+			"severity": "blocking",
+			"authority": "deterministic-analyzer",
+			"scenarioId": null,
+			"summary": "Required acquisition observation gap: acquisition 73d7e9aa-6c91-4347-9c1d-f662ba62cdda observation incomplete: participant redis has missing spans: redis:spans (not-emitted).",
+			"affectsVerdict": true
+		},
+		{
+			"id": "finding.qualification-gap.0135d86104cd",
+			"severity": "blocking",
+			"authority": "deterministic-analyzer",
+			"scenarioId": null,
+			"summary": "Required acquisition observation gap: acquisition 73d7e9aa-6c91-4347-9c1d-f662ba62cdda observation incomplete: participant redis spanCount is null; no count was established.",
+			"affectsVerdict": true
+		},
+		{
+			"id": "finding.qualification-gap.8a8b2ba95890",
+			"severity": "blocking",
+			"authority": "deterministic-analyzer",
+			"scenarioId": null,
+			"summary": "Required acquisition observation gap: acquisition 73d7e9aa-6c91-4347-9c1d-f662ba62cdda observation incomplete: required participant localstack status is missing, not observed.",
+			"affectsVerdict": true
+		},
+		{
+			"id": "finding.qualification-gap.6d0c4d2e4091",
+			"severity": "blocking",
+			"authority": "deterministic-analyzer",
+			"scenarioId": null,
+			"summary": "Required acquisition observation gap: acquisition 73d7e9aa-6c91-4347-9c1d-f662ba62cdda observation incomplete: required participant postgres status is missing, not observed.",
+			"affectsVerdict": true
+		},
+		{
+			"id": "finding.qualification-gap.c65c01798df4",
+			"severity": "blocking",
+			"authority": "deterministic-analyzer",
+			"scenarioId": null,
+			"summary": "Required acquisition observation gap: acquisition 73d7e9aa-6c91-4347-9c1d-f662ba62cdda observation incomplete: required participant redis status is missing, not observed.",
+			"affectsVerdict": true
+		},
+		{
+			"id": "finding.qualification-gap.b3a1df8c6464",
+			"severity": "blocking",
+			"authority": "deterministic-analyzer",
+			"scenarioId": null,
+			"summary": "Required acquisition observation gap: acquisition a24c5a8d-ca3e-4065-b74a-8b18841465ab observation incomplete: participant localstack has missing spans: localstack:spans (not-emitted).",
+			"affectsVerdict": true
+		},
+		{
+			"id": "finding.qualification-gap.5224796670b1",
+			"severity": "blocking",
+			"authority": "deterministic-analyzer",
+			"scenarioId": null,
+			"summary": "Required acquisition observation gap: acquisition a24c5a8d-ca3e-4065-b74a-8b18841465ab observation incomplete: participant localstack spanCount is null; no count was established.",
+			"affectsVerdict": true
+		},
+		{
+			"id": "finding.qualification-gap.564d71709eab",
+			"severity": "blocking",
+			"authority": "deterministic-analyzer",
+			"scenarioId": null,
+			"summary": "Required acquisition observation gap: acquisition a24c5a8d-ca3e-4065-b74a-8b18841465ab observation incomplete: participant postgres has missing spans: postgres:spans (not-emitted).",
+			"affectsVerdict": true
+		},
+		{
+			"id": "finding.qualification-gap.f19a7921c79e",
+			"severity": "blocking",
+			"authority": "deterministic-analyzer",
+			"scenarioId": null,
+			"summary": "Required acquisition observation gap: acquisition a24c5a8d-ca3e-4065-b74a-8b18841465ab observation incomplete: participant postgres spanCount is null; no count was established.",
+			"affectsVerdict": true
+		},
+		{
+			"id": "finding.qualification-gap.0d54bfa7090a",
+			"severity": "blocking",
+			"authority": "deterministic-analyzer",
+			"scenarioId": null,
+			"summary": "Required acquisition observation gap: acquisition a24c5a8d-ca3e-4065-b74a-8b18841465ab observation incomplete: participant redis has missing spans: redis:spans (not-emitted).",
+			"affectsVerdict": true
+		},
+		{
+			"id": "finding.qualification-gap.b696214121b3",
+			"severity": "blocking",
+			"authority": "deterministic-analyzer",
+			"scenarioId": null,
+			"summary": "Required acquisition observation gap: acquisition a24c5a8d-ca3e-4065-b74a-8b18841465ab observation incomplete: participant redis spanCount is null; no count was established.",
+			"affectsVerdict": true
+		},
+		{
+			"id": "finding.qualification-gap.38e962c9ce72",
+			"severity": "blocking",
+			"authority": "deterministic-analyzer",
+			"scenarioId": null,
+			"summary": "Required acquisition observation gap: acquisition a24c5a8d-ca3e-4065-b74a-8b18841465ab observation incomplete: required participant localstack status is missing, not observed.",
+			"affectsVerdict": true
+		},
+		{
+			"id": "finding.qualification-gap.581c36a78109",
+			"severity": "blocking",
+			"authority": "deterministic-analyzer",
+			"scenarioId": null,
+			"summary": "Required acquisition observation gap: acquisition a24c5a8d-ca3e-4065-b74a-8b18841465ab observation incomplete: required participant postgres status is missing, not observed.",
+			"affectsVerdict": true
+		},
+		{
+			"id": "finding.qualification-gap.be30be0f3e23",
+			"severity": "blocking",
+			"authority": "deterministic-analyzer",
+			"scenarioId": null,
+			"summary": "Required acquisition observation gap: acquisition a24c5a8d-ca3e-4065-b74a-8b18841465ab observation incomplete: required participant redis status is missing, not observed.",
+			"affectsVerdict": true
+		}
+	],
+	"assumptions": [
+		{
+			"id": "instrumentation-captured-all-boundaries",
+			"text": "Instrumentation captured every declared boundary; an effect the observation policy does not cover cannot be represented as evidence."
+		},
+		{
+			"id": "collector-delivered-before-seal",
+			"text": "Every effect the instrumentation captured was delivered to the collector before the run sealed; the seal's window end is a floor on sealing, not just a fact about it."
+		},
+		{
+			"id": "source-maps-match-running-code",
+			"text": "The source maps read by the analyzer match the code that actually executed in the sealed run."
+		},
+		{
+			"id": "clock-ordering-sufficient",
+			"text": "The clock ordering available to the analyzer is sufficient to place attempt, evidence, and window boundaries correctly relative to one another."
+		},
+		{
+			"id": "declared-boundary-matches-actual",
+			"text": "The boundary declared in the observation policy (its kind and authoritativeFor claims) matches what the instrumented code actually does at runtime."
+		}
+	],
+	"perProjectResults": [
+		{
+			"project": "per-test",
+			"verdict": "indeterminate",
+			"contractState": "unbaselined"
+		},
+		{
+			"project": "per-worker",
+			"verdict": "indeterminate",
+			"contractState": "unbaselined"
+		}
+	],
+	"attempts": [
+		{
+			"attemptId": "505e1054ec07e6be9cb8c95bfbfe0653",
+			"scenarioId": "s3-gate-arrange-vs-act-correlation.binds-entry-correlation-to-the-act-request-never-an-earlier-arra",
+			"project": "per-test",
+			"retry": 0,
+			"final": true,
+			"executionOutcome": "passed",
+			"evidenceComplete": false,
+			"evidenceStatus": "incomplete",
+			"evidenceFiles": [
+				{
+					"name": "attempt.json",
+					"path": "evidence/505e1054ec07e6be9cb8c95bfbfe0653/attempt.json"
+				},
+				{
+					"name": "decisions.json",
+					"path": "evidence/505e1054ec07e6be9cb8c95bfbfe0653/decisions.json"
+				},
+				{
+					"name": "trace-summary.json",
+					"path": "evidence/505e1054ec07e6be9cb8c95bfbfe0653/trace-summary.json"
+				},
+				{
+					"name": "effects.json",
+					"path": "evidence/505e1054ec07e6be9cb8c95bfbfe0653/effects.json"
+				},
+				{
+					"name": "assertions.json",
+					"path": "evidence/505e1054ec07e6be9cb8c95bfbfe0653/assertions.json"
+				},
+				{
+					"name": "projection-comparison.json",
+					"path": "evidence/505e1054ec07e6be9cb8c95bfbfe0653/projection-comparison.json"
+				}
+			]
+		},
+		{
+			"attemptId": "af7370c81fdc7466e8ef72dfa9e723aa",
+			"scenarioId": "s3-gate-arrange-vs-act-correlation.binds-entry-correlation-to-the-act-request-never-an-earlier-arra",
+			"project": "per-worker",
+			"retry": 0,
+			"final": true,
+			"executionOutcome": "passed",
+			"evidenceComplete": false,
+			"evidenceStatus": "incomplete",
+			"evidenceFiles": [
+				{
+					"name": "attempt.json",
+					"path": "evidence/af7370c81fdc7466e8ef72dfa9e723aa/attempt.json"
+				},
+				{
+					"name": "decisions.json",
+					"path": "evidence/af7370c81fdc7466e8ef72dfa9e723aa/decisions.json"
+				},
+				{
+					"name": "trace-summary.json",
+					"path": "evidence/af7370c81fdc7466e8ef72dfa9e723aa/trace-summary.json"
+				},
+				{
+					"name": "effects.json",
+					"path": "evidence/af7370c81fdc7466e8ef72dfa9e723aa/effects.json"
+				},
+				{
+					"name": "assertions.json",
+					"path": "evidence/af7370c81fdc7466e8ef72dfa9e723aa/assertions.json"
+				},
+				{
+					"name": "projection-comparison.json",
+					"path": "evidence/af7370c81fdc7466e8ef72dfa9e723aa/projection-comparison.json"
+				}
+			]
+		}
+	],
+	"nextValidAction": {
+		"code": "rerun",
+		"summary": "Required run or acquisition evidence is unavailable. Repair capture and rerun.",
+		"commandAfterAuthorization": null
+	},
+	"artifacts": {
+		"manifest": "manifest.json",
+		"proofPlan": "proof-plans/s3-gate-arrange-wins.json",
+		"behaviorModel": "behavior-models/s3-gate-arrange-wins.json",
+		"observationPolicy": "observation-policy.json",
+		"evidenceIndex": "evidence/index.json",
+		"seal": "seal.json",
+		"report": "report.html",
+		"approvalContext": null,
+		"candidateContract": null,
+		"contractDiff": null
+	},
+	"recommendation": null,
+	"developerDecision": null
+}

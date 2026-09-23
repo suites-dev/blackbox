@@ -1,0 +1,43 @@
+{
+	"schemaVersion": 2,
+	"artifactRole": "assertion-observations",
+	"runId": "01M23JNQ6G9X2CYTFR8Q7ZSXS9",
+	"attemptId": "0f77c98f6aa07cfdb640fd80cbf08a30",
+	"playwrightTestId": "16c3faa07c6fdef3bf8c-8587996589daf6be6867",
+	"scenarioId": "subscription-rejection.rejects-an-unknown-user-with-404-and-leaves-no-side-effects",
+	"project": "per-worker",
+	"retry": 0,
+	"planComplete": true,
+	"scenarioResult": true,
+	"scenarioResultReason": null,
+	"assertions": [
+		{
+			"assertionId": "subscription-rejection.rejects-an-unknown-user-with-404-and-leaves-no-side-effects/step:1",
+			"ordinal": 1,
+			"title": "Assert 404 with the unknown-user outcome",
+			"declaration": {
+				"path": "tests/suites/subscription-rejection.suite.ts",
+				"line": 31,
+				"column": 4
+			},
+			"evaluation": true,
+			"reason": null,
+			"titleCorroborated": false,
+			"terminalAttribution": "no-attributable-expect-failure"
+		},
+		{
+			"assertionId": "subscription-rejection.rejects-an-unknown-user-with-404-and-leaves-no-side-effects/step:2",
+			"ordinal": 2,
+			"title": "Assert fixture state is untouched, no fraud, payment, redis, or queue effects",
+			"declaration": {
+				"path": "tests/suites/subscription-rejection.suite.ts",
+				"line": 41,
+				"column": 4
+			},
+			"evaluation": true,
+			"reason": null,
+			"titleCorroborated": false,
+			"terminalAttribution": "no-attributable-expect-failure"
+		}
+	]
+}

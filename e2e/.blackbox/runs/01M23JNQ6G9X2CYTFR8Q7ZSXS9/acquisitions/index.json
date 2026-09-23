@@ -1,0 +1,637 @@
+{
+	"schemaVersion": 1,
+	"artifactRole": "acquisition-index",
+	"runId": "01M23JNQ6G9X2CYTFR8Q7ZSXS9",
+	"entries": [
+		{
+			"acquisitionId": "1494cad4-700b-4ba9-97d7-b898bf2748b5",
+			"intent": {
+				"acquisitionId": "1494cad4-700b-4ba9-97d7-b898bf2748b5",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/1494cad4-700b-4ba9-97d7-b898bf2748b5/intent.json",
+				"digest": "445254260f8672344e847fc377e31d45c6fd95bd"
+			},
+			"plan": {
+				"acquisitionId": "1494cad4-700b-4ba9-97d7-b898bf2748b5",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/1494cad4-700b-4ba9-97d7-b898bf2748b5/observation-plan.json",
+				"digest": "1687d3aa21ecf58c79b144eb9b5d38db2a2fe93e"
+			},
+			"result": {
+				"acquisitionId": "1494cad4-700b-4ba9-97d7-b898bf2748b5",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/1494cad4-700b-4ba9-97d7-b898bf2748b5/observation-result.json",
+				"digest": "ee871c51833535001af7728f03cab85da9c8f0cd"
+			}
+		},
+		{
+			"acquisitionId": "29003d22-dec0-4112-a2ca-6ca56731ba77",
+			"intent": {
+				"acquisitionId": "29003d22-dec0-4112-a2ca-6ca56731ba77",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/29003d22-dec0-4112-a2ca-6ca56731ba77/intent.json",
+				"digest": "450b17f2600a57ac0e29a77caa7e7fa8bdb48d4b"
+			},
+			"plan": {
+				"acquisitionId": "29003d22-dec0-4112-a2ca-6ca56731ba77",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/29003d22-dec0-4112-a2ca-6ca56731ba77/observation-plan.json",
+				"digest": "765955e67fc16665b28888a877c99c2e4f92972e"
+			},
+			"result": {
+				"acquisitionId": "29003d22-dec0-4112-a2ca-6ca56731ba77",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/29003d22-dec0-4112-a2ca-6ca56731ba77/observation-result.json",
+				"digest": "8393a0151b4f2df251f0e520a68602aa9e29d450"
+			}
+		},
+		{
+			"acquisitionId": "30b00260-f025-4376-bdbc-c07e9f74ca1f",
+			"intent": {
+				"acquisitionId": "30b00260-f025-4376-bdbc-c07e9f74ca1f",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/30b00260-f025-4376-bdbc-c07e9f74ca1f/intent.json",
+				"digest": "477b712ca13990f6b68da0dcff38a073db0b51bb"
+			},
+			"plan": {
+				"acquisitionId": "30b00260-f025-4376-bdbc-c07e9f74ca1f",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/30b00260-f025-4376-bdbc-c07e9f74ca1f/observation-plan.json",
+				"digest": "d45e09a190f344e379d5fb07a2fd4dfa311cb512"
+			},
+			"result": {
+				"acquisitionId": "30b00260-f025-4376-bdbc-c07e9f74ca1f",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/30b00260-f025-4376-bdbc-c07e9f74ca1f/observation-result.json",
+				"digest": "88aacc432ca520228b4fab13a130a7e503c79a98"
+			}
+		},
+		{
+			"acquisitionId": "30b8a910-b6f7-4087-8667-a7efbe775c2a",
+			"intent": {
+				"acquisitionId": "30b8a910-b6f7-4087-8667-a7efbe775c2a",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/30b8a910-b6f7-4087-8667-a7efbe775c2a/intent.json",
+				"digest": "661d994bfb332411338a9129b0aa53bda639bde0"
+			},
+			"plan": {
+				"acquisitionId": "30b8a910-b6f7-4087-8667-a7efbe775c2a",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/30b8a910-b6f7-4087-8667-a7efbe775c2a/observation-plan.json",
+				"digest": "bf5c6711d119b035595d7aade8b35f4c18903798"
+			},
+			"result": {
+				"acquisitionId": "30b8a910-b6f7-4087-8667-a7efbe775c2a",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/30b8a910-b6f7-4087-8667-a7efbe775c2a/observation-result.json",
+				"digest": "92bdf7337b94ca75633628e7c02e13cefb0e8abd"
+			}
+		},
+		{
+			"acquisitionId": "335f9780-6313-472f-8a68-1efd68fc5e84",
+			"intent": {
+				"acquisitionId": "335f9780-6313-472f-8a68-1efd68fc5e84",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/335f9780-6313-472f-8a68-1efd68fc5e84/intent.json",
+				"digest": "6df1c28d1067330cf26dfb885f6cb08bb5de9d8f"
+			},
+			"plan": {
+				"acquisitionId": "335f9780-6313-472f-8a68-1efd68fc5e84",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/335f9780-6313-472f-8a68-1efd68fc5e84/observation-plan.json",
+				"digest": "a7306bf1cdacd418455129bfb331cf6eccdeb524"
+			},
+			"result": {
+				"acquisitionId": "335f9780-6313-472f-8a68-1efd68fc5e84",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/335f9780-6313-472f-8a68-1efd68fc5e84/observation-result.json",
+				"digest": "9d76a6a28193896d6efa6d9dfe644ea3d7771cfb"
+			}
+		},
+		{
+			"acquisitionId": "392593e1-9531-45df-b7cb-302ae0957131",
+			"intent": {
+				"acquisitionId": "392593e1-9531-45df-b7cb-302ae0957131",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/392593e1-9531-45df-b7cb-302ae0957131/intent.json",
+				"digest": "965f5c56ca72ddb1f7a70d3da4d4c9722bb20980"
+			},
+			"plan": {
+				"acquisitionId": "392593e1-9531-45df-b7cb-302ae0957131",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/392593e1-9531-45df-b7cb-302ae0957131/observation-plan.json",
+				"digest": "7e5ac7646979b04e6b473e342bc367bad77c0e05"
+			},
+			"result": {
+				"acquisitionId": "392593e1-9531-45df-b7cb-302ae0957131",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/392593e1-9531-45df-b7cb-302ae0957131/observation-result.json",
+				"digest": "c535635c314994a660023dfc5aa3797c4abf10a4"
+			}
+		},
+		{
+			"acquisitionId": "3b1bf4fa-fe6f-40da-a4cf-905ca1fac638",
+			"intent": {
+				"acquisitionId": "3b1bf4fa-fe6f-40da-a4cf-905ca1fac638",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/3b1bf4fa-fe6f-40da-a4cf-905ca1fac638/intent.json",
+				"digest": "e5f0e64b86a6b3e36d6426084bc2f9e8756f9c4a"
+			},
+			"plan": {
+				"acquisitionId": "3b1bf4fa-fe6f-40da-a4cf-905ca1fac638",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/3b1bf4fa-fe6f-40da-a4cf-905ca1fac638/observation-plan.json",
+				"digest": "56a52f765bde7d4970bef4f214fcbc68bd25d9b1"
+			},
+			"result": {
+				"acquisitionId": "3b1bf4fa-fe6f-40da-a4cf-905ca1fac638",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/3b1bf4fa-fe6f-40da-a4cf-905ca1fac638/observation-result.json",
+				"digest": "22a7ce1629c60d898f35f722aa198005a831c3c2"
+			}
+		},
+		{
+			"acquisitionId": "3eae2251-581c-4e2e-810a-e73b7c673088",
+			"intent": {
+				"acquisitionId": "3eae2251-581c-4e2e-810a-e73b7c673088",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/3eae2251-581c-4e2e-810a-e73b7c673088/intent.json",
+				"digest": "b2f9b40ab8d9aa402c564946c0395984223112da"
+			},
+			"plan": {
+				"acquisitionId": "3eae2251-581c-4e2e-810a-e73b7c673088",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/3eae2251-581c-4e2e-810a-e73b7c673088/observation-plan.json",
+				"digest": "93c0a897b4dfafdfb7739a258a0666ba6640a7d2"
+			},
+			"result": {
+				"acquisitionId": "3eae2251-581c-4e2e-810a-e73b7c673088",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/3eae2251-581c-4e2e-810a-e73b7c673088/observation-result.json",
+				"digest": "9d5410f6b7928b2dbe985e4521dd2f933d1c03d5"
+			}
+		},
+		{
+			"acquisitionId": "4b4d6ecd-fca0-431a-9f35-5d66938d1c94",
+			"intent": {
+				"acquisitionId": "4b4d6ecd-fca0-431a-9f35-5d66938d1c94",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/4b4d6ecd-fca0-431a-9f35-5d66938d1c94/intent.json",
+				"digest": "884946cfa22bd2436b957f1f76d614f3ce43ce45"
+			},
+			"plan": {
+				"acquisitionId": "4b4d6ecd-fca0-431a-9f35-5d66938d1c94",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/4b4d6ecd-fca0-431a-9f35-5d66938d1c94/observation-plan.json",
+				"digest": "2bbb648a5802f194afd2f54b1dca1a5a03d7f788"
+			},
+			"result": {
+				"acquisitionId": "4b4d6ecd-fca0-431a-9f35-5d66938d1c94",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/4b4d6ecd-fca0-431a-9f35-5d66938d1c94/observation-result.json",
+				"digest": "45a2704047e52ada3548b2608ea2363fc7a3af04"
+			}
+		},
+		{
+			"acquisitionId": "56be4beb-b4bb-4d5c-84cf-432025e60d7c",
+			"intent": {
+				"acquisitionId": "56be4beb-b4bb-4d5c-84cf-432025e60d7c",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/56be4beb-b4bb-4d5c-84cf-432025e60d7c/intent.json",
+				"digest": "933dc565032a2d616cd6db161d8aadbe26b24be3"
+			},
+			"plan": {
+				"acquisitionId": "56be4beb-b4bb-4d5c-84cf-432025e60d7c",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/56be4beb-b4bb-4d5c-84cf-432025e60d7c/observation-plan.json",
+				"digest": "6af3351a3d44ddd92c87ce2339523a67befdbb1f"
+			},
+			"result": {
+				"acquisitionId": "56be4beb-b4bb-4d5c-84cf-432025e60d7c",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/56be4beb-b4bb-4d5c-84cf-432025e60d7c/observation-result.json",
+				"digest": "ae58d49a948ec3f4d454c0c289817973901c1cec"
+			}
+		},
+		{
+			"acquisitionId": "5d9ae922-8202-4834-8acf-25a0eaa3e4ec",
+			"intent": {
+				"acquisitionId": "5d9ae922-8202-4834-8acf-25a0eaa3e4ec",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/5d9ae922-8202-4834-8acf-25a0eaa3e4ec/intent.json",
+				"digest": "d918ee4aad757eae8c7f17829b05b83bc45e504f"
+			},
+			"plan": {
+				"acquisitionId": "5d9ae922-8202-4834-8acf-25a0eaa3e4ec",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/5d9ae922-8202-4834-8acf-25a0eaa3e4ec/observation-plan.json",
+				"digest": "630168815df588e1f050789335d445345b77dfea"
+			},
+			"result": {
+				"acquisitionId": "5d9ae922-8202-4834-8acf-25a0eaa3e4ec",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/5d9ae922-8202-4834-8acf-25a0eaa3e4ec/observation-result.json",
+				"digest": "6c34b5eee2ae4e5d3985e150149202b1e9913afc"
+			}
+		},
+		{
+			"acquisitionId": "61d49077-3ae8-4809-8c7c-624d486b827b",
+			"intent": {
+				"acquisitionId": "61d49077-3ae8-4809-8c7c-624d486b827b",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/61d49077-3ae8-4809-8c7c-624d486b827b/intent.json",
+				"digest": "7e897a1c725133764f96daca2a8cf4d9d5f3b7f7"
+			},
+			"plan": {
+				"acquisitionId": "61d49077-3ae8-4809-8c7c-624d486b827b",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/61d49077-3ae8-4809-8c7c-624d486b827b/observation-plan.json",
+				"digest": "7befe06705e91c2722065bfa2e0ad59ae724ba18"
+			},
+			"result": {
+				"acquisitionId": "61d49077-3ae8-4809-8c7c-624d486b827b",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/61d49077-3ae8-4809-8c7c-624d486b827b/observation-result.json",
+				"digest": "c12ef6f07e3e94ddd03b819474a2bab1c31d7a55"
+			}
+		},
+		{
+			"acquisitionId": "66d22c0d-0fac-49dd-af12-2729d9d5e328",
+			"intent": {
+				"acquisitionId": "66d22c0d-0fac-49dd-af12-2729d9d5e328",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/66d22c0d-0fac-49dd-af12-2729d9d5e328/intent.json",
+				"digest": "e6c53c489ea56b5a4f92ba1bc83608564c2441ca"
+			},
+			"plan": {
+				"acquisitionId": "66d22c0d-0fac-49dd-af12-2729d9d5e328",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/66d22c0d-0fac-49dd-af12-2729d9d5e328/observation-plan.json",
+				"digest": "9af2b92a84d3c394a2ca5ab58f2a625948e3267f"
+			},
+			"result": {
+				"acquisitionId": "66d22c0d-0fac-49dd-af12-2729d9d5e328",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/66d22c0d-0fac-49dd-af12-2729d9d5e328/observation-result.json",
+				"digest": "6ca395b5509a82dc355548f01e83005cb165b2dc"
+			}
+		},
+		{
+			"acquisitionId": "760d8e79-d3c7-4fdc-afc5-b1a28cabc305",
+			"intent": {
+				"acquisitionId": "760d8e79-d3c7-4fdc-afc5-b1a28cabc305",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/760d8e79-d3c7-4fdc-afc5-b1a28cabc305/intent.json",
+				"digest": "a07a890c1d0d89fd204682277b59ed781ec2a6c7"
+			},
+			"plan": {
+				"acquisitionId": "760d8e79-d3c7-4fdc-afc5-b1a28cabc305",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/760d8e79-d3c7-4fdc-afc5-b1a28cabc305/observation-plan.json",
+				"digest": "9ac8ede8c3af57209dc741d708f62961cc7eb774"
+			},
+			"result": {
+				"acquisitionId": "760d8e79-d3c7-4fdc-afc5-b1a28cabc305",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/760d8e79-d3c7-4fdc-afc5-b1a28cabc305/observation-result.json",
+				"digest": "69ab64561020632d50b310ef9238def1e7927fd8"
+			}
+		},
+		{
+			"acquisitionId": "7b1fa232-cb65-432f-bdc7-f4bbe6f9525d",
+			"intent": {
+				"acquisitionId": "7b1fa232-cb65-432f-bdc7-f4bbe6f9525d",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/7b1fa232-cb65-432f-bdc7-f4bbe6f9525d/intent.json",
+				"digest": "d68c3da3bde77db2177312802d709c24be2cd3bb"
+			},
+			"plan": {
+				"acquisitionId": "7b1fa232-cb65-432f-bdc7-f4bbe6f9525d",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/7b1fa232-cb65-432f-bdc7-f4bbe6f9525d/observation-plan.json",
+				"digest": "b1d5a072bac43def998b96ce0bf2fabcc78ee30b"
+			},
+			"result": {
+				"acquisitionId": "7b1fa232-cb65-432f-bdc7-f4bbe6f9525d",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/7b1fa232-cb65-432f-bdc7-f4bbe6f9525d/observation-result.json",
+				"digest": "6fa948f2efe303c3e4736a252b20937d575587af"
+			}
+		},
+		{
+			"acquisitionId": "7eb7faef-ef2d-4aa9-9b4e-5d5416762ca0",
+			"intent": {
+				"acquisitionId": "7eb7faef-ef2d-4aa9-9b4e-5d5416762ca0",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/7eb7faef-ef2d-4aa9-9b4e-5d5416762ca0/intent.json",
+				"digest": "20ce9fe19e37c389daa8616fff417b1098f93efd"
+			},
+			"plan": {
+				"acquisitionId": "7eb7faef-ef2d-4aa9-9b4e-5d5416762ca0",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/7eb7faef-ef2d-4aa9-9b4e-5d5416762ca0/observation-plan.json",
+				"digest": "e7969f7f3b6c23f396b982d65499098d67b88536"
+			},
+			"result": {
+				"acquisitionId": "7eb7faef-ef2d-4aa9-9b4e-5d5416762ca0",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/7eb7faef-ef2d-4aa9-9b4e-5d5416762ca0/observation-result.json",
+				"digest": "b1ef0235c74efb72141d0e0a73bd03603fa3b1c1"
+			}
+		},
+		{
+			"acquisitionId": "8558b677-98ab-4d11-b52e-81dbfe122c9a",
+			"intent": {
+				"acquisitionId": "8558b677-98ab-4d11-b52e-81dbfe122c9a",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/8558b677-98ab-4d11-b52e-81dbfe122c9a/intent.json",
+				"digest": "bb35df474059065e15ca6d2f6c82b0682a713832"
+			},
+			"plan": {
+				"acquisitionId": "8558b677-98ab-4d11-b52e-81dbfe122c9a",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/8558b677-98ab-4d11-b52e-81dbfe122c9a/observation-plan.json",
+				"digest": "d10c7a264f61b0e4b1f75534ee885b3a3e7fbbea"
+			},
+			"result": {
+				"acquisitionId": "8558b677-98ab-4d11-b52e-81dbfe122c9a",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/8558b677-98ab-4d11-b52e-81dbfe122c9a/observation-result.json",
+				"digest": "c14a69c8ee94ed478dd5e201725837beb184a30b"
+			}
+		},
+		{
+			"acquisitionId": "8956051e-ce9f-4a73-bedb-f9aec2a95210",
+			"intent": {
+				"acquisitionId": "8956051e-ce9f-4a73-bedb-f9aec2a95210",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/8956051e-ce9f-4a73-bedb-f9aec2a95210/intent.json",
+				"digest": "dc64af0f75d3990568b440e03801d6d090c47e80"
+			},
+			"plan": {
+				"acquisitionId": "8956051e-ce9f-4a73-bedb-f9aec2a95210",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/8956051e-ce9f-4a73-bedb-f9aec2a95210/observation-plan.json",
+				"digest": "ddfe63a9451e3f8aa26016396a68272a4d270c72"
+			},
+			"result": {
+				"acquisitionId": "8956051e-ce9f-4a73-bedb-f9aec2a95210",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/8956051e-ce9f-4a73-bedb-f9aec2a95210/observation-result.json",
+				"digest": "455e8c8ef9d1cd921b078981add792a4a348b7bb"
+			}
+		},
+		{
+			"acquisitionId": "8cfbd6a8-4063-4340-bafe-1a5ada60a495",
+			"intent": {
+				"acquisitionId": "8cfbd6a8-4063-4340-bafe-1a5ada60a495",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/8cfbd6a8-4063-4340-bafe-1a5ada60a495/intent.json",
+				"digest": "8f06fcd40bc28447c7825ae2050a3bb8c75d5781"
+			},
+			"plan": {
+				"acquisitionId": "8cfbd6a8-4063-4340-bafe-1a5ada60a495",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/8cfbd6a8-4063-4340-bafe-1a5ada60a495/observation-plan.json",
+				"digest": "a5689cfcd82f76228b260333a793661007e9e55a"
+			},
+			"result": {
+				"acquisitionId": "8cfbd6a8-4063-4340-bafe-1a5ada60a495",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/8cfbd6a8-4063-4340-bafe-1a5ada60a495/observation-result.json",
+				"digest": "0399bc8df1a11e8c725025d77948761025fbff95"
+			}
+		},
+		{
+			"acquisitionId": "91be989c-32ee-47f3-8de4-0a235ea1f05f",
+			"intent": {
+				"acquisitionId": "91be989c-32ee-47f3-8de4-0a235ea1f05f",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/91be989c-32ee-47f3-8de4-0a235ea1f05f/intent.json",
+				"digest": "b8a7552276094aeb8f4611dda7366bd4ab94572a"
+			},
+			"plan": {
+				"acquisitionId": "91be989c-32ee-47f3-8de4-0a235ea1f05f",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/91be989c-32ee-47f3-8de4-0a235ea1f05f/observation-plan.json",
+				"digest": "a0417b13d75273fb3ffe2d1787b77dee104ae2ed"
+			},
+			"result": {
+				"acquisitionId": "91be989c-32ee-47f3-8de4-0a235ea1f05f",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/91be989c-32ee-47f3-8de4-0a235ea1f05f/observation-result.json",
+				"digest": "99928530d699593d6ed39ddcd5f726481a3331f9"
+			}
+		},
+		{
+			"acquisitionId": "9b77ea51-9a14-44f9-b2a9-8e0f6a757868",
+			"intent": {
+				"acquisitionId": "9b77ea51-9a14-44f9-b2a9-8e0f6a757868",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/9b77ea51-9a14-44f9-b2a9-8e0f6a757868/intent.json",
+				"digest": "47a6d86f6f205f97f2d4749b400af42ab103199d"
+			},
+			"plan": {
+				"acquisitionId": "9b77ea51-9a14-44f9-b2a9-8e0f6a757868",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/9b77ea51-9a14-44f9-b2a9-8e0f6a757868/observation-plan.json",
+				"digest": "ca5ce377b9828fa0b0ba6d80728b57a096f4d632"
+			},
+			"result": {
+				"acquisitionId": "9b77ea51-9a14-44f9-b2a9-8e0f6a757868",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/9b77ea51-9a14-44f9-b2a9-8e0f6a757868/observation-result.json",
+				"digest": "744849a5c11dcc5816a808e92d99f1ea2e262181"
+			}
+		},
+		{
+			"acquisitionId": "9ee98411-6d02-4bba-a268-72dcee4ba54d",
+			"intent": {
+				"acquisitionId": "9ee98411-6d02-4bba-a268-72dcee4ba54d",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/9ee98411-6d02-4bba-a268-72dcee4ba54d/intent.json",
+				"digest": "e0ca1ba745dff12984b804a83cdf8232b6afb65e"
+			},
+			"plan": {
+				"acquisitionId": "9ee98411-6d02-4bba-a268-72dcee4ba54d",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/9ee98411-6d02-4bba-a268-72dcee4ba54d/observation-plan.json",
+				"digest": "4ef73b7edd42040eee2a8b3e683517dbc45d0000"
+			},
+			"result": {
+				"acquisitionId": "9ee98411-6d02-4bba-a268-72dcee4ba54d",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/9ee98411-6d02-4bba-a268-72dcee4ba54d/observation-result.json",
+				"digest": "d0851edda93dc2c8a234080d4ccb088cdbf662c1"
+			}
+		},
+		{
+			"acquisitionId": "a2fc0bc6-4295-47ce-b5cb-42c2830e212d",
+			"intent": {
+				"acquisitionId": "a2fc0bc6-4295-47ce-b5cb-42c2830e212d",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/a2fc0bc6-4295-47ce-b5cb-42c2830e212d/intent.json",
+				"digest": "45f17958e646a8fa11ff8e83dc34a2c8191c8e29"
+			},
+			"plan": {
+				"acquisitionId": "a2fc0bc6-4295-47ce-b5cb-42c2830e212d",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/a2fc0bc6-4295-47ce-b5cb-42c2830e212d/observation-plan.json",
+				"digest": "34be98e7484bc8b01756996b2914b1dea8d84ce7"
+			},
+			"result": {
+				"acquisitionId": "a2fc0bc6-4295-47ce-b5cb-42c2830e212d",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/a2fc0bc6-4295-47ce-b5cb-42c2830e212d/observation-result.json",
+				"digest": "71d4fa84dfdc8564c10a759134bf42cbf98c4b9f"
+			}
+		},
+		{
+			"acquisitionId": "abc9fc8d-6001-40c5-a1a7-bfef63b1e39d",
+			"intent": {
+				"acquisitionId": "abc9fc8d-6001-40c5-a1a7-bfef63b1e39d",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/abc9fc8d-6001-40c5-a1a7-bfef63b1e39d/intent.json",
+				"digest": "853e6f5d6563b4e6103c93709f075c1ed8e21664"
+			},
+			"plan": {
+				"acquisitionId": "abc9fc8d-6001-40c5-a1a7-bfef63b1e39d",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/abc9fc8d-6001-40c5-a1a7-bfef63b1e39d/observation-plan.json",
+				"digest": "e8d94bb550c6355cbe930b1b9f772563a9b0422f"
+			},
+			"result": {
+				"acquisitionId": "abc9fc8d-6001-40c5-a1a7-bfef63b1e39d",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/abc9fc8d-6001-40c5-a1a7-bfef63b1e39d/observation-result.json",
+				"digest": "b44ea809eb243c2f4f28e8d89aedbb2a3f85b84c"
+			}
+		},
+		{
+			"acquisitionId": "b2bc7ffe-5739-47a2-8165-d7940ed54994",
+			"intent": {
+				"acquisitionId": "b2bc7ffe-5739-47a2-8165-d7940ed54994",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/b2bc7ffe-5739-47a2-8165-d7940ed54994/intent.json",
+				"digest": "66c513f00e2e37a2c13bd0cd98088c60d3f85728"
+			},
+			"plan": {
+				"acquisitionId": "b2bc7ffe-5739-47a2-8165-d7940ed54994",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/b2bc7ffe-5739-47a2-8165-d7940ed54994/observation-plan.json",
+				"digest": "749db0f7f06cb42f6d544bcaaf37933f14cb98cc"
+			},
+			"result": {
+				"acquisitionId": "b2bc7ffe-5739-47a2-8165-d7940ed54994",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/b2bc7ffe-5739-47a2-8165-d7940ed54994/observation-result.json",
+				"digest": "62260eb24c1759582545ce9679589b5fface984c"
+			}
+		},
+		{
+			"acquisitionId": "c92d66d5-d47a-4d53-8d28-6bc60e91242e",
+			"intent": {
+				"acquisitionId": "c92d66d5-d47a-4d53-8d28-6bc60e91242e",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/c92d66d5-d47a-4d53-8d28-6bc60e91242e/intent.json",
+				"digest": "20733a7de15f2cc6b54bc26727cd640061714edf"
+			},
+			"plan": {
+				"acquisitionId": "c92d66d5-d47a-4d53-8d28-6bc60e91242e",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/c92d66d5-d47a-4d53-8d28-6bc60e91242e/observation-plan.json",
+				"digest": "20de2ce1d12ff89d9eefff7311eaa80690e1fea8"
+			},
+			"result": {
+				"acquisitionId": "c92d66d5-d47a-4d53-8d28-6bc60e91242e",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/c92d66d5-d47a-4d53-8d28-6bc60e91242e/observation-result.json",
+				"digest": "b28649c764e805ca5ed2d890fe8a9bcf88912bcc"
+			}
+		},
+		{
+			"acquisitionId": "cd1e748e-c09b-4afa-8dc9-c015dcccd3c7",
+			"intent": {
+				"acquisitionId": "cd1e748e-c09b-4afa-8dc9-c015dcccd3c7",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/cd1e748e-c09b-4afa-8dc9-c015dcccd3c7/intent.json",
+				"digest": "cb3fdd24d704f903b7cfd934b04b4614040fdf45"
+			},
+			"plan": {
+				"acquisitionId": "cd1e748e-c09b-4afa-8dc9-c015dcccd3c7",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/cd1e748e-c09b-4afa-8dc9-c015dcccd3c7/observation-plan.json",
+				"digest": "665cf9caa20d57a8299352ef1515e9588e5c55e4"
+			},
+			"result": {
+				"acquisitionId": "cd1e748e-c09b-4afa-8dc9-c015dcccd3c7",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/cd1e748e-c09b-4afa-8dc9-c015dcccd3c7/observation-result.json",
+				"digest": "fdde31d49cac874d6aea596f3a7482d5c1e4eee2"
+			}
+		},
+		{
+			"acquisitionId": "cf567956-b0e8-42b0-b512-34a1b4a6aecc",
+			"intent": {
+				"acquisitionId": "cf567956-b0e8-42b0-b512-34a1b4a6aecc",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/cf567956-b0e8-42b0-b512-34a1b4a6aecc/intent.json",
+				"digest": "d3b2efe224b20e8633e2657c5267292d2cc58a9b"
+			},
+			"plan": {
+				"acquisitionId": "cf567956-b0e8-42b0-b512-34a1b4a6aecc",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/cf567956-b0e8-42b0-b512-34a1b4a6aecc/observation-plan.json",
+				"digest": "5d6747302cf605e51c119b1fc5c7040d5efd83a8"
+			},
+			"result": {
+				"acquisitionId": "cf567956-b0e8-42b0-b512-34a1b4a6aecc",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/cf567956-b0e8-42b0-b512-34a1b4a6aecc/observation-result.json",
+				"digest": "2e0cf8d7c5816daf1f2b58f557e381f3fdd29366"
+			}
+		},
+		{
+			"acquisitionId": "d1746c0a-ae7c-455d-9547-764a122e5463",
+			"intent": {
+				"acquisitionId": "d1746c0a-ae7c-455d-9547-764a122e5463",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/d1746c0a-ae7c-455d-9547-764a122e5463/intent.json",
+				"digest": "f28681176335de3d6b9236f2b6e2d1f3c325aa9c"
+			},
+			"plan": {
+				"acquisitionId": "d1746c0a-ae7c-455d-9547-764a122e5463",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/d1746c0a-ae7c-455d-9547-764a122e5463/observation-plan.json",
+				"digest": "2c679712c74103082e9da372af0670c8bd46648f"
+			},
+			"result": {
+				"acquisitionId": "d1746c0a-ae7c-455d-9547-764a122e5463",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/d1746c0a-ae7c-455d-9547-764a122e5463/observation-result.json",
+				"digest": "19c3da547d34e55e7970c5e78f374a4f3f542be1"
+			}
+		},
+		{
+			"acquisitionId": "d9039a8f-aac1-434b-b690-bc5715fdcaa4",
+			"intent": {
+				"acquisitionId": "d9039a8f-aac1-434b-b690-bc5715fdcaa4",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/d9039a8f-aac1-434b-b690-bc5715fdcaa4/intent.json",
+				"digest": "bfa56ce60d97e59e3a759a667ced9593d4968fe8"
+			},
+			"plan": {
+				"acquisitionId": "d9039a8f-aac1-434b-b690-bc5715fdcaa4",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/d9039a8f-aac1-434b-b690-bc5715fdcaa4/observation-plan.json",
+				"digest": "82e13c1470c6e15a9adbd11c26e9cdd8170cb31f"
+			},
+			"result": {
+				"acquisitionId": "d9039a8f-aac1-434b-b690-bc5715fdcaa4",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/d9039a8f-aac1-434b-b690-bc5715fdcaa4/observation-result.json",
+				"digest": "dc3edb5bcd187611c34252794ba028b60601016d"
+			}
+		},
+		{
+			"acquisitionId": "dea8dce2-2a69-400c-857c-155b415f46fc",
+			"intent": {
+				"acquisitionId": "dea8dce2-2a69-400c-857c-155b415f46fc",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/dea8dce2-2a69-400c-857c-155b415f46fc/intent.json",
+				"digest": "d9bcc1b82ea56e70043dacda28031c28d5ec1943"
+			},
+			"plan": {
+				"acquisitionId": "dea8dce2-2a69-400c-857c-155b415f46fc",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/dea8dce2-2a69-400c-857c-155b415f46fc/observation-plan.json",
+				"digest": "2bd2aa8a03779c3fab1d9c93b4428fdada5815c7"
+			},
+			"result": {
+				"acquisitionId": "dea8dce2-2a69-400c-857c-155b415f46fc",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/dea8dce2-2a69-400c-857c-155b415f46fc/observation-result.json",
+				"digest": "67371c4c55a70c6cfbca29955f26d3319fc13719"
+			}
+		},
+		{
+			"acquisitionId": "e2af0e61-efa7-408e-943d-1556e7409620",
+			"intent": {
+				"acquisitionId": "e2af0e61-efa7-408e-943d-1556e7409620",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/e2af0e61-efa7-408e-943d-1556e7409620/intent.json",
+				"digest": "e74bc782c7a1b3e345553363a7a7ab3b0868af14"
+			},
+			"plan": {
+				"acquisitionId": "e2af0e61-efa7-408e-943d-1556e7409620",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/e2af0e61-efa7-408e-943d-1556e7409620/observation-plan.json",
+				"digest": "7455e8dc78453ed6515df6a2563a726507a1eb1b"
+			},
+			"result": {
+				"acquisitionId": "e2af0e61-efa7-408e-943d-1556e7409620",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/e2af0e61-efa7-408e-943d-1556e7409620/observation-result.json",
+				"digest": "31a8fc7d45d90fda002a1d1e296e320a993c8dfb"
+			}
+		},
+		{
+			"acquisitionId": "e97e919b-285e-4238-a358-4d9b8520fa0d",
+			"intent": {
+				"acquisitionId": "e97e919b-285e-4238-a358-4d9b8520fa0d",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/e97e919b-285e-4238-a358-4d9b8520fa0d/intent.json",
+				"digest": "d26c518a83a4b73d2206cfa32758deeded086d0c"
+			},
+			"plan": {
+				"acquisitionId": "e97e919b-285e-4238-a358-4d9b8520fa0d",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/e97e919b-285e-4238-a358-4d9b8520fa0d/observation-plan.json",
+				"digest": "be36e3caaa960cfddb587ac684841d805b426cf8"
+			},
+			"result": {
+				"acquisitionId": "e97e919b-285e-4238-a358-4d9b8520fa0d",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/e97e919b-285e-4238-a358-4d9b8520fa0d/observation-result.json",
+				"digest": "4d794e06b6a728a514ffa882bf06001bf5bbd312"
+			}
+		},
+		{
+			"acquisitionId": "f7a0d36e-dd10-4b7b-b60f-b9b0c63546e1",
+			"intent": {
+				"acquisitionId": "f7a0d36e-dd10-4b7b-b60f-b9b0c63546e1",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/f7a0d36e-dd10-4b7b-b60f-b9b0c63546e1/intent.json",
+				"digest": "0d0f5467c7cafe1d36897aa387f4b465eabcc618"
+			},
+			"plan": {
+				"acquisitionId": "f7a0d36e-dd10-4b7b-b60f-b9b0c63546e1",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/f7a0d36e-dd10-4b7b-b60f-b9b0c63546e1/observation-plan.json",
+				"digest": "4aaaabe0ffa7b350dfbdec7fe9c6375a07d965a0"
+			},
+			"result": {
+				"acquisitionId": "f7a0d36e-dd10-4b7b-b60f-b9b0c63546e1",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/f7a0d36e-dd10-4b7b-b60f-b9b0c63546e1/observation-result.json",
+				"digest": "4a6e71ad4d2461725f777d0e2c0ae9ea34dc2e16"
+			}
+		},
+		{
+			"acquisitionId": "f9d42032-06ac-4a73-92cc-72e982838dfc",
+			"intent": {
+				"acquisitionId": "f9d42032-06ac-4a73-92cc-72e982838dfc",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/f9d42032-06ac-4a73-92cc-72e982838dfc/intent.json",
+				"digest": "9d71740340fc5125d0cda396f6c15ca8ff4c0137"
+			},
+			"plan": {
+				"acquisitionId": "f9d42032-06ac-4a73-92cc-72e982838dfc",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/f9d42032-06ac-4a73-92cc-72e982838dfc/observation-plan.json",
+				"digest": "cb433a35b9c109348f08fe799b87a36924c3f2f8"
+			},
+			"result": {
+				"acquisitionId": "f9d42032-06ac-4a73-92cc-72e982838dfc",
+				"path": ".blackbox/runs/01M23JNQ6G9X2CYTFR8Q7ZSXS9/acquisitions/f9d42032-06ac-4a73-92cc-72e982838dfc/observation-result.json",
+				"digest": "c46161d423fa590a78ddb57e202d7901265fb3cf"
+			}
+		}
+	]
+}

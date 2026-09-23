@@ -1,0 +1,152 @@
+name: E2E Release Simulation
+
+# Reusable: release-packages.yml calls this as its pre-tag gate, and it can
+# also be run on its own from the Actions tab.
+on:
+  workflow_call:
+    inputs:
+      target_branch:
+        description: 'Branch to simulate release from'
+        required: true
+        type: string
+  workflow_dispatch:
+    inputs:
+      target_branch:
+        description: 'Branch to simulate release from'
+        required: true
+        type: string
+        default: 'release/v0.0.1-alpha'
+
+permissions:
+  contents: read
+
+# One top-level env block only. A second one replaces the first in YAML.
+env:
+  CI: true
+  PNPM_VERSION: 9.15.4
+  NODE_VERSION: 22.x
+  VERDACCIO_URL: http://localhost:4873
+
+jobs:
+  release-e2e:
+    name: Packed-artifact Simulation
+    runs-on: [self-hosted, linux, arm64, blackbox]
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.target_branch }}
+          fetch-depth: 0
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        timeout-minutes: 15
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        timeout-minutes: 15
+        run: pnpm run build:alpha
+
+      - name: Select publishable Alpha packages
+        id: alpha-packages
+        timeout-minutes: 5
+        run: |
+          selection="$(node scripts/alpha-test-contract.mjs matrix publish)"
+          printf '%s' "$selection" | node -e '
+            let input = "";
+            process.stdin.setEncoding("utf8");
+            process.stdin.on("data", chunk => input += chunk);
+            process.stdin.on("end", () => {
+              const matrix = JSON.parse(input);
+              if (!Array.isArray(matrix.include) || matrix.include.length === 0) process.exit(1);
+              for (const item of matrix.include) console.log(item.name);
+            });
+          ' > "$RUNNER_TEMP/alpha-publish-packages.txt"
+          echo "file=$RUNNER_TEMP/alpha-publish-packages.txt" >> "$GITHUB_OUTPUT"
+
+      - name: Start Verdaccio
+        timeout-minutes: 5
+        run: |
+          docker run -d --name verdaccio \
+            -p 4873:4873 \
+            -v ${{ github.workspace }}/.github/verdaccio/config.yaml:/verdaccio/conf/config.yaml \
+            verdaccio/verdaccio
+          for i in $(seq 1 30); do
+            if curl -sf "$VERDACCIO_URL/-/ping" >/dev/null; then
+              echo "Verdaccio is up"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Verdaccio did not come up in time"
+          exit 1
+
+      - name: Configure registry auth
+        run: |
+          cat >> .npmrc <<'EOF'
+          @suites:registry=http://localhost:4873/
+          //localhost:4873/:_authToken=blackbox-e2e
+          EOF
+
+      # pnpm (not lerna) rewrites catalog: and workspace: specifiers on pack.
+      # Publish only the manifest's public and bridge packages; private and
+      # deferred packages do not enter the Alpha consumer simulation.
+      - name: Publish packages to Verdaccio
+        timeout-minutes: 10
+        env:
+          ALPHA_PACKAGE_LIST: ${{ steps.alpha-packages.outputs.file }}
+        run: |
+          mapfile -t alpha_packages < "$ALPHA_PACKAGE_LIST"
+          if [[ ${#alpha_packages[@]} -eq 0 ]]; then
+            echo 'Alpha publish selection is empty' >&2
+            exit 1
+          fi
+          filters=()
+          for package in "${alpha_packages[@]}"; do
+            filters+=(--filter "$package")
+          done
+          printf 'Publishing Alpha packages:\n%s\n' "${alpha_packages[@]}"
+          pnpm -r "${filters[@]}" publish --no-git-checks --registry "$VERDACCIO_URL/"
+
+      - name: Capture published version
+        id: ver
+        run: |
+          echo "version=$(node -p "require('./packages/blackbox/package.json').version")" >> "$GITHUB_OUTPUT"
+          echo "cli=$(node -p "require('./packages/cli/package.json').version")" >> "$GITHUB_OUTPUT"
+
+      # npm has no catalog: support, so a plain npm install of the published
+      # tarball fails loudly if an unresolved specifier ever ships.
+      - name: Install published package with npm
+        timeout-minutes: 10
+        run: |
+          cp -R e2e/consumer "$RUNNER_TEMP/release-consumer"
+          cd "$RUNNER_TEMP/release-consumer"
+          npm install --no-audit --no-fund \
+            --registry "$VERDACCIO_URL/" \
+            "@suites/blackbox@${{ steps.ver.outputs.version }}" \
+            "@suites/blackbox-cli@${{ steps.ver.outputs.cli }}"
+
+      - name: Typecheck installed declarations
+        working-directory: ${{ runner.temp }}/release-consumer
+        timeout-minutes: 5
+        run: npm run typecheck
+
+      - name: Test installed packages
+        working-directory: ${{ runner.temp }}/release-consumer
+        timeout-minutes: 10
+        run: npm test
+
+      - name: Verdaccio logs
+        if: failure()
+        run: docker logs verdaccio

@@ -1,0 +1,217 @@
+{
+	"type": "effects",
+	"flowId": "fixture-control",
+	"attemptId": "a51ac21e41c5503ece8e56217acbcf9f",
+	"observed": {
+		"schemaVersion": 2,
+		"entry": null,
+		"entryResolution": {
+			"status": "excluded",
+			"reason": "declared-act-fixture-control"
+		},
+		"summary": {
+			"counts": {
+				"inbound": 4,
+				"outboundHttp": 2,
+				"sql": 13,
+				"cache": 6,
+				"messaging": 0
+			},
+			"services": [
+				"payment-mock",
+				"public-api"
+			],
+			"edges": [
+				{
+					"caller": "public-api",
+					"callee": "localstack"
+				},
+				{
+					"caller": "public-api",
+					"callee": "payment-mock"
+				}
+			]
+		},
+		"services": {
+			"payment-mock": {
+				"inbound": [
+					{
+						"method": "GET",
+						"path": "/fixture/state",
+						"status": 200,
+						"count": 1,
+						"origin": "fixture-control"
+					},
+					{
+						"method": "POST",
+						"path": "/fixture/reset",
+						"status": 200,
+						"count": 1,
+						"origin": "fixture-control"
+					}
+				]
+			},
+			"public-api": {
+				"inbound": [
+					{
+						"method": "POST",
+						"path": "/fixture/group-cleanup",
+						"status": 200,
+						"count": 1,
+						"origin": "fixture-control"
+					},
+					{
+						"method": "POST",
+						"path": "/subscriptions",
+						"status": 201,
+						"count": 1,
+						"origin": "sut"
+					}
+				],
+				"outboundHttp": [
+					{
+						"callee": "localstack",
+						"method": "POST",
+						"path": "/",
+						"status": 200,
+						"count": "1+",
+						"origin": "fixture-control"
+					},
+					{
+						"callee": "payment-mock",
+						"method": "GET",
+						"path": "/fixture/state",
+						"status": 200,
+						"count": 1,
+						"origin": "fixture-control"
+					},
+					{
+						"callee": "payment-mock",
+						"method": "POST",
+						"path": "/fixture/reset",
+						"status": 200,
+						"count": 1,
+						"origin": "fixture-control"
+					}
+				],
+				"sql": [
+					{
+						"operation": "BEGIN",
+						"statement": "BEGIN",
+						"count": 1,
+						"origin": "fixture-control"
+					},
+					{
+						"operation": "COMMIT",
+						"statement": "COMMIT",
+						"count": 1,
+						"origin": "fixture-control"
+					},
+					{
+						"operation": "DELETE",
+						"table": "users",
+						"statement": "DELETE FROM users",
+						"count": 1,
+						"origin": "fixture-control"
+					},
+					{
+						"operation": "INSERT",
+						"table": "users",
+						"statement": "INSERT INTO users (user_id, tier, execution_path) VALUES ($1, $2, $3)",
+						"count": 5,
+						"origin": "fixture-control"
+					},
+					{
+						"operation": "SELECT",
+						"table": "fraud_audit",
+						"statement": "SELECT id::text, user_id AS \"userId\", decision, hint_profile AS \"hintProfile\" FROM fraud_audit ORDER BY id",
+						"count": 1,
+						"origin": "fixture-control"
+					},
+					{
+						"operation": "SELECT",
+						"table": "subscriptions",
+						"statement": "SELECT id, user_id AS \"userId\", tier, status, payment_intent_id AS \"paymentIntentId\", order_id AS \"orderId\" FROM subscriptions ORDER BY user_id",
+						"count": 1,
+						"origin": "fixture-control"
+					},
+					{
+						"operation": "TRUNCATE",
+						"table": "subscriptions",
+						"statement": "TRUNCATE subscriptions, fraud_audit RESTART IDENTITY",
+						"count": 1,
+						"origin": "fixture-control"
+					},
+					{
+						"operation": "INSERT",
+						"table": "subscriptions",
+						"statement": "INSERT INTO subscriptions (id, user_id, tier, status, payment_intent_id, order_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, status",
+						"count": 1,
+						"origin": "sut"
+					},
+					{
+						"operation": "SELECT",
+						"table": "subscriptions",
+						"statement": "SELECT u.user_id AS \"userId\", u.tier, u.execution_path AS \"executionPath\", EXISTS (SELECT ? FROM subscriptions s WHERE s.user_id = u.user_id) AS \"hasSubscription\" FROM users u WHERE u.user_id = $1",
+						"count": 1,
+						"origin": "sut"
+					}
+				],
+				"cache": [
+					{
+						"system": "redis",
+						"command": "FLUSHDB",
+						"keyPattern": "<none>",
+						"count": 1,
+						"origin": "fixture-control"
+					},
+					{
+						"system": "redis",
+						"command": "KEYS",
+						"keyPattern": "<redacted>",
+						"count": 1,
+						"origin": "fixture-control"
+					},
+					{
+						"system": "redis",
+						"command": "GET",
+						"keyPattern": "hint:returning:dora",
+						"count": 1,
+						"origin": "sut"
+					},
+					{
+						"system": "redis",
+						"command": "GET",
+						"keyPattern": "user:dora:tier",
+						"count": 1,
+						"origin": "sut"
+					},
+					{
+						"system": "redis",
+						"command": "SET",
+						"keyPattern": "reg:dora",
+						"count": 1,
+						"origin": "sut"
+					},
+					{
+						"system": "redis",
+						"command": "SET",
+						"keyPattern": "user:dora:tier",
+						"count": 1,
+						"origin": "sut"
+					}
+				]
+			}
+		},
+		"errors": []
+	},
+	"expectedPath": "/private/tmp/blackbox-phase0-proof.HO0ohJ/e2e/tests/per-test/effects/fixture-control.spec.ts/effects-fixture-control--flow-88cd600a4d7f2f1915fb4f9b898714e30c7dcc08--scenario-fc8dd6d0f5acdaf0d890c53ec15ee3fc951de21e.yaml",
+	"entryResolution": {
+		"status": "excluded",
+		"reason": "declared-act-fixture-control"
+	},
+	"rootSpan": null,
+	"semanticStepId": "act",
+	"runtimeActSpanId": "d820a85dbfad4e17",
+	"outcome": "verified"
+}

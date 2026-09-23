@@ -1,0 +1,1511 @@
+{
+	"schemaVersion": 2,
+	"artifactRole": "execution-outcomes",
+	"runId": "01M25KNEH3C9BC4HVE743DBF2T",
+	"records": [
+		{
+			"schemaVersion": 3,
+			"artifactRole": "reporter-attempt-outcome",
+			"runId": "01M25KNEH3C9BC4HVE743DBF2T",
+			"playwrightTestId": "035dad0ffab30e40b0c2-36f35216846c15f06d57",
+			"project": "subsystem",
+			"scenarioId": "payment-mock-subsystem.reports-ready-on-get-health",
+			"retry": 0,
+			"attemptId": "03fb3cab95743be7bdd0e7aab22015d9",
+			"outcome": "passed",
+			"status": "passed",
+			"recordedAt": "2026-09-10T12:12:19.177Z",
+			"planComplete": true,
+			"assertions": [
+				{
+					"assertionId": "payment-mock-subsystem.reports-ready-on-get-health/step:1",
+					"ordinal": 1,
+					"title": "Assert 200 with status ready",
+					"declaration": {
+						"path": "tests/subsystem/payment-mock.spec.ts",
+						"line": 15,
+						"column": 3
+					},
+					"evaluation": true,
+					"reason": null,
+					"titleCorroborated": false,
+					"terminalAttribution": "no-attributable-expect-failure"
+				}
+			],
+			"requestedArtifacts": [
+				"decisions.json",
+				"effects.json",
+				"assertions.json"
+			],
+			"flowId": "payment-mock-subsystem"
+		},
+		{
+			"schemaVersion": 3,
+			"artifactRole": "reporter-attempt-outcome",
+			"runId": "01M25KNEH3C9BC4HVE743DBF2T",
+			"playwrightTestId": "035dad0ffab30e40b0c2-479d3c3b3a4e35c353cb",
+			"project": "subsystem",
+			"scenarioId": "payment-mock-subsystem.runs-the-payment-intent-and-refund-lifecycle-on-a-lone-container",
+			"retry": 0,
+			"attemptId": "278b2f35a30396422fb6b5192ab38ed1",
+			"outcome": "passed",
+			"status": "passed",
+			"recordedAt": "2026-09-10T12:12:30.438Z",
+			"planComplete": true,
+			"assertions": [
+				{
+					"assertionId": "payment-mock-subsystem.runs-the-payment-intent-and-refund-lifecycle-on-a-lone-container/step:1",
+					"ordinal": 1,
+					"title": "Assert 201 with a succeeded payment intent",
+					"declaration": {
+						"path": "tests/subsystem/payment-mock.spec.ts",
+						"line": 31,
+						"column": 3
+					},
+					"evaluation": true,
+					"reason": null,
+					"titleCorroborated": false,
+					"terminalAttribution": "no-attributable-expect-failure"
+				},
+				{
+					"assertionId": "payment-mock-subsystem.runs-the-payment-intent-and-refund-lifecycle-on-a-lone-container/step:3",
+					"ordinal": 3,
+					"title": "Assert 201 with a succeeded refund",
+					"declaration": {
+						"path": "tests/subsystem/payment-mock.spec.ts",
+						"line": 45,
+						"column": 3
+					},
+					"evaluation": true,
+					"reason": null,
+					"titleCorroborated": false,
+					"terminalAttribution": "no-attributable-expect-failure"
+				},
+				{
+					"assertionId": "payment-mock-subsystem.runs-the-payment-intent-and-refund-lifecycle-on-a-lone-container/step:4",
+					"ordinal": 4,
+					"title": "Assert fixture state holds exactly one intent and one refund",
+					"declaration": {
+						"path": "tests/subsystem/payment-mock.spec.ts",
+						"line": 56,
+						"column": 3
+					},
+					"evaluation": true,
+					"reason": null,
+					"titleCorroborated": false,
+					"terminalAttribution": "no-attributable-expect-failure"
+				}
+			],
+			"requestedArtifacts": [
+				"decisions.json",
+				"effects.json",
+				"assertions.json"
+			],
+			"flowId": "payment-mock-subsystem"
+		},
+		{
+			"schemaVersion": 3,
+			"artifactRole": "reporter-attempt-outcome",
+			"runId": "01M25KNEH3C9BC4HVE743DBF2T",
+			"playwrightTestId": "035dad0ffab30e40b0c2-5942dc07c8be519e4490",
+			"project": "subsystem",
+			"scenarioId": "payment-mock-subsystem.starts-from-a-clean-state-because-the-container-is-per-test",
+			"retry": 0,
+			"attemptId": "687b6d2959198a2f907cde9db5239e78",
+			"outcome": "passed",
+			"status": "passed",
+			"recordedAt": "2026-09-10T12:12:42.657Z",
+			"planComplete": true,
+			"assertions": [
+				{
+					"assertionId": "payment-mock-subsystem.starts-from-a-clean-state-because-the-container-is-per-test/step:1",
+					"ordinal": 1,
+					"title": "Assert empty intents and refunds",
+					"declaration": {
+						"path": "tests/subsystem/payment-mock.spec.ts",
+						"line": 89,
+						"column": 3
+					},
+					"evaluation": true,
+					"reason": null,
+					"titleCorroborated": false,
+					"terminalAttribution": "no-attributable-expect-failure"
+				}
+			],
+			"requestedArtifacts": [
+				"decisions.json",
+				"effects.json",
+				"assertions.json"
+			],
+			"flowId": "payment-mock-subsystem"
+		},
+		{
+			"schemaVersion": 3,
+			"artifactRole": "reporter-attempt-outcome",
+			"runId": "01M25KNEH3C9BC4HVE743DBF2T",
+			"playwrightTestId": "16c3faa07c6fdef3bf8c-6fefe7f7bc54019351a6",
+			"project": "per-worker",
+			"scenarioId": "subscription-rejection.rejects-a-second-subscription-for-the-same-user-with-409-before",
+			"retry": 0,
+			"attemptId": "121404c269c8700a54812986a122107e",
+			"outcome": "passed",
+			"status": "passed",
+			"recordedAt": "2026-09-10T12:12:03.106Z",
+			"planComplete": true,
+			"assertions": [
+				{
+					"assertionId": "subscription-rejection.rejects-a-second-subscription-for-the-same-user-with-409-before/step:2",
+					"ordinal": 2,
+					"title": "Assert 409 with the duplicate-subscription outcome",
+					"declaration": {
+						"path": "tests/suites/subscription-rejection.suite.ts",
+						"line": 73,
+						"column": 4
+					},
+					"evaluation": true,
+					"reason": null,
+					"titleCorroborated": false,
+					"terminalAttribution": "no-attributable-expect-failure"
+				},
+				{
+					"assertionId": "subscription-rejection.rejects-a-second-subscription-for-the-same-user-with-409-before/step:3",
+					"ordinal": 3,
+					"title": "Assert fixture state still holds only the first subscription's effects",
+					"declaration": {
+						"path": "tests/suites/subscription-rejection.suite.ts",
+						"line": 83,
+						"column": 4
+					},
+					"evaluation": true,
+					"reason": null,
+					"titleCorroborated": false,
+					"terminalAttribution": "no-attributable-expect-failure"
+				}
+			],
+			"requestedArtifacts": [
+				"assertions.json"
+			],
+			"flowId": "subscription-rejection"
+		},
+		{
+			"schemaVersion": 3,
+			"artifactRole": "reporter-attempt-outcome",
+			"runId": "01M25KNEH3C9BC4HVE743DBF2T",
+			"playwrightTestId": "16c3faa07c6fdef3bf8c-8587996589daf6be6867",
+			"project": "per-worker",
+			"scenarioId": "subscription-rejection.rejects-an-unknown-user-with-404-and-leaves-no-side-effects",
+			"retry": 0,
+			"attemptId": "165a64014d21c072fd077b1fcee86c99",
+			"outcome": "passed",
+			"status": "passed",
+			"recordedAt": "2026-09-10T12:12:00.974Z",
+			"planComplete": true,
+			"assertions": [
+				{
+					"assertionId": "subscription-rejection.rejects-an-unknown-user-with-404-and-leaves-no-side-effects/step:1",
+					"ordinal": 1,
+					"title": "Assert 404 with the unknown-user outcome",
+					"declaration": {
+						"path": "tests/suites/subscription-rejection.suite.ts",
+						"line": 31,
+						"column": 4
+					},
+					"evaluation": true,
+					"reason": null,
+					"titleCorroborated": false,
+					"terminalAttribution": "no-attributable-expect-failure"
+				},
+				{
+					"assertionId": "subscription-rejection.rejects-an-unknown-user-with-404-and-leaves-no-side-effects/step:2",
+					"ordinal": 2,
+					"title": "Assert fixture state is untouched, no fraud, payment, redis, or queue effects",
+					"declaration": {
+						"path": "tests/suites/subscription-rejection.suite.ts",
+						"line": 41,
+						"column": 4
+					},
+					"evaluation": true,
+					"reason": null,
+					"titleCorroborated": false,
+					"terminalAttribution": "no-attributable-expect-failure"
+				}
+			],
+			"requestedArtifacts": [
+				"assertions.json"
+			],
+			"flowId": "subscription-rejection"
+		},
+		{
+			"schemaVersion": 3,
+			"artifactRole": "reporter-attempt-outcome",
+			"runId": "01M25KNEH3C9BC4HVE743DBF2T",
+			"playwrightTestId": "16c3faa07c6fdef3bf8c-b2a1f53e7a4247749557",
+			"project": "per-worker",
+			"scenarioId": "subscription-rejection.rejects-malformed-subscription-bodies-with-400-invalid-body",
+			"retry": 0,
+			"attemptId": "b083ef47ce587639d8415c2fc768c741",
+			"outcome": "passed",
+			"status": "passed",
+			"recordedAt": "2026-09-10T12:12:05.152Z",
+			"planComplete": false,
+			"assertions": [
+				{
+					"assertionId": "subscription-rejection.rejects-malformed-subscription-bodies-with-400-invalid-body/step:1",
+					"ordinal": 1,
+					"title": "Assert 400 invalid-body for an empty body",
+					"declaration": {
+						"path": "tests/suites/subscription-rejection.suite.ts",
+						"line": 121,
+						"column": 4
+					},
+					"evaluation": true,
+					"reason": null,
+					"titleCorroborated": false,
+					"terminalAttribution": "no-attributable-expect-failure"
+				}
+			],
+			"requestedArtifacts": [
+				"assertions.json"
+			],
+			"flowId": "subscription-rejection"
+		},
+		{
+			"schemaVersion": 3,
+			"artifactRole": "reporter-attempt-outcome",
+			"runId": "01M25KNEH3C9BC4HVE743DBF2T",
+			"playwrightTestId": "1b9ca96bf231cda8c08d-50c45533cc2bd17e83b1",
+			"project": "subsystem",
+			"scenarioId": "payment-mock-subsystem-dist-wrapper.runs-the-payment-intent-and-refund-lifecycle-on-the-dist-wrapper",
+			"retry": 0,
+			"attemptId": "62403baa46fdc9fe69e4122f1da5f12b",
+			"outcome": "passed",
+			"status": "passed",
+			"recordedAt": "2026-09-10T12:12:23.160Z",
+			"planComplete": true,
+			"assertions": [
+				{
+					"assertionId": "payment-mock-subsystem-dist-wrapper.runs-the-payment-intent-and-refund-lifecycle-on-the-dist-wrapper/step:1",
+					"ordinal": 1,
+					"title": "Assert 201 with a succeeded payment intent",
+					"declaration": {
+						"path": "tests/subsystem/payment-mock-dist.spec.ts",
+						"line": 34,
+						"column": 3
+					},
+					"evaluation": true,
+					"reason": null,
+					"titleCorroborated": false,
+					"terminalAttribution": "no-attributable-expect-failure"
+				},
+				{
+					"assertionId": "payment-mock-subsystem-dist-wrapper.runs-the-payment-intent-and-refund-lifecycle-on-the-dist-wrapper/step:3",
+					"ordinal": 3,
+					"title": "Assert 201 with a succeeded refund",
+					"declaration": {
+						"path": "tests/subsystem/payment-mock-dist.spec.ts",
+						"line": 48,
+						"column": 3
+					},
+					"evaluation": true,
+					"reason": null,
+					"titleCorroborated": false,
+					"terminalAttribution": "no-attributable-expect-failure"
+				},
+				{
+					"assertionId": "payment-mock-subsystem-dist-wrapper.runs-the-payment-intent-and-refund-lifecycle-on-the-dist-wrapper/step:4",
+					"ordinal": 4,
+					"title": "Assert fixture state holds exactly one intent and one refund",
+					"declaration": {
+						"path": "tests/subsystem/payment-mock-dist.spec.ts",
+						"line": 59,
+						"column": 3
+					},
+					"evaluation": true,
+					"reason": null,
+					"titleCorroborated": false,
+					"terminalAttribution": "no-attributable-expect-failure"
+				}
+			],
+			"requestedArtifacts": [
+				"effects.json",
+				"assertions.json"
+			],
+			"flowId": "payment-mock-subsystem-dist-wrapper"
+		},
+		{
+			"schemaVersion": 3,
+			"artifactRole": "reporter-attempt-outcome",
+			"runId": "01M25KNEH3C9BC4HVE743DBF2T",
+			"playwrightTestId": "1b9ca96bf231cda8c08d-abf7c15ba6be3d6e4f55",
+			"project": "subsystem",
+			"scenarioId": "payment-mock-subsystem-dist-wrapper.reports-ready-on-get-health-from-the-lean-dist-wrapper",
+			"retry": 0,
+			"attemptId": "2e7edd9ebedc5d2c938575d14d8461bb",
+			"outcome": "passed",
+			"status": "passed",
+			"recordedAt": "2026-09-10T12:12:12.719Z",
+			"planComplete": true,
+			"assertions": [
+				{
+					"assertionId": "payment-mock-subsystem-dist-wrapper.reports-ready-on-get-health-from-the-lean-dist-wrapper/step:1",
+					"ordinal": 1,
+					"title": "Assert 200 with status ready",
+					"declaration": {
+						"path": "tests/subsystem/payment-mock-dist.spec.ts",
+						"line": 18,
+						"column": 3
+					},
+					"evaluation": true,
+					"reason": null,
+					"titleCorroborated": false,
+					"terminalAttribution": "no-attributable-expect-failure"
+				}
+			],
+			"requestedArtifacts": [
+				"effects.json",
+				"assertions.json"
+			],
+			"flowId": "payment-mock-subsystem-dist-wrapper"
+		},
+		{
+			"schemaVersion": 3,
+			"artifactRole": "reporter-attempt-outcome",
+			"runId": "01M25KNEH3C9BC4HVE743DBF2T",
+			"playwrightTestId": "2be0dfcf8cf709fb4273-33c10a4e908b3a852d16",
+			"project": "per-test",
+			"scenarioId": "subscription-creation.creates-an-active-subscription-for-a-full-path-user-with-fraud-p",
+			"retry": 0,
+			"attemptId": "28b3aa9509e9799893b6f517c2236260",
+			"outcome": "passed",
+			"status": "passed",
+			"recordedAt": "2026-09-10T12:11:57.215Z",
+			"planComplete": true,
+			"assertions": [
+				{
+					"assertionId": "subscription-creation.creates-an-active-subscription-for-a-full-path-user-with-fraud-p/step:1",
+					"ordinal": 1,
+					"title": "Assert 201 with an active pro subscription linked to a payment intent and an order",
+					"declaration": {
+						"path": "tests/suites/subscription-creation.suite.ts",
+						"line": 32,
+						"column": 4
+					},
+					"evaluation": true,
+					"reason": null,
+					"titleCorroborated": false,
+					"terminalAttribution": "no-attributable-expect-failure"
+				},
+				{
+					"assertionId": "subscription-creation.creates-an-active-subscription-for-a-full-path-user-with-fraud-p/step:2",
+					"ordinal": 2,
+					"title": "Assert fixture state records fraud audit, payment intent, redis keys, and one queued message",
+					"declaration": {
+						"path": "tests/suites/subscription-creation.suite.ts",
+						"line": 45,
+						"column": 4
+					},
+					"evaluation": true,
+					"reason": null,
+					"titleCorroborated": false,
+					"terminalAttribution": "no-attributable-expect-failure"
+				},
+				{
+					"assertionId": "subscription-creation.creates-an-active-subscription-for-a-full-path-user-with-fraud-p/step:3",
+					"ordinal": 3,
+					"title": "Assert draining the queue yields exactly one subscribe message for alice",
+					"declaration": {
+						"path": "tests/suites/subscription-creation.suite.ts",
+						"line": 73,
+						"column": 4
+					},
+					"evaluation": true,
+					"reason": null,
+					"titleCorroborated": false,
+					"terminalAttribution": "no-attributable-expect-failure"
+				}
+			],
+			"requestedArtifacts": [
+				"decisions.json",
+				"effects.json",
+				"assertions.json"
+			],
+			"flowId": "subscription-creation"
+		},
+		{
+			"schemaVersion": 3,
+			"artifactRole": "reporter-attempt-outcome",
+			"runId": "01M25KNEH3C9BC4HVE743DBF2T",
+			"playwrightTestId": "2be0dfcf8cf709fb4273-ae88c8e64e2636ab3006",
+			"project": "per-test",
+			"scenarioId": "subscription-creation.creates-a-local-only-subscription-for-dora-without-fraud-payment",
+			"retry": 0,
+			"attemptId": "8a44e5b6642c8cbe09689a6908adc397",
+			"outcome": "passed",
+			"status": "passed",
+			"recordedAt": "2026-09-10T12:12:29.235Z",
+			"planComplete": true,
+			"assertions": [
+				{
+					"assertionId": "subscription-creation.creates-a-local-only-subscription-for-dora-without-fraud-payment/step:1",
+					"ordinal": 1,
+					"title": "Assert 201 with an active subscription and null payment and order references",
+					"declaration": {
+						"path": "tests/suites/subscription-creation.suite.ts",
+						"line": 101,
+						"column": 4
+					},
+					"evaluation": true,
+					"reason": null,
+					"titleCorroborated": false,
+					"terminalAttribution": "no-attributable-expect-failure"
+				},
+				{
+					"assertionId": "subscription-creation.creates-a-local-only-subscription-for-dora-without-fraud-payment/step:2",
+					"ordinal": 2,
+					"title": "Assert fixture state shows redis and postgres writes only, no downstream effects",
+					"declaration": {
+						"path": "tests/suites/subscription-creation.suite.ts",
+						"line": 114,
+						"column": 4
+					},
+					"evaluation": true,
+					"reason": null,
+					"titleCorroborated": false,
+					"terminalAttribution": "no-attributable-expect-failure"
+				}
+			],
+			"requestedArtifacts": [
+				"decisions.json",
+				"effects.json",
+				"assertions.json"
+			],
+			"flowId": "subscription-creation"
+		},
+		{
+			"schemaVersion": 3,
+			"artifactRole": "reporter-attempt-outcome",
+			"runId": "01M25KNEH3C9BC4HVE743DBF2T",
+			"playwrightTestId": "2be0dfcf8cf709fb4273-ed2119ca959bffa2909b",
+			"project": "per-test",
+			"scenarioId": "subscription-creation.serves-eve-from-the-preloaded-returning-hint-under-the-compariso",
+			"retry": 0,
+			"attemptId": "d50124a1e5baa337d1858ee4ed586419",
+			"outcome": "passed",
+			"status": "passed",
+			"recordedAt": "2026-09-10T12:12:54.804Z",
+			"planComplete": true,
+			"assertions": [
+				{
+					"assertionId": "subscription-creation.serves-eve-from-the-preloaded-returning-hint-under-the-compariso/step:2",
+					"ordinal": 2,
+					"title": "Assert 201 local-only subscription with null payment and order references",
+					"declaration": {
+						"path": "tests/suites/subscription-creation.suite.ts",
+						"line": 153,
+						"column": 4
+					},
+					"evaluation": true,
+					"reason": null,
+					"titleCorroborated": false,
+					"terminalAttribution": "no-attributable-expect-failure"
+				},
+				{
+					"assertionId": "subscription-creation.serves-eve-from-the-preloaded-returning-hint-under-the-compariso/step:3",
+					"ordinal": 3,
+					"title": "Assert fixture state keeps the preloaded returning hint and adds eve's registration keys",
+					"declaration": {
+						"path": "tests/suites/subscription-creation.suite.ts",
+						"line": 164,
+						"column": 4
+					},
+					"evaluation": true,
+					"reason": null,
+					"titleCorroborated": false,
+					"terminalAttribution": "no-attributable-expect-failure"
+				}
+			],
+			"requestedArtifacts": [
+				"decisions.json",
+				"effects.json",
+				"assertions.json"
+			],
+			"flowId": "subscription-creation"
+		},
+		{
+			"schemaVersion": 3,
+			"artifactRole": "reporter-attempt-outcome",
+			"runId": "01M25KNEH3C9BC4HVE743DBF2T",
+			"playwrightTestId": "3996852a31c3766fefc0-867a5e5855d281597baf",
+			"project": "per-worker",
+			"scenarioId": "concurrency.serializes-concurrent-subscribe-calls-for-one-user-into-one-crea",
+			"retry": 0,
+			"attemptId": "b1714bea048d24c90cb38d0e08f39ae8",
+			"outcome": "passed",
+			"status": "passed",
+			"recordedAt": "2026-09-10T12:11:48.180Z",
+			"planComplete": true,
+			"assertions": [
+				{
+					"assertionId": "concurrency.serializes-concurrent-subscribe-calls-for-one-user-into-one-crea/step:1",
+					"ordinal": 1,
+					"title": "Assert exactly one 201 creation and one 409 duplicate, in either order",
+					"declaration": {
+						"path": "tests/suites/concurrency.suite.ts",
+						"line": 34,
+						"column": 4
+					},
+					"evaluation": true,
+					"reason": null,
+					"titleCorroborated": false,
+					"terminalAttribution": "no-attributable-expect-failure"
+				},
+				{
+					"assertionId": "concurrency.serializes-concurrent-subscribe-calls-for-one-user-into-one-crea/step:2",
+					"ordinal": 2,
+					"title": "Assert fixture state holds exactly one fraud audit, payment intent, queue message, and subscription",
+					"declaration": {
+						"path": "tests/suites/concurrency.suite.ts",
+						"line": 43,
+						"column": 4
+					},
+					"evaluation": true,
+					"reason": null,
+					"titleCorroborated": false,
+					"terminalAttribution": "no-attributable-expect-failure"
+				}
+			],
+			"requestedArtifacts": [
+				"assertions.json"
+			],
+			"flowId": "concurrency-carol"
+		},
+		{
+			"schemaVersion": 3,
+			"artifactRole": "reporter-attempt-outcome",
+			"runId": "01M25KNEH3C9BC4HVE743DBF2T",
+			"playwrightTestId": "52990a645e1a89ad7d6d-013c382151adbb3a55be",
+			"project": "per-worker",
+			"scenarioId": "subscription-creation.serves-eve-from-the-preloaded-returning-hint-under-the-compariso",
+			"retry": 0,
+			"attemptId": "f6ca4b0ff8ba3054be4eba0f086207d9",
+			"outcome": "passed",
+			"status": "passed",
+			"recordedAt": "2026-09-10T12:12:21.165Z",
+			"planComplete": true,
+			"assertions": [
+				{
+					"assertionId": "subscription-creation.serves-eve-from-the-preloaded-returning-hint-under-the-compariso/step:2",
+					"ordinal": 2,
+					"title": "Assert 201 local-only subscription with null payment and order references",
+					"declaration": {
+						"path": "tests/suites/subscription-creation.suite.ts",
+						"line": 153,
+						"column": 4
+					},
+					"evaluation": true,
+					"reason": null,
+					"titleCorroborated": false,
+					"terminalAttribution": "no-attributable-expect-failure"
+				},
+				{
+					"assertionId": "subscription-creation.serves-eve-from-the-preloaded-returning-hint-under-the-compariso/step:3",
+					"ordinal": 3,
+					"title": "Assert fixture state keeps the preloaded returning hint and adds eve's registration keys",
+					"declaration": {
+						"path": "tests/suites/subscription-creation.suite.ts",
+						"line": 164,
+						"column": 4
+					},
+					"evaluation": true,
+					"reason": null,
+					"titleCorroborated": false,
+					"terminalAttribution": "no-attributable-expect-failure"
+				}
+			],
+			"requestedArtifacts": [
+				"assertions.json"
+			],
+			"flowId": "subscription-creation"
+		},
+		{
+			"schemaVersion": 3,
+			"artifactRole": "reporter-attempt-outcome",
+			"runId": "01M25KNEH3C9BC4HVE743DBF2T",
+			"playwrightTestId": "52990a645e1a89ad7d6d-43416091fcafbbe4d901",
+			"project": "per-worker",
+			"scenarioId": "subscription-creation.creates-a-local-only-subscription-for-dora-without-fraud-payment",
+			"retry": 0,
+			"attemptId": "39e9f9b41e7ea2479f8053c0819ff73a",
+			"outcome": "passed",
+			"status": "passed",
+			"recordedAt": "2026-09-10T12:12:16.574Z",
+			"planComplete": true,
+			"assertions": [
+				{
+					"assertionId": "subscription-creation.creates-a-local-only-subscription-for-dora-without-fraud-payment/step:1",
+					"ordinal": 1,
+					"title": "Assert 201 with an active subscription and null payment and order references",
+					"declaration": {
+						"path": "tests/suites/subscription-creation.suite.ts",
+						"line": 101,
+						"column": 4
+					},
+					"evaluation": true,
+					"reason": null,
+					"titleCorroborated": false,
+					"terminalAttribution": "no-attributable-expect-failure"
+				},
+				{
+					"assertionId": "subscription-creation.creates-a-local-only-subscription-for-dora-without-fraud-payment/step:2",
+					"ordinal": 2,
+					"title": "Assert fixture state shows redis and postgres writes only, no downstream effects",
+					"declaration": {
+						"path": "tests/suites/subscription-creation.suite.ts",
+						"line": 114,
+						"column": 4
+					},
+					"evaluation": true,
+					"reason": null,
+					"titleCorroborated": false,
+					"terminalAttribution": "no-attributable-expect-failure"
+				}
+			],
+			"requestedArtifacts": [
+				"assertions.json"
+			],
+			"flowId": "subscription-creation"
+		},
+		{
+			"schemaVersion": 3,
+			"artifactRole": "reporter-attempt-outcome",
+			"runId": "01M25KNEH3C9BC4HVE743DBF2T",
+			"playwrightTestId": "52990a645e1a89ad7d6d-ca9831f667f7076da215",
+			"project": "per-worker",
+			"scenarioId": "subscription-creation.creates-an-active-subscription-for-a-full-path-user-with-fraud-p",
+			"retry": 0,
+			"attemptId": "661cbceb133352e08062668e2a6ee2de",
+			"outcome": "passed",
+			"status": "passed",
+			"recordedAt": "2026-09-10T12:12:14.444Z",
+			"planComplete": true,
+			"assertions": [
+				{
+					"assertionId": "subscription-creation.creates-an-active-subscription-for-a-full-path-user-with-fraud-p/step:1",
+					"ordinal": 1,
+					"title": "Assert 201 with an active pro subscription linked to a payment intent and an order",
+					"declaration": {
+						"path": "tests/suites/subscription-creation.suite.ts",
+						"line": 32,
+						"column": 4
+					},
+					"evaluation": true,
+					"reason": null,
+					"titleCorroborated": false,
+					"terminalAttribution": "no-attributable-expect-failure"
+				},
+				{
+					"assertionId": "subscription-creation.creates-an-active-subscription-for-a-full-path-user-with-fraud-p/step:2",
+					"ordinal": 2,
+					"title": "Assert fixture state records fraud audit, payment intent, redis keys, and one queued message",
+					"declaration": {
+						"path": "tests/suites/subscription-creation.suite.ts",
+						"line": 45,
+						"column": 4
+					},
+					"evaluation": true,
+					"reason": null,
+					"titleCorroborated": false,
+					"terminalAttribution": "no-attributable-expect-failure"
+				},
+				{
+					"assertionId": "subscription-creation.creates-an-active-subscription-for-a-full-path-user-with-fraud-p/step:3",
+					"ordinal": 3,
+					"title": "Assert draining the queue yields exactly one subscribe message for alice",
+					"declaration": {
+						"path": "tests/suites/subscription-creation.suite.ts",
+						"line": 73,
+						"column": 4
+					},
+					"evaluation": true,
+					"reason": null,
+					"titleCorroborated": false,
+					"terminalAttribution": "no-attributable-expect-failure"
+				}
+			],
+			"requestedArtifacts": [
+				"assertions.json"
+			],
+			"flowId": "subscription-creation"
+		},
+		{
+			"schemaVersion": 3,
+			"artifactRole": "reporter-attempt-outcome",
+			"runId": "01M25KNEH3C9BC4HVE743DBF2T",
+			"playwrightTestId": "6c705246398d2be6220f-2465bac7087b54961dcd",
+			"project": "per-test",
+			"scenarioId": "health.payment-mock-reports-ready-on-get-health",
+			"retry": 0,
+			"attemptId": "f5760288ceed49da362eb026332939de",
+			"outcome": "passed",
+			"status": "passed",
+			"recordedAt": "2026-09-10T12:13:14.716Z",
+			"planComplete": false,
+			"assertions": [],
+			"requestedArtifacts": [
+				"effects.json"
+			],
+			"flowId": "health"
+		},
+		{
+			"schemaVersion": 3,
+			"artifactRole": "reporter-attempt-outcome",
+			"runId": "01M25KNEH3C9BC4HVE743DBF2T",
+			"playwrightTestId": "6c705246398d2be6220f-29a6bc1d9bba4456030c",
+			"project": "per-test",
+			"scenarioId": "health.public-api-reports-ready-on-get-health",
+			"retry": 0,
+			"attemptId": "bc172f89f2a232357d0fac72751c7769",
+			"outcome": "passed",
+			"status": "passed",
+			"recordedAt": "2026-09-10T12:11:53.378Z",
+			"planComplete": false,
+			"assertions": [],
+			"requestedArtifacts": [
+				"effects.json"
+			],
+			"flowId": "health"
+		},
+		{
+			"schemaVersion": 3,
+			"artifactRole": "reporter-attempt-outcome",
+			"runId": "01M25KNEH3C9BC4HVE743DBF2T",
+			"playwrightTestId": "6c705246398d2be6220f-a5ba2a2915458cdccc3a",
+			"project": "per-test",
+			"scenarioId": "health.order-service-reports-ready-on-get-health",
+			"retry": 0,
+			"attemptId": "076f0910a93f2b37f40a7f1c160a49a5",
+			"outcome": "passed",
+			"status": "passed",
+			"recordedAt": "2026-09-10T12:12:52.512Z",
+			"planComplete": false,
+			"assertions": [],
+			"requestedArtifacts": [
+				"effects.json"
+			],
+			"flowId": "health"
+		},
+		{
+			"schemaVersion": 3,
+			"artifactRole": "reporter-attempt-outcome",
+			"runId": "01M25KNEH3C9BC4HVE743DBF2T",
+			"playwrightTestId": "6c705246398d2be6220f-ca88f3cd08a3e96c7670",
+			"project": "per-test",
+			"scenarioId": "health.fraud-check-reports-ready-on-get-health",
+			"retry": 0,
+			"attemptId": "1233bfdf3bc09f006362f6dec062fe09",
+			"outcome": "passed",
+			"status": "passed",
+			"recordedAt": "2026-09-10T12:12:25.550Z",
+			"planComplete": false,
+			"assertions": [],
+			"requestedArtifacts": [
+				"effects.json"
+			],
+			"flowId": "health"
+		},
+		{
+			"schemaVersion": 3,
+			"artifactRole": "reporter-attempt-outcome",
+			"runId": "01M25KNEH3C9BC4HVE743DBF2T",
+			"playwrightTestId": "936b029611cc371ee95b-18cf142de6ae144affbd",
+			"project": "per-test",
+			"scenarioId": "subscription-rejection.rejects-malformed-subscription-bodies-with-400-invalid-body",
+			"retry": 0,
+			"attemptId": "0e15205173f61c09f2878a6769beb928",
+			"outcome": "passed",
+			"status": "passed",
+			"recordedAt": "2026-09-10T12:12:51.696Z",
+			"planComplete": false,
+			"assertions": [
+				{
+					"assertionId": "subscription-rejection.rejects-malformed-subscription-bodies-with-400-invalid-body/step:1",
+					"ordinal": 1,
+					"title": "Assert 400 invalid-body for an empty body",
+					"declaration": {
+						"path": "tests/suites/subscription-rejection.suite.ts",
+						"line": 121,
+						"column": 4
+					},
+					"evaluation": true,
+					"reason": null,
+					"titleCorroborated": false,
+					"terminalAttribution": "no-attributable-expect-failure"
+				}
+			],
+			"requestedArtifacts": [
+				"effects.json",
+				"assertions.json"
+			],
+			"flowId": "subscription-rejection"
+		},
+		{
+			"schemaVersion": 3,
+			"artifactRole": "reporter-attempt-outcome",
+			"runId": "01M25KNEH3C9BC4HVE743DBF2T",
+			"playwrightTestId": "936b029611cc371ee95b-2c00b5c353780a522c49",
+			"project": "per-test",
+			"scenarioId": "subscription-rejection.rejects-an-unknown-user-with-404-and-leaves-no-side-effects",
+			"retry": 0,
+			"attemptId": "903517d6273d2527a99322de307d1cde",
+			"outcome": "passed",
+			"status": "passed",
+			"recordedAt": "2026-09-10T12:11:52.707Z",
+			"planComplete": true,
+			"assertions": [
+				{
+					"assertionId": "subscription-rejection.rejects-an-unknown-user-with-404-and-leaves-no-side-effects/step:1",
+					"ordinal": 1,
+					"title": "Assert 404 with the unknown-user outcome",
+					"declaration": {
+						"path": "tests/suites/subscription-rejection.suite.ts",
+						"line": 31,
+						"column": 4
+					},
+					"evaluation": true,
+					"reason": null,
+					"titleCorroborated": false,
+					"terminalAttribution": "no-attributable-expect-failure"
+				},
+				{
+					"assertionId": "subscription-rejection.rejects-an-unknown-user-with-404-and-leaves-no-side-effects/step:2",
+					"ordinal": 2,
+					"title": "Assert fixture state is untouched, no fraud, payment, redis, or queue effects",
+					"declaration": {
+						"path": "tests/suites/subscription-rejection.suite.ts",
+						"line": 41,
+						"column": 4
+					},
+					"evaluation": true,
+					"reason": null,
+					"titleCorroborated": false,
+					"terminalAttribution": "no-attributable-expect-failure"
+				}
+			],
+			"requestedArtifacts": [
+				"effects.json",
+				"assertions.json"
+			],
+			"flowId": "subscription-rejection"
+		},
+		{
+			"schemaVersion": 3,
+			"artifactRole": "reporter-attempt-outcome",
+			"runId": "01M25KNEH3C9BC4HVE743DBF2T",
+			"playwrightTestId": "936b029611cc371ee95b-3a151cbeb2ce66ce1e7e",
+			"project": "per-test",
+			"scenarioId": "subscription-rejection.rejects-a-second-subscription-for-the-same-user-with-409-before",
+			"retry": 0,
+			"attemptId": "28dc6c767b0bdb4c18aed1a4fa7785cd",
+			"outcome": "passed",
+			"status": "passed",
+			"recordedAt": "2026-09-10T12:12:27.134Z",
+			"planComplete": true,
+			"assertions": [
+				{
+					"assertionId": "subscription-rejection.rejects-a-second-subscription-for-the-same-user-with-409-before/step:2",
+					"ordinal": 2,
+					"title": "Assert 409 with the duplicate-subscription outcome",
+					"declaration": {
+						"path": "tests/suites/subscription-rejection.suite.ts",
+						"line": 73,
+						"column": 4
+					},
+					"evaluation": true,
+					"reason": null,
+					"titleCorroborated": false,
+					"terminalAttribution": "no-attributable-expect-failure"
+				},
+				{
+					"assertionId": "subscription-rejection.rejects-a-second-subscription-for-the-same-user-with-409-before/step:3",
+					"ordinal": 3,
+					"title": "Assert fixture state still holds only the first subscription's effects",
+					"declaration": {
+						"path": "tests/suites/subscription-rejection.suite.ts",
+						"line": 83,
+						"column": 4
+					},
+					"evaluation": true,
+					"reason": null,
+					"titleCorroborated": false,
+					"terminalAttribution": "no-attributable-expect-failure"
+				}
+			],
+			"requestedArtifacts": [
+				"effects.json",
+				"assertions.json"
+			],
+			"flowId": "subscription-rejection"
+		},
+		{
+			"schemaVersion": 3,
+			"artifactRole": "reporter-attempt-outcome",
+			"runId": "01M25KNEH3C9BC4HVE743DBF2T",
+			"playwrightTestId": "ab20711e520f4abff31a-6d85b1dce71a1f12bdc1",
+			"project": "per-test",
+			"scenarioId": "concurrency.serializes-concurrent-subscribe-calls-for-one-user-into-one-crea",
+			"retry": 0,
+			"attemptId": "7ba85a5bb78b1b541ac02c90061b4ac0",
+			"outcome": "passed",
+			"status": "passed",
+			"recordedAt": "2026-09-10T12:11:49.477Z",
+			"planComplete": true,
+			"assertions": [
+				{
+					"assertionId": "concurrency.serializes-concurrent-subscribe-calls-for-one-user-into-one-crea/step:1",
+					"ordinal": 1,
+					"title": "Assert exactly one 201 creation and one 409 duplicate, in either order",
+					"declaration": {
+						"path": "tests/suites/concurrency.suite.ts",
+						"line": 34,
+						"column": 4
+					},
+					"evaluation": true,
+					"reason": null,
+					"titleCorroborated": false,
+					"terminalAttribution": "no-attributable-expect-failure"
+				},
+				{
+					"assertionId": "concurrency.serializes-concurrent-subscribe-calls-for-one-user-into-one-crea/step:2",
+					"ordinal": 2,
+					"title": "Assert fixture state holds exactly one fraud audit, payment intent, queue message, and subscription",
+					"declaration": {
+						"path": "tests/suites/concurrency.suite.ts",
+						"line": 43,
+						"column": 4
+					},
+					"evaluation": true,
+					"reason": null,
+					"titleCorroborated": false,
+					"terminalAttribution": "no-attributable-expect-failure"
+				}
+			],
+			"requestedArtifacts": [
+				"effects.json",
+				"assertions.json"
+			],
+			"flowId": "concurrency-carol"
+		},
+		{
+			"schemaVersion": 3,
+			"artifactRole": "reporter-attempt-outcome",
+			"runId": "01M25KNEH3C9BC4HVE743DBF2T",
+			"playwrightTestId": "b4201a13beca0831b244-40c59631f597356130db",
+			"project": "per-test",
+			"scenarioId": "fixture-control.payment-mock-records-payment-intents-and-refunds-and-rejects-unk",
+			"retry": 0,
+			"attemptId": "152963ca1aff5c81d8617af73d7e58bf",
+			"outcome": "passed",
+			"status": "passed",
+			"recordedAt": "2026-09-10T12:13:12.740Z",
+			"planComplete": true,
+			"assertions": [
+				{
+					"assertionId": "fixture-control.payment-mock-records-payment-intents-and-refunds-and-rejects-unk/step:1",
+					"ordinal": 1,
+					"title": "Assert 201 with a succeeded payment intent",
+					"declaration": {
+						"path": "tests/suites/fixture-control.suite.ts",
+						"line": 189,
+						"column": 4
+					},
+					"evaluation": true,
+					"reason": null,
+					"titleCorroborated": false,
+					"terminalAttribution": "no-attributable-expect-failure"
+				},
+				{
+					"assertionId": "fixture-control.payment-mock-records-payment-intents-and-refunds-and-rejects-unk/step:3",
+					"ordinal": 3,
+					"title": "Assert 404 payment-intent-not-found for the unknown intent",
+					"declaration": {
+						"path": "tests/suites/fixture-control.suite.ts",
+						"line": 205,
+						"column": 4
+					},
+					"evaluation": true,
+					"reason": null,
+					"titleCorroborated": false,
+					"terminalAttribution": "no-attributable-expect-failure"
+				},
+				{
+					"assertionId": "fixture-control.payment-mock-records-payment-intents-and-refunds-and-rejects-unk/step:5",
+					"ordinal": 5,
+					"title": "Assert 201 with a succeeded refund",
+					"declaration": {
+						"path": "tests/suites/fixture-control.suite.ts",
+						"line": 218,
+						"column": 4
+					},
+					"evaluation": true,
+					"reason": null,
+					"titleCorroborated": false,
+					"terminalAttribution": "no-attributable-expect-failure"
+				},
+				{
+					"assertionId": "fixture-control.payment-mock-records-payment-intents-and-refunds-and-rejects-unk/step:7",
+					"ordinal": 7,
+					"title": "Assert 409 refund-already-exists for the duplicate refund",
+					"declaration": {
+						"path": "tests/suites/fixture-control.suite.ts",
+						"line": 233,
+						"column": 4
+					},
+					"evaluation": true,
+					"reason": null,
+					"titleCorroborated": false,
+					"terminalAttribution": "no-attributable-expect-failure"
+				},
+				{
+					"assertionId": "fixture-control.payment-mock-records-payment-intents-and-refunds-and-rejects-unk/step:8",
+					"ordinal": 8,
+					"title": "Assert payment-mock state holds exactly one intent and one refund",
+					"declaration": {
+						"path": "tests/suites/fixture-control.suite.ts",
+						"line": 240,
+						"column": 4
+					},
+					"evaluation": true,
+					"reason": null,
+					"titleCorroborated": false,
+					"terminalAttribution": "no-attributable-expect-failure"
+				}
+			],
+			"requestedArtifacts": [
+				"effects.json",
+				"assertions.json"
+			],
+			"flowId": "fixture-control"
+		},
+		{
+			"schemaVersion": 3,
+			"artifactRole": "reporter-attempt-outcome",
+			"runId": "01M25KNEH3C9BC4HVE743DBF2T",
+			"playwrightTestId": "b4201a13beca0831b244-4773a456e28879b49c0a",
+			"project": "per-test",
+			"scenarioId": "fixture-control.resets-to-the-fresh-and-comparison-absent-profiles-and-rejects-a",
+			"retry": 0,
+			"attemptId": "120962cbcb095f5067a822f22ef23a6e",
+			"outcome": "passed",
+			"status": "passed",
+			"recordedAt": "2026-09-10T12:12:26.543Z",
+			"planComplete": false,
+			"assertions": [
+				{
+					"assertionId": "fixture-control.resets-to-the-fresh-and-comparison-absent-profiles-and-rejects-a/step:3",
+					"ordinal": 3,
+					"title": "Assert 400 invalid-profile for the unknown profile",
+					"declaration": {
+						"path": "tests/suites/fixture-control.suite.ts",
+						"line": 135,
+						"column": 4
+					},
+					"evaluation": true,
+					"reason": null,
+					"titleCorroborated": false,
+					"terminalAttribution": "no-attributable-expect-failure"
+				}
+			],
+			"requestedArtifacts": [
+				"effects.json",
+				"assertions.json"
+			],
+			"flowId": "fixture-control"
+		},
+		{
+			"schemaVersion": 3,
+			"artifactRole": "reporter-attempt-outcome",
+			"runId": "01M25KNEH3C9BC4HVE743DBF2T",
+			"playwrightTestId": "b4201a13beca0831b244-4880676256a8969578c6",
+			"project": "per-test",
+			"scenarioId": "fixture-control.group-cleanup-restores-a-clean-fixture-state-after-a-subscriptio",
+			"retry": 0,
+			"attemptId": "a51ac21e41c5503ece8e56217acbcf9f",
+			"outcome": "passed",
+			"status": "passed",
+			"recordedAt": "2026-09-10T12:12:50.104Z",
+			"planComplete": true,
+			"assertions": [
+				{
+					"assertionId": "fixture-control.group-cleanup-restores-a-clean-fixture-state-after-a-subscriptio/step:2",
+					"ordinal": 2,
+					"title": "Assert 200 with empty redis, subscriptions, and queue",
+					"declaration": {
+						"path": "tests/suites/fixture-control.suite.ts",
+						"line": 158,
+						"column": 4
+					},
+					"evaluation": true,
+					"reason": null,
+					"titleCorroborated": false,
+					"terminalAttribution": "no-attributable-expect-failure"
+				}
+			],
+			"requestedArtifacts": [
+				"effects.json",
+				"assertions.json"
+			],
+			"flowId": "fixture-control"
+		},
+		{
+			"schemaVersion": 3,
+			"artifactRole": "reporter-attempt-outcome",
+			"runId": "01M25KNEH3C9BC4HVE743DBF2T",
+			"playwrightTestId": "b4201a13beca0831b244-604c182745a568e3fd90",
+			"project": "per-test",
+			"scenarioId": "fixture-control.rejects-fixture-control-access-without-a-token-or-with-a-wrong-t",
+			"retry": 0,
+			"attemptId": "245aacb120f4abfead852ed6eef59fc3",
+			"outcome": "passed",
+			"status": "passed",
+			"recordedAt": "2026-09-10T12:11:52.587Z",
+			"planComplete": true,
+			"assertions": [
+				{
+					"assertionId": "fixture-control.rejects-fixture-control-access-without-a-token-or-with-a-wrong-t/step:1",
+					"ordinal": 1,
+					"title": "Assert 401 fixture-control-unauthorized without a token",
+					"declaration": {
+						"path": "tests/suites/fixture-control.suite.ts",
+						"line": 46,
+						"column": 4
+					},
+					"evaluation": true,
+					"reason": null,
+					"titleCorroborated": false,
+					"terminalAttribution": "no-attributable-expect-failure"
+				},
+				{
+					"assertionId": "fixture-control.rejects-fixture-control-access-without-a-token-or-with-a-wrong-t/step:3",
+					"ordinal": 3,
+					"title": "Assert 401 fixture-control-unauthorized with a wrong token",
+					"declaration": {
+						"path": "tests/suites/fixture-control.suite.ts",
+						"line": 59,
+						"column": 4
+					},
+					"evaluation": true,
+					"reason": null,
+					"titleCorroborated": false,
+					"terminalAttribution": "no-attributable-expect-failure"
+				},
+				{
+					"assertionId": "fixture-control.rejects-fixture-control-access-without-a-token-or-with-a-wrong-t/step:5",
+					"ordinal": 5,
+					"title": "Assert payment-mock also answers 401 fixture-control-unauthorized",
+					"declaration": {
+						"path": "tests/suites/fixture-control.suite.ts",
+						"line": 70,
+						"column": 4
+					},
+					"evaluation": true,
+					"reason": null,
+					"titleCorroborated": false,
+					"terminalAttribution": "no-attributable-expect-failure"
+				}
+			],
+			"requestedArtifacts": [
+				"effects.json",
+				"assertions.json"
+			],
+			"flowId": "fixture-control"
+		},
+		{
+			"schemaVersion": 3,
+			"artifactRole": "reporter-attempt-outcome",
+			"runId": "01M25KNEH3C9BC4HVE743DBF2T",
+			"playwrightTestId": "c771ecd7169f45f8e2fe-6357137907732b791aea",
+			"project": "per-worker",
+			"scenarioId": "fixture-control.resets-to-the-fresh-and-comparison-absent-profiles-and-rejects-a",
+			"retry": 0,
+			"attemptId": "9f538c98172d3ee75c1a2d92ebd5876e",
+			"outcome": "passed",
+			"status": "passed",
+			"recordedAt": "2026-09-10T12:11:51.446Z",
+			"planComplete": false,
+			"assertions": [
+				{
+					"assertionId": "fixture-control.resets-to-the-fresh-and-comparison-absent-profiles-and-rejects-a/step:3",
+					"ordinal": 3,
+					"title": "Assert 400 invalid-profile for the unknown profile",
+					"declaration": {
+						"path": "tests/suites/fixture-control.suite.ts",
+						"line": 135,
+						"column": 4
+					},
+					"evaluation": true,
+					"reason": null,
+					"titleCorroborated": false,
+					"terminalAttribution": "no-attributable-expect-failure"
+				}
+			],
+			"requestedArtifacts": [
+				"assertions.json"
+			],
+			"flowId": "fixture-control"
+		},
+		{
+			"schemaVersion": 3,
+			"artifactRole": "reporter-attempt-outcome",
+			"runId": "01M25KNEH3C9BC4HVE743DBF2T",
+			"playwrightTestId": "c771ecd7169f45f8e2fe-882b052d6171ab2eb6fb",
+			"project": "per-worker",
+			"scenarioId": "fixture-control.group-cleanup-restores-a-clean-fixture-state-after-a-subscriptio",
+			"retry": 0,
+			"attemptId": "e4e80c4177ba626bf638e4cc38865a2f",
+			"outcome": "passed",
+			"status": "passed",
+			"recordedAt": "2026-09-10T12:11:55.850Z",
+			"planComplete": true,
+			"assertions": [
+				{
+					"assertionId": "fixture-control.group-cleanup-restores-a-clean-fixture-state-after-a-subscriptio/step:2",
+					"ordinal": 2,
+					"title": "Assert 200 with empty redis, subscriptions, and queue",
+					"declaration": {
+						"path": "tests/suites/fixture-control.suite.ts",
+						"line": 158,
+						"column": 4
+					},
+					"evaluation": true,
+					"reason": null,
+					"titleCorroborated": false,
+					"terminalAttribution": "no-attributable-expect-failure"
+				}
+			],
+			"requestedArtifacts": [
+				"assertions.json"
+			],
+			"flowId": "fixture-control"
+		},
+		{
+			"schemaVersion": 3,
+			"artifactRole": "reporter-attempt-outcome",
+			"runId": "01M25KNEH3C9BC4HVE743DBF2T",
+			"playwrightTestId": "c771ecd7169f45f8e2fe-914b1f0498378f20e793",
+			"project": "per-worker",
+			"scenarioId": "fixture-control.payment-mock-records-payment-intents-and-refunds-and-rejects-unk",
+			"retry": 0,
+			"attemptId": "eaa57bf01335c6bc1cf0549a3b647ed1",
+			"outcome": "passed",
+			"status": "passed",
+			"recordedAt": "2026-09-10T12:11:59.125Z",
+			"planComplete": true,
+			"assertions": [
+				{
+					"assertionId": "fixture-control.payment-mock-records-payment-intents-and-refunds-and-rejects-unk/step:1",
+					"ordinal": 1,
+					"title": "Assert 201 with a succeeded payment intent",
+					"declaration": {
+						"path": "tests/suites/fixture-control.suite.ts",
+						"line": 189,
+						"column": 4
+					},
+					"evaluation": true,
+					"reason": null,
+					"titleCorroborated": false,
+					"terminalAttribution": "no-attributable-expect-failure"
+				},
+				{
+					"assertionId": "fixture-control.payment-mock-records-payment-intents-and-refunds-and-rejects-unk/step:3",
+					"ordinal": 3,
+					"title": "Assert 404 payment-intent-not-found for the unknown intent",
+					"declaration": {
+						"path": "tests/suites/fixture-control.suite.ts",
+						"line": 205,
+						"column": 4
+					},
+					"evaluation": true,
+					"reason": null,
+					"titleCorroborated": false,
+					"terminalAttribution": "no-attributable-expect-failure"
+				},
+				{
+					"assertionId": "fixture-control.payment-mock-records-payment-intents-and-refunds-and-rejects-unk/step:5",
+					"ordinal": 5,
+					"title": "Assert 201 with a succeeded refund",
+					"declaration": {
+						"path": "tests/suites/fixture-control.suite.ts",
+						"line": 218,
+						"column": 4
+					},
+					"evaluation": true,
+					"reason": null,
+					"titleCorroborated": false,
+					"terminalAttribution": "no-attributable-expect-failure"
+				},
+				{
+					"assertionId": "fixture-control.payment-mock-records-payment-intents-and-refunds-and-rejects-unk/step:7",
+					"ordinal": 7,
+					"title": "Assert 409 refund-already-exists for the duplicate refund",
+					"declaration": {
+						"path": "tests/suites/fixture-control.suite.ts",
+						"line": 233,
+						"column": 4
+					},
+					"evaluation": true,
+					"reason": null,
+					"titleCorroborated": false,
+					"terminalAttribution": "no-attributable-expect-failure"
+				},
+				{
+					"assertionId": "fixture-control.payment-mock-records-payment-intents-and-refunds-and-rejects-unk/step:8",
+					"ordinal": 8,
+					"title": "Assert payment-mock state holds exactly one intent and one refund",
+					"declaration": {
+						"path": "tests/suites/fixture-control.suite.ts",
+						"line": 240,
+						"column": 4
+					},
+					"evaluation": true,
+					"reason": null,
+					"titleCorroborated": false,
+					"terminalAttribution": "no-attributable-expect-failure"
+				}
+			],
+			"requestedArtifacts": [
+				"assertions.json"
+			],
+			"flowId": "fixture-control"
+		},
+		{
+			"schemaVersion": 3,
+			"artifactRole": "reporter-attempt-outcome",
+			"runId": "01M25KNEH3C9BC4HVE743DBF2T",
+			"playwrightTestId": "c771ecd7169f45f8e2fe-b91b1496b1d233ee2ca2",
+			"project": "per-worker",
+			"scenarioId": "fixture-control.rejects-fixture-control-access-without-a-token-or-with-a-wrong-t",
+			"retry": 0,
+			"attemptId": "be744a44dab9614d510991b5550d0a49",
+			"outcome": "passed",
+			"status": "passed",
+			"recordedAt": "2026-09-10T12:11:47.395Z",
+			"planComplete": true,
+			"assertions": [
+				{
+					"assertionId": "fixture-control.rejects-fixture-control-access-without-a-token-or-with-a-wrong-t/step:1",
+					"ordinal": 1,
+					"title": "Assert 401 fixture-control-unauthorized without a token",
+					"declaration": {
+						"path": "tests/suites/fixture-control.suite.ts",
+						"line": 46,
+						"column": 4
+					},
+					"evaluation": true,
+					"reason": null,
+					"titleCorroborated": false,
+					"terminalAttribution": "no-attributable-expect-failure"
+				},
+				{
+					"assertionId": "fixture-control.rejects-fixture-control-access-without-a-token-or-with-a-wrong-t/step:3",
+					"ordinal": 3,
+					"title": "Assert 401 fixture-control-unauthorized with a wrong token",
+					"declaration": {
+						"path": "tests/suites/fixture-control.suite.ts",
+						"line": 59,
+						"column": 4
+					},
+					"evaluation": true,
+					"reason": null,
+					"titleCorroborated": false,
+					"terminalAttribution": "no-attributable-expect-failure"
+				},
+				{
+					"assertionId": "fixture-control.rejects-fixture-control-access-without-a-token-or-with-a-wrong-t/step:5",
+					"ordinal": 5,
+					"title": "Assert payment-mock also answers 401 fixture-control-unauthorized",
+					"declaration": {
+						"path": "tests/suites/fixture-control.suite.ts",
+						"line": 70,
+						"column": 4
+					},
+					"evaluation": true,
+					"reason": null,
+					"titleCorroborated": false,
+					"terminalAttribution": "no-attributable-expect-failure"
+				}
+			],
+			"requestedArtifacts": [
+				"assertions.json"
+			],
+			"flowId": "fixture-control"
+		},
+		{
+			"schemaVersion": 3,
+			"artifactRole": "reporter-attempt-outcome",
+			"runId": "01M25KNEH3C9BC4HVE743DBF2T",
+			"playwrightTestId": "d1bf5212fc8f8f62b54d-1e1daa19626dcd7bbfc6",
+			"project": "per-worker",
+			"scenarioId": "health.fraud-check-reports-ready-on-get-health",
+			"retry": 0,
+			"attemptId": "294ea73c5c95e9fbb5006fdc2e637206",
+			"outcome": "passed",
+			"status": "passed",
+			"recordedAt": "2026-09-10T12:11:53.193Z",
+			"planComplete": false,
+			"assertions": [],
+			"requestedArtifacts": [],
+			"flowId": "health"
+		},
+		{
+			"schemaVersion": 3,
+			"artifactRole": "reporter-attempt-outcome",
+			"runId": "01M25KNEH3C9BC4HVE743DBF2T",
+			"playwrightTestId": "d1bf5212fc8f8f62b54d-64d32dd7ca0689ffcc67",
+			"project": "per-worker",
+			"scenarioId": "health.payment-mock-reports-ready-on-get-health",
+			"retry": 0,
+			"attemptId": "5ffe52e1bcea1275d10dab552420a449",
+			"outcome": "passed",
+			"status": "passed",
+			"recordedAt": "2026-09-10T12:11:58.488Z",
+			"planComplete": false,
+			"assertions": [],
+			"requestedArtifacts": [],
+			"flowId": "health"
+		},
+		{
+			"schemaVersion": 3,
+			"artifactRole": "reporter-attempt-outcome",
+			"runId": "01M25KNEH3C9BC4HVE743DBF2T",
+			"playwrightTestId": "d1bf5212fc8f8f62b54d-b1e05c0b3ee6edfd93ee",
+			"project": "per-worker",
+			"scenarioId": "health.public-api-reports-ready-on-get-health",
+			"retry": 0,
+			"attemptId": "c12c8a8e74c469333769e511067bb15b",
+			"outcome": "passed",
+			"status": "passed",
+			"recordedAt": "2026-09-10T12:11:50.270Z",
+			"planComplete": false,
+			"assertions": [],
+			"requestedArtifacts": [],
+			"flowId": "health"
+		},
+		{
+			"schemaVersion": 3,
+			"artifactRole": "reporter-attempt-outcome",
+			"runId": "01M25KNEH3C9BC4HVE743DBF2T",
+			"playwrightTestId": "d1bf5212fc8f8f62b54d-f751bfc7864c4432ec4e",
+			"project": "per-worker",
+			"scenarioId": "health.order-service-reports-ready-on-get-health",
+			"retry": 0,
+			"attemptId": "4b752797d284318d4ea38e9498966b33",
+			"outcome": "passed",
+			"status": "passed",
+			"recordedAt": "2026-09-10T12:11:56.481Z",
+			"planComplete": false,
+			"assertions": [],
+			"requestedArtifacts": [],
+			"flowId": "health"
+		}
+	]
+}

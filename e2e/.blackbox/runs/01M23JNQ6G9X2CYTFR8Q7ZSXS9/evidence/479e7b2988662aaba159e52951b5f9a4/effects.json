@@ -1,0 +1,42 @@
+{
+	"type": "effects",
+	"flowId": "starts-from-a-clean-state-because-the-container-is-per-test",
+	"attemptId": "479e7b2988662aaba159e52951b5f9a4",
+	"observed": {
+		"schemaVersion": 2,
+		"entry": null,
+		"entryResolution": {
+			"status": "excluded",
+			"reason": "declared-act-fixture-control"
+		},
+		"summary": {
+			"counts": {
+				"inbound": 1,
+				"outboundHttp": 0,
+				"sql": 0,
+				"cache": 0,
+				"messaging": 0
+			},
+			"services": [
+				"payment-mock"
+			],
+			"edges": []
+		},
+		"services": {
+			"payment-mock": {
+				"inbound": [
+					{
+						"method": "GET",
+						"path": "/fixture/state",
+						"status": 200,
+						"count": 1,
+						"origin": "fixture-control"
+					}
+				]
+			}
+		},
+		"errors": []
+	},
+	"expectedPath": "/Users/omer/projects/suites/blackbox/e2e/tests/subsystem/effects/payment-mock.spec.ts/effects-starts-from-a-clean-state-because-the-container-is-per-test.yaml",
+	"outcome": "verified"
+}

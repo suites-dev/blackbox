@@ -1,0 +1,54 @@
+{
+	"schemaVersion": 3,
+	"runId": "01M25M0NVWJEJG0G85S6YDWP6M",
+	"attemptId": "503eef72bf83d209a9e9270a02cc4d8e",
+	"flowId": "phase-0-payment-intent-verdict",
+	"scenarioId": "payment-intent-verdict-triad.records-a-payment-intent-for-a-valid-request",
+	"playwrightTestId": "119b2e1344f43fa7fc46-011e459b154c46ff88a1",
+	"project": "phase-0-verdicts",
+	"retry": 0,
+	"worker": 0,
+	"startedAt": "2026-09-10T12:17:33.602Z",
+	"finishedAt": "2026-09-10T12:17:37.661Z",
+	"outcome": "passed",
+	"partial": false,
+	"traceId": "503eef72bf83d209a9e9270a02cc4d8e",
+	"declarationFile": {
+		"path": "proofs/phase-0-verdicts/verdicts.spec.ts",
+		"digest": "974d86a14f1d6c98103381f9d753ac5fc53e86bf"
+	},
+	"entryFile": "verdicts.spec.ts",
+	"effects": [
+		{
+			"serviceId": "payment-mock",
+			"effect": {
+				"effectId": "effect-1",
+				"boundary": "http",
+				"operation": "POST",
+				"target": "/v1/payment_intents",
+				"status": "201",
+				"origin": "sut",
+				"attributes": {
+					"direction": "inbound"
+				}
+			}
+		}
+	],
+	"requestedArtifacts": [
+		"decisions.json",
+		"effects.json",
+		"assertions.json"
+	],
+	"entryResolution": {
+		"status": "resolved"
+	},
+	"rootSpan": {
+		"spanId": "4d2232c942633f22",
+		"name": "POST /v1/payment_intents",
+		"service": "payment-mock",
+		"error": false,
+		"durationMs": 1.379
+	},
+	"semanticStepId": "act",
+	"runtimeActSpanId": "8b0655f5f865c32d"
+}

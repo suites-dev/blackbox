@@ -1,0 +1,135 @@
+name: E2E Tests
+
+# Docker-backed and slow, so it is a workflow of its own: the fast package
+# gate in ci.yml never waits on it.
+on:
+  pull_request:
+    branches:
+      - main
+      - release/v0.0.1-alpha
+  workflow_dispatch:
+    inputs:
+      target_branch:
+        description: 'Branch to run e2e from'
+        required: true
+        type: string
+        default: 'release/v0.0.1-alpha'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+# One top-level env block only. A second one replaces the first in YAML, which
+# is how CI: true stopped reaching the jobs here once before.
+env:
+  CI: true
+  PNPM_VERSION: 9.15.4
+  NODE_VERSION: 22.x
+
+jobs:
+  e2e:
+    name: Harness E2E (testcontainers)
+    runs-on: [self-hosted, linux, arm64, blackbox]
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.pull_request.head.sha || inputs.target_branch }}
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Validate evidence transport
+        id: transport_tests
+        run: >-
+          node .github/scripts/ci-evidence.mjs run --lane e2e --project legacy-harness
+          --evidence-dir .blackbox/tmp/ci-e2e-commands/transport-tests
+          -- node --test .github/scripts/e2e-evidence.test.mjs
+
+      - name: Install dependencies
+        id: install
+        timeout-minutes: 15
+        run: >-
+          node .github/scripts/ci-evidence.mjs run --lane e2e --project legacy-harness
+          --evidence-dir .blackbox/tmp/ci-e2e-commands/install
+          -- pnpm install --frozen-lockfile
+
+      # The e2e harness consumes the packages through their dist exports maps.
+      - name: Build
+        id: build
+        timeout-minutes: 15
+        run: >-
+          node .github/scripts/ci-evidence.mjs run --lane e2e --project legacy-harness
+          --evidence-dir .blackbox/tmp/ci-e2e-commands/build -- pnpm build
+
+      - name: Validate YAML catalog
+        id: catalog
+        timeout-minutes: 5
+        run: >-
+          node .github/scripts/ci-evidence.mjs run --lane e2e --project legacy-harness
+          --evidence-dir .blackbox/tmp/ci-e2e-commands/catalog
+          -- pnpm --dir e2e blackbox catalog validate --json
+
+      - name: Run e2e
+        id: tests
+        timeout-minutes: 20
+        run: >-
+          node .github/scripts/ci-evidence.mjs run --lane e2e --project legacy-harness
+          --evidence-dir ci-evidence/e2e/legacy-harness -- pnpm test:e2e
+
+      # Preserve hidden files and original colon-containing filenames inside tar.
+      # This remains the informational legacy harness, not product acceptance.
+      - name: Archive exact harness output
+        id: archive
+        if: always()
+        env:
+          E2E_TEST_OUTCOME: ${{ steps.tests.outcome }}
+        run: node .github/scripts/e2e-evidence.mjs
+
+      - name: Retain harness evidence
+        id: evidence
+        if: always()
+        uses: ./.github/actions/ci-evidence
+        with:
+          lane: e2e
+          project: legacy-harness
+          evidence-dir: ci-evidence/e2e/legacy-harness
+          setup-result: ${{ steps.install.outcome }}
+          result: ${{ steps.tests.outcome }}
+          command: pnpm test:e2e
+          expected: |
+            log=ci-evidence/e2e/legacy-harness/logs/command.log
+            archive=.blackbox/tmp/ci-e2e-transport/evidence.tar
+            transport=.blackbox/tmp/ci-e2e-transport/transport-receipt.json
+            log?=.blackbox/tmp/ci-e2e-transport/archive.log
+            logs?=.blackbox/tmp/ci-e2e-commands
+            junit?=e2e/test-results/junit.xml
+            json?=e2e/test-results/results.json
+
+      - name: Enforce test and retention outcomes
+        if: always()
+        env:
+          TRANSPORT_TEST_OUTCOME: ${{ steps.transport_tests.outcome }}
+          INSTALL_OUTCOME: ${{ steps.install.outcome }}
+          BUILD_OUTCOME: ${{ steps.build.outcome }}
+          CATALOG_OUTCOME: ${{ steps.catalog.outcome }}
+          TEST_OUTCOME: ${{ steps.tests.outcome }}
+          ARCHIVE_OUTCOME: ${{ steps.archive.outcome }}
+          EVIDENCE_OUTCOME: ${{ steps.evidence.outcome }}
+        run: |
+          for outcome in "$TRANSPORT_TEST_OUTCOME" "$INSTALL_OUTCOME" "$BUILD_OUTCOME" "$CATALOG_OUTCOME" \
+            "$TEST_OUTCOME" "$ARCHIVE_OUTCOME" "$EVIDENCE_OUTCOME"; do
+            [[ "$outcome" == success ]] || exit 1
+          done

@@ -1,0 +1,70 @@
+{
+	"schemaVersion": 2,
+	"runId": "01M23JNQ6G9X2CYTFR8Q7ZSXS9",
+	"attemptId": "0ea4a7e154121cb3a82174b00e061dc0",
+	"flowId": "runs-the-payment-intent-and-refund-lifecycle-on-a-lone-container",
+	"scenarioId": "payment-mock-subsystem.runs-the-payment-intent-and-refund-lifecycle-on-a-lone-container",
+	"playwrightTestId": "035dad0ffab30e40b0c2-479d3c3b3a4e35c353cb",
+	"project": "subsystem",
+	"retry": 0,
+	"worker": 9,
+	"startedAt": "2026-09-09T17:16:37.556Z",
+	"finishedAt": "2026-09-09T17:16:42.569Z",
+	"outcome": "passed",
+	"partial": false,
+	"traceId": "0ea4a7e154121cb3a82174b00e061dc0",
+	"declarationFile": {
+		"path": "tests/subsystem/payment-mock.spec.ts",
+		"digest": "a6f4c74abbc4e42db951463c5deddda12c89a354"
+	},
+	"entryFile": "subsystem/payment-mock.spec.ts",
+	"effects": [
+		{
+			"serviceId": "payment-mock",
+			"effect": {
+				"effectId": "effect-1",
+				"boundary": "http",
+				"operation": "GET",
+				"target": "/fixture/state",
+				"status": "200",
+				"origin": "fixture-control",
+				"attributes": {
+					"direction": "inbound"
+				}
+			}
+		},
+		{
+			"serviceId": "payment-mock",
+			"effect": {
+				"effectId": "effect-2",
+				"boundary": "http",
+				"operation": "POST",
+				"target": "/v1/payment_intents",
+				"status": "201",
+				"origin": "sut",
+				"attributes": {
+					"direction": "inbound"
+				}
+			}
+		},
+		{
+			"serviceId": "payment-mock",
+			"effect": {
+				"effectId": "effect-3",
+				"boundary": "http",
+				"operation": "POST",
+				"target": "/v1/refunds",
+				"status": "201",
+				"origin": "sut",
+				"attributes": {
+					"direction": "inbound"
+				}
+			}
+		}
+	],
+	"requestedArtifacts": [
+		"decisions.json",
+		"effects.json",
+		"assertions.json"
+	]
+}

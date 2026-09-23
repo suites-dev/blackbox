@@ -1,0 +1,85 @@
+{
+	"schemaVersion": 2,
+	"artifactRole": "assertion-observations",
+	"runId": "01M23JNQ6G9X2CYTFR8Q7ZSXS9",
+	"attemptId": "80701a7618b8b361f93cfb51ff7b1eb4",
+	"playwrightTestId": "c771ecd7169f45f8e2fe-914b1f0498378f20e793",
+	"scenarioId": "fixture-control.payment-mock-records-payment-intents-and-refunds-and-rejects-unk",
+	"project": "per-worker",
+	"retry": 0,
+	"planComplete": true,
+	"scenarioResult": true,
+	"scenarioResultReason": null,
+	"assertions": [
+		{
+			"assertionId": "fixture-control.payment-mock-records-payment-intents-and-refunds-and-rejects-unk/step:1",
+			"ordinal": 1,
+			"title": "Assert 201 with a succeeded payment intent",
+			"declaration": {
+				"path": "tests/suites/fixture-control.suite.ts",
+				"line": 189,
+				"column": 4
+			},
+			"evaluation": true,
+			"reason": null,
+			"titleCorroborated": false,
+			"terminalAttribution": "no-attributable-expect-failure"
+		},
+		{
+			"assertionId": "fixture-control.payment-mock-records-payment-intents-and-refunds-and-rejects-unk/step:3",
+			"ordinal": 3,
+			"title": "Assert 404 payment-intent-not-found for the unknown intent",
+			"declaration": {
+				"path": "tests/suites/fixture-control.suite.ts",
+				"line": 205,
+				"column": 4
+			},
+			"evaluation": true,
+			"reason": null,
+			"titleCorroborated": false,
+			"terminalAttribution": "no-attributable-expect-failure"
+		},
+		{
+			"assertionId": "fixture-control.payment-mock-records-payment-intents-and-refunds-and-rejects-unk/step:5",
+			"ordinal": 5,
+			"title": "Assert 201 with a succeeded refund",
+			"declaration": {
+				"path": "tests/suites/fixture-control.suite.ts",
+				"line": 218,
+				"column": 4
+			},
+			"evaluation": true,
+			"reason": null,
+			"titleCorroborated": false,
+			"terminalAttribution": "no-attributable-expect-failure"
+		},
+		{
+			"assertionId": "fixture-control.payment-mock-records-payment-intents-and-refunds-and-rejects-unk/step:7",
+			"ordinal": 7,
+			"title": "Assert 409 refund-already-exists for the duplicate refund",
+			"declaration": {
+				"path": "tests/suites/fixture-control.suite.ts",
+				"line": 233,
+				"column": 4
+			},
+			"evaluation": true,
+			"reason": null,
+			"titleCorroborated": false,
+			"terminalAttribution": "no-attributable-expect-failure"
+		},
+		{
+			"assertionId": "fixture-control.payment-mock-records-payment-intents-and-refunds-and-rejects-unk/step:8",
+			"ordinal": 8,
+			"title": "Assert payment-mock state holds exactly one intent and one refund",
+			"declaration": {
+				"path": "tests/suites/fixture-control.suite.ts",
+				"line": 240,
+				"column": 4
+			},
+			"evaluation": true,
+			"reason": null,
+			"titleCorroborated": false,
+			"terminalAttribution": "no-attributable-expect-failure"
+		}
+	]
+}

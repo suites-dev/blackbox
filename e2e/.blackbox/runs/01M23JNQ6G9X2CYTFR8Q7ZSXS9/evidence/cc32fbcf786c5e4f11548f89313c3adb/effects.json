@@ -1,0 +1,59 @@
+{
+	"type": "effects",
+	"flowId": "runs-the-payment-intent-and-refund-lifecycle-on-the-dist-wrapper",
+	"attemptId": "cc32fbcf786c5e4f11548f89313c3adb",
+	"observed": {
+		"schemaVersion": 2,
+		"entry": {
+			"service": "payment-mock-dist",
+			"request": "POST /v1/payment_intents",
+			"status": 201
+		},
+		"entryResolution": {
+			"status": "resolved"
+		},
+		"summary": {
+			"counts": {
+				"inbound": 3,
+				"outboundHttp": 0,
+				"sql": 0,
+				"cache": 0,
+				"messaging": 0
+			},
+			"services": [
+				"payment-mock-dist"
+			],
+			"edges": []
+		},
+		"services": {
+			"payment-mock-dist": {
+				"inbound": [
+					{
+						"method": "GET",
+						"path": "/fixture/state",
+						"status": 200,
+						"count": 1,
+						"origin": "fixture-control"
+					},
+					{
+						"method": "POST",
+						"path": "/v1/payment_intents",
+						"status": 201,
+						"count": 1,
+						"origin": "sut"
+					},
+					{
+						"method": "POST",
+						"path": "/v1/refunds",
+						"status": 201,
+						"count": 1,
+						"origin": "sut"
+					}
+				]
+			}
+		},
+		"errors": []
+	},
+	"expectedPath": "/Users/omer/projects/suites/blackbox/e2e/tests/subsystem/effects/payment-mock-dist.spec.ts/effects-runs-the-payment-intent-and-refund-lifecycle-on-the-dist-wrapper.yaml",
+	"outcome": "verified"
+}

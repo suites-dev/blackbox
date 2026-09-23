@@ -1,0 +1,34 @@
+{
+	"flowId": "s3-gate-qualified-project-disagree",
+	"authoringSource": "suite",
+	"suite": {
+		"path": "tests/s3-gate/qualified-project-disagree.spec.ts",
+		"digest": "a46b8bfd49347a199682e0b2b688472ebea19789"
+	},
+	"requirement": null,
+	"baselines": [],
+	"entries": [
+		{
+			"project": "subsystem-base",
+			"entryPath": "tests/s3-gate/qualified-project-disagree.spec.ts"
+		},
+		{
+			"project": "subsystem-disagree",
+			"entryPath": "tests/s3-gate/qualified-project-disagree.spec.ts"
+		}
+	],
+	"candidate": null,
+	"behaviorModelDigest": "1b5169a21f1821cae4f4faca7551d48e56a36f8d",
+	"observationDigest": "1fa7b4b1273c0ca0e351a378c1e44b0f039c6795",
+	"proofPlanDigest": "07c158d2d27308ec0ae42f7e69cc4f74bf8a1e01",
+	"completeness": {
+		"plannedScenarios": [
+			"s3-gate-qualified-subsystem-project-disagreement.captures-distinct-payment-intent-outcomes-per-project"
+		],
+		"executedScenarios": [
+			"s3-gate-qualified-subsystem-project-disagreement.captures-distinct-payment-intent-outcomes-per-project"
+		],
+		"complete": true,
+		"reasons": []
+	}
+}

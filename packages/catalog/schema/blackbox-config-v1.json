@@ -1,0 +1,193 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.suites.dev/blackbox/config/v1",
+  "title": "Blackbox configuration v1",
+  "description": "Language-neutral schema for a Blackbox catalog authored as YAML or JSON.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "catalog", "activations"],
+  "properties": {
+    "schemaVersion": {
+      "const": 1,
+      "description": "Version of this configuration schema.",
+      "examples": [1]
+    },
+    "catalog": { "$ref": "#/$defs/catalog" },
+    "activations": { "$ref": "#/$defs/activations" }
+  },
+  "$defs": {
+    "identifier": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+    },
+    "relativePath": {
+      "type": "string",
+      "minLength": 1,
+      "description": "A project-relative path. Root containment is enforced semantically."
+    },
+    "catalog": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["default", "entries"],
+      "properties": {
+        "default": {
+          "$ref": "#/$defs/identifier",
+          "description": "Catalog entry selected when no explicit entry is requested."
+        },
+        "entries": {
+          "type": "object",
+          "minProperties": 1,
+          "propertyNames": { "$ref": "#/$defs/identifier" },
+          "additionalProperties": { "$ref": "#/$defs/catalogEntry" }
+        }
+      }
+    },
+    "catalogEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "acquisition", "isolation", "entrypoint", "participants", "observation"],
+      "properties": {
+        "kind": {
+          "enum": ["system", "subsystem"],
+          "description": "Whether this entry represents a complete system or a selectable subsystem."
+        },
+        "acquisition": { "$ref": "#/$defs/acquisition" },
+        "isolation": {
+          "enum": ["per-test", "per-worker", "group"],
+          "default": "per-test"
+        },
+        "groupName": { "$ref": "#/$defs/identifier" },
+        "entrypoint": { "$ref": "#/$defs/entrypoint" },
+        "participants": {
+          "type": "object",
+          "minProperties": 1,
+          "propertyNames": { "$ref": "#/$defs/identifier" },
+          "additionalProperties": { "$ref": "#/$defs/participant" }
+        },
+        "observation": { "$ref": "#/$defs/observation" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "isolation": { "const": "group" } }, "required": ["isolation"] },
+          "then": {
+            "properties": { "groupName": { "$ref": "#/$defs/identifier" } },
+            "required": ["groupName"]
+          },
+          "else": { "not": { "required": ["groupName"] } }
+        }
+      ]
+    },
+    "acquisition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["adapter", "files"],
+      "properties": {
+        "adapter": {
+          "const": "docker-compose@1",
+          "description": "Versioned acquisition adapter used by the sandbox runtime."
+        },
+        "files": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/relativePath" },
+          "description": "Ordered Compose files; later files may override earlier files.",
+          "examples": [[".blackbox/compose/system.yml"]]
+        }
+      }
+    },
+    "entrypoint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["participant", "protocol", "containerPort", "readiness"],
+      "properties": {
+        "participant": { "$ref": "#/$defs/identifier" },
+        "protocol": { "type": "string", "minLength": 1, "examples": ["http"] },
+        "containerPort": { "type": "integer", "minimum": 1, "maximum": 65535 },
+        "readiness": { "$ref": "#/$defs/readiness" }
+      }
+    },
+    "readiness": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "timeoutMs"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1, "examples": ["/health"] },
+        "timeoutMs": { "type": "integer", "minimum": 1, "examples": [60000] }
+      }
+    },
+    "participant": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["service", "role", "runtime"],
+      "properties": {
+        "service": { "$ref": "#/$defs/identifier" },
+        "role": { "enum": ["entrypoint", "application", "dependency"] },
+        "runtime": { "type": "string", "minLength": 1 },
+        "activation": { "$ref": "#/$defs/identifier" }
+      }
+    },
+    "observation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["policyId", "boundaries", "requiredBoundaries", "terminalObservationWindowMs", "redaction"],
+      "properties": {
+        "policyId": { "$ref": "#/$defs/identifier" },
+        "boundaries": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/observationBoundary" }
+        },
+        "requiredBoundaries": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/identifier" }
+        },
+        "terminalObservationWindowMs": { "type": "integer", "minimum": 0, "default": 0 },
+        "redaction": { "$ref": "#/$defs/redaction" }
+      }
+    },
+    "observationBoundary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind", "authoritativeFor"],
+      "properties": {
+        "id": { "$ref": "#/$defs/identifier" },
+        "kind": { "type": "string", "minLength": 1 },
+        "authoritativeFor": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "redaction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["requestBodies", "headers", "dynamicIdentifiers"],
+      "properties": {
+        "requestBodies": { "type": "string", "minLength": 1 },
+        "headers": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "dynamicIdentifiers": { "type": "string", "minLength": 1 }
+      }
+    },
+    "activations": {
+      "type": "object",
+      "propertyNames": { "$ref": "#/$defs/identifier" },
+      "additionalProperties": { "$ref": "#/$defs/activation" }
+    },
+    "activation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ref", "adapter", "version"],
+      "properties": {
+        "ref": { "$ref": "#/$defs/relativePath" },
+        "adapter": { "type": "string", "minLength": 1 },
+        "version": { "type": "integer", "minimum": 1 }
+      }
+    }
+  }
+}

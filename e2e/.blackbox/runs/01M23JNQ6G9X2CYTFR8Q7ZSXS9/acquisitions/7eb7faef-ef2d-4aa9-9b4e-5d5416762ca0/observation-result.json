@@ -1,0 +1,23 @@
+{
+	"schemaVersion": 1,
+	"artifactRole": "observation-result",
+	"runId": "01M23JNQ6G9X2CYTFR8Q7ZSXS9",
+	"acquisitionId": "7eb7faef-ef2d-4aa9-9b4e-5d5416762ca0",
+	"finishedAt": "2026-09-09T17:17:27.213Z",
+	"status": "completed",
+	"planDigest": "e7969f7f3b6c23f396b982d65499098d67b88536",
+	"failure": null,
+	"collector": {
+		"status": "healthy",
+		"spanCount": 58
+	},
+	"participants": [
+		{
+			"participantId": "payment-mock-dist",
+			"status": "observed",
+			"spanCount": 3,
+			"missingSpans": []
+		}
+	],
+	"unexpectedParticipantIds": []
+}

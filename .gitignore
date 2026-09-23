@@ -1,0 +1,61 @@
+node_modules
+.DS_Store
+
+# build outputs
+dist
+**/dist
+*.tsbuildinfo
+*.tsbuildinfo.*
+oclif.manifest.json
+
+# eslint cache
+.eslintcache
+
+# test outputs
+coverage
+/coverage-input/
+/reports/
+.blackbox-coverage
+.playwright-report
+test-results
+.fn-spans
+.tarballs
+.baselines/*.json
+
+# package managers
+# pnpm-lock.yaml is committed; standalone Docker build contexts keep their own
+# npm lockfiles so clean checkouts can run npm ci reproducibly.
+package-lock.json
+!packages/capture-node/node-agent/package-lock.json
+!e2e/sut/package-lock.json
+
+# env
+.env
+.env.local
+.env.*.local
+
+*.js.map
+*.d.ts.map
+
+knowledgebase
+poc
+.claude
+.claire
+research
+.idea
+*.zip
+.baseline
+/worktrees/
+# Keep other local docs ignored; publish the README-linked verification guide.
+packages/*/docs/
+
+# E2E harness runtime state (e2e/ is the harness root)
+.blackbox/
+!e2e/.blackbox/
+.codex-background-agents/
+trace-store
+e2e/tests/suite.spec.d.ts
+blackbox-docs-draft-gpt-v1-old
+.agents
+archive
+plans

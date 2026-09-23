@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>phase-0-payment-intent-verdict · Blackbox</title>
+<style>
+:root {
+	--ground:#f7f7f5;--surface:#fff;--surface-2:#f0f1ee;--ink:#1d2023;--muted:#555d65;--faint:#606870;
+	--line:#dedfdb;--line-strong:#c8cac5;--block:#a82d26;--block-bg:#fae9e7;--review:#245db8;--review-bg:#eaf1fb;
+	--caution:#72500b;--caution-bg:#f8efd9;--ok:#276b3d;--ok-bg:#e8f3eb;--mono-bg:#f4f4f1;
+}
+@media (prefers-color-scheme:dark) {
+	:root:not([data-theme="light"]) { --ground:#15171a;--surface:#1e2226;--surface-2:#25292e;--ink:#eceeeb;--muted:#b1b8bf;--faint:#a0a8b0;--line:#363c43;--line-strong:#4b535d;--block:#f08a80;--block-bg:#402725;--review:#8bb4f0;--review-bg:#233752;--caution:#e0b558;--caution-bg:#3c3220;--ok:#7dcb94;--ok-bg:#21382a;--mono-bg:#25292e; }
+}
+:root[data-theme="dark"] { --ground:#15171a;--surface:#1e2226;--surface-2:#25292e;--ink:#eceeeb;--muted:#b1b8bf;--faint:#a0a8b0;--line:#363c43;--line-strong:#4b535d;--block:#f08a80;--block-bg:#402725;--review:#8bb4f0;--review-bg:#233752;--caution:#e0b558;--caution-bg:#3c3220;--ok:#7dcb94;--ok-bg:#21382a;--mono-bg:#25292e; }
+*{box-sizing:border-box}html,body{margin:0}body{background:var(--ground);color:var(--ink);font:14px/1.5 -apple-system,"Segoe UI",Helvetica,Arial,sans-serif}
+.mono,code{font-family:ui-monospace,"SF Mono",Consolas,monospace}
+.quiet{color:var(--muted)}
+header{padding:20px 24px;border-bottom:1px solid var(--line);background:var(--surface)}
+.eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--faint);font-weight:700}
+header h1{margin:4px 0 8px;font-size:20px}
+.run-meta{display:flex;gap:14px;flex-wrap:wrap;color:var(--muted);font-size:12px;margin-bottom:12px}
+.axes{display:grid;grid-template-columns:repeat(4,minmax(120px,1fr));gap:14px}
+.axis-k{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--faint);font-weight:700}
+.axis-v{font-weight:700;margin-top:2px}
+main{max-width:960px;margin:0 auto;padding:20px 24px 60px}
+main.pending{max-width:640px;text-align:center;padding-top:80px;color:var(--muted)}
+.banner{border:1px solid var(--caution);background:var(--caution-bg);color:var(--caution);border-radius:8px;padding:12px 16px;margin-bottom:18px}
+.banner p{margin:6px 0}
+.qual-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:6px;margin-top:8px}
+.qual-row{display:flex;justify-content:space-between;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:4px 8px;font-size:12px}
+.block{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:16px 18px;margin-bottom:16px}
+.block h2{margin:0 0 10px;font-size:15px;text-transform:uppercase;letter-spacing:.06em;color:var(--faint)}
+.block h3{margin:0 0 6px}
+.verdict-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+.scope-tag{font-size:12px;color:var(--muted)}
+.lead{margin:0 0 10px;max-width:70ch}
+.facts{margin:0;display:grid;gap:6px}
+.facts div{display:grid;grid-template-columns:170px minmax(0,1fr);gap:10px}
+.facts dt{color:var(--muted)}
+.facts dd{margin:0}
+.fineprint{font-size:12px;color:var(--muted);margin:8px 0 0}
+.pill{display:inline-block;border-radius:999px;padding:2px 9px;font-size:11px;font-weight:700;letter-spacing:.02em;white-space:nowrap}
+.pill.ok{color:var(--ok);background:var(--ok-bg)}
+.pill.block{color:var(--block);background:var(--block-bg)}
+.pill.review{color:var(--review);background:var(--review-bg)}
+.pill.evidence{color:var(--caution);background:var(--caution-bg)}
+.authority{display:inline-block;border:1px solid var(--line-strong);border-radius:5px;padding:1px 7px;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.command{font-family:ui-monospace,monospace;background:var(--mono-bg);border:1px solid var(--line);border-radius:6px;padding:8px 10px;margin-top:6px;overflow-wrap:anywhere}
+.assumptions{margin-bottom:16px}
+.assumptions summary{cursor:pointer;color:var(--muted);font-size:13px}
+.assumptions ul{margin:8px 0 0;padding-left:18px}
+.table-wrap{overflow:auto}
+.data-table{border-collapse:collapse;width:100%;font-size:12.5px}
+.data-table th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--faint);font-weight:700;padding:8px 10px;border-bottom:1px solid var(--line)}
+.data-table td{padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+.effect-line{font-family:ui-monospace,monospace;font-size:12px;padding-left:10px;border-left:2px solid var(--line);color:var(--muted);margin-bottom:6px}
+.effect-line.added{color:var(--ok);border-left-color:var(--ok)}
+.effect-line.removed{color:var(--block);border-left-color:var(--block)}
+.finding-row{border-top:1px solid var(--line);padding:10px 0}
+.finding-row:first-of-type{border-top:0}
+.finding-row:target{outline:2px solid var(--review);outline-offset:4px;border-radius:6px}
+.finding-head{display:flex;gap:8px;align-items:center;margin-bottom:4px}
+.finding-id-link{color:inherit;text-decoration:none}
+.finding-id-link:hover{text-decoration:underline}
+.pointer{margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
+a{color:var(--review)}
+</style>
+</head>
+<body>
+<header>
+		<div class="eyebrow">Deterministic behavioral analysis</div>
+		<h1>phase-0-payment-intent-verdict</h1>
+		<div class="run-meta">
+			<span class="mono">phase-0-payment-intent-verdict</span>
+			<span class="mono">run 01M25M1C9EY49M98NSB9C6T1GA</span>
+			<span>schema v1</span>
+			<span>generated 2026-09-10T12:18:05.627Z</span>
+		</div>
+		<div class="axes">
+			<div class="axis"><div class="axis-k">Execution</div><div class="axis-v mono">passed</div></div>
+			<div class="axis"><div class="axis-k">Evidence</div><div class="axis-v mono">complete</div></div>
+			<div class="axis"><div class="axis-k">Contract state</div><div class="axis-v mono">drifted</div></div>
+			<div class="axis"><div class="axis-k">Verdict</div><div class="axis-v"><span class="pill block">violated</span></div></div>
+		</div>
+	</header><main>
+					
+					<section class="block" id="verdict">
+		<h2>Verdict</h2>
+		<div class="verdict-row"><span class="pill block">violated</span><span class="authority">deterministic-analyzer</span><span class="scope-tag">scope: flow-run</span></div>
+		<p class="lead">The accepted effects contract or a required assertion was violated for phase-0-payment-intent-verdict's flow run.</p>
+		<dl class="facts"><div><dt>Reason</dt><dd class="mono">required-evaluation-false</dd></div></dl>
+	</section>
+					<section class="block" id="next-valid-action">
+		<h2>Next valid action</h2>
+		<p class="lead"><code>fix</code> · At least one required obligation evaluated false. Fix the implementation or the accepted contract, then rerun.</p>
+		
+	</section>
+					<details class="assumptions"><summary>Satisfied modulo 5 assumptions</summary><ul><li><strong>instrumentation-captured-all-boundaries</strong>: Instrumentation captured every declared boundary; an effect the observation policy does not cover cannot be represented as evidence.</li><li><strong>collector-delivered-before-seal</strong>: Every effect the instrumentation captured was delivered to the collector before the run sealed; the seal's window end is a floor on sealing, not just a fact about it.</li><li><strong>source-maps-match-running-code</strong>: The source maps read by the analyzer match the code that actually executed in the sealed run.</li><li><strong>clock-ordering-sufficient</strong>: The clock ordering available to the analyzer is sufficient to place attempt, evidence, and window boundaries correctly relative to one another.</li><li><strong>declared-boundary-matches-actual</strong>: The boundary declared in the observation policy (its kind and authoritativeFor claims) matches what the instrumented code actually does at runtime.</li></ul></details>
+					<section class="block" id="requirement">
+		<h2>Requirement</h2>
+		<h3>phase-0-payment-intent-verdict</h3>
+		<dl class="facts">
+			<div><dt>Flow</dt><dd class="mono">phase-0-payment-intent-verdict</dd></div>
+			<div><dt>Authoring source</dt><dd>suite</dd></div>
+			<div><dt>Required scenarios</dt><dd>1</dd></div>
+			<div><dt>Executed scenarios</dt><dd>1</dd></div>
+			<div><dt>Attempts</dt><dd>1</dd></div>
+			<div><dt>Filtered</dt><dd><span class="pill ok">false</span></dd></div>
+		</dl>
+		<p class="fineprint">Playwright projects: phase-0-verdicts. Each project below is evaluated on its own; counts are never added across projects.</p>
+		<div class="table-wrap"><table class="data-table"><thead><tr><th>Project</th><th>Verdict</th><th>Contract state</th></tr></thead><tbody><tr><td class="mono">phase-0-verdicts</td><td><span class="pill block">violated</span></td><td class="mono">drifted</td></tr></tbody></table></div>
+	</section>
+					<section class="block" id="first-divergence">
+		<h2>First divergence</h2>
+		<dl class="facts">
+					<div><dt>Scenario</dt><dd class="mono">payment-intent-verdict-triad.records-a-payment-intent-for-a-valid-request</dd></div>
+					<div><dt>Kind</dt><dd class="mono">effect-missing</dd></div>
+					<div><dt>Source</dt><dd class="mono">effects.candidate</dd></div>
+				</dl>
+				<p class="lead">Project &quot;phase-0-verdicts&quot;'s candidate is missing an effect the accepted contract requires: http POST /v1/payment_intents.</p>
+	</section>
+					<section class="block" id="effects-diff">
+		<h2>Effects diff</h2>
+		<div class="effect-line removed">- http · POST · /v1/payment_intents · 201 · 1</div>
+		<p class="fineprint">This is the first divergence only. No fuller contract diff artifact was produced for this run.</p>
+	</section>
+					<section class="block" id="evidence">
+		<h2>Evidence</h2>
+		<div class="table-wrap"><table class="data-table"><thead><tr><th>Obligation</th><th>Scenario</th><th>Source</th><th>Evaluation</th><th>Reason</th></tr></thead><tbody><tr><td class="mono">phase-0-payment-intent-verdict::contract</td><td class="mono">flow scope</td><td class="mono">effects.candidate</td><td><span class="pill block">false</span></td><td class="mono">missing-effect</td></tr><tr><td class="mono">payment-intent-verdict-triad.records-a-payment-intent-for-a-valid-request::absence::effects.postgres</td><td class="mono">payment-intent-verdict-triad.records-a-payment-intent-for-a-valid-request</td><td class="mono">effects.postgres</td><td><span class="pill ok">true</span></td><td class="mono">not recorded</td></tr><tr><td class="mono">payment-intent-verdict-triad.records-a-payment-intent-for-a-valid-request::absence::effects.redis</td><td class="mono">payment-intent-verdict-triad.records-a-payment-intent-for-a-valid-request</td><td class="mono">effects.redis</td><td><span class="pill ok">true</span></td><td class="mono">not recorded</td></tr><tr><td class="mono">payment-intent-verdict-triad.records-a-payment-intent-for-a-valid-request::absence::effects.sqs</td><td class="mono">payment-intent-verdict-triad.records-a-payment-intent-for-a-valid-request</td><td class="mono">effects.sqs</td><td><span class="pill ok">true</span></td><td class="mono">not recorded</td></tr><tr><td class="mono">payment-intent-verdict-triad.records-a-payment-intent-for-a-valid-request::assertion</td><td class="mono">payment-intent-verdict-triad.records-a-payment-intent-for-a-valid-request</td><td class="mono">playwright.assertion</td><td><span class="pill ok">true</span></td><td class="mono">not recorded</td></tr><tr><td class="mono">payment-intent-verdict-triad.records-a-payment-intent-for-a-valid-request::effect::http::POST::/v1/payment_intents</td><td class="mono">payment-intent-verdict-triad.records-a-payment-intent-for-a-valid-request</td><td class="mono">effects.http</td><td><span class="pill block">false</span></td><td class="mono">missing-effect</td></tr></tbody></table></div>
+		<h3>Attempts</h3>
+		<p class="fineprint">One row per recorded attempt (a derived, informational index, never authoritative over <code>evidence/index.json</code>, and never a second source for scope.attempts, qualification.evidenceComplete, axes, or verdict). A row missing from this table because its attempt.json itself failed to parse is not claimed here; that gap is visible only in the run's own evidence validation, not fabricated into a row.</p>
+		<div class="table-wrap"><table class="data-table"><thead><tr><th>Attempt</th><th>Scenario</th><th>Project</th><th>Retry</th><th>Final</th><th>Execution</th><th>Evidence</th><th>Files</th></tr></thead><tbody><tr><td class="mono">4581a0391102df00a041d6300c0e90a2</td><td class="mono">payment-intent-verdict-triad.records-a-payment-intent-for-a-valid-request</td><td class="mono">phase-0-verdicts</td><td class="mono">0</td><td><span class="pill ok">final</span></td><td class="mono">passed</td><td><span class="pill ok">valid</span></td><td><a href="evidence/4581a0391102df00a041d6300c0e90a2/attempt.json">attempt.json</a>, <a href="evidence/4581a0391102df00a041d6300c0e90a2/decisions.json">decisions.json</a>, <a href="evidence/4581a0391102df00a041d6300c0e90a2/trace-summary.json">trace-summary.json</a>, <a href="evidence/4581a0391102df00a041d6300c0e90a2/effects.json">effects.json</a>, <a href="evidence/4581a0391102df00a041d6300c0e90a2/assertions.json">assertions.json</a>, <a href="evidence/4581a0391102df00a041d6300c0e90a2/projection-comparison.json">projection-comparison.json</a></td></tr></tbody></table></div>
+		<h3>Artifacts</h3>
+		<p class="fineprint">Raw evidence, unparsed by this report: each link points at a sibling artifact this run wrote.</p>
+		<dl class="facts"><div><dt>Run manifest</dt><dd><a href="manifest.json">manifest.json</a></dd></div><div><dt>Proof plan</dt><dd><a href="proof-plans/phase-0-payment-intent-verdict.json">proof-plans/phase-0-payment-intent-verdict.json</a></dd></div><div><dt>Behavior model</dt><dd><a href="behavior-models/phase-0-payment-intent-verdict.json">behavior-models/phase-0-payment-intent-verdict.json</a></dd></div><div><dt>Observation policy</dt><dd><a href="observation-policy.json">observation-policy.json</a></dd></div><div><dt>Evidence index</dt><dd><a href="evidence/index.json">evidence/index.json</a></dd></div><div><dt>Seal</dt><dd><a href="seal.json">seal.json</a></dd></div></dl>
+	</section>
+					<section class="block" id="traces">
+		<h2>Findings</h2>
+		<div class="finding-row" id="finding-finding.phase-0-payment-intent-verdict::contract"><div class="finding-head"><span class="pill block">blocking</span><span class="authority">deterministic-analyzer</span><span class="mono">run scope</span></div><p>Obligation &quot;phase-0-payment-intent-verdict::contract&quot; (source: effects.candidate) evaluated false (missing-effect).</p><p class="fineprint finding-id"><a href="#finding-finding.phase-0-payment-intent-verdict::contract" class="finding-id-link">id <code>finding.phase-0-payment-intent-verdict::contract</code></a></p><p class="fineprint">Affects the verdict.</p></div><div class="finding-row" id="finding-finding.payment-intent-verdict-triad.records-a-payment-intent-for-a-valid-request::effect::http::POST::/v1/payment_intents"><div class="finding-head"><span class="pill block">blocking</span><span class="authority">deterministic-analyzer</span><span class="mono">payment-intent-verdict-triad.records-a-payment-intent-for-a-valid-request</span></div><p>Obligation &quot;payment-intent-verdict-triad.records-a-payment-intent-for-a-valid-request::effect::http::POST::/v1/payment_intents&quot; (source: effects.http) evaluated false (missing-effect).</p><p class="fineprint finding-id"><a href="#finding-finding.payment-intent-verdict-triad.records-a-payment-intent-for-a-valid-request::effect::http::POST::/v1/payment_intents" class="finding-id-link">id <code>finding.payment-intent-verdict-triad.records-a-payment-intent-for-a-valid-request::effect::http::POST::/v1/payment_intents</code></a></p><p class="fineprint">Affects the verdict.</p></div>
+		
+		
+		<p class="fineprint">Per-attempt trace drill-down is a separate, version-pinned adapter (the Playwright OpenTelemetry trace viewer), reached from the Attempts table in Evidence above rather than embedded here; that artifact carries only identity and evidence-file paths, never a trace itself. The full raw evidence ledger for this run is indexed at <a href="evidence/index.json">evidence/index.json</a>.</p>
+	</section>
+				</main>
+</body>
+</html>

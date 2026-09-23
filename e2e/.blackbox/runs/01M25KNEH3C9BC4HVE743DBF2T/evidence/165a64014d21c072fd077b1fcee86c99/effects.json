@@ -1,0 +1,205 @@
+{
+	"type": "effects",
+	"flowId": "subscription-rejection",
+	"attemptId": "165a64014d21c072fd077b1fcee86c99",
+	"outcome": "captured",
+	"observed": {
+		"schemaVersion": 2,
+		"entry": {
+			"service": "public-api",
+			"request": "POST /subscriptions",
+			"status": 404
+		},
+		"entryResolution": {
+			"status": "resolved"
+		},
+		"summary": {
+			"counts": {
+				"inbound": 6,
+				"outboundHttp": 3,
+				"sql": 14,
+				"cache": 4,
+				"messaging": 0
+			},
+			"services": [
+				"payment-mock",
+				"public-api"
+			],
+			"edges": [
+				{
+					"caller": "public-api",
+					"callee": "localstack"
+				},
+				{
+					"caller": "public-api",
+					"callee": "payment-mock"
+				}
+			]
+		},
+		"services": {
+			"payment-mock": {
+				"inbound": [
+					{
+						"method": "GET",
+						"path": "/fixture/state",
+						"status": 200,
+						"count": 2,
+						"origin": "fixture-control"
+					},
+					{
+						"method": "POST",
+						"path": "/fixture/reset",
+						"status": 200,
+						"count": 1,
+						"origin": "fixture-control"
+					}
+				]
+			},
+			"public-api": {
+				"inbound": [
+					{
+						"method": "GET",
+						"path": "/fixture/state",
+						"status": 200,
+						"count": 1,
+						"origin": "fixture-control"
+					},
+					{
+						"method": "POST",
+						"path": "/fixture/reset",
+						"status": 200,
+						"count": 1,
+						"origin": "fixture-control"
+					},
+					{
+						"method": "POST",
+						"path": "/subscriptions",
+						"status": 404,
+						"count": 1,
+						"origin": "sut"
+					}
+				],
+				"outboundHttp": [
+					{
+						"callee": "localstack",
+						"method": "POST",
+						"path": "/",
+						"status": 200,
+						"count": "1+",
+						"origin": "fixture-control"
+					},
+					{
+						"callee": "payment-mock",
+						"method": "GET",
+						"path": "/fixture/state",
+						"status": 200,
+						"count": 2,
+						"origin": "fixture-control"
+					},
+					{
+						"callee": "payment-mock",
+						"method": "POST",
+						"path": "/fixture/reset",
+						"status": 200,
+						"count": 1,
+						"origin": "fixture-control"
+					}
+				],
+				"sql": [
+					{
+						"operation": "BEGIN",
+						"statement": "BEGIN",
+						"count": 1,
+						"origin": "fixture-control"
+					},
+					{
+						"operation": "COMMIT",
+						"statement": "COMMIT",
+						"count": 1,
+						"origin": "fixture-control"
+					},
+					{
+						"operation": "DELETE",
+						"table": "users",
+						"statement": "DELETE FROM users",
+						"count": 1,
+						"origin": "fixture-control"
+					},
+					{
+						"operation": "INSERT",
+						"table": "users",
+						"statement": "INSERT INTO users (user_id, tier, execution_path) VALUES ($1, $2, $3)",
+						"count": 5,
+						"origin": "fixture-control"
+					},
+					{
+						"operation": "SELECT",
+						"table": "fraud_audit",
+						"statement": "SELECT id::text, user_id AS \"userId\", decision, hint_profile AS \"hintProfile\" FROM fraud_audit ORDER BY id",
+						"count": 2,
+						"origin": "fixture-control"
+					},
+					{
+						"operation": "SELECT",
+						"table": "subscriptions",
+						"statement": "SELECT id, user_id AS \"userId\", tier, status, payment_intent_id AS \"paymentIntentId\", order_id AS \"orderId\" FROM subscriptions ORDER BY user_id",
+						"count": 2,
+						"origin": "fixture-control"
+					},
+					{
+						"operation": "TRUNCATE",
+						"table": "subscriptions",
+						"statement": "TRUNCATE subscriptions, fraud_audit RESTART IDENTITY",
+						"count": 1,
+						"origin": "fixture-control"
+					},
+					{
+						"operation": "SELECT",
+						"table": "subscriptions",
+						"statement": "SELECT u.user_id AS \"userId\", u.tier, u.execution_path AS \"executionPath\", EXISTS (SELECT ? FROM subscriptions s WHERE s.user_id = u.user_id) AS \"hasSubscription\" FROM users u WHERE u.user_id = $1",
+						"count": 1,
+						"origin": "sut"
+					}
+				],
+				"cache": [
+					{
+						"system": "redis",
+						"command": "FLUSHDB",
+						"keyPattern": "<none>",
+						"count": 1,
+						"origin": "fixture-control"
+					},
+					{
+						"system": "redis",
+						"command": "KEYS",
+						"keyPattern": "<redacted>",
+						"count": 2,
+						"origin": "fixture-control"
+					},
+					{
+						"system": "redis",
+						"command": "GET",
+						"keyPattern": "user:ghost-user:tier",
+						"count": 1,
+						"origin": "sut"
+					}
+				]
+			}
+		},
+		"errors": []
+	},
+	"expectedPath": null,
+	"captureReason": "no-baseline-comparison-requested",
+	"entryResolution": {
+		"status": "resolved"
+	},
+	"rootSpan": {
+		"spanId": "5b6e9a37237705f1",
+		"name": "POST /subscriptions",
+		"service": "public-api",
+		"error": false,
+		"durationMs": 2.198
+	},
+	"semanticStepId": "act",
+	"runtimeActSpanId": "bbdbab41a3ade7ff"
+}

@@ -1,0 +1,48 @@
+{
+	"schemaVersion": 1,
+	"attemptId": "ee9d60489912169d7b329cfa462c7443",
+	"traceId": "ee9d60489912169d7b329cfa462c7443",
+	"rootSpan": {
+		"spanId": "c1e18fdc1821de95",
+		"name": "POST /v1/payment_intents",
+		"service": "payment-mock",
+		"error": false,
+		"durationMs": 1.231
+	},
+	"entryResolution": {
+		"status": "resolved"
+	},
+	"actStep": {
+		"phase": "when",
+		"title": "Act: POST /v1/payment_intents",
+		"error": false,
+		"semanticStepId": "act",
+		"runtimeActSpanId": "a605c2ca3ffb7f59"
+	},
+	"steps": [
+		{
+			"phase": "when",
+			"title": "Act: POST /v1/payment_intents",
+			"error": false,
+			"semanticStepId": null,
+			"runtimeActSpanId": null
+		},
+		{
+			"phase": "then",
+			"title": "Assert: project-specific payment-intent status",
+			"error": false,
+			"semanticStepId": null,
+			"runtimeActSpanId": null
+		},
+		{
+			"phase": "unknown",
+			"title": "Expect \"toBe\"",
+			"error": false,
+			"semanticStepId": null,
+			"runtimeActSpanId": null
+		}
+	],
+	"spanCount": 1,
+	"capturedEffectCount": 1,
+	"redactionsApplied": null
+}

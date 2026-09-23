@@ -1,0 +1,43 @@
+{
+	"schemaVersion": 2,
+	"artifactRole": "assertion-observations",
+	"runId": "01M23JNQ6G9X2CYTFR8Q7ZSXS9",
+	"attemptId": "b301f82aba1aae850b6ca180e9e09b20",
+	"playwrightTestId": "2be0dfcf8cf709fb4273-ae88c8e64e2636ab3006",
+	"scenarioId": "subscription-creation.creates-a-local-only-subscription-for-dora-without-fraud-payment",
+	"project": "per-test",
+	"retry": 0,
+	"planComplete": true,
+	"scenarioResult": true,
+	"scenarioResultReason": null,
+	"assertions": [
+		{
+			"assertionId": "subscription-creation.creates-a-local-only-subscription-for-dora-without-fraud-payment/step:1",
+			"ordinal": 1,
+			"title": "Assert 201 with an active subscription and null payment and order references",
+			"declaration": {
+				"path": "tests/suites/subscription-creation.suite.ts",
+				"line": 101,
+				"column": 4
+			},
+			"evaluation": true,
+			"reason": null,
+			"titleCorroborated": false,
+			"terminalAttribution": "no-attributable-expect-failure"
+		},
+		{
+			"assertionId": "subscription-creation.creates-a-local-only-subscription-for-dora-without-fraud-payment/step:2",
+			"ordinal": 2,
+			"title": "Assert fixture state shows redis and postgres writes only, no downstream effects",
+			"declaration": {
+				"path": "tests/suites/subscription-creation.suite.ts",
+				"line": 114,
+				"column": 4
+			},
+			"evaluation": true,
+			"reason": null,
+			"titleCorroborated": false,
+			"terminalAttribution": "no-attributable-expect-failure"
+		}
+	]
+}

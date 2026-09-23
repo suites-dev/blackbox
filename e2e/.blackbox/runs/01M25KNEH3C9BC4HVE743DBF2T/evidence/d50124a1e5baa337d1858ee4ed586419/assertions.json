@@ -1,0 +1,43 @@
+{
+	"schemaVersion": 2,
+	"artifactRole": "assertion-observations",
+	"runId": "01M25KNEH3C9BC4HVE743DBF2T",
+	"attemptId": "d50124a1e5baa337d1858ee4ed586419",
+	"playwrightTestId": "2be0dfcf8cf709fb4273-ed2119ca959bffa2909b",
+	"scenarioId": "subscription-creation.serves-eve-from-the-preloaded-returning-hint-under-the-compariso",
+	"project": "per-test",
+	"retry": 0,
+	"planComplete": true,
+	"scenarioResult": true,
+	"scenarioResultReason": null,
+	"assertions": [
+		{
+			"assertionId": "subscription-creation.serves-eve-from-the-preloaded-returning-hint-under-the-compariso/step:2",
+			"ordinal": 2,
+			"title": "Assert 201 local-only subscription with null payment and order references",
+			"declaration": {
+				"path": "tests/suites/subscription-creation.suite.ts",
+				"line": 153,
+				"column": 4
+			},
+			"evaluation": true,
+			"reason": null,
+			"titleCorroborated": false,
+			"terminalAttribution": "no-attributable-expect-failure"
+		},
+		{
+			"assertionId": "subscription-creation.serves-eve-from-the-preloaded-returning-hint-under-the-compariso/step:3",
+			"ordinal": 3,
+			"title": "Assert fixture state keeps the preloaded returning hint and adds eve's registration keys",
+			"declaration": {
+				"path": "tests/suites/subscription-creation.suite.ts",
+				"line": 164,
+				"column": 4
+			},
+			"evaluation": true,
+			"reason": null,
+			"titleCorroborated": false,
+			"terminalAttribution": "no-attributable-expect-failure"
+		}
+	]
+}

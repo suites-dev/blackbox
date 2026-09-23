@@ -1,0 +1,90 @@
+{
+	"type": "effects",
+	"flowId": "health",
+	"attemptId": "c12c8a8e74c469333769e511067bb15b",
+	"outcome": "captured",
+	"observed": {
+		"schemaVersion": 2,
+		"entry": {
+			"service": "public-api",
+			"request": "GET /health",
+			"status": 200
+		},
+		"entryResolution": {
+			"status": "resolved"
+		},
+		"summary": {
+			"counts": {
+				"inbound": 1,
+				"outboundHttp": 0,
+				"sql": 1,
+				"cache": 1,
+				"messaging": 0
+			},
+			"services": [
+				"public-api"
+			],
+			"edges": [
+				{
+					"caller": "public-api",
+					"callee": "localstack"
+				}
+			]
+		},
+		"services": {
+			"public-api": {
+				"inbound": [
+					{
+						"method": "GET",
+						"path": "/health",
+						"status": 200,
+						"count": 1,
+						"origin": "sut"
+					}
+				],
+				"outboundHttp": [
+					{
+						"callee": "localstack",
+						"method": "POST",
+						"path": "/",
+						"status": 200,
+						"count": "1+",
+						"origin": "sut"
+					}
+				],
+				"sql": [
+					{
+						"operation": "SELECT",
+						"statement": "SELECT ?",
+						"count": 1,
+						"origin": "sut"
+					}
+				],
+				"cache": [
+					{
+						"system": "redis",
+						"command": "PING",
+						"keyPattern": "<none>",
+						"count": 1,
+						"origin": "sut"
+					}
+				]
+			}
+		},
+		"errors": []
+	},
+	"expectedPath": null,
+	"captureReason": "no-baseline-comparison-requested",
+	"entryResolution": {
+		"status": "resolved"
+	},
+	"rootSpan": {
+		"spanId": "405a5d020cec71c7",
+		"name": "GET /health",
+		"service": "public-api",
+		"error": false,
+		"durationMs": 8.673
+	},
+	"semanticStepId": "act",
+	"runtimeActSpanId": "5bba53f336fc3c45"
+}

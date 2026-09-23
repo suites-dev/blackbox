@@ -1,0 +1,29 @@
+{
+	"schemaVersion": 2,
+	"artifactRole": "assertion-observations",
+	"runId": "01M23JNQ6G9X2CYTFR8Q7ZSXS9",
+	"attemptId": "befe43efa19b033526abe99ff19cbdf0",
+	"playwrightTestId": "1b9ca96bf231cda8c08d-abf7c15ba6be3d6e4f55",
+	"scenarioId": "payment-mock-subsystem-dist-wrapper.reports-ready-on-get-health-from-the-lean-dist-wrapper",
+	"project": "subsystem",
+	"retry": 0,
+	"planComplete": true,
+	"scenarioResult": true,
+	"scenarioResultReason": null,
+	"assertions": [
+		{
+			"assertionId": "payment-mock-subsystem-dist-wrapper.reports-ready-on-get-health-from-the-lean-dist-wrapper/step:1",
+			"ordinal": 1,
+			"title": "Assert 200 with status ready",
+			"declaration": {
+				"path": "tests/subsystem/payment-mock-dist.spec.ts",
+				"line": 18,
+				"column": 3
+			},
+			"evaluation": true,
+			"reason": null,
+			"titleCorroborated": false,
+			"terminalAttribution": "no-attributable-expect-failure"
+		}
+	]
+}

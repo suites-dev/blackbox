@@ -1,0 +1,322 @@
+{
+	"schemaVersion": 1,
+	"artifactRole": "effects-projection-comparison",
+	"runId": "01M25KNEH3C9BC4HVE743DBF2T",
+	"attemptId": "0e15205173f61c09f2878a6769beb928",
+	"outcome": "equal",
+	"differences": [],
+	"live": {
+		"snapshot": {
+			"schemaVersion": 2,
+			"entry": {
+				"service": "public-api",
+				"request": "POST /subscriptions",
+				"status": 400
+			},
+			"entryResolution": {
+				"status": "resolved"
+			},
+			"summary": {
+				"counts": {
+					"inbound": 3,
+					"outboundHttp": 0,
+					"sql": 0,
+					"cache": 0,
+					"messaging": 0
+				},
+				"services": [
+					"public-api"
+				],
+				"edges": []
+			},
+			"services": {
+				"public-api": {
+					"inbound": [
+						{
+							"method": "POST",
+							"path": "/subscriptions",
+							"status": 400,
+							"count": 3,
+							"origin": "sut"
+						}
+					]
+				}
+			},
+			"errors": []
+		},
+		"binding": {
+			"entryResolution": {
+				"status": "resolved"
+			},
+			"rootSpan": {
+				"spanId": "ab2a7b44f4514aaa",
+				"name": "POST /subscriptions",
+				"service": "public-api",
+				"error": false,
+				"durationMs": 0.589
+			},
+			"semanticStepId": "act",
+			"runtimeActSpanId": "2677a3c177a49b62"
+		},
+		"effects": [
+			{
+				"serviceId": "public-api",
+				"effect": {
+					"effectId": "effect-1",
+					"boundary": "http",
+					"operation": "POST",
+					"target": "/subscriptions",
+					"status": "400",
+					"origin": "sut",
+					"attributes": {
+						"direction": "inbound"
+					}
+				}
+			},
+			{
+				"serviceId": "public-api",
+				"effect": {
+					"effectId": "effect-2",
+					"boundary": "http",
+					"operation": "POST",
+					"target": "/subscriptions",
+					"status": "400",
+					"origin": "sut",
+					"attributes": {
+						"direction": "inbound"
+					}
+				}
+			},
+			{
+				"serviceId": "public-api",
+				"effect": {
+					"effectId": "effect-3",
+					"boundary": "http",
+					"operation": "POST",
+					"target": "/subscriptions",
+					"status": "400",
+					"origin": "sut",
+					"attributes": {
+						"direction": "inbound"
+					}
+				}
+			}
+		]
+	},
+	"postHoc": {
+		"snapshot": {
+			"schemaVersion": 2,
+			"entry": {
+				"service": "public-api",
+				"request": "POST /subscriptions",
+				"status": 400
+			},
+			"entryResolution": {
+				"status": "resolved"
+			},
+			"summary": {
+				"counts": {
+					"inbound": 3,
+					"outboundHttp": 0,
+					"sql": 0,
+					"cache": 0,
+					"messaging": 0
+				},
+				"services": [
+					"public-api"
+				],
+				"edges": []
+			},
+			"services": {
+				"public-api": {
+					"inbound": [
+						{
+							"method": "POST",
+							"path": "/subscriptions",
+							"status": 400,
+							"count": 3,
+							"origin": "sut"
+						}
+					]
+				}
+			},
+			"errors": []
+		},
+		"binding": {
+			"entryResolution": {
+				"status": "resolved"
+			},
+			"rootSpan": {
+				"spanId": "ab2a7b44f4514aaa",
+				"name": "POST /subscriptions",
+				"service": "public-api",
+				"error": false,
+				"durationMs": 0.589
+			},
+			"semanticStepId": "act",
+			"runtimeActSpanId": "2677a3c177a49b62"
+		},
+		"effects": [
+			{
+				"serviceId": "public-api",
+				"effect": {
+					"effectId": "effect-1",
+					"boundary": "http",
+					"operation": "POST",
+					"target": "/subscriptions",
+					"status": "400",
+					"origin": "sut",
+					"attributes": {
+						"direction": "inbound"
+					}
+				}
+			},
+			{
+				"serviceId": "public-api",
+				"effect": {
+					"effectId": "effect-2",
+					"boundary": "http",
+					"operation": "POST",
+					"target": "/subscriptions",
+					"status": "400",
+					"origin": "sut",
+					"attributes": {
+						"direction": "inbound"
+					}
+				}
+			},
+			{
+				"serviceId": "public-api",
+				"effect": {
+					"effectId": "effect-3",
+					"boundary": "http",
+					"operation": "POST",
+					"target": "/subscriptions",
+					"status": "400",
+					"origin": "sut",
+					"attributes": {
+						"direction": "inbound"
+					}
+				}
+			}
+		]
+	},
+	"postHocTraceSummary": {
+		"schemaVersion": 1,
+		"attemptId": "0e15205173f61c09f2878a6769beb928",
+		"traceId": "0e15205173f61c09f2878a6769beb928",
+		"rootSpan": {
+			"spanId": "ab2a7b44f4514aaa",
+			"name": "POST /subscriptions",
+			"service": "public-api",
+			"error": false,
+			"durationMs": 0.589
+		},
+		"entryResolution": {
+			"status": "resolved"
+		},
+		"actStep": {
+			"phase": "when",
+			"title": "Act: POST /subscriptions with an empty body",
+			"error": false,
+			"semanticStepId": "act",
+			"runtimeActSpanId": "2677a3c177a49b62"
+		},
+		"steps": [
+			{
+				"phase": "when",
+				"title": "Act: POST /subscriptions with an empty body",
+				"error": false,
+				"semanticStepId": null,
+				"runtimeActSpanId": null
+			},
+			{
+				"phase": "then",
+				"title": "Assert: 400 invalid-body for an empty body",
+				"error": false,
+				"semanticStepId": null,
+				"runtimeActSpanId": null
+			},
+			{
+				"phase": "unknown",
+				"title": "Expect \"toBe\"",
+				"error": false,
+				"semanticStepId": null,
+				"runtimeActSpanId": null
+			},
+			{
+				"phase": "unknown",
+				"title": "Expect \"toMatchObject\"",
+				"error": false,
+				"semanticStepId": null,
+				"runtimeActSpanId": null
+			},
+			{
+				"phase": "when",
+				"title": "Act: POST /subscriptions with a blank paymentMethodId",
+				"error": false,
+				"semanticStepId": null,
+				"runtimeActSpanId": null
+			},
+			{
+				"phase": "then",
+				"title": "Assert: 400 invalid-body for a blank paymentMethodId",
+				"error": false,
+				"semanticStepId": null,
+				"runtimeActSpanId": null
+			},
+			{
+				"phase": "unknown",
+				"title": "Expect \"toBe\"",
+				"error": false,
+				"semanticStepId": null,
+				"runtimeActSpanId": null
+			},
+			{
+				"phase": "unknown",
+				"title": "Expect \"toMatchObject\"",
+				"error": false,
+				"semanticStepId": null,
+				"runtimeActSpanId": null
+			},
+			{
+				"phase": "when",
+				"title": "Act: POST /subscriptions with a blank userId",
+				"error": false,
+				"semanticStepId": null,
+				"runtimeActSpanId": null
+			},
+			{
+				"phase": "then",
+				"title": "Assert: 400 invalid-body for a blank userId",
+				"error": false,
+				"semanticStepId": null,
+				"runtimeActSpanId": null
+			},
+			{
+				"phase": "unknown",
+				"title": "Expect \"toBe\"",
+				"error": false,
+				"semanticStepId": null,
+				"runtimeActSpanId": null
+			},
+			{
+				"phase": "unknown",
+				"title": "Expect \"toMatchObject\"",
+				"error": false,
+				"semanticStepId": null,
+				"runtimeActSpanId": null
+			},
+			{
+				"phase": "unknown",
+				"title": "Expect \"toMatchSnapshot\"",
+				"error": false,
+				"semanticStepId": null,
+				"runtimeActSpanId": null
+			}
+		],
+		"spanCount": 62,
+		"capturedEffectCount": 3,
+		"redactionsApplied": null
+	}
+}

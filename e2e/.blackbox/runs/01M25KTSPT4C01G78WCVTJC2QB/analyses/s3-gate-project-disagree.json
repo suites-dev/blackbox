@@ -1,0 +1,331 @@
+{
+	"schemaVersion": 1,
+	"artifactRole": "canonical-run-result",
+	"generatedAt": "2026-09-10T12:15:37.465Z",
+	"runId": "01M25KTSPT4C01G78WCVTJC2QB",
+	"flowId": "s3-gate-project-disagree",
+	"title": "s3-gate-project-disagree",
+	"authoringSource": "suite",
+	"axes": {
+		"execution": "passed",
+		"evidence": "incomplete",
+		"contractState": "unbaselined",
+		"verdict": "indeterminate"
+	},
+	"verdict": {
+		"value": "indeterminate",
+		"authority": "deterministic-analyzer",
+		"reason": "effects-contract-absent",
+		"scope": "flow-run",
+		"summary": "s3-gate-project-disagree's evidence was not fit for judgment (effects-contract-absent)."
+	},
+	"qualification": {
+		"sealed": true,
+		"fresh": true,
+		"digestsMatch": true,
+		"scopeComplete": true,
+		"evidenceComplete": false,
+		"qualifies": false
+	},
+	"scope": {
+		"requiredScenarios": 1,
+		"executedScenarios": 1,
+		"attempts": 2,
+		"projects": [
+			"per-test",
+			"per-worker"
+		],
+		"filtered": false
+	},
+	"firstDivergence": null,
+	"obligations": [
+		{
+			"id": "s3-gate-project-scoped-candidate-disagreement.plants-one-extra-real-sut-effect-only-under-the-disagreement-pro::assertion",
+			"scenarioId": "s3-gate-project-scoped-candidate-disagreement.plants-one-extra-real-sut-effect-only-under-the-disagreement-pro",
+			"source": "playwright.assertion",
+			"evaluation": true,
+			"reason": null
+		}
+	],
+	"findings": [
+		{
+			"id": "finding.observed-project-projection-difference.s3-gate-project-scoped-candidate-disagreement.plants-one-extra-real-sut-effect-only-under-the-disagreement-pro",
+			"severity": "diagnostic",
+			"authority": "deterministic-analyzer",
+			"scenarioId": "s3-gate-project-scoped-candidate-disagreement.plants-one-extra-real-sut-effect-only-under-the-disagreement-pro",
+			"summary": "Observed SUT-origin projections differ for scenario \"s3-gate-project-scoped-candidate-disagreement.plants-one-extra-real-sut-effect-only-under-the-disagreement-pro\": project \"per-test\" captured [1 x http POST /assess 200, 1 x http POST /orders 201, 1 x http POST /subscriptions 201, 1 x http POST /v1/payment_intents 201, 1 x http POST fraud-check:/assess 200, 1 x http POST localstack:/ 200, 1 x http POST order-service:/orders 201, 1 x http POST payment-mock:/v1/payment_intents 201, 1 x postgres INSERT fraud_audit (no status), 1 x postgres INSERT subscriptions (no status), 1 x postgres SELECT subscriptions (no status), 1 x redis GET hint:short:bob (no status), 1 x redis GET user:bob:tier (no status), 1 x redis SET hint:short:bob (no status), 1 x redis SET user:bob:tier (no status)]; project \"per-worker\" captured [2 x http POST /assess 200, 2 x http POST /orders 201, 2 x http POST /subscriptions 201, 2 x http POST /v1/payment_intents 201, 2 x http POST fraud-check:/assess 200, 1 x http POST localstack:/ 200, 2 x http POST order-service:/orders 201, 2 x http POST payment-mock:/v1/payment_intents 201, 2 x postgres INSERT fraud_audit (no status), 2 x postgres INSERT subscriptions (no status), 2 x postgres SELECT subscriptions (no status), 1 x redis GET hint:long:carol (no status), 1 x redis GET hint:short:bob (no status), 1 x redis GET user:bob:tier (no status), 1 x redis GET user:carol:tier (no status), 1 x redis SET hint:long:carol (no status), 1 x redis SET hint:short:bob (no status), 1 x redis SET user:bob:tier (no status), 1 x redis SET user:carol:tier (no status)]. This compares captured observations only; evidence is incomplete, so neither projection is claimed complete or promotable.",
+			"affectsVerdict": false
+		},
+		{
+			"id": "finding.qualification-gap.98d8dfc33392",
+			"severity": "blocking",
+			"authority": "deterministic-analyzer",
+			"scenarioId": null,
+			"summary": "Required acquisition observation gap: acquisition e18a7e16-1ce5-4696-a375-d3bba3479470 observation incomplete: participant localstack has missing spans: localstack:spans (not-emitted).",
+			"affectsVerdict": true
+		},
+		{
+			"id": "finding.qualification-gap.63d0a525af15",
+			"severity": "blocking",
+			"authority": "deterministic-analyzer",
+			"scenarioId": null,
+			"summary": "Required acquisition observation gap: acquisition e18a7e16-1ce5-4696-a375-d3bba3479470 observation incomplete: participant localstack spanCount is null; no count was established.",
+			"affectsVerdict": true
+		},
+		{
+			"id": "finding.qualification-gap.45da8d9dbd0e",
+			"severity": "blocking",
+			"authority": "deterministic-analyzer",
+			"scenarioId": null,
+			"summary": "Required acquisition observation gap: acquisition e18a7e16-1ce5-4696-a375-d3bba3479470 observation incomplete: participant postgres has missing spans: postgres:spans (not-emitted).",
+			"affectsVerdict": true
+		},
+		{
+			"id": "finding.qualification-gap.229f7f000e7f",
+			"severity": "blocking",
+			"authority": "deterministic-analyzer",
+			"scenarioId": null,
+			"summary": "Required acquisition observation gap: acquisition e18a7e16-1ce5-4696-a375-d3bba3479470 observation incomplete: participant postgres spanCount is null; no count was established.",
+			"affectsVerdict": true
+		},
+		{
+			"id": "finding.qualification-gap.d35ee658df6f",
+			"severity": "blocking",
+			"authority": "deterministic-analyzer",
+			"scenarioId": null,
+			"summary": "Required acquisition observation gap: acquisition e18a7e16-1ce5-4696-a375-d3bba3479470 observation incomplete: participant redis has missing spans: redis:spans (not-emitted).",
+			"affectsVerdict": true
+		},
+		{
+			"id": "finding.qualification-gap.72ff9e71b930",
+			"severity": "blocking",
+			"authority": "deterministic-analyzer",
+			"scenarioId": null,
+			"summary": "Required acquisition observation gap: acquisition e18a7e16-1ce5-4696-a375-d3bba3479470 observation incomplete: participant redis spanCount is null; no count was established.",
+			"affectsVerdict": true
+		},
+		{
+			"id": "finding.qualification-gap.362c1e5fd527",
+			"severity": "blocking",
+			"authority": "deterministic-analyzer",
+			"scenarioId": null,
+			"summary": "Required acquisition observation gap: acquisition e18a7e16-1ce5-4696-a375-d3bba3479470 observation incomplete: required participant localstack status is missing, not observed.",
+			"affectsVerdict": true
+		},
+		{
+			"id": "finding.qualification-gap.27c8d59c4172",
+			"severity": "blocking",
+			"authority": "deterministic-analyzer",
+			"scenarioId": null,
+			"summary": "Required acquisition observation gap: acquisition e18a7e16-1ce5-4696-a375-d3bba3479470 observation incomplete: required participant postgres status is missing, not observed.",
+			"affectsVerdict": true
+		},
+		{
+			"id": "finding.qualification-gap.735006b75315",
+			"severity": "blocking",
+			"authority": "deterministic-analyzer",
+			"scenarioId": null,
+			"summary": "Required acquisition observation gap: acquisition e18a7e16-1ce5-4696-a375-d3bba3479470 observation incomplete: required participant redis status is missing, not observed.",
+			"affectsVerdict": true
+		},
+		{
+			"id": "finding.qualification-gap.30d24308d5d7",
+			"severity": "blocking",
+			"authority": "deterministic-analyzer",
+			"scenarioId": null,
+			"summary": "Required acquisition observation gap: acquisition e60b7f00-89a1-4726-a154-dfeb0a4de6cd observation incomplete: participant localstack has missing spans: localstack:spans (not-emitted).",
+			"affectsVerdict": true
+		},
+		{
+			"id": "finding.qualification-gap.994118d4f672",
+			"severity": "blocking",
+			"authority": "deterministic-analyzer",
+			"scenarioId": null,
+			"summary": "Required acquisition observation gap: acquisition e60b7f00-89a1-4726-a154-dfeb0a4de6cd observation incomplete: participant localstack spanCount is null; no count was established.",
+			"affectsVerdict": true
+		},
+		{
+			"id": "finding.qualification-gap.44693f05c179",
+			"severity": "blocking",
+			"authority": "deterministic-analyzer",
+			"scenarioId": null,
+			"summary": "Required acquisition observation gap: acquisition e60b7f00-89a1-4726-a154-dfeb0a4de6cd observation incomplete: participant postgres has missing spans: postgres:spans (not-emitted).",
+			"affectsVerdict": true
+		},
+		{
+			"id": "finding.qualification-gap.5dd88fca30df",
+			"severity": "blocking",
+			"authority": "deterministic-analyzer",
+			"scenarioId": null,
+			"summary": "Required acquisition observation gap: acquisition e60b7f00-89a1-4726-a154-dfeb0a4de6cd observation incomplete: participant postgres spanCount is null; no count was established.",
+			"affectsVerdict": true
+		},
+		{
+			"id": "finding.qualification-gap.e9906400b399",
+			"severity": "blocking",
+			"authority": "deterministic-analyzer",
+			"scenarioId": null,
+			"summary": "Required acquisition observation gap: acquisition e60b7f00-89a1-4726-a154-dfeb0a4de6cd observation incomplete: participant redis has missing spans: redis:spans (not-emitted).",
+			"affectsVerdict": true
+		},
+		{
+			"id": "finding.qualification-gap.48aee6b5e9af",
+			"severity": "blocking",
+			"authority": "deterministic-analyzer",
+			"scenarioId": null,
+			"summary": "Required acquisition observation gap: acquisition e60b7f00-89a1-4726-a154-dfeb0a4de6cd observation incomplete: participant redis spanCount is null; no count was established.",
+			"affectsVerdict": true
+		},
+		{
+			"id": "finding.qualification-gap.e3fcb3191843",
+			"severity": "blocking",
+			"authority": "deterministic-analyzer",
+			"scenarioId": null,
+			"summary": "Required acquisition observation gap: acquisition e60b7f00-89a1-4726-a154-dfeb0a4de6cd observation incomplete: required participant localstack status is missing, not observed.",
+			"affectsVerdict": true
+		},
+		{
+			"id": "finding.qualification-gap.16a142e49513",
+			"severity": "blocking",
+			"authority": "deterministic-analyzer",
+			"scenarioId": null,
+			"summary": "Required acquisition observation gap: acquisition e60b7f00-89a1-4726-a154-dfeb0a4de6cd observation incomplete: required participant postgres status is missing, not observed.",
+			"affectsVerdict": true
+		},
+		{
+			"id": "finding.qualification-gap.00941521803b",
+			"severity": "blocking",
+			"authority": "deterministic-analyzer",
+			"scenarioId": null,
+			"summary": "Required acquisition observation gap: acquisition e60b7f00-89a1-4726-a154-dfeb0a4de6cd observation incomplete: required participant redis status is missing, not observed.",
+			"affectsVerdict": true
+		}
+	],
+	"assumptions": [
+		{
+			"id": "instrumentation-captured-all-boundaries",
+			"text": "Instrumentation captured every declared boundary; an effect the observation policy does not cover cannot be represented as evidence."
+		},
+		{
+			"id": "collector-delivered-before-seal",
+			"text": "Every effect the instrumentation captured was delivered to the collector before the run sealed; the seal's window end is a floor on sealing, not just a fact about it."
+		},
+		{
+			"id": "source-maps-match-running-code",
+			"text": "The source maps read by the analyzer match the code that actually executed in the sealed run."
+		},
+		{
+			"id": "clock-ordering-sufficient",
+			"text": "The clock ordering available to the analyzer is sufficient to place attempt, evidence, and window boundaries correctly relative to one another."
+		},
+		{
+			"id": "declared-boundary-matches-actual",
+			"text": "The boundary declared in the observation policy (its kind and authoritativeFor claims) matches what the instrumented code actually does at runtime."
+		}
+	],
+	"perProjectResults": [
+		{
+			"project": "per-test",
+			"verdict": "indeterminate",
+			"contractState": "unbaselined"
+		},
+		{
+			"project": "per-worker",
+			"verdict": "indeterminate",
+			"contractState": "unbaselined"
+		}
+	],
+	"attempts": [
+		{
+			"attemptId": "3d3f7f9c18e98d8331cdb79e82bcc363",
+			"scenarioId": "s3-gate-project-scoped-candidate-disagreement.plants-one-extra-real-sut-effect-only-under-the-disagreement-pro",
+			"project": "per-test",
+			"retry": 0,
+			"final": true,
+			"executionOutcome": "passed",
+			"evidenceComplete": false,
+			"evidenceStatus": "incomplete",
+			"evidenceFiles": [
+				{
+					"name": "attempt.json",
+					"path": "evidence/3d3f7f9c18e98d8331cdb79e82bcc363/attempt.json"
+				},
+				{
+					"name": "decisions.json",
+					"path": "evidence/3d3f7f9c18e98d8331cdb79e82bcc363/decisions.json"
+				},
+				{
+					"name": "trace-summary.json",
+					"path": "evidence/3d3f7f9c18e98d8331cdb79e82bcc363/trace-summary.json"
+				},
+				{
+					"name": "effects.json",
+					"path": "evidence/3d3f7f9c18e98d8331cdb79e82bcc363/effects.json"
+				},
+				{
+					"name": "assertions.json",
+					"path": "evidence/3d3f7f9c18e98d8331cdb79e82bcc363/assertions.json"
+				},
+				{
+					"name": "projection-comparison.json",
+					"path": "evidence/3d3f7f9c18e98d8331cdb79e82bcc363/projection-comparison.json"
+				}
+			]
+		},
+		{
+			"attemptId": "b78b0471cf8eaed584989543bac107a9",
+			"scenarioId": "s3-gate-project-scoped-candidate-disagreement.plants-one-extra-real-sut-effect-only-under-the-disagreement-pro",
+			"project": "per-worker",
+			"retry": 0,
+			"final": true,
+			"executionOutcome": "passed",
+			"evidenceComplete": false,
+			"evidenceStatus": "incomplete",
+			"evidenceFiles": [
+				{
+					"name": "attempt.json",
+					"path": "evidence/b78b0471cf8eaed584989543bac107a9/attempt.json"
+				},
+				{
+					"name": "decisions.json",
+					"path": "evidence/b78b0471cf8eaed584989543bac107a9/decisions.json"
+				},
+				{
+					"name": "trace-summary.json",
+					"path": "evidence/b78b0471cf8eaed584989543bac107a9/trace-summary.json"
+				},
+				{
+					"name": "effects.json",
+					"path": "evidence/b78b0471cf8eaed584989543bac107a9/effects.json"
+				},
+				{
+					"name": "assertions.json",
+					"path": "evidence/b78b0471cf8eaed584989543bac107a9/assertions.json"
+				},
+				{
+					"name": "projection-comparison.json",
+					"path": "evidence/b78b0471cf8eaed584989543bac107a9/projection-comparison.json"
+				}
+			]
+		}
+	],
+	"nextValidAction": {
+		"code": "rerun",
+		"summary": "Required run or acquisition evidence is unavailable. Repair capture and rerun.",
+		"commandAfterAuthorization": null
+	},
+	"artifacts": {
+		"manifest": "manifest.json",
+		"proofPlan": "proof-plans/s3-gate-project-disagree.json",
+		"behaviorModel": "behavior-models/s3-gate-project-disagree.json",
+		"observationPolicy": "observation-policy.json",
+		"evidenceIndex": "evidence/index.json",
+		"seal": "seal.json",
+		"report": "report.html",
+		"approvalContext": null,
+		"candidateContract": null,
+		"contractDiff": null
+	},
+	"recommendation": null,
+	"developerDecision": null
+}

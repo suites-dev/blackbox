@@ -1,0 +1,6 @@
+schemaVersion: 1
+unknownRootField: rejected
+catalog:
+  default: missing
+  entries: {}
+activations: {}

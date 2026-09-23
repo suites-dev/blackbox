@@ -1,0 +1,31 @@
+{
+	"flowId": "payment-mock-records-payment-intents-and-refunds-and-rejects-unk",
+	"authoringSource": "suite",
+	"suite": {
+		"path": "tests/suites/fixture-control.suite.ts",
+		"digest": "5f0b5069d2d494f57bd4503fe0aa9b358c1f4d97"
+	},
+	"requirement": null,
+	"baseline": {
+		"path": "tests/per-test/effects/fixture-control.spec.ts/effects-payment-mock-records-payment-intents-and-refunds-and-rejects-unk.yaml",
+		"digest": "9cb69f7773eddea4722b7fc6c1030913d37f54bd"
+	},
+	"entries": [
+		{
+			"project": "per-test",
+			"entryPath": "per-test/fixture-control.spec.ts"
+		}
+	],
+	"candidate": null,
+	"behaviorModelDigest": "pending-s3",
+	"observationDigest": "pending-s3",
+	"proofPlanDigest": "pending-s3",
+	"completeness": {
+		"plannedScenarios": [],
+		"executedScenarios": [],
+		"complete": false,
+		"reasons": [
+			"planned-scope-unknown-pending-proof-plans"
+		]
+	}
+}

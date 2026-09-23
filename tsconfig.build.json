@@ -1,0 +1,10 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "customConditions": [],
+    "noEmit": false,
+    "noEmitOnError": true,
+    "declaration": true,
+    "sourceMap": true
+  }
+}

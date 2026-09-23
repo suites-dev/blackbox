@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "flowId": "s3-gate-arrange-wins",
+  "authoringSource": "suite",
+  "source": {
+    "declaration": {
+      "path": "/Users/omer/projects/suites/blackbox/e2e/proofs/s3-gate/planted-arrange-wins.suite.ts",
+      "digest": "8ff2db3854113205a8cfa1d36020be61f31bc23a"
+    },
+    "entry": {
+      "path": "/Users/omer/projects/suites/blackbox/e2e/tests/s3-gate/per-test.spec.ts",
+      "digest": "017ca263def1aaef4a30dba86d1eb926edb54161"
+    }
+  },
+  "feature": {
+    "title": "S3 gate: Arrange-vs-Act correlation",
+    "description": "",
+    "scenarios": [
+      {
+        "id": "s3-gate-arrange-wins.binds-entry-correlation-to-the-act-request-never-an-earlier-arra",
+        "title": "binds entry correlation to the Act request, never an earlier Arrange request",
+        "steps": [
+          "Given GET public-api /health (a real, earlier SUT request, not the flow under test)",
+          "Then the Arrange request itself succeeds",
+          "When POST /subscriptions for bob (the flow's real act request)",
+          "Then 201 with an active subscription for bob",
+          "Then (S3 gate): entry correlates to the Act request, and BOTH real requests are still present as effects"
+        ]
+      }
+    ]
+  }
+}

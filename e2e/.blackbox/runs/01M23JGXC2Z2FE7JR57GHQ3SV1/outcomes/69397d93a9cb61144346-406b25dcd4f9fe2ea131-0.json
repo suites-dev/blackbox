@@ -1,0 +1,34 @@
+{
+	"schemaVersion": 2,
+	"artifactRole": "reporter-attempt-outcome",
+	"runId": "01M23JGXC2Z2FE7JR57GHQ3SV1",
+	"playwrightTestId": "69397d93a9cb61144346-406b25dcd4f9fe2ea131",
+	"project": "subsystem-base",
+	"scenarioId": "s3-gate-qualified-subsystem-project-disagreement.captures-distinct-payment-intent-outcomes-per-project",
+	"retry": 0,
+	"attemptId": "690897e0d00bec5f60ebac1202e99bdb",
+	"outcome": "passed",
+	"status": "passed",
+	"recordedAt": "2026-09-09T17:13:03.481Z",
+	"planComplete": true,
+	"assertions": [
+		{
+			"assertionId": "s3-gate-qualified-subsystem-project-disagreement.captures-distinct-payment-intent-outcomes-per-project/step:1",
+			"ordinal": 1,
+			"title": "Assert project-specific payment-intent status",
+			"declaration": {
+				"path": "tests/s3-gate/qualified-project-disagree.spec.ts",
+				"line": 28,
+				"column": 3
+			},
+			"evaluation": true,
+			"reason": null,
+			"titleCorroborated": false,
+			"terminalAttribution": "no-attributable-expect-failure"
+		}
+	],
+	"requestedArtifacts": [
+		"decisions.json",
+		"assertions.json"
+	]
+}

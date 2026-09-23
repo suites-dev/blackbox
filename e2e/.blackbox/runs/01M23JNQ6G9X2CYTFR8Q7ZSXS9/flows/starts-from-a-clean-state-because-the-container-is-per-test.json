@@ -1,0 +1,31 @@
+{
+	"flowId": "starts-from-a-clean-state-because-the-container-is-per-test",
+	"authoringSource": "suite",
+	"suite": {
+		"path": "tests/subsystem/payment-mock.spec.ts",
+		"digest": "a6f4c74abbc4e42db951463c5deddda12c89a354"
+	},
+	"requirement": null,
+	"baseline": {
+		"path": "tests/subsystem/effects/payment-mock.spec.ts/effects-starts-from-a-clean-state-because-the-container-is-per-test.yaml",
+		"digest": "ad9eecb0e9a539f7b5a1b7f0fe3d24ad62772423"
+	},
+	"entries": [
+		{
+			"project": "subsystem",
+			"entryPath": "subsystem/payment-mock.spec.ts"
+		}
+	],
+	"candidate": null,
+	"behaviorModelDigest": "pending-s3",
+	"observationDigest": "pending-s3",
+	"proofPlanDigest": "pending-s3",
+	"completeness": {
+		"plannedScenarios": [],
+		"executedScenarios": [],
+		"complete": false,
+		"reasons": [
+			"planned-scope-unknown-pending-proof-plans"
+		]
+	}
+}

@@ -1,0 +1,55 @@
+{
+  "schemaVersion": 1,
+  "flowId": "s3-gate-fixture-control",
+  "compiledAt": "2026-09-10T12:14:13.956Z",
+  "inputs": {
+    "authoringSource": "suite",
+    "requirementDigest": null,
+    "behaviorModelDigest": "ccf05b0a01ca1c3ee45367b55d43eec0690a94f9",
+    "suiteDigest": "e5dc11dd9ead24279c3532a93ea25d1cb400b735",
+    "acceptedEffectsDigest": null,
+    "observationDigest": "1fa7b4b1273c0ca0e351a378c1e44b0f039c6795"
+  },
+  "requiredScope": {
+    "projects": [
+      "per-test",
+      "per-worker"
+    ],
+    "scenarios": [
+      "s3-gate-fixture-control-origin-marking.captures-a-fixture-control-read-origin-marked-never-coalesced-wi"
+    ],
+    "selectionMustBeComplete": true,
+    "predeclaredAssertions": [
+      {
+        "scenarioId": "s3-gate-fixture-control-origin-marking.captures-a-fixture-control-read-origin-marked-never-coalesced-wi",
+        "assertionIds": [
+          "s3-gate-fixture-control-origin-marking.captures-a-fixture-control-read-origin-marked-never-coalesced-wi/step:1",
+          "s3-gate-fixture-control-origin-marking.captures-a-fixture-control-read-origin-marked-never-coalesced-wi/step:3",
+          "s3-gate-fixture-control-origin-marking.captures-a-fixture-control-read-origin-marked-never-coalesced-wi/step:4"
+        ]
+      }
+    ],
+    "scenarioIdentityMappings": [
+      {
+        "semanticScenarioId": "s3-gate-fixture-control.captures-a-fixture-control-read-origin-marked-never-coalesced-wi",
+        "nativeScenarioId": "s3-gate-fixture-control-origin-marking.captures-a-fixture-control-read-origin-marked-never-coalesced-wi"
+      }
+    ]
+  },
+  "obligations": [
+    {
+      "id": "s3-gate-fixture-control-origin-marking.captures-a-fixture-control-read-origin-marked-never-coalesced-wi::assertion",
+      "scenarioId": "s3-gate-fixture-control-origin-marking.captures-a-fixture-control-read-origin-marked-never-coalesced-wi",
+      "kind": "assertion",
+      "source": "playwright.assertion",
+      "required": true,
+      "semanticStepId": null
+    }
+  ],
+  "qualification": {
+    "requireSealedEvidence": true,
+    "requireFreshDigests": true,
+    "requireCompleteScope": true,
+    "requireCompleteEvidence": true
+  }
+}

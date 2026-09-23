@@ -1,0 +1,979 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://suites.dev/blackbox/schemas/capsule-progress-v1.json",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "kind",
+    "events"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "kind": {
+      "const": "capsule-progress"
+    },
+    "events": {
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "required": [
+              "sessionId",
+              "sequence",
+              "at",
+              "stage",
+              "kind",
+              "system",
+              "artifactRoot",
+              "environmentKeys"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "sessionId": {
+                "type": "string"
+              },
+              "sequence": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "at": {
+                "type": "string"
+              },
+              "stage": {
+                "enum": [
+                  "admission",
+                  "catalog",
+                  "manager",
+                  "acquisition",
+                  "readiness",
+                  "ready",
+                  "catalog-load",
+                  "catalog-resolution",
+                  "manager-spawn",
+                  "manager-handshake",
+                  "persistence"
+                ]
+              },
+              "kind": {
+                "const": "session-admitted"
+              },
+              "system": {
+                "type": "string"
+              },
+              "artifactRoot": {
+                "type": "string"
+              },
+              "environmentKeys": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "sessionId",
+              "sequence",
+              "at",
+              "stage",
+              "kind",
+              "managerPid"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "sessionId": {
+                "type": "string"
+              },
+              "sequence": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "at": {
+                "type": "string"
+              },
+              "stage": {
+                "enum": [
+                  "admission",
+                  "catalog",
+                  "manager",
+                  "acquisition",
+                  "readiness",
+                  "ready",
+                  "catalog-load",
+                  "catalog-resolution",
+                  "manager-spawn",
+                  "manager-handshake",
+                  "persistence"
+                ]
+              },
+              "kind": {
+                "const": "manager-spawned"
+              },
+              "managerPid": {
+                "type": "integer",
+                "minimum": 0
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "sessionId",
+              "sequence",
+              "at",
+              "stage",
+              "kind",
+              "managerPid"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "sessionId": {
+                "type": "string"
+              },
+              "sequence": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "at": {
+                "type": "string"
+              },
+              "stage": {
+                "enum": [
+                  "admission",
+                  "catalog",
+                  "manager",
+                  "acquisition",
+                  "readiness",
+                  "ready",
+                  "catalog-load",
+                  "catalog-resolution",
+                  "manager-spawn",
+                  "manager-handshake",
+                  "persistence"
+                ]
+              },
+              "kind": {
+                "const": "manager-ready"
+              },
+              "managerPid": {
+                "type": "integer",
+                "minimum": 0
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "sessionId",
+              "sequence",
+              "at",
+              "stage",
+              "kind",
+              "system",
+              "configFile"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "sessionId": {
+                "type": "string"
+              },
+              "sequence": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "at": {
+                "type": "string"
+              },
+              "stage": {
+                "enum": [
+                  "admission",
+                  "catalog",
+                  "manager",
+                  "acquisition",
+                  "readiness",
+                  "ready",
+                  "catalog-load",
+                  "catalog-resolution",
+                  "manager-spawn",
+                  "manager-handshake",
+                  "persistence"
+                ]
+              },
+              "kind": {
+                "const": "catalog-selected"
+              },
+              "system": {
+                "type": "string"
+              },
+              "configFile": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "sessionId",
+              "sequence",
+              "at",
+              "stage",
+              "kind",
+              "system",
+              "projectDirectory",
+              "composeFiles",
+              "services"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "sessionId": {
+                "type": "string"
+              },
+              "sequence": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "at": {
+                "type": "string"
+              },
+              "stage": {
+                "enum": [
+                  "admission",
+                  "catalog",
+                  "manager",
+                  "acquisition",
+                  "readiness",
+                  "ready",
+                  "catalog-load",
+                  "catalog-resolution",
+                  "manager-spawn",
+                  "manager-handshake",
+                  "persistence"
+                ]
+              },
+              "kind": {
+                "const": "catalog-resolved"
+              },
+              "system": {
+                "type": "string"
+              },
+              "projectDirectory": {
+                "type": "string"
+              },
+              "composeFiles": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "services": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "sessionId",
+              "sequence",
+              "at",
+              "stage",
+              "kind",
+              "projectName"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "sessionId": {
+                "type": "string"
+              },
+              "sequence": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "at": {
+                "type": "string"
+              },
+              "stage": {
+                "enum": [
+                  "admission",
+                  "catalog",
+                  "manager",
+                  "acquisition",
+                  "readiness",
+                  "ready",
+                  "catalog-load",
+                  "catalog-resolution",
+                  "manager-spawn",
+                  "manager-handshake",
+                  "persistence"
+                ]
+              },
+              "kind": {
+                "const": "compose-configured"
+              },
+              "projectName": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "sessionId",
+              "sequence",
+              "at",
+              "stage",
+              "kind",
+              "projectName"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "sessionId": {
+                "type": "string"
+              },
+              "sequence": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "at": {
+                "type": "string"
+              },
+              "stage": {
+                "enum": [
+                  "admission",
+                  "catalog",
+                  "manager",
+                  "acquisition",
+                  "readiness",
+                  "ready",
+                  "catalog-load",
+                  "catalog-resolution",
+                  "manager-spawn",
+                  "manager-handshake",
+                  "persistence"
+                ]
+              },
+              "kind": {
+                "const": "acquisition-started"
+              },
+              "projectName": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "sessionId",
+              "sequence",
+              "at",
+              "stage",
+              "kind",
+              "observation"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "sessionId": {
+                "type": "string"
+              },
+              "sequence": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "at": {
+                "type": "string"
+              },
+              "stage": {
+                "enum": [
+                  "admission",
+                  "catalog",
+                  "manager",
+                  "acquisition",
+                  "readiness",
+                  "ready",
+                  "catalog-load",
+                  "catalog-resolution",
+                  "manager-spawn",
+                  "manager-handshake",
+                  "persistence"
+                ]
+              },
+              "kind": {
+                "const": "acquisition-observation"
+              },
+              "observation": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "required": [
+                      "kind",
+                      "participant",
+                      "container"
+                    ],
+                    "additionalProperties": false,
+                    "properties": {
+                      "kind": {
+                        "const": "service-state"
+                      },
+                      "participant": {
+                        "type": "string"
+                      },
+                      "container": {
+                        "type": "object",
+                        "required": [
+                          "service",
+                          "containerId",
+                          "containerName",
+                          "state",
+                          "health",
+                          "termination"
+                        ],
+                        "additionalProperties": false,
+                        "properties": {
+                          "service": {
+                            "type": "string"
+                          },
+                          "containerId": {
+                            "type": "string"
+                          },
+                          "containerName": {
+                            "type": "string"
+                          },
+                          "state": {
+                            "enum": [
+                              "created",
+                              "running",
+                              "paused",
+                              "restarting",
+                              "removing",
+                              "exited",
+                              "dead",
+                              "unknown"
+                            ]
+                          },
+                          "health": {
+                            "enum": [
+                              "not-configured",
+                              "starting",
+                              "healthy",
+                              "unhealthy",
+                              "unknown"
+                            ]
+                          },
+                          "termination": {
+                            "oneOf": [
+                              {
+                                "type": "object",
+                                "required": [
+                                  "kind"
+                                ],
+                                "additionalProperties": false,
+                                "properties": {
+                                  "kind": {
+                                    "const": "none"
+                                  }
+                                }
+                              },
+                              {
+                                "type": "object",
+                                "required": [
+                                  "kind",
+                                  "exitCode"
+                                ],
+                                "additionalProperties": false,
+                                "properties": {
+                                  "kind": {
+                                    "const": "exited"
+                                  },
+                                  "exitCode": {
+                                    "type": "integer"
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "type": "object",
+                    "required": [
+                      "kind",
+                      "resource"
+                    ],
+                    "additionalProperties": false,
+                    "properties": {
+                      "kind": {
+                        "const": "resource-discovered"
+                      },
+                      "resource": {
+                        "type": "object",
+                        "required": [
+                          "kind",
+                          "name"
+                        ],
+                        "additionalProperties": false,
+                        "properties": {
+                          "kind": {
+                            "enum": [
+                              "network",
+                              "volume"
+                            ]
+                          },
+                          "name": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "type": "object",
+                    "required": [
+                      "kind",
+                      "elapsedMs"
+                    ],
+                    "additionalProperties": false,
+                    "properties": {
+                      "kind": {
+                        "const": "waiting"
+                      },
+                      "elapsedMs": {
+                        "type": "integer",
+                        "minimum": 0
+                      }
+                    }
+                  },
+                  {
+                    "type": "object",
+                    "required": [
+                      "kind",
+                      "status"
+                    ],
+                    "additionalProperties": false,
+                    "properties": {
+                      "kind": {
+                        "const": "observation-status"
+                      },
+                      "status": {
+                        "enum": [
+                          "available",
+                          "unavailable"
+                        ]
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "sessionId",
+              "sequence",
+              "at",
+              "stage",
+              "kind",
+              "participant",
+              "service",
+              "containerName",
+              "containerId",
+              "networkNames"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "sessionId": {
+                "type": "string"
+              },
+              "sequence": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "at": {
+                "type": "string"
+              },
+              "stage": {
+                "enum": [
+                  "admission",
+                  "catalog",
+                  "manager",
+                  "acquisition",
+                  "readiness",
+                  "ready",
+                  "catalog-load",
+                  "catalog-resolution",
+                  "manager-spawn",
+                  "manager-handshake",
+                  "persistence"
+                ]
+              },
+              "kind": {
+                "const": "container-acquired"
+              },
+              "participant": {
+                "type": "string"
+              },
+              "service": {
+                "type": "string"
+              },
+              "containerName": {
+                "type": "string"
+              },
+              "containerId": {
+                "type": "string"
+              },
+              "networkNames": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "sessionId",
+              "sequence",
+              "at",
+              "stage",
+              "kind",
+              "endpoint"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "sessionId": {
+                "type": "string"
+              },
+              "sequence": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "at": {
+                "type": "string"
+              },
+              "stage": {
+                "enum": [
+                  "admission",
+                  "catalog",
+                  "manager",
+                  "acquisition",
+                  "readiness",
+                  "ready",
+                  "catalog-load",
+                  "catalog-resolution",
+                  "manager-spawn",
+                  "manager-handshake",
+                  "persistence"
+                ]
+              },
+              "kind": {
+                "const": "endpoint-mapped"
+              },
+              "endpoint": {
+                "type": "object",
+                "required": [
+                  "url",
+                  "host",
+                  "port",
+                  "protocol"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "url": {
+                    "type": "string"
+                  },
+                  "host": {
+                    "type": "string"
+                  },
+                  "port": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "protocol": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "sessionId",
+              "sequence",
+              "at",
+              "stage",
+              "kind",
+              "resource"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "sessionId": {
+                "type": "string"
+              },
+              "sequence": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "at": {
+                "type": "string"
+              },
+              "stage": {
+                "enum": [
+                  "admission",
+                  "catalog",
+                  "manager",
+                  "acquisition",
+                  "readiness",
+                  "ready",
+                  "catalog-load",
+                  "catalog-resolution",
+                  "manager-spawn",
+                  "manager-handshake",
+                  "persistence"
+                ]
+              },
+              "kind": {
+                "const": "resource-owned"
+              },
+              "resource": {
+                "type": "object",
+                "required": [
+                  "kind",
+                  "name"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "kind": {
+                    "enum": [
+                      "network",
+                      "volume"
+                    ]
+                  },
+                  "name": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "sessionId",
+              "sequence",
+              "at",
+              "stage",
+              "kind",
+              "url",
+              "timeoutMs"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "sessionId": {
+                "type": "string"
+              },
+              "sequence": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "at": {
+                "type": "string"
+              },
+              "stage": {
+                "enum": [
+                  "admission",
+                  "catalog",
+                  "manager",
+                  "acquisition",
+                  "readiness",
+                  "ready",
+                  "catalog-load",
+                  "catalog-resolution",
+                  "manager-spawn",
+                  "manager-handshake",
+                  "persistence"
+                ]
+              },
+              "kind": {
+                "const": "readiness-started"
+              },
+              "url": {
+                "type": "string"
+              },
+              "timeoutMs": {
+                "type": "integer",
+                "minimum": 0
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "sessionId",
+              "sequence",
+              "at",
+              "stage",
+              "kind",
+              "url",
+              "durationMs"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "sessionId": {
+                "type": "string"
+              },
+              "sequence": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "at": {
+                "type": "string"
+              },
+              "stage": {
+                "enum": [
+                  "admission",
+                  "catalog",
+                  "manager",
+                  "acquisition",
+                  "readiness",
+                  "ready",
+                  "catalog-load",
+                  "catalog-resolution",
+                  "manager-spawn",
+                  "manager-handshake",
+                  "persistence"
+                ]
+              },
+              "kind": {
+                "const": "readiness-succeeded"
+              },
+              "url": {
+                "type": "string"
+              },
+              "durationMs": {
+                "type": "integer",
+                "minimum": 0
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "sessionId",
+              "sequence",
+              "at",
+              "stage",
+              "kind",
+              "durationMs"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "sessionId": {
+                "type": "string"
+              },
+              "sequence": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "at": {
+                "type": "string"
+              },
+              "stage": {
+                "enum": [
+                  "admission",
+                  "catalog",
+                  "manager",
+                  "acquisition",
+                  "readiness",
+                  "ready",
+                  "catalog-load",
+                  "catalog-resolution",
+                  "manager-spawn",
+                  "manager-handshake",
+                  "persistence"
+                ]
+              },
+              "kind": {
+                "const": "capsule-ready"
+              },
+              "durationMs": {
+                "type": "integer",
+                "minimum": 0
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "sessionId",
+              "sequence",
+              "at",
+              "stage",
+              "kind",
+              "cause"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "sessionId": {
+                "type": "string"
+              },
+              "sequence": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "at": {
+                "type": "string"
+              },
+              "stage": {
+                "enum": [
+                  "admission",
+                  "catalog",
+                  "manager",
+                  "acquisition",
+                  "readiness",
+                  "ready",
+                  "catalog-load",
+                  "catalog-resolution",
+                  "manager-spawn",
+                  "manager-handshake",
+                  "persistence"
+                ]
+              },
+              "kind": {
+                "const": "capsule-start-failed"
+              },
+              "cause": {
+                "type": "object",
+                "required": [
+                  "name",
+                  "message"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "message": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

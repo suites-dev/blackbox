@@ -1,0 +1,9 @@
+{
+	"attemptId": "03fb3cab95743be7bdd0e7aab22015d9",
+	"acquisitionId": "32bc72d2-7e22-4348-b872-436e742b600d",
+	"scenarioId": "payment-mock-subsystem.reports-ready-on-get-health",
+	"playwrightTestId": "035dad0ffab30e40b0c2-36f35216846c15f06d57",
+	"project": "subsystem",
+	"retry": 0,
+	"recordedAt": "2026-09-10T12:12:19.177Z"
+}

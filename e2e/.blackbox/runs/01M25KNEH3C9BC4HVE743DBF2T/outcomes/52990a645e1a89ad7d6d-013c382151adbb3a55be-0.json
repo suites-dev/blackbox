@@ -1,0 +1,48 @@
+{
+	"schemaVersion": 3,
+	"artifactRole": "reporter-attempt-outcome",
+	"runId": "01M25KNEH3C9BC4HVE743DBF2T",
+	"flowId": "subscription-creation",
+	"playwrightTestId": "52990a645e1a89ad7d6d-013c382151adbb3a55be",
+	"project": "per-worker",
+	"scenarioId": "subscription-creation.serves-eve-from-the-preloaded-returning-hint-under-the-compariso",
+	"retry": 0,
+	"attemptId": "f6ca4b0ff8ba3054be4eba0f086207d9",
+	"outcome": "passed",
+	"status": "passed",
+	"recordedAt": "2026-09-10T12:12:21.165Z",
+	"planComplete": true,
+	"assertions": [
+		{
+			"assertionId": "subscription-creation.serves-eve-from-the-preloaded-returning-hint-under-the-compariso/step:2",
+			"ordinal": 2,
+			"title": "Assert 201 local-only subscription with null payment and order references",
+			"declaration": {
+				"path": "tests/suites/subscription-creation.suite.ts",
+				"line": 153,
+				"column": 4
+			},
+			"evaluation": true,
+			"reason": null,
+			"titleCorroborated": false,
+			"terminalAttribution": "no-attributable-expect-failure"
+		},
+		{
+			"assertionId": "subscription-creation.serves-eve-from-the-preloaded-returning-hint-under-the-compariso/step:3",
+			"ordinal": 3,
+			"title": "Assert fixture state keeps the preloaded returning hint and adds eve's registration keys",
+			"declaration": {
+				"path": "tests/suites/subscription-creation.suite.ts",
+				"line": 164,
+				"column": 4
+			},
+			"evaluation": true,
+			"reason": null,
+			"titleCorroborated": false,
+			"terminalAttribution": "no-attributable-expect-failure"
+		}
+	],
+	"requestedArtifacts": [
+		"assertions.json"
+	]
+}

@@ -1,0 +1,234 @@
+name: Package Tests and Coverage
+
+on:
+  workflow_call:
+    secrets:
+      CODECOV_TOKEN:
+        required: false
+
+permissions:
+  contents: read
+
+env:
+  CI: true
+  PNPM_VERSION: 9.15.4
+  NODE_VERSION: 22.x
+  NODE_OPTIONS: --conditions=blackbox-source
+
+jobs:
+  prepare:
+    name: Prepare test matrix
+    runs-on: [self-hosted, linux, arm64, blackbox]
+    timeout-minutes: 10
+    outputs:
+      matrix: ${{ steps.matrix.outputs.value }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Test Alpha contract and matrix validation
+        timeout-minutes: 5
+        run: |
+          mkdir -p reports/junit
+          node --test \
+            --test-reporter=spec --test-reporter=junit \
+            --test-reporter-destination=stdout \
+            --test-reporter-destination=reports/junit/alpha-contract.xml \
+            scripts/alpha-test-contract.test.mjs
+
+      - name: Upload Alpha contract JUnit
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: alpha-contract-junit-${{ github.run_id }}-${{ github.run_attempt }}
+          path: reports/junit/alpha-contract.xml
+          retention-days: 14
+          if-no-files-found: error
+
+      - name: Generate test matrix
+        id: matrix
+        run: |
+          matrix="$(node scripts/alpha-test-contract.mjs matrix test)"
+          printf 'value=%s\n' "$matrix" >> "$GITHUB_OUTPUT"
+
+  test:
+    name: Test (${{ matrix.name }})
+    runs-on: [self-hosted, linux, arm64, blackbox]
+    timeout-minutes: 30
+    needs: prepare
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.prepare.outputs.matrix) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup toolchain
+        id: setup
+        uses: ./.github/actions/setup
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          pnpm-version: ${{ env.PNPM_VERSION }}
+
+      # Coverage includes shared dependencies exercised by this project's tests.
+      # Vitest merges their counters; uncovered sources remain in the denominator.
+      - name: Test project with coverage
+        id: test-project
+        timeout-minutes: 20
+        run: |
+          node .github/scripts/ci-evidence.mjs run \
+            --lane test \
+            --project "${{ matrix.name }}" \
+            --evidence-dir "ci-evidence/test/${{ matrix.name }}" \
+            -- \
+            pnpm run test --project "${{ matrix.name }}" \
+              --reporter=default --reporter=junit --reporter=blob \
+              --outputFile.junit=reports/junit/${{ matrix.name }}.xml \
+              --outputFile.blob=reports/coverage-blobs/${{ matrix.name }}.json \
+              --coverage.reporter=json-summary \
+              --coverage.reportsDirectory=coverage/${{ matrix.name }}
+
+      - name: Retain project evidence
+        if: always()
+        uses: ./.github/actions/ci-evidence
+        with:
+          lane: test
+          project: ${{ matrix.name }}
+          evidence-dir: ci-evidence/test/${{ matrix.name }}
+          setup-result: ${{ steps.setup.outcome }}
+          working-directory: .
+          test-case-identifiers: ${{ matrix.name }}
+          expected: |
+            junit=reports/junit/${{ matrix.name }}.xml
+            coverage-blob=reports/coverage-blobs/${{ matrix.name }}.json
+            coverage=coverage/${{ matrix.name }}
+            log=ci-evidence/test/${{ matrix.name }}/logs/command.log
+          command: >-
+            pnpm run test --project ${{ matrix.name }} --reporter=default
+            --reporter=junit --reporter=blob
+            --outputFile.junit=reports/junit/${{ matrix.name }}.xml
+            --outputFile.blob=reports/coverage-blobs/${{ matrix.name }}.json
+            --coverage.reporter=json-summary
+            --coverage.reportsDirectory=coverage/${{ matrix.name }}
+
+  coverage:
+    name: Merge Coverage and Report
+    needs: [prepare, test]
+    if: always()
+    runs-on: [self-hosted, linux, arm64, blackbox]
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup toolchain
+        id: setup
+        uses: ./.github/actions/setup
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          pnpm-version: ${{ env.PNPM_VERSION }}
+
+      - name: Download project results and coverage
+        id: download
+        if: always()
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          pattern: ci-evidence-${{ github.run_id }}-${{ github.run_attempt }}-test-*
+          path: coverage-input
+          merge-multiple: false
+
+      - name: Prepare coverage merge inputs
+        id: prepare
+        if: always()
+        continue-on-error: true
+        run: |
+          mkdir -p coverage-input/merged-blobs
+          find coverage-input -type f -path '*/coverage/blobs/*.json' \
+            -exec cp '{}' coverage-input/merged-blobs/ ';' || true
+
+      # Merge the coverage maps embedded in blob reports. No tests execute here.
+      - name: Merge test results and coverage
+        timeout-minutes: 10
+        id: merge
+        if: always()
+        continue-on-error: true
+        run: |
+          mkdir -p logs reports/junit
+          if compgen -G 'coverage-input/merged-blobs/*.json' >/dev/null; then
+            set -o pipefail
+            pnpm exec vitest run --merge-reports coverage-input/merged-blobs \
+              --coverage --coverage.reporter=text-summary --coverage.reporter=lcov \
+              --coverage.reporter=json-summary \
+              --reporter=default --reporter=junit \
+              --outputFile.junit=reports/junit/merged.xml 2>&1 | tee logs/merge.log
+          else
+            printf '%s\n' 'No project coverage blobs were available; merge skipped.' | tee logs/merge.log
+          fi
+
+      - name: Upload Report to Codecov
+        id: codecov
+        continue-on-error: true
+        if: ${{ always() && needs.test.result == 'success' && steps.merge.outcome == 'success' && hashFiles('coverage/lcov.info') != '' }}
+        uses: codecov/codecov-action@v5
+        with:
+          name: codecov-umbrella
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: false
+          files: ./coverage/lcov.info
+          disable_search: true
+          verbose: true
+
+      - name: Retain merged test evidence
+        id: evidence
+        continue-on-error: true
+        if: always()
+        uses: ./.github/actions/ci-evidence
+        with:
+          lane: test
+          project: merged
+          evidence-dir: ci-evidence/test/merged
+          setup-result: ${{ steps.setup.outcome }}
+          upload-result: ${{ steps.codecov.outcome }}
+          working-directory: .
+          test-case-identifiers: merged
+          expected: |
+            junit=reports/junit/merged.xml
+            coverage=coverage
+            coverage=coverage/lcov.info
+            log=logs/merge.log
+          input-root: coverage-input
+          expected-projects: ${{ join(fromJSON(needs.prepare.outputs.matrix).include.*.name, ',') }}
+          command: >-
+            pnpm exec vitest run --merge-reports coverage-input/merged-blobs
+            --coverage --coverage.reporter=text-summary --coverage.reporter=lcov
+            --coverage.reporter=json-summary --reporter=default --reporter=junit
+            --outputFile.junit=reports/junit/merged.xml
+          result: ${{ needs.test.result }} ${{ steps.merge.outcome }}
+
+      - name: Enforce merged evidence gate
+        if: always()
+        env:
+          TEST_RESULT: ${{ needs.test.result }}
+          DOWNLOAD_OUTCOME: ${{ steps.download.outcome }}
+          PREPARE_OUTCOME: ${{ steps.prepare.outcome }}
+          MERGE_OUTCOME: ${{ steps.merge.outcome }}
+          EVIDENCE_OUTCOME: ${{ steps.evidence.outcome }}
+        run: |
+          for outcome in "$TEST_RESULT" "$DOWNLOAD_OUTCOME" "$PREPARE_OUTCOME" \
+            "$MERGE_OUTCOME" "$EVIDENCE_OUTCOME"; do
+            [[ "$outcome" == success ]] || exit 1
+          done

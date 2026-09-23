@@ -1,0 +1,62 @@
+{
+	"schemaVersion": 1,
+	"attemptId": "1233bfdf3bc09f006362f6dec062fe09",
+	"traceId": "1233bfdf3bc09f006362f6dec062fe09",
+	"rootSpan": {
+		"spanId": "b62bcee3003f629c",
+		"name": "GET /health",
+		"service": "fraud-check",
+		"error": false,
+		"durationMs": 0.689
+	},
+	"entryResolution": {
+		"status": "resolved"
+	},
+	"actStep": {
+		"phase": "when",
+		"title": "Act: GET fraud-check /health",
+		"error": false,
+		"semanticStepId": "act",
+		"runtimeActSpanId": "6ad6b37187e65989"
+	},
+	"steps": [
+		{
+			"phase": "when",
+			"title": "Act: GET fraud-check /health",
+			"error": false,
+			"semanticStepId": null,
+			"runtimeActSpanId": null
+		},
+		{
+			"phase": "then",
+			"title": "Assert: 200 with status ready",
+			"error": false,
+			"semanticStepId": null,
+			"runtimeActSpanId": null
+		},
+		{
+			"phase": "unknown",
+			"title": "Expect \"toBe\"",
+			"error": false,
+			"semanticStepId": null,
+			"runtimeActSpanId": null
+		},
+		{
+			"phase": "unknown",
+			"title": "Expect \"toEqual\"",
+			"error": false,
+			"semanticStepId": null,
+			"runtimeActSpanId": null
+		},
+		{
+			"phase": "unknown",
+			"title": "Expect \"toMatchSnapshot\"",
+			"error": false,
+			"semanticStepId": null,
+			"runtimeActSpanId": null
+		}
+	],
+	"spanCount": 3,
+	"capturedEffectCount": 2,
+	"redactionsApplied": null
+}

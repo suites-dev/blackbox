@@ -1,0 +1,58 @@
+{
+	"type": "effects",
+	"flowId": "health",
+	"attemptId": "5ffe52e1bcea1275d10dab552420a449",
+	"outcome": "captured",
+	"observed": {
+		"schemaVersion": 2,
+		"entry": {
+			"service": "payment-mock",
+			"request": "GET /health",
+			"status": 200
+		},
+		"entryResolution": {
+			"status": "resolved"
+		},
+		"summary": {
+			"counts": {
+				"inbound": 1,
+				"outboundHttp": 0,
+				"sql": 0,
+				"cache": 0,
+				"messaging": 0
+			},
+			"services": [
+				"payment-mock"
+			],
+			"edges": []
+		},
+		"services": {
+			"payment-mock": {
+				"inbound": [
+					{
+						"method": "GET",
+						"path": "/health",
+						"status": 200,
+						"count": 1,
+						"origin": "sut"
+					}
+				]
+			}
+		},
+		"errors": []
+	},
+	"expectedPath": null,
+	"captureReason": "no-baseline-comparison-requested",
+	"entryResolution": {
+		"status": "resolved"
+	},
+	"rootSpan": {
+		"spanId": "b1a99dbccd207ed8",
+		"name": "GET /health",
+		"service": "payment-mock",
+		"error": false,
+		"durationMs": 0.304
+	},
+	"semanticStepId": "act",
+	"runtimeActSpanId": "2e1b50eb9c388b71"
+}

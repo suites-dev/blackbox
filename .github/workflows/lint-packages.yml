@@ -1,0 +1,229 @@
+name: Package Lint
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+env:
+  CI: true
+  PNPM_VERSION: 9.15.4
+  NODE_VERSION: 22.x
+
+jobs:
+  prepare:
+    name: Prepare lint matrix
+    runs-on: [self-hosted, linux, arm64, blackbox]
+    timeout-minutes: 5
+    outputs:
+      matrix: ${{ steps.matrix.outputs.value }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Generate lint matrix
+        id: matrix
+        run: |
+          matrix="$(node scripts/alpha-test-contract.mjs matrix lint)"
+          printf 'value=%s\n' "$matrix" >> "$GITHUB_OUTPUT"
+
+  lint:
+    name: Lint (${{ matrix.name }})
+    runs-on: [self-hosted, linux, arm64, blackbox]
+    timeout-minutes: 20
+    needs: prepare
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.prepare.outputs.matrix) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup toolchain
+        id: setup
+        uses: ./.github/actions/setup
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          pnpm-version: ${{ env.PNPM_VERSION }}
+
+      # Package-scoped ESLint cache: keyed on the package's own files plus
+      # the shared config, so unrelated package changes cannot invalidate it.
+      - name: Cache ESLint
+        uses: actions/cache@v4
+        with:
+          path: ${{ matrix.path }}/.eslintcache
+          key: eslint-${{ matrix.name }}-${{ hashFiles('eslint.config.mjs', 'pnpm-lock.yaml', format('{0}/**', matrix.path)) }}
+          restore-keys: |
+            eslint-${{ matrix.name }}-
+
+      - name: Lint
+        id: lint-project
+        timeout-minutes: 15
+        run: |
+          mkdir -p reports/eslint
+          node .github/scripts/ci-evidence.mjs run \
+            --lane lint \
+            --project "${{ matrix.name }}" \
+            --cwd "${{ matrix.path }}" \
+            --evidence-dir "ci-evidence/lint/${{ matrix.name }}" \
+            -- \
+            pnpm run lint \
+              --cache --cache-location .eslintcache \
+              --format junit --output-file "../../reports/eslint/${{ matrix.name }}.xml"
+
+      - name: Retain lint evidence
+        if: always()
+        uses: ./.github/actions/ci-evidence
+        with:
+          lane: lint
+          project: ${{ matrix.name }}
+          evidence-dir: ci-evidence/lint/${{ matrix.name }}
+          setup-result: ${{ steps.setup.outcome }}
+          working-directory: ${{ matrix.path }}
+          test-case-identifiers: ${{ matrix.name }}
+          expected: |
+            junit=reports/eslint/${{ matrix.name }}.xml
+            coverage?=coverage/${{ matrix.name }}
+            log=ci-evidence/lint/${{ matrix.name }}/logs/command.log
+          command: >-
+            pnpm run lint --cache --cache-location .eslintcache --format junit
+            --output-file ../../reports/eslint/${{ matrix.name }}.xml
+
+  # The package matrix covers packages/ only. This leg carries the trees the
+  # eslint config still reaches: e2e and examples.
+  lint-other:
+    name: Lint (e2e, examples)
+    runs-on: [self-hosted, linux, arm64, blackbox]
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup toolchain
+        id: setup
+        uses: ./.github/actions/setup
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          pnpm-version: ${{ env.PNPM_VERSION }}
+
+      - name: Cache ESLint
+        uses: actions/cache@v4
+        with:
+          path: .eslintcache
+          key: eslint-other-${{ hashFiles('eslint.config.mjs', 'pnpm-lock.yaml', 'e2e/**', 'examples/**') }}
+          restore-keys: |
+            eslint-other-
+
+      - name: Lint
+        id: lint-other
+        timeout-minutes: 15
+        run: |
+          mkdir -p reports/eslint
+          node .github/scripts/ci-evidence.mjs run \
+            --lane lint \
+            --project other \
+            --evidence-dir ci-evidence/lint/other \
+            -- \
+            pnpm exec eslint e2e examples \
+              --cache --cache-location .eslintcache \
+              --format junit --output-file reports/eslint/other.xml
+
+      - name: Retain lint evidence
+        if: always()
+        uses: ./.github/actions/ci-evidence
+        with:
+          lane: lint
+          project: other
+          evidence-dir: ci-evidence/lint/other
+          setup-result: ${{ steps.setup.outcome }}
+          working-directory: .
+          test-case-identifiers: |
+            e2e
+            examples
+          expected: |
+            junit=reports/eslint/other.xml
+            coverage?=coverage/other
+            log=ci-evidence/lint/other/logs/command.log
+          command: >-
+            pnpm exec eslint e2e examples --cache --cache-location .eslintcache
+            --format junit --output-file reports/eslint/other.xml
+
+  # Collect every per-project bundle even when a leg is red, so partial reports
+  # and receipts remain available for the aggregate inventory.
+  report:
+    name: Collect Lint Reports
+    needs: [prepare, lint, lint-other]
+    if: always()
+    runs-on: [self-hosted, linux, arm64, blackbox]
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Node for evidence collection
+        id: setup
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Download project reports
+        id: download
+        if: always()
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          pattern: ci-evidence-${{ github.run_id }}-${{ github.run_attempt }}-lint-*
+          path: lint-input
+          merge-multiple: false
+
+      - name: Prepare lint report inputs
+        id: prepare
+        if: always()
+        continue-on-error: true
+        run: |
+          mkdir -p reports/eslint logs
+          find lint-input -type f -path '*/junit/*.xml' \
+            -exec cp '{}' reports/eslint/ ';' || true
+          find reports/eslint -type f -name '*.xml' -print > logs/report.log || true
+
+      - name: Retain merged lint evidence
+        id: evidence
+        continue-on-error: true
+        if: always()
+        uses: ./.github/actions/ci-evidence
+        with:
+          lane: lint
+          project: merged
+          evidence-dir: ci-evidence/lint/merged
+          setup-result: ${{ steps.setup.outcome }}
+          working-directory: .
+          test-case-identifiers: merged
+          expected: |
+            junit-dir=reports/eslint
+            log=logs/report.log
+          input-root: lint-input
+          expected-projects: ${{ format('{0},other', join(fromJSON(needs.prepare.outputs.matrix).include.*.name, ',')) }}
+          command: >-
+            pnpm exec eslint packages e2e examples --format junit
+            --output-file reports/eslint/<project>.xml
+          result: ${{ needs.lint.result }} ${{ needs.lint-other.result }}
+
+      - name: Enforce merged evidence gate
+        if: always()
+        env:
+          LINT_RESULT: ${{ needs.lint.result }}
+          LINT_OTHER_RESULT: ${{ needs.lint-other.result }}
+          DOWNLOAD_OUTCOME: ${{ steps.download.outcome }}
+          PREPARE_OUTCOME: ${{ steps.prepare.outcome }}
+          EVIDENCE_OUTCOME: ${{ steps.evidence.outcome }}
+        run: |
+          for outcome in "$LINT_RESULT" "$LINT_OTHER_RESULT" "$DOWNLOAD_OUTCOME" \
+            "$PREPARE_OUTCOME" "$EVIDENCE_OUTCOME"; do
+            [[ "$outcome" == success ]] || exit 1
+          done

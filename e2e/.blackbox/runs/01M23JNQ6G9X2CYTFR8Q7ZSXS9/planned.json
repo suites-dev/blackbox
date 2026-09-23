@@ -1,0 +1,1340 @@
+{
+	"schemaVersion": 1,
+	"artifactRole": "planned-scope",
+	"runId": "01M23JNQ6G9X2CYTFR8Q7ZSXS9",
+	"plannedAt": "2026-09-09T17:15:30.298Z",
+	"repeatEach": 1,
+	"executions": [
+		{
+			"playwrightTestId": "ab20711e520f4abff31a-6d85b1dce71a1f12bdc1",
+			"scenarioId": "concurrency.serializes-concurrent-subscribe-calls-for-one-user-into-one-crea",
+			"project": "per-test",
+			"titlePath": [
+				"Concurrency",
+				"serializes concurrent subscribe calls for one user into one creation and one duplicate rejection"
+			],
+			"entryFile": "per-test/concurrency.spec.ts",
+			"entryPath": "tests/per-test/concurrency.spec.ts",
+			"expectedStatus": "passed",
+			"declaration": {
+				"path": "tests/suites/concurrency.suite.ts",
+				"line": 19,
+				"column": 7
+			},
+			"assertions": [
+				{
+					"assertionId": "concurrency.serializes-concurrent-subscribe-calls-for-one-user-into-one-crea/step:1",
+					"ordinal": 1,
+					"title": "Assert exactly one 201 creation and one 409 duplicate, in either order",
+					"declaration": {
+						"path": "tests/suites/concurrency.suite.ts",
+						"line": 34,
+						"column": 4
+					}
+				},
+				{
+					"assertionId": "concurrency.serializes-concurrent-subscribe-calls-for-one-user-into-one-crea/step:2",
+					"ordinal": 2,
+					"title": "Assert fixture state holds exactly one fraud audit, payment intent, queue message, and subscription",
+					"declaration": {
+						"path": "tests/suites/concurrency.suite.ts",
+						"line": 43,
+						"column": 4
+					}
+				}
+			],
+			"assertionPlanComplete": true,
+			"assertionPlanReasons": []
+		},
+		{
+			"playwrightTestId": "b4201a13beca0831b244-604c182745a568e3fd90",
+			"scenarioId": "fixture-control.rejects-fixture-control-access-without-a-token-or-with-a-wrong-t",
+			"project": "per-test",
+			"titlePath": [
+				"Fixture control",
+				"rejects fixture-control access without a token or with a wrong token"
+			],
+			"entryFile": "per-test/fixture-control.spec.ts",
+			"entryPath": "tests/per-test/fixture-control.spec.ts",
+			"expectedStatus": "passed",
+			"declaration": {
+				"path": "tests/suites/fixture-control.suite.ts",
+				"line": 26,
+				"column": 7
+			},
+			"assertions": [
+				{
+					"assertionId": "fixture-control.rejects-fixture-control-access-without-a-token-or-with-a-wrong-t/step:1",
+					"ordinal": 1,
+					"title": "Assert 401 fixture-control-unauthorized without a token",
+					"declaration": {
+						"path": "tests/suites/fixture-control.suite.ts",
+						"line": 46,
+						"column": 4
+					}
+				},
+				{
+					"assertionId": "fixture-control.rejects-fixture-control-access-without-a-token-or-with-a-wrong-t/step:3",
+					"ordinal": 3,
+					"title": "Assert 401 fixture-control-unauthorized with a wrong token",
+					"declaration": {
+						"path": "tests/suites/fixture-control.suite.ts",
+						"line": 59,
+						"column": 4
+					}
+				},
+				{
+					"assertionId": "fixture-control.rejects-fixture-control-access-without-a-token-or-with-a-wrong-t/step:5",
+					"ordinal": 5,
+					"title": "Assert payment-mock also answers 401 fixture-control-unauthorized",
+					"declaration": {
+						"path": "tests/suites/fixture-control.suite.ts",
+						"line": 70,
+						"column": 4
+					}
+				}
+			],
+			"assertionPlanComplete": true,
+			"assertionPlanReasons": []
+		},
+		{
+			"playwrightTestId": "b4201a13beca0831b244-4773a456e28879b49c0a",
+			"scenarioId": "fixture-control.resets-to-the-fresh-and-comparison-absent-profiles-and-rejects-a",
+			"project": "per-test",
+			"titlePath": [
+				"Fixture control",
+				"resets to the fresh and comparison-absent profiles and rejects an unknown profile with 400"
+			],
+			"entryFile": "per-test/fixture-control.spec.ts",
+			"entryPath": "tests/per-test/fixture-control.spec.ts",
+			"expectedStatus": "passed",
+			"declaration": {
+				"path": "tests/suites/fixture-control.suite.ts",
+				"line": 78,
+				"column": 7
+			},
+			"assertions": [
+				{
+					"assertionId": "fixture-control.resets-to-the-fresh-and-comparison-absent-profiles-and-rejects-a/step:3",
+					"ordinal": 3,
+					"title": "Assert 400 invalid-profile for the unknown profile",
+					"declaration": {
+						"path": "tests/suites/fixture-control.suite.ts",
+						"line": 135,
+						"column": 4
+					}
+				}
+			],
+			"assertionPlanComplete": false,
+			"assertionPlanReasons": [
+				"step-not-directly-in-test-body: a step call in \"resets to the fresh and comparison-absent profiles and rejects an unknown profile with 400\" is not a direct child of the test body (inside a conditional, or inside a helper declared in the body), so it is not recovered as a boundary"
+			]
+		},
+		{
+			"playwrightTestId": "b4201a13beca0831b244-4880676256a8969578c6",
+			"scenarioId": "fixture-control.group-cleanup-restores-a-clean-fixture-state-after-a-subscriptio",
+			"project": "per-test",
+			"titlePath": [
+				"Fixture control",
+				"group-cleanup restores a clean fixture state after a subscription dirtied it"
+			],
+			"entryFile": "per-test/fixture-control.spec.ts",
+			"entryPath": "tests/per-test/fixture-control.spec.ts",
+			"expectedStatus": "passed",
+			"declaration": {
+				"path": "tests/suites/fixture-control.suite.ts",
+				"line": 141,
+				"column": 7
+			},
+			"assertions": [
+				{
+					"assertionId": "fixture-control.group-cleanup-restores-a-clean-fixture-state-after-a-subscriptio/step:2",
+					"ordinal": 2,
+					"title": "Assert 200 with empty redis, subscriptions, and queue",
+					"declaration": {
+						"path": "tests/suites/fixture-control.suite.ts",
+						"line": 158,
+						"column": 4
+					}
+				}
+			],
+			"assertionPlanComplete": true,
+			"assertionPlanReasons": []
+		},
+		{
+			"playwrightTestId": "b4201a13beca0831b244-40c59631f597356130db",
+			"scenarioId": "fixture-control.payment-mock-records-payment-intents-and-refunds-and-rejects-unk",
+			"project": "per-test",
+			"titlePath": [
+				"Fixture control",
+				"payment-mock records payment intents and refunds and rejects unknown or duplicate refunds"
+			],
+			"entryFile": "per-test/fixture-control.spec.ts",
+			"entryPath": "tests/per-test/fixture-control.spec.ts",
+			"expectedStatus": "passed",
+			"declaration": {
+				"path": "tests/suites/fixture-control.suite.ts",
+				"line": 171,
+				"column": 7
+			},
+			"assertions": [
+				{
+					"assertionId": "fixture-control.payment-mock-records-payment-intents-and-refunds-and-rejects-unk/step:1",
+					"ordinal": 1,
+					"title": "Assert 201 with a succeeded payment intent",
+					"declaration": {
+						"path": "tests/suites/fixture-control.suite.ts",
+						"line": 189,
+						"column": 4
+					}
+				},
+				{
+					"assertionId": "fixture-control.payment-mock-records-payment-intents-and-refunds-and-rejects-unk/step:3",
+					"ordinal": 3,
+					"title": "Assert 404 payment-intent-not-found for the unknown intent",
+					"declaration": {
+						"path": "tests/suites/fixture-control.suite.ts",
+						"line": 205,
+						"column": 4
+					}
+				},
+				{
+					"assertionId": "fixture-control.payment-mock-records-payment-intents-and-refunds-and-rejects-unk/step:5",
+					"ordinal": 5,
+					"title": "Assert 201 with a succeeded refund",
+					"declaration": {
+						"path": "tests/suites/fixture-control.suite.ts",
+						"line": 218,
+						"column": 4
+					}
+				},
+				{
+					"assertionId": "fixture-control.payment-mock-records-payment-intents-and-refunds-and-rejects-unk/step:7",
+					"ordinal": 7,
+					"title": "Assert 409 refund-already-exists for the duplicate refund",
+					"declaration": {
+						"path": "tests/suites/fixture-control.suite.ts",
+						"line": 233,
+						"column": 4
+					}
+				},
+				{
+					"assertionId": "fixture-control.payment-mock-records-payment-intents-and-refunds-and-rejects-unk/step:8",
+					"ordinal": 8,
+					"title": "Assert payment-mock state holds exactly one intent and one refund",
+					"declaration": {
+						"path": "tests/suites/fixture-control.suite.ts",
+						"line": 240,
+						"column": 4
+					}
+				}
+			],
+			"assertionPlanComplete": true,
+			"assertionPlanReasons": []
+		},
+		{
+			"playwrightTestId": "6c705246398d2be6220f-29a6bc1d9bba4456030c",
+			"scenarioId": "health.public-api-reports-ready-on-get-health",
+			"project": "per-test",
+			"titlePath": [
+				"Health",
+				"public-api reports ready on GET /health"
+			],
+			"entryFile": "per-test/health.spec.ts",
+			"entryPath": "tests/per-test/health.spec.ts",
+			"expectedStatus": "passed",
+			"declaration": {
+				"path": "tests/suites/health.suite.ts",
+				"line": 27,
+				"column": 8
+			},
+			"assertions": [],
+			"assertionPlanComplete": false,
+			"assertionPlanReasons": [
+				"test-declaration-not-recovered: a test() call here produced no declaration, so its assertion boundaries are absent from this plan; the expected set is smaller than the file and cannot be compared against a run",
+				"no-recovered-test-declaration-at-that-line"
+			]
+		},
+		{
+			"playwrightTestId": "6c705246398d2be6220f-ca88f3cd08a3e96c7670",
+			"scenarioId": "health.fraud-check-reports-ready-on-get-health",
+			"project": "per-test",
+			"titlePath": [
+				"Health",
+				"fraud-check reports ready on GET /health"
+			],
+			"entryFile": "per-test/health.spec.ts",
+			"entryPath": "tests/per-test/health.spec.ts",
+			"expectedStatus": "passed",
+			"declaration": {
+				"path": "tests/suites/health.suite.ts",
+				"line": 27,
+				"column": 8
+			},
+			"assertions": [],
+			"assertionPlanComplete": false,
+			"assertionPlanReasons": [
+				"test-declaration-not-recovered: a test() call here produced no declaration, so its assertion boundaries are absent from this plan; the expected set is smaller than the file and cannot be compared against a run",
+				"no-recovered-test-declaration-at-that-line"
+			]
+		},
+		{
+			"playwrightTestId": "6c705246398d2be6220f-a5ba2a2915458cdccc3a",
+			"scenarioId": "health.order-service-reports-ready-on-get-health",
+			"project": "per-test",
+			"titlePath": [
+				"Health",
+				"order-service reports ready on GET /health"
+			],
+			"entryFile": "per-test/health.spec.ts",
+			"entryPath": "tests/per-test/health.spec.ts",
+			"expectedStatus": "passed",
+			"declaration": {
+				"path": "tests/suites/health.suite.ts",
+				"line": 27,
+				"column": 8
+			},
+			"assertions": [],
+			"assertionPlanComplete": false,
+			"assertionPlanReasons": [
+				"test-declaration-not-recovered: a test() call here produced no declaration, so its assertion boundaries are absent from this plan; the expected set is smaller than the file and cannot be compared against a run",
+				"no-recovered-test-declaration-at-that-line"
+			]
+		},
+		{
+			"playwrightTestId": "6c705246398d2be6220f-2465bac7087b54961dcd",
+			"scenarioId": "health.payment-mock-reports-ready-on-get-health",
+			"project": "per-test",
+			"titlePath": [
+				"Health",
+				"payment-mock reports ready on GET /health"
+			],
+			"entryFile": "per-test/health.spec.ts",
+			"entryPath": "tests/per-test/health.spec.ts",
+			"expectedStatus": "passed",
+			"declaration": {
+				"path": "tests/suites/health.suite.ts",
+				"line": 27,
+				"column": 8
+			},
+			"assertions": [],
+			"assertionPlanComplete": false,
+			"assertionPlanReasons": [
+				"test-declaration-not-recovered: a test() call here produced no declaration, so its assertion boundaries are absent from this plan; the expected set is smaller than the file and cannot be compared against a run",
+				"no-recovered-test-declaration-at-that-line"
+			]
+		},
+		{
+			"playwrightTestId": "2be0dfcf8cf709fb4273-33c10a4e908b3a852d16",
+			"scenarioId": "subscription-creation.creates-an-active-subscription-for-a-full-path-user-with-fraud-p",
+			"project": "per-test",
+			"titlePath": [
+				"Subscription creation",
+				"creates an active subscription for a full-path user with fraud, payment, order, and queue effects"
+			],
+			"entryFile": "per-test/subscription-creation.spec.ts",
+			"entryPath": "tests/per-test/subscription-creation.spec.ts",
+			"expectedStatus": "passed",
+			"declaration": {
+				"path": "tests/suites/subscription-creation.suite.ts",
+				"line": 22,
+				"column": 7
+			},
+			"assertions": [
+				{
+					"assertionId": "subscription-creation.creates-an-active-subscription-for-a-full-path-user-with-fraud-p/step:1",
+					"ordinal": 1,
+					"title": "Assert 201 with an active pro subscription linked to a payment intent and an order",
+					"declaration": {
+						"path": "tests/suites/subscription-creation.suite.ts",
+						"line": 32,
+						"column": 4
+					}
+				},
+				{
+					"assertionId": "subscription-creation.creates-an-active-subscription-for-a-full-path-user-with-fraud-p/step:2",
+					"ordinal": 2,
+					"title": "Assert fixture state records fraud audit, payment intent, redis keys, and one queued message",
+					"declaration": {
+						"path": "tests/suites/subscription-creation.suite.ts",
+						"line": 45,
+						"column": 4
+					}
+				},
+				{
+					"assertionId": "subscription-creation.creates-an-active-subscription-for-a-full-path-user-with-fraud-p/step:3",
+					"ordinal": 3,
+					"title": "Assert draining the queue yields exactly one subscribe message for alice",
+					"declaration": {
+						"path": "tests/suites/subscription-creation.suite.ts",
+						"line": 73,
+						"column": 4
+					}
+				}
+			],
+			"assertionPlanComplete": true,
+			"assertionPlanReasons": []
+		},
+		{
+			"playwrightTestId": "2be0dfcf8cf709fb4273-ae88c8e64e2636ab3006",
+			"scenarioId": "subscription-creation.creates-a-local-only-subscription-for-dora-without-fraud-payment",
+			"project": "per-test",
+			"titlePath": [
+				"Subscription creation",
+				"creates a local-only subscription for dora without fraud, payment, or order calls"
+			],
+			"entryFile": "per-test/subscription-creation.spec.ts",
+			"entryPath": "tests/per-test/subscription-creation.spec.ts",
+			"expectedStatus": "passed",
+			"declaration": {
+				"path": "tests/suites/subscription-creation.suite.ts",
+				"line": 91,
+				"column": 7
+			},
+			"assertions": [
+				{
+					"assertionId": "subscription-creation.creates-a-local-only-subscription-for-dora-without-fraud-payment/step:1",
+					"ordinal": 1,
+					"title": "Assert 201 with an active subscription and null payment and order references",
+					"declaration": {
+						"path": "tests/suites/subscription-creation.suite.ts",
+						"line": 101,
+						"column": 4
+					}
+				},
+				{
+					"assertionId": "subscription-creation.creates-a-local-only-subscription-for-dora-without-fraud-payment/step:2",
+					"ordinal": 2,
+					"title": "Assert fixture state shows redis and postgres writes only, no downstream effects",
+					"declaration": {
+						"path": "tests/suites/subscription-creation.suite.ts",
+						"line": 114,
+						"column": 4
+					}
+				}
+			],
+			"assertionPlanComplete": true,
+			"assertionPlanReasons": []
+		},
+		{
+			"playwrightTestId": "2be0dfcf8cf709fb4273-ed2119ca959bffa2909b",
+			"scenarioId": "subscription-creation.serves-eve-from-the-preloaded-returning-hint-under-the-compariso",
+			"project": "per-test",
+			"titlePath": [
+				"Subscription creation",
+				"serves eve from the preloaded returning hint under the comparison-returning profile"
+			],
+			"entryFile": "per-test/subscription-creation.spec.ts",
+			"entryPath": "tests/per-test/subscription-creation.spec.ts",
+			"expectedStatus": "passed",
+			"declaration": {
+				"path": "tests/suites/subscription-creation.suite.ts",
+				"line": 131,
+				"column": 7
+			},
+			"assertions": [
+				{
+					"assertionId": "subscription-creation.serves-eve-from-the-preloaded-returning-hint-under-the-compariso/step:2",
+					"ordinal": 2,
+					"title": "Assert 201 local-only subscription with null payment and order references",
+					"declaration": {
+						"path": "tests/suites/subscription-creation.suite.ts",
+						"line": 153,
+						"column": 4
+					}
+				},
+				{
+					"assertionId": "subscription-creation.serves-eve-from-the-preloaded-returning-hint-under-the-compariso/step:3",
+					"ordinal": 3,
+					"title": "Assert fixture state keeps the preloaded returning hint and adds eve's registration keys",
+					"declaration": {
+						"path": "tests/suites/subscription-creation.suite.ts",
+						"line": 164,
+						"column": 4
+					}
+				}
+			],
+			"assertionPlanComplete": true,
+			"assertionPlanReasons": []
+		},
+		{
+			"playwrightTestId": "936b029611cc371ee95b-2c00b5c353780a522c49",
+			"scenarioId": "subscription-rejection.rejects-an-unknown-user-with-404-and-leaves-no-side-effects",
+			"project": "per-test",
+			"titlePath": [
+				"Subscription rejection",
+				"rejects an unknown user with 404 and leaves no side effects"
+			],
+			"entryFile": "per-test/subscription-rejection.spec.ts",
+			"entryPath": "tests/per-test/subscription-rejection.spec.ts",
+			"expectedStatus": "passed",
+			"declaration": {
+				"path": "tests/suites/subscription-rejection.suite.ts",
+				"line": 21,
+				"column": 7
+			},
+			"assertions": [
+				{
+					"assertionId": "subscription-rejection.rejects-an-unknown-user-with-404-and-leaves-no-side-effects/step:1",
+					"ordinal": 1,
+					"title": "Assert 404 with the unknown-user outcome",
+					"declaration": {
+						"path": "tests/suites/subscription-rejection.suite.ts",
+						"line": 31,
+						"column": 4
+					}
+				},
+				{
+					"assertionId": "subscription-rejection.rejects-an-unknown-user-with-404-and-leaves-no-side-effects/step:2",
+					"ordinal": 2,
+					"title": "Assert fixture state is untouched, no fraud, payment, redis, or queue effects",
+					"declaration": {
+						"path": "tests/suites/subscription-rejection.suite.ts",
+						"line": 41,
+						"column": 4
+					}
+				}
+			],
+			"assertionPlanComplete": true,
+			"assertionPlanReasons": []
+		},
+		{
+			"playwrightTestId": "936b029611cc371ee95b-3a151cbeb2ce66ce1e7e",
+			"scenarioId": "subscription-rejection.rejects-a-second-subscription-for-the-same-user-with-409-before",
+			"project": "per-test",
+			"titlePath": [
+				"Subscription rejection",
+				"rejects a second subscription for the same user with 409 before any new downstream work"
+			],
+			"entryFile": "per-test/subscription-rejection.spec.ts",
+			"entryPath": "tests/per-test/subscription-rejection.spec.ts",
+			"expectedStatus": "passed",
+			"declaration": {
+				"path": "tests/suites/subscription-rejection.suite.ts",
+				"line": 56,
+				"column": 7
+			},
+			"assertions": [
+				{
+					"assertionId": "subscription-rejection.rejects-a-second-subscription-for-the-same-user-with-409-before/step:2",
+					"ordinal": 2,
+					"title": "Assert 409 with the duplicate-subscription outcome",
+					"declaration": {
+						"path": "tests/suites/subscription-rejection.suite.ts",
+						"line": 73,
+						"column": 4
+					}
+				},
+				{
+					"assertionId": "subscription-rejection.rejects-a-second-subscription-for-the-same-user-with-409-before/step:3",
+					"ordinal": 3,
+					"title": "Assert fixture state still holds only the first subscription's effects",
+					"declaration": {
+						"path": "tests/suites/subscription-rejection.suite.ts",
+						"line": 83,
+						"column": 4
+					}
+				}
+			],
+			"assertionPlanComplete": true,
+			"assertionPlanReasons": []
+		},
+		{
+			"playwrightTestId": "936b029611cc371ee95b-18cf142de6ae144affbd",
+			"scenarioId": "subscription-rejection.rejects-malformed-subscription-bodies-with-400-invalid-body",
+			"project": "per-test",
+			"titlePath": [
+				"Subscription rejection",
+				"rejects malformed subscription bodies with 400 invalid-body"
+			],
+			"entryFile": "per-test/subscription-rejection.spec.ts",
+			"entryPath": "tests/per-test/subscription-rejection.spec.ts",
+			"expectedStatus": "passed",
+			"declaration": {
+				"path": "tests/suites/subscription-rejection.suite.ts",
+				"line": 103,
+				"column": 7
+			},
+			"assertions": [
+				{
+					"assertionId": "subscription-rejection.rejects-malformed-subscription-bodies-with-400-invalid-body/step:1",
+					"ordinal": 1,
+					"title": "Assert 400 invalid-body for an empty body",
+					"declaration": {
+						"path": "tests/suites/subscription-rejection.suite.ts",
+						"line": 121,
+						"column": 4
+					}
+				}
+			],
+			"assertionPlanComplete": false,
+			"assertionPlanReasons": [
+				"step-not-directly-in-test-body: a step call in \"rejects malformed subscription bodies with 400 invalid-body\" is not a direct child of the test body (inside a conditional, or inside a helper declared in the body), so it is not recovered as a boundary",
+				"step-not-directly-in-test-body: a step call in \"rejects malformed subscription bodies with 400 invalid-body\" is not a direct child of the test body (inside a conditional, or inside a helper declared in the body), so it is not recovered as a boundary"
+			]
+		},
+		{
+			"playwrightTestId": "3996852a31c3766fefc0-867a5e5855d281597baf",
+			"scenarioId": "concurrency.serializes-concurrent-subscribe-calls-for-one-user-into-one-crea",
+			"project": "per-worker",
+			"titlePath": [
+				"Concurrency",
+				"serializes concurrent subscribe calls for one user into one creation and one duplicate rejection"
+			],
+			"entryFile": "per-worker/concurrency.spec.ts",
+			"entryPath": "tests/per-worker/concurrency.spec.ts",
+			"expectedStatus": "passed",
+			"declaration": {
+				"path": "tests/suites/concurrency.suite.ts",
+				"line": 19,
+				"column": 7
+			},
+			"assertions": [
+				{
+					"assertionId": "concurrency.serializes-concurrent-subscribe-calls-for-one-user-into-one-crea/step:1",
+					"ordinal": 1,
+					"title": "Assert exactly one 201 creation and one 409 duplicate, in either order",
+					"declaration": {
+						"path": "tests/suites/concurrency.suite.ts",
+						"line": 34,
+						"column": 4
+					}
+				},
+				{
+					"assertionId": "concurrency.serializes-concurrent-subscribe-calls-for-one-user-into-one-crea/step:2",
+					"ordinal": 2,
+					"title": "Assert fixture state holds exactly one fraud audit, payment intent, queue message, and subscription",
+					"declaration": {
+						"path": "tests/suites/concurrency.suite.ts",
+						"line": 43,
+						"column": 4
+					}
+				}
+			],
+			"assertionPlanComplete": true,
+			"assertionPlanReasons": []
+		},
+		{
+			"playwrightTestId": "c771ecd7169f45f8e2fe-b91b1496b1d233ee2ca2",
+			"scenarioId": "fixture-control.rejects-fixture-control-access-without-a-token-or-with-a-wrong-t",
+			"project": "per-worker",
+			"titlePath": [
+				"Fixture control",
+				"rejects fixture-control access without a token or with a wrong token"
+			],
+			"entryFile": "per-worker/fixture-control.spec.ts",
+			"entryPath": "tests/per-worker/fixture-control.spec.ts",
+			"expectedStatus": "passed",
+			"declaration": {
+				"path": "tests/suites/fixture-control.suite.ts",
+				"line": 26,
+				"column": 7
+			},
+			"assertions": [
+				{
+					"assertionId": "fixture-control.rejects-fixture-control-access-without-a-token-or-with-a-wrong-t/step:1",
+					"ordinal": 1,
+					"title": "Assert 401 fixture-control-unauthorized without a token",
+					"declaration": {
+						"path": "tests/suites/fixture-control.suite.ts",
+						"line": 46,
+						"column": 4
+					}
+				},
+				{
+					"assertionId": "fixture-control.rejects-fixture-control-access-without-a-token-or-with-a-wrong-t/step:3",
+					"ordinal": 3,
+					"title": "Assert 401 fixture-control-unauthorized with a wrong token",
+					"declaration": {
+						"path": "tests/suites/fixture-control.suite.ts",
+						"line": 59,
+						"column": 4
+					}
+				},
+				{
+					"assertionId": "fixture-control.rejects-fixture-control-access-without-a-token-or-with-a-wrong-t/step:5",
+					"ordinal": 5,
+					"title": "Assert payment-mock also answers 401 fixture-control-unauthorized",
+					"declaration": {
+						"path": "tests/suites/fixture-control.suite.ts",
+						"line": 70,
+						"column": 4
+					}
+				}
+			],
+			"assertionPlanComplete": true,
+			"assertionPlanReasons": []
+		},
+		{
+			"playwrightTestId": "c771ecd7169f45f8e2fe-6357137907732b791aea",
+			"scenarioId": "fixture-control.resets-to-the-fresh-and-comparison-absent-profiles-and-rejects-a",
+			"project": "per-worker",
+			"titlePath": [
+				"Fixture control",
+				"resets to the fresh and comparison-absent profiles and rejects an unknown profile with 400"
+			],
+			"entryFile": "per-worker/fixture-control.spec.ts",
+			"entryPath": "tests/per-worker/fixture-control.spec.ts",
+			"expectedStatus": "passed",
+			"declaration": {
+				"path": "tests/suites/fixture-control.suite.ts",
+				"line": 78,
+				"column": 7
+			},
+			"assertions": [
+				{
+					"assertionId": "fixture-control.resets-to-the-fresh-and-comparison-absent-profiles-and-rejects-a/step:3",
+					"ordinal": 3,
+					"title": "Assert 400 invalid-profile for the unknown profile",
+					"declaration": {
+						"path": "tests/suites/fixture-control.suite.ts",
+						"line": 135,
+						"column": 4
+					}
+				}
+			],
+			"assertionPlanComplete": false,
+			"assertionPlanReasons": [
+				"step-not-directly-in-test-body: a step call in \"resets to the fresh and comparison-absent profiles and rejects an unknown profile with 400\" is not a direct child of the test body (inside a conditional, or inside a helper declared in the body), so it is not recovered as a boundary"
+			]
+		},
+		{
+			"playwrightTestId": "c771ecd7169f45f8e2fe-882b052d6171ab2eb6fb",
+			"scenarioId": "fixture-control.group-cleanup-restores-a-clean-fixture-state-after-a-subscriptio",
+			"project": "per-worker",
+			"titlePath": [
+				"Fixture control",
+				"group-cleanup restores a clean fixture state after a subscription dirtied it"
+			],
+			"entryFile": "per-worker/fixture-control.spec.ts",
+			"entryPath": "tests/per-worker/fixture-control.spec.ts",
+			"expectedStatus": "passed",
+			"declaration": {
+				"path": "tests/suites/fixture-control.suite.ts",
+				"line": 141,
+				"column": 7
+			},
+			"assertions": [
+				{
+					"assertionId": "fixture-control.group-cleanup-restores-a-clean-fixture-state-after-a-subscriptio/step:2",
+					"ordinal": 2,
+					"title": "Assert 200 with empty redis, subscriptions, and queue",
+					"declaration": {
+						"path": "tests/suites/fixture-control.suite.ts",
+						"line": 158,
+						"column": 4
+					}
+				}
+			],
+			"assertionPlanComplete": true,
+			"assertionPlanReasons": []
+		},
+		{
+			"playwrightTestId": "c771ecd7169f45f8e2fe-914b1f0498378f20e793",
+			"scenarioId": "fixture-control.payment-mock-records-payment-intents-and-refunds-and-rejects-unk",
+			"project": "per-worker",
+			"titlePath": [
+				"Fixture control",
+				"payment-mock records payment intents and refunds and rejects unknown or duplicate refunds"
+			],
+			"entryFile": "per-worker/fixture-control.spec.ts",
+			"entryPath": "tests/per-worker/fixture-control.spec.ts",
+			"expectedStatus": "passed",
+			"declaration": {
+				"path": "tests/suites/fixture-control.suite.ts",
+				"line": 171,
+				"column": 7
+			},
+			"assertions": [
+				{
+					"assertionId": "fixture-control.payment-mock-records-payment-intents-and-refunds-and-rejects-unk/step:1",
+					"ordinal": 1,
+					"title": "Assert 201 with a succeeded payment intent",
+					"declaration": {
+						"path": "tests/suites/fixture-control.suite.ts",
+						"line": 189,
+						"column": 4
+					}
+				},
+				{
+					"assertionId": "fixture-control.payment-mock-records-payment-intents-and-refunds-and-rejects-unk/step:3",
+					"ordinal": 3,
+					"title": "Assert 404 payment-intent-not-found for the unknown intent",
+					"declaration": {
+						"path": "tests/suites/fixture-control.suite.ts",
+						"line": 205,
+						"column": 4
+					}
+				},
+				{
+					"assertionId": "fixture-control.payment-mock-records-payment-intents-and-refunds-and-rejects-unk/step:5",
+					"ordinal": 5,
+					"title": "Assert 201 with a succeeded refund",
+					"declaration": {
+						"path": "tests/suites/fixture-control.suite.ts",
+						"line": 218,
+						"column": 4
+					}
+				},
+				{
+					"assertionId": "fixture-control.payment-mock-records-payment-intents-and-refunds-and-rejects-unk/step:7",
+					"ordinal": 7,
+					"title": "Assert 409 refund-already-exists for the duplicate refund",
+					"declaration": {
+						"path": "tests/suites/fixture-control.suite.ts",
+						"line": 233,
+						"column": 4
+					}
+				},
+				{
+					"assertionId": "fixture-control.payment-mock-records-payment-intents-and-refunds-and-rejects-unk/step:8",
+					"ordinal": 8,
+					"title": "Assert payment-mock state holds exactly one intent and one refund",
+					"declaration": {
+						"path": "tests/suites/fixture-control.suite.ts",
+						"line": 240,
+						"column": 4
+					}
+				}
+			],
+			"assertionPlanComplete": true,
+			"assertionPlanReasons": []
+		},
+		{
+			"playwrightTestId": "d1bf5212fc8f8f62b54d-b1e05c0b3ee6edfd93ee",
+			"scenarioId": "health.public-api-reports-ready-on-get-health",
+			"project": "per-worker",
+			"titlePath": [
+				"Health",
+				"public-api reports ready on GET /health"
+			],
+			"entryFile": "per-worker/health.spec.ts",
+			"entryPath": "tests/per-worker/health.spec.ts",
+			"expectedStatus": "passed",
+			"declaration": {
+				"path": "tests/suites/health.suite.ts",
+				"line": 27,
+				"column": 8
+			},
+			"assertions": [],
+			"assertionPlanComplete": false,
+			"assertionPlanReasons": [
+				"test-declaration-not-recovered: a test() call here produced no declaration, so its assertion boundaries are absent from this plan; the expected set is smaller than the file and cannot be compared against a run",
+				"no-recovered-test-declaration-at-that-line"
+			]
+		},
+		{
+			"playwrightTestId": "d1bf5212fc8f8f62b54d-1e1daa19626dcd7bbfc6",
+			"scenarioId": "health.fraud-check-reports-ready-on-get-health",
+			"project": "per-worker",
+			"titlePath": [
+				"Health",
+				"fraud-check reports ready on GET /health"
+			],
+			"entryFile": "per-worker/health.spec.ts",
+			"entryPath": "tests/per-worker/health.spec.ts",
+			"expectedStatus": "passed",
+			"declaration": {
+				"path": "tests/suites/health.suite.ts",
+				"line": 27,
+				"column": 8
+			},
+			"assertions": [],
+			"assertionPlanComplete": false,
+			"assertionPlanReasons": [
+				"test-declaration-not-recovered: a test() call here produced no declaration, so its assertion boundaries are absent from this plan; the expected set is smaller than the file and cannot be compared against a run",
+				"no-recovered-test-declaration-at-that-line"
+			]
+		},
+		{
+			"playwrightTestId": "d1bf5212fc8f8f62b54d-f751bfc7864c4432ec4e",
+			"scenarioId": "health.order-service-reports-ready-on-get-health",
+			"project": "per-worker",
+			"titlePath": [
+				"Health",
+				"order-service reports ready on GET /health"
+			],
+			"entryFile": "per-worker/health.spec.ts",
+			"entryPath": "tests/per-worker/health.spec.ts",
+			"expectedStatus": "passed",
+			"declaration": {
+				"path": "tests/suites/health.suite.ts",
+				"line": 27,
+				"column": 8
+			},
+			"assertions": [],
+			"assertionPlanComplete": false,
+			"assertionPlanReasons": [
+				"test-declaration-not-recovered: a test() call here produced no declaration, so its assertion boundaries are absent from this plan; the expected set is smaller than the file and cannot be compared against a run",
+				"no-recovered-test-declaration-at-that-line"
+			]
+		},
+		{
+			"playwrightTestId": "d1bf5212fc8f8f62b54d-64d32dd7ca0689ffcc67",
+			"scenarioId": "health.payment-mock-reports-ready-on-get-health",
+			"project": "per-worker",
+			"titlePath": [
+				"Health",
+				"payment-mock reports ready on GET /health"
+			],
+			"entryFile": "per-worker/health.spec.ts",
+			"entryPath": "tests/per-worker/health.spec.ts",
+			"expectedStatus": "passed",
+			"declaration": {
+				"path": "tests/suites/health.suite.ts",
+				"line": 27,
+				"column": 8
+			},
+			"assertions": [],
+			"assertionPlanComplete": false,
+			"assertionPlanReasons": [
+				"test-declaration-not-recovered: a test() call here produced no declaration, so its assertion boundaries are absent from this plan; the expected set is smaller than the file and cannot be compared against a run",
+				"no-recovered-test-declaration-at-that-line"
+			]
+		},
+		{
+			"playwrightTestId": "52990a645e1a89ad7d6d-ca9831f667f7076da215",
+			"scenarioId": "subscription-creation.creates-an-active-subscription-for-a-full-path-user-with-fraud-p",
+			"project": "per-worker",
+			"titlePath": [
+				"Subscription creation",
+				"creates an active subscription for a full-path user with fraud, payment, order, and queue effects"
+			],
+			"entryFile": "per-worker/subscription-creation.spec.ts",
+			"entryPath": "tests/per-worker/subscription-creation.spec.ts",
+			"expectedStatus": "passed",
+			"declaration": {
+				"path": "tests/suites/subscription-creation.suite.ts",
+				"line": 22,
+				"column": 7
+			},
+			"assertions": [
+				{
+					"assertionId": "subscription-creation.creates-an-active-subscription-for-a-full-path-user-with-fraud-p/step:1",
+					"ordinal": 1,
+					"title": "Assert 201 with an active pro subscription linked to a payment intent and an order",
+					"declaration": {
+						"path": "tests/suites/subscription-creation.suite.ts",
+						"line": 32,
+						"column": 4
+					}
+				},
+				{
+					"assertionId": "subscription-creation.creates-an-active-subscription-for-a-full-path-user-with-fraud-p/step:2",
+					"ordinal": 2,
+					"title": "Assert fixture state records fraud audit, payment intent, redis keys, and one queued message",
+					"declaration": {
+						"path": "tests/suites/subscription-creation.suite.ts",
+						"line": 45,
+						"column": 4
+					}
+				},
+				{
+					"assertionId": "subscription-creation.creates-an-active-subscription-for-a-full-path-user-with-fraud-p/step:3",
+					"ordinal": 3,
+					"title": "Assert draining the queue yields exactly one subscribe message for alice",
+					"declaration": {
+						"path": "tests/suites/subscription-creation.suite.ts",
+						"line": 73,
+						"column": 4
+					}
+				}
+			],
+			"assertionPlanComplete": true,
+			"assertionPlanReasons": []
+		},
+		{
+			"playwrightTestId": "52990a645e1a89ad7d6d-43416091fcafbbe4d901",
+			"scenarioId": "subscription-creation.creates-a-local-only-subscription-for-dora-without-fraud-payment",
+			"project": "per-worker",
+			"titlePath": [
+				"Subscription creation",
+				"creates a local-only subscription for dora without fraud, payment, or order calls"
+			],
+			"entryFile": "per-worker/subscription-creation.spec.ts",
+			"entryPath": "tests/per-worker/subscription-creation.spec.ts",
+			"expectedStatus": "passed",
+			"declaration": {
+				"path": "tests/suites/subscription-creation.suite.ts",
+				"line": 91,
+				"column": 7
+			},
+			"assertions": [
+				{
+					"assertionId": "subscription-creation.creates-a-local-only-subscription-for-dora-without-fraud-payment/step:1",
+					"ordinal": 1,
+					"title": "Assert 201 with an active subscription and null payment and order references",
+					"declaration": {
+						"path": "tests/suites/subscription-creation.suite.ts",
+						"line": 101,
+						"column": 4
+					}
+				},
+				{
+					"assertionId": "subscription-creation.creates-a-local-only-subscription-for-dora-without-fraud-payment/step:2",
+					"ordinal": 2,
+					"title": "Assert fixture state shows redis and postgres writes only, no downstream effects",
+					"declaration": {
+						"path": "tests/suites/subscription-creation.suite.ts",
+						"line": 114,
+						"column": 4
+					}
+				}
+			],
+			"assertionPlanComplete": true,
+			"assertionPlanReasons": []
+		},
+		{
+			"playwrightTestId": "52990a645e1a89ad7d6d-013c382151adbb3a55be",
+			"scenarioId": "subscription-creation.serves-eve-from-the-preloaded-returning-hint-under-the-compariso",
+			"project": "per-worker",
+			"titlePath": [
+				"Subscription creation",
+				"serves eve from the preloaded returning hint under the comparison-returning profile"
+			],
+			"entryFile": "per-worker/subscription-creation.spec.ts",
+			"entryPath": "tests/per-worker/subscription-creation.spec.ts",
+			"expectedStatus": "passed",
+			"declaration": {
+				"path": "tests/suites/subscription-creation.suite.ts",
+				"line": 131,
+				"column": 7
+			},
+			"assertions": [
+				{
+					"assertionId": "subscription-creation.serves-eve-from-the-preloaded-returning-hint-under-the-compariso/step:2",
+					"ordinal": 2,
+					"title": "Assert 201 local-only subscription with null payment and order references",
+					"declaration": {
+						"path": "tests/suites/subscription-creation.suite.ts",
+						"line": 153,
+						"column": 4
+					}
+				},
+				{
+					"assertionId": "subscription-creation.serves-eve-from-the-preloaded-returning-hint-under-the-compariso/step:3",
+					"ordinal": 3,
+					"title": "Assert fixture state keeps the preloaded returning hint and adds eve's registration keys",
+					"declaration": {
+						"path": "tests/suites/subscription-creation.suite.ts",
+						"line": 164,
+						"column": 4
+					}
+				}
+			],
+			"assertionPlanComplete": true,
+			"assertionPlanReasons": []
+		},
+		{
+			"playwrightTestId": "16c3faa07c6fdef3bf8c-8587996589daf6be6867",
+			"scenarioId": "subscription-rejection.rejects-an-unknown-user-with-404-and-leaves-no-side-effects",
+			"project": "per-worker",
+			"titlePath": [
+				"Subscription rejection",
+				"rejects an unknown user with 404 and leaves no side effects"
+			],
+			"entryFile": "per-worker/subscription-rejection.spec.ts",
+			"entryPath": "tests/per-worker/subscription-rejection.spec.ts",
+			"expectedStatus": "passed",
+			"declaration": {
+				"path": "tests/suites/subscription-rejection.suite.ts",
+				"line": 21,
+				"column": 7
+			},
+			"assertions": [
+				{
+					"assertionId": "subscription-rejection.rejects-an-unknown-user-with-404-and-leaves-no-side-effects/step:1",
+					"ordinal": 1,
+					"title": "Assert 404 with the unknown-user outcome",
+					"declaration": {
+						"path": "tests/suites/subscription-rejection.suite.ts",
+						"line": 31,
+						"column": 4
+					}
+				},
+				{
+					"assertionId": "subscription-rejection.rejects-an-unknown-user-with-404-and-leaves-no-side-effects/step:2",
+					"ordinal": 2,
+					"title": "Assert fixture state is untouched, no fraud, payment, redis, or queue effects",
+					"declaration": {
+						"path": "tests/suites/subscription-rejection.suite.ts",
+						"line": 41,
+						"column": 4
+					}
+				}
+			],
+			"assertionPlanComplete": true,
+			"assertionPlanReasons": []
+		},
+		{
+			"playwrightTestId": "16c3faa07c6fdef3bf8c-6fefe7f7bc54019351a6",
+			"scenarioId": "subscription-rejection.rejects-a-second-subscription-for-the-same-user-with-409-before",
+			"project": "per-worker",
+			"titlePath": [
+				"Subscription rejection",
+				"rejects a second subscription for the same user with 409 before any new downstream work"
+			],
+			"entryFile": "per-worker/subscription-rejection.spec.ts",
+			"entryPath": "tests/per-worker/subscription-rejection.spec.ts",
+			"expectedStatus": "passed",
+			"declaration": {
+				"path": "tests/suites/subscription-rejection.suite.ts",
+				"line": 56,
+				"column": 7
+			},
+			"assertions": [
+				{
+					"assertionId": "subscription-rejection.rejects-a-second-subscription-for-the-same-user-with-409-before/step:2",
+					"ordinal": 2,
+					"title": "Assert 409 with the duplicate-subscription outcome",
+					"declaration": {
+						"path": "tests/suites/subscription-rejection.suite.ts",
+						"line": 73,
+						"column": 4
+					}
+				},
+				{
+					"assertionId": "subscription-rejection.rejects-a-second-subscription-for-the-same-user-with-409-before/step:3",
+					"ordinal": 3,
+					"title": "Assert fixture state still holds only the first subscription's effects",
+					"declaration": {
+						"path": "tests/suites/subscription-rejection.suite.ts",
+						"line": 83,
+						"column": 4
+					}
+				}
+			],
+			"assertionPlanComplete": true,
+			"assertionPlanReasons": []
+		},
+		{
+			"playwrightTestId": "16c3faa07c6fdef3bf8c-b2a1f53e7a4247749557",
+			"scenarioId": "subscription-rejection.rejects-malformed-subscription-bodies-with-400-invalid-body",
+			"project": "per-worker",
+			"titlePath": [
+				"Subscription rejection",
+				"rejects malformed subscription bodies with 400 invalid-body"
+			],
+			"entryFile": "per-worker/subscription-rejection.spec.ts",
+			"entryPath": "tests/per-worker/subscription-rejection.spec.ts",
+			"expectedStatus": "passed",
+			"declaration": {
+				"path": "tests/suites/subscription-rejection.suite.ts",
+				"line": 103,
+				"column": 7
+			},
+			"assertions": [
+				{
+					"assertionId": "subscription-rejection.rejects-malformed-subscription-bodies-with-400-invalid-body/step:1",
+					"ordinal": 1,
+					"title": "Assert 400 invalid-body for an empty body",
+					"declaration": {
+						"path": "tests/suites/subscription-rejection.suite.ts",
+						"line": 121,
+						"column": 4
+					}
+				}
+			],
+			"assertionPlanComplete": false,
+			"assertionPlanReasons": [
+				"step-not-directly-in-test-body: a step call in \"rejects malformed subscription bodies with 400 invalid-body\" is not a direct child of the test body (inside a conditional, or inside a helper declared in the body), so it is not recovered as a boundary",
+				"step-not-directly-in-test-body: a step call in \"rejects malformed subscription bodies with 400 invalid-body\" is not a direct child of the test body (inside a conditional, or inside a helper declared in the body), so it is not recovered as a boundary"
+			]
+		},
+		{
+			"playwrightTestId": "1b9ca96bf231cda8c08d-abf7c15ba6be3d6e4f55",
+			"scenarioId": "payment-mock-subsystem-dist-wrapper.reports-ready-on-get-health-from-the-lean-dist-wrapper",
+			"project": "subsystem",
+			"titlePath": [
+				"Payment-mock subsystem (dist wrapper)",
+				"reports ready on GET /health from the lean dist wrapper"
+			],
+			"entryFile": "subsystem/payment-mock-dist.spec.ts",
+			"entryPath": "tests/subsystem/payment-mock-dist.spec.ts",
+			"expectedStatus": "passed",
+			"declaration": {
+				"path": "tests/subsystem/payment-mock-dist.spec.ts",
+				"line": 12,
+				"column": 6
+			},
+			"assertions": [
+				{
+					"assertionId": "payment-mock-subsystem-dist-wrapper.reports-ready-on-get-health-from-the-lean-dist-wrapper/step:1",
+					"ordinal": 1,
+					"title": "Assert 200 with status ready",
+					"declaration": {
+						"path": "tests/subsystem/payment-mock-dist.spec.ts",
+						"line": 18,
+						"column": 3
+					}
+				}
+			],
+			"assertionPlanComplete": true,
+			"assertionPlanReasons": []
+		},
+		{
+			"playwrightTestId": "1b9ca96bf231cda8c08d-50c45533cc2bd17e83b1",
+			"scenarioId": "payment-mock-subsystem-dist-wrapper.runs-the-payment-intent-and-refund-lifecycle-on-the-dist-wrapper",
+			"project": "subsystem",
+			"titlePath": [
+				"Payment-mock subsystem (dist wrapper)",
+				"runs the payment intent and refund lifecycle on the dist wrapper"
+			],
+			"entryFile": "subsystem/payment-mock-dist.spec.ts",
+			"entryPath": "tests/subsystem/payment-mock-dist.spec.ts",
+			"expectedStatus": "passed",
+			"declaration": {
+				"path": "tests/subsystem/payment-mock-dist.spec.ts",
+				"line": 24,
+				"column": 6
+			},
+			"assertions": [
+				{
+					"assertionId": "payment-mock-subsystem-dist-wrapper.runs-the-payment-intent-and-refund-lifecycle-on-the-dist-wrapper/step:1",
+					"ordinal": 1,
+					"title": "Assert 201 with a succeeded payment intent",
+					"declaration": {
+						"path": "tests/subsystem/payment-mock-dist.spec.ts",
+						"line": 34,
+						"column": 3
+					}
+				},
+				{
+					"assertionId": "payment-mock-subsystem-dist-wrapper.runs-the-payment-intent-and-refund-lifecycle-on-the-dist-wrapper/step:3",
+					"ordinal": 3,
+					"title": "Assert 201 with a succeeded refund",
+					"declaration": {
+						"path": "tests/subsystem/payment-mock-dist.spec.ts",
+						"line": 48,
+						"column": 3
+					}
+				},
+				{
+					"assertionId": "payment-mock-subsystem-dist-wrapper.runs-the-payment-intent-and-refund-lifecycle-on-the-dist-wrapper/step:4",
+					"ordinal": 4,
+					"title": "Assert fixture state holds exactly one intent and one refund",
+					"declaration": {
+						"path": "tests/subsystem/payment-mock-dist.spec.ts",
+						"line": 59,
+						"column": 3
+					}
+				}
+			],
+			"assertionPlanComplete": true,
+			"assertionPlanReasons": []
+		},
+		{
+			"playwrightTestId": "035dad0ffab30e40b0c2-36f35216846c15f06d57",
+			"scenarioId": "payment-mock-subsystem.reports-ready-on-get-health",
+			"project": "subsystem",
+			"titlePath": [
+				"Payment-mock subsystem",
+				"reports ready on GET /health"
+			],
+			"entryFile": "subsystem/payment-mock.spec.ts",
+			"entryPath": "tests/subsystem/payment-mock.spec.ts",
+			"expectedStatus": "passed",
+			"declaration": {
+				"path": "tests/subsystem/payment-mock.spec.ts",
+				"line": 12,
+				"column": 6
+			},
+			"assertions": [
+				{
+					"assertionId": "payment-mock-subsystem.reports-ready-on-get-health/step:1",
+					"ordinal": 1,
+					"title": "Assert 200 with status ready",
+					"declaration": {
+						"path": "tests/subsystem/payment-mock.spec.ts",
+						"line": 15,
+						"column": 3
+					}
+				}
+			],
+			"assertionPlanComplete": true,
+			"assertionPlanReasons": []
+		},
+		{
+			"playwrightTestId": "035dad0ffab30e40b0c2-479d3c3b3a4e35c353cb",
+			"scenarioId": "payment-mock-subsystem.runs-the-payment-intent-and-refund-lifecycle-on-a-lone-container",
+			"project": "subsystem",
+			"titlePath": [
+				"Payment-mock subsystem",
+				"runs the payment intent and refund lifecycle on a lone container"
+			],
+			"entryFile": "subsystem/payment-mock.spec.ts",
+			"entryPath": "tests/subsystem/payment-mock.spec.ts",
+			"expectedStatus": "passed",
+			"declaration": {
+				"path": "tests/subsystem/payment-mock.spec.ts",
+				"line": 21,
+				"column": 6
+			},
+			"assertions": [
+				{
+					"assertionId": "payment-mock-subsystem.runs-the-payment-intent-and-refund-lifecycle-on-a-lone-container/step:1",
+					"ordinal": 1,
+					"title": "Assert 201 with a succeeded payment intent",
+					"declaration": {
+						"path": "tests/subsystem/payment-mock.spec.ts",
+						"line": 31,
+						"column": 3
+					}
+				},
+				{
+					"assertionId": "payment-mock-subsystem.runs-the-payment-intent-and-refund-lifecycle-on-a-lone-container/step:3",
+					"ordinal": 3,
+					"title": "Assert 201 with a succeeded refund",
+					"declaration": {
+						"path": "tests/subsystem/payment-mock.spec.ts",
+						"line": 45,
+						"column": 3
+					}
+				},
+				{
+					"assertionId": "payment-mock-subsystem.runs-the-payment-intent-and-refund-lifecycle-on-a-lone-container/step:4",
+					"ordinal": 4,
+					"title": "Assert fixture state holds exactly one intent and one refund",
+					"declaration": {
+						"path": "tests/subsystem/payment-mock.spec.ts",
+						"line": 56,
+						"column": 3
+					}
+				}
+			],
+			"assertionPlanComplete": true,
+			"assertionPlanReasons": []
+		},
+		{
+			"playwrightTestId": "035dad0ffab30e40b0c2-5942dc07c8be519e4490",
+			"scenarioId": "payment-mock-subsystem.starts-from-a-clean-state-because-the-container-is-per-test",
+			"project": "subsystem",
+			"titlePath": [
+				"Payment-mock subsystem",
+				"starts from a clean state because the container is per-test"
+			],
+			"entryFile": "subsystem/payment-mock.spec.ts",
+			"entryPath": "tests/subsystem/payment-mock.spec.ts",
+			"expectedStatus": "passed",
+			"declaration": {
+				"path": "tests/subsystem/payment-mock.spec.ts",
+				"line": 77,
+				"column": 6
+			},
+			"assertions": [
+				{
+					"assertionId": "payment-mock-subsystem.starts-from-a-clean-state-because-the-container-is-per-test/step:1",
+					"ordinal": 1,
+					"title": "Assert empty intents and refunds",
+					"declaration": {
+						"path": "tests/subsystem/payment-mock.spec.ts",
+						"line": 89,
+						"column": 3
+					}
+				}
+			],
+			"assertionPlanComplete": true,
+			"assertionPlanReasons": []
+		}
+	]
+}

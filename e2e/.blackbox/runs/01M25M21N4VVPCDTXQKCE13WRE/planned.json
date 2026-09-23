@@ -1,0 +1,40 @@
+{
+	"schemaVersion": 1,
+	"artifactRole": "planned-scope",
+	"runId": "01M25M21N4VVPCDTXQKCE13WRE",
+	"plannedAt": "2026-09-10T12:18:11.750Z",
+	"repeatEach": 1,
+	"executions": [
+		{
+			"playwrightTestId": "119b2e1344f43fa7fc46-011e459b154c46ff88a1",
+			"scenarioId": "payment-intent-verdict-triad.records-a-payment-intent-for-a-valid-request",
+			"project": "phase-0-verdicts",
+			"titlePath": [
+				"Payment intent verdict triad",
+				"records a payment intent for a valid request"
+			],
+			"entryFile": "verdicts.spec.ts",
+			"entryPath": "proofs/phase-0-verdicts/verdicts.spec.ts",
+			"expectedStatus": "passed",
+			"declaration": {
+				"path": "proofs/phase-0-verdicts/verdicts.spec.ts",
+				"line": 30,
+				"column": 6
+			},
+			"assertions": [
+				{
+					"assertionId": "payment-intent-verdict-triad.records-a-payment-intent-for-a-valid-request/step:1",
+					"ordinal": 1,
+					"title": "Assert payment intent request has the expected status",
+					"declaration": {
+						"path": "proofs/phase-0-verdicts/verdicts.spec.ts",
+						"line": 48,
+						"column": 3
+					}
+				}
+			],
+			"assertionPlanComplete": true,
+			"assertionPlanReasons": []
+		}
+	]
+}

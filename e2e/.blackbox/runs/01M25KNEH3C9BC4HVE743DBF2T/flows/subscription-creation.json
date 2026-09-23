@@ -1,0 +1,60 @@
+{
+	"flowId": "subscription-creation",
+	"authoringSource": "suite",
+	"suite": {
+		"path": "tests/suites/subscription-creation.suite.ts",
+		"digest": "19b31cd10a4baada45ce0cac2367b50e0592b63e"
+	},
+	"requirement": null,
+	"baselines": [
+		{
+			"scenarioId": "subscription-creation.creates-a-local-only-subscription-for-dora-without-fraud-payment",
+			"artifact": {
+				"path": "tests/per-test/effects/subscription-creation.spec.ts/effects-subscription-creation--flow-33ad4e9fb7c54e62c067beb3990d545e972815c2--scenario-8e77f9451807deb30ad1eb261d97110ad4f6bd73.yaml",
+				"digest": "182c3c795750dd5dcb1c9366c30e0d0e1268a059"
+			}
+		},
+		{
+			"scenarioId": "subscription-creation.creates-an-active-subscription-for-a-full-path-user-with-fraud-p",
+			"artifact": {
+				"path": "tests/per-test/effects/subscription-creation.spec.ts/effects-subscription-creation--flow-33ad4e9fb7c54e62c067beb3990d545e972815c2--scenario-e250c3333517e97a832739bd4117b2309a53c400.yaml",
+				"digest": "5b3761d9b6810ff10021696723bacb8b99707c83"
+			}
+		},
+		{
+			"scenarioId": "subscription-creation.serves-eve-from-the-preloaded-returning-hint-under-the-compariso",
+			"artifact": {
+				"path": "tests/per-test/effects/subscription-creation.spec.ts/effects-subscription-creation--flow-33ad4e9fb7c54e62c067beb3990d545e972815c2--scenario-d06a6eddf8ac24c31c794b27547444fd40e3dd30.yaml",
+				"digest": "7e146d65dc9268bd6497e7352f7ee2ae88198def"
+			}
+		}
+	],
+	"entries": [
+		{
+			"project": "per-test",
+			"entryPath": "tests/per-test/subscription-creation.spec.ts"
+		},
+		{
+			"project": "per-worker",
+			"entryPath": "tests/per-worker/subscription-creation.spec.ts"
+		}
+	],
+	"candidate": null,
+	"behaviorModelDigest": "d501c3f5663b719154d23ca01c4b1df9913b15c3",
+	"observationDigest": "1fa7b4b1273c0ca0e351a378c1e44b0f039c6795",
+	"proofPlanDigest": "b4ca5139d9bb7660a3f8580d90bcf635e942d6c6",
+	"completeness": {
+		"plannedScenarios": [
+			"subscription-creation.creates-a-local-only-subscription-for-dora-without-fraud-payment",
+			"subscription-creation.creates-an-active-subscription-for-a-full-path-user-with-fraud-p",
+			"subscription-creation.serves-eve-from-the-preloaded-returning-hint-under-the-compariso"
+		],
+		"executedScenarios": [
+			"subscription-creation.creates-a-local-only-subscription-for-dora-without-fraud-payment",
+			"subscription-creation.creates-an-active-subscription-for-a-full-path-user-with-fraud-p",
+			"subscription-creation.serves-eve-from-the-preloaded-returning-hint-under-the-compariso"
+		],
+		"complete": true,
+		"reasons": []
+	}
+}

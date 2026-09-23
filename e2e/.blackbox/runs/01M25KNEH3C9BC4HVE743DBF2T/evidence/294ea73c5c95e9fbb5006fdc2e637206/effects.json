@@ -1,0 +1,66 @@
+{
+	"type": "effects",
+	"flowId": "health",
+	"attemptId": "294ea73c5c95e9fbb5006fdc2e637206",
+	"outcome": "captured",
+	"observed": {
+		"schemaVersion": 2,
+		"entry": {
+			"service": "fraud-check",
+			"request": "GET /health",
+			"status": 200
+		},
+		"entryResolution": {
+			"status": "resolved"
+		},
+		"summary": {
+			"counts": {
+				"inbound": 1,
+				"outboundHttp": 0,
+				"sql": 1,
+				"cache": 0,
+				"messaging": 0
+			},
+			"services": [
+				"fraud-check"
+			],
+			"edges": []
+		},
+		"services": {
+			"fraud-check": {
+				"inbound": [
+					{
+						"method": "GET",
+						"path": "/health",
+						"status": 200,
+						"count": 1,
+						"origin": "sut"
+					}
+				],
+				"sql": [
+					{
+						"operation": "SELECT",
+						"statement": "SELECT ?",
+						"count": 1,
+						"origin": "sut"
+					}
+				]
+			}
+		},
+		"errors": []
+	},
+	"expectedPath": null,
+	"captureReason": "no-baseline-comparison-requested",
+	"entryResolution": {
+		"status": "resolved"
+	},
+	"rootSpan": {
+		"spanId": "79684f17f5c407d7",
+		"name": "GET /health",
+		"service": "fraud-check",
+		"error": false,
+		"durationMs": 1.491
+	},
+	"semanticStepId": "act",
+	"runtimeActSpanId": "5ed18029f8c7be12"
+}

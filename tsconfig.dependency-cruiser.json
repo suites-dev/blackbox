@@ -1,0 +1,106 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@suites/blackbox-analyzer": ["packages/analyzer/src/index.ts"],
+      "@suites/blackbox-analyzer/ledger": ["packages/analyzer/src/ledger.ts"],
+      "@suites/blackbox-analyzer/contract": ["packages/analyzer/src/contract.ts"],
+      "@suites/blackbox-analyzer/config-section": ["packages/analyzer/src/config-section.ts"],
+      "@suites/blackbox": ["packages/blackbox/src/index.ts"],
+      "@suites/blackbox/test": ["packages/blackbox/src/test.ts"],
+      "@suites/blackbox/playwright": ["packages/blackbox/src/playwright.ts"],
+      "@suites/blackbox/config": ["packages/blackbox/src/config.ts"],
+      "@suites/blackbox/playwright/config": ["packages/blackbox/src/playwright-config.ts"],
+      "@suites/blackbox-capture-node": ["packages/capture-node/src/index.ts"],
+      "@suites/blackbox-capture-node/generate-override": [
+        "packages/capture-node/src/generate-override.ts"
+      ],
+      "@suites/blackbox-capture-node/odc-decision-registry": [
+        "packages/capture-node/src/odc-decision-registry.ts"
+      ],
+      "@suites/blackbox-capture-node/effects": ["packages/capture-node/src/effects.ts"],
+      "@suites/blackbox-capture-node/acquisition-store": [
+        "packages/capture-node/src/acquisition-store.ts"
+      ],
+      "@suites/blackbox-capture-node/flow-registry": ["packages/capture-node/src/flow-registry.ts"],
+      "@suites/blackbox-capture-node/run-track": ["packages/capture-node/src/run-track.ts"],
+      "@suites/blackbox-capture-node/observation-policy": [
+        "packages/capture-node/src/observation-policy.ts"
+      ],
+      "@suites/blackbox-capture-node/act-step": ["packages/capture-node/src/act-step.ts"],
+      "@suites/blackbox-capture-node/odc-capture": ["packages/capture-node/src/odc-capture.ts"],
+      "@suites/blackbox-capture-node/evidence-write": [
+        "packages/capture-node/src/evidence-write.ts"
+      ],
+      "@suites/blackbox-capture-node/suite-files": ["packages/capture-node/src/suite-files.ts"],
+      "@suites/blackbox-capture-node/flow-identity-blockers": [
+        "packages/capture-node/src/flow-identity-blockers.ts"
+      ],
+      "@suites/blackbox-capture-node/projection-comparison": [
+        "packages/capture-node/src/projection-comparison.ts"
+      ],
+      "@suites/blackbox-capture-node/planned-scope": ["packages/capture-node/src/planned-scope.ts"],
+      "@suites/blackbox-capture-node/reconcile": ["packages/capture-node/src/reconcile.ts"],
+      "@suites/blackbox-capture-node/config-section": [
+        "packages/capture-node/src/config-section.ts"
+      ],
+      "@suites/blackbox-capture-node/capability-adapter": [
+        "packages/capture-node/src/capability-adapter.ts"
+      ],
+      "@suites/blackbox-capture-node/activation-adapter": [
+        "packages/capture-node/src/activation-adapter.ts"
+      ],
+      "@suites/blackbox-capture-node/container-activation": [
+        "packages/capture-node/src/container-activation.ts"
+      ],
+      "@suites/blackbox-cli": ["packages/cli/src/index.ts"],
+      "@suites/blackbox-cli-contract": ["packages/cli-contract/src/index.ts"],
+      "@suites/blackbox-collection-http": ["packages/collection-http/src/index.ts"],
+      "@suites/blackbox-collection-http/server": ["packages/collection-http/src/server.ts"],
+      "@suites/blackbox-collection-http/config": ["packages/collection-http/src/config.ts"],
+      "@suites/blackbox-catalog": ["packages/catalog/src/index.ts"],
+      "@suites/blackbox-catalog/catalog": ["packages/catalog/src/catalog.ts"],
+      "@suites/blackbox-catalog/internal/legacy-config": [
+        "packages/catalog/src/internal/legacy-config/index.ts"
+      ],
+      "@suites/blackbox-catalog/internal/legacy-config/schema": ["packages/catalog/src/schema.ts"],
+      "@suites/blackbox-evidence": ["packages/evidence/src/index.ts"],
+      "@suites/blackbox-evidence/run-track": ["packages/evidence/src/run-track.ts"],
+      "@suites/blackbox-evidence/acquisition-store": ["packages/evidence/src/acquisition-store.ts"],
+      "@suites/blackbox-evidence/evidence-write": ["packages/evidence/src/evidence-write.ts"],
+      "@suites/blackbox-evidence/capture-state": ["packages/evidence/src/capture-state.ts"],
+      "@suites/blackbox-evidence/execution-store": ["packages/evidence/src/execution-store.ts"],
+      "@suites/blackbox-evidence/collector": ["packages/evidence/src/collector/index.ts"],
+      "@suites/blackbox-evidence/collector/server": ["packages/evidence/src/collector/server.ts"],
+      "@suites/blackbox-execution": ["packages/execution/src/index.ts"],
+      "@suites/blackbox-execution/manager-process": ["packages/execution/src/manager-process.ts"],
+      "@suites/blackbox-odc": ["packages/odc/src/index.ts"],
+      "@suites/blackbox-odc-node": ["packages/odc-node/src/index.ts"],
+      "@suites/blackbox-protocol": ["packages/protocol/src/index.ts"],
+      "@suites/blackbox-protocol/decode-primitives": ["packages/protocol/src/decode-primitives.ts"],
+      "@suites/blackbox-report": ["packages/report/src/index.ts"],
+      "@suites/blackbox-runner-playwright": ["packages/runner-playwright/src/index.ts"],
+      "@suites/blackbox-runner-playwright/fixtures": ["packages/runner-playwright/src/fixtures.ts"],
+      "@suites/blackbox-runner-playwright/reporter": ["packages/runner-playwright/src/reporter.ts"],
+      "@suites/blackbox-runner-playwright/global-setup": [
+        "packages/runner-playwright/src/bootstrap.ts"
+      ],
+      "@suites/blackbox-runner-playwright/config-section": [
+        "packages/runner-playwright/src/config-section.ts"
+      ],
+      "@suites/blackbox-spec": ["packages/spec/src/index.ts"],
+      "@suites/blackbox-spec-gherkin": ["packages/spec-gherkin/src/index.ts"],
+      "@suites/blackbox-spec-gherkin/contract": ["packages/spec-gherkin/src/contract.ts"],
+      "@suites/blackbox-spec-gherkin/capability-adapter": [
+        "packages/spec-gherkin/src/capability-adapter.ts"
+      ],
+      "@suites/blackbox-spec-playwright": ["packages/spec-playwright/src/index.ts"],
+      "@suites/blackbox-system": ["packages/system/src/index.ts"],
+      "@suites/blackbox-system/config-section": ["packages/system/src/config-section.ts"],
+      "@suites/blackbox-system/compose": ["packages/system/src/compose/index.ts"],
+      "@suites/blackbox-system/legacy-system-section": ["packages/system/src/legacy/index.ts"],
+      "@suites/blackbox-testbed": ["packages/testbed/src/index.ts"]
+    }
+  }
+}

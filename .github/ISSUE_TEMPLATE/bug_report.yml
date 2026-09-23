@@ -1,0 +1,133 @@
+name: Bug report
+description: Report one problem and define its reviewable delivery contract
+type: Bug
+projects: ['suites-dev/5']
+title: '[bug] '
+labels: [bug]
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this form for one Bug and its one reviewable PR. GitHub Project suites-dev #5 is the sole authority for status, scheduling, priority, and milestones. This form records the proposed delivery contract; maintainers must separately verify the live Project fields and relationships.
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug description
+      description: Describe the observed problem clearly.
+    validations: { required: true }
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction
+      description: Give deterministic steps or link a minimal reproducer.
+    validations: { required: true }
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations: { required: true }
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      placeholder: |
+        @suites/blackbox version:
+        Node version:
+        Package manager and version:
+        OS:
+    validations: { required: true }
+  - type: input
+    id: parent
+    attributes:
+      label: Parent milestone issue
+      description: Link exactly one parent milestone issue; do not use a Project URL here.
+    validations: { required: true }
+  - type: input
+    id: project_item
+    attributes:
+      label: 'Project #5 item'
+      description: >-
+        Link this Bug's Project item, or enter "Pending assignment" during issue creation. Before work starts, the coordinator must attach the issue to Project #5 and verify its live fields and relationships; this form does not perform that verification.
+    validations: { required: true }
+  - type: dropdown
+    id: stream
+    attributes:
+      label: Stream
+      options: [A-runtime, B-consumer, C-architecture, Release]
+    validations: { required: true }
+  - type: dropdown
+    id: phase
+    attributes:
+      label: Delivery phase
+      options:
+        [
+          0 Contract,
+          1 Acquisition,
+          2 Assurance,
+          3 Integration,
+          4 Journeys,
+          5 Meta & Reports,
+          6 Release,
+          Post-Alpha,
+        ]
+    validations: { required: true }
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      description: Select the value that must also be verified in the live Project item.
+      options: [P0 Blocker, P1 Critical, P2 Normal, P3 Deferred]
+    validations: { required: true }
+  - type: dropdown
+    id: product_milestone
+    attributes:
+      label: Product Milestone
+      description: Select the value that must also be verified in the live Project item.
+      options: [Alpha 1, Alpha 2, Alpha 3, Post-Alpha]
+    validations: { required: true }
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dependencies and relationships
+      description: >-
+        Link dependencies, blocked items, and related Project #5 items; explicitly write "None" where applicable.
+    validations: { required: true }
+  - type: textarea
+    id: owned_files
+    attributes:
+      label: Owned files or directories
+      description: List exact paths.
+    validations: { required: true }
+  - type: textarea
+    id: excluded_files
+    attributes:
+      label: Explicitly excluded files or directories
+      description: List exact paths, or "None" when appropriate.
+    validations: { required: true }
+  - type: textarea
+    id: validation_commands
+    attributes:
+      label: Exact validation commands
+      description: One copyable command per line; do not use placeholders.
+      render: shell
+    validations: { required: true }
+  - type: textarea
+    id: artifacts
+    attributes:
+      label: Expected artifact or receipt locations
+      description: List exact repository paths or durable URLs, or explain why none is produced.
+    validations: { required: true }
+  - type: textarea
+    id: testing_bundles
+    attributes:
+      label: Testing bundles and traceability
+      description: Identify testing-bundle IDs and phase traceability, or "None" with a reason.
+    validations: { required: true }
+  - type: checkboxes
+    id: delivery_rules
+    attributes:
+      label: Delivery rules
+      options:
+        - label: I will keep this Bug to one PR, target `release/v0.0.1-alpha` for phases 0–6 or the base recorded in the owning Project item for Post-Alpha work, follow the desired `agent/<stream>/<issue>-<slug>` convention, and record the actual branch and any native Cloud publication departure before readiness.
+          required: true

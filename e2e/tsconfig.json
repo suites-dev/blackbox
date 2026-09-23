@@ -1,0 +1,28 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "customConditions": ["blackbox-source"],
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "allowArbitraryExtensions": true,
+    "types": ["node"]
+  },
+  "include": [
+    "playwright.config.ts",
+    "playwright.per-worker-control.config.ts",
+    "../packages/**/*.ts",
+    "gates/**/*.ts",
+    "tests/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "sut",
+    "../packages/**/node_modules",
+    "tests/examples/gherkin"
+  ]
+}

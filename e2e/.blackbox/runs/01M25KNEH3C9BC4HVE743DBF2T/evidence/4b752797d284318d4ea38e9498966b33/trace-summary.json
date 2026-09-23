@@ -1,0 +1,55 @@
+{
+	"schemaVersion": 1,
+	"attemptId": "4b752797d284318d4ea38e9498966b33",
+	"traceId": "4b752797d284318d4ea38e9498966b33",
+	"rootSpan": {
+		"spanId": "16be1aee23aa670f",
+		"name": "GET /health",
+		"service": "order-service",
+		"error": false,
+		"durationMs": 15.845
+	},
+	"entryResolution": {
+		"status": "resolved"
+	},
+	"actStep": {
+		"phase": "when",
+		"title": "Act: GET order-service /health",
+		"error": false,
+		"semanticStepId": "act",
+		"runtimeActSpanId": "254088e5788c35c3"
+	},
+	"steps": [
+		{
+			"phase": "when",
+			"title": "Act: GET order-service /health",
+			"error": false,
+			"semanticStepId": null,
+			"runtimeActSpanId": null
+		},
+		{
+			"phase": "then",
+			"title": "Assert: 200 with status ready",
+			"error": false,
+			"semanticStepId": null,
+			"runtimeActSpanId": null
+		},
+		{
+			"phase": "unknown",
+			"title": "Expect \"toBe\"",
+			"error": false,
+			"semanticStepId": null,
+			"runtimeActSpanId": null
+		},
+		{
+			"phase": "unknown",
+			"title": "Expect \"toEqual\"",
+			"error": false,
+			"semanticStepId": null,
+			"runtimeActSpanId": null
+		}
+	],
+	"spanCount": 2,
+	"capturedEffectCount": 1,
+	"redactionsApplied": null
+}

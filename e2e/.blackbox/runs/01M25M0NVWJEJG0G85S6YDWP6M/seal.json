@@ -1,0 +1,19 @@
+{
+	"schemaVersion": 2,
+	"runId": "01M25M0NVWJEJG0G85S6YDWP6M",
+	"sealed": true,
+	"sealedAt": "2026-09-10T12:17:42.979Z",
+	"evidenceIndexDigest": "991b97f450b32e435f440dc1a9ad66b56e23e909",
+	"acquisitionIndexDigest": "fd67123bba7aee81172b0411b2c4a88bc361cd9c",
+	"attempts": [
+		"503eef72bf83d209a9e9270a02cc4d8e"
+	],
+	"expectedAttemptCount": 1,
+	"observedAttemptCount": 1,
+	"captureErrors": [],
+	"requiredBoundariesObserved": [],
+	"candidateDigest": null,
+	"assertionBoundaryCaptured": true,
+	"plannedExecutionCount": 1,
+	"reconciledExecutionCount": 1
+}

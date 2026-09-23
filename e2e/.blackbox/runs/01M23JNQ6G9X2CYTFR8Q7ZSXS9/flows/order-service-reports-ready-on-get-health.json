@@ -1,0 +1,31 @@
+{
+	"flowId": "order-service-reports-ready-on-get-health",
+	"authoringSource": "suite",
+	"suite": {
+		"path": "tests/suites/health.suite.ts",
+		"digest": "f59b991cdd51cd2f99b5a817572cc024aebbcef9"
+	},
+	"requirement": null,
+	"baseline": {
+		"path": "tests/per-test/effects/health.spec.ts/effects-order-service-reports-ready-on-get-health.yaml",
+		"digest": "4423b08aa1be58797738b8b4fa98bd1e1141e3ac"
+	},
+	"entries": [
+		{
+			"project": "per-test",
+			"entryPath": "per-test/health.spec.ts"
+		}
+	],
+	"candidate": null,
+	"behaviorModelDigest": "pending-s3",
+	"observationDigest": "pending-s3",
+	"proofPlanDigest": "pending-s3",
+	"completeness": {
+		"plannedScenarios": [],
+		"executedScenarios": [],
+		"complete": false,
+		"reasons": [
+			"planned-scope-unknown-pending-proof-plans"
+		]
+	}
+}

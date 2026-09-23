@@ -1,0 +1,30 @@
+{
+	"flowId": "phase-0-payment-intent-verdict",
+	"authoringSource": "suite",
+	"suite": {
+		"path": "proofs/phase-0-verdicts/verdicts.spec.ts",
+		"digest": "974d86a14f1d6c98103381f9d753ac5fc53e86bf"
+	},
+	"requirement": null,
+	"baselines": [],
+	"entries": [
+		{
+			"project": "phase-0-verdicts",
+			"entryPath": "proofs/phase-0-verdicts/verdicts.spec.ts"
+		}
+	],
+	"candidate": null,
+	"behaviorModelDigest": "c7c97d40dff37a74797bf7881191106fed522102",
+	"observationDigest": "1fa7b4b1273c0ca0e351a378c1e44b0f039c6795",
+	"proofPlanDigest": "5df56e687c2404aefed24671ab2734e9e0bd1ad2",
+	"completeness": {
+		"plannedScenarios": [
+			"payment-intent-verdict-triad.records-a-payment-intent-for-a-valid-request"
+		],
+		"executedScenarios": [
+			"payment-intent-verdict-triad.records-a-payment-intent-for-a-valid-request"
+		],
+		"complete": true,
+		"reasons": []
+	}
+}

@@ -1,0 +1,79 @@
+# Screen-recording storyboard for the Phase 1 Capsule journey.
+# Commands are intentionally the public CLI surface. The player pauses before
+# each step so the presenter can explain what the audience is seeing.
+title: Blackbox Capsule discovery demo
+steps:
+  - id: assets
+    explanation: Build the local packages and validate the canonical catalog.
+    kind: shell
+    command: e2e/bash/capsule-assets.sh
+  - id: catalog-validate
+    explanation: Ask Blackbox to validate the catalog and every referenced file.
+    kind: cli
+    command: catalog validate --json
+  - id: catalog-list
+    explanation: List the systems that can be acquired, in machine-readable form.
+    kind: cli
+    command: catalog list --json
+  - id: serve
+    explanation: Open flight control before startup; leave it visible while the remaining commands run.
+    kind: serve
+    command: capsule report serve --port 0 --open
+  - id: start
+    explanation: Acquire one named Capsule and retain its exact session identity.
+    kind: cli
+    command: capsule start --system subscription-system --title "Recorded Capsule demo" --description "Explore subscription activation" --env FIXTURE_CONTROL_TOKEN=capsule-e2e-token --json
+  - id: health
+    explanation: Use the user-owned curl client through Capsule to check readiness.
+    kind: cli
+    command: capsule exec --session ${SESSION_ID} -- curl --fail --silent --show-error ${ENTRYPOINT_URL}/health
+  - id: report-json
+    explanation: Export the running experiment to JSON on stdout; flight control remains open.
+    kind: cli
+    command: >-
+      capsule report export
+      --session ${SESSION_ID}
+      --format json
+      --output -
+  - id: report-json-file
+    explanation: Export JSON to its automatic report path; the CLI prints the generated filename.
+    kind: cli
+    command: >-
+      capsule report export
+      --session ${SESSION_ID}
+      --format json
+  - id: report-running-html
+    explanation: Save a portable HTML snapshot at a custom path while the Capsule is running.
+    kind: cli
+    command: >-
+      capsule report export
+      --session ${SESSION_ID}
+      --format html
+      --output ${REPORT_ROOT}/running.html
+  - id: stop
+    explanation: Release the exact Capsule's resources; its history stays visible in flight control.
+    kind: cli
+    command: capsule stop --session ${SESSION_ID} --json
+  - id: report-stopped-json
+    explanation: Export the stopped session to stdout and inspect the actual cleanup result.
+    kind: cli
+    command: >-
+      capsule report export
+      --session ${SESSION_ID}
+      --format json
+      --output -
+  - id: report-html
+    explanation: Generate the final portable HTML at its automatic path, after teardown.
+    kind: cli
+    command: >-
+      capsule report export
+      --session ${SESSION_ID}
+      --format html
+  - id: serve-exact
+    explanation: Reopen flight control directly on this exact retained experiment; no containers are started.
+    kind: serve
+    command: >-
+      capsule report serve
+      --session ${SESSION_ID}
+      --port 0
+      --open

@@ -1,0 +1,26 @@
+{
+  "consumer": {
+    "result": "cancelled",
+    "outputs": {}
+  },
+  "catalog-package": {
+    "result": "success",
+    "outputs": {}
+  },
+  "build": {
+    "result": "success",
+    "outputs": {}
+  },
+  "deps": {
+    "result": "success",
+    "outputs": {}
+  },
+  "lint": {
+    "result": "success",
+    "outputs": {}
+  },
+  "test": {
+    "result": "success",
+    "outputs": {}
+  }
+}

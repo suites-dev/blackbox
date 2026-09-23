@@ -1,0 +1,28 @@
+name: self-hosted runner smoke
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - worktree-github-runners
+
+jobs:
+  smoke:
+    runs-on: [self-hosted, linux, arm64, blackbox]
+    timeout-minutes: 10
+    steps:
+      - name: Report the runner it landed on
+        run: |
+          echo "runner:  $RUNNER_NAME"
+          echo "arch:    $(uname -m)"
+          echo "kernel:  $(uname -r)"
+          echo "cpus:    $(nproc)"
+          echo "memory:  $(free -h | awk '/Mem:/ {print $2}')"
+          echo "instance: $(curl -s -H "X-aws-ec2-metadata-token: $(curl -s -X PUT http://169.254.169.254/latest/api/token -H 'X-aws-ec2-metadata-token-ttl-seconds: 60')" http://169.254.169.254/latest/meta-data/instance-type)"
+
+      - uses: actions/checkout@v4
+
+      - name: Confirm the workspace is usable
+        run: |
+          git rev-parse HEAD
+          ls -1 | head -20

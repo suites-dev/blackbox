@@ -1,0 +1,71 @@
+{
+	"type": "effects",
+	"flowId": "payment-mock-subsystem-dist-wrapper",
+	"attemptId": "62403baa46fdc9fe69e4122f1da5f12b",
+	"observed": {
+		"schemaVersion": 2,
+		"entry": {
+			"service": "payment-mock-dist",
+			"request": "POST /v1/payment_intents",
+			"status": 201
+		},
+		"entryResolution": {
+			"status": "resolved"
+		},
+		"summary": {
+			"counts": {
+				"inbound": 3,
+				"outboundHttp": 0,
+				"sql": 0,
+				"cache": 0,
+				"messaging": 0
+			},
+			"services": [
+				"payment-mock-dist"
+			],
+			"edges": []
+		},
+		"services": {
+			"payment-mock-dist": {
+				"inbound": [
+					{
+						"method": "GET",
+						"path": "/fixture/state",
+						"status": 200,
+						"count": 1,
+						"origin": "fixture-control"
+					},
+					{
+						"method": "POST",
+						"path": "/v1/payment_intents",
+						"status": 201,
+						"count": 1,
+						"origin": "sut"
+					},
+					{
+						"method": "POST",
+						"path": "/v1/refunds",
+						"status": 201,
+						"count": 1,
+						"origin": "sut"
+					}
+				]
+			}
+		},
+		"errors": []
+	},
+	"expectedPath": "/private/tmp/blackbox-phase0-proof.HO0ohJ/e2e/tests/subsystem/effects/payment-mock-dist.spec.ts/effects-payment-mock-subsystem-dist-wrapper--flow-d32bf88e5378e3471d1cbc455124f759ebb827bf--scenario-5f9d2e1d62c0af8eaf18127f0f70836f15871bb6.yaml",
+	"entryResolution": {
+		"status": "resolved"
+	},
+	"rootSpan": {
+		"spanId": "1a0d88085b2ae069",
+		"name": "POST /v1/payment_intents",
+		"service": "payment-mock-dist",
+		"error": false,
+		"durationMs": 0.97
+	},
+	"semanticStepId": "act",
+	"runtimeActSpanId": "f74b0a55ede6de57",
+	"outcome": "verified"
+}

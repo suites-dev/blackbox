@@ -1,0 +1,343 @@
+{
+	"schemaVersion": 1,
+	"artifactRole": "effects-projection-comparison",
+	"runId": "01M25KNEH3C9BC4HVE743DBF2T",
+	"attemptId": "278b2f35a30396422fb6b5192ab38ed1",
+	"outcome": "equal",
+	"differences": [],
+	"live": {
+		"snapshot": {
+			"schemaVersion": 2,
+			"entry": {
+				"service": "payment-mock",
+				"request": "POST /v1/payment_intents",
+				"status": 201
+			},
+			"entryResolution": {
+				"status": "resolved"
+			},
+			"summary": {
+				"counts": {
+					"inbound": 3,
+					"outboundHttp": 0,
+					"sql": 0,
+					"cache": 0,
+					"messaging": 0
+				},
+				"services": [
+					"payment-mock"
+				],
+				"edges": []
+			},
+			"services": {
+				"payment-mock": {
+					"inbound": [
+						{
+							"method": "GET",
+							"path": "/fixture/state",
+							"status": 200,
+							"count": 1,
+							"origin": "fixture-control"
+						},
+						{
+							"method": "POST",
+							"path": "/v1/payment_intents",
+							"status": 201,
+							"count": 1,
+							"origin": "sut"
+						},
+						{
+							"method": "POST",
+							"path": "/v1/refunds",
+							"status": 201,
+							"count": 1,
+							"origin": "sut"
+						}
+					]
+				}
+			},
+			"errors": []
+		},
+		"binding": {
+			"entryResolution": {
+				"status": "resolved"
+			},
+			"rootSpan": {
+				"spanId": "79d004241d26cf97",
+				"name": "POST /v1/payment_intents",
+				"service": "payment-mock",
+				"error": false,
+				"durationMs": 0.953
+			},
+			"semanticStepId": "act",
+			"runtimeActSpanId": "f62d76565ac2f13b"
+		},
+		"effects": [
+			{
+				"serviceId": "payment-mock",
+				"effect": {
+					"effectId": "effect-1",
+					"boundary": "http",
+					"operation": "GET",
+					"target": "/fixture/state",
+					"status": "200",
+					"origin": "fixture-control",
+					"attributes": {
+						"direction": "inbound"
+					}
+				}
+			},
+			{
+				"serviceId": "payment-mock",
+				"effect": {
+					"effectId": "effect-2",
+					"boundary": "http",
+					"operation": "POST",
+					"target": "/v1/payment_intents",
+					"status": "201",
+					"origin": "sut",
+					"attributes": {
+						"direction": "inbound"
+					}
+				}
+			},
+			{
+				"serviceId": "payment-mock",
+				"effect": {
+					"effectId": "effect-3",
+					"boundary": "http",
+					"operation": "POST",
+					"target": "/v1/refunds",
+					"status": "201",
+					"origin": "sut",
+					"attributes": {
+						"direction": "inbound"
+					}
+				}
+			}
+		]
+	},
+	"postHoc": {
+		"snapshot": {
+			"schemaVersion": 2,
+			"entry": {
+				"service": "payment-mock",
+				"request": "POST /v1/payment_intents",
+				"status": 201
+			},
+			"entryResolution": {
+				"status": "resolved"
+			},
+			"summary": {
+				"counts": {
+					"inbound": 3,
+					"outboundHttp": 0,
+					"sql": 0,
+					"cache": 0,
+					"messaging": 0
+				},
+				"services": [
+					"payment-mock"
+				],
+				"edges": []
+			},
+			"services": {
+				"payment-mock": {
+					"inbound": [
+						{
+							"method": "GET",
+							"path": "/fixture/state",
+							"status": 200,
+							"count": 1,
+							"origin": "fixture-control"
+						},
+						{
+							"method": "POST",
+							"path": "/v1/payment_intents",
+							"status": 201,
+							"count": 1,
+							"origin": "sut"
+						},
+						{
+							"method": "POST",
+							"path": "/v1/refunds",
+							"status": 201,
+							"count": 1,
+							"origin": "sut"
+						}
+					]
+				}
+			},
+			"errors": []
+		},
+		"binding": {
+			"entryResolution": {
+				"status": "resolved"
+			},
+			"rootSpan": {
+				"spanId": "79d004241d26cf97",
+				"name": "POST /v1/payment_intents",
+				"service": "payment-mock",
+				"error": false,
+				"durationMs": 0.953
+			},
+			"semanticStepId": "act",
+			"runtimeActSpanId": "f62d76565ac2f13b"
+		},
+		"effects": [
+			{
+				"serviceId": "payment-mock",
+				"effect": {
+					"effectId": "effect-1",
+					"boundary": "http",
+					"operation": "GET",
+					"target": "/fixture/state",
+					"status": "200",
+					"origin": "fixture-control",
+					"attributes": {
+						"direction": "inbound"
+					}
+				}
+			},
+			{
+				"serviceId": "payment-mock",
+				"effect": {
+					"effectId": "effect-2",
+					"boundary": "http",
+					"operation": "POST",
+					"target": "/v1/payment_intents",
+					"status": "201",
+					"origin": "sut",
+					"attributes": {
+						"direction": "inbound"
+					}
+				}
+			},
+			{
+				"serviceId": "payment-mock",
+				"effect": {
+					"effectId": "effect-3",
+					"boundary": "http",
+					"operation": "POST",
+					"target": "/v1/refunds",
+					"status": "201",
+					"origin": "sut",
+					"attributes": {
+						"direction": "inbound"
+					}
+				}
+			}
+		]
+	},
+	"postHocTraceSummary": {
+		"schemaVersion": 1,
+		"attemptId": "278b2f35a30396422fb6b5192ab38ed1",
+		"traceId": "278b2f35a30396422fb6b5192ab38ed1",
+		"rootSpan": {
+			"spanId": "79d004241d26cf97",
+			"name": "POST /v1/payment_intents",
+			"service": "payment-mock",
+			"error": false,
+			"durationMs": 0.953
+		},
+		"entryResolution": {
+			"status": "resolved"
+		},
+		"actStep": {
+			"phase": "when",
+			"title": "Act: POST /v1/payment_intents for alice",
+			"error": false,
+			"semanticStepId": "act",
+			"runtimeActSpanId": "f62d76565ac2f13b"
+		},
+		"steps": [
+			{
+				"phase": "when",
+				"title": "Act: POST /v1/payment_intents for alice",
+				"error": false,
+				"semanticStepId": null,
+				"runtimeActSpanId": null
+			},
+			{
+				"phase": "then",
+				"title": "Assert: 201 with a succeeded payment intent",
+				"error": false,
+				"semanticStepId": null,
+				"runtimeActSpanId": null
+			},
+			{
+				"phase": "unknown",
+				"title": "Expect \"toBe\"",
+				"error": false,
+				"semanticStepId": null,
+				"runtimeActSpanId": null
+			},
+			{
+				"phase": "unknown",
+				"title": "Expect \"toEqual\"",
+				"error": false,
+				"semanticStepId": null,
+				"runtimeActSpanId": null
+			},
+			{
+				"phase": "when",
+				"title": "Act: POST /v1/refunds for that intent",
+				"error": false,
+				"semanticStepId": null,
+				"runtimeActSpanId": null
+			},
+			{
+				"phase": "then",
+				"title": "Assert: 201 with a succeeded refund",
+				"error": false,
+				"semanticStepId": null,
+				"runtimeActSpanId": null
+			},
+			{
+				"phase": "unknown",
+				"title": "Expect \"toBe\"",
+				"error": false,
+				"semanticStepId": null,
+				"runtimeActSpanId": null
+			},
+			{
+				"phase": "unknown",
+				"title": "Expect \"toEqual\"",
+				"error": false,
+				"semanticStepId": null,
+				"runtimeActSpanId": null
+			},
+			{
+				"phase": "then",
+				"title": "Assert: fixture state holds exactly one intent and one refund",
+				"error": false,
+				"semanticStepId": null,
+				"runtimeActSpanId": null
+			},
+			{
+				"phase": "unknown",
+				"title": "Expect \"toBe\"",
+				"error": false,
+				"semanticStepId": null,
+				"runtimeActSpanId": null
+			},
+			{
+				"phase": "unknown",
+				"title": "Expect \"toEqual\"",
+				"error": false,
+				"semanticStepId": null,
+				"runtimeActSpanId": null
+			},
+			{
+				"phase": "unknown",
+				"title": "Expect \"toMatchSnapshot\"",
+				"error": false,
+				"semanticStepId": null,
+				"runtimeActSpanId": null
+			}
+		],
+		"spanCount": 65,
+		"capturedEffectCount": 3,
+		"redactionsApplied": null
+	}
+}

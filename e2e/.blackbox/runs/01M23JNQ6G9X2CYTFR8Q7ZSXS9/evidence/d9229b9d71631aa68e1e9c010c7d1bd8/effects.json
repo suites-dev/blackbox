@@ -1,0 +1,60 @@
+{
+	"type": "effects",
+	"flowId": "order-service-reports-ready-on-get-health",
+	"attemptId": "d9229b9d71631aa68e1e9c010c7d1bd8",
+	"observed": {
+		"schemaVersion": 2,
+		"entry": {
+			"service": "order-service",
+			"request": "GET /health",
+			"status": 200
+		},
+		"entryResolution": {
+			"status": "resolved"
+		},
+		"summary": {
+			"counts": {
+				"inbound": 1,
+				"outboundHttp": 0,
+				"sql": 0,
+				"cache": 0,
+				"messaging": 0
+			},
+			"services": [
+				"order-service"
+			],
+			"edges": [
+				{
+					"caller": "order-service",
+					"callee": "localstack"
+				}
+			]
+		},
+		"services": {
+			"order-service": {
+				"inbound": [
+					{
+						"method": "GET",
+						"path": "/health",
+						"status": 200,
+						"count": 1,
+						"origin": "sut"
+					}
+				],
+				"outboundHttp": [
+					{
+						"callee": "localstack",
+						"method": "POST",
+						"path": "/",
+						"status": 200,
+						"count": "1+",
+						"origin": "sut"
+					}
+				]
+			}
+		},
+		"errors": []
+	},
+	"expectedPath": "/Users/omer/projects/suites/blackbox/e2e/tests/per-test/effects/health.spec.ts/effects-order-service-reports-ready-on-get-health.yaml",
+	"outcome": "verified"
+}

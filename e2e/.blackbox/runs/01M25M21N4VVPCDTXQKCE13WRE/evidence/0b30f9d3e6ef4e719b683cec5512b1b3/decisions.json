@@ -1,0 +1,12 @@
+{
+	"schemaVersion": 2,
+	"attemptId": "0b30f9d3e6ef4e719b683cec5512b1b3",
+	"captureScope": "whole-attempt",
+	"originAttribution": "unavailable",
+	"services": [
+		{
+			"serviceId": "payment-mock",
+			"decisions": []
+		}
+	]
+}

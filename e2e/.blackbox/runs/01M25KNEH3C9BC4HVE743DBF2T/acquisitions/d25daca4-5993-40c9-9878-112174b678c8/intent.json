@@ -1,0 +1,19 @@
+{
+	"schemaVersion": 1,
+	"artifactRole": "acquisition-intent",
+	"runId": "01M25KNEH3C9BC4HVE743DBF2T",
+	"acquisitionId": "d25daca4-5993-40c9-9878-112174b678c8",
+	"playwrightTestId": "035dad0ffab30e40b0c2-5942dc07c8be519e4490",
+	"project": "subsystem",
+	"retry": 0,
+	"worker": 9,
+	"attemptId": "687b6d2959198a2f907cde9db5239e78",
+	"traceId": "687b6d2959198a2f907cde9db5239e78",
+	"target": {
+		"kind": "subsystem",
+		"id": "payment-mock"
+	},
+	"isolation": "per-test",
+	"groupName": null,
+	"startedAt": "2026-09-10T12:12:30.446Z"
+}

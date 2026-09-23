@@ -1,0 +1,58 @@
+{
+	"flowId": "subscription-rejection",
+	"authoringSource": "suite",
+	"suite": {
+		"path": "tests/suites/subscription-rejection.suite.ts",
+		"digest": "fc0109d815b6bcb4e0f9cdcb7d192e91bb94d524"
+	},
+	"requirement": null,
+	"baselines": [
+		{
+			"scenarioId": "subscription-rejection.rejects-a-second-subscription-for-the-same-user-with-409-before",
+			"artifact": {
+				"path": "tests/per-test/effects/subscription-rejection.spec.ts/effects-subscription-rejection--flow-b7753fee4c4ebb2a2447732f796253ff6f100687--scenario-627a04193185aaea88fb31233f60d02b6962e07e.yaml",
+				"digest": "785f44b644f01863f1299eb5f7e7182f6ec91209"
+			}
+		},
+		{
+			"scenarioId": "subscription-rejection.rejects-an-unknown-user-with-404-and-leaves-no-side-effects",
+			"artifact": {
+				"path": "tests/per-test/effects/subscription-rejection.spec.ts/effects-subscription-rejection--flow-b7753fee4c4ebb2a2447732f796253ff6f100687--scenario-945e8a6a7fda732da979b0f56dcbee8a929dd988.yaml",
+				"digest": "4f37ff7c20e511d61e8037e08c1904fe461cad27"
+			}
+		},
+		{
+			"scenarioId": "subscription-rejection.rejects-malformed-subscription-bodies-with-400-invalid-body",
+			"artifact": {
+				"path": "tests/per-test/effects/subscription-rejection.spec.ts/effects-subscription-rejection--flow-b7753fee4c4ebb2a2447732f796253ff6f100687--scenario-8caa2aa2222eb52bd870e4ee5996e5de94d8efa5.yaml",
+				"digest": "4f5da8568ca747f86faacad859aa4ab013a6ee21"
+			}
+		}
+	],
+	"entries": [
+		{
+			"project": "per-test",
+			"entryPath": "per-test/subscription-rejection.spec.ts"
+		},
+		{
+			"project": "per-worker",
+			"entryPath": "per-worker/subscription-rejection.spec.ts"
+		}
+	],
+	"candidate": null,
+	"behaviorModelDigest": "pending-s3",
+	"observationDigest": "pending-s3",
+	"proofPlanDigest": "pending-s3",
+	"completeness": {
+		"plannedScenarios": [],
+		"executedScenarios": [
+			"subscription-rejection.rejects-a-second-subscription-for-the-same-user-with-409-before",
+			"subscription-rejection.rejects-an-unknown-user-with-404-and-leaves-no-side-effects",
+			"subscription-rejection.rejects-malformed-subscription-bodies-with-400-invalid-body"
+		],
+		"complete": false,
+		"reasons": [
+			"planned-scope-unknown-pending-proof-plans"
+		]
+	}
+}

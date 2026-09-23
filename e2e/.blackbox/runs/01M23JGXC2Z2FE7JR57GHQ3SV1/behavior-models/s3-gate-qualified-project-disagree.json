@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "flowId": "s3-gate-qualified-project-disagree",
+  "authoringSource": "suite",
+  "source": {
+    "declaration": {
+      "path": "/Users/omer/projects/suites/blackbox/e2e/tests/s3-gate/qualified-project-disagree.spec.ts",
+      "digest": "5ad9530ef2f17d10d59dda970085a4b8fdb16b2a"
+    },
+    "entry": null
+  },
+  "feature": {
+    "title": "",
+    "description": "",
+    "rules": [
+      {
+        "id": "s3-gate-qualified-project-disagree.s3-gate-qualified-subsystem-project-disagreement",
+        "title": "S3 gate: qualified subsystem project disagreement",
+        "scenarios": [
+          {
+            "id": "s3-gate-qualified-project-disagree.captures-distinct-payment-intent-outcomes-per-project",
+            "title": "captures distinct payment-intent outcomes per project",
+            "steps": [
+              "When POST /v1/payment_intents",
+              "Then project-specific payment-intent status"
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

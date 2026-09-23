@@ -1,0 +1,36 @@
+{
+  "name": "@suites/blackbox-capsule-internal",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Internal persistent Capsule session manager over Catalog and Sandbox.",
+  "files": [
+    "dist",
+    "schema"
+  ],
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "blackbox-source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./schema/capsule-progress-v1.json": "./schema/capsule-progress-v1.json"
+  },
+  "scripts": {
+    "build": "tsc --project tsconfig.build.json",
+    "lint": "eslint .",
+    "test": "vitest run --config vitest.config.ts"
+  },
+  "dependencies": {
+    "@suites/blackbox-catalog-internal": "workspace:*",
+    "@suites/blackbox-sandbox-internal": "workspace:*",
+    "ajv": "8.18.0"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

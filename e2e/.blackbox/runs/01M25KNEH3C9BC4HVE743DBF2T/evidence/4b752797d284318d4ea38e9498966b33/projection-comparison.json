@@ -1,0 +1,263 @@
+{
+	"schemaVersion": 1,
+	"artifactRole": "effects-projection-comparison",
+	"runId": "01M25KNEH3C9BC4HVE743DBF2T",
+	"attemptId": "4b752797d284318d4ea38e9498966b33",
+	"outcome": "equal",
+	"differences": [],
+	"live": {
+		"snapshot": {
+			"schemaVersion": 2,
+			"entry": {
+				"service": "order-service",
+				"request": "GET /health",
+				"status": 200
+			},
+			"entryResolution": {
+				"status": "resolved"
+			},
+			"summary": {
+				"counts": {
+					"inbound": 1,
+					"outboundHttp": 0,
+					"sql": 0,
+					"cache": 0,
+					"messaging": 0
+				},
+				"services": [
+					"order-service"
+				],
+				"edges": [
+					{
+						"caller": "order-service",
+						"callee": "localstack"
+					}
+				]
+			},
+			"services": {
+				"order-service": {
+					"inbound": [
+						{
+							"method": "GET",
+							"path": "/health",
+							"status": 200,
+							"count": 1,
+							"origin": "sut"
+						}
+					],
+					"outboundHttp": [
+						{
+							"callee": "localstack",
+							"method": "POST",
+							"path": "/",
+							"status": 200,
+							"count": "1+",
+							"origin": "sut"
+						}
+					]
+				}
+			},
+			"errors": []
+		},
+		"binding": {
+			"entryResolution": {
+				"status": "resolved"
+			},
+			"rootSpan": {
+				"spanId": "16be1aee23aa670f",
+				"name": "GET /health",
+				"service": "order-service",
+				"error": false,
+				"durationMs": 15.845
+			},
+			"semanticStepId": "act",
+			"runtimeActSpanId": "254088e5788c35c3"
+		},
+		"effects": [
+			{
+				"serviceId": "order-service",
+				"effect": {
+					"effectId": "effect-1",
+					"boundary": "http",
+					"operation": "GET",
+					"target": "/health",
+					"status": "200",
+					"origin": "sut",
+					"attributes": {
+						"direction": "inbound"
+					}
+				}
+			},
+			{
+				"serviceId": "order-service",
+				"effect": {
+					"effectId": "effect-2",
+					"boundary": "http",
+					"operation": "POST",
+					"target": "localstack:/",
+					"status": "200",
+					"origin": "sut",
+					"attributes": {
+						"direction": "outbound",
+						"callee": "localstack"
+					}
+				}
+			}
+		]
+	},
+	"postHoc": {
+		"snapshot": {
+			"schemaVersion": 2,
+			"entry": {
+				"service": "order-service",
+				"request": "GET /health",
+				"status": 200
+			},
+			"entryResolution": {
+				"status": "resolved"
+			},
+			"summary": {
+				"counts": {
+					"inbound": 1,
+					"outboundHttp": 0,
+					"sql": 0,
+					"cache": 0,
+					"messaging": 0
+				},
+				"services": [
+					"order-service"
+				],
+				"edges": [
+					{
+						"caller": "order-service",
+						"callee": "localstack"
+					}
+				]
+			},
+			"services": {
+				"order-service": {
+					"inbound": [
+						{
+							"method": "GET",
+							"path": "/health",
+							"status": 200,
+							"count": 1,
+							"origin": "sut"
+						}
+					],
+					"outboundHttp": [
+						{
+							"callee": "localstack",
+							"method": "POST",
+							"path": "/",
+							"status": 200,
+							"count": "1+",
+							"origin": "sut"
+						}
+					]
+				}
+			},
+			"errors": []
+		},
+		"binding": {
+			"entryResolution": {
+				"status": "resolved"
+			},
+			"rootSpan": {
+				"spanId": "16be1aee23aa670f",
+				"name": "GET /health",
+				"service": "order-service",
+				"error": false,
+				"durationMs": 15.845
+			},
+			"semanticStepId": "act",
+			"runtimeActSpanId": "254088e5788c35c3"
+		},
+		"effects": [
+			{
+				"serviceId": "order-service",
+				"effect": {
+					"effectId": "effect-1",
+					"boundary": "http",
+					"operation": "GET",
+					"target": "/health",
+					"status": "200",
+					"origin": "sut",
+					"attributes": {
+						"direction": "inbound"
+					}
+				}
+			},
+			{
+				"serviceId": "order-service",
+				"effect": {
+					"effectId": "effect-2",
+					"boundary": "http",
+					"operation": "POST",
+					"target": "localstack:/",
+					"status": "200",
+					"origin": "sut",
+					"attributes": {
+						"direction": "outbound",
+						"callee": "localstack"
+					}
+				}
+			}
+		]
+	},
+	"postHocTraceSummary": {
+		"schemaVersion": 1,
+		"attemptId": "4b752797d284318d4ea38e9498966b33",
+		"traceId": "4b752797d284318d4ea38e9498966b33",
+		"rootSpan": {
+			"spanId": "16be1aee23aa670f",
+			"name": "GET /health",
+			"service": "order-service",
+			"error": false,
+			"durationMs": 15.845
+		},
+		"entryResolution": {
+			"status": "resolved"
+		},
+		"actStep": {
+			"phase": "when",
+			"title": "Act: GET order-service /health",
+			"error": false,
+			"semanticStepId": "act",
+			"runtimeActSpanId": "254088e5788c35c3"
+		},
+		"steps": [
+			{
+				"phase": "when",
+				"title": "Act: GET order-service /health",
+				"error": false,
+				"semanticStepId": null,
+				"runtimeActSpanId": null
+			},
+			{
+				"phase": "then",
+				"title": "Assert: 200 with status ready",
+				"error": false,
+				"semanticStepId": null,
+				"runtimeActSpanId": null
+			},
+			{
+				"phase": "unknown",
+				"title": "Expect \"toBe\"",
+				"error": false,
+				"semanticStepId": null,
+				"runtimeActSpanId": null
+			},
+			{
+				"phase": "unknown",
+				"title": "Expect \"toEqual\"",
+				"error": false,
+				"semanticStepId": null,
+				"runtimeActSpanId": null
+			}
+		],
+		"spanCount": 50,
+		"capturedEffectCount": 1,
+		"redactionsApplied": null
+	}
+}

@@ -1,0 +1,31 @@
+{
+	"flowId": "runs-the-payment-intent-and-refund-lifecycle-on-a-lone-container",
+	"authoringSource": "suite",
+	"suite": {
+		"path": "tests/subsystem/payment-mock.spec.ts",
+		"digest": "a6f4c74abbc4e42db951463c5deddda12c89a354"
+	},
+	"requirement": null,
+	"baseline": {
+		"path": "tests/subsystem/effects/payment-mock.spec.ts/effects-runs-the-payment-intent-and-refund-lifecycle-on-a-lone-container.yaml",
+		"digest": "dffd7216c2dee29daadbda956dbcb0319d66f840"
+	},
+	"entries": [
+		{
+			"project": "subsystem",
+			"entryPath": "subsystem/payment-mock.spec.ts"
+		}
+	],
+	"candidate": null,
+	"behaviorModelDigest": "pending-s3",
+	"observationDigest": "pending-s3",
+	"proofPlanDigest": "pending-s3",
+	"completeness": {
+		"plannedScenarios": [],
+		"executedScenarios": [],
+		"complete": false,
+		"reasons": [
+			"planned-scope-unknown-pending-proof-plans"
+		]
+	}
+}

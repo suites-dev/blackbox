@@ -1,0 +1,26 @@
+schemaVersion: 2
+entry:
+  service: public-api
+  request: POST /subscriptions
+  status: 400
+entryResolution:
+  status: resolved
+summary:
+  counts:
+    inbound: 3
+    outboundHttp: 0
+    sql: 0
+    cache: 0
+    messaging: 0
+  services:
+    - public-api
+  edges: []
+services:
+  public-api:
+    inbound:
+      - method: POST
+        path: /subscriptions
+        status: 400
+        count: 3
+        origin: sut
+errors: []

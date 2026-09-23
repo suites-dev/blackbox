@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "flowId": "s3-gate-qualified-project-disagree",
+  "compiledAt": "2026-09-10T12:14:13.956Z",
+  "inputs": {
+    "authoringSource": "suite",
+    "requirementDigest": null,
+    "behaviorModelDigest": "1b5169a21f1821cae4f4faca7551d48e56a36f8d",
+    "suiteDigest": "349ace425c3c68a684df1393a0a00d27b4dc1f79",
+    "acceptedEffectsDigest": null,
+    "observationDigest": "1fa7b4b1273c0ca0e351a378c1e44b0f039c6795"
+  },
+  "requiredScope": {
+    "projects": [
+      "subsystem-base",
+      "subsystem-disagree"
+    ],
+    "scenarios": [
+      "s3-gate-qualified-subsystem-project-disagreement.captures-distinct-payment-intent-outcomes-per-project"
+    ],
+    "selectionMustBeComplete": true,
+    "predeclaredAssertions": [
+      {
+        "scenarioId": "s3-gate-qualified-subsystem-project-disagreement.captures-distinct-payment-intent-outcomes-per-project",
+        "assertionIds": [
+          "s3-gate-qualified-subsystem-project-disagreement.captures-distinct-payment-intent-outcomes-per-project/step:1"
+        ]
+      }
+    ],
+    "scenarioIdentityMappings": [
+      {
+        "semanticScenarioId": "s3-gate-qualified-project-disagree.captures-distinct-payment-intent-outcomes-per-project",
+        "nativeScenarioId": "s3-gate-qualified-subsystem-project-disagreement.captures-distinct-payment-intent-outcomes-per-project"
+      }
+    ]
+  },
+  "obligations": [
+    {
+      "id": "s3-gate-qualified-subsystem-project-disagreement.captures-distinct-payment-intent-outcomes-per-project::assertion",
+      "scenarioId": "s3-gate-qualified-subsystem-project-disagreement.captures-distinct-payment-intent-outcomes-per-project",
+      "kind": "assertion",
+      "source": "playwright.assertion",
+      "required": true,
+      "semanticStepId": null
+    }
+  ],
+  "qualification": {
+    "requireSealedEvidence": true,
+    "requireFreshDigests": true,
+    "requireCompleteScope": true,
+    "requireCompleteEvidence": true
+  }
+}

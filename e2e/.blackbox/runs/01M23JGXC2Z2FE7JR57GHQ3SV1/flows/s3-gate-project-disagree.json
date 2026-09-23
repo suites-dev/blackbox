@@ -1,0 +1,34 @@
+{
+	"flowId": "s3-gate-project-disagree",
+	"authoringSource": "suite",
+	"suite": {
+		"path": "proofs/s3-gate/planted-project-disagree.suite.ts",
+		"digest": "d129eb9b9e4aa223a5364276e0c9e8a3ddc8a29f"
+	},
+	"requirement": null,
+	"baseline": null,
+	"entries": [
+		{
+			"project": "per-test",
+			"entryPath": "tests/s3-gate/per-test.spec.ts"
+		},
+		{
+			"project": "per-worker",
+			"entryPath": "tests/s3-gate/per-worker.spec.ts"
+		}
+	],
+	"candidate": null,
+	"behaviorModelDigest": "7044631d415e6c1bd5bf20cf2e23c63476ebf199",
+	"observationDigest": "1fa7b4b1273c0ca0e351a378c1e44b0f039c6795",
+	"proofPlanDigest": "6610836af871333f41bf278a435ef2a399321649",
+	"completeness": {
+		"plannedScenarios": [
+			"s3-gate-project-scoped-candidate-disagreement.plants-one-extra-real-sut-effect-only-under-the-disagreement-pro"
+		],
+		"executedScenarios": [
+			"s3-gate-project-scoped-candidate-disagreement.plants-one-extra-real-sut-effect-only-under-the-disagreement-pro"
+		],
+		"complete": true,
+		"reasons": []
+	}
+}

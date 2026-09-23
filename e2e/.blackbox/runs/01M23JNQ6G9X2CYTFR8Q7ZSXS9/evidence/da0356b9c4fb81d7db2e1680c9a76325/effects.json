@@ -1,0 +1,45 @@
+{
+	"type": "effects",
+	"flowId": "rejects-malformed-subscription-bodies-with-400-invalid-body",
+	"attemptId": "da0356b9c4fb81d7db2e1680c9a76325",
+	"observed": {
+		"schemaVersion": 2,
+		"entry": {
+			"service": "public-api",
+			"request": "POST /subscriptions",
+			"status": 400
+		},
+		"entryResolution": {
+			"status": "resolved"
+		},
+		"summary": {
+			"counts": {
+				"inbound": 3,
+				"outboundHttp": 0,
+				"sql": 0,
+				"cache": 0,
+				"messaging": 0
+			},
+			"services": [
+				"public-api"
+			],
+			"edges": []
+		},
+		"services": {
+			"public-api": {
+				"inbound": [
+					{
+						"method": "POST",
+						"path": "/subscriptions",
+						"status": 400,
+						"count": 3,
+						"origin": "sut"
+					}
+				]
+			}
+		},
+		"errors": []
+	},
+	"expectedPath": "/Users/omer/projects/suites/blackbox/e2e/tests/per-test/effects/subscription-rejection.spec.ts/effects-rejects-malformed-subscription-bodies-with-400-invalid-body.yaml",
+	"outcome": "verified"
+}

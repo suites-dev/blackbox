@@ -1,0 +1,174 @@
+schemaVersion: 2
+entry: null
+entryResolution:
+  status: ambiguous
+  reason: multiple-act-bound-candidates
+summary:
+  counts:
+    inbound: 7
+    outboundHttp: 4
+    sql: 6
+    cache: 7
+    messaging: 0
+  services:
+    - fraud-check
+    - order-service
+    - payment-mock
+    - public-api
+  edges:
+    - caller: order-service
+      callee: localstack
+    - caller: public-api
+      callee: fraud-check
+    - caller: public-api
+      callee: localstack
+    - caller: public-api
+      callee: order-service
+    - caller: public-api
+      callee: payment-mock
+services:
+  fraud-check:
+    inbound:
+      - method: POST
+        path: /assess
+        status: 200
+        count: 1
+        origin: sut
+    sql:
+      - operation: INSERT
+        table: fraud_audit
+        statement: INSERT INTO fraud_audit (user_id, decision, hint_profile) VALUES ($1, $2, $3)
+        count: 1
+        origin: sut
+  order-service:
+    inbound:
+      - method: POST
+        path: /orders
+        status: 201
+        count: 1
+        origin: sut
+    outboundHttp:
+      - callee: localstack
+        method: POST
+        path: /
+        status: 200
+        count: 1+
+        origin: sut
+  payment-mock:
+    inbound:
+      - method: GET
+        path: /fixture/state
+        status: 200
+        count: 1
+        origin: fixture-control
+      - method: POST
+        path: /v1/payment_intents
+        status: 201
+        count: 1
+        origin: sut
+  public-api:
+    inbound:
+      - method: GET
+        path: /fixture/state
+        status: 200
+        count: 1
+        origin: fixture-control
+      - method: POST
+        path: /subscriptions
+        status: 201
+        count: 1
+        origin: sut
+      - method: POST
+        path: /subscriptions
+        status: 409
+        count: 1
+        origin: sut
+    outboundHttp:
+      - callee: localstack
+        method: POST
+        path: /
+        status: 200
+        count: 1+
+        origin: fixture-control
+      - callee: payment-mock
+        method: GET
+        path: /fixture/state
+        status: 200
+        count: 1
+        origin: fixture-control
+      - callee: fraud-check
+        method: POST
+        path: /assess
+        status: 200
+        count: 1
+        origin: sut
+      - callee: order-service
+        method: POST
+        path: /orders
+        status: 201
+        count: 1
+        origin: sut
+      - callee: payment-mock
+        method: POST
+        path: /v1/payment_intents
+        status: 201
+        count: 1
+        origin: sut
+    sql:
+      - operation: SELECT
+        table: fraud_audit
+        statement: SELECT id::text, user_id AS "userId", decision, hint_profile AS "hintProfile" FROM
+          fraud_audit ORDER BY id
+        count: 1
+        origin: fixture-control
+      - operation: SELECT
+        table: subscriptions
+        statement: SELECT id, user_id AS "userId", tier, status, payment_intent_id AS "paymentIntentId",
+          order_id AS "orderId" FROM subscriptions ORDER BY user_id
+        count: 1
+        origin: fixture-control
+      - operation: INSERT
+        table: subscriptions
+        statement: INSERT INTO subscriptions (id, user_id, tier, status, payment_intent_id, order_id) VALUES
+          ($1, $2, $3, $4, $5, $6) RETURNING id, status
+        count: 1
+        origin: sut
+      - operation: SELECT
+        table: subscriptions
+        statement: SELECT u.user_id AS "userId", u.tier, u.execution_path AS "executionPath", EXISTS (SELECT
+          ? FROM subscriptions s WHERE s.user_id = u.user_id) AS "hasSubscription" FROM users u
+          WHERE u.user_id = $1
+        count: 2
+        origin: sut
+    cache:
+      - system: redis
+        command: KEYS
+        keyPattern: <redacted>
+        count: 1
+        origin: fixture-control
+      - system: redis
+        command: MGET
+        keyPattern: <redacted>
+        count: 1
+        origin: fixture-control
+      - system: redis
+        command: GET
+        keyPattern: hint:long:carol
+        count: 1
+        origin: sut
+      - system: redis
+        command: GET
+        keyPattern: user:carol:tier
+        count: 2
+        origin: sut
+      - system: redis
+        command: SET
+        keyPattern: hint:long:carol
+        count: 1
+        origin: sut
+      - system: redis
+        command: SET
+        keyPattern: user:carol:tier
+        count: 1
+        origin: sut
+errors: []

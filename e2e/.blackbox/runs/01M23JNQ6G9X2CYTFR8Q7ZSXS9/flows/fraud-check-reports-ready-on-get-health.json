@@ -1,0 +1,31 @@
+{
+	"flowId": "fraud-check-reports-ready-on-get-health",
+	"authoringSource": "suite",
+	"suite": {
+		"path": "tests/suites/health.suite.ts",
+		"digest": "f59b991cdd51cd2f99b5a817572cc024aebbcef9"
+	},
+	"requirement": null,
+	"baseline": {
+		"path": "tests/per-test/effects/health.spec.ts/effects-fraud-check-reports-ready-on-get-health.yaml",
+		"digest": "c36a83cd40f421829f47624b4c7030f4bc885336"
+	},
+	"entries": [
+		{
+			"project": "per-test",
+			"entryPath": "per-test/health.spec.ts"
+		}
+	],
+	"candidate": null,
+	"behaviorModelDigest": "pending-s3",
+	"observationDigest": "pending-s3",
+	"proofPlanDigest": "pending-s3",
+	"completeness": {
+		"plannedScenarios": [],
+		"executedScenarios": [],
+		"complete": false,
+		"reasons": [
+			"planned-scope-unknown-pending-proof-plans"
+		]
+	}
+}

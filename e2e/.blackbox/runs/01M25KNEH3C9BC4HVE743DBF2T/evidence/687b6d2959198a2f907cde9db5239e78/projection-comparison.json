@@ -1,0 +1,189 @@
+{
+	"schemaVersion": 1,
+	"artifactRole": "effects-projection-comparison",
+	"runId": "01M25KNEH3C9BC4HVE743DBF2T",
+	"attemptId": "687b6d2959198a2f907cde9db5239e78",
+	"outcome": "equal",
+	"differences": [],
+	"live": {
+		"snapshot": {
+			"schemaVersion": 2,
+			"entry": null,
+			"entryResolution": {
+				"status": "excluded",
+				"reason": "declared-act-fixture-control"
+			},
+			"summary": {
+				"counts": {
+					"inbound": 1,
+					"outboundHttp": 0,
+					"sql": 0,
+					"cache": 0,
+					"messaging": 0
+				},
+				"services": [
+					"payment-mock"
+				],
+				"edges": []
+			},
+			"services": {
+				"payment-mock": {
+					"inbound": [
+						{
+							"method": "GET",
+							"path": "/fixture/state",
+							"status": 200,
+							"count": 1,
+							"origin": "fixture-control"
+						}
+					]
+				}
+			},
+			"errors": []
+		},
+		"binding": {
+			"entryResolution": {
+				"status": "excluded",
+				"reason": "declared-act-fixture-control"
+			},
+			"rootSpan": null,
+			"semanticStepId": "act",
+			"runtimeActSpanId": "59b8e0f22a586679"
+		},
+		"effects": [
+			{
+				"serviceId": "payment-mock",
+				"effect": {
+					"effectId": "effect-1",
+					"boundary": "http",
+					"operation": "GET",
+					"target": "/fixture/state",
+					"status": "200",
+					"origin": "fixture-control",
+					"attributes": {
+						"direction": "inbound"
+					}
+				}
+			}
+		]
+	},
+	"postHoc": {
+		"snapshot": {
+			"schemaVersion": 2,
+			"entry": null,
+			"entryResolution": {
+				"status": "excluded",
+				"reason": "declared-act-fixture-control"
+			},
+			"summary": {
+				"counts": {
+					"inbound": 1,
+					"outboundHttp": 0,
+					"sql": 0,
+					"cache": 0,
+					"messaging": 0
+				},
+				"services": [
+					"payment-mock"
+				],
+				"edges": []
+			},
+			"services": {
+				"payment-mock": {
+					"inbound": [
+						{
+							"method": "GET",
+							"path": "/fixture/state",
+							"status": 200,
+							"count": 1,
+							"origin": "fixture-control"
+						}
+					]
+				}
+			},
+			"errors": []
+		},
+		"binding": {
+			"entryResolution": {
+				"status": "excluded",
+				"reason": "declared-act-fixture-control"
+			},
+			"rootSpan": null,
+			"semanticStepId": "act",
+			"runtimeActSpanId": "59b8e0f22a586679"
+		},
+		"effects": [
+			{
+				"serviceId": "payment-mock",
+				"effect": {
+					"effectId": "effect-1",
+					"boundary": "http",
+					"operation": "GET",
+					"target": "/fixture/state",
+					"status": "200",
+					"origin": "fixture-control",
+					"attributes": {
+						"direction": "inbound"
+					}
+				}
+			}
+		]
+	},
+	"postHocTraceSummary": {
+		"schemaVersion": 1,
+		"attemptId": "687b6d2959198a2f907cde9db5239e78",
+		"traceId": "687b6d2959198a2f907cde9db5239e78",
+		"rootSpan": null,
+		"entryResolution": {
+			"status": "excluded",
+			"reason": "declared-act-fixture-control"
+		},
+		"actStep": {
+			"phase": "when",
+			"title": "Act: GET /fixture/state on a fresh container",
+			"error": false,
+			"semanticStepId": "act",
+			"runtimeActSpanId": "59b8e0f22a586679"
+		},
+		"steps": [
+			{
+				"phase": "when",
+				"title": "Act: GET /fixture/state on a fresh container",
+				"error": false,
+				"semanticStepId": null,
+				"runtimeActSpanId": null
+			},
+			{
+				"phase": "then",
+				"title": "Assert: empty intents and refunds",
+				"error": false,
+				"semanticStepId": null,
+				"runtimeActSpanId": null
+			},
+			{
+				"phase": "unknown",
+				"title": "Expect \"toBe\"",
+				"error": false,
+				"semanticStepId": null,
+				"runtimeActSpanId": null
+			},
+			{
+				"phase": "unknown",
+				"title": "Expect \"toEqual\"",
+				"error": false,
+				"semanticStepId": null,
+				"runtimeActSpanId": null
+			},
+			{
+				"phase": "unknown",
+				"title": "Expect \"toMatchSnapshot\"",
+				"error": false,
+				"semanticStepId": null,
+				"runtimeActSpanId": null
+			}
+		],
+		"spanCount": 54,
+		"capturedEffectCount": 1,
+		"redactionsApplied": null
+	}
+}

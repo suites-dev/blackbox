@@ -1,0 +1,119 @@
+schemaVersion: 1
+catalog:
+  default: subscription-system
+  entries:
+    subscription-system:
+      kind: system
+      acquisition:
+        adapter: docker-compose@1
+        files:
+          - .blackbox/catalog/subscription-system.yml
+      isolation: per-test
+      entrypoint:
+        participant: public-api
+        protocol: http
+        containerPort: 3000
+        readiness:
+          path: /health
+          timeoutMs: 120000
+      participants:
+        public-api:
+          service: public-api
+          role: entrypoint
+          runtime: node
+          activation: sut-node-factory
+        fraud-check:
+          service: fraud-check
+          role: application
+          runtime: node
+          activation: sut-node-factory
+        order-service:
+          service: order-service
+          role: application
+          runtime: node
+          activation: sut-node-factory
+        payment-mock:
+          service: payment-mock
+          role: application
+          runtime: node
+          activation: sut-node-factory
+        postgres:
+          service: postgres
+          role: dependency
+          runtime: infra
+        redis:
+          service: redis
+          role: dependency
+          runtime: infra
+        localstack:
+          service: localstack
+          role: dependency
+          runtime: infra
+      observation: &observation
+        policyId: e2e-all-participants-v1
+        boundaries:
+          - id: effects.http
+            kind: http
+            authoritativeFor: [normalized inbound and outbound HTTP effects]
+          - id: effects.postgres
+            kind: postgres
+            authoritativeFor: [normalized PostgreSQL statement effects]
+          - id: effects.redis
+            kind: redis
+            authoritativeFor: [normalized Redis command effects]
+          - id: effects.sqs
+            kind: sqs
+            authoritativeFor: [normalized SQS messaging effects]
+        requiredBoundaries: [effects.http, effects.postgres, effects.redis, effects.sqs]
+        terminalObservationWindowMs: 5000
+        redaction:
+          requestBodies: not-captured
+          headers: [authorization, cookie, set-cookie]
+          dynamicIdentifiers: normalized in effect identities and paths
+    payment-mock:
+      kind: subsystem
+      acquisition:
+        adapter: docker-compose@1
+        files:
+          - .blackbox/catalog/payment-mock-image.yml
+      isolation: per-test
+      entrypoint:
+        participant: payment-mock
+        protocol: http
+        containerPort: 8080
+        readiness:
+          path: /health
+          timeoutMs: 60000
+      participants:
+        payment-mock:
+          service: payment-mock
+          role: entrypoint
+          runtime: node
+          activation: sut-node-factory
+      observation: *observation
+    payment-mock-dist:
+      kind: subsystem
+      acquisition:
+        adapter: docker-compose@1
+        files:
+          - .blackbox/catalog/payment-mock-dist.yml
+      isolation: per-test
+      entrypoint:
+        participant: payment-mock
+        protocol: http
+        containerPort: 8080
+        readiness:
+          path: /health
+          timeoutMs: 60000
+      participants:
+        payment-mock:
+          service: payment-mock
+          role: entrypoint
+          runtime: node
+          activation: sut-node-factory
+      observation: *observation
+activations:
+  sut-node-factory:
+    ref: .blackbox/instrumentation/sut-factory.mjs
+    adapter: node-factory
+    version: 1

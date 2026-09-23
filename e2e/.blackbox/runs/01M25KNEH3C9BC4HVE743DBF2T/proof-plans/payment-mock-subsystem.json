@@ -1,0 +1,92 @@
+{
+  "schemaVersion": 1,
+  "flowId": "payment-mock-subsystem",
+  "compiledAt": "2026-09-10T12:11:18.713Z",
+  "inputs": {
+    "authoringSource": "suite",
+    "requirementDigest": null,
+    "behaviorModelDigest": "0b416f9da853e34b130cb191f3b05c9f6fdcf25d",
+    "suiteDigest": "a924a7193e219252268254825d50898f9496ee43",
+    "acceptedEffectsDigest": null,
+    "observationDigest": "1fa7b4b1273c0ca0e351a378c1e44b0f039c6795"
+  },
+  "requiredScope": {
+    "projects": [
+      "subsystem"
+    ],
+    "scenarios": [
+      "payment-mock-subsystem.reports-ready-on-get-health",
+      "payment-mock-subsystem.runs-the-payment-intent-and-refund-lifecycle-on-a-lone-container",
+      "payment-mock-subsystem.starts-from-a-clean-state-because-the-container-is-per-test"
+    ],
+    "selectionMustBeComplete": true,
+    "predeclaredAssertions": [
+      {
+        "scenarioId": "payment-mock-subsystem.reports-ready-on-get-health",
+        "assertionIds": [
+          "payment-mock-subsystem.reports-ready-on-get-health/step:1"
+        ]
+      },
+      {
+        "scenarioId": "payment-mock-subsystem.runs-the-payment-intent-and-refund-lifecycle-on-a-lone-container",
+        "assertionIds": [
+          "payment-mock-subsystem.runs-the-payment-intent-and-refund-lifecycle-on-a-lone-container/step:1",
+          "payment-mock-subsystem.runs-the-payment-intent-and-refund-lifecycle-on-a-lone-container/step:3",
+          "payment-mock-subsystem.runs-the-payment-intent-and-refund-lifecycle-on-a-lone-container/step:4"
+        ]
+      },
+      {
+        "scenarioId": "payment-mock-subsystem.starts-from-a-clean-state-because-the-container-is-per-test",
+        "assertionIds": [
+          "payment-mock-subsystem.starts-from-a-clean-state-because-the-container-is-per-test/step:1"
+        ]
+      }
+    ],
+    "scenarioIdentityMappings": [
+      {
+        "semanticScenarioId": "payment-mock-subsystem.reports-ready-on-get-health",
+        "nativeScenarioId": "payment-mock-subsystem.reports-ready-on-get-health"
+      },
+      {
+        "semanticScenarioId": "payment-mock-subsystem.runs-the-payment-intent-and-refund-lifecycle-on-a-lone-container",
+        "nativeScenarioId": "payment-mock-subsystem.runs-the-payment-intent-and-refund-lifecycle-on-a-lone-container"
+      },
+      {
+        "semanticScenarioId": "payment-mock-subsystem.starts-from-a-clean-state-because-the-container-is-per-test",
+        "nativeScenarioId": "payment-mock-subsystem.starts-from-a-clean-state-because-the-container-is-per-test"
+      }
+    ]
+  },
+  "obligations": [
+    {
+      "id": "payment-mock-subsystem.reports-ready-on-get-health::assertion",
+      "scenarioId": "payment-mock-subsystem.reports-ready-on-get-health",
+      "kind": "assertion",
+      "source": "playwright.assertion",
+      "required": true,
+      "semanticStepId": null
+    },
+    {
+      "id": "payment-mock-subsystem.runs-the-payment-intent-and-refund-lifecycle-on-a-lone-container::assertion",
+      "scenarioId": "payment-mock-subsystem.runs-the-payment-intent-and-refund-lifecycle-on-a-lone-container",
+      "kind": "assertion",
+      "source": "playwright.assertion",
+      "required": true,
+      "semanticStepId": null
+    },
+    {
+      "id": "payment-mock-subsystem.starts-from-a-clean-state-because-the-container-is-per-test::assertion",
+      "scenarioId": "payment-mock-subsystem.starts-from-a-clean-state-because-the-container-is-per-test",
+      "kind": "assertion",
+      "source": "playwright.assertion",
+      "required": true,
+      "semanticStepId": null
+    }
+  ],
+  "qualification": {
+    "requireSealedEvidence": true,
+    "requireFreshDigests": true,
+    "requireCompleteScope": true,
+    "requireCompleteEvidence": true
+  }
+}

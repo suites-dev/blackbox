@@ -1,0 +1,35 @@
+schemaVersion: 2
+entry:
+  service: order-service
+  request: GET /health
+  status: 200
+entryResolution:
+  status: resolved
+summary:
+  counts:
+    inbound: 1
+    outboundHttp: 0
+    sql: 0
+    cache: 0
+    messaging: 0
+  services:
+    - order-service
+  edges:
+    - caller: order-service
+      callee: localstack
+services:
+  order-service:
+    inbound:
+      - method: GET
+        path: /health
+        status: 200
+        count: 1
+        origin: sut
+    outboundHttp:
+      - callee: localstack
+        method: POST
+        path: /
+        status: 200
+        count: 1+
+        origin: sut
+errors: []

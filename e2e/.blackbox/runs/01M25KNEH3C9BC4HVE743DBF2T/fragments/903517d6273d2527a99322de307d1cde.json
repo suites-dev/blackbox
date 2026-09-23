@@ -1,0 +1,172 @@
+{
+	"schemaVersion": 2,
+	"artifactRole": "attempt-fragment-draft",
+	"runId": "01M25KNEH3C9BC4HVE743DBF2T",
+	"attemptId": "903517d6273d2527a99322de307d1cde",
+	"flowId": "subscription-rejection",
+	"scenarioId": "subscription-rejection.rejects-an-unknown-user-with-404-and-leaves-no-side-effects",
+	"playwrightTestId": "936b029611cc371ee95b-2c00b5c353780a522c49",
+	"project": "per-test",
+	"retry": 0,
+	"worker": 4,
+	"startedAt": "2026-09-10T12:11:44.201Z",
+	"capturedAt": "2026-09-10T12:11:46.190Z",
+	"traceId": "903517d6273d2527a99322de307d1cde",
+	"declarationFile": {
+		"path": "tests/suites/subscription-rejection.suite.ts",
+		"digest": "fc0109d815b6bcb4e0f9cdcb7d192e91bb94d524"
+	},
+	"entryFile": "per-test/subscription-rejection.spec.ts",
+	"effects": [
+		{
+			"serviceId": "payment-mock",
+			"effect": {
+				"effectId": "effect-1",
+				"boundary": "http",
+				"operation": "GET",
+				"target": "/fixture/state",
+				"status": "200",
+				"origin": "fixture-control",
+				"attributes": {
+					"direction": "inbound"
+				}
+			}
+		},
+		{
+			"serviceId": "public-api",
+			"effect": {
+				"effectId": "effect-2",
+				"boundary": "http",
+				"operation": "GET",
+				"target": "/fixture/state",
+				"status": "200",
+				"origin": "fixture-control",
+				"attributes": {
+					"direction": "inbound"
+				}
+			}
+		},
+		{
+			"serviceId": "public-api",
+			"effect": {
+				"effectId": "effect-3",
+				"boundary": "http",
+				"operation": "POST",
+				"target": "/subscriptions",
+				"status": "404",
+				"origin": "sut",
+				"attributes": {
+					"direction": "inbound"
+				}
+			}
+		},
+		{
+			"serviceId": "public-api",
+			"effect": {
+				"effectId": "effect-4",
+				"boundary": "http",
+				"operation": "POST",
+				"target": "localstack:/",
+				"status": "200",
+				"origin": "fixture-control",
+				"attributes": {
+					"direction": "outbound",
+					"callee": "localstack"
+				}
+			}
+		},
+		{
+			"serviceId": "public-api",
+			"effect": {
+				"effectId": "effect-5",
+				"boundary": "http",
+				"operation": "GET",
+				"target": "payment-mock:/fixture/state",
+				"status": "200",
+				"origin": "fixture-control",
+				"attributes": {
+					"direction": "outbound",
+					"callee": "payment-mock"
+				}
+			}
+		},
+		{
+			"serviceId": "public-api",
+			"effect": {
+				"effectId": "effect-6",
+				"boundary": "postgres",
+				"operation": "SELECT",
+				"target": "fraud_audit",
+				"status": null,
+				"origin": "fixture-control",
+				"attributes": {
+					"statement": "SELECT id::text, user_id AS \"userId\", decision, hint_profile AS \"hintProfile\" FROM fraud_audit ORDER BY id"
+				}
+			}
+		},
+		{
+			"serviceId": "public-api",
+			"effect": {
+				"effectId": "effect-7",
+				"boundary": "postgres",
+				"operation": "SELECT",
+				"target": "subscriptions",
+				"status": null,
+				"origin": "fixture-control",
+				"attributes": {
+					"statement": "SELECT id, user_id AS \"userId\", tier, status, payment_intent_id AS \"paymentIntentId\", order_id AS \"orderId\" FROM subscriptions ORDER BY user_id"
+				}
+			}
+		},
+		{
+			"serviceId": "public-api",
+			"effect": {
+				"effectId": "effect-8",
+				"boundary": "postgres",
+				"operation": "SELECT",
+				"target": "subscriptions",
+				"status": null,
+				"origin": "sut",
+				"attributes": {
+					"statement": "SELECT u.user_id AS \"userId\", u.tier, u.execution_path AS \"executionPath\", EXISTS (SELECT ? FROM subscriptions s WHERE s.user_id = u.user_id) AS \"hasSubscription\" FROM users u WHERE u.user_id = $1"
+				}
+			}
+		},
+		{
+			"serviceId": "public-api",
+			"effect": {
+				"effectId": "effect-9",
+				"boundary": "redis",
+				"operation": "KEYS",
+				"target": "<redacted>",
+				"status": null,
+				"origin": "fixture-control",
+				"attributes": {}
+			}
+		},
+		{
+			"serviceId": "public-api",
+			"effect": {
+				"effectId": "effect-10",
+				"boundary": "redis",
+				"operation": "GET",
+				"target": "user:ghost-user:tier",
+				"status": null,
+				"origin": "sut",
+				"attributes": {}
+			}
+		}
+	],
+	"entryResolution": {
+		"status": "resolved"
+	},
+	"rootSpan": {
+		"spanId": "7e4c69065d4c1ca5",
+		"name": "POST /subscriptions",
+		"service": "public-api",
+		"error": false,
+		"durationMs": 3.495
+	},
+	"semanticStepId": "act",
+	"runtimeActSpanId": "19b6d5f9a161c617"
+}

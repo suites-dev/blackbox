@@ -1,0 +1,360 @@
+{
+	"schemaVersion": 1,
+	"artifactRole": "effects-projection-comparison",
+	"runId": "01M25KNEH3C9BC4HVE743DBF2T",
+	"attemptId": "245aacb120f4abfead852ed6eef59fc3",
+	"outcome": "equal",
+	"differences": [],
+	"live": {
+		"snapshot": {
+			"schemaVersion": 2,
+			"entry": {
+				"service": "public-api",
+				"request": "GET /fixture/state",
+				"status": 401
+			},
+			"entryResolution": {
+				"status": "resolved"
+			},
+			"summary": {
+				"counts": {
+					"inbound": 3,
+					"outboundHttp": 0,
+					"sql": 0,
+					"cache": 0,
+					"messaging": 0
+				},
+				"services": [
+					"payment-mock",
+					"public-api"
+				],
+				"edges": []
+			},
+			"services": {
+				"payment-mock": {
+					"inbound": [
+						{
+							"method": "GET",
+							"path": "/fixture/state",
+							"status": 401,
+							"count": 1,
+							"origin": "sut"
+						}
+					]
+				},
+				"public-api": {
+					"inbound": [
+						{
+							"method": "GET",
+							"path": "/fixture/state",
+							"status": 401,
+							"count": 1,
+							"origin": "fixture-control"
+						},
+						{
+							"method": "GET",
+							"path": "/fixture/state",
+							"status": 401,
+							"count": 1,
+							"origin": "sut"
+						}
+					]
+				}
+			},
+			"errors": []
+		},
+		"binding": {
+			"entryResolution": {
+				"status": "resolved"
+			},
+			"rootSpan": {
+				"spanId": "ad859b41911fe6d7",
+				"name": "GET /fixture/state",
+				"service": "public-api",
+				"error": false,
+				"durationMs": 1.397
+			},
+			"semanticStepId": "act",
+			"runtimeActSpanId": "fa9fefc95a8d0a73"
+		},
+		"effects": [
+			{
+				"serviceId": "payment-mock",
+				"effect": {
+					"effectId": "effect-1",
+					"boundary": "http",
+					"operation": "GET",
+					"target": "/fixture/state",
+					"status": "401",
+					"origin": "sut",
+					"attributes": {
+						"direction": "inbound"
+					}
+				}
+			},
+			{
+				"serviceId": "public-api",
+				"effect": {
+					"effectId": "effect-2",
+					"boundary": "http",
+					"operation": "GET",
+					"target": "/fixture/state",
+					"status": "401",
+					"origin": "fixture-control",
+					"attributes": {
+						"direction": "inbound"
+					}
+				}
+			},
+			{
+				"serviceId": "public-api",
+				"effect": {
+					"effectId": "effect-3",
+					"boundary": "http",
+					"operation": "GET",
+					"target": "/fixture/state",
+					"status": "401",
+					"origin": "sut",
+					"attributes": {
+						"direction": "inbound"
+					}
+				}
+			}
+		]
+	},
+	"postHoc": {
+		"snapshot": {
+			"schemaVersion": 2,
+			"entry": {
+				"service": "public-api",
+				"request": "GET /fixture/state",
+				"status": 401
+			},
+			"entryResolution": {
+				"status": "resolved"
+			},
+			"summary": {
+				"counts": {
+					"inbound": 3,
+					"outboundHttp": 0,
+					"sql": 0,
+					"cache": 0,
+					"messaging": 0
+				},
+				"services": [
+					"payment-mock",
+					"public-api"
+				],
+				"edges": []
+			},
+			"services": {
+				"payment-mock": {
+					"inbound": [
+						{
+							"method": "GET",
+							"path": "/fixture/state",
+							"status": 401,
+							"count": 1,
+							"origin": "sut"
+						}
+					]
+				},
+				"public-api": {
+					"inbound": [
+						{
+							"method": "GET",
+							"path": "/fixture/state",
+							"status": 401,
+							"count": 1,
+							"origin": "fixture-control"
+						},
+						{
+							"method": "GET",
+							"path": "/fixture/state",
+							"status": 401,
+							"count": 1,
+							"origin": "sut"
+						}
+					]
+				}
+			},
+			"errors": []
+		},
+		"binding": {
+			"entryResolution": {
+				"status": "resolved"
+			},
+			"rootSpan": {
+				"spanId": "ad859b41911fe6d7",
+				"name": "GET /fixture/state",
+				"service": "public-api",
+				"error": false,
+				"durationMs": 1.397
+			},
+			"semanticStepId": "act",
+			"runtimeActSpanId": "fa9fefc95a8d0a73"
+		},
+		"effects": [
+			{
+				"serviceId": "payment-mock",
+				"effect": {
+					"effectId": "effect-1",
+					"boundary": "http",
+					"operation": "GET",
+					"target": "/fixture/state",
+					"status": "401",
+					"origin": "sut",
+					"attributes": {
+						"direction": "inbound"
+					}
+				}
+			},
+			{
+				"serviceId": "public-api",
+				"effect": {
+					"effectId": "effect-2",
+					"boundary": "http",
+					"operation": "GET",
+					"target": "/fixture/state",
+					"status": "401",
+					"origin": "fixture-control",
+					"attributes": {
+						"direction": "inbound"
+					}
+				}
+			},
+			{
+				"serviceId": "public-api",
+				"effect": {
+					"effectId": "effect-3",
+					"boundary": "http",
+					"operation": "GET",
+					"target": "/fixture/state",
+					"status": "401",
+					"origin": "sut",
+					"attributes": {
+						"direction": "inbound"
+					}
+				}
+			}
+		]
+	},
+	"postHocTraceSummary": {
+		"schemaVersion": 1,
+		"attemptId": "245aacb120f4abfead852ed6eef59fc3",
+		"traceId": "245aacb120f4abfead852ed6eef59fc3",
+		"rootSpan": {
+			"spanId": "ad859b41911fe6d7",
+			"name": "GET /fixture/state",
+			"service": "public-api",
+			"error": false,
+			"durationMs": 1.397
+		},
+		"entryResolution": {
+			"status": "resolved"
+		},
+		"actStep": {
+			"phase": "when",
+			"title": "Act: GET /fixture/state without an authorization header",
+			"error": false,
+			"semanticStepId": "act",
+			"runtimeActSpanId": "fa9fefc95a8d0a73"
+		},
+		"steps": [
+			{
+				"phase": "when",
+				"title": "Act: GET /fixture/state without an authorization header",
+				"error": false,
+				"semanticStepId": null,
+				"runtimeActSpanId": null
+			},
+			{
+				"phase": "then",
+				"title": "Assert: 401 fixture-control-unauthorized without a token",
+				"error": false,
+				"semanticStepId": null,
+				"runtimeActSpanId": null
+			},
+			{
+				"phase": "unknown",
+				"title": "Expect \"toBe\"",
+				"error": false,
+				"semanticStepId": null,
+				"runtimeActSpanId": null
+			},
+			{
+				"phase": "unknown",
+				"title": "Expect \"toMatchObject\"",
+				"error": false,
+				"semanticStepId": null,
+				"runtimeActSpanId": null
+			},
+			{
+				"phase": "when",
+				"title": "Act: GET /fixture/state with a wrong bearer token",
+				"error": false,
+				"semanticStepId": null,
+				"runtimeActSpanId": null
+			},
+			{
+				"phase": "then",
+				"title": "Assert: 401 fixture-control-unauthorized with a wrong token",
+				"error": false,
+				"semanticStepId": null,
+				"runtimeActSpanId": null
+			},
+			{
+				"phase": "unknown",
+				"title": "Expect \"toBe\"",
+				"error": false,
+				"semanticStepId": null,
+				"runtimeActSpanId": null
+			},
+			{
+				"phase": "unknown",
+				"title": "Expect \"toMatchObject\"",
+				"error": false,
+				"semanticStepId": null,
+				"runtimeActSpanId": null
+			},
+			{
+				"phase": "when",
+				"title": "Act: GET payment-mock /fixture/state without an authorization header",
+				"error": false,
+				"semanticStepId": null,
+				"runtimeActSpanId": null
+			},
+			{
+				"phase": "then",
+				"title": "Assert: payment-mock also answers 401 fixture-control-unauthorized",
+				"error": false,
+				"semanticStepId": null,
+				"runtimeActSpanId": null
+			},
+			{
+				"phase": "unknown",
+				"title": "Expect \"toBe\"",
+				"error": false,
+				"semanticStepId": null,
+				"runtimeActSpanId": null
+			},
+			{
+				"phase": "unknown",
+				"title": "Expect \"toMatchObject\"",
+				"error": false,
+				"semanticStepId": null,
+				"runtimeActSpanId": null
+			},
+			{
+				"phase": "unknown",
+				"title": "Expect \"toMatchSnapshot\"",
+				"error": false,
+				"semanticStepId": null,
+				"runtimeActSpanId": null
+			}
+		],
+		"spanCount": 65,
+		"capturedEffectCount": 3,
+		"redactionsApplied": null
+	}
+}

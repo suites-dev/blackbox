@@ -1,0 +1,162 @@
+{
+	"schemaVersion": 1,
+	"artifactRole": "canonical-run-result",
+	"generatedAt": "2026-09-09T17:14:32.746Z",
+	"runId": "01M23JGXC2Z2FE7JR57GHQ3SV1",
+	"flowId": "s3-gate-qualified-project-disagree",
+	"title": "s3-gate-qualified-project-disagree",
+	"authoringSource": "suite",
+	"axes": {
+		"execution": "passed",
+		"evidence": "complete",
+		"contractState": "unbaselined",
+		"verdict": "indeterminate"
+	},
+	"verdict": {
+		"value": "indeterminate",
+		"authority": "deterministic-analyzer",
+		"reason": "project-candidates-disagree",
+		"scope": "flow-run",
+		"summary": "s3-gate-qualified-project-disagree's evidence was not fit for judgment (project-candidates-disagree)."
+	},
+	"qualification": {
+		"sealed": true,
+		"fresh": true,
+		"digestsMatch": true,
+		"scopeComplete": true,
+		"evidenceComplete": true,
+		"qualifies": true
+	},
+	"scope": {
+		"requiredScenarios": 1,
+		"executedScenarios": 1,
+		"attempts": 2,
+		"projects": [
+			"subsystem-base",
+			"subsystem-disagree"
+		],
+		"filtered": false
+	},
+	"firstDivergence": null,
+	"obligations": [
+		{
+			"id": "s3-gate-qualified-subsystem-project-disagreement.captures-distinct-payment-intent-outcomes-per-project::assertion",
+			"scenarioId": "s3-gate-qualified-subsystem-project-disagreement.captures-distinct-payment-intent-outcomes-per-project",
+			"source": "playwright.assertion",
+			"evaluation": true,
+			"reason": null
+		}
+	],
+	"findings": [],
+	"assumptions": [
+		{
+			"id": "instrumentation-captured-all-boundaries",
+			"text": "Instrumentation captured every declared boundary; an effect the observation policy does not cover cannot be represented as evidence."
+		},
+		{
+			"id": "collector-delivered-before-seal",
+			"text": "Every effect the instrumentation captured was delivered to the collector before the run sealed; the seal's window end is a floor on sealing, not just a fact about it."
+		},
+		{
+			"id": "source-maps-match-running-code",
+			"text": "The source maps read by the analyzer match the code that actually executed in the sealed run."
+		},
+		{
+			"id": "clock-ordering-sufficient",
+			"text": "The clock ordering available to the analyzer is sufficient to place attempt, evidence, and window boundaries correctly relative to one another."
+		},
+		{
+			"id": "declared-boundary-matches-actual",
+			"text": "The boundary declared in the observation policy (its kind and authoritativeFor claims) matches what the instrumented code actually does at runtime."
+		}
+	],
+	"perProjectResults": [
+		{
+			"project": "subsystem-base",
+			"verdict": "indeterminate",
+			"contractState": "unbaselined"
+		},
+		{
+			"project": "subsystem-disagree",
+			"verdict": "indeterminate",
+			"contractState": "unbaselined"
+		}
+	],
+	"attempts": [
+		{
+			"attemptId": "690897e0d00bec5f60ebac1202e99bdb",
+			"scenarioId": "s3-gate-qualified-subsystem-project-disagreement.captures-distinct-payment-intent-outcomes-per-project",
+			"project": "subsystem-base",
+			"retry": 0,
+			"final": true,
+			"executionOutcome": "passed",
+			"evidenceComplete": true,
+			"evidenceStatus": "valid",
+			"evidenceFiles": [
+				{
+					"name": "attempt.json",
+					"path": "evidence/690897e0d00bec5f60ebac1202e99bdb/attempt.json"
+				},
+				{
+					"name": "decisions.json",
+					"path": "evidence/690897e0d00bec5f60ebac1202e99bdb/decisions.json"
+				},
+				{
+					"name": "trace-summary.json",
+					"path": "evidence/690897e0d00bec5f60ebac1202e99bdb/trace-summary.json"
+				},
+				{
+					"name": "assertions.json",
+					"path": "evidence/690897e0d00bec5f60ebac1202e99bdb/assertions.json"
+				}
+			]
+		},
+		{
+			"attemptId": "fff784a51f3c010f3f02dab3aa1eef4c",
+			"scenarioId": "s3-gate-qualified-subsystem-project-disagreement.captures-distinct-payment-intent-outcomes-per-project",
+			"project": "subsystem-disagree",
+			"retry": 0,
+			"final": true,
+			"executionOutcome": "passed",
+			"evidenceComplete": true,
+			"evidenceStatus": "valid",
+			"evidenceFiles": [
+				{
+					"name": "attempt.json",
+					"path": "evidence/fff784a51f3c010f3f02dab3aa1eef4c/attempt.json"
+				},
+				{
+					"name": "decisions.json",
+					"path": "evidence/fff784a51f3c010f3f02dab3aa1eef4c/decisions.json"
+				},
+				{
+					"name": "trace-summary.json",
+					"path": "evidence/fff784a51f3c010f3f02dab3aa1eef4c/trace-summary.json"
+				},
+				{
+					"name": "assertions.json",
+					"path": "evidence/fff784a51f3c010f3f02dab3aa1eef4c/assertions.json"
+				}
+			]
+		}
+	],
+	"nextValidAction": {
+		"code": "request-developer-authorization",
+		"summary": "Ask the developer to approve the exact candidate or request repair/revision.",
+		"commandAfterAuthorization": "blackbox flow approve s3-gate-qualified-project-disagree --run 01M23JGXC2Z2FE7JR57GHQ3SV1"
+	},
+	"artifacts": {
+		"manifest": "manifest.json",
+		"proofPlan": "proof-plans/s3-gate-qualified-project-disagree.json",
+		"behaviorModel": "behavior-models/s3-gate-qualified-project-disagree.json",
+		"observationPolicy": "observation-policy.json",
+		"evidenceIndex": "evidence/index.json",
+		"seal": "seal.json",
+		"report": "report.html",
+		"approvalContext": null,
+		"candidateContract": null,
+		"contractDiff": null
+	},
+	"recommendation": null,
+	"developerDecision": null
+}

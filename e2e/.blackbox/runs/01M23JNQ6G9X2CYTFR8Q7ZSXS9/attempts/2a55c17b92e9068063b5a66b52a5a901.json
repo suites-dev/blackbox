@@ -1,0 +1,9 @@
+{
+	"attemptId": "2a55c17b92e9068063b5a66b52a5a901",
+	"acquisitionId": "3b1bf4fa-fe6f-40da-a4cf-905ca1fac638",
+	"scenarioId": "health.payment-mock-reports-ready-on-get-health",
+	"playwrightTestId": "d1bf5212fc8f8f62b54d-64d32dd7ca0689ffcc67",
+	"project": "per-worker",
+	"retry": 0,
+	"recordedAt": "2026-09-09T17:16:02.029Z"
+}

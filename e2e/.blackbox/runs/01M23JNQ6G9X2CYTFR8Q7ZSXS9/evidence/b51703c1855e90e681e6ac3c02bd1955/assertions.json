@@ -1,0 +1,29 @@
+{
+	"schemaVersion": 2,
+	"artifactRole": "assertion-observations",
+	"runId": "01M23JNQ6G9X2CYTFR8Q7ZSXS9",
+	"attemptId": "b51703c1855e90e681e6ac3c02bd1955",
+	"playwrightTestId": "035dad0ffab30e40b0c2-36f35216846c15f06d57",
+	"scenarioId": "payment-mock-subsystem.reports-ready-on-get-health",
+	"project": "subsystem",
+	"retry": 0,
+	"planComplete": true,
+	"scenarioResult": true,
+	"scenarioResultReason": null,
+	"assertions": [
+		{
+			"assertionId": "payment-mock-subsystem.reports-ready-on-get-health/step:1",
+			"ordinal": 1,
+			"title": "Assert 200 with status ready",
+			"declaration": {
+				"path": "tests/subsystem/payment-mock.spec.ts",
+				"line": 15,
+				"column": 3
+			},
+			"evaluation": true,
+			"reason": null,
+			"titleCorroborated": false,
+			"terminalAttribution": "no-attributable-expect-failure"
+		}
+	]
+}

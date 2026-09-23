@@ -1,0 +1,756 @@
+{
+	"schemaVersion": 4,
+	"runId": "01M25KNEH3C9BC4HVE743DBF2T",
+	"contentDigestScheme": {
+		"id": "git-blob-sha1",
+		"algorithm": "sha1",
+		"encoding": "lowercase-hex",
+		"preimage": "blob <raw-byte-length>\\0<raw-file-bytes>",
+		"purpose": "Content-integrity identifier; not authentication or a signature."
+	},
+	"startedAt": "2026-09-10T12:11:16.899Z",
+	"finishedAt": "2026-09-10T12:13:28.496Z",
+	"scope": {
+		"projects": [
+			"per-test",
+			"per-worker",
+			"subsystem"
+		],
+		"selection": [],
+		"shard": null,
+		"grep": null
+	},
+	"sourceRevision": {
+		"headSha": "5e6e88ddf8eee680eb3fc6f68f2b898ef64b85f6",
+		"branch": null,
+		"dirty": false,
+		"mergeBase": "3a1a1e2282fb53f6885ab5994e975977acac0e65"
+	},
+	"versions": {
+		"protocol": "0.0.0",
+		"analyzer": "0.0.0",
+		"playwright": "1.61.0",
+		"instrumentation": "0.12.1"
+	},
+	"flows": [
+		{
+			"flowId": "concurrency-carol",
+			"authoringSource": "feature",
+			"suite": {
+				"path": "tests/suites/concurrency.suite.ts",
+				"digest": "cfcbc79eded27c16637dbd4893c01b7934a3292a"
+			},
+			"requirement": {
+				"path": "tests/per-test/concurrency-carol.feature",
+				"digest": "83fccbb1696cfbe92011ab6d19a17d2b826da2fd"
+			},
+			"baselines": [
+				{
+					"scenarioId": "concurrency.serializes-concurrent-subscribe-calls-for-one-user-into-one-crea",
+					"artifact": {
+						"path": "tests/per-test/effects/concurrency.spec.ts/effects-concurrency-carol--flow-1276aff2490c49228363b4fc44542cbf72040a62--scenario-28215a038ecfde2b48adf8037f7c7426a09351a1.yaml",
+						"digest": "dc4f14a95f9f43b11ce16823ac92832a61b99d54"
+					}
+				}
+			],
+			"entries": [
+				{
+					"project": "per-test",
+					"entryPath": "tests/per-test/concurrency.spec.ts"
+				},
+				{
+					"project": "per-worker",
+					"entryPath": "tests/per-worker/concurrency.spec.ts"
+				}
+			],
+			"candidate": null,
+			"behaviorModelDigest": "82a98e8300284d769a95419c5d09e56f04893bbf",
+			"observationDigest": "1fa7b4b1273c0ca0e351a378c1e44b0f039c6795",
+			"proofPlanDigest": "77e93e52f855e29787de76faac90ec8ab8afd2bc",
+			"completeness": {
+				"plannedScenarios": [
+					"concurrency.serializes-concurrent-subscribe-calls-for-one-user-into-one-crea"
+				],
+				"executedScenarios": [
+					"concurrency.serializes-concurrent-subscribe-calls-for-one-user-into-one-crea"
+				],
+				"complete": true,
+				"reasons": []
+			}
+		},
+		{
+			"flowId": "fixture-control",
+			"authoringSource": "suite",
+			"suite": {
+				"path": "tests/suites/fixture-control.suite.ts",
+				"digest": "50a1d6306307e7d45e4aa5e6d99c3c97df5a4272"
+			},
+			"requirement": null,
+			"baselines": [
+				{
+					"scenarioId": "fixture-control.group-cleanup-restores-a-clean-fixture-state-after-a-subscriptio",
+					"artifact": {
+						"path": "tests/per-test/effects/fixture-control.spec.ts/effects-fixture-control--flow-88cd600a4d7f2f1915fb4f9b898714e30c7dcc08--scenario-fc8dd6d0f5acdaf0d890c53ec15ee3fc951de21e.yaml",
+						"digest": "00c54037add6eb9fa2fd536ff175a800b3c65258"
+					}
+				},
+				{
+					"scenarioId": "fixture-control.payment-mock-records-payment-intents-and-refunds-and-rejects-unk",
+					"artifact": {
+						"path": "tests/per-test/effects/fixture-control.spec.ts/effects-fixture-control--flow-88cd600a4d7f2f1915fb4f9b898714e30c7dcc08--scenario-44ebb232a79db761b7a03479eb0f5bba79679545.yaml",
+						"digest": "9cb69f7773eddea4722b7fc6c1030913d37f54bd"
+					}
+				},
+				{
+					"scenarioId": "fixture-control.rejects-fixture-control-access-without-a-token-or-with-a-wrong-t",
+					"artifact": {
+						"path": "tests/per-test/effects/fixture-control.spec.ts/effects-fixture-control--flow-88cd600a4d7f2f1915fb4f9b898714e30c7dcc08--scenario-b39da81cf518bcd9336ca3c2f5ceb2b829fedcf2.yaml",
+						"digest": "0450b3cc9fe48226300ca8a5ccd25976a6f0a0f7"
+					}
+				},
+				{
+					"scenarioId": "fixture-control.resets-to-the-fresh-and-comparison-absent-profiles-and-rejects-a",
+					"artifact": {
+						"path": "tests/per-test/effects/fixture-control.spec.ts/effects-fixture-control--flow-88cd600a4d7f2f1915fb4f9b898714e30c7dcc08--scenario-17dadf1683cdd75bd8f6aa9c8f4c5c9a245f7e26.yaml",
+						"digest": "81f3389ff38c75c92150a69b9202bf9392533a19"
+					}
+				}
+			],
+			"entries": [
+				{
+					"project": "per-test",
+					"entryPath": "per-test/fixture-control.spec.ts"
+				},
+				{
+					"project": "per-worker",
+					"entryPath": "per-worker/fixture-control.spec.ts"
+				}
+			],
+			"candidate": null,
+			"behaviorModelDigest": "pending-s3",
+			"observationDigest": "pending-s3",
+			"proofPlanDigest": "pending-s3",
+			"completeness": {
+				"plannedScenarios": [],
+				"executedScenarios": [
+					"fixture-control.group-cleanup-restores-a-clean-fixture-state-after-a-subscriptio",
+					"fixture-control.payment-mock-records-payment-intents-and-refunds-and-rejects-unk",
+					"fixture-control.rejects-fixture-control-access-without-a-token-or-with-a-wrong-t",
+					"fixture-control.resets-to-the-fresh-and-comparison-absent-profiles-and-rejects-a"
+				],
+				"complete": false,
+				"reasons": [
+					"planned-scope-unknown-pending-proof-plans"
+				]
+			}
+		},
+		{
+			"flowId": "health",
+			"authoringSource": "suite",
+			"suite": {
+				"path": "tests/suites/health.suite.ts",
+				"digest": "fbfed6fa0a4228a0944a22fd590eb80ae53d2ba5"
+			},
+			"requirement": null,
+			"baselines": [
+				{
+					"scenarioId": "health.fraud-check-reports-ready-on-get-health",
+					"artifact": {
+						"path": "tests/per-test/effects/health.spec.ts/effects-health--flow-b420c0f6052935ea1676ecb75289d52c3752f234--scenario-b493367b9daf124871b3f1325f7b65a8af312208.yaml",
+						"digest": "c36a83cd40f421829f47624b4c7030f4bc885336"
+					}
+				},
+				{
+					"scenarioId": "health.order-service-reports-ready-on-get-health",
+					"artifact": {
+						"path": "tests/per-test/effects/health.spec.ts/effects-health--flow-b420c0f6052935ea1676ecb75289d52c3752f234--scenario-917f5ebf111fa08a3bbb8ef44548f7c6aa90c5db.yaml",
+						"digest": "4423b08aa1be58797738b8b4fa98bd1e1141e3ac"
+					}
+				},
+				{
+					"scenarioId": "health.payment-mock-reports-ready-on-get-health",
+					"artifact": {
+						"path": "tests/per-test/effects/health.spec.ts/effects-health--flow-b420c0f6052935ea1676ecb75289d52c3752f234--scenario-8a67a9f224be27f04b0040d3e58e3705f13d24ad.yaml",
+						"digest": "cbf91fbfdd077868b22b16e6d3411b24b44834ed"
+					}
+				},
+				{
+					"scenarioId": "health.public-api-reports-ready-on-get-health",
+					"artifact": {
+						"path": "tests/per-test/effects/health.spec.ts/effects-health--flow-b420c0f6052935ea1676ecb75289d52c3752f234--scenario-157d1fdb65fe7eb25307a1784d4dec5f2339cc1d.yaml",
+						"digest": "b640ee83657c9d0c6031aa988a37b279ee1beccd"
+					}
+				}
+			],
+			"entries": [
+				{
+					"project": "per-test",
+					"entryPath": "per-test/health.spec.ts"
+				},
+				{
+					"project": "per-worker",
+					"entryPath": "per-worker/health.spec.ts"
+				}
+			],
+			"candidate": null,
+			"behaviorModelDigest": "pending-s3",
+			"observationDigest": "pending-s3",
+			"proofPlanDigest": "pending-s3",
+			"completeness": {
+				"plannedScenarios": [],
+				"executedScenarios": [
+					"health.fraud-check-reports-ready-on-get-health",
+					"health.order-service-reports-ready-on-get-health",
+					"health.payment-mock-reports-ready-on-get-health",
+					"health.public-api-reports-ready-on-get-health"
+				],
+				"complete": false,
+				"reasons": [
+					"planned-scope-unknown-pending-proof-plans"
+				]
+			}
+		},
+		{
+			"flowId": "payment-mock-subsystem-dist-wrapper",
+			"authoringSource": "suite",
+			"suite": {
+				"path": "tests/subsystem/payment-mock-dist.spec.ts",
+				"digest": "3f960a8a9cd5b4e09613ad5e72f365855b526a4d"
+			},
+			"requirement": null,
+			"baselines": [
+				{
+					"scenarioId": "payment-mock-subsystem-dist-wrapper.reports-ready-on-get-health-from-the-lean-dist-wrapper",
+					"artifact": {
+						"path": "tests/subsystem/effects/payment-mock-dist.spec.ts/effects-payment-mock-subsystem-dist-wrapper--flow-d32bf88e5378e3471d1cbc455124f759ebb827bf--scenario-08a87be3422136b3da105697420fdf94761675de.yaml",
+						"digest": "1c9baf1d5736593f733e7a3be438532c2dcaf1f4"
+					}
+				},
+				{
+					"scenarioId": "payment-mock-subsystem-dist-wrapper.runs-the-payment-intent-and-refund-lifecycle-on-the-dist-wrapper",
+					"artifact": {
+						"path": "tests/subsystem/effects/payment-mock-dist.spec.ts/effects-payment-mock-subsystem-dist-wrapper--flow-d32bf88e5378e3471d1cbc455124f759ebb827bf--scenario-5f9d2e1d62c0af8eaf18127f0f70836f15871bb6.yaml",
+						"digest": "a6135d6a4c2126805292008d957af967584ec48f"
+					}
+				}
+			],
+			"entries": [
+				{
+					"project": "subsystem",
+					"entryPath": "tests/subsystem/payment-mock-dist.spec.ts"
+				}
+			],
+			"candidate": null,
+			"behaviorModelDigest": "821cc0b0c071d84bc2606e5aa40eb293cc874e4b",
+			"observationDigest": "1fa7b4b1273c0ca0e351a378c1e44b0f039c6795",
+			"proofPlanDigest": "be4347c972e4c16bfdf3e67c6c9b2037756d1b36",
+			"completeness": {
+				"plannedScenarios": [
+					"payment-mock-subsystem-dist-wrapper.reports-ready-on-get-health-from-the-lean-dist-wrapper",
+					"payment-mock-subsystem-dist-wrapper.runs-the-payment-intent-and-refund-lifecycle-on-the-dist-wrapper"
+				],
+				"executedScenarios": [
+					"payment-mock-subsystem-dist-wrapper.reports-ready-on-get-health-from-the-lean-dist-wrapper",
+					"payment-mock-subsystem-dist-wrapper.runs-the-payment-intent-and-refund-lifecycle-on-the-dist-wrapper"
+				],
+				"complete": true,
+				"reasons": []
+			}
+		},
+		{
+			"flowId": "payment-mock-subsystem",
+			"authoringSource": "suite",
+			"suite": {
+				"path": "tests/subsystem/payment-mock.spec.ts",
+				"digest": "83162c8b5b8a3f220dac6b89ffdc77fe621632a8"
+			},
+			"requirement": null,
+			"baselines": [
+				{
+					"scenarioId": "payment-mock-subsystem.reports-ready-on-get-health",
+					"artifact": {
+						"path": "tests/subsystem/effects/payment-mock.spec.ts/effects-payment-mock-subsystem--flow-9ea784feaeff925bba0b40b570b0c64565d3c879--scenario-13b705ce482ac4ef15315a1e0b790b6fb9ac56f6.yaml",
+						"digest": "cbf91fbfdd077868b22b16e6d3411b24b44834ed"
+					}
+				},
+				{
+					"scenarioId": "payment-mock-subsystem.runs-the-payment-intent-and-refund-lifecycle-on-a-lone-container",
+					"artifact": {
+						"path": "tests/subsystem/effects/payment-mock.spec.ts/effects-payment-mock-subsystem--flow-9ea784feaeff925bba0b40b570b0c64565d3c879--scenario-068073fca12496cdde5d63a7140d5352769cb080.yaml",
+						"digest": "dffd7216c2dee29daadbda956dbcb0319d66f840"
+					}
+				},
+				{
+					"scenarioId": "payment-mock-subsystem.starts-from-a-clean-state-because-the-container-is-per-test",
+					"artifact": {
+						"path": "tests/subsystem/effects/payment-mock.spec.ts/effects-payment-mock-subsystem--flow-9ea784feaeff925bba0b40b570b0c64565d3c879--scenario-b99f7ad63338c3a01e916b65b26d4fce1724a111.yaml",
+						"digest": "ad9eecb0e9a539f7b5a1b7f0fe3d24ad62772423"
+					}
+				}
+			],
+			"entries": [
+				{
+					"project": "subsystem",
+					"entryPath": "tests/subsystem/payment-mock.spec.ts"
+				}
+			],
+			"candidate": null,
+			"behaviorModelDigest": "0b416f9da853e34b130cb191f3b05c9f6fdcf25d",
+			"observationDigest": "1fa7b4b1273c0ca0e351a378c1e44b0f039c6795",
+			"proofPlanDigest": "0da6cd3a95f5bd90d3e3eb53c372e60ddd99c2b0",
+			"completeness": {
+				"plannedScenarios": [
+					"payment-mock-subsystem.reports-ready-on-get-health",
+					"payment-mock-subsystem.runs-the-payment-intent-and-refund-lifecycle-on-a-lone-container",
+					"payment-mock-subsystem.starts-from-a-clean-state-because-the-container-is-per-test"
+				],
+				"executedScenarios": [
+					"payment-mock-subsystem.reports-ready-on-get-health",
+					"payment-mock-subsystem.runs-the-payment-intent-and-refund-lifecycle-on-a-lone-container",
+					"payment-mock-subsystem.starts-from-a-clean-state-because-the-container-is-per-test"
+				],
+				"complete": true,
+				"reasons": []
+			}
+		},
+		{
+			"flowId": "subscription-creation",
+			"authoringSource": "suite",
+			"suite": {
+				"path": "tests/suites/subscription-creation.suite.ts",
+				"digest": "19b31cd10a4baada45ce0cac2367b50e0592b63e"
+			},
+			"requirement": null,
+			"baselines": [
+				{
+					"scenarioId": "subscription-creation.creates-a-local-only-subscription-for-dora-without-fraud-payment",
+					"artifact": {
+						"path": "tests/per-test/effects/subscription-creation.spec.ts/effects-subscription-creation--flow-33ad4e9fb7c54e62c067beb3990d545e972815c2--scenario-8e77f9451807deb30ad1eb261d97110ad4f6bd73.yaml",
+						"digest": "182c3c795750dd5dcb1c9366c30e0d0e1268a059"
+					}
+				},
+				{
+					"scenarioId": "subscription-creation.creates-an-active-subscription-for-a-full-path-user-with-fraud-p",
+					"artifact": {
+						"path": "tests/per-test/effects/subscription-creation.spec.ts/effects-subscription-creation--flow-33ad4e9fb7c54e62c067beb3990d545e972815c2--scenario-e250c3333517e97a832739bd4117b2309a53c400.yaml",
+						"digest": "5b3761d9b6810ff10021696723bacb8b99707c83"
+					}
+				},
+				{
+					"scenarioId": "subscription-creation.serves-eve-from-the-preloaded-returning-hint-under-the-compariso",
+					"artifact": {
+						"path": "tests/per-test/effects/subscription-creation.spec.ts/effects-subscription-creation--flow-33ad4e9fb7c54e62c067beb3990d545e972815c2--scenario-d06a6eddf8ac24c31c794b27547444fd40e3dd30.yaml",
+						"digest": "7e146d65dc9268bd6497e7352f7ee2ae88198def"
+					}
+				}
+			],
+			"entries": [
+				{
+					"project": "per-test",
+					"entryPath": "tests/per-test/subscription-creation.spec.ts"
+				},
+				{
+					"project": "per-worker",
+					"entryPath": "tests/per-worker/subscription-creation.spec.ts"
+				}
+			],
+			"candidate": null,
+			"behaviorModelDigest": "d501c3f5663b719154d23ca01c4b1df9913b15c3",
+			"observationDigest": "1fa7b4b1273c0ca0e351a378c1e44b0f039c6795",
+			"proofPlanDigest": "b4ca5139d9bb7660a3f8580d90bcf635e942d6c6",
+			"completeness": {
+				"plannedScenarios": [
+					"subscription-creation.creates-a-local-only-subscription-for-dora-without-fraud-payment",
+					"subscription-creation.creates-an-active-subscription-for-a-full-path-user-with-fraud-p",
+					"subscription-creation.serves-eve-from-the-preloaded-returning-hint-under-the-compariso"
+				],
+				"executedScenarios": [
+					"subscription-creation.creates-a-local-only-subscription-for-dora-without-fraud-payment",
+					"subscription-creation.creates-an-active-subscription-for-a-full-path-user-with-fraud-p",
+					"subscription-creation.serves-eve-from-the-preloaded-returning-hint-under-the-compariso"
+				],
+				"complete": true,
+				"reasons": []
+			}
+		},
+		{
+			"flowId": "subscription-rejection",
+			"authoringSource": "suite",
+			"suite": {
+				"path": "tests/suites/subscription-rejection.suite.ts",
+				"digest": "fc0109d815b6bcb4e0f9cdcb7d192e91bb94d524"
+			},
+			"requirement": null,
+			"baselines": [
+				{
+					"scenarioId": "subscription-rejection.rejects-a-second-subscription-for-the-same-user-with-409-before",
+					"artifact": {
+						"path": "tests/per-test/effects/subscription-rejection.spec.ts/effects-subscription-rejection--flow-b7753fee4c4ebb2a2447732f796253ff6f100687--scenario-627a04193185aaea88fb31233f60d02b6962e07e.yaml",
+						"digest": "785f44b644f01863f1299eb5f7e7182f6ec91209"
+					}
+				},
+				{
+					"scenarioId": "subscription-rejection.rejects-an-unknown-user-with-404-and-leaves-no-side-effects",
+					"artifact": {
+						"path": "tests/per-test/effects/subscription-rejection.spec.ts/effects-subscription-rejection--flow-b7753fee4c4ebb2a2447732f796253ff6f100687--scenario-945e8a6a7fda732da979b0f56dcbee8a929dd988.yaml",
+						"digest": "4f37ff7c20e511d61e8037e08c1904fe461cad27"
+					}
+				},
+				{
+					"scenarioId": "subscription-rejection.rejects-malformed-subscription-bodies-with-400-invalid-body",
+					"artifact": {
+						"path": "tests/per-test/effects/subscription-rejection.spec.ts/effects-subscription-rejection--flow-b7753fee4c4ebb2a2447732f796253ff6f100687--scenario-8caa2aa2222eb52bd870e4ee5996e5de94d8efa5.yaml",
+						"digest": "4f5da8568ca747f86faacad859aa4ab013a6ee21"
+					}
+				}
+			],
+			"entries": [
+				{
+					"project": "per-test",
+					"entryPath": "per-test/subscription-rejection.spec.ts"
+				},
+				{
+					"project": "per-worker",
+					"entryPath": "per-worker/subscription-rejection.spec.ts"
+				}
+			],
+			"candidate": null,
+			"behaviorModelDigest": "pending-s3",
+			"observationDigest": "pending-s3",
+			"proofPlanDigest": "pending-s3",
+			"completeness": {
+				"plannedScenarios": [],
+				"executedScenarios": [
+					"subscription-rejection.rejects-a-second-subscription-for-the-same-user-with-409-before",
+					"subscription-rejection.rejects-an-unknown-user-with-404-and-leaves-no-side-effects",
+					"subscription-rejection.rejects-malformed-subscription-bodies-with-400-invalid-body"
+				],
+				"complete": false,
+				"reasons": [
+					"planned-scope-unknown-pending-proof-plans"
+				]
+			}
+		}
+	],
+	"attempts": [
+		{
+			"attemptId": "03fb3cab95743be7bdd0e7aab22015d9",
+			"acquisitionId": "32bc72d2-7e22-4348-b872-436e742b600d",
+			"scenarioId": "payment-mock-subsystem.reports-ready-on-get-health",
+			"playwrightTestId": "035dad0ffab30e40b0c2-36f35216846c15f06d57",
+			"project": "subsystem",
+			"retry": 0,
+			"recordedAt": "2026-09-10T12:12:19.177Z"
+		},
+		{
+			"attemptId": "076f0910a93f2b37f40a7f1c160a49a5",
+			"acquisitionId": "1feec302-f41f-4d48-835e-2585f3fb976d",
+			"scenarioId": "health.order-service-reports-ready-on-get-health",
+			"playwrightTestId": "6c705246398d2be6220f-a5ba2a2915458cdccc3a",
+			"project": "per-test",
+			"retry": 0,
+			"recordedAt": "2026-09-10T12:12:52.512Z"
+		},
+		{
+			"attemptId": "0e15205173f61c09f2878a6769beb928",
+			"acquisitionId": "39e07fba-0c43-48aa-aa4b-d35430a1367a",
+			"scenarioId": "subscription-rejection.rejects-malformed-subscription-bodies-with-400-invalid-body",
+			"playwrightTestId": "936b029611cc371ee95b-18cf142de6ae144affbd",
+			"project": "per-test",
+			"retry": 0,
+			"recordedAt": "2026-09-10T12:12:51.696Z"
+		},
+		{
+			"attemptId": "120962cbcb095f5067a822f22ef23a6e",
+			"acquisitionId": "1e8157ca-161d-4d9a-bd36-61a994f507a2",
+			"scenarioId": "fixture-control.resets-to-the-fresh-and-comparison-absent-profiles-and-rejects-a",
+			"playwrightTestId": "b4201a13beca0831b244-4773a456e28879b49c0a",
+			"project": "per-test",
+			"retry": 0,
+			"recordedAt": "2026-09-10T12:12:26.542Z"
+		},
+		{
+			"attemptId": "121404c269c8700a54812986a122107e",
+			"acquisitionId": "2d44c943-005f-4f32-93dc-6bcd9b5c2b72",
+			"scenarioId": "subscription-rejection.rejects-a-second-subscription-for-the-same-user-with-409-before",
+			"playwrightTestId": "16c3faa07c6fdef3bf8c-6fefe7f7bc54019351a6",
+			"project": "per-worker",
+			"retry": 0,
+			"recordedAt": "2026-09-10T12:12:03.105Z"
+		},
+		{
+			"attemptId": "1233bfdf3bc09f006362f6dec062fe09",
+			"acquisitionId": "1d9cdaf9-4af4-4846-aa7f-fceb237be4f4",
+			"scenarioId": "health.fraud-check-reports-ready-on-get-health",
+			"playwrightTestId": "6c705246398d2be6220f-ca88f3cd08a3e96c7670",
+			"project": "per-test",
+			"retry": 0,
+			"recordedAt": "2026-09-10T12:12:25.549Z"
+		},
+		{
+			"attemptId": "152963ca1aff5c81d8617af73d7e58bf",
+			"acquisitionId": "53ec67c8-4010-473f-aaa2-ceb7a999a9eb",
+			"scenarioId": "fixture-control.payment-mock-records-payment-intents-and-refunds-and-rejects-unk",
+			"playwrightTestId": "b4201a13beca0831b244-40c59631f597356130db",
+			"project": "per-test",
+			"retry": 0,
+			"recordedAt": "2026-09-10T12:13:12.739Z"
+		},
+		{
+			"attemptId": "165a64014d21c072fd077b1fcee86c99",
+			"acquisitionId": "3f829ba3-a44c-4bcb-ad67-e3e2740ccac7",
+			"scenarioId": "subscription-rejection.rejects-an-unknown-user-with-404-and-leaves-no-side-effects",
+			"playwrightTestId": "16c3faa07c6fdef3bf8c-8587996589daf6be6867",
+			"project": "per-worker",
+			"retry": 0,
+			"recordedAt": "2026-09-10T12:12:00.973Z"
+		},
+		{
+			"attemptId": "245aacb120f4abfead852ed6eef59fc3",
+			"acquisitionId": "b61dec61-7c6d-49f1-8436-330201306c3f",
+			"scenarioId": "fixture-control.rejects-fixture-control-access-without-a-token-or-with-a-wrong-t",
+			"playwrightTestId": "b4201a13beca0831b244-604c182745a568e3fd90",
+			"project": "per-test",
+			"retry": 0,
+			"recordedAt": "2026-09-10T12:11:52.586Z"
+		},
+		{
+			"attemptId": "278b2f35a30396422fb6b5192ab38ed1",
+			"acquisitionId": "a0a5edfa-2e34-46bf-b99a-8fb2a22f02e1",
+			"scenarioId": "payment-mock-subsystem.runs-the-payment-intent-and-refund-lifecycle-on-a-lone-container",
+			"playwrightTestId": "035dad0ffab30e40b0c2-479d3c3b3a4e35c353cb",
+			"project": "subsystem",
+			"retry": 0,
+			"recordedAt": "2026-09-10T12:12:30.437Z"
+		},
+		{
+			"attemptId": "28b3aa9509e9799893b6f517c2236260",
+			"acquisitionId": "dc0e69e6-8e2a-4d80-a751-b96ef5b217c9",
+			"scenarioId": "subscription-creation.creates-an-active-subscription-for-a-full-path-user-with-fraud-p",
+			"playwrightTestId": "2be0dfcf8cf709fb4273-33c10a4e908b3a852d16",
+			"project": "per-test",
+			"retry": 0,
+			"recordedAt": "2026-09-10T12:11:57.214Z"
+		},
+		{
+			"attemptId": "28dc6c767b0bdb4c18aed1a4fa7785cd",
+			"acquisitionId": "5c625dd9-9918-40dd-8995-0ed10a4ff0bd",
+			"scenarioId": "subscription-rejection.rejects-a-second-subscription-for-the-same-user-with-409-before",
+			"playwrightTestId": "936b029611cc371ee95b-3a151cbeb2ce66ce1e7e",
+			"project": "per-test",
+			"retry": 0,
+			"recordedAt": "2026-09-10T12:12:27.134Z"
+		},
+		{
+			"attemptId": "294ea73c5c95e9fbb5006fdc2e637206",
+			"acquisitionId": "0c96e14d-3f0f-449d-ae67-55020e1ca892",
+			"scenarioId": "health.fraud-check-reports-ready-on-get-health",
+			"playwrightTestId": "d1bf5212fc8f8f62b54d-1e1daa19626dcd7bbfc6",
+			"project": "per-worker",
+			"retry": 0,
+			"recordedAt": "2026-09-10T12:11:53.192Z"
+		},
+		{
+			"attemptId": "2e7edd9ebedc5d2c938575d14d8461bb",
+			"acquisitionId": "c024b600-ddfa-46cb-a5c7-98e2c7d31c9c",
+			"scenarioId": "payment-mock-subsystem-dist-wrapper.reports-ready-on-get-health-from-the-lean-dist-wrapper",
+			"playwrightTestId": "1b9ca96bf231cda8c08d-abf7c15ba6be3d6e4f55",
+			"project": "subsystem",
+			"retry": 0,
+			"recordedAt": "2026-09-10T12:12:12.717Z"
+		},
+		{
+			"attemptId": "39e9f9b41e7ea2479f8053c0819ff73a",
+			"acquisitionId": "07374d88-0042-4ea8-bffe-530568d61ffc",
+			"scenarioId": "subscription-creation.creates-a-local-only-subscription-for-dora-without-fraud-payment",
+			"playwrightTestId": "52990a645e1a89ad7d6d-43416091fcafbbe4d901",
+			"project": "per-worker",
+			"retry": 0,
+			"recordedAt": "2026-09-10T12:12:16.573Z"
+		},
+		{
+			"attemptId": "4b752797d284318d4ea38e9498966b33",
+			"acquisitionId": "f7f4daf4-edb2-48ec-9c75-995d26cbd246",
+			"scenarioId": "health.order-service-reports-ready-on-get-health",
+			"playwrightTestId": "d1bf5212fc8f8f62b54d-f751bfc7864c4432ec4e",
+			"project": "per-worker",
+			"retry": 0,
+			"recordedAt": "2026-09-10T12:11:56.479Z"
+		},
+		{
+			"attemptId": "5ffe52e1bcea1275d10dab552420a449",
+			"acquisitionId": "0c38eef5-dfdd-4653-bf34-c81079751c0f",
+			"scenarioId": "health.payment-mock-reports-ready-on-get-health",
+			"playwrightTestId": "d1bf5212fc8f8f62b54d-64d32dd7ca0689ffcc67",
+			"project": "per-worker",
+			"retry": 0,
+			"recordedAt": "2026-09-10T12:11:58.488Z"
+		},
+		{
+			"attemptId": "62403baa46fdc9fe69e4122f1da5f12b",
+			"acquisitionId": "eb3f7286-51d2-4206-9dd6-6453a7c34f33",
+			"scenarioId": "payment-mock-subsystem-dist-wrapper.runs-the-payment-intent-and-refund-lifecycle-on-the-dist-wrapper",
+			"playwrightTestId": "1b9ca96bf231cda8c08d-50c45533cc2bd17e83b1",
+			"project": "subsystem",
+			"retry": 0,
+			"recordedAt": "2026-09-10T12:12:23.159Z"
+		},
+		{
+			"attemptId": "661cbceb133352e08062668e2a6ee2de",
+			"acquisitionId": "644aa011-5ae1-490d-9284-81602a19e3a1",
+			"scenarioId": "subscription-creation.creates-an-active-subscription-for-a-full-path-user-with-fraud-p",
+			"playwrightTestId": "52990a645e1a89ad7d6d-ca9831f667f7076da215",
+			"project": "per-worker",
+			"retry": 0,
+			"recordedAt": "2026-09-10T12:12:14.443Z"
+		},
+		{
+			"attemptId": "687b6d2959198a2f907cde9db5239e78",
+			"acquisitionId": "d25daca4-5993-40c9-9878-112174b678c8",
+			"scenarioId": "payment-mock-subsystem.starts-from-a-clean-state-because-the-container-is-per-test",
+			"playwrightTestId": "035dad0ffab30e40b0c2-5942dc07c8be519e4490",
+			"project": "subsystem",
+			"retry": 0,
+			"recordedAt": "2026-09-10T12:12:42.657Z"
+		},
+		{
+			"attemptId": "7ba85a5bb78b1b541ac02c90061b4ac0",
+			"acquisitionId": "1e729427-ac92-4e82-b9b3-386615a91ba7",
+			"scenarioId": "concurrency.serializes-concurrent-subscribe-calls-for-one-user-into-one-crea",
+			"playwrightTestId": "ab20711e520f4abff31a-6d85b1dce71a1f12bdc1",
+			"project": "per-test",
+			"retry": 0,
+			"recordedAt": "2026-09-10T12:11:49.476Z"
+		},
+		{
+			"attemptId": "8a44e5b6642c8cbe09689a6908adc397",
+			"acquisitionId": "166e56c2-ff8e-476f-b705-1f28cfe4628b",
+			"scenarioId": "subscription-creation.creates-a-local-only-subscription-for-dora-without-fraud-payment",
+			"playwrightTestId": "2be0dfcf8cf709fb4273-ae88c8e64e2636ab3006",
+			"project": "per-test",
+			"retry": 0,
+			"recordedAt": "2026-09-10T12:12:29.234Z"
+		},
+		{
+			"attemptId": "903517d6273d2527a99322de307d1cde",
+			"acquisitionId": "4967a661-6ea6-4a4b-936d-314df5c03494",
+			"scenarioId": "subscription-rejection.rejects-an-unknown-user-with-404-and-leaves-no-side-effects",
+			"playwrightTestId": "936b029611cc371ee95b-2c00b5c353780a522c49",
+			"project": "per-test",
+			"retry": 0,
+			"recordedAt": "2026-09-10T12:11:52.706Z"
+		},
+		{
+			"attemptId": "9f538c98172d3ee75c1a2d92ebd5876e",
+			"acquisitionId": "5d8f093d-b107-4804-a48c-18504e73279f",
+			"scenarioId": "fixture-control.resets-to-the-fresh-and-comparison-absent-profiles-and-rejects-a",
+			"playwrightTestId": "c771ecd7169f45f8e2fe-6357137907732b791aea",
+			"project": "per-worker",
+			"retry": 0,
+			"recordedAt": "2026-09-10T12:11:51.444Z"
+		},
+		{
+			"attemptId": "a51ac21e41c5503ece8e56217acbcf9f",
+			"acquisitionId": "afbf5b58-9362-43c5-bd99-f7e6c227272b",
+			"scenarioId": "fixture-control.group-cleanup-restores-a-clean-fixture-state-after-a-subscriptio",
+			"playwrightTestId": "b4201a13beca0831b244-4880676256a8969578c6",
+			"project": "per-test",
+			"retry": 0,
+			"recordedAt": "2026-09-10T12:12:50.104Z"
+		},
+		{
+			"attemptId": "b083ef47ce587639d8415c2fc768c741",
+			"acquisitionId": "13fbed56-aa44-466b-b062-dc1d169040eb",
+			"scenarioId": "subscription-rejection.rejects-malformed-subscription-bodies-with-400-invalid-body",
+			"playwrightTestId": "16c3faa07c6fdef3bf8c-b2a1f53e7a4247749557",
+			"project": "per-worker",
+			"retry": 0,
+			"recordedAt": "2026-09-10T12:12:05.152Z"
+		},
+		{
+			"attemptId": "b1714bea048d24c90cb38d0e08f39ae8",
+			"acquisitionId": "e3f0fc3e-2711-4330-95bd-1375eef48756",
+			"scenarioId": "concurrency.serializes-concurrent-subscribe-calls-for-one-user-into-one-crea",
+			"playwrightTestId": "3996852a31c3766fefc0-867a5e5855d281597baf",
+			"project": "per-worker",
+			"retry": 0,
+			"recordedAt": "2026-09-10T12:11:48.180Z"
+		},
+		{
+			"attemptId": "bc172f89f2a232357d0fac72751c7769",
+			"acquisitionId": "9a738e83-92a2-4381-867a-d84fccbe0c16",
+			"scenarioId": "health.public-api-reports-ready-on-get-health",
+			"playwrightTestId": "6c705246398d2be6220f-29a6bc1d9bba4456030c",
+			"project": "per-test",
+			"retry": 0,
+			"recordedAt": "2026-09-10T12:11:53.377Z"
+		},
+		{
+			"attemptId": "be744a44dab9614d510991b5550d0a49",
+			"acquisitionId": "d00aeb6e-01cd-4b69-9e2c-886d4ff476a4",
+			"scenarioId": "fixture-control.rejects-fixture-control-access-without-a-token-or-with-a-wrong-t",
+			"playwrightTestId": "c771ecd7169f45f8e2fe-b91b1496b1d233ee2ca2",
+			"project": "per-worker",
+			"retry": 0,
+			"recordedAt": "2026-09-10T12:11:47.393Z"
+		},
+		{
+			"attemptId": "c12c8a8e74c469333769e511067bb15b",
+			"acquisitionId": "876ad360-09ed-487d-9d1c-beb7c7dadbe9",
+			"scenarioId": "health.public-api-reports-ready-on-get-health",
+			"playwrightTestId": "d1bf5212fc8f8f62b54d-b1e05c0b3ee6edfd93ee",
+			"project": "per-worker",
+			"retry": 0,
+			"recordedAt": "2026-09-10T12:11:50.268Z"
+		},
+		{
+			"attemptId": "d50124a1e5baa337d1858ee4ed586419",
+			"acquisitionId": "f78ee994-5fc6-42a9-9153-ca605c3b8d85",
+			"scenarioId": "subscription-creation.serves-eve-from-the-preloaded-returning-hint-under-the-compariso",
+			"playwrightTestId": "2be0dfcf8cf709fb4273-ed2119ca959bffa2909b",
+			"project": "per-test",
+			"retry": 0,
+			"recordedAt": "2026-09-10T12:12:54.802Z"
+		},
+		{
+			"attemptId": "e4e80c4177ba626bf638e4cc38865a2f",
+			"acquisitionId": "3f0a562c-5371-4fd5-9e69-8dd2f2f45571",
+			"scenarioId": "fixture-control.group-cleanup-restores-a-clean-fixture-state-after-a-subscriptio",
+			"playwrightTestId": "c771ecd7169f45f8e2fe-882b052d6171ab2eb6fb",
+			"project": "per-worker",
+			"retry": 0,
+			"recordedAt": "2026-09-10T12:11:55.849Z"
+		},
+		{
+			"attemptId": "eaa57bf01335c6bc1cf0549a3b647ed1",
+			"acquisitionId": "690178a1-8cbd-4cc3-8173-c82b0b524fbc",
+			"scenarioId": "fixture-control.payment-mock-records-payment-intents-and-refunds-and-rejects-unk",
+			"playwrightTestId": "c771ecd7169f45f8e2fe-914b1f0498378f20e793",
+			"project": "per-worker",
+			"retry": 0,
+			"recordedAt": "2026-09-10T12:11:59.124Z"
+		},
+		{
+			"attemptId": "f5760288ceed49da362eb026332939de",
+			"acquisitionId": "e520338f-d85f-459d-9c4c-b694f61a677e",
+			"scenarioId": "health.payment-mock-reports-ready-on-get-health",
+			"playwrightTestId": "6c705246398d2be6220f-2465bac7087b54961dcd",
+			"project": "per-test",
+			"retry": 0,
+			"recordedAt": "2026-09-10T12:13:14.716Z"
+		},
+		{
+			"attemptId": "f6ca4b0ff8ba3054be4eba0f086207d9",
+			"acquisitionId": "61e9d5f9-a734-4de4-901d-7b16b9552e37",
+			"scenarioId": "subscription-creation.serves-eve-from-the-preloaded-returning-hint-under-the-compariso",
+			"playwrightTestId": "52990a645e1a89ad7d6d-013c382151adbb3a55be",
+			"project": "per-worker",
+			"retry": 0,
+			"recordedAt": "2026-09-10T12:12:21.165Z"
+		}
+	],
+	"evidenceIndexDigest": "0188286314b67e637a0b5a16128d6a236ab2ddad",
+	"plannedScopeDigest": "a6c86634effbcaf6e57597b4bfee0cbab4694099",
+	"sealed": true,
+	"acquisitionIndexDigest": "eb05580f590d0a7f171218481dae264df0d12534"
+}

@@ -1,0 +1,182 @@
+name: current-dev-compose
+
+x-application: &application
+  image: current-dev-compose-services:local
+  init: true
+  restart: 'no'
+  working_dir: /app
+
+x-service-environment: &service-environment
+  DATABASE_URL: postgres://fixture:fixture@postgres:5432/subscriptions
+  REDIS_URL: redis://redis:6379
+  SQS_ENDPOINT: http://localstack:4566
+  SQS_QUEUE_NAME: subscription-orders
+  AWS_REGION: us-east-1
+  AWS_ACCESS_KEY_ID: test
+  AWS_SECRET_ACCESS_KEY: test
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: subscriptions
+      POSTGRES_PASSWORD: fixture
+      POSTGRES_USER: fixture
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U fixture -d subscriptions']
+      interval: 1s
+      timeout: 3s
+      retries: 60
+    volumes:
+      - ../../sut/infra/postgres/init.sql:/docker-entrypoint-initdb.d/001-init.sql:ro
+
+  redis:
+    image: redis:7-alpine
+    command: ['redis-server', '--save', '', '--appendonly', 'no']
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 1s
+      timeout: 3s
+      retries: 60
+
+  localstack:
+    image: localstack/localstack:3.8
+    environment:
+      AWS_DEFAULT_REGION: us-east-1
+      SERVICES: sqs
+    healthcheck:
+      test: ['CMD-SHELL', 'curl -fsS http://localhost:4566/_localstack/health | grep -q ''"sqs"''']
+      interval: 1s
+      timeout: 3s
+      retries: 60
+    volumes:
+      - ../../sut/infra/localstack/init-queue.sh:/etc/localstack/init/ready.d/10-create-queue.sh:ro
+
+  payment-mock:
+    <<: *application
+    image: sut-payment-mock:local
+    build:
+      context: ../../sut
+      dockerfile: src/payment-mock/Dockerfile
+    command: ['node', 'dist/payment-mock/server.js']
+    environment:
+      FIXTURE_CONTROL_TOKEN: ${FIXTURE_CONTROL_TOKEN:-demo-fixture-token}
+      PORT: 8080
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'env',
+          '-u',
+          'NODE_OPTIONS',
+          'node',
+          '-e',
+          "const s=require('node:net').connect(8080,'127.0.0.1',()=>{s.destroy();process.exit(0)});s.setTimeout(2000,()=>process.exit(1));s.on('error',()=>process.exit(1))",
+        ]
+      interval: 1s
+      timeout: 3s
+      retries: 60
+    ports:
+      - '127.0.0.1::8080'
+
+  fraud-check:
+    <<: *application
+    image: sut-fraud-check:local
+    build:
+      context: ../../sut
+      dockerfile: src/fraud-check/Dockerfile
+    command: ['node', 'dist/fraud-check/server.js']
+    environment:
+      <<: *service-environment
+      PORT: 3000
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'env',
+          '-u',
+          'NODE_OPTIONS',
+          'node',
+          '-e',
+          "const s=require('node:net').connect(3000,'127.0.0.1',()=>{s.destroy();process.exit(0)});s.setTimeout(2000,()=>process.exit(1));s.on('error',()=>process.exit(1))",
+        ]
+      interval: 1s
+      timeout: 3s
+      retries: 60
+    ports:
+      - '127.0.0.1::3000'
+
+  order-service:
+    <<: *application
+    image: sut-order-service:local
+    build:
+      context: ../../sut
+      dockerfile: src/order-service/Dockerfile
+    command: ['node', 'dist/order-service/server.js']
+    environment:
+      <<: *service-environment
+      PORT: 3000
+    depends_on:
+      localstack:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'env',
+          '-u',
+          'NODE_OPTIONS',
+          'node',
+          '-e',
+          "const s=require('node:net').connect(3000,'127.0.0.1',()=>{s.destroy();process.exit(0)});s.setTimeout(2000,()=>process.exit(1));s.on('error',()=>process.exit(1))",
+        ]
+      interval: 1s
+      timeout: 3s
+      retries: 60
+    ports:
+      - '127.0.0.1::3000'
+
+  public-api:
+    <<: *application
+    image: sut-public-api:local
+    build:
+      context: ../../sut
+      dockerfile: src/public-api/Dockerfile
+    command: ['node', 'dist/public-api/server.js']
+    environment:
+      <<: *service-environment
+      FIXTURE_CONTROL_TOKEN: ${FIXTURE_CONTROL_TOKEN:-demo-fixture-token}
+      PORT: 3000
+      FRAUD_CHECK_URL: http://fraud-check:3000
+      ORDER_SERVICE_URL: http://order-service:3000
+      PAYMENT_MOCK_URL: http://payment-mock:8080
+    depends_on:
+      fraud-check:
+        condition: service_healthy
+      order-service:
+        condition: service_healthy
+      payment-mock:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - '127.0.0.1::3000'
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'env',
+          '-u',
+          'NODE_OPTIONS',
+          'node',
+          '-e',
+          "const s=require('node:net').connect(3000,'127.0.0.1',()=>{s.destroy();process.exit(0)});s.setTimeout(2000,()=>process.exit(1));s.on('error',()=>process.exit(1))",
+        ]
+      interval: 1s
+      timeout: 3s
+      retries: 60

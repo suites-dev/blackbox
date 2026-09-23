@@ -1,0 +1,35 @@
+{
+  "name": "@suites/blackbox-catalog-internal",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Internal YAML catalog schema, validation, selection, and sandbox-input resolution.",
+  "files": [
+    "dist",
+    "schema"
+  ],
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "blackbox-source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./schema/blackbox-config-v1.json": "./schema/blackbox-config-v1.json"
+  },
+  "scripts": {
+    "build": "tsc --project tsconfig.build.json",
+    "lint": "eslint .",
+    "test": "vitest run --config vitest.config.ts"
+  },
+  "dependencies": {
+    "ajv": "8.18.0",
+    "yaml": "2.8.3"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}
