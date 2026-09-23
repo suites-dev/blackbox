@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://blackbox.suites.dev/schemas/report-server-identity-v1.json",
+  "title": "Blackbox local report server identity",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["kind", "schemaVersion", "scopeId", "providerTypes"],
+  "properties": {
+    "kind": { "const": "report-server-identity" },
+    "schemaVersion": { "const": 1 },
+    "scopeId": { "type": "string", "pattern": "^[a-zA-Z0-9._-]{1,200}$" },
+    "providerTypes": { "type": "array", "uniqueItems": true, "items": { "type": "string" } }
+  }
+}

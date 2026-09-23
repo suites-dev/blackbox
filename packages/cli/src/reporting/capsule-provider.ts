@@ -1,4 +1,4 @@
-import { listCapsuleSessions, renderCapsuleHtml, reportCapsule, type CapsuleReportDocument, type CapsuleReportResult, type CapsuleRegistryEntry } from '@suites/blackbox-capsule-internal';
+import { capsuleReportClientView, listCapsuleSessions, renderCapsuleHtml, reportCapsule, type CapsuleReportDocument, type CapsuleReportResult, type CapsuleRegistryEntry } from '@suites/blackbox-capsule-internal';
 import type { ReportFailure, ReportProvider, ReportSummary } from '@suites/blackbox-report-server-internal';
 
 function reportFailure(input: { result: Exclude<CapsuleReportResult, { kind: 'capsule-report' }> }): ReportFailure {
@@ -38,6 +38,7 @@ function renderDocument(input: { kind: 'render-report'; document: unknown }): st
 export function capsuleReportProvider(input: { projectDirectory: string }): ReportProvider {
   return {
     kind: 'report-provider', type: 'capsule',
+    view: capsuleReportClientView,
     async list() {
       const result = await listCapsuleSessions(input);
       if (result.kind === 'capsule-registry-failed') {

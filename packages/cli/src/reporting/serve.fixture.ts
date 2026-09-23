@@ -3,7 +3,8 @@ import { fileURLToPath } from 'node:url';
 
 export async function runningReportCli(input: { directory: string; argv: readonly string[] }) {
   const cli = fileURLToPath(new URL('../../bin/run.js', import.meta.url));
-  const child = spawn(process.execPath, [cli, 'capsule', 'report', 'serve', ...input.argv], { cwd: input.directory });
+  const argv = input.argv.includes('--port') ? [...input.argv] : [...input.argv, '--port', '0'];
+  const child = spawn(process.execPath, [cli, 'capsule', 'report', 'serve', ...argv], { cwd: input.directory });
   let stdout = '';
   let stderr = '';
   child.stderr.setEncoding('utf8').on('data', (chunk: string) => { stderr += chunk; });

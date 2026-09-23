@@ -1,15 +1,20 @@
 import type { ReportProvider, ReportSummary, ReportFailure } from './provider.js';
+import type { ReportServerIdentity } from './identity.js';
 
 export type ReportSelection =
   | { kind: 'registry' }
   | { kind: 'report'; type: string; id: string };
 
-export interface StartReportServerInput {
-  kind: 'start-report-server';
+interface ReportServerConfiguration {
   providers: readonly ReportProvider[];
   port: number;
   selection: ReportSelection;
 }
+
+export type StartReportServerInput = ReportServerConfiguration & (
+  | { kind: 'start-report-server' }
+  | { kind: 'start-scoped-report-server'; identity: ReportServerIdentity }
+);
 
 export interface ReportServer {
   kind: 'report-server';

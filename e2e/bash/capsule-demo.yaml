@@ -18,7 +18,7 @@ steps:
   - id: serve
     explanation: Open flight control before startup; leave it visible while the remaining commands run.
     kind: serve
-    command: capsule report serve --port 0 --open
+    command: capsule report serve --open
   - id: start
     explanation: Acquire one named Capsule and retain its exact session identity.
     kind: cli
@@ -75,5 +75,4 @@ steps:
     command: >-
       capsule report serve
       --session ${SESSION_ID}
-      --port 0
       --open

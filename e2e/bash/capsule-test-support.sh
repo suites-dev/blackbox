@@ -15,6 +15,7 @@ ARTIFACT_ROOT="$(mktemp -d "$E2E_ROOT/.blackbox/tmp/capsule-test.XXXXXX")"
 SESSION_ID=""
 SESSION_STOPPED=0
 REPORT_SERVER_PID=""
+REPORT_SERVER_REUSED=0
 INTERACTIVE=0
 if [[ -t 0 && -t 1 ]]; then
   INTERACTIVE=1
@@ -127,9 +128,8 @@ fi
 # The stored PID always belongs to the actual node/blackbox process, not a shell function.
 start_report_server() {
   local selected="${1:-}"
-  local args=(capsule report serve --port 0)
-  local display='blackbox capsule report serve \
-        --port 0'
+  local args=(capsule report serve)
+  local display='blackbox capsule report serve'
   local label=registry
   if [[ -n "$selected" ]]; then
     args+=(--session "$selected")
@@ -145,10 +145,12 @@ start_report_server() {
   "${BLACKBOX_COMMAND[@]}" "${args[@]}" >"$log" 2>&1 &
   REPORT_SERVER_PID=$!
   REPORT_SERVER_URL=""
-  local attempt
+  local attempt ownership
+  ownership=""
   for attempt in {1..100}; do
     REPORT_SERVER_URL="$(sed -n 's/^Blackbox reports: //p' "$log" | head -n 1)"
-    if [[ -n "$REPORT_SERVER_URL" ]]; then break; fi
+    ownership="$(sed -n 's/^Viewer ownership: //p' "$log" | head -n 1)"
+    if [[ -n "$REPORT_SERVER_URL" && -n "$ownership" ]]; then break; fi
     if ! kill -0 "$REPORT_SERVER_PID" 2>/dev/null; then break; fi
     sleep 0.1
   done
@@ -156,6 +158,22 @@ start_report_server() {
     cat "$log" >&2
     echo 'capsule-test: report server did not announce a URL' >&2
     exit 1
+  fi
+  ownership="$(sed -n 's/^Viewer ownership: //p' "$log" | head -n 1)"
+  if [[ "$ownership" == reused ]]; then
+    local reused_pid="$REPORT_SERVER_PID"
+    REPORT_SERVER_PID=""
+    REPORT_SERVER_REUSED=1
+    if ! wait "$reused_pid" 2>/dev/null; then
+      echo 'capsule-test: reused viewer exited unsuccessfully' >&2
+      return 1
+    fi
+  else
+    if [[ "$ownership" != started ]]; then
+      echo "capsule-test: invalid viewer ownership announcement: $ownership" >&2
+      return 1
+    fi
+    REPORT_SERVER_REUSED=0
   fi
   # Drop the selection query before constructing API endpoints.
   REPORT_SERVER_ORIGIN="${REPORT_SERVER_URL%%\?*}"
@@ -168,6 +186,11 @@ start_report_server() {
 }
 
 stop_report_server() {
+  if [[ "${REPORT_SERVER_REUSED:-0}" -eq 1 ]]; then
+    REPORT_SERVER_REUSED=0
+    printf '%s[blackbox]%s reused viewer remains running\n' "$C_CYAN" "$C_RESET"
+    return 0
+  fi
   if ! kill -INT "$REPORT_SERVER_PID" 2>/dev/null; then
     echo 'capsule-test: viewer did not accept shutdown' >&2
     return 1

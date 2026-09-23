@@ -30,13 +30,14 @@ describe('Capsule-owned HTML renderer', () => {
     const report = document();
     const before = structuredClone(report);
     const html = renderCapsuleHtml({ report });
-    expect(html).toContain('Compose project <strong>not available</strong>');
-    expect(html).toContain('not-attempted');
+    expect(html).toContain('const capsuleReportData=');
     expect(html).toContain('No application readiness result was retained.');
     expect(html).not.toContain(report.session.artifactRoot);
-    expect(html).toContain('Artifact path <strong>[redacted]</strong>');
+    expect(html).toContain('Artifact path [redacted]');
     expect(html).toContain('Placeholder retained intentionally: the Capsule report schema');
     expect(html).toContain('PLACEHOLDER · ASSURANCE DEFERRED');
+    expect(html).not.toContain('<iframe');
+    expect(html).not.toContain('postMessage');
     expect(renderCapsuleHtml({ report })).toBe(html);
     expect(report).toEqual(before);
   });
@@ -62,13 +63,9 @@ describe('Capsule-owned HTML renderer', () => {
     expect(html).not.toContain(hostile);
     expect(html.match(/<script>/gu)).toHaveLength(1);
     expect(html).toContain(`<title>Capsule ${escaped}</title>`);
-    expect(html).toContain(`<strong>${escaped}</strong>`);
-    expect(html).toContain(`Compose project <strong>${escaped}</strong>`);
-    expect(html).toContain('http://localhost:3000 · 25ms');
-    expect(html).toContain(`<strong>${escaped}</strong><span>api · ${escaped}</span>`);
-    expect(html).toContain(`<h3>capsule-ready</h3>`);
-    expect(html).toContain(`Participant · ${escaped}`);
-    expect(html).toContain(`${escaped}: ${escaped}`);
+    expect(html).toContain('\\u003cscript>alert(\\"x&y\\")\\u003c/script>');
+    expect(html).toContain('http://localhost:3000');
+    expect(html).toContain('capsule-ready');
   });
 
   it('keeps host activities valid without a participant and reports completed cleanup', () => {
@@ -78,10 +75,9 @@ describe('Capsule-owned HTML renderer', () => {
         outcome: { kind: 'signaled', argv: [], signal: 'SIGTERM', stdout: '', stderr: '' } }],
     } satisfies CapsuleReportDocument;
     const html = renderCapsuleHtml({ report });
-    expect(html).toContain('<span class="sequence">02</span>');
-    expect(html).toContain('signal SIGTERM');
-    expect(html).toContain('<span class="badge good">complete</span>');
-    expect(html).not.toContain('undefined');
+    expect(html).toContain('"sequence":2');
+    expect(html).toContain('"signal":"SIGTERM"');
+    expect(html).toContain('"cleanup":{"kind":"complete"}');
   });
 
 });
@@ -94,7 +90,8 @@ describe('Capsule acquisition report presentation', () => {
         containerId: 'abc', containerName: 'api-1', state: 'running', health: 'healthy',
         termination: { kind: 'none' } } } }] } satisfies CapsuleReportDocument;
     const html = renderCapsuleHtml({ report });
-    expect(html).toContain('api · api · running · health healthy');
+    expect(html).toContain('"kind":"acquisition-observation"');
+    expect(html).toContain('"state":"running","health":"healthy"');
     expect(html).toContain('Container health never substitutes for application readiness.');
     expect(html).toContain('No application readiness result was retained.');
   });

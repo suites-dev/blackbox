@@ -26,7 +26,7 @@ jq -e --arg system "$SYSTEM_ID" '.entries | any(.id == $system)' \
   "$ARTIFACT_ROOT/catalog-list.json" >/dev/null
 
 # Start the registry before acquisition so admission/startup can appear live.
-# In a terminal this executes: blackbox capsule report serve --port 0 --open
+# In a terminal this executes: blackbox capsule report serve --open (default port)
 start_report_server
 
 # Start one real Capsule. The JSON response is the source of the exact session

@@ -39,7 +39,7 @@ void test('HTML report is portable, escapes retained text, and does not modify s
     assert.equal(result.status, 0, result.stderr);
     const html = await readFile(htmlPath, 'utf8');
     assert.match(html, /quiet-river-ada/u);
-    assert.match(html, /&lt;script&gt;/u);
+    assert.match(html, /\\u003cscript>alert\(\\"unsafe\\"\)\\u003c\/script>/u);
     assert.doesNotMatch(html, /<script>alert|(?:src|href)=["']https?:/u);
     assert.equal(await readFile(recordPath, 'utf8'), before);
   } finally { await removeFixture(fixture.directory); }

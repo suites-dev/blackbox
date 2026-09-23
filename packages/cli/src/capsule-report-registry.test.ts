@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { once } from 'node:events';
 import { mkdir, rename, writeFile } from 'node:fs/promises';
-import { createServer } from 'node:net';
+import { createServer } from 'node:http';
 import { join } from 'node:path';
 import test from 'node:test';
 import { capsuleSessionDirectory } from '@suites/blackbox-capsule-internal';
@@ -74,7 +74,7 @@ void test('SIGTERM closes the CLI report listener and releases its port', async 
 
 void test('an occupied report port fails without announcing a server or taking over its listener', async () => {
   const fixture = await commandFixture('stopped');
-  const occupied = createServer();
+  const occupied = createServer((_request, response) => { response.writeHead(404).end(); });
   occupied.listen(0, '127.0.0.1');
   await once(occupied, 'listening');
   try {
@@ -82,10 +82,11 @@ void test('an occupied report port fails without announcing a server or taking o
     assert.ok(address !== null && typeof address !== 'string');
     const result = await runCli({ directory: fixture.directory, argv: ['capsule', 'report', 'serve', '--port', String(address.port)] });
     assert.notEqual(result.status, 0);
-    assert.match(result.stderr, /EADDRINUSE|address already in use/u);
+    assert.match(result.stderr, /occupied by an incompatible viewer/u);
     assert.doesNotMatch(result.stdout, /Blackbox reports:/u);
     assert.equal(occupied.listening, true);
   } finally {
+    occupied.closeAllConnections();
     await new Promise<void>(resolve => occupied.close(() => { resolve(); }));
     await removeFixture(fixture.directory);
   }

@@ -34,17 +34,3 @@ export function progressDetail(event: CapsuleProgressEvent): string {
     case 'capsule-start-failed': return `start failed at ${event.stage}: ${event.cause.name}: ${event.cause.message}`;
   }
 }
-
-export function progressMarker(event: CapsuleProgressEvent): '✓' | '✗' | '•' | '…' {
-  if (event.kind === 'capsule-start-failed') { return '✗'; }
-  if (event.kind === 'acquisition-observation') {
-    const observation = event.observation;
-    if (observation.kind === 'resource-discovered') { return '✓'; }
-    if (observation.kind !== 'service-state') { return '•'; }
-    const { state, health } = observation.container;
-    if (state === 'exited' || state === 'dead' || health === 'unhealthy') { return '✗'; }
-    return state === 'running' ? '✓' : '•';
-  }
-  return ['session-admitted', 'manager-ready', 'catalog-resolved', 'container-acquired',
-    'endpoint-mapped', 'resource-owned', 'readiness-succeeded', 'capsule-ready'].includes(event.kind) ? '✓' : '…';
-}

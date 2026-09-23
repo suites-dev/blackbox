@@ -26,7 +26,8 @@
     "@oclif/core": "^4.14.0",
     "@suites/blackbox-catalog-internal": "workspace:*",
     "@suites/blackbox-capsule-internal": "workspace:*",
-    "@suites/blackbox-report-server-internal": "workspace:*"
+    "@suites/blackbox-report-server-internal": "workspace:*",
+    "string-width": "4.2.3"
   },
   "oclif": {
     "bin": "blackbox",

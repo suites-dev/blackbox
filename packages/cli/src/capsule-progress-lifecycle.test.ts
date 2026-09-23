@@ -19,7 +19,7 @@ void test('explicit finish stops the spinner after an interrupted startup withou
   context.mock.timers.tick(1000);
   assert.equal(output.length, finishedLength);
   assert.doesNotMatch(output.join(''), /✓|Capsule ready/u);
-  assert.equal(output.join('').includes('\u001b'), false);
+  assert.doesNotMatch(output.join(''), new RegExp(`${String.fromCharCode(27)}\\[\\d+m`, 'u'));
 });
 
 void test('failure stops future frames and uses the failed stage marker', (context) => {
@@ -33,7 +33,8 @@ void test('failure stops future frames and uses the failed stage marker', (conte
   context.mock.timers.tick(1000);
   renderer.finish();
   assert.equal(output.length, failedLength);
-  assert.match(output.join(''), /✗.*Acquisition.*container never became ready/u);
+  assert.match(output.join(''), /✗.*acquisition/u);
+  assert.match(output.join(''), /container never became ready/u);
   assert.doesNotMatch(output.join(''), /✓/u);
 });
 

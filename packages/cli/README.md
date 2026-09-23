@@ -24,18 +24,22 @@ The CLI creates the destination directory and prints the generated path.
 itself to stdout, without an envelope, path, or progress messages. Export errors
 use stderr and a nonzero exit code. `--format` is required.
 
-The served mode is a local read-only registry. It polls summaries and the selected
+The served mode is a local read-only registry on port `4310` by default. Repeated
+serves for the same project and provider reuse the existing viewer and announce
+`Viewer ownership: reused`; the reused caller does not own or stop that process.
+Use `--port 0` only for deliberately isolated test runs. It polls summaries and the selected
 report every second, updating the report only when the rendered snapshot changes.
 Failed updates leave an explicit stale/unavailable message; the viewer retries.
 Progress records appear as they are retained; command activities currently appear
 when commands finish, not as a live stdout/stderr stream. Lifecycle states are
 recorded states, not a heartbeat proving the manager is alive.
 
-`--open` launches the default browser after the listener is ready. If the browser
+`--open` launches the default browser after the listener is ready, including when
+an existing viewer is reused. If the browser
 cannot open, the CLI prints a warning and keeps serving the announced URL.
-Ctrl-C or SIGTERM stops only this viewer process, never the Capsule. Each `serve`
-invocation owns its listener; port `0` selects an available port. Closing a browser
-tab does not stop the server. Stop the viewer explicitly in its terminal.
+Ctrl-C or SIGTERM stops only a viewer started by that invocation, never the Capsule.
+Closing a browser tab does not stop the server. Stop the owning viewer explicitly
+in its terminal.
 
 The former `capsule report --serve`, `--html`, and `--json` forms have been replaced
 by these subcommands. `capsule report` displays help for both actions.

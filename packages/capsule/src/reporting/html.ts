@@ -9,7 +9,9 @@ export interface CapsuleHtmlInput {
 /** Render a portable Capsule projection without reading or mutating evidence. */
 export function renderCapsuleHtml(input: CapsuleHtmlInput): string {
   const { report } = input;
-  const data = JSON.stringify(report).replaceAll('<', '\\u003c').replaceAll('\u2028', '\\u2028').replaceAll('\u2029', '\\u2029');
+  const { artifactRoot: _artifactRoot, ...safeSession } = report.session;
+  const data = JSON.stringify({ ...report, session: safeSession }).replaceAll('<', '\\u003c')
+    .replaceAll('\u2028', '\\u2028').replaceAll('\u2029', '\\u2029');
   return `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="dark"><title>Capsule ${escapeHtml(report.session.sessionId)}</title>

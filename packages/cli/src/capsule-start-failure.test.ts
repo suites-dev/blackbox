@@ -19,7 +19,12 @@ for (const mode of ['--silent', '--non-interactive', '--interactive']) {
       if (typeof sessionId !== 'string') { throw new Error('Expected session ID'); }
       assert.match(sessionId, /^[a-z]+-[a-z]+-[a-z]+$/u);
       assert.doesNotMatch(result.stdout + result.stderr, /private-test-value/u);
-      assert.equal((result.stdout + result.stderr).includes('\u001b'), false);
+      assert.equal(result.stdout.includes('\u001b'), false);
+      if (mode === '--interactive') {
+        assert.ok(result.stderr.includes('\u001b[2K'), 'interactive redraw must use cursor control without color');
+        assert.doesNotMatch(result.stderr, new RegExp(`${String.fromCharCode(27)}\\[\\d+m`, 'u'));
+        assert.match(result.stderr, /Capsule start failed/u);
+      } else { assert.equal(result.stderr.includes('\u001b'), false); }
       const sessionsRoot = dirname(fixture.artifactRoot);
       assert.deepEqual((await readdir(sessionsRoot)).sort(), [fixture.sessionId, sessionId].map(id => `capsule-${id}`).sort());
       const record = JSON.parse(await readFile(join(sessionsRoot, `capsule-${sessionId}`, 'session.json'), 'utf8'));
@@ -27,6 +32,7 @@ for (const mode of ['--silent', '--non-interactive', '--interactive']) {
       assert.equal(record.cleanup.kind, 'not-attempted');
       assert.ok(record.error.message.length > 0);
       if (mode === '--silent') { assert.doesNotMatch(result.stderr, /session .* admitted|manager spawned/u); }
+      else if (mode === '--interactive') { assert.match(result.stderr, /Session — /u); }
       else { assert.match(result.stderr, /session .* admitted/u); }
     } finally { await removeFixture(fixture.directory); }
   });

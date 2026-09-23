@@ -10,6 +10,9 @@ function validateInput(input: StartReportServerInput): void {
   const types = new Set<string>();
   for (const provider of input.providers) {
     if (!validSegment({ value: provider.type }) || types.has(provider.type)) { throw new Error('Report provider types must be unique safe path segments.'); }
+    if (/<\/script/iu.test(provider.view.script) || /<\/style/iu.test(provider.view.styles)) {
+      throw new Error('Report provider client views must be safe inline assets.');
+    }
     types.add(provider.type);
   }
   if (input.selection.kind === 'report' && (!types.has(input.selection.type) || !validSegment({ value: input.selection.id }))) {
@@ -31,6 +34,9 @@ function rejectedRequest(input: { request: IncomingMessage }): HttpResult | null
 
 async function handleRequest(input: { request: IncomingMessage; response: ServerResponse; config: StartReportServerInput }): Promise<void> {
   let result = rejectedRequest(input);
+  if (result === null && input.config.kind === 'start-scoped-report-server' && input.request.url === '/api/server') {
+    result = jsonResult({ status: 200, document: input.config.identity });
+  }
   if (result === null) {
     try {
       result = await routeRequest({ path: input.request.url ?? '/', providers: input.config.providers });

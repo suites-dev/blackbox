@@ -26,9 +26,9 @@ void test('interactive progress starts, updates, and completes its loader', () =
   renderer.sink({ kind: 'acquisition-started', sessionId: 's', sequence: 1, at: 'now', stage: 'acquisition', projectName: 'orders' });
   renderer.sink({ kind: 'capsule-ready', sessionId: 's', sequence: 2, at: 'now', stage: 'ready', durationMs: 8 });
   assert.equal(output[0].includes('\u001b[36m'), true);
-  assert.match(output[0], /starting resources/u);
-  assert.match(output[1], /✓/u);
-  assert.match(output[2], /Capsule ready/u);
+  assert.match(output[0], /Acquiring capsule/u);
+  assert.match(output[1], /✓.*Capsule ready/u);
+  assert.equal(output.at(-1), '\r\n');
 });
 
 void test('interactive failure completes the loader with a failure marker', () => {

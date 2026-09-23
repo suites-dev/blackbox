@@ -15,7 +15,7 @@ void test('browser launch happens after readiness; opener failure preserves the 
   let sawAnnouncedUrl = false;
   const signalListeners = process.listenerCount('SIGINT');
   try {
-    await serveReport({ kind: 'serve-report', port: 0, provider: capsuleReportProvider({ projectDirectory: fixture.directory }),
+    await serveReport({ kind: 'serve-report', projectDirectory: fixture.directory, port: 0, provider: capsuleReportProvider({ projectDirectory: fixture.directory }),
       selection: { kind: 'report', type: 'capsule', id: fixture.sessionId },
       announce: ({ url }) => { announced.push(url); },
       browser: { kind: 'open',

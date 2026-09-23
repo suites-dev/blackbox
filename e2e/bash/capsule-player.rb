@@ -28,7 +28,8 @@ end
 
 def stop_report_viewer(server)
   return unless server
-  output, wait_thread = server
+  output, wait_thread, owned = server
+  return unless owned
   begin
     Process.kill('INT', wait_thread.pid) if wait_thread.alive?
   rescue Errno::ESRCH
@@ -79,23 +80,35 @@ begin
       stop_report_viewer(report_server)
       report_server = nil
       input, output, wait_thread = Open3.popen2e(*Shellwords.split(executable), chdir: project_directory)
-      report_server = [output, wait_thread]
+      report_server = [output, wait_thread, true]
       input.close
       server_url = nil
+      ownership = nil
       while (line = output.gets)
         print line
         server_url = line.sub(/^Blackbox reports: /, '').strip if line.start_with?('Blackbox reports: ')
-        break if server_url
+        ownership = line.sub(/^Viewer ownership: /, '').strip if line.start_with?('Viewer ownership: ')
+        break if server_url && ownership
       end
       abort 'Report server did not announce a URL' unless server_url
+      if ownership == 'reused'
+        raise 'Reused report viewer exited unexpectedly' unless wait_thread.value.success?
+        output.close
+        report_server = nil
+      elsif ownership != 'started'
+        raise "Invalid report viewer ownership: #{ownership}"
+      end
       system('curl', '--fail', '--silent', '--show-error', URI.join(server_url, '/api/reports').to_s) || abort('Report registry request failed')
       puts "#{green}✓ flight control remains available at #{server_url}#{reset}"
       next
     end
 
-    stdout, stderr, status = Open3.capture3(*Shellwords.split(executable), chdir: project_directory)
+    input, output, wait_thread = Open3.popen2(*Shellwords.split(executable), chdir: project_directory, err: STDERR)
+    input.close
+    stdout = output.read
+    output.close
+    status = wait_thread.value
     print stdout
-    warn stderr unless stderr.empty?
     abort "Step #{step.fetch('id')} failed with #{status.exitstatus}" unless status.success?
 
     if step.fetch('id') == 'start'

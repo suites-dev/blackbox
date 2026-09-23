@@ -18,12 +18,13 @@ void test('keeps early service state visible with names and distinguishes Docker
     renderer.sink({ ...base, kind: 'acquisition-observation', observation: { kind: 'waiting', elapsedMs: 5000 } });
     renderer.sink({ ...base, kind: 'container-acquired', participant: 'postgres', service: 'db', containerId: 'internal-id', containerName: 'internal-db', networkNames: [] });
     const text = output.join('');
-    assert.match(text, /✓ postgres: container running; Docker health: starting\n/u);
+    assert.match(text, /Acquiring capsule/u);
+    assert.match(text, /postgres — running; Docker health: starting/u);
     assert.match(text, /elapsed/u);
     assert.doesNotMatch(text, /internal|application ready|Acquisition complete/u);
     renderer.sink({ ...base, kind: 'readiness-started', stage: 'readiness', url: 'http://localhost/health', timeoutMs: 1000 });
-    assert.match(output.join(''), /Acquisition complete/u);
-    assert.match(output.join(''), /application readiness checking/u);
+    assert.match(output.join(''), /Acquisition — Testcontainers checks passed/u);
+    assert.match(output.join(''), /Application readiness — checking/u);
   } finally { renderer.finish(); }
 });
 
@@ -33,7 +34,8 @@ void test('failed acquisition never gets a success check when the error is attri
   renderer.sink({ ...base, kind: 'acquisition-started', projectName: 'owned' });
   renderer.sink({ ...base, kind: 'capsule-start-failed', stage: 'persistence', cause: { name: 'Error', message: 'disk full' } });
   renderer.finish();
-  assert.match(output.join(''), /✗ Persistence.*disk full/u);
+  assert.match(output.join(''), /✗ Capsule start failed — persistence/u);
+  assert.match(output.join(''), /disk full/u);
   assert.doesNotMatch(output.join(''), /✓/u);
 });
 
@@ -47,6 +49,7 @@ void test('plain progress reports exit code, observation outages and recovery wi
     { kind: 'waiting', elapsedMs: 5000 },
   ] satisfies CapsuleAcquisitionObservation[];
   for (const value of observations) { renderer.sink({ ...base, kind: 'acquisition-observation', observation: value }); }
+  for (const line of output) { assert.match(line, /^ {2}\[1\] /u); }
   assert.match(output.join(''), /container exited.*exit 7/u);
   assert.match(output.join(''), /progress unavailable; startup continues/u);
   assert.match(output.join(''), /observation resumed/u);
@@ -65,9 +68,9 @@ void test('interactive substeps mark observed unhealthy and terminated container
         termination: state === 'dead' ? { kind: 'exited', exitCode: 137 } : { kind: 'none' },
       } } });
     }
-    assert.match(output.join(''), /• postgres: container created/u);
-    assert.match(output.join(''), /✗ postgres: container running; Docker health: unhealthy/u);
-    assert.match(output.join(''), /✗ postgres: container dead; exit 137/u);
+    assert.match(output.join(''), /[⠋⠙⠹⠸] postgres — created/u);
+    assert.match(output.join(''), /✗ postgres — running; Docker health: unhealthy/u);
+    assert.match(output.join(''), /✗ postgres — dead; exit 137/u);
     assert.doesNotMatch(output.join(''), /✓/u);
   } finally { renderer.finish(); }
 });
