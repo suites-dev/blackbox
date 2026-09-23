@@ -1,9 +1,0 @@
-{
-	"attemptId": "4b752797d284318d4ea38e9498966b33",
-	"acquisitionId": "f7f4daf4-edb2-48ec-9c75-995d26cbd246",
-	"scenarioId": "health.order-service-reports-ready-on-get-health",
-	"playwrightTestId": "d1bf5212fc8f8f62b54d-f751bfc7864c4432ec4e",
-	"project": "per-worker",
-	"retry": 0,
-	"recordedAt": "2026-09-10T12:11:56.479Z"
-}

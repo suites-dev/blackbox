@@ -1,9 +1,0 @@
-{
-	"attemptId": "278b2f35a30396422fb6b5192ab38ed1",
-	"acquisitionId": "a0a5edfa-2e34-46bf-b99a-8fb2a22f02e1",
-	"scenarioId": "payment-mock-subsystem.runs-the-payment-intent-and-refund-lifecycle-on-a-lone-container",
-	"playwrightTestId": "035dad0ffab30e40b0c2-479d3c3b3a4e35c353cb",
-	"project": "subsystem",
-	"retry": 0,
-	"recordedAt": "2026-09-10T12:12:30.437Z"
-}

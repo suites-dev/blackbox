@@ -1,9 +1,0 @@
-{
-	"attemptId": "d24820988e36c6169d59a47ed0fd8370",
-	"acquisitionId": "d1746c0a-ae7c-455d-9547-764a122e5463",
-	"scenarioId": "subscription-rejection.rejects-a-second-subscription-for-the-same-user-with-409-before",
-	"playwrightTestId": "936b029611cc371ee95b-3a151cbeb2ce66ce1e7e",
-	"project": "per-test",
-	"retry": 0,
-	"recordedAt": "2026-09-09T17:16:27.897Z"
-}

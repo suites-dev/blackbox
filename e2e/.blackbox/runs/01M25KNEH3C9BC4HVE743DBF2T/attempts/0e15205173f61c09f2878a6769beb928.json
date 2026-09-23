@@ -1,9 +1,0 @@
-{
-	"attemptId": "0e15205173f61c09f2878a6769beb928",
-	"acquisitionId": "39e07fba-0c43-48aa-aa4b-d35430a1367a",
-	"scenarioId": "subscription-rejection.rejects-malformed-subscription-bodies-with-400-invalid-body",
-	"playwrightTestId": "936b029611cc371ee95b-18cf142de6ae144affbd",
-	"project": "per-test",
-	"retry": 0,
-	"recordedAt": "2026-09-10T12:12:51.696Z"
-}

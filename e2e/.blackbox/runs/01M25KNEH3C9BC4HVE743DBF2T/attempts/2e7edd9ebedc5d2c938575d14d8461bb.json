@@ -1,9 +1,0 @@
-{
-	"attemptId": "2e7edd9ebedc5d2c938575d14d8461bb",
-	"acquisitionId": "c024b600-ddfa-46cb-a5c7-98e2c7d31c9c",
-	"scenarioId": "payment-mock-subsystem-dist-wrapper.reports-ready-on-get-health-from-the-lean-dist-wrapper",
-	"playwrightTestId": "1b9ca96bf231cda8c08d-abf7c15ba6be3d6e4f55",
-	"project": "subsystem",
-	"retry": 0,
-	"recordedAt": "2026-09-10T12:12:12.717Z"
-}

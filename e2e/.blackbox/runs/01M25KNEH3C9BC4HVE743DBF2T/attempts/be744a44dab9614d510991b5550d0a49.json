@@ -1,9 +1,0 @@
-{
-	"attemptId": "be744a44dab9614d510991b5550d0a49",
-	"acquisitionId": "d00aeb6e-01cd-4b69-9e2c-886d4ff476a4",
-	"scenarioId": "fixture-control.rejects-fixture-control-access-without-a-token-or-with-a-wrong-t",
-	"playwrightTestId": "c771ecd7169f45f8e2fe-b91b1496b1d233ee2ca2",
-	"project": "per-worker",
-	"retry": 0,
-	"recordedAt": "2026-09-10T12:11:47.393Z"
-}

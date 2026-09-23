@@ -1,9 +1,0 @@
-{
-	"attemptId": "479e7b2988662aaba159e52951b5f9a4",
-	"acquisitionId": "760d8e79-d3c7-4fdc-afc5-b1a28cabc305",
-	"scenarioId": "payment-mock-subsystem.starts-from-a-clean-state-because-the-container-is-per-test",
-	"playwrightTestId": "035dad0ffab30e40b0c2-5942dc07c8be519e4490",
-	"project": "subsystem",
-	"retry": 0,
-	"recordedAt": "2026-09-09T17:16:53.574Z"
-}

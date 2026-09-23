@@ -1,9 +1,0 @@
-{
-	"attemptId": "503eef72bf83d209a9e9270a02cc4d8e",
-	"acquisitionId": "cba49740-dc82-4eab-90e0-515ec27c2809",
-	"scenarioId": "payment-intent-verdict-triad.records-a-payment-intent-for-a-valid-request",
-	"playwrightTestId": "119b2e1344f43fa7fc46-011e459b154c46ff88a1",
-	"project": "phase-0-verdicts",
-	"retry": 0,
-	"recordedAt": "2026-09-10T12:17:37.660Z"
-}

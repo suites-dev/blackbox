@@ -1,9 +1,0 @@
-{
-	"attemptId": "62403baa46fdc9fe69e4122f1da5f12b",
-	"acquisitionId": "eb3f7286-51d2-4206-9dd6-6453a7c34f33",
-	"scenarioId": "payment-mock-subsystem-dist-wrapper.runs-the-payment-intent-and-refund-lifecycle-on-the-dist-wrapper",
-	"playwrightTestId": "1b9ca96bf231cda8c08d-50c45533cc2bd17e83b1",
-	"project": "subsystem",
-	"retry": 0,
-	"recordedAt": "2026-09-10T12:12:23.159Z"
-}

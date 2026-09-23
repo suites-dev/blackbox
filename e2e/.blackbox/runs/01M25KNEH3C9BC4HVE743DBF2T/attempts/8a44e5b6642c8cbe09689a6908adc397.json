@@ -1,9 +1,0 @@
-{
-	"attemptId": "8a44e5b6642c8cbe09689a6908adc397",
-	"acquisitionId": "166e56c2-ff8e-476f-b705-1f28cfe4628b",
-	"scenarioId": "subscription-creation.creates-a-local-only-subscription-for-dora-without-fraud-payment",
-	"playwrightTestId": "2be0dfcf8cf709fb4273-ae88c8e64e2636ab3006",
-	"project": "per-test",
-	"retry": 0,
-	"recordedAt": "2026-09-10T12:12:29.234Z"
-}
