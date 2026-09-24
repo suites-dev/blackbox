@@ -23,7 +23,8 @@
       "default": "./dist/node-runner/index.js"
     },
     "./schema/client-result-v1.json": "./schema/client-result-v1.json",
-    "./schema/client-execution-v1.json": "./schema/client-execution-v1.json"
+    "./schema/client-execution-v1.json": "./schema/client-execution-v1.json",
+    "./schema/client-inspection-v1.json": "./schema/client-inspection-v1.json"
   },
   "scripts": {
     "prebuild": "rimraf dist",

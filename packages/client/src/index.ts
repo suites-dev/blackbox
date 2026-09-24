@@ -5,9 +5,15 @@ export {
   clientExecutionSchemaUrl,
 } from './schema/client-execution-schema.js';
 export {
+  clientInspectionSchema,
+  clientInspectionSchemaUrl,
+} from './schema/client-inspection-schema.js';
+export {
   createNodeClientRunnerSource,
+  createNodeClientInspectorSource,
   executeClient,
   runNodeClientProcess,
+  inspectNodeClientDefinition,
 } from './node-runner/index.js';
 export type {
   ClientCallback,
@@ -23,10 +29,13 @@ export type {
 } from './model/client-types.js';
 export type {
   ClientProcessResult,
+  ClientInspectionResult,
   ClientIdentity,
   ClientMetadataAvailability,
   ClientMetadataAvailable,
+  CreateNodeClientInspectorSourceInput,
   CreateNodeClientRunnerSourceInput,
   ExecuteClientInput,
+  InspectNodeClientDefinitionInput,
   RunNodeClientProcessInput,
 } from './node-runner/index.js';

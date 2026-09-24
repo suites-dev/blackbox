@@ -13,6 +13,7 @@ import type {
   ExecuteClientInput,
   RunNodeClientProcessInput,
 } from './runner-types.js';
+import { clientIdentity, isClientDefinition } from './definition-validation.js';
 
 async function readInput(stream: Readable): Promise<unknown> {
   const chunks: Buffer[] = [];
@@ -20,19 +21,6 @@ async function readInput(stream: Readable): Promise<unknown> {
     chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(String(chunk)));
   }
   return JSON.parse(Buffer.concat(chunks).toString('utf8')) as unknown;
-}
-
-function isDefinition(value: unknown): value is ClientDefinition {
-  if (typeof value !== 'object' || value === null) {
-    return false;
-  }
-  const record = value as Record<string, unknown>;
-  return (
-    (record.kind === 'entrypoint' || record.kind === 'utility') &&
-    typeof record.name === 'string' &&
-    record.name.trim() !== '' &&
-    typeof record.run === 'function'
-  );
 }
 
 function isResult(value: unknown): value is ClientResult {
@@ -164,12 +152,12 @@ export async function runNodeClientProcess(input: RunNodeClientProcessInput): Pr
   let response: ClientProcessResult;
   let metadata: ClientMetadataAvailability = unavailableMetadata();
   try {
-    if (!isDefinition(input.definition)) {
+    if (!isClientDefinition(input.definition)) {
       throw new Error('Client module default export is not a valid client definition');
     }
     metadata = {
       kind: 'available',
-      client: { kind: input.definition.kind, name: input.definition.name },
+      client: clientIdentity(input.definition),
     };
     const execution = (await readInput(input.input)) as ClientExecutionInput;
     response = {

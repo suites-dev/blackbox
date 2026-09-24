@@ -6,9 +6,18 @@ export interface CreateNodeClientRunnerSourceInput {
   readonly clientModuleUrl: URL;
 }
 
+export interface CreateNodeClientInspectorSourceInput {
+  readonly clientModuleUrl: URL;
+}
+
 export interface RunNodeClientProcessInput {
   readonly definition: unknown;
   readonly input: Readable;
+  readonly output: Writable;
+}
+
+export interface InspectNodeClientDefinitionInput {
+  readonly definition: unknown;
   readonly output: Writable;
 }
 
@@ -37,6 +46,16 @@ export interface ClientMetadataAvailable {
 export type ClientMetadataAvailability =
   | ClientMetadataAvailable
   | { readonly kind: 'unavailable' };
+
+export type ClientInspectionResult =
+  | {
+      readonly kind: 'available';
+      readonly client: ClientIdentity;
+    }
+  | {
+      readonly kind: 'unavailable';
+      readonly error: { readonly name: string; readonly message: string };
+    };
 
 export interface ExecuteClientInput {
   readonly definition: ClientDefinition;
