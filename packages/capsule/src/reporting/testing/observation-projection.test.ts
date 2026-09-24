@@ -31,7 +31,13 @@ const record = {
 } satisfies CapsuleSessionRecord;
 
 function project(observations: CollectorSessionReadResult) {
-  return projectCapsuleReport({ record, activities: [], progress: [], observations });
+  return projectCapsuleReport({
+    record,
+    activities: [],
+    progress: [],
+    activityObservations: [],
+    observations,
+  });
 }
 
 it('projects factual collector counts and trace identities without an assurance conclusion', () => {

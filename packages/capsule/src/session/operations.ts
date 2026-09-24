@@ -7,6 +7,7 @@ import { redactStandaloneError } from '../reporting/redaction.js';
 import type { CapsuleReportArtifact, CapsuleReportResult } from '../reporting/types.js';
 import { readCapsuleActivities } from '../records.js';
 import { readCapsuleSessionObservations } from './observations.js';
+import { readCapsuleActivityObservations } from './activity-observations.js';
 import type {
   CapsuleExecInput,
   CapsuleExecResult,
@@ -149,7 +150,21 @@ export async function reportCapsule(input: CapsuleReportInput): Promise<CapsuleR
     }
     return {
       kind: 'capsule-report',
-      document: projectCapsuleReport({ record, activities, progress, observations }),
+      document: projectCapsuleReport({
+        record,
+        activities,
+        progress,
+        observations,
+        activityObservations: await Promise.all(
+          activities.map((activity) =>
+            readCapsuleActivityObservations({
+              projectDirectory,
+              sessionId: input.sessionId,
+              activityId: activity.activityId,
+            }),
+          ),
+        ),
+      }),
     };
   } catch (error) {
     return {

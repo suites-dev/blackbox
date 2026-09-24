@@ -1,6 +1,7 @@
+import { Script } from 'node:vm';
 import { describe, expect, it } from 'vitest';
 
-import { renderCapsuleHtml } from '../../index.js';
+import { capsuleReportClientView, renderCapsuleHtml } from '../../index.js';
 import type { CapsuleReportDocument } from '../types.js';
 
 const hostile = '<script>alert("x&y")</script>\'';
@@ -26,6 +27,7 @@ function document(): CapsuleReportDocument {
     readiness: { kind: 'unavailable' },
     resources: { containers: [], networks: [], volumes: [] },
     activities: [],
+    activityTelemetry: [],
     progress: [],
     observations: {
       kind: 'collector-session-missing',
@@ -85,6 +87,26 @@ function hostileDocument(): CapsuleReportDocument {
         startedAt: '',
         completedAt: '',
         outcome: { kind: 'exited', argv: [], exitCode: 0, stdout: '', stderr: '' },
+      },
+    ],
+    activityTelemetry: [
+      {
+        kind: 'available',
+        activityId: 'activity-1',
+        spans: [
+          {
+            traceId: '11111111111111111111111111111111',
+            spanId: '2222222222222222',
+            parentSpanId: null,
+            operation: hostile,
+            service: hostile,
+            startTimeUnixNano: null,
+            endTimeUnixNano: null,
+            statusCode: null,
+            attributes: [{ key: 'http.method', value: hostile }],
+            links: [],
+          },
+        ],
       },
     ],
     cleanup: { kind: 'failed', error: { name: hostile, message: hostile } },
@@ -173,5 +195,25 @@ describe('Capsule acquisition report presentation', () => {
     expect(html).toContain('"state":"running","health":"healthy"');
     expect(html).toContain('Docker health and application readiness remain separate.');
     expect(html).toContain('No application readiness result was retained.');
+  });
+});
+
+describe('shared mockup presentation', () => {
+  it('embeds the exact served renderer and styles in offline exports with no network assets', () => {
+    const html = renderCapsuleHtml({ report: document() });
+    expect(html).toContain(capsuleReportClientView.script);
+    expect(html).toContain(capsuleReportClientView.styles);
+    expect(html).toContain('report-workspace');
+    expect(html).toContain('report-inspector');
+    expect(html).toContain('Raw telemetry');
+    expect(html).toContain('What was observed');
+    expect(html).toContain("createElementNS('http://www.w3.org/2000/svg'");
+    expect(html).toContain('Inter,ui-sans-serif,system-ui');
+    expect(html).not.toContain('fonts.googleapis');
+    expect(html).not.toContain('<link');
+    expect(html).not.toContain('.innerHTML');
+    expect(() =>
+      new Script(capsuleReportClientView.script).runInNewContext({ BlackboxReportViews: {} }),
+    ).not.toThrow();
   });
 });

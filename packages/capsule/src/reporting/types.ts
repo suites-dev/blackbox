@@ -14,7 +14,11 @@ import type {
   CapsuleSessionState,
 } from '../types.js';
 import type { CapsuleSessionRecord } from '../records.js';
-import type { CollectorSessionReadResult } from '@suites/blackbox-otel-collector-internal';
+import type { CapsuleActivityTelemetry } from './telemetry-types.js';
+import type {
+  CollectorActivityReadResult,
+  CollectorSessionReadResult,
+} from '@suites/blackbox-otel-collector-internal';
 
 export type CapsuleReportLifecycle =
   | { readonly kind: 'running'; readonly retainedState: 'running' }
@@ -113,6 +117,7 @@ export interface CapsuleReportDocument {
   };
   readonly readiness: CapsuleReportAvailability<CapsuleReadinessDetails>;
   readonly activities: readonly CapsuleReportActivity[];
+  readonly activityTelemetry: readonly CapsuleActivityTelemetry[];
   readonly progress: readonly CapsuleProgressEvent[];
   readonly observations: CapsuleReportObservations;
   readonly cleanup: CapsuleCleanupReport;
@@ -143,6 +148,7 @@ export interface CapsuleReportProjectionInput {
   readonly activities: readonly CapsuleActivityReport[];
   readonly progress: readonly CapsuleProgressEvent[];
   readonly observations: CollectorSessionReadResult;
+  readonly activityObservations: readonly CollectorActivityReadResult[];
 }
 
 export interface SerializeCapsuleReportDocumentInput {

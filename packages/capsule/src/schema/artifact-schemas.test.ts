@@ -97,6 +97,7 @@ function report(): CapsuleReportDocument {
     resources: { containers: [], networks: [], volumes: [] },
     readiness: { kind: 'unavailable' },
     activities: [activity()],
+    activityTelemetry: [],
     progress: [],
     observations: {
       kind: 'collector-session-found',
@@ -168,9 +169,47 @@ describe('Capsule activities artifact schema', () => {
 describe('Capsule operational report schema', () => {
   it('validates the projection and rejects crossed report branches', () => {
     expect(validateReport(report())).toBe(true);
+    const span = {
+      traceId: 'trace',
+      spanId: 'span',
+      parentSpanId: null,
+      operation: 'GET',
+      service: 'api',
+      startTimeUnixNano: null,
+      endTimeUnixNano: null,
+      statusCode: null,
+      attributes: [],
+      links: [],
+    };
+    expect(
+      validateReport({
+        ...report(),
+        activityTelemetry: [{ kind: 'available', activityId: 'one', spans: [span] }],
+      }),
+    ).toBe(true);
+    expect(
+      validateReport({
+        ...report(),
+        activityTelemetry: [
+          { kind: 'available', activityId: 'one', spans: [{ ...span, links: [{}] }] },
+        ],
+      }),
+    ).toBe(false);
     const base = report();
     for (const invalid of [
       { ...base, kind: 'capsule-assurance-report' },
+      { ...base, activityTelemetry: [{ kind: 'available', activityId: 'one', spans: [] }] },
+      { ...base, activityTelemetry: [{ kind: 'unavailable', activityId: 'one' }] },
+      {
+        ...base,
+        activityTelemetry: [
+          { kind: 'unavailable', activityId: 'one', reason: 'not-retained', spans: [] },
+        ],
+      },
+      {
+        ...base,
+        activityTelemetry: [{ kind: 'unavailable', activityId: 'one', reason: 'zero-effects' }],
+      },
       { ...base, lifecycle: { kind: 'running', retainedState: 'stopped' } },
       {
         ...base,

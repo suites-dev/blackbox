@@ -1,3 +1,4 @@
+import { projectActivityTelemetry } from './telemetry.js';
 import type { CapsuleProgressEvent, CapsuleSessionState } from '../types.js';
 import { createRedactionContext, redactActivities, redactError, redactText } from './redaction.js';
 import type {
@@ -106,6 +107,24 @@ function observationsProjection(
   }
 }
 
+function activityTelemetry(
+  input: CapsuleReportProjectionInput,
+  context: ReturnType<typeof createRedactionContext>,
+) {
+  return input.activities.map((activity) => {
+    const observation = input.activityObservations.find(
+      (item) => item.activityId === activity.activityId,
+    );
+    return observation
+      ? projectActivityTelemetry(observation, context)
+      : {
+          kind: 'unavailable' as const,
+          activityId: activity.activityId,
+          reason: 'not-retained' as const,
+        };
+  });
+}
+
 export function projectCapsuleReport(input: CapsuleReportProjectionInput): CapsuleReportDocument {
   const context = createRedactionContext();
   const cleanup = cleanupProjection(input, context);
@@ -160,6 +179,7 @@ export function projectCapsuleReport(input: CapsuleReportProjectionInput): Capsu
           },
     activities: redactActivities({ activities: input.activities, context }),
     progress: redactProgress({ events: input.progress, context }),
+    activityTelemetry: activityTelemetry(input, context),
     observations: observationsProjection(input.observations),
     cleanup,
     failure:

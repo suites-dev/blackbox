@@ -13,6 +13,7 @@ import {
   type CapsuleSessionRecord,
 } from '../records.js';
 import { readCapsuleObservations } from './observations.js';
+import { readCapsuleActivityObservations } from './activity-observations.js';
 
 const roots: string[] = [];
 const collectors: CollectorHandle[] = [];
@@ -95,13 +96,17 @@ function traceRequest(activityId: string): Record<string, unknown> {
             spans: [
               {
                 traceId,
+                spanId: 'bbbbbbbbbbbbbbbb',
+                parentSpanId: 'aaaaaaaaaaaaaaaa',
+                name: 'downstream-api',
+              },
+              {
+                traceId,
                 spanId: 'aaaaaaaaaaaaaaaa',
                 name: 'create-order',
                 startTimeUnixNano: '1750000000000000000',
                 endTimeUnixNano: '1750000000001000000',
-                attributes: [
-                  { key: 'blackbox.activity.id', value: { stringValue: activityId } },
-                ],
+                attributes: [{ key: 'blackbox.activity.id', value: { stringValue: activityId } }],
               },
             ],
           },
@@ -137,7 +142,7 @@ it('reads exact retained session, activity, and trace observations from the Caps
     readCapsuleObservations({ ...fixture, selection: { kind: 'session' } }),
   ).resolves.toMatchObject({
     kind: 'collector-session-found',
-    fragments: [{ sequence: 1, spanCount: 1 }],
+    fragments: [{ sequence: 1, spanCount: 2 }],
     traceIds: [traceId],
   });
   await expect(
@@ -171,11 +176,7 @@ it('distinguishes missing exact selections from a corrupt retained collector lif
   ).resolves.toMatchObject({ kind: 'collector-trace-missing' });
 
   const corrupt = await sessionFixture('rapid-harbor-alex');
-  const directory = join(
-    collectorStorage(corrupt),
-    corrupt.sessionId,
-    corrupt.executionId,
-  );
+  const directory = join(collectorStorage(corrupt), corrupt.sessionId, corrupt.executionId);
   await mkdir(directory, { recursive: true });
   await writeFile(join(directory, 'collector-lifecycle.json'), '{not-json');
   await expect(
@@ -190,4 +191,21 @@ it('distinguishes missing exact selections from a corrupt retained collector lif
   await expect(
     readCapsuleObservations({ ...corrupt, selection: { kind: 'trace', traceId } }),
   ).resolves.toMatchObject({ kind: 'collector-trace-corrupt' });
+});
+
+it('prepares exact activity-linked traces including downstream spans without an activity attribute', async () => {
+  const fixture = await sessionFixture('calm-river-ada');
+  const collector = await collectorFixture(fixture);
+  await postTrace(collector, 'activity-7');
+  const expanded = await readCapsuleActivityObservations({ ...fixture, activityId: 'activity-7' });
+  expect(expanded.kind).toBe('collector-activity-found');
+  expect(JSON.stringify(expanded)).toContain('downstream-api');
+  const direct = await readCapsuleObservations({
+    ...fixture,
+    selection: { kind: 'activity', activityId: 'activity-7' },
+  });
+  expect(JSON.stringify(direct)).not.toContain('downstream-api');
+  await expect(
+    readCapsuleActivityObservations({ ...fixture, activityId: 'activity-8' }),
+  ).resolves.toMatchObject({ kind: 'collector-activity-missing' });
 });
