@@ -3,8 +3,11 @@ import type {
   RuntimeInstrumentationFile,
 } from '@suites/blackbox-instrumentation-internal';
 
-import { installNodeDependencies, type NodeDependencyInstaller } from './dependency-installer.js';
-import { prepareNodeDependencies } from './dependency-state.js';
+import {
+  installNodeDependencies,
+  type NodeDependencyInstaller,
+} from '../dependencies/dependency-installer.js';
+import { prepareNodeDependencies } from '../dependencies/dependency-state.js';
 import { nodeInstrumentationFiles } from './bundle.js';
 
 export interface CreateNodeRuntimeProviderInput {

@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import type { RuntimePreparationResult } from '@suites/blackbox-instrumentation-internal';
 
 import type { NodeDependencyInstaller } from './dependency-installer.js';
-import { nodeInstrumentationDependencies } from './bundle.js';
+import { nodeInstrumentationDependencies } from '../bootstrap/bundle.js';
 
 export interface PrepareNodeDependenciesInput {
   readonly directory: string;

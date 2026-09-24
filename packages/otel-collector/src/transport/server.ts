@@ -40,6 +40,10 @@ function endpoint(input: StartCollectorInput, port: number): CollectorEndpoint {
     baseUrl,
     tracesPath: input.endpoint.tracesPath,
     tracesUrl: `${baseUrl}${input.endpoint.tracesPath}`,
+    activationPath: input.endpoint.activationPath,
+    activationUrl: `${baseUrl}${input.endpoint.activationPath}`,
+    readinessPath: input.endpoint.readinessPath,
+    readinessUrl: `${baseUrl}${input.endpoint.readinessPath}`,
     readPath: input.endpoint.readPath,
     readUrl: `${baseUrl}${input.endpoint.readPath}`,
   };

@@ -5,13 +5,16 @@ import { join } from 'node:path';
 import { promisify } from 'node:util';
 import { expect, it } from 'vitest';
 import { readCollectorSession, readCollectorTrace } from '../index.js';
-import { withCollector } from '../test-fixtures/collector.js';
+import { collectorToken, withCollector } from '../test-fixtures/collector.js';
 
 // This is a separately installed upstream producer; no collector serializer is reused.
 const producer = `
 const { BasicTracerProvider, SimpleSpanProcessor } = require('@opentelemetry/sdk-trace-base');
 const { OTLPTraceExporter } = require('@opentelemetry/exporter-trace-otlp-http');
-const exporter = new OTLPTraceExporter({ url: process.argv[2] });
+const exporter = new OTLPTraceExporter({
+  url: process.argv[2],
+  headers: { authorization: 'Bearer ' + process.argv[3] },
+});
 const provider = new BasicTracerProvider({ spanProcessors: [new SimpleSpanProcessor(exporter)] });
 const span = provider.getTracer('upstream-http-json-probe').startSpan('actual-exporter-span');
 const identity = span.spanContext();
@@ -47,7 +50,7 @@ it('accepts an actual upstream OTLP HTTP JSON exporter and retains its exact tra
     await withCollector(async ({ input, collector }) => {
       const result = await promisify(execFile)(
         process.execPath,
-        [entry, collector.endpoint.tracesUrl],
+        [entry, collector.endpoint.tracesUrl, collectorToken],
         {
           cwd: directory,
           timeout: 15_000,

@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import { expect, it } from 'vitest';
 import { installInstrumentation } from '@suites/blackbox-instrumentation-internal';
 
-import { nodeRuntimeProvider } from './provider.js';
+import { nodeRuntimeProvider } from '../bootstrap/provider.js';
 
 it('never reports success for an installed dependency whose executable module disappeared', async () => {
   const projectDirectory = await mkdtemp(join(tmpdir(), 'blackbox-instrumentation-corrupt-'));

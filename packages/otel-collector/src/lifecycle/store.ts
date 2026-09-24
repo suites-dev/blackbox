@@ -35,6 +35,10 @@ function validEndpoint(value: unknown): boolean {
     typeof value.baseUrl === 'string' &&
     typeof value.tracesPath === 'string' &&
     typeof value.tracesUrl === 'string' &&
+    typeof value.activationPath === 'string' &&
+    typeof value.activationUrl === 'string' &&
+    typeof value.readinessPath === 'string' &&
+    typeof value.readinessUrl === 'string' &&
     typeof value.readPath === 'string' &&
     typeof value.readUrl === 'string'
   );
@@ -53,11 +57,35 @@ function validRun(value: unknown): boolean {
     (value.stoppedAt === null || typeof value.stoppedAt === 'string') &&
     typeof value.receiver === 'string' &&
     receivers.includes(value.receiver) &&
-    value.instrumentation === 'unknown' &&
+    validInstrumentation(value.instrumentation) &&
     typeof value.shutdown === 'string' &&
     shutdowns.includes(value.shutdown) &&
     validFailure(value.failure) &&
     validEndpoint(value.endpoint)
+  );
+}
+
+function validInstrumentation(value: unknown): boolean {
+  if (!isRecord(value)) {
+    return false;
+  }
+  if (value.kind === 'not-activated') {
+    return Object.keys(value).length === 1;
+  }
+  return (
+    value.kind === 'activated' &&
+    Array.isArray(value.activations) &&
+    value.activations.length > 0 &&
+    value.activations.every(
+      (activation) =>
+        isRecord(activation) &&
+        activation.kind === 'instrumentation-activation' &&
+        typeof activation.runtime === 'string' &&
+        activation.runtime !== '' &&
+        typeof activation.serviceName === 'string' &&
+        activation.serviceName !== '' &&
+        typeof activation.activatedAt === 'string',
+    )
   );
 }
 
@@ -175,7 +203,7 @@ function initialRecord(input: {
     updatedAt: now,
     stoppedAt: null,
     receiver: 'ready',
-    instrumentation: 'unknown',
+    instrumentation: { kind: 'not-activated' },
     shutdown: 'not-started',
     failure: null,
     endpoint: input.endpoint,

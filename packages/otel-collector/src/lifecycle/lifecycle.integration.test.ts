@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import { expect, it } from 'vitest';
 import { readCollectorSession, readCollectorTrace, startCollector } from '../index.js';
 import { fragmentDirectory, lifecyclePath } from '../storage/paths.js';
-import { postJson, traceA, traceRequest } from '../test-fixtures/collector.js';
+import { collectorToken, postJson, traceA, traceRequest } from '../test-fixtures/collector.js';
 import type { CollectorHandle, StartCollectorInput } from '../model/types.js';
 
 function collectorInput(storageDirectory: string, identity: string): StartCollectorInput {
@@ -19,8 +19,11 @@ function collectorInput(storageDirectory: string, identity: string): StartCollec
       host: '127.0.0.1',
       port: 0,
       tracesPath: '/v1/traces',
+      activationPath: '/v1/activation',
+      readinessPath: '/ready',
       readPath: '/v1/collector',
     },
+    authorization: { kind: 'bearer-token', token: collectorToken },
     limits: { maxRequestBytes: 4096, shutdownTimeoutMs: 75 },
   };
 }

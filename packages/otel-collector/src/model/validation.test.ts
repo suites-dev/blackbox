@@ -16,8 +16,11 @@ function validInput(storageDirectory: string): StartCollectorInput {
       host: '127.0.0.1',
       port: 0,
       tracesPath: '/v1/traces',
+      activationPath: '/v1/activation',
+      readinessPath: '/ready',
       readPath: '/v1/collector',
     },
+    authorization: { kind: 'bearer-token', token: 'validation-token' },
     limits: { maxRequestBytes: 4096, shutdownTimeoutMs: 75 },
   };
 }

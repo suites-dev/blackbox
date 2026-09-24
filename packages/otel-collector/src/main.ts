@@ -29,7 +29,13 @@ async function run(): Promise<void> {
       host: requiredEnvironment('BLACKBOX_OTEL_HOST'),
       port: integerEnvironment('BLACKBOX_OTEL_PORT'),
       tracesPath: requiredEnvironment('BLACKBOX_OTEL_TRACES_PATH'),
+      activationPath: requiredEnvironment('BLACKBOX_OTEL_ACTIVATION_PATH'),
+      readinessPath: requiredEnvironment('BLACKBOX_OTEL_READINESS_PATH'),
       readPath: requiredEnvironment('BLACKBOX_OTEL_READ_PATH'),
+    },
+    authorization: {
+      kind: 'bearer-token',
+      token: requiredEnvironment('BLACKBOX_OTEL_AUTH_TOKEN'),
     },
     limits: {
       maxRequestBytes: integerEnvironment('BLACKBOX_OTEL_MAX_REQUEST_BYTES'),

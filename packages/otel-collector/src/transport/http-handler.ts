@@ -2,33 +2,12 @@ import { gunzip } from 'node:zlib';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { CollectorStore } from '../lifecycle/store.js';
 import type { StartCollectorInput } from '../model/types.js';
-import { readCollectorSession, readCollectorTrace } from '../storage/reader.js';
 import { recordedFailure } from '../model/validation.js';
 import { validateOtlpTraceRequest } from '../otlp/json.js';
-
-class RequestFailure extends Error {
-  readonly status: number;
-  public constructor(status: number, message: string) {
-    super(message);
-    this.name = 'RequestFailure';
-    this.status = status;
-  }
-}
-
-function writeJson(input: {
-  readonly response: ServerResponse;
-  readonly status: number;
-  readonly value: unknown;
-}): void {
-  const body = `${JSON.stringify(input.value)}\n`;
-  input.response.writeHead(input.status, {
-    'content-type': 'application/json',
-    'content-length': Buffer.byteLength(body),
-    'cache-control': 'no-store',
-    'x-content-type-options': 'nosniff',
-  });
-  input.response.end(body);
-}
+import { parseActivation } from '../activation/validation.js';
+import { requireAuthorization } from './authorization.js';
+import { RequestFailure, writeJson } from './response.js';
+import { serveCollectorRead } from './read-handler.js';
 
 function readEncodedBody(input: {
   readonly request: IncomingMessage;
@@ -146,58 +125,28 @@ async function acceptTraces(input: {
   writeJson({ response: input.response, status: 200, value: {} });
 }
 
-async function serveRead(input: {
+async function activateInstrumentation(input: {
   readonly request: IncomingMessage;
   readonly response: ServerResponse;
   readonly config: StartCollectorInput;
   readonly store: CollectorStore;
-  readonly path: string;
 }): Promise<void> {
-  const prefix = `${input.config.endpoint.readPath}/traces/`;
-  const knownPath =
-    input.path === input.config.endpoint.readPath ||
-    input.path === `${input.config.endpoint.readPath}/session` ||
-    input.path.startsWith(prefix);
-  if (!knownPath) {
-    throw new RequestFailure(404, 'Collector endpoint not found.');
+  if (input.request.method !== 'POST') {
+    throw new RequestFailure(405, 'The instrumentation activation endpoint requires POST.');
   }
-  if (input.request.method !== 'GET') {
-    throw new RequestFailure(405, 'Collector read endpoints require GET.');
+  const decoded = await decodeTraceRequest({
+    request: input.request,
+    limit: input.config.limits.maxRequestBytes,
+  });
+  const activation = parseActivation(decoded.value);
+  if (
+    activation.sessionId !== input.config.sessionId ||
+    activation.executionId !== input.config.executionId
+  ) {
+    throw new RequestFailure(409, 'Instrumentation activation identity does not match collector.');
   }
-  if (input.path === input.config.endpoint.readPath) {
-    writeJson({ response: input.response, status: 200, value: input.store.status() });
-    return;
-  }
-  if (input.path === `${input.config.endpoint.readPath}/session`) {
-    const result = await readCollectorSession(input.config);
-    writeJson({
-      response: input.response,
-      status:
-        result.kind === 'collector-session-missing'
-          ? 404
-          : result.kind === 'collector-session-corrupt'
-            ? 500
-            : 200,
-      value: result,
-    });
-    return;
-  }
-  try {
-    const traceId = decodeURIComponent(input.path.slice(prefix.length));
-    const result = await readCollectorTrace({ ...input.config, traceId });
-    writeJson({
-      response: input.response,
-      status:
-        result.kind === 'collector-trace-missing'
-          ? 404
-          : result.kind === 'collector-trace-corrupt'
-            ? 500
-            : 200,
-      value: result,
-    });
-  } catch (error) {
-    throw new RequestFailure(400, recordedFailure(error).message);
-  }
+  await input.store.activate(activation);
+  writeJson({ response: input.response, status: 200, value: input.store.status() });
 }
 
 export async function handleCollectorRequest(input: {
@@ -207,14 +156,27 @@ export async function handleCollectorRequest(input: {
   readonly store: CollectorStore | null;
 }): Promise<void> {
   try {
+    const path = new URL(input.request.url ?? '/', 'http://collector.invalid').pathname;
+    if (path === input.config.endpoint.readinessPath) {
+      if (input.request.method !== 'GET') {
+        throw new RequestFailure(405, 'The collector readiness endpoint requires GET.');
+      }
+      if (input.store === null || input.store.status().receiver !== 'ready') {
+        throw new RequestFailure(503, 'Collector storage is not ready.');
+      }
+      writeJson({ response: input.response, status: 200, value: { kind: 'collector-ready' } });
+      return;
+    }
     if (input.store === null) {
       throw new RequestFailure(503, 'Collector storage is not ready.');
     }
-    const path = new URL(input.request.url ?? '/', 'http://collector.invalid').pathname;
+    requireAuthorization(input);
     if (path === input.config.endpoint.tracesPath) {
       await acceptTraces({ ...input, store: input.store });
+    } else if (path === input.config.endpoint.activationPath) {
+      await activateInstrumentation({ ...input, store: input.store });
     } else {
-      await serveRead({ ...input, store: input.store, path });
+      await serveCollectorRead({ ...input, store: input.store, path });
     }
   } catch (error) {
     const failure = recordedFailure(error);

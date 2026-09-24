@@ -15,20 +15,23 @@ const collector = await startCollector({
     host: '127.0.0.1',
     port: 4318,
     tracesPath: '/v1/traces',
+    activationPath: '/v1/activation',
+    readinessPath: '/ready',
     readPath: '/v1/blackbox',
   },
+  authorization: { kind: 'bearer-token', token: '<session-secret>' },
   limits: { maxRequestBytes: 67_108_864, shutdownTimeoutMs: 5_000 },
 });
 ```
 
-Send `POST application/json` requests to `collector.endpoint.tracesUrl`. The receiver accepts identity and gzip content encodings. A successful response is the OTLP JSON `ExportTraceServiceResponse` empty object. Binary protobuf, gRPC, metrics, logs, and profiles are outside this initial transport scope and receive a factual HTTP error instead of a false success.
+Send `POST application/json` requests to `collector.endpoint.tracesUrl` with the configured bearer token. The receiver accepts identity and gzip content encodings. A successful response is the OTLP JSON `ExportTraceServiceResponse` empty object. Binary protobuf, gRPC, metrics, logs, and profiles are outside this initial transport scope and receive a factual HTTP error instead of a false success.
 
-`GET <readPath>` returns live factual status, `GET <readPath>/session` reads the exact retained session with a sorted inventory of its distinct trace IDs, and `GET <readPath>/traces/<32-hex-trace-id>` returns only spans for that trace while preserving their OTLP resource, scope, events, attributes, status, and links. The exported `readCollectorSession` and `readCollectorTrace` functions provide the same retained reads after the server stops.
+`GET <readinessPath>` is an unauthenticated, data-free health probe. The authenticated read API returns live factual status, exact-session inventory, an exact trace, or spans carrying an exact `blackbox.activity.id`. The exported read functions provide the same retained reads after the server stops.
 
 Each successful ingestion is acknowledged only after its raw decompressed JSON text is stored in a fragment and the lifecycle record is updated. Derived trace reads never replace those raw fragments. Retained data survives graceful shutdown and restart. If a prior lifecycle lacks a graceful close record, the next start records it as interrupted.
 
-Receiver readiness means only that its socket and durable store are ready. Instrumentation status remains `unknown`; telemetry status becomes `received` after the first durable request. Graceful close drains HTTP work within the configured bound, but it does not claim that instrumentation was loaded or that every application span arrived. The collector preserves links but does not inject propagation headers, infer causality, or infer capture completeness.
+Receiver readiness means only that its socket and durable store are ready. An authenticated activation records the exact runtime and service identity; telemetry status becomes `received` after the first durable request. Graceful close drains HTTP work within the configured bound, but it does not claim that every application span arrived. The collector preserves links but does not inject propagation headers, infer causality, or infer capture completeness.
 
 The transport follows the [OTLP/HTTP specification](https://github.com/open-telemetry/opentelemetry-proto/blob/main/docs/specification.md), including the `/v1/traces` convention, JSON protobuf mapping, JSON response media type, gzip support, and bounded request parsing. OTLP JSON trace and span IDs use their specified hexadecimal wire representation.
 
-The runnable `blackbox-otel-collector` entrypoint requires explicit `BLACKBOX_OTEL_SESSION_ID`, `BLACKBOX_OTEL_EXECUTION_ID`, `BLACKBOX_OTEL_STORAGE_DIRECTORY`, `BLACKBOX_OTEL_HOST`, `BLACKBOX_OTEL_PORT`, `BLACKBOX_OTEL_TRACES_PATH`, `BLACKBOX_OTEL_READ_PATH`, `BLACKBOX_OTEL_MAX_REQUEST_BYTES`, and `BLACKBOX_OTEL_SHUTDOWN_TIMEOUT_MS` environment variables. It prints one readiness JSON line, then closes on `SIGINT` or `SIGTERM`.
+The runnable entrypoint also requires `BLACKBOX_OTEL_ACTIVATION_PATH`, `BLACKBOX_OTEL_READINESS_PATH`, and `BLACKBOX_OTEL_AUTH_TOKEN`. The production Dockerfile builds the local image `blackbox-otel-collector:dev` from the package directory after `pnpm build`. It prints one readiness JSON line, then drains and records shutdown on `SIGINT` or `SIGTERM`.

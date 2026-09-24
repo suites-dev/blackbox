@@ -6,6 +6,13 @@ import type { CollectorHandle, StartCollectorInput } from '../model/types.js';
 
 export const traceA = '11111111111111111111111111111111';
 export const traceB = '22222222222222222222222222222222';
+export const collectorToken = 'collector-test-token';
+
+export function collectorHeaders(
+  headers: Readonly<Record<string, string>> = {},
+): Readonly<Record<string, string>> {
+  return { authorization: `Bearer ${collectorToken}`, ...headers };
+}
 
 export function span(traceId: string, spanId: string): Record<string, unknown> {
   return {
@@ -62,8 +69,11 @@ export async function withCollector(test: (fixture: Fixture) => Promise<void>): 
       host: '127.0.0.1',
       port: 0,
       tracesPath: '/v1/traces',
+      activationPath: '/v1/activation',
+      readinessPath: '/ready',
       readPath: '/status',
     },
+    authorization: { kind: 'bearer-token', token: collectorToken },
     limits: { maxRequestBytes: 2048, shutdownTimeoutMs: 100 },
   } satisfies StartCollectorInput;
   let collector: CollectorHandle | null = null;
@@ -81,7 +91,7 @@ export async function withCollector(test: (fixture: Fixture) => Promise<void>): 
 export async function postJson(collector: CollectorHandle, value: unknown): Promise<Response> {
   return fetch(collector.endpoint.tracesUrl, {
     method: 'POST',
-    headers: { 'content-type': 'application/json' },
+    headers: collectorHeaders({ 'content-type': 'application/json' }),
     body: JSON.stringify(value),
   });
 }

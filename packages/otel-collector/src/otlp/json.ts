@@ -150,3 +150,53 @@ export function traceIdsInRequest(request: unknown): readonly string[] {
   }
   return [...ids].sort();
 }
+
+function spanActivityId(span: unknown): string | null {
+  if (!isRecord(span)) {
+    throw new Error('Retained span is not an object.');
+  }
+  for (const attribute of fieldArray({ record: span, field: 'attributes' })) {
+    if (!isRecord(attribute) || attribute.key !== 'blackbox.activity.id') {
+      continue;
+    }
+    const value = attribute.value;
+    if (isRecord(value) && typeof value.stringValue === 'string') {
+      return value.stringValue;
+    }
+  }
+  return null;
+}
+
+function filterScopeByActivity(input: {
+  readonly scope: unknown;
+  readonly activityId: string;
+}): Record<string, unknown> | null {
+  if (!isRecord(input.scope)) {
+    throw new Error('Retained scopeSpans entry is not an object.');
+  }
+  const spans = spansFor(input.scope).filter(
+    (span) => spanActivityId(span) === input.activityId,
+  );
+  return spans.length === 0 ? null : { ...input.scope, spans };
+}
+
+export function filterActivityRequest(input: {
+  readonly request: unknown;
+  readonly activityId: string;
+}): Record<string, unknown> | null {
+  if (!isRecord(input.request)) {
+    throw new Error('Retained OTLP request is not an object.');
+  }
+  const resourceSpans = fieldArray({ record: input.request, field: 'resourceSpans' })
+    .map((resource): Record<string, unknown> | null => {
+      if (!isRecord(resource)) {
+        throw new Error('Retained resourceSpans entry is not an object.');
+      }
+      const scopeSpans = scopeSpansFor(resource)
+        .map((scope) => filterScopeByActivity({ scope, activityId: input.activityId }))
+        .filter((scope): scope is Record<string, unknown> => scope !== null);
+      return scopeSpans.length === 0 ? null : { ...resource, scopeSpans };
+    })
+    .filter((resource): resource is Record<string, unknown> => resource !== null);
+  return resourceSpans.length === 0 ? null : { ...input.request, resourceSpans };
+}

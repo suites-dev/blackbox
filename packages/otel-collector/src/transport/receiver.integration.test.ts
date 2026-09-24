@@ -5,6 +5,7 @@ import { readCollectorSession, readCollectorTrace } from '../index.js';
 import { fragmentDirectory, lifecyclePath } from '../storage/paths.js';
 import {
   postJson,
+  collectorHeaders,
   traceA,
   traceB,
   traceRequest,
@@ -63,7 +64,7 @@ it('acknowledges OTLP JSON hex identifiers only after fragments and lifecycle ar
         { request: { resourceSpans: [{ scopeSpans: [{ spans: [{ traceId: traceB }] }] }] } },
       ],
     });
-    expect(collector.status().instrumentation).toBe('unknown');
+    expect(collector.status().instrumentation).toEqual({ kind: 'not-activated' });
   });
 });
 
@@ -85,7 +86,10 @@ it('serializes concurrent acknowledgements without overwriting fragment identiti
 
 it('accepts gzip JSON while rejecting malformed/compressed-over-limit bodies without poisoning readiness', async () => {
   await withCollector(async ({ collector }) => {
-    const headers = { 'content-type': 'application/json', 'content-encoding': 'gzip' };
+    const headers = collectorHeaders({
+      'content-type': 'application/json',
+      'content-encoding': 'gzip',
+    });
     const good = await fetch(collector.endpoint.tracesUrl, {
       method: 'POST',
       headers,
@@ -123,7 +127,7 @@ it.each([
   await withCollector(async ({ collector }) => {
     const response = await fetch(`${collector.endpoint.baseUrl}${path}`, {
       method,
-      headers: { 'content-type': contentType },
+      headers: collectorHeaders({ 'content-type': contentType }),
       body,
     });
     expect(response.status).toBe(status);

@@ -8,7 +8,14 @@ export interface CollectorHttpInput {
   readonly host: string;
   readonly port: number;
   readonly tracesPath: string;
+  readonly activationPath: string;
+  readonly readinessPath: string;
   readonly readPath: string;
+}
+
+export interface CollectorAuthorization {
+  readonly kind: 'bearer-token';
+  readonly token: string;
 }
 
 export interface CollectorLimits {
@@ -20,6 +27,7 @@ export interface StartCollectorInput extends CollectorIdentity {
   readonly kind: 'start-collector';
   readonly storageDirectory: string;
   readonly endpoint: CollectorHttpInput;
+  readonly authorization: CollectorAuthorization;
   readonly limits: CollectorLimits;
 }
 
@@ -30,6 +38,10 @@ export interface CollectorEndpoint {
   readonly baseUrl: string;
   readonly tracesPath: string;
   readonly tracesUrl: string;
+  readonly activationPath: string;
+  readonly activationUrl: string;
+  readonly readinessPath: string;
+  readonly readinessUrl: string;
   readonly readPath: string;
   readonly readUrl: string;
 }
@@ -42,13 +54,27 @@ export interface CollectorFailure {
 export type ReceiverStatus = 'ready' | 'draining' | 'stopped' | 'failed' | 'interrupted';
 export type ShutdownStatus = 'not-started' | 'draining' | 'complete' | 'timed-out' | 'interrupted';
 
+export interface CollectorActivationRecord {
+  readonly kind: 'instrumentation-activation';
+  readonly runtime: string;
+  readonly serviceName: string;
+  readonly activatedAt: string;
+}
+
+export type CollectorInstrumentationStatus =
+  | { readonly kind: 'not-activated' }
+  | {
+      readonly kind: 'activated';
+      readonly activations: readonly CollectorActivationRecord[];
+    };
+
 export interface CollectorRunRecord {
   readonly instanceId: string;
   readonly startedAt: string;
   readonly updatedAt: string;
   readonly stoppedAt: string | null;
   readonly receiver: ReceiverStatus;
-  readonly instrumentation: 'unknown';
+  readonly instrumentation: CollectorInstrumentationStatus;
   readonly shutdown: ShutdownStatus;
   readonly failure: CollectorFailure | null;
   readonly endpoint: CollectorEndpoint;
@@ -79,7 +105,7 @@ export interface CollectorStatus extends CollectorIdentity {
   readonly kind: 'collector-status';
   readonly instanceId: string;
   readonly receiver: ReceiverStatus;
-  readonly instrumentation: 'unknown';
+  readonly instrumentation: CollectorInstrumentationStatus;
   readonly telemetry: CollectorTelemetryStatus;
   readonly shutdown: ShutdownStatus;
   readonly failure: CollectorFailure | null;
@@ -110,6 +136,17 @@ export interface ReadCollectorSessionInput extends CollectorIdentity {
 
 export interface ReadCollectorTraceInput extends ReadCollectorSessionInput {
   readonly traceId: string;
+}
+
+export interface ReadCollectorActivityInput extends ReadCollectorSessionInput {
+  readonly activityId: string;
+}
+
+export interface ActivateCollectorInput extends CollectorIdentity {
+  readonly schemaVersion: 1;
+  readonly kind: 'instrumentation-activation-v1';
+  readonly runtime: string;
+  readonly serviceName: string;
 }
 
 export interface RetainedFragmentSummary {
@@ -159,6 +196,27 @@ export type CollectorTraceReadResult =
       readonly kind: 'collector-trace-corrupt';
       readonly identity: CollectorIdentity;
       readonly traceId: string;
+      readonly error: CollectorFailure;
+    };
+
+export type CollectorActivityReadResult =
+  | {
+      readonly kind: 'collector-activity-found';
+      readonly identity: CollectorIdentity;
+      readonly activityId: string;
+      readonly fragments: readonly TraceFragment[];
+      readonly traceIds: readonly string[];
+    }
+  | {
+      readonly kind: 'collector-activity-missing';
+      readonly identity: CollectorIdentity;
+      readonly activityId: string;
+      readonly message: string;
+    }
+  | {
+      readonly kind: 'collector-activity-corrupt';
+      readonly identity: CollectorIdentity;
+      readonly activityId: string;
       readonly error: CollectorFailure;
     };
 

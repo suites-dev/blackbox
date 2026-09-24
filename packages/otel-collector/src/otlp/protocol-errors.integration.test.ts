@@ -1,5 +1,12 @@
 import { expect, it } from 'vitest';
-import { postJson, span, traceA, traceRequest, withCollector } from '../test-fixtures/collector.js';
+import {
+  collectorHeaders,
+  postJson,
+  span,
+  traceA,
+  traceRequest,
+  withCollector,
+} from '../test-fixtures/collector.js';
 
 function requestWithSpan(value: unknown): unknown {
   return { resourceSpans: [{ scopeSpans: [{ spans: [value] }] }] };
@@ -65,7 +72,9 @@ it('supports uppercase hex and parent identity without changing retained payload
       parentSpanId: 'C'.repeat(16),
     });
     expect((await postJson(collector, value)).status).toBe(200);
-    const trace = await fetch(`${collector.endpoint.readUrl}/traces/${'a'.repeat(32)}`);
+    const trace = await fetch(`${collector.endpoint.readUrl}/traces/${'a'.repeat(32)}`, {
+      headers: collectorHeaders(),
+    });
     expect(trace.status).toBe(200);
     expect(await trace.json()).toMatchObject({
       kind: 'collector-trace-found',
@@ -76,14 +85,34 @@ it('supports uppercase hex and parent identity without changing retained payload
 
 it('serves status/session/trace views and reports absent traces without marking the receiver failed', async () => {
   await withCollector(async ({ collector }) => {
-    expect((await fetch(collector.endpoint.readUrl)).status).toBe(200);
-    const session = await fetch(`${collector.endpoint.readUrl}/session`);
+    expect(
+      (await fetch(collector.endpoint.readUrl, { headers: collectorHeaders() })).status,
+    ).toBe(200);
+    const session = await fetch(`${collector.endpoint.readUrl}/session`, {
+      headers: collectorHeaders(),
+    });
     expect(await session.json()).toMatchObject({ kind: 'collector-session-found', traceIds: [] });
-    expect((await fetch(`${collector.endpoint.readUrl}/traces/${traceA}`)).status).toBe(404);
-    expect((await fetch(collector.endpoint.readUrl, { method: 'POST' })).status).toBe(405);
+    expect(
+      (
+        await fetch(`${collector.endpoint.readUrl}/traces/${traceA}`, {
+          headers: collectorHeaders(),
+        })
+      ).status,
+    ).toBe(404);
+    expect(
+      (
+        await fetch(collector.endpoint.readUrl, {
+          method: 'POST',
+          headers: collectorHeaders(),
+        })
+      ).status,
+    ).toBe(405);
     const unsupported = await fetch(collector.endpoint.tracesUrl, {
       method: 'POST',
-      headers: { 'content-type': 'application/json', 'content-encoding': 'br' },
+      headers: collectorHeaders({
+        'content-type': 'application/json',
+        'content-encoding': 'br',
+      }),
       body: '{}',
     });
     expect(unsupported.status).toBe(415);

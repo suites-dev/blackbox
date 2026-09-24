@@ -17,6 +17,7 @@
       "default": "./dist/index.js"
     },
     "./schema/collector-fragment-v1.json": "./schema/collector-fragment-v1.json",
+    "./schema/collector-activation-v1.json": "./schema/collector-activation-v1.json",
     "./schema/collector-lifecycle-v1.json": "./schema/collector-lifecycle-v1.json"
   },
   "bin": {

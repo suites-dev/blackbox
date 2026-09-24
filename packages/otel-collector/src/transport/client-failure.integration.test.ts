@@ -4,13 +4,22 @@ import { writeFile } from 'node:fs/promises';
 import { expect, it } from 'vitest';
 import { readCollectorTrace } from '../index.js';
 import { lifecyclePath } from '../storage/paths.js';
-import { postJson, traceA, traceRequest, withCollector } from '../test-fixtures/collector.js';
+import {
+  collectorHeaders,
+  postJson,
+  traceA,
+  traceRequest,
+  withCollector,
+} from '../test-fixtures/collector.js';
 
 it('keeps receiver ready after a client disconnects halfway through an OTLP body', async () => {
   await withCollector(async ({ collector }) => {
     const pending = request(collector.endpoint.tracesUrl, {
       method: 'POST',
-      headers: { 'content-type': 'application/json', 'content-length': '1000' },
+      headers: collectorHeaders({
+        'content-type': 'application/json',
+        'content-length': '1000',
+      }),
     });
     pending.on('error', () => undefined);
     pending.write('{');

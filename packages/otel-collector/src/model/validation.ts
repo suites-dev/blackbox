@@ -40,9 +40,20 @@ export function validateStartInput(input: StartCollectorInput): void {
     throw new Error('endpoint.port must be an integer from 0 through 65535.');
   }
   validatePath({ name: 'endpoint.tracesPath', value: input.endpoint.tracesPath });
+  validatePath({ name: 'endpoint.activationPath', value: input.endpoint.activationPath });
+  validatePath({ name: 'endpoint.readinessPath', value: input.endpoint.readinessPath });
   validatePath({ name: 'endpoint.readPath', value: input.endpoint.readPath });
-  if (input.endpoint.tracesPath === input.endpoint.readPath) {
-    throw new Error('Trace ingest and read paths must differ.');
+  const paths = [
+    input.endpoint.tracesPath,
+    input.endpoint.activationPath,
+    input.endpoint.readinessPath,
+    input.endpoint.readPath,
+  ];
+  if (new Set(paths).size !== paths.length) {
+    throw new Error('Trace ingest, activation, readiness, and read paths must differ.');
+  }
+  if (input.authorization.token.trim() === '') {
+    throw new Error('authorization.token must be explicit and non-empty.');
   }
   if (!Number.isSafeInteger(input.limits.maxRequestBytes) || input.limits.maxRequestBytes < 1) {
     throw new Error('limits.maxRequestBytes must be a positive safe integer.');
@@ -50,6 +61,16 @@ export function validateStartInput(input: StartCollectorInput): void {
   if (!Number.isSafeInteger(input.limits.shutdownTimeoutMs) || input.limits.shutdownTimeoutMs < 1) {
     throw new Error('limits.shutdownTimeoutMs must be a positive safe integer.');
   }
+}
+
+export function validateNonBlankField(input: {
+  readonly field: string;
+  readonly value: unknown;
+}): string {
+  if (typeof input.value !== 'string' || input.value.trim() === '') {
+    throw new Error(`${input.field} must be a non-empty string.`);
+  }
+  return input.value;
 }
 
 export function validateTraceId(traceId: string): string {

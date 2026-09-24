@@ -43,10 +43,44 @@
         "updatedAt": { "type": "string", "format": "date-time" },
         "stoppedAt": { "type": ["string", "null"] },
         "receiver": { "enum": ["ready", "draining", "stopped", "failed", "interrupted"] },
-        "instrumentation": { "const": "unknown" },
+        "instrumentation": { "$ref": "#/$defs/instrumentation" },
         "shutdown": { "enum": ["not-started", "draining", "complete", "timed-out", "interrupted"] },
         "failure": { "$ref": "#/$defs/failure" },
         "endpoint": { "$ref": "#/$defs/endpoint" }
+      }
+    },
+    "instrumentation": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind"],
+          "properties": { "kind": { "const": "not-activated" } }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "activations"],
+          "properties": {
+            "kind": { "const": "activated" },
+            "activations": {
+              "type": "array",
+              "minItems": 1,
+              "items": { "$ref": "#/$defs/activation" }
+            }
+          }
+        }
+      ]
+    },
+    "activation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "runtime", "serviceName", "activatedAt"],
+      "properties": {
+        "kind": { "const": "instrumentation-activation" },
+        "runtime": { "type": "string", "minLength": 1 },
+        "serviceName": { "type": "string", "minLength": 1 },
+        "activatedAt": { "type": "string", "format": "date-time" }
       }
     },
     "endpoint": {
@@ -59,6 +93,10 @@
         "baseUrl",
         "tracesPath",
         "tracesUrl",
+        "activationPath",
+        "activationUrl",
+        "readinessPath",
+        "readinessUrl",
         "readPath",
         "readUrl"
       ],
@@ -69,6 +107,10 @@
         "baseUrl": { "type": "string", "minLength": 1 },
         "tracesPath": { "type": "string", "pattern": "^/" },
         "tracesUrl": { "type": "string", "minLength": 1 },
+        "activationPath": { "type": "string", "pattern": "^/" },
+        "activationUrl": { "type": "string", "minLength": 1 },
+        "readinessPath": { "type": "string", "pattern": "^/" },
+        "readinessUrl": { "type": "string", "minLength": 1 },
         "readPath": { "type": "string", "pattern": "^/" },
         "readUrl": { "type": "string", "minLength": 1 }
       }

@@ -11,10 +11,18 @@ import type {
 } from '../model/types.js';
 import { fragmentDirectory, lifecyclePath } from './paths.js';
 import { parseLifecycle } from '../lifecycle/store.js';
-import { filterTraceRequest, traceIdsInRequest, validateOtlpTraceRequest } from '../otlp/json.js';
-import { recordedFailure, validateIdentity, validateTraceId } from '../model/validation.js';
+import {
+  filterTraceRequest,
+  traceIdsInRequest,
+  validateOtlpTraceRequest,
+} from '../otlp/json.js';
+import {
+  recordedFailure,
+  validateIdentity,
+  validateTraceId,
+} from '../model/validation.js';
 
-function isMissing(error: unknown): boolean {
+export function isMissing(error: unknown): boolean {
   return error instanceof Error && 'code' in error && error.code === 'ENOENT';
 }
 
@@ -61,7 +69,7 @@ async function fragmentNames(input: ReadCollectorSessionInput): Promise<readonly
   return names.filter((name) => /^\d{12}\.json$/u.test(name)).sort();
 }
 
-async function readFragments(
+export async function readFragments(
   input: ReadCollectorSessionInput,
 ): Promise<readonly RetainedFragment[]> {
   const names = await fragmentNames(input);
@@ -76,18 +84,20 @@ async function readFragments(
   );
 }
 
-function identity(input: ReadCollectorSessionInput): {
+export function identity(input: ReadCollectorSessionInput): {
   readonly sessionId: string;
   readonly executionId: string;
 } {
   return { sessionId: input.sessionId, executionId: input.executionId };
 }
 
-async function readLifecycle(input: ReadCollectorSessionInput): Promise<CollectorLifecycleRecord> {
+export async function readLifecycle(
+  input: ReadCollectorSessionInput,
+): Promise<CollectorLifecycleRecord> {
   return parseLifecycle({ text: await readFile(lifecyclePath(input), 'utf8'), identity: input });
 }
 
-function assertInventory(input: {
+export function assertInventory(input: {
   readonly lifecycle: CollectorLifecycleRecord;
   readonly fragments: readonly RetainedFragment[];
 }): void {

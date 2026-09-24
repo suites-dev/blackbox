@@ -5,6 +5,7 @@ import type {
   CollectorLifecycleRecord,
   CollectorRunRecord,
   CollectorStatus,
+  ActivateCollectorInput,
   RetainedFragment,
 } from '../model/types.js';
 import { durableJsonWrite } from '../storage/durable-json.js';
@@ -19,6 +20,7 @@ export interface FragmentAcceptance {
 
 export interface CollectorStore {
   readonly accept: (input: FragmentAcceptance) => Promise<RetainedFragment>;
+  readonly activate: (input: ActivateCollectorInput) => Promise<void>;
   readonly beginDrain: () => Promise<void>;
   readonly finish: (input: {
     readonly timedOut: boolean;
@@ -82,6 +84,31 @@ export class RunningCollectorStore implements CollectorStore {
     });
   }
 
+  public activate(input: ActivateCollectorInput): Promise<void> {
+    return this.updateRun((run) => {
+      const activatedAt = new Date().toISOString();
+      const activation = {
+        kind: 'instrumentation-activation' as const,
+        runtime: input.runtime,
+        serviceName: input.serviceName,
+        activatedAt,
+      };
+      const previous =
+        run.instrumentation.kind === 'activated' ? run.instrumentation.activations : [];
+      const activations = [
+        ...previous.filter(
+          (item) => item.runtime !== input.runtime || item.serviceName !== input.serviceName,
+        ),
+        activation,
+      ];
+      return {
+        ...run,
+        instrumentation: { kind: 'activated', activations },
+        updatedAt: activatedAt,
+      };
+    });
+  }
+
   public beginDrain(): Promise<void> {
     return this.updateRun((run) => ({
       ...run,
@@ -129,7 +156,7 @@ export class RunningCollectorStore implements CollectorStore {
       executionId: this.#record.executionId,
       instanceId: run.instanceId,
       receiver: run.receiver,
-      instrumentation: 'unknown',
+      instrumentation: run.instrumentation,
       telemetry: this.#record.telemetry,
       shutdown: run.shutdown,
       failure: run.failure,

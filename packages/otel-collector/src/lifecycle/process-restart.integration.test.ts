@@ -25,7 +25,10 @@ function startProcess(storageDirectory: string): {
         BLACKBOX_OTEL_HOST: '127.0.0.1',
         BLACKBOX_OTEL_PORT: '0',
         BLACKBOX_OTEL_TRACES_PATH: '/v1/traces',
+        BLACKBOX_OTEL_ACTIVATION_PATH: '/v1/activation',
+        BLACKBOX_OTEL_READINESS_PATH: '/ready',
         BLACKBOX_OTEL_READ_PATH: '/status',
+        BLACKBOX_OTEL_AUTH_TOKEN: 'process-token',
         BLACKBOX_OTEL_MAX_REQUEST_BYTES: '4096',
         BLACKBOX_OTEL_SHUTDOWN_TIMEOUT_MS: '1000',
       },
@@ -83,7 +86,10 @@ it('recovers durable spans and marks a SIGKILLed receiver interrupted after a re
     const endpoint = await first.ready;
     const response = await fetch(endpoint.tracesUrl, {
       method: 'POST',
-      headers: { 'content-type': 'application/json' },
+      headers: {
+        authorization: 'Bearer process-token',
+        'content-type': 'application/json',
+      },
       body: JSON.stringify(traceRequest()),
     });
     expect(response.status).toBe(200);
