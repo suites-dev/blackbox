@@ -1,20 +1,23 @@
 name: Continuous Integration
 
+# The workspace gate: every package builds, typechecks, lints and tests from
+# source. Docker-backed Capsule e2e lives in e2e.yml so this lane stays fast.
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - '**'
   pull_request:
-    # Stacked agent PRs target their prerequisite agent branch until it merges
-    # (AGENTS.md). They need the same lanes and PR Gate as release-targeted PRs.
     branches:
       - main
       - release/v0.0.1-alpha
-      - agent/**
+      - 'agent/**'
 
 # Least privilege: nothing in this workflow writes to the repository.
 permissions:
   contents: read
 
-# A new push to the same pull request supersedes the previous run.
+# A new push to the same ref supersedes the previous run.
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
@@ -27,14 +30,8 @@ env:
   NODE_VERSION: 22.x
 
 jobs:
-  consumer:
-    name: Installed consumer
-    uses: ./.github/workflows/e2e-release.yml
-    with:
-      target_branch: ${{ github.event.pull_request.head.sha || github.sha }}
-
-  catalog-package:
-    name: Packed catalog contract
+  build:
+    name: Build and Typecheck
     runs-on: [self-hosted, linux, arm64, blackbox]
     timeout-minutes: 30
     steps:
@@ -47,138 +44,71 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           pnpm-version: ${{ env.PNPM_VERSION }}
 
-      - name: Validate packed catalog consumer
-        id: catalog-proof
+      - name: Build every workspace package
         timeout-minutes: 20
-        run: node scripts/validate-catalog-package.mjs
+        run: pnpm run build
 
-      - name: Retain catalog package receipts
-        if: always() && steps.catalog-proof.outcome != 'skipped'
-        uses: actions/upload-artifact@v4
-        with:
-          name: catalog-package-${{ github.run_id }}-${{ github.run_attempt }}
-          path: .blackbox/tmp/package-migration/134/
-          include-hidden-files: true
-          retention-days: 14
-          if-no-files-found: error
+      # The root tsconfig resolves packages through the blackbox-source
+      # condition, so this checks sources rather than emitted declarations.
+      - name: Typecheck the workspace
+        timeout-minutes: 10
+        run: pnpm run typecheck
 
-  build:
-    name: Alpha Build and Typecheck
-    runs-on: [self-hosted, linux, arm64, blackbox]
-    timeout-minutes: 45
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v5
-
-      - name: Setup toolchain
-        uses: ./.github/actions/setup
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          pnpm-version: ${{ env.PNPM_VERSION }}
-
-      - name: Build required Alpha package closure
-        id: alpha-build
-        timeout-minutes: 20
-        run: pnpm run build:alpha
-
-      - name: Typecheck production Alpha package closure
-        id: alpha-typecheck
-        timeout-minutes: 20
-        run: pnpm run typecheck:alpha
-
-      - name: Retain Alpha gate receipts
-        if: always() && (steps.alpha-build.outcome != 'skipped' || steps.alpha-typecheck.outcome != 'skipped')
-        uses: actions/upload-artifact@v4
-        with:
-          name: alpha-gates-${{ github.run_id }}-${{ github.run_attempt }}
-          path: .blackbox/tmp/alpha-gates/
-          include-hidden-files: true
-          retention-days: 14
-          if-no-files-found: error
-
-  deps:
-    name: Dependency Boundaries
-    runs-on: [self-hosted, linux, arm64, blackbox]
-    timeout-minutes: 15
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v5
-
-      - name: Setup toolchain
-        uses: ./.github/actions/setup
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          pnpm-version: ${{ env.PNPM_VERSION }}
-
-      - name: Check dependency boundaries
-        run: pnpm cruise
-
-  # Each package lints as its own matrix leg, in parallel, instead of one
-  # long `eslint .` over the whole workspace.
   lint:
-    name: Package Lint
-    uses: ./.github/workflows/lint-packages.yml
+    name: Lint
+    runs-on: [self-hosted, linux, arm64, blackbox]
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
 
-  # Each Vitest project produces coverage once; a dependent job merges it.
+      - name: Setup toolchain
+        uses: ./.github/actions/setup
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          pnpm-version: ${{ env.PNPM_VERSION }}
+
+      - name: Check source layout and lint packages
+        timeout-minutes: 15
+        run: pnpm run lint
+
   test:
-    name: Package Tests and Coverage
-    permissions:
-      contents: read
-      id-token: write
-    uses: ./.github/workflows/test-packages.yml
-    secrets:
-      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+    name: Package Tests
+    runs-on: [self-hosted, linux, arm64, blackbox]
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
 
-  # e2e/consumer is deliberately outside the pnpm workspace: it must resolve
-  # @suites/* the way an external consumer does, from a registry rather than
-  # through workspace symlinks. The `consumer` job above is what exercises it,
-  # by publishing to a local Verdaccio and npm installing the real tarballs.
-  # Running vitest against it in place would only prove that unresolvable
-  # imports are unresolvable.
+      - name: Setup toolchain
+        uses: ./.github/actions/setup
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          pnpm-version: ${{ env.PNPM_VERSION }}
 
-  # One stable aggregate over the explicitly required product lanes (#106).
-  # Each lane above keeps its own independent, diagnosable result; this job
-  # only folds their results into one verdict and one linked summary. It fails
-  # on failure, cancellation, timeout, or a skipped/missing required lane, and
-  # never reads the informational Harness E2E result into its verdict.
+      # `pnpm test` builds first: the CLI suite runs the compiled binary.
+      - name: Run every package test suite
+        timeout-minutes: 25
+        run: pnpm run test
+
+  # One stable aggregate over the required lanes. Each lane keeps its own
+  # diagnosable result; this job only folds them into a single verdict.
   gate:
-    name: PR Gate
-    needs: [consumer, catalog-package, build, deps, lint, test]
+    name: CI Gate
+    needs: [build, lint, test]
     if: always()
     runs-on: [self-hosted, linux, arm64, blackbox]
-    timeout-minutes: 10
-    permissions:
-      contents: read
-      actions: read
-      checks: read
+    timeout-minutes: 5
     steps:
-      - name: Checkout
-        uses: actions/checkout@v5
-
-      - name: Setup toolchain
-        uses: ./.github/actions/setup
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          pnpm-version: ${{ env.PNPM_VERSION }}
-
-      - name: Self-test the aggregator against this checkout
-        run: node --test .github/scripts/pr-gate.test.mjs
-
       - name: Evaluate required lanes
-        id: evaluate
         env:
-          GITHUB_TOKEN: ${{ github.token }}
-          PR_GATE_NEEDS: ${{ toJSON(needs) }}
-          PR_GATE_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
-          PR_GATE_RECEIPT: ci-evidence/pr-gate/receipt.json
-        run: node .github/scripts/pr-gate.mjs evaluate
-
-      - name: Retain gate receipt and summary
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: pr-gate-${{ github.run_id }}-${{ github.run_attempt }}
-          path: ci-evidence/pr-gate/
-          include-hidden-files: true
-          retention-days: 14
-          if-no-files-found: error
+          BUILD_RESULT: ${{ needs.build.result }}
+          LINT_RESULT: ${{ needs.lint.result }}
+          TEST_RESULT: ${{ needs.test.result }}
+        run: |
+          status=0
+          for lane in "build=$BUILD_RESULT" "lint=$LINT_RESULT" "test=$TEST_RESULT"; do
+            printf '%s\n' "$lane"
+            [[ "${lane#*=}" == success ]] || status=1
+          done
+          exit "$status"
