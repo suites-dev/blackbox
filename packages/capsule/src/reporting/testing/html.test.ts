@@ -27,6 +27,10 @@ function document(): CapsuleReportDocument {
     resources: { containers: [], networks: [], volumes: [] },
     activities: [],
     progress: [],
+    observations: {
+      kind: 'collector-session-missing',
+      message: 'No retained collector session exists.',
+    },
     cleanup: { kind: 'not-attempted' },
     failure: { kind: 'none' },
     redactions: { count: 0, entries: [] },
@@ -73,6 +77,8 @@ function hostileDocument(): CapsuleReportDocument {
     ],
     activities: [
       {
+        kind: 'completed',
+        activityId: 'activity-1',
         sequence: 1,
         target: { kind: 'participant', participant: hostile },
         argv: [],
@@ -118,6 +124,8 @@ describe('Capsule-owned HTML renderer', () => {
       cleanup: { kind: 'complete' },
       activities: [
         {
+          kind: 'completed',
+          activityId: 'activity-2',
           sequence: 2,
           target: { kind: 'host' },
           argv: [],
@@ -163,7 +171,7 @@ describe('Capsule acquisition report presentation', () => {
     const html = renderCapsuleHtml({ report });
     expect(html).toContain('"kind":"acquisition-observation"');
     expect(html).toContain('"state":"running","health":"healthy"');
-    expect(html).toContain('Container health never substitutes for application readiness.');
+    expect(html).toContain('Docker health and application readiness remain separate.');
     expect(html).toContain('No application readiness result was retained.');
   });
 });

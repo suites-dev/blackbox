@@ -81,6 +81,8 @@ function record(input: {
 }
 
 const activity = {
+  kind: 'completed',
+  activityId: 'activity-1',
   sequence: 1,
   target: { kind: 'host' },
   argv: ['curl', '--header', 'Authorization: Bearer capsule-e2e-token', 'API_TOKEN=raw-token'],

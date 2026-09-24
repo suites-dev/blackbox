@@ -1,0 +1,285 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://suites.dev/blackbox/schemas/capsule-activities-v1.json",
+  "title": "Blackbox Capsule activities artifact v1",
+  "type": "array",
+  "items": { "$ref": "#/$defs/activity" },
+  "$defs": {
+    "activity": {
+      "oneOf": [
+        { "$ref": "#/$defs/runningActivity" },
+        { "$ref": "#/$defs/completedActivity" },
+        { "$ref": "#/$defs/failedActivity" }
+      ]
+    },
+    "activityBase": {
+      "type": "object",
+      "required": ["activityId", "sequence", "target", "argv", "startedAt"],
+      "properties": {
+        "activityId": { "type": "string" },
+        "sequence": { "type": "number" },
+        "target": { "$ref": "#/$defs/target" },
+        "argv": { "$ref": "#/$defs/stringArray" },
+        "startedAt": { "type": "string" }
+      }
+    },
+    "runningActivity": {
+      "allOf": [
+        { "$ref": "#/$defs/activityBase" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["activityId", "sequence", "target", "argv", "startedAt", "kind"],
+          "properties": {
+            "activityId": true,
+            "sequence": true,
+            "target": true,
+            "argv": true,
+            "startedAt": true,
+            "kind": { "const": "running" }
+          }
+        }
+      ]
+    },
+    "completedActivity": {
+      "allOf": [
+        { "$ref": "#/$defs/activityBase" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "activityId",
+            "sequence",
+            "target",
+            "argv",
+            "startedAt",
+            "kind",
+            "outcome",
+            "completedAt"
+          ],
+          "properties": {
+            "activityId": true,
+            "sequence": true,
+            "target": true,
+            "argv": true,
+            "startedAt": true,
+            "kind": { "const": "completed" },
+            "outcome": { "$ref": "#/$defs/outcome" },
+            "completedAt": { "type": "string" }
+          }
+        }
+      ]
+    },
+    "failedActivity": {
+      "allOf": [
+        { "$ref": "#/$defs/activityBase" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "activityId",
+            "sequence",
+            "target",
+            "argv",
+            "startedAt",
+            "kind",
+            "error",
+            "completedAt"
+          ],
+          "properties": {
+            "activityId": true,
+            "sequence": true,
+            "target": true,
+            "argv": true,
+            "startedAt": true,
+            "kind": { "const": "failed" },
+            "error": { "$ref": "#/$defs/recordedError" },
+            "completedAt": { "type": "string" }
+          }
+        }
+      ]
+    },
+    "target": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind"],
+          "properties": { "kind": { "const": "host" } }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "participant"],
+          "properties": {
+            "kind": { "const": "participant" },
+            "participant": { "type": "string" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "clientId"],
+          "properties": {
+            "kind": { "const": "client" },
+            "clientId": { "type": "string" }
+          }
+        }
+      ]
+    },
+    "outcome": {
+      "oneOf": [
+        { "$ref": "#/$defs/exitedOutcome" },
+        { "$ref": "#/$defs/signaledOutcome" },
+        { "$ref": "#/$defs/clientOutcome" }
+      ]
+    },
+    "exitedOutcome": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "argv", "exitCode", "stdout", "stderr"],
+      "properties": {
+        "kind": { "const": "exited" },
+        "argv": { "$ref": "#/$defs/stringArray" },
+        "exitCode": { "type": "number" },
+        "stdout": { "type": "string" },
+        "stderr": { "type": "string" }
+      }
+    },
+    "signaledOutcome": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "argv", "signal", "stdout", "stderr"],
+      "properties": {
+        "kind": { "const": "signaled" },
+        "argv": { "$ref": "#/$defs/stringArray" },
+        "signal": {
+          "enum": [
+            "SIGABRT",
+            "SIGALRM",
+            "SIGBUS",
+            "SIGCHLD",
+            "SIGCONT",
+            "SIGFPE",
+            "SIGHUP",
+            "SIGILL",
+            "SIGINT",
+            "SIGIO",
+            "SIGIOT",
+            "SIGKILL",
+            "SIGPIPE",
+            "SIGPOLL",
+            "SIGPROF",
+            "SIGPWR",
+            "SIGQUIT",
+            "SIGSEGV",
+            "SIGSTKFLT",
+            "SIGSTOP",
+            "SIGSYS",
+            "SIGTERM",
+            "SIGTRAP",
+            "SIGTSTP",
+            "SIGTTIN",
+            "SIGTTOU",
+            "SIGUNUSED",
+            "SIGURG",
+            "SIGUSR1",
+            "SIGUSR2",
+            "SIGVTALRM",
+            "SIGWINCH",
+            "SIGXCPU",
+            "SIGXFSZ",
+            "SIGBREAK",
+            "SIGLOST",
+            "SIGINFO"
+          ]
+        },
+        "stdout": { "type": "string" },
+        "stderr": { "type": "string" }
+      }
+    },
+    "clientOutcome": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "client", "result", "telemetry"],
+      "properties": {
+        "kind": { "const": "client-completed" },
+        "client": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["id", "name", "behavior"],
+          "properties": {
+            "id": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+            "name": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+            "behavior": { "enum": ["entrypoint", "utility"] }
+          }
+        },
+        "result": { "$ref": "#/$defs/clientResult" },
+        "telemetry": { "$ref": "#/$defs/clientTelemetry" }
+      }
+    },
+    "clientResult": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "value"],
+          "properties": { "kind": { "const": "json" }, "value": true }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "value"],
+          "properties": {
+            "kind": { "const": "text" },
+            "value": { "type": "string" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind"],
+          "properties": { "kind": { "const": "empty" } }
+        }
+      ]
+    },
+    "clientTelemetry": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind"],
+          "properties": { "kind": { "const": "not-requested" } }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind"],
+          "properties": { "kind": { "const": "complete" } }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "error"],
+          "properties": {
+            "kind": { "const": "incomplete" },
+            "error": { "$ref": "#/$defs/recordedError" }
+          }
+        }
+      ]
+    },
+    "recordedError": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "message"],
+      "properties": {
+        "name": { "type": "string" },
+        "message": { "type": "string" }
+      }
+    },
+    "stringArray": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  }
+}

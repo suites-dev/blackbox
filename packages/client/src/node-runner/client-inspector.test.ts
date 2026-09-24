@@ -15,13 +15,13 @@ function readJson(stream: PassThrough): unknown {
 it.each(['entrypoint', 'utility'] as const)('reports valid %s metadata', (kind) => {
   const output = new PassThrough();
   const result = inspectNodeClientDefinition({
-    definition: { kind, name: 'Orders client', run: () => ({ kind: 'empty' }) },
+    definition: { kind, name: 'orders-client', run: () => ({ kind: 'empty' }) },
     output,
   });
 
   const expected = {
     kind: 'available',
-    client: { kind, name: 'Orders client' },
+    client: { kind, name: 'orders-client' },
   };
   expect(result).toStrictEqual(expected);
   expect(readJson(output)).toStrictEqual(expected);
@@ -31,7 +31,7 @@ it.each([
   null,
   {},
   { kind: 'entrypoint', name: '', run: () => ({ kind: 'empty' }) },
-  { kind: 'utility', name: 'Missing callback' },
+  { kind: 'utility', name: 'missing-callback' },
 ])('reports unavailable for invalid definition %#', (definition) => {
   const output = new PassThrough();
   const result = inspectNodeClientDefinition({ definition, output });

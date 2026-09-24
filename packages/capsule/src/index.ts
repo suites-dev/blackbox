@@ -1,5 +1,6 @@
 export { startCapsule } from './session/start.js';
 export { execCapsule, reportCapsule, stopCapsule } from './session/operations.js';
+export { readCapsuleObservations } from './session/observations.js';
 export { projectCapsuleReport } from './reporting/document.js';
 export { serializeCapsuleReportDocument } from './reporting/serialization.js';
 export { renderCapsuleHtml } from './reporting/html.js';
@@ -28,15 +29,19 @@ export type {
   CapsuleActivityReport,
   CapsuleAvailability,
   CapsuleCleanupReport,
+  CapsuleClientOutcome,
   CapsuleContainerDetails,
   CapsuleDescription,
   CapsuleEntrypoint,
+  CapsuleExecutionOutcome,
   CapsuleExecInput,
   CapsuleExecResult,
   CapsuleExecTarget,
   CapsuleFailureRecord,
   CapsuleManagerOwnership,
   CapsuleOperationFailure,
+  CapsuleObservationsInput,
+  CapsuleObservationsResult,
   CapsuleProcessOutcome,
   CapsuleProgressEvent,
   CapsuleProgressMode,
@@ -79,3 +84,11 @@ export {
   capsuleProgressSchemaUrl,
   type CapsuleProgressDocument,
 } from './progress/schema.js';
+export {
+  capsuleActivitiesSchema,
+  capsuleActivitiesSchemaUrl,
+  capsuleOperationalReportSchema,
+  capsuleOperationalReportSchemaUrl,
+  capsuleSessionSchema,
+  capsuleSessionSchemaUrl,
+} from './schema/artifact-schemas.js';

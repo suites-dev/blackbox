@@ -16,7 +16,10 @@
       "import": "./dist/index.js",
       "default": "./dist/index.js"
     },
-    "./schema/capsule-progress-v1.json": "./schema/capsule-progress-v1.json"
+    "./schema/capsule-progress-v1.json": "./schema/capsule-progress-v1.json",
+    "./schema/capsule-session-v1.json": "./schema/capsule-session-v1.json",
+    "./schema/capsule-activities-v1.json": "./schema/capsule-activities-v1.json",
+    "./schema/capsule-operational-report-v1.json": "./schema/capsule-operational-report-v1.json"
   },
   "scripts": {
     "prebuild": "rimraf dist",
@@ -26,7 +29,10 @@
     "test": "vitest run --config vitest.config.ts"
   },
   "dependencies": {
+    "@suites/blackbox-client": "workspace:*",
     "@suites/blackbox-catalog-internal": "workspace:*",
+    "@suites/blackbox-inst-runtime-node": "workspace:*",
+    "@suites/blackbox-otel-collector-internal": "workspace:*",
     "@suites/blackbox-sandbox-internal": "workspace:*",
     "ajv": "8.18.0"
   },

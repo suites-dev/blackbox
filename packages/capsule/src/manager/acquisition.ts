@@ -2,6 +2,7 @@ import type { CatalogEntry, CatalogSandboxInput } from '@suites/blackbox-catalog
 import type { SandboxHandle } from '@suites/blackbox-sandbox-internal';
 
 import { awaitReadiness } from '../execution/commands.js';
+import { clientEndpointName } from '../execution/client-endpoint.js';
 import type { CapsuleManagerBootstrap } from '../protocol.js';
 import { capsuleSandboxRecordDirectory, recordedError } from '../records.js';
 import type {
@@ -12,6 +13,7 @@ import type {
 import { CapsuleStageError, emitProgress, runStartStage } from './progress.js';
 import type { CapsuleManagerPorts } from './ports.js';
 import { sandboxProgressBridge } from './sandbox-progress.js';
+import { capsuleSandboxTelemetry, type CapsuleTelemetryAuthorization } from './telemetry.js';
 
 export interface AcquiredCapsuleSandbox {
   readonly sandbox: SandboxHandle;
@@ -99,6 +101,7 @@ interface PlannedSandboxInput {
   readonly plan: CatalogSandboxInput;
   readonly entry: CatalogEntry;
   readonly ports: CapsuleManagerPorts;
+  readonly authorization: CapsuleTelemetryAuthorization;
 }
 
 export async function startPlannedSandbox(input: PlannedSandboxInput): Promise<{
@@ -126,16 +129,24 @@ export async function startPlannedSandbox(input: PlannedSandboxInput): Promise<{
         recordDirectory: capsuleSandboxRecordDirectory(input.bootstrap),
         environment: { ...input.plan.environment, ...input.bootstrap.environment },
         serviceSelection: { kind: 'selected', services: input.plan.services },
-        endpoints: input.plan.endpoints.map(({ name, service, containerPort }) => ({
-          name,
-          service,
-          containerPort,
-        })),
+        endpoints: [
+          ...input.plan.endpoints.map(({ name, service, containerPort }) => ({
+            name,
+            service,
+            containerPort,
+          })),
+          ...Object.values(input.plan.clients).map((client) => ({
+            name: clientEndpointName(client.id),
+            service: client.target.service,
+            containerPort: client.target.containerPort,
+          })),
+        ],
         startupTimeoutMs: Math.max(
           ...input.plan.readiness.map(({ timeoutMs }) => timeoutMs),
           120_000,
         ),
         stopTimeoutMs: 60_000,
+        telemetry: capsuleSandboxTelemetry(input),
       },
       progress: progress.mode,
     }),

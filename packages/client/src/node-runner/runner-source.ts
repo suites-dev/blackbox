@@ -3,20 +3,21 @@ import type {
   CreateNodeClientRunnerSourceInput,
 } from './runner-types.js';
 
-function serializeClientModuleUrl(clientModuleUrl: URL): string {
-  if (clientModuleUrl.protocol !== 'file:') {
+function serializeModuleUrl(moduleUrl: URL): string {
+  if (moduleUrl.protocol !== 'file:') {
     throw new Error('Client module URL must use the file: protocol');
   }
-  return JSON.stringify(clientModuleUrl.href);
+  return JSON.stringify(moduleUrl.href);
 }
 
 export function createNodeClientRunnerSource(
   input: CreateNodeClientRunnerSourceInput,
 ): string {
-  const moduleUrl = serializeClientModuleUrl(input.clientModuleUrl);
+  const moduleUrl = serializeModuleUrl(input.clientModuleUrl);
+  const runnerUrl = serializeModuleUrl(input.runnerModuleUrl);
   return [
     `import definition from ${moduleUrl};`,
-    `import { runNodeClientProcess } from '@suites/blackbox-client/node-runner';`,
+    `import { runNodeClientProcess } from ${runnerUrl};`,
     '',
     'await runNodeClientProcess({',
     '  definition,',
@@ -30,10 +31,11 @@ export function createNodeClientRunnerSource(
 export function createNodeClientInspectorSource(
   input: CreateNodeClientInspectorSourceInput,
 ): string {
-  const moduleUrl = serializeClientModuleUrl(input.clientModuleUrl);
+  const moduleUrl = serializeModuleUrl(input.clientModuleUrl);
+  const runnerUrl = serializeModuleUrl(input.runnerModuleUrl);
   return [
     `import definition from ${moduleUrl};`,
-    `import { inspectNodeClientDefinition } from '@suites/blackbox-client/node-runner';`,
+    `import { inspectNodeClientDefinition } from ${runnerUrl};`,
     '',
     'inspectNodeClientDefinition({',
     '  definition,',

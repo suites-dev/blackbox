@@ -15,6 +15,10 @@ steps:
     explanation: Repeat the same install; an existing installation stays unchanged.
     kind: cli
     command: inst install --runtime node
+  - id: client-install
+    explanation: Prepare the project-owned Node client directory without installing protocol libraries.
+    kind: cli
+    command: client install --runtime node --json
   - id: catalog-validate
     explanation: Ask Blackbox to validate the catalog and every referenced file.
     kind: cli
@@ -35,6 +39,22 @@ steps:
     explanation: Use the user-owned curl client through Capsule to check readiness.
     kind: cli
     command: capsule exec --session ${SESSION_ID} -- curl --fail --silent --show-error ${ENTRYPOINT_URL}/health
+  - id: entrypoint-client
+    explanation: Run the authored entrypoint client with automatic W3C trace propagation.
+    kind: cli
+    command: capsule exec --session ${SESSION_ID} --client create-subscription --json -- alice
+  - id: observations-session
+    explanation: Read the retained telemetry summary for this exact Capsule execution.
+    kind: cli
+    command: observations --session ${SESSION_ID} --json
+  - id: observations-activity
+    explanation: Pull only the spans correlated to the authored client activity.
+    kind: cli
+    command: observations --session ${SESSION_ID} --activity ${CLIENT_ACTIVITY_ID} --json
+  - id: observations-trace
+    explanation: Pull one exact W3C trace from the Capsule collector.
+    kind: cli
+    command: observations --session ${SESSION_ID} --trace ${TRACE_ID} --json
   - id: report-json
     explanation: Export the running experiment to JSON on stdout; flight control remains open.
     kind: cli

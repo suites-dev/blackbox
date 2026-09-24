@@ -6,6 +6,7 @@ import { projectCapsuleReport } from '../reporting/document.js';
 import { redactStandaloneError } from '../reporting/redaction.js';
 import type { CapsuleReportArtifact, CapsuleReportResult } from '../reporting/types.js';
 import { readCapsuleActivities } from '../records.js';
+import { readCapsuleSessionObservations } from './observations.js';
 import type {
   CapsuleExecInput,
   CapsuleExecResult,
@@ -134,9 +135,21 @@ export async function reportCapsule(input: CapsuleReportInput): Promise<CapsuleR
     });
     artifact = 'progress';
     const progress = await readCapsuleProgress({ projectDirectory, sessionId: input.sessionId });
+    artifact = 'observations';
+    const observations = await readCapsuleSessionObservations({
+      projectDirectory,
+      sessionId: input.sessionId,
+    });
+    if (
+      observations.kind === 'capsule-not-found' ||
+      observations.kind === 'capsule-invalid-state' ||
+      observations.kind === 'capsule-operation-failed'
+    ) {
+      return observations;
+    }
     return {
       kind: 'capsule-report',
-      document: projectCapsuleReport({ record, activities, progress }),
+      document: projectCapsuleReport({ record, activities, progress, observations }),
     };
   } catch (error) {
     return {

@@ -114,6 +114,11 @@ catalog:
       observation: *observation
 activations:
   sut-node-factory:
-    ref: .blackbox/instrumentation/sut-factory.mjs
-    adapter: node-factory
+    ref: .blackbox/instrumentation/instrumentation.js
+    adapter: node-preload
     version: 1
+clients:
+  create-subscription:
+    ref: .blackbox/clients/create-subscription.mjs
+    target:
+      kind: entrypoint

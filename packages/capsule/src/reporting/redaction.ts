@@ -1,8 +1,9 @@
 import type {
   CapsuleActivityReport,
-  CapsuleProcessOutcome,
+  CapsuleExecutionOutcome,
   CapsuleRecordedError,
 } from '../types.js';
+import type { JsonObject, JsonValue } from '@suites/blackbox-client';
 import type { CapsuleReportActivity, CapsuleReportRedaction } from './types.js';
 
 const MASK = '[REDACTED]';
@@ -108,10 +109,40 @@ function redactArgv(
 }
 
 function redactOutcome(
-  outcome: CapsuleProcessOutcome,
+  outcome: CapsuleExecutionOutcome,
   location: string,
   context: RedactionContext,
-): CapsuleProcessOutcome {
+): CapsuleExecutionOutcome {
+  if (outcome.kind === 'client-completed') {
+    const result = outcome.result;
+    return {
+      ...outcome,
+      client: {
+        ...outcome.client,
+        name: redactText(outcome.client.name, `${location}.client.name`, context),
+      },
+      result:
+        result.kind === 'text'
+          ? { kind: 'text', value: redactText(result.value, `${location}.result.value`, context) }
+          : result.kind === 'json'
+            ? {
+                kind: 'json',
+                value: redactJson(result.value, `${location}.result.value`, context),
+              }
+            : result,
+      telemetry:
+        outcome.telemetry.kind === 'incomplete'
+          ? {
+              kind: 'incomplete',
+              error: redactError({
+                error: outcome.telemetry.error,
+                location: `${location}.telemetry.error`,
+                context,
+              }),
+            }
+          : outcome.telemetry,
+    };
+  }
   const common = {
     argv: redactArgv(outcome.argv, `${location}.argv`, context),
     stdout: redactText(outcome.stdout, `${location}.stdout`, context),
@@ -123,17 +154,59 @@ function redactOutcome(
   return { kind: 'signaled', signal: outcome.signal, ...common };
 }
 
+function redactJson(
+  value: JsonValue,
+  location: string,
+  context: RedactionContext,
+): JsonValue {
+  if (typeof value === 'string') {
+    return redactText(value, location, context);
+  }
+  if (value === null || typeof value === 'number' || typeof value === 'boolean') {
+    return value;
+  }
+  if (Array.isArray(value)) {
+    const arrayValue: readonly JsonValue[] = value;
+    return arrayValue.map((item, index) =>
+      redactJson(item, `${location}[${String(index)}]`, context),
+    );
+  }
+  const objectValue = value as JsonObject;
+  return Object.fromEntries(
+    Object.entries(objectValue).map(([key, item]) => [
+      key,
+      redactJson(item, `${location}.${key}`, context),
+    ]),
+  );
+}
+
 export function redactActivities(input: {
   readonly activities: readonly CapsuleActivityReport[];
   readonly context: RedactionContext;
 }): readonly CapsuleReportActivity[] {
   return input.activities.map((activity, index) => {
     const location = `activities[${String(index)}]`;
-    return {
-      ...activity,
-      argv: redactArgv(activity.argv, `${location}.argv`, input.context),
-      outcome: redactOutcome(activity.outcome, `${location}.outcome`, input.context),
-    };
+    const argv = redactArgv(activity.argv, `${location}.argv`, input.context);
+    switch (activity.kind) {
+      case 'running':
+        return { ...activity, argv };
+      case 'completed':
+        return {
+          ...activity,
+          argv,
+          outcome: redactOutcome(activity.outcome, `${location}.outcome`, input.context),
+        };
+      case 'failed':
+        return {
+          ...activity,
+          argv,
+          error: redactError({
+            error: activity.error,
+            location: `${location}.error`,
+            context: input.context,
+          }),
+        };
+    }
   });
 }
 

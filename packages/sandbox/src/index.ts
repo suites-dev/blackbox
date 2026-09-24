@@ -44,6 +44,10 @@ export type {
   SandboxVolumeResource,
 } from './inspection/resources.js';
 export { SandboxInputError, validateSandboxInput } from './validation/input.js';
+export {
+  sandboxGeneratedComposeDirectory,
+  sandboxTelemetryStorageDirectory,
+} from './telemetry/storage.js';
 export type {
   ComposeContainer,
   ComposeSandboxDriver,

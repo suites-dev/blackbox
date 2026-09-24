@@ -1,4 +1,4 @@
-import type { CapsuleExecTarget, CapsuleProcessOutcome } from './types.js';
+import type { CapsuleExecutionOutcome, CapsuleExecTarget } from './types.js';
 
 export type CapsuleManagerRequest =
   | {
@@ -16,7 +16,7 @@ export type CapsuleManagerResponse =
   | {
       readonly kind: 'exec-response';
       readonly requestId: string;
-      readonly outcome: CapsuleProcessOutcome;
+      readonly outcome: CapsuleExecutionOutcome;
     }
   | {
       readonly kind: 'stop-response';

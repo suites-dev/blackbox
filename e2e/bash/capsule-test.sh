@@ -23,6 +23,14 @@ run_captured_step \
   inst install --runtime node
 
 run_captured_step \
+  'Prepare the project-owned Node client directory without installing protocol dependencies.' \
+  'blackbox client install --runtime node --json' \
+  "$ARTIFACT_ROOT/client-install.json" \
+  client install --runtime node --json
+jq -e '.kind == "client-runtime-installation" and .dependencyOwnership == "user"' \
+  "$ARTIFACT_ROOT/client-install.json" >/dev/null
+
+run_captured_step \
   'Validate the catalog and every referenced Compose input.' \
   'blackbox catalog validate --json' \
   "$ARTIFACT_ROOT/catalog-validate.json" \
@@ -118,27 +126,59 @@ run_captured_step \
   --data '{"profile":"fresh"}' \
   "$ENTRYPOINT_URL/fixture/reset"
 
-# Alice follows the SUT's full path: PostgreSQL, Redis, fraud check, payment,
-# order creation, and SQS. The response must describe the created subscription.
+# Alice follows the SUT's full path through an authored entrypoint client. The
+# client owns fetch and the wire. Blackbox supplies the mapped target and wraps
+# the callback in one root activity span without changing the HTTP request.
 run_captured_step \
-  'Drive Alice through the full subscription path across the SUT services.' \
+  'Run the authored entrypoint client across the full subscription path.' \
   "blackbox capsule exec \\
         --session $SESSION_ID \\
-        -- curl --fail --silent --show-error \\
-        --request POST \\
-        --header 'Content-Type: application/json' \\
-        --data '{\"userId\":\"alice\",\"paymentMethodId\":\"pm_capsule_e2e\"}' \\
-        $ENTRYPOINT_URL/subscriptions" \
-  "$ARTIFACT_ROOT/subscription.json" \
-  capsule exec --session "$SESSION_ID" -- \
-  curl --fail --silent --show-error \
-  --request POST \
-  --header 'Content-Type: application/json' \
-  --data '{"userId":"alice","paymentMethodId":"pm_capsule_e2e"}' \
-  "$ENTRYPOINT_URL/subscriptions"
+        --client create-subscription \\
+        --json \\
+        -- alice" \
+  "$ARTIFACT_ROOT/client-execution.json" \
+  capsule exec --session "$SESSION_ID" --client create-subscription --json -- alice
 jq -e \
-  '.userId == "alice" and .subscription.id == "subscription_alice" and .subscription.status == "active"' \
-  "$ARTIFACT_ROOT/subscription.json" >/dev/null
+  '.kind == "client-completed" and .telemetry.kind == "complete" and .result.kind == "json" and .result.value.userId == "alice" and .result.value.subscription.id == "subscription_alice" and .result.value.subscription.status == "active"' \
+  "$ARTIFACT_ROOT/client-execution.json" >/dev/null
+
+CLIENT_ACTIVITY_ID="$(jq -er \
+  '[.[] | select(.target.kind == "client" and .target.clientId == "create-subscription")][-1].activityId' \
+  "$E2E_ROOT/.blackbox/experiments/capsule-$SESSION_ID/activities.json")"
+
+run_captured_step \
+  'Read the collector summary retained for this exact Capsule execution.' \
+  "blackbox observations --session $SESSION_ID --json" \
+  "$ARTIFACT_ROOT/observations-session.json" \
+  observations --session "$SESSION_ID" --json
+jq -e '.kind == "collector-session-found" and (.traceIds | length > 0)' \
+  "$ARTIFACT_ROOT/observations-session.json" >/dev/null
+
+run_captured_step \
+  'Read only the spans correlated to the authored client activity.' \
+  "blackbox observations \\
+        --session $SESSION_ID \\
+        --activity $CLIENT_ACTIVITY_ID \\
+        --json" \
+  "$ARTIFACT_ROOT/observations-activity.json" \
+  observations --session "$SESSION_ID" --activity "$CLIENT_ACTIVITY_ID" --json
+jq -e --arg activity "$CLIENT_ACTIVITY_ID" \
+  '.kind == "collector-activity-found" and .activityId == $activity and (.fragments | length > 0)' \
+  "$ARTIFACT_ROOT/observations-activity.json" >/dev/null
+
+TRACE_ID="$(jq -er '.traceIds[0]' "$ARTIFACT_ROOT/observations-activity.json")"
+run_captured_step \
+  'Pull one exact W3C trace retained by the Capsule collector.' \
+  "blackbox observations \\
+        --session $SESSION_ID \\
+        --trace $TRACE_ID \\
+        --json" \
+  "$ARTIFACT_ROOT/observations-trace.json" \
+  observations --session "$SESSION_ID" --trace "$TRACE_ID" --json
+jq -e --arg trace "$TRACE_ID" \
+  '.kind == "collector-trace-found" and .traceId == $trace and
+   ([.fragments[].request.resourceSpans[]?.scopeSpans[]?.spans[]?] | length) > 1' \
+  "$ARTIFACT_ROOT/observations-trace.json" >/dev/null
 
 # Participant execution is a real command inside the Compose `postgres`
 # service. It independently checks the durable state produced through HTTP.
@@ -191,6 +231,8 @@ run_captured_step \
   capsule report export --session "$SESSION_ID" --format json --output -
 assert_report "$ARTIFACT_ROOT/running-report.json" running
 jq -e '.activities | length >= 6' "$ARTIFACT_ROOT/running-report.json" >/dev/null
+jq -e '.observations.kind == "collector-session-found" and (.observations.traceIds | length > 0)' \
+  "$ARTIFACT_ROOT/running-report.json" >/dev/null
 assert_served_report running "$ARTIFACT_ROOT/served-running-after.json"
 jq -e '.document.activities | length >= 6' "$ARTIFACT_ROOT/served-running-after.json" >/dev/null
 inspect_in_browser 'The completed commands are now retained activities. Current reporting refreshes records; it does not stream an unfinished command’s stdout/stderr.'
@@ -203,7 +245,9 @@ run_captured_step \
   "$ARTIFACT_ROOT/json-report-path.txt" \
   capsule report export --session "$SESSION_ID" --format json
 assert_report "$REPORT_ROOT/capsule-report.json" running
-cmp "$ARTIFACT_ROOT/running-report.json" "$REPORT_ROOT/capsule-report.json"
+jq -e --arg session "$SESSION_ID" \
+  '.session.sessionId == $session and .lifecycle.kind == "running" and (.activities | length >= 6) and .observations.kind == "collector-session-found"' \
+  "$REPORT_ROOT/capsule-report.json" >/dev/null
 
 run_captured_step \
   'Save a portable HTML snapshot at a custom path while the environment is still running.' \
@@ -270,6 +314,9 @@ printf '%s\n' \
   "session-artifact=$E2E_ROOT/.blackbox/experiments/capsule-$SESSION_ID/session.json" \
   "activity-artifact=$E2E_ROOT/.blackbox/experiments/capsule-$SESSION_ID/activities.json" \
   "progress-artifact=$E2E_ROOT/.blackbox/experiments/capsule-$SESSION_ID/progress.json" \
+  "session-observations=$ARTIFACT_ROOT/observations-session.json" \
+  "activity-observations=$ARTIFACT_ROOT/observations-activity.json" \
+  "trace-observations=$ARTIFACT_ROOT/observations-trace.json" \
   "json-report=$ARTIFACT_ROOT/capsule-report.json" \
   "html-report=$REPORT_ROOT/capsule-report.html" \
   "running-json-report=$REPORT_ROOT/capsule-report.json" \

@@ -34,6 +34,7 @@ catalog:
         terminalObservationWindowMs: 0
         redaction: { requestBodies: not-captured, headers: [], dynamicIdentifiers: none }
 activations: {}
+clients: {}
 `,
   );
   return directory;

@@ -160,40 +160,6 @@ export type CapsuleStartResult =
     }
   | CapsuleOperationFailure;
 
-export type CapsuleExecTarget =
-  | { readonly kind: 'host'; readonly argv: readonly [string, ...string[]] }
-  | {
-      readonly kind: 'participant';
-      readonly participant: string;
-      readonly argv: readonly [string, ...string[]];
-    };
-
-export interface CapsuleExecInput {
-  readonly projectDirectory: string;
-  readonly sessionId: string;
-  readonly target: CapsuleExecTarget;
-}
-
-export type CapsuleProcessOutcome =
-  | {
-      readonly kind: 'exited';
-      readonly argv: readonly string[];
-      readonly exitCode: number;
-      readonly stdout: string;
-      readonly stderr: string;
-    }
-  | {
-      readonly kind: 'signaled';
-      readonly argv: readonly string[];
-      readonly signal: NodeJS.Signals;
-      readonly stdout: string;
-      readonly stderr: string;
-    };
-
-export type CapsuleExecResult =
-  | { readonly kind: 'capsule-exec-completed'; readonly outcome: CapsuleProcessOutcome }
-  | CapsuleOperationFailure;
-
 export interface CapsuleStopInput {
   readonly projectDirectory: string;
   readonly sessionId: string;
@@ -214,16 +180,17 @@ export interface CapsuleReportInput {
   readonly sessionId: string;
 }
 
-export interface CapsuleActivityReport {
-  readonly sequence: number;
-  readonly target:
-    | { readonly kind: 'host' }
-    | { readonly kind: 'participant'; readonly participant: string };
-  readonly argv: readonly string[];
-  readonly outcome: CapsuleProcessOutcome;
-  readonly startedAt: string;
-  readonly completedAt: string;
-}
+export type {
+  CapsuleActivityReport,
+  CapsuleClientOutcome,
+  CapsuleExecInput,
+  CapsuleExecResult,
+  CapsuleExecTarget,
+  CapsuleExecutionOutcome,
+  CapsuleObservationsInput,
+  CapsuleObservationsResult,
+  CapsuleProcessOutcome,
+} from './execution/types.js';
 
 export type CapsuleCleanupReport =
   | { readonly kind: 'not-attempted' }
@@ -249,7 +216,7 @@ export type CapsuleOperationFailure =
     }
   | {
       readonly kind: 'capsule-operation-failed';
-      readonly operation: 'start' | 'exec' | 'stop' | 'report';
+      readonly operation: 'start' | 'exec' | 'stop' | 'report' | 'observations';
       readonly sessionId: string;
       readonly error: CapsuleRecordedError;
     };

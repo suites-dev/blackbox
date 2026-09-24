@@ -8,6 +8,7 @@ export function catalogFixture(directory: string): LoadedCatalog {
     config: {
       schemaVersion: 1,
       activations: {},
+      clients: {},
       catalog: {
         default: 'orders',
         entries: {

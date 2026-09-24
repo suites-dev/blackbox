@@ -83,6 +83,20 @@ it('unknown participants and spawn failures return explicit manager errors', asy
       requestId: 'spawn-1',
       error: { message: expect.stringContaining('ENOENT') },
     });
+    expect(await readCapsuleActivities(fixture)).toMatchObject([
+      {
+        kind: 'failed',
+        sequence: 1,
+        target: { kind: 'participant', participant: 'foreign-container' },
+        error: { message: 'Unknown participant "foreign-container"' },
+      },
+      {
+        kind: 'failed',
+        sequence: 2,
+        target: { kind: 'host' },
+        error: { message: expect.stringContaining('ENOENT') },
+      },
+    ]);
   } finally {
     await fixture.close();
   }

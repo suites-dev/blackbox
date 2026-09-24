@@ -1,0 +1,294 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://suites.dev/blackbox/schemas/capsule-session-v1.json",
+  "title": "Blackbox Capsule session artifact v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "sessionId",
+    "executionId",
+    "system",
+    "title",
+    "description",
+    "state",
+    "revision",
+    "admittedAt",
+    "updatedAt",
+    "manager",
+    "socketPath",
+    "entrypoint",
+    "containers",
+    "cleanup",
+    "failure",
+    "composeProject",
+    "artifactRoot",
+    "networks",
+    "volumes",
+    "readiness"
+  ],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "sessionId": { "type": "string" },
+    "executionId": { "type": "string" },
+    "system": { "type": "string" },
+    "title": { "type": "string" },
+    "description": { "$ref": "#/$defs/description" },
+    "state": { "$ref": "#/$defs/sessionState" },
+    "revision": { "type": "number" },
+    "admittedAt": { "type": "string" },
+    "updatedAt": { "type": "string" },
+    "manager": { "$ref": "#/$defs/manager" },
+    "socketPath": { "type": "string" },
+    "entrypoint": {
+      "oneOf": [
+        { "$ref": "#/$defs/unavailable" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "value"],
+          "properties": {
+            "kind": { "const": "available" },
+            "value": { "$ref": "#/$defs/entrypoint" }
+          }
+        }
+      ]
+    },
+    "containers": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/container" }
+    },
+    "cleanup": { "$ref": "#/$defs/cleanup" },
+    "failure": { "$ref": "#/$defs/failure" },
+    "composeProject": {
+      "oneOf": [
+        { "$ref": "#/$defs/unavailable" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "value"],
+          "properties": {
+            "kind": { "const": "available" },
+            "value": { "type": "string" }
+          }
+        }
+      ]
+    },
+    "artifactRoot": { "type": "string" },
+    "networks": { "$ref": "#/$defs/stringArray" },
+    "volumes": { "$ref": "#/$defs/stringArray" },
+    "readiness": {
+      "oneOf": [
+        { "$ref": "#/$defs/unavailable" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "value"],
+          "properties": {
+            "kind": { "const": "available" },
+            "value": { "$ref": "#/$defs/readiness" }
+          }
+        }
+      ]
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "type": "object",
+        "properties": { "state": { "const": "running" } },
+        "required": ["state"]
+      },
+      "then": {
+        "type": "object",
+        "properties": {
+          "entrypoint": {
+            "type": "object",
+            "properties": { "kind": { "const": "available" } }
+          },
+          "composeProject": {
+            "type": "object",
+            "properties": { "kind": { "const": "available" } }
+          },
+          "readiness": {
+            "type": "object",
+            "properties": { "kind": { "const": "available" } }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "type": "object",
+        "properties": { "state": { "const": "stopped" } },
+        "required": ["state"]
+      },
+      "then": {
+        "type": "object",
+        "properties": {
+          "cleanup": {
+            "type": "object",
+            "properties": { "kind": { "const": "complete" } }
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "sessionState": {
+      "enum": [
+        "admitted",
+        "manager-starting",
+        "sandbox-starting",
+        "running",
+        "stopping",
+        "stopped",
+        "start-failed",
+        "stop-failed",
+        "manager-failed"
+      ]
+    },
+    "description": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "value"],
+          "properties": {
+            "kind": { "const": "provided" },
+            "value": { "type": "string" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind"],
+          "properties": { "kind": { "const": "omitted" } }
+        }
+      ]
+    },
+    "manager": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind"],
+          "properties": { "kind": { "const": "not-started" } }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "pid"],
+          "properties": {
+            "kind": { "const": "started" },
+            "pid": { "type": "number" }
+          }
+        }
+      ]
+    },
+    "unavailable": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind"],
+      "properties": { "kind": { "const": "unavailable" } }
+    },
+    "entrypoint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["url", "host", "port", "protocol"],
+      "properties": {
+        "url": { "type": "string" },
+        "host": { "type": "string" },
+        "port": { "type": "number" },
+        "protocol": { "type": "string" }
+      }
+    },
+    "container": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "participant",
+        "service",
+        "containerId",
+        "containerName",
+        "host",
+        "networkNames"
+      ],
+      "properties": {
+        "participant": { "type": "string" },
+        "service": { "type": "string" },
+        "containerId": { "type": "string" },
+        "containerName": { "type": "string" },
+        "host": { "type": "string" },
+        "networkNames": { "$ref": "#/$defs/stringArray" }
+      }
+    },
+    "recordedError": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "message"],
+      "properties": {
+        "name": { "type": "string" },
+        "message": { "type": "string" }
+      }
+    },
+    "cleanup": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind"],
+          "properties": { "kind": { "const": "not-attempted" } }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind"],
+          "properties": { "kind": { "const": "complete" } }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "error"],
+          "properties": {
+            "kind": { "const": "failed" },
+            "error": { "$ref": "#/$defs/recordedError" }
+          }
+        }
+      ]
+    },
+    "failure": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind"],
+          "properties": { "kind": { "const": "none" } }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "error"],
+          "properties": {
+            "kind": { "const": "recorded" },
+            "error": { "$ref": "#/$defs/recordedError" }
+          }
+        }
+      ]
+    },
+    "readiness": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["url", "status", "durationMs"],
+      "properties": {
+        "url": { "type": "string" },
+        "status": { "const": "ready" },
+        "durationMs": { "type": "number" }
+      }
+    },
+    "stringArray": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  }
+}

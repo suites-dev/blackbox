@@ -25,6 +25,7 @@ import { validateSandboxInput } from '../validation/input.js';
 import { RunningSandbox } from './running-sandbox.js';
 import { failSandboxStart } from './start-failure.js';
 import { cleanupCompose } from './cleanup/compose.js';
+import { sandboxGeneratedComposeDirectory } from '../telemetry/storage.js';
 
 export class SandboxRuntime {
   constructor(private readonly dependencies: SandboxRuntimeDependencies) {}
@@ -51,7 +52,7 @@ export class SandboxRuntime {
         startupTimeoutMs: input.startupTimeoutMs,
         endpoints: input.endpoints,
         telemetry: input.telemetry,
-        generatedComposeDirectory: `${input.recordDirectory}/${input.sandboxId}.compose`,
+        generatedComposeDirectory: sandboxGeneratedComposeDirectory(input),
         observation:
           request.progress.kind === 'silent'
             ? { kind: 'silent' }

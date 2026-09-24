@@ -4,7 +4,8 @@ import { join } from 'node:path';
 import { expect, it } from 'vitest';
 import type { SandboxTelemetryEnabledInput } from '../types.js';
 import { writeTelemetryComposeOverride } from './compose-override.js';
-import { participantEnvironment } from './environment.js';
+import { collectorEnvironment, participantEnvironment } from './environment.js';
+import { sandboxTelemetryStorageDirectory } from './storage.js';
 
 async function telemetryFixture(): Promise<{
   readonly telemetry: SandboxTelemetryEnabledInput;
@@ -70,6 +71,7 @@ it('injects Blackbox identity and standard OTLP configuration', async () => {
     BLACKBOX_OTEL_EXECUTION_ID: 'client-01',
     BLACKBOX_OTEL_SERVICE_NAME: 'orders',
     BLACKBOX_OTEL_RUNTIME: 'node',
+    OTEL_SERVICE_NAME: 'orders',
     OTEL_TRACES_EXPORTER: 'otlp',
     OTEL_EXPORTER_OTLP_TRACES_PROTOCOL: 'http/json',
     OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: 'http://blackbox-collector:4318/v1/traces',
@@ -77,4 +79,17 @@ it('injects Blackbox identity and standard OTLP configuration', async () => {
     OTEL_METRICS_EXPORTER: 'none',
     OTEL_LOGS_EXPORTER: 'none',
   });
+});
+
+it('configures the collector readiness route used by its health check', async () => {
+  const { telemetry } = await telemetryFixture();
+  expect(collectorEnvironment(telemetry, 'resolved-token')).toMatchObject({
+    BLACKBOX_OTEL_READINESS_PATH: '/ready',
+  });
+});
+
+it('publishes the retained collector directory from Sandbox ownership coordinates', () => {
+  expect(
+    sandboxTelemetryStorageDirectory({ recordDirectory: '/records', sandboxId: 'sandbox-1' }),
+  ).toBe(join('/records', 'sandbox-1.compose', 'collector'));
 });

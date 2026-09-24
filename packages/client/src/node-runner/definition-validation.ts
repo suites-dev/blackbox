@@ -1,4 +1,5 @@
 import type { ClientDefinition } from '../model/client-types.js';
+import { isClientName } from '../model/client-name.js';
 import type { ClientIdentity } from './runner-types.js';
 
 export function isClientDefinition(value: unknown): value is ClientDefinition {
@@ -9,7 +10,7 @@ export function isClientDefinition(value: unknown): value is ClientDefinition {
   return (
     (record.kind === 'entrypoint' || record.kind === 'utility') &&
     typeof record.name === 'string' &&
-    record.name.trim() !== '' &&
+    isClientName(record.name) &&
     typeof record.run === 'function'
   );
 }

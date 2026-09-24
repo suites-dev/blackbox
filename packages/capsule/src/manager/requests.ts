@@ -1,12 +1,14 @@
 import { unlink } from 'node:fs/promises';
+import { randomUUID } from 'node:crypto';
 import type { Socket } from 'node:net';
 
 import { capsuleConnectionEnvironment } from '../connection-environment.js';
+import { runCapsuleClient } from '../execution/client-process.js';
 import { runHost, runParticipant } from '../execution/commands.js';
 import { readRequest, sendResponse } from '../ipc/server.js';
 import type { CapsuleManagerBootstrap, CapsuleManagerRequest } from '../protocol.js';
 import { recordedError, writeCapsuleActivities } from '../records.js';
-import type { CapsuleActivityReport, CapsuleProcessOutcome } from '../types.js';
+import type { CapsuleActivityReport, CapsuleExecutionOutcome } from '../types.js';
 import { persist, transition, type RunningManager } from './runtime.js';
 
 function assertNever(value: never): never {
@@ -17,7 +19,8 @@ async function executeTarget(input: {
   readonly request: Extract<CapsuleManagerRequest, { readonly kind: 'exec-request' }>;
   readonly bootstrap: CapsuleManagerBootstrap;
   readonly manager: RunningManager;
-}): Promise<CapsuleProcessOutcome> {
+  readonly activityId: string;
+}): Promise<CapsuleExecutionOutcome> {
   const { target } = input.request;
   switch (target.kind) {
     case 'host':
@@ -36,6 +39,22 @@ async function executeTarget(input: {
       }
       return runParticipant({ sandbox: input.manager.sandbox, service, argv: target.argv });
     }
+    case 'client': {
+      if (!Object.hasOwn(input.manager.clients, target.clientId)) {
+        throw new Error(`Unknown client ${JSON.stringify(target.clientId)}`);
+      }
+      const client = input.manager.clients[target.clientId];
+      return runCapsuleClient({
+        projectDirectory: input.bootstrap.projectDirectory,
+        sessionId: input.bootstrap.sessionId,
+        executionId: input.bootstrap.executionId,
+        activityId: input.activityId,
+        client,
+        args: target.args,
+        sandbox: input.manager.sandbox,
+        authorization: input.manager.telemetryAuthorization,
+      });
+    }
     default:
       return assertNever(target);
   }
@@ -48,20 +67,56 @@ async function handleExec(input: {
   readonly manager: RunningManager;
 }): Promise<void> {
   const startedAt = new Date().toISOString();
-  const outcome = await executeTarget(input);
   const target = input.request.target;
-  const activity = {
+  const activityId = randomUUID();
+  const admitted = {
+    kind: 'running',
+    activityId,
     sequence: input.manager.activities.length + 1,
     target:
       target.kind === 'participant'
         ? { kind: 'participant' as const, participant: target.participant }
-        : { kind: 'host' as const },
-    argv: [...target.argv],
-    outcome,
+        : target.kind === 'client'
+          ? { kind: 'client' as const, clientId: target.clientId }
+          : { kind: 'host' as const },
+    argv: target.kind === 'client' ? [...target.args] : [...target.argv],
     startedAt,
-    completedAt: new Date().toISOString(),
   } satisfies CapsuleActivityReport;
-  input.manager.activities = [...input.manager.activities, activity];
+  input.manager.activities = [...input.manager.activities, admitted];
+  await writeCapsuleActivities({
+    projectDirectory: input.bootstrap.projectDirectory,
+    sessionId: input.bootstrap.sessionId,
+    activities: input.manager.activities,
+  });
+  let outcome: CapsuleExecutionOutcome;
+  try {
+    outcome = await executeTarget({ ...input, activityId });
+  } catch (error) {
+    input.manager.activities = [
+      ...input.manager.activities.slice(0, -1),
+      {
+        ...admitted,
+        kind: 'failed',
+        error: recordedError(error),
+        completedAt: new Date().toISOString(),
+      },
+    ];
+    await writeCapsuleActivities({
+      projectDirectory: input.bootstrap.projectDirectory,
+      sessionId: input.bootstrap.sessionId,
+      activities: input.manager.activities,
+    });
+    throw error;
+  }
+  input.manager.activities = [
+    ...input.manager.activities.slice(0, -1),
+    {
+      ...admitted,
+      kind: 'completed',
+      outcome,
+      completedAt: new Date().toISOString(),
+    },
+  ];
   await writeCapsuleActivities({
     projectDirectory: input.bootstrap.projectDirectory,
     sessionId: input.bootstrap.sessionId,

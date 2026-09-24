@@ -15,7 +15,8 @@ import type {
   CapsuleRecordedError,
   CapsuleSessionState,
 } from './types.js';
-import { decodeCapsuleActivities, decodeCapsuleSessionRecord } from './persistence/decoder.js';
+import { decodeCapsuleActivities } from './persistence/activity-decoder.js';
+import { decodeCapsuleSessionRecord } from './persistence/decoder.js';
 
 export interface CapsuleSessionRecord {
   readonly schemaVersion: 1;

@@ -9,8 +9,8 @@ describe('client inspection schema', () => {
   const validate = new Ajv2020({ strict: true }).compile(clientInspectionSchema);
 
   it.each([
-    { kind: 'available', client: { kind: 'entrypoint', name: 'Create order' } },
-    { kind: 'available', client: { kind: 'utility', name: 'Inspect database' } },
+    { kind: 'available', client: { kind: 'entrypoint', name: 'create-order' } },
+    { kind: 'available', client: { kind: 'utility', name: 'inspect-database' } },
     {
       kind: 'unavailable',
       error: { name: 'InvalidClientDefinitionError', message: 'Invalid definition' },
@@ -21,6 +21,7 @@ describe('client inspection schema', () => {
 
   it.each([
     { kind: 'available', client: { kind: 'utility', name: '   ' } },
+    { kind: 'available', client: { kind: 'utility', name: 'Inspect database' } },
     { kind: 'available', client: { kind: 'unknown', name: 'Unknown' } },
     { kind: 'unavailable' },
   ])('rejects %j', (result) => {

@@ -18,7 +18,6 @@ async function fixture(input: { readonly delay: number; readonly timeout: number
   api:
     image: nginx:alpine
     command: ["/bin/sh", "-c", "sleep ${input.delay}; exec nginx -g 'daemon off;'"]
-    ports: ["80"]
     healthcheck:
       test: ["CMD", "true"]
       interval: 1s

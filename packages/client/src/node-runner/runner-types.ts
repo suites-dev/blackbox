@@ -4,10 +4,12 @@ import type { ClientDefinition, ClientExecutionInput, ClientResult } from '../mo
 
 export interface CreateNodeClientRunnerSourceInput {
   readonly clientModuleUrl: URL;
+  readonly runnerModuleUrl: URL;
 }
 
 export interface CreateNodeClientInspectorSourceInput {
   readonly clientModuleUrl: URL;
+  readonly runnerModuleUrl: URL;
 }
 
 export interface RunNodeClientProcessInput {

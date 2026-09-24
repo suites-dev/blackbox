@@ -53,6 +53,8 @@ export async function requestFixture(stop: (input: SandboxStopInput) => Promise<
     declaredEnvironment: {},
     endpoints: new Map(),
     containers: new Map(),
+    telemetry: { kind: 'disabled' },
+    inspectTelemetry: () => Promise.resolve({ kind: 'disabled' }),
     getContainer: () => {
       throw new Error('unused');
     },
@@ -92,6 +94,8 @@ export async function requestFixture(stop: (input: SandboxStopInput) => Promise<
     record,
     activities: [],
     participantServices: new Map([['postgres', 'db-service']]),
+    telemetryAuthorization: { kind: 'bearer-token', token: 'test-collector-token' },
+    clients: {},
     entrypoint: { url: 'http://127.0.0.1:4567', host: '127.0.0.1', port: 4567, protocol: 'http' },
   } satisfies RunningManager;
   serveManager(bootstrap, manager);

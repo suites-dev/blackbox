@@ -7,8 +7,9 @@
   "author": "Suites",
   "description": "Monorepo for Suites Blackbox.",
   "scripts": {
-    "build": "pnpm --recursive run build",
+    "build": "pnpm --recursive --sort run build",
     "test": "pnpm run build && pnpm --recursive run test",
+    "test:e2e:capsule": "bash e2e/bash/capsule-assets.sh && bash e2e/bash/capsule-test.sh",
     "lint": "node scripts/check-source-layout.mjs && eslint packages --cache",
     "lint:fix": "eslint packages --cache --fix",
     "typecheck": "tsc --project tsconfig.json --noEmit",
@@ -17,6 +18,9 @@
   },
   "engines": {
     "node": ">=22.15"
+  },
+  "dependencies": {
+    "@suites/blackbox-client": "workspace:*"
   },
   "packageManager": "pnpm@9.15.4",
   "devDependencies": {

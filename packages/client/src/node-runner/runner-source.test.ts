@@ -5,9 +5,12 @@ import {
   createNodeClientRunnerSource,
 } from './runner-source.js';
 
+const runnerModuleUrl = new URL('file:///blackbox/client-runner.js');
+
 it('renders a static client import without dynamic import syntax', () => {
   const source = createNodeClientRunnerSource({
     clientModuleUrl: new URL('file:///project/.blackbox/clients/orders.mjs'),
+    runnerModuleUrl,
   });
 
   expect(source).toContain(
@@ -18,13 +21,17 @@ it('renders a static client import without dynamic import syntax', () => {
 
 it('rejects a non-file module URL', () => {
   expect(() =>
-    createNodeClientRunnerSource({ clientModuleUrl: new URL('https://example.test/client.mjs') }),
+    createNodeClientRunnerSource({
+      clientModuleUrl: new URL('https://example.test/client.mjs'),
+      runnerModuleUrl,
+    }),
   ).toThrow('file: protocol');
 });
 
 it('keeps hostile path characters inside the static import string', () => {
   const source = createNodeClientRunnerSource({
     clientModuleUrl: new URL('file:///project/client.mjs?value=%22%3B%0Athrow%20new%20Error'),
+    runnerModuleUrl,
   });
 
   expect(source.match(/^import /gmu)).toHaveLength(2);
@@ -35,6 +42,7 @@ it('keeps hostile path characters inside the static import string', () => {
 it('renders an uninstrumented static inspector', () => {
   const source = createNodeClientInspectorSource({
     clientModuleUrl: new URL('file:///project/.blackbox/clients/orders.mjs'),
+    runnerModuleUrl,
   });
 
   expect(source).toContain(
@@ -48,6 +56,7 @@ it('renders an uninstrumented static inspector', () => {
 it('keeps hostile inspector path characters inside the static import string', () => {
   const source = createNodeClientInspectorSource({
     clientModuleUrl: new URL('file:///project/client.mjs?value=%22%3B%0Athrow%20new%20Error'),
+    runnerModuleUrl,
   });
 
   expect(source.match(/^import /gmu)).toHaveLength(2);
@@ -59,6 +68,7 @@ it('rejects a non-file inspector module URL', () => {
   expect(() =>
     createNodeClientInspectorSource({
       clientModuleUrl: new URL('https://example.test/client.mjs'),
+      runnerModuleUrl,
     }),
   ).toThrow('file: protocol');
 });

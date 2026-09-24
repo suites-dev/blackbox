@@ -1,8 +1,10 @@
+import { randomBytes } from 'node:crypto';
 import { mkdir, unlink } from 'node:fs/promises';
 import { createServer, type Server } from 'node:net';
 import { dirname, join } from 'node:path';
 
 import type { SandboxHandle } from '@suites/blackbox-sandbox-internal';
+import type { CatalogSandboxInput } from '@suites/blackbox-catalog-internal';
 
 import type { CapsuleManagerBootstrap } from '../protocol.js';
 import {
@@ -16,12 +18,15 @@ import type { CapsuleActivityReport, CapsuleEntrypoint } from '../types.js';
 import { completePlannedSandbox, startPlannedSandbox } from './acquisition.js';
 import { emitProgress, runStartStage } from './progress.js';
 import type { CapsuleManagerPorts } from './ports.js';
+import type { CapsuleTelemetryAuthorization } from './telemetry.js';
 
 export interface RunningManager {
   readonly server: Server;
   readonly sandbox: SandboxHandle;
   readonly entrypoint: CapsuleEntrypoint;
   readonly participantServices: ReadonlyMap<string, string>;
+  readonly telemetryAuthorization: CapsuleTelemetryAuthorization;
+  readonly clients: CatalogSandboxInput['clients'];
   activities: CapsuleActivityReport[];
   record: CapsuleSessionRecord;
 }
@@ -96,6 +101,10 @@ async function cleanupFailedSandbox(sandbox: SandboxHandle | undefined) {
   );
 }
 
+function createTelemetryAuthorization(): CapsuleTelemetryAuthorization {
+  return { kind: 'bearer-token', token: randomBytes(32).toString('base64url') };
+}
+
 export async function prepareManager(
   bootstrap: CapsuleManagerBootstrap,
   ports: CapsuleManagerPorts,
@@ -113,11 +122,25 @@ export async function prepareManager(
     transition(record, 'sandbox-starting', { manager: { kind: 'started', pid: process.pid } }),
   );
   let sandbox: SandboxHandle | undefined;
+  const telemetryAuthorization = createTelemetryAuthorization();
   try {
-    const acquisition = await startPlannedSandbox({ bootstrap, plan, entry, ports });
+    const acquisition = await startPlannedSandbox({
+      bootstrap,
+      plan,
+      entry,
+      ports,
+      authorization: telemetryAuthorization,
+    });
     sandbox = acquisition.sandbox;
     await acquisition.flushProgress();
-    const acquired = await completePlannedSandbox({ bootstrap, plan, entry, ports, sandbox });
+    const acquired = await completePlannedSandbox({
+      bootstrap,
+      plan,
+      entry,
+      ports,
+      authorization: telemetryAuthorization,
+      sandbox,
+    });
     record = await persist(
       bootstrap.projectDirectory,
       transition(record, 'running', {
@@ -138,6 +161,8 @@ export async function prepareManager(
       server,
       sandbox,
       entrypoint: acquired.entrypoint,
+      telemetryAuthorization,
+      clients: plan.clients,
       record,
       participantServices: new Map(
         Object.entries(entry.participants).map(([id, value]) => [id, value.service]),

@@ -39,7 +39,7 @@ function readJson(stream: PassThrough): unknown {
 it('passes an isolated immutable execution DTO to the client', async () => {
   const run = vi.fn((_input: ClientExecutionInput) => ({ kind: 'empty' }) as const);
   await expect(
-    executeClient({ definition: { kind: 'entrypoint', name: 'HTTP', run }, execution }),
+    executeClient({ definition: { kind: 'entrypoint', name: 'http-client', run }, execution }),
   ).resolves.toEqual({ kind: 'empty' });
 
   const call = run.mock.calls.at(0);
@@ -74,7 +74,7 @@ it('rejects a non-JSON value returned as a JSON result', async () => {
   await runNodeClientProcess({
     definition: {
       kind: 'utility',
-      name: 'Invalid result',
+      name: 'invalid-result',
       run: () => ({ kind: 'json', value: circular }),
     },
     input: stdin,
@@ -90,7 +90,7 @@ it('retains client metadata when an authored callback fails', async () => {
   await runNodeClientProcess({
     definition: {
       kind: 'entrypoint',
-      name: 'Create order',
+      name: 'create-order',
       run: () => {
         throw new Error('request failed');
       },
@@ -102,7 +102,7 @@ it('retains client metadata when an authored callback fails', async () => {
     kind: 'failed',
     metadata: {
       kind: 'available',
-      client: { kind: 'entrypoint', name: 'Create order' },
+      client: { kind: 'entrypoint', name: 'create-order' },
     },
     error: { name: 'Error', message: 'request failed' },
   });
@@ -124,7 +124,7 @@ it('activates a span only for an entrypoint client', async () => {
   await executeClient({
     definition: {
       kind: 'entrypoint',
-      name: 'HTTP',
+      name: 'http-client',
       run: () => ({ kind: 'empty' }),
     },
     execution,
@@ -132,7 +132,7 @@ it('activates a span only for an entrypoint client', async () => {
   await executeClient({
     definition: {
       kind: 'utility',
-      name: 'Database setup',
+      name: 'database-setup',
       run: () => ({ kind: 'empty' }),
     },
     execution: utilityExecution,
@@ -150,7 +150,7 @@ it.each([
     executeClient({
       definition: {
         kind: definitionKind,
-        name: 'Mismatched',
+        name: 'mismatched-client',
         run: () => ({ kind: 'empty' }),
       },
       execution: input,
@@ -165,7 +165,7 @@ it('retains client metadata with a completed result', async () => {
   await runNodeClientProcess({
     definition: {
       kind: 'utility',
-      name: 'Inspect database',
+      name: 'inspect-database',
       run: () => ({ kind: 'empty' }),
     },
     input: stdin,
@@ -175,7 +175,7 @@ it('retains client metadata with a completed result', async () => {
     kind: 'completed',
     metadata: {
       kind: 'available',
-      client: { kind: 'utility', name: 'Inspect database' },
+      client: { kind: 'utility', name: 'inspect-database' },
     },
     result: { kind: 'empty' },
   });

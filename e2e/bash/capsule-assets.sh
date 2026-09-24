@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
 # Prepare the assets consumed by capsule-test.sh. This script does not acquire
-# Docker resources or start a Capsule. It builds the local CLI and validates the
-# canonical catalog so the later run is only the user-visible command journey.
+# Docker resources or start a Capsule. It only builds the local packages. The
+# user-visible player installs generated inputs before it validates the catalog.
 
 set -Eeuo pipefail
 
@@ -25,8 +25,8 @@ require_command() {
   }
 }
 
-require_command jq
 require_command pnpm
+require_command docker
 
 cd "$REPO_ROOT"
 printf '%s━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━%s\n' "$C_BLUE" "$C_RESET"
@@ -34,23 +34,12 @@ printf '%s[blackbox]%s %sPrepare local assets%s\n' "$C_CYAN" "$C_RESET" "$C_YELL
 printf '        $ pnpm build\n'
 pnpm build
 
-cd "$E2E_ROOT"
-printf '%s[blackbox]%s %sValidate the canonical catalog and referenced files%s\n' "$C_CYAN" "$C_RESET" "$C_YELLOW" "$C_RESET"
-printf '        $ blackbox catalog validate --json\n'
-if [[ -n "${BLACKBOX_BIN:-}" ]]; then
-  BLACKBOX_COMMAND=("$BLACKBOX_BIN")
-else
-  BLACKBOX_COMMAND=(node "$REPO_ROOT/packages/cli/bin/run.js")
-fi
-"${BLACKBOX_COMMAND[@]}" catalog validate --json >"$ARTIFACT_ROOT/catalog-validate.json"
-"${BLACKBOX_COMMAND[@]}" catalog list --json >"$ARTIFACT_ROOT/catalog-list.json"
-jq -e '.ok == true and .kind == "catalog-validate-success"' "$ARTIFACT_ROOT/catalog-validate.json" >/dev/null
-jq -e '(.entries | any(.id == "subscription-system" and .isDefault == true))' "$ARTIFACT_ROOT/catalog-list.json" >/dev/null
+printf '        $ docker build --tag blackbox-otel-collector:dev packages/otel-collector\n'
+docker build --tag blackbox-otel-collector:dev packages/otel-collector
 
 printf '%s\n' \
-  "catalog-validate=$ARTIFACT_ROOT/catalog-validate.json" \
-  "catalog-list=$ARTIFACT_ROOT/catalog-list.json" \
   "build=passed" \
+  "collector-image=blackbox-otel-collector:dev" \
   >"$ARTIFACT_ROOT/receipt.txt"
 printf '%s[blackbox]%s %s✓ assets ready%s\n' "$C_CYAN" "$C_RESET" "$C_GREEN" "$C_RESET"
 printf '        artifacts: %s\n' "$ARTIFACT_ROOT"

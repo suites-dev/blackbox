@@ -3,6 +3,7 @@ import { createRedactionContext, redactActivities, redactError, redactText } fro
 import type {
   CapsuleReportDocument,
   CapsuleReportLifecycle,
+  CapsuleReportObservations,
   CapsuleReportProjectionInput,
 } from './types.js';
 
@@ -76,6 +77,35 @@ function cleanupProjection(
     : input.record.cleanup;
 }
 
+function observationsProjection(
+  observations: CapsuleReportProjectionInput['observations'],
+): CapsuleReportObservations {
+  switch (observations.kind) {
+    case 'collector-session-found': {
+      const activations = observations.lifecycle.runs.flatMap((run) =>
+        run.instrumentation.kind === 'activated'
+          ? run.instrumentation.activations.map(({ runtime, serviceName, activatedAt }) => ({
+              runtime,
+              serviceName,
+              activatedAt,
+            }))
+          : [],
+      );
+      return {
+        kind: observations.kind,
+        telemetry: observations.lifecycle.telemetry,
+        fragmentCount: observations.fragments.length,
+        traceIds: observations.traceIds,
+        activations,
+      };
+    }
+    case 'collector-session-missing':
+      return { kind: observations.kind, message: observations.message };
+    case 'collector-session-corrupt':
+      return { kind: observations.kind, error: observations.error };
+  }
+}
+
 export function projectCapsuleReport(input: CapsuleReportProjectionInput): CapsuleReportDocument {
   const context = createRedactionContext();
   const cleanup = cleanupProjection(input, context);
@@ -130,6 +160,7 @@ export function projectCapsuleReport(input: CapsuleReportProjectionInput): Capsu
           },
     activities: redactActivities({ activities: input.activities, context }),
     progress: redactProgress({ events: input.progress, context }),
+    observations: observationsProjection(input.observations),
     cleanup,
     failure:
       input.record.failure.kind === 'none'

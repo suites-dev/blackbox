@@ -25,7 +25,7 @@ async function testInput(): Promise<SandboxInput> {
     environment: { SANDBOX_ID: sandboxId },
     serviceSelection: { kind: 'selected', services: ['echo'] },
     endpoints: [{ name: 'unmapped', service: 'echo', containerPort: 65000 }],
-    startupTimeoutMs: 60_000,
+    startupTimeoutMs: 5_000,
     stopTimeoutMs: 20_000,
     telemetry: { kind: 'disabled' },
   };
@@ -54,7 +54,7 @@ async function ownedFallbackCleanup(input: SandboxInput): Promise<void> {
 }
 
 describe.skipIf(!dockerEnabled)('Docker startup failure cleanup', () => {
-  it('removes acquired containers, networks, and volumes when endpoint resolution fails', async () => {
+  it('retains the driver boundary while Testcontainers cleans a port-wait failure', async () => {
     const input = await testInput();
     const projectName = composeProjectName(input);
     const events: SandboxProgressEvent[] = [];
@@ -68,7 +68,7 @@ describe.skipIf(!dockerEnabled)('Docker startup failure cleanup', () => {
         name: 'SandboxStartError',
         failure: {
           kind: 'start-failed',
-          cleanup: { kind: 'complete' },
+          cleanup: { kind: 'not-attempted' },
           record: { kind: 'written' },
         },
       });
@@ -76,7 +76,7 @@ describe.skipIf(!dockerEnabled)('Docker startup failure cleanup', () => {
         sandboxId: input.sandboxId,
         projectName,
         state: 'start-failed',
-        cleanup: { kind: 'complete' },
+        cleanup: { kind: 'not-attempted' },
       });
       expect(
         events.filter(({ kind }) => kind !== 'acquisition-observation').map(({ kind }) => kind),

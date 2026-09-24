@@ -61,6 +61,10 @@ catalogs:
 importers:
 
   .:
+    dependencies:
+      '@suites/blackbox-client':
+        specifier: workspace:*
+        version: link:packages/client
     devDependencies:
       '@commitlint/cli':
         specifier: 'catalog:'
@@ -116,6 +120,15 @@ importers:
       '@suites/blackbox-catalog-internal':
         specifier: workspace:*
         version: link:../catalog
+      '@suites/blackbox-client':
+        specifier: workspace:*
+        version: link:../client
+      '@suites/blackbox-inst-runtime-node':
+        specifier: workspace:*
+        version: link:../instrumentation-runtime-node
+      '@suites/blackbox-otel-collector-internal':
+        specifier: workspace:*
+        version: link:../otel-collector
       '@suites/blackbox-sandbox-internal':
         specifier: workspace:*
         version: link:../sandbox
@@ -191,6 +204,28 @@ importers:
       typescript:
         specifier: 'catalog:'
         version: 5.7.3
+
+  packages/client:
+    dependencies:
+      '@opentelemetry/api':
+        specifier: 1.9.0
+        version: 1.9.0
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 22.19.17
+      ajv:
+        specifier: 8.18.0
+        version: 8.18.0
+      rimraf:
+        specifier: 'catalog:'
+        version: 6.1.3
+      typescript:
+        specifier: 'catalog:'
+        version: 5.7.3
+      vitest:
+        specifier: 'catalog:'
+        version: 3.2.6(@types/node@22.19.17)(jiti@2.6.1)(tsx@4.23.13)(yaml@2.8.3)
 
   packages/instrumentation:
     devDependencies:
@@ -653,6 +688,10 @@ packages:
   '@oclif/core@4.14.0':
     resolution: {integrity: sha512-QCJIZoVJxV7jywgVAUlsQwl3dr3Sa21kfi5z9KrYolbexWJUtFSEtMoNiBWojD05mYycLnB50gp/VxlGdaOCRA==}
     engines: {node: '>=18.0.0'}
+
+  '@opentelemetry/api@1.9.0':
+    resolution: {integrity: sha512-3giAOQvZiH5F9bMlMiv8+GSPMeqg0dbaeo58/0SlA9sxSqZhnUtxzX9/2FzyhS9sWQf5S0GJE0AKBrFqjpeYcg==}
+    engines: {node: '>=8.0.0'}
 
   '@package-json/types@0.0.12':
     resolution: {integrity: sha512-uu43FGU34B5VM9mCNjXCwLaGHYjXdNincqKLaraaCW+7S2+SmiBg1Nv8bPnmschrIfZmfKNY9f3fC376MRrObw==}
@@ -3085,6 +3124,8 @@ snapshots:
       wordwrap: 1.0.0
       wrap-ansi: 7.0.0
       wsl-utils: 0.4.0
+
+  '@opentelemetry/api@1.9.0': {}
 
   '@package-json/types@0.0.12': {}
 

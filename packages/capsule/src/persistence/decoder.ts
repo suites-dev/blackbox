@@ -1,37 +1,36 @@
 import type { CapsuleSessionRecord } from '../records.js';
-import type { CapsuleActivityReport } from '../types.js';
 
 type JsonObject = Record<string, unknown>;
 
-function object(value: unknown, location: string): JsonObject {
+export function object(value: unknown, location: string): JsonObject {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) {
     throw new Error(`${location} must be an object`);
   }
   return value as JsonObject;
 }
 
-function string(value: unknown, location: string): string {
+export function string(value: unknown, location: string): string {
   if (typeof value !== 'string') {
     throw new Error(`${location} must be a string`);
   }
   return value;
 }
 
-function number(value: unknown, location: string): number {
+export function number(value: unknown, location: string): number {
   if (typeof value !== 'number' || !Number.isFinite(value)) {
     throw new Error(`${location} must be a finite number`);
   }
   return value;
 }
 
-function stringArray(value: unknown, location: string): readonly string[] {
+export function stringArray(value: unknown, location: string): readonly string[] {
   if (!Array.isArray(value) || !value.every((item) => typeof item === 'string')) {
     throw new Error(`${location} must be an array of strings`);
   }
   return value;
 }
 
-function discriminator(value: JsonObject, allowed: readonly string[], location: string): string {
+export function discriminator(value: JsonObject, allowed: readonly string[], location: string): string {
   const kind = string(value.kind, `${location}.kind`);
   if (!allowed.includes(kind)) {
     throw new Error(`${location}.kind is unsupported`);
@@ -53,7 +52,7 @@ function manager(value: unknown): void {
   }
 }
 
-function recordedError(value: unknown, location: string): void {
+export function recordedError(value: unknown, location: string): void {
   const error = object(value, location);
   string(error.name, `${location}.name`);
   string(error.message, `${location}.message`);
@@ -179,38 +178,4 @@ export function decodeCapsuleSessionRecord(input: {
   const record = object(value, 'session');
   validateSession(record);
   return value as CapsuleSessionRecord;
-}
-
-function validateActivity(value: unknown, index: number): void {
-  const location = `activities[${String(index)}]`;
-  const activity = object(value, location);
-  number(activity.sequence, `${location}.sequence`);
-  const target = object(activity.target, `${location}.target`);
-  if (discriminator(target, ['host', 'participant'], `${location}.target`) === 'participant') {
-    string(target.participant, `${location}.target.participant`);
-  }
-  stringArray(activity.argv, `${location}.argv`);
-  string(activity.startedAt, `${location}.startedAt`);
-  string(activity.completedAt, `${location}.completedAt`);
-  const outcome = object(activity.outcome, `${location}.outcome`);
-  const outcomeKind = discriminator(outcome, ['exited', 'signaled'], `${location}.outcome`);
-  stringArray(outcome.argv, `${location}.outcome.argv`);
-  string(outcome.stdout, `${location}.outcome.stdout`);
-  string(outcome.stderr, `${location}.outcome.stderr`);
-  if (outcomeKind === 'exited') {
-    number(outcome.exitCode, `${location}.outcome.exitCode`);
-  } else {
-    string(outcome.signal, `${location}.outcome.signal`);
-  }
-}
-
-export function decodeCapsuleActivities(input: {
-  readonly bytes: string;
-}): readonly CapsuleActivityReport[] {
-  const value: unknown = JSON.parse(input.bytes);
-  if (!Array.isArray(value)) {
-    throw new Error('activities must be an array');
-  }
-  value.forEach(validateActivity);
-  return value as CapsuleActivityReport[];
 }
