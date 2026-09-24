@@ -1,52 +1,39 @@
 export const capsuleTelemetryRowsScript = `
-function spanAttribute(span, key) {
-  const attribute = span.attributes.find((item) => item.key === key);
-  return attribute ? String(attribute.value) : '';
-}
-function spanTitle(span) {
-  const method =
-    spanAttribute(span, 'http.request.method') || spanAttribute(span, 'http.method');
-  const path = spanAttribute(span, 'url.path');
-  return method && path ? method + ' ' + path : span.operation;
-}
-function relatedService(spans, predicate, service) {
-  const related = spans.find((item) => predicate(item) && item.service !== service);
-  return related ? related.service : '';
-}
-function spanDirection(span, spans) {
-  const parent = relatedService(
-    spans,
-    (item) => item.spanId === span.parentSpanId && item.traceId === span.traceId,
-    span.service,
+function telemetrySpanRow(span, spans, activityId, root) {
+  const presentation = spanPresentation(span, spans), button = n('button', 'span-row');
+  button.type = 'button';
+  add(
+    button,
+    icon('branch'),
+    add(
+      n('span', 'span-summary'),
+      n('strong', 'span-operation', presentation.title),
+      n('small', 'span-direction', presentation.direction),
+    ),
+    icon('chevron'),
   );
-  const child = relatedService(
-    spans,
-    (item) => item.parentSpanId === span.spanId && item.traceId === span.traceId,
-    span.service,
+  button.addEventListener('click', () =>
+    inspectSpan(root, span, activityId, presentation),
   );
-  const peer =
-    spanAttribute(span, 'server.address') ||
-    spanAttribute(span, 'messaging.destination.name') ||
-    spanAttribute(span, 'messaging.system') ||
-    spanAttribute(span, 'rpc.system');
-  switch (span.spanKind) {
-    case 'server':
-      return (parent || 'remote') + ' → ' + span.service;
-    case 'client':
-      return span.service + ' → ' + (child || peer || 'remote');
-    case 'producer':
-      return span.service + ' → ' + (peer || 'message broker');
-    case 'consumer':
-      return (peer || 'message broker') + ' → ' + span.service;
-    default:
-      return span.service;
-  }
+  return button;
 }
-function spanPresentation(span, spans) {
-  return {
-    title: spanTitle(span),
-    direction: spanDirection(span, spans) + ' · ' + span.spanKind,
-  };
+function telemetryResourceRun(run, spans, activityId, root) {
+  if (run.spans.length === 1) return telemetrySpanRow(run.spans[0], spans, activityId, root);
+  const details = n('details', 'telemetry-resource-group'), summary = n('summary'), rows = n('div');
+  add(
+    summary,
+    icon('stack'),
+    add(
+      n('span', 'span-summary'),
+      n('strong', 'span-operation', run.label),
+      n('small', 'span-direction', run.direction),
+    ),
+    badge(run.spans.length + ' operations'),
+    icon('chevron'),
+  );
+  for (const span of run.spans) add(rows, telemetrySpanRow(span, spans, activityId, root));
+  add(details, summary, rows);
+  return details;
 }
 function rawTelemetry(d, a, root) {
   const retained = activityTelemetry(d, a);
@@ -62,24 +49,13 @@ function rawTelemetry(d, a, root) {
     );
     return block;
   }
-  for (const span of retained.spans) {
-    const presentation = spanPresentation(span, retained.spans);
-    const button = n('button', 'span-row');
-    button.type = 'button';
+  for (const run of telemetryRuns(retained.spans)) {
     add(
-      button,
-      icon('branch'),
-      add(
-        n('span', 'span-summary'),
-        n('strong', 'span-operation', presentation.title),
-        n('small', 'span-direction', presentation.direction),
-      ),
-      icon('chevron'),
+      block,
+      run.kind === 'resource-run'
+        ? telemetryResourceRun(run, retained.spans, a.activityId, root)
+        : telemetrySpanRow(run.span, retained.spans, a.activityId, root),
     );
-    button.addEventListener('click', () =>
-      inspectSpan(root, span, a.activityId, presentation),
-    );
-    add(block, button);
   }
   add(
     block,
