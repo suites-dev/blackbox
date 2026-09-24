@@ -1,5 +1,14 @@
 import { join } from 'node:path';
 import type { LoadedCatalog } from '@suites/blackbox-catalog-internal';
+import type { CapsuleCollectorRuntimePort } from '../collector-runtime.js';
+
+export const readyCollectorRuntime = {
+  resolve: () =>
+    Promise.resolve({
+      kind: 'ready',
+      runtime: { kind: 'image-default', image: 'collector:test' },
+    }),
+} satisfies CapsuleCollectorRuntimePort;
 
 export function catalogFixture(directory: string): LoadedCatalog {
   return {

@@ -28,9 +28,8 @@ async function enabledInput(): Promise<SandboxInput> {
       authorization: { kind: 'bearer-token', token: 'secret' },
       collector: {
         service: 'blackbox-collector',
-        image: 'collector:test',
         containerPort: 4318,
-        command: { kind: 'image-default' },
+        runtime: { kind: 'image-default', image: 'collector:test' },
         environment: {},
         readiness: {
           kind: 'http',

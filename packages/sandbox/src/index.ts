@@ -75,6 +75,7 @@ export type {
   SandboxTestcontainerInspection,
   StartedComposeSandbox,
   SandboxCollectorInput,
+  SandboxCollectorRuntime,
   SandboxTelemetryEnabledInput,
   SandboxTelemetryEndpoints,
   SandboxTelemetryInput,

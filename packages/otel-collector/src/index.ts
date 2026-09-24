@@ -9,6 +9,8 @@ export {
   collectorLifecycleSchema,
 } from './schema/index.js';
 export { startCollector } from './transport/server.js';
+export { packagedCollectorRuntime } from './runtime.js';
+export type { PackagedCollectorRuntime } from './runtime.js';
 export type {
   CollectorCloseResult,
   ActivateCollectorInput,

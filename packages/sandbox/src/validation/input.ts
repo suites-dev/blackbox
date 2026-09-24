@@ -1,6 +1,6 @@
 import { access, realpath } from 'node:fs/promises';
 import { isAbsolute, relative, resolve, sep } from 'node:path';
-import type { SandboxInput } from '../types.js';
+import type { SandboxCollectorRuntime, SandboxInput } from '../types.js';
 
 const ID_PATTERN = /^[a-zA-Z0-9][a-zA-Z0-9._-]{0,127}$/;
 const SERVICE_PATTERN = /^[a-zA-Z0-9][a-zA-Z0-9._-]*$/;
@@ -61,9 +61,11 @@ async function validateTelemetry(input: SandboxInput): Promise<void> {
   if (selectedServices(input).includes(telemetry.collector.service)) {
     throw new SandboxInputError('telemetry collector service must not replace an application service');
   }
-  if (telemetry.collector.image.trim().length === 0) {
+  const runtime = telemetry.collector.runtime;
+  if (runtime.image.trim().length === 0) {
     throw new SandboxInputError('telemetry collector image must not be blank');
   }
+  await validateCollectorRuntime(runtime);
   const participantServices = telemetry.participants.map((participant) => participant.service);
   requireUnique(participantServices, 'telemetry participant services');
   for (const participant of telemetry.participants) {
@@ -90,6 +92,25 @@ async function validateTelemetry(input: SandboxInput): Promise<void> {
   validateCollectorNumber(telemetry.collector.readiness.retries, 'readiness retries', 1_000);
   if (!telemetry.collector.readiness.path.startsWith('/')) {
     throw new SandboxInputError('collector readiness path must start with /');
+  }
+}
+
+async function validateCollectorRuntime(
+  runtime: SandboxCollectorRuntime,
+): Promise<void> {
+  if (runtime.kind === 'image-default') {
+    return;
+  }
+  if (!isAbsolute(runtime.sourceDirectory) || !isAbsolute(runtime.targetDirectory)) {
+    throw new SandboxInputError('telemetry collector runtime paths must be absolute');
+  }
+  if (isAbsolute(runtime.entrypoint) || runtime.user.trim().length === 0) {
+    throw new SandboxInputError('telemetry collector runtime entrypoint and user are invalid');
+  }
+  const sourceDirectory = await realpath(runtime.sourceDirectory);
+  const entrypoint = await realpath(resolve(sourceDirectory, runtime.entrypoint));
+  if (!isWithin(sourceDirectory, entrypoint)) {
+    throw new SandboxInputError('telemetry collector entrypoint escapes its runtime');
   }
 }
 

@@ -26,7 +26,6 @@ require_command() {
 }
 
 require_command pnpm
-require_command docker
 
 cd "$REPO_ROOT"
 printf '%s━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━%s\n' "$C_BLUE" "$C_RESET"
@@ -34,12 +33,9 @@ printf '%s[blackbox]%s %sPrepare local assets%s\n' "$C_CYAN" "$C_RESET" "$C_YELL
 printf '        $ pnpm build\n'
 pnpm build
 
-printf '        $ docker build --tag blackbox-otel-collector:dev packages/otel-collector\n'
-docker build --tag blackbox-otel-collector:dev packages/otel-collector
-
 printf '%s\n' \
   "build=passed" \
-  "collector-image=blackbox-otel-collector:dev" \
+  "collector-runtime=packaged" \
   >"$ARTIFACT_ROOT/receipt.txt"
 printf '%s[blackbox]%s %s✓ assets ready%s\n' "$C_CYAN" "$C_RESET" "$C_GREEN" "$C_RESET"
 printf '        artifacts: %s\n' "$ARTIFACT_ROOT"

@@ -19,6 +19,7 @@ import { completePlannedSandbox, startPlannedSandbox } from './acquisition.js';
 import { emitProgress, runStartStage } from './progress.js';
 import type { CapsuleManagerPorts } from './ports.js';
 import type { CapsuleTelemetryAuthorization } from './telemetry.js';
+import { requireCollectorRuntime } from './collector-runtime.js';
 
 export interface RunningManager {
   readonly server: Server;
@@ -105,6 +106,18 @@ function createTelemetryAuthorization(): CapsuleTelemetryAuthorization {
   return { kind: 'bearer-token', token: randomBytes(32).toString('base64url') };
 }
 
+async function resolveCollectorRuntime(ports: CapsuleManagerPorts) {
+  return runStartStage('acquisition', async () =>
+    requireCollectorRuntime(await ports.collectorRuntime.resolve()),
+  );
+}
+
+function participantServices(plan: CatalogSandboxInput): ReadonlyMap<string, string> {
+  return new Map(
+    Object.entries(plan.metadata.participants).map(([id, value]) => [id, value.service]),
+  );
+}
+
 export async function prepareManager(
   bootstrap: CapsuleManagerBootstrap,
   ports: CapsuleManagerPorts,
@@ -124,12 +137,14 @@ export async function prepareManager(
   let sandbox: SandboxHandle | undefined;
   const telemetryAuthorization = createTelemetryAuthorization();
   try {
+    const collectorRuntime = await resolveCollectorRuntime(ports);
     const acquisition = await startPlannedSandbox({
       bootstrap,
       plan,
       entry,
       ports,
       authorization: telemetryAuthorization,
+      collectorRuntime,
     });
     sandbox = acquisition.sandbox;
     await acquisition.flushProgress();
@@ -139,6 +154,7 @@ export async function prepareManager(
       entry,
       ports,
       authorization: telemetryAuthorization,
+      collectorRuntime,
       sandbox,
     });
     record = await persist(
@@ -164,9 +180,7 @@ export async function prepareManager(
       telemetryAuthorization,
       clients: plan.clients,
       record,
-      participantServices: new Map(
-        Object.entries(entry.participants).map(([id, value]) => [id, value.service]),
-      ),
+      participantServices: participantServices(plan),
       activities: [...(await readCapsuleActivities(bootstrap))],
     };
   } catch (error) {

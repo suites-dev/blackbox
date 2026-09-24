@@ -16,15 +16,26 @@ interface ComposeServiceBase {
   };
 }
 
+function collectorVolumes(input: {
+  readonly telemetry: SandboxTelemetryEnabledInput;
+  readonly storageDirectory: string;
+}): readonly string[] {
+  const storage = `${input.storageDirectory}:/blackbox/telemetry`;
+  const runtime = input.telemetry.collector.runtime;
+  return runtime.kind === 'image-default'
+    ? [storage]
+    : [storage, `${runtime.sourceDirectory}:${runtime.targetDirectory}:ro`];
+}
+
 function collectorService(input: {
   readonly telemetry: SandboxTelemetryEnabledInput;
   readonly storageDirectory: string;
 }): object {
   const base = {
-    image: input.telemetry.collector.image,
+    image: input.telemetry.collector.runtime.image,
     environment: collectorEnvironment(input.telemetry, '${BLACKBOX_SANDBOX_OTEL_AUTH_TOKEN}'),
     ports: [`127.0.0.1::${input.telemetry.collector.containerPort}`],
-    volumes: [`${input.storageDirectory}:/blackbox/telemetry`],
+    volumes: collectorVolumes(input),
     healthcheck: {
       test: [
         'CMD',
@@ -37,9 +48,14 @@ function collectorService(input: {
       retries: input.telemetry.collector.readiness.retries,
     },
   } satisfies ComposeServiceBase;
-  return input.telemetry.collector.command.kind === 'image-default'
+  const runtime = input.telemetry.collector.runtime;
+  return runtime.kind === 'image-default'
     ? base
-    : { ...base, command: input.telemetry.collector.command.value };
+    : {
+        ...base,
+        user: runtime.user,
+        command: ['node', `${runtime.targetDirectory}/${runtime.entrypoint}`],
+      };
 }
 
 function participantService(input: {

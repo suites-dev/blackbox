@@ -7,6 +7,7 @@ import type {
 } from '@suites/blackbox-sandbox-internal';
 
 import type { CapsuleManagerBootstrap } from '../protocol.js';
+import type { CapsuleCollectorRuntime } from './collector-runtime.js';
 
 export interface CapsuleTelemetryAuthorization {
   readonly kind: 'bearer-token';
@@ -45,6 +46,7 @@ export function capsuleSandboxTelemetry(input: {
   readonly bootstrap: CapsuleManagerBootstrap;
   readonly plan: CatalogSandboxInput;
   readonly authorization: CapsuleTelemetryAuthorization;
+  readonly collectorRuntime: CapsuleCollectorRuntime;
 }): SandboxTelemetryEnabledInput {
   return {
     kind: 'enabled',
@@ -53,9 +55,8 @@ export function capsuleSandboxTelemetry(input: {
     authorization: input.authorization,
     collector: {
       service: 'blackbox-otel-collector',
-      image: 'blackbox-otel-collector:dev',
       containerPort: 4318,
-      command: { kind: 'image-default' },
+      runtime: input.collectorRuntime,
       environment: {
         BLACKBOX_OTEL_MAX_REQUEST_BYTES: String(16 * 1024 * 1024),
         BLACKBOX_OTEL_SHUTDOWN_TIMEOUT_MS: '10000',

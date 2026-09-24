@@ -4,7 +4,7 @@ import { expect, it } from 'vitest';
 import { runCapsuleManager } from '../../manager.js';
 import { capsuleProgressPath, readCapsuleProgress } from '../../progress/store.js';
 import { readCapsuleRecord } from '../../records.js';
-import { catalogFixture } from './acquisition.fixture.js';
+import { catalogFixture, readyCollectorRuntime } from './acquisition.fixture.js';
 import { requestFixture } from './request.fixture.js';
 
 it('stops an acquired sandbox when progress persistence fails before manager readiness', async () => {
@@ -21,6 +21,7 @@ it('stops an acquired sandbox when progress persistence fails before manager rea
   );
   try {
     await runCapsuleManager(fixture, {
+      collectorRuntime: readyCollectorRuntime,
       catalog: {
         load: () => Promise.resolve(catalogFixture(fixture.projectDirectory)),
         resolve: ({ catalog, systemId }) =>
@@ -78,6 +79,7 @@ it('drains early observations before recording a rejected Compose acquisition', 
   );
   try {
     await runCapsuleManager(fixture, {
+      collectorRuntime: readyCollectorRuntime,
       catalog: {
         load: () => Promise.resolve(catalogFixture(fixture.projectDirectory)),
         resolve: ({ catalog, systemId }) =>
@@ -132,6 +134,7 @@ it('retains both failures in the session record when acquisition and the progres
   try {
     await expect(
       runCapsuleManager(fixture, {
+        collectorRuntime: readyCollectorRuntime,
         catalog: {
           load: () => Promise.resolve(catalogFixture(fixture.projectDirectory)),
           resolve: ({ catalog, systemId }) =>

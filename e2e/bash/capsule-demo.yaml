@@ -3,10 +3,6 @@
 # each step so the presenter can explain what the audience is seeing.
 title: Blackbox Capsule discovery demo
 steps:
-  - id: assets
-    explanation: Build the local packages and validate the canonical catalog.
-    kind: shell
-    command: e2e/bash/capsule-assets.sh
   - id: instrumentation-install
     explanation: Install the standalone Node instrumentation bundle and dependencies.
     kind: cli

@@ -13,6 +13,11 @@ export type {
   CapsuleManagerPorts,
   CapsuleSandboxPort,
 } from './manager/ports.js';
+export type {
+  CapsuleCollectorRuntime,
+  CapsuleCollectorRuntimePort,
+  CapsuleCollectorRuntimeReadiness,
+} from './manager/collector-runtime.js';
 export type { CapsuleConnectionEnvironmentInput } from './connection-environment.js';
 export {
   capsuleActivityPath,

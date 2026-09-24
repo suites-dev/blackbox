@@ -13,6 +13,7 @@ import {
   readCapsuleRecord,
   type CapsuleSessionRecord,
 } from '../../records.js';
+import { readyCollectorRuntime } from './acquisition.fixture.js';
 
 function managerRecord(projectDirectory: string, sessionId: string): CapsuleSessionRecord {
   const admittedAt = new Date().toISOString();
@@ -62,6 +63,7 @@ describe('Capsule manager startup failure', () => {
       );
       await admitCapsuleRecord({ projectDirectory, record });
       await runCapsuleManager(bootstrap, {
+        collectorRuntime: readyCollectorRuntime,
         catalog: {
           load: () => Promise.reject(new Error('catalog unavailable')),
           resolve: () => {

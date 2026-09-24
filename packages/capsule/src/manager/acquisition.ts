@@ -14,6 +14,7 @@ import { CapsuleStageError, emitProgress, runStartStage } from './progress.js';
 import type { CapsuleManagerPorts } from './ports.js';
 import { sandboxProgressBridge } from './sandbox-progress.js';
 import { capsuleSandboxTelemetry, type CapsuleTelemetryAuthorization } from './telemetry.js';
+import type { CapsuleCollectorRuntime } from './collector-runtime.js';
 
 export interface AcquiredCapsuleSandbox {
   readonly sandbox: SandboxHandle;
@@ -102,6 +103,7 @@ interface PlannedSandboxInput {
   readonly entry: CatalogEntry;
   readonly ports: CapsuleManagerPorts;
   readonly authorization: CapsuleTelemetryAuthorization;
+  readonly collectorRuntime: CapsuleCollectorRuntime;
 }
 
 export async function startPlannedSandbox(input: PlannedSandboxInput): Promise<{

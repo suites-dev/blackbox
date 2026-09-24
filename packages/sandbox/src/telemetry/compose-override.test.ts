@@ -23,9 +23,15 @@ async function telemetryFixture(): Promise<{
       authorization: { kind: 'bearer-token', token: 'private-token' },
       collector: {
         service: 'blackbox-collector',
-        image: 'blackbox-collector:local',
         containerPort: 4318,
-        command: { kind: 'image-default' },
+        runtime: {
+          kind: 'mounted-node',
+          image: 'node:test@sha256:runtime',
+          sourceDirectory: directory,
+          targetDirectory: '/blackbox/collector',
+          entrypoint: 'instrumentation.js',
+          user: 'node',
+        },
         environment: { BLACKBOX_OTEL_MAX_REQUEST_BYTES: '1048576' },
         readiness: {
           kind: 'http',
@@ -52,7 +58,11 @@ it('writes a Compose override without retaining the bearer token', async () => {
   const fixture = await telemetryFixture();
   const path = await writeTelemetryComposeOverride(fixture);
   const document = await readFile(path, 'utf8');
-  expect(document).toContain('blackbox-collector:local');
+  expect(document).toContain('node:test@sha256:runtime');
+  expect(document).toContain(`${fixture.directory}:/blackbox/collector:ro`);
+  expect(document).toContain('node');
+  expect(document).toContain('/blackbox/collector/instrumentation.js');
+  expect(document).toContain('"user": "node"');
   expect(document).toContain('127.0.0.1::4318');
   expect(document).toContain('${BLACKBOX_SANDBOX_OTEL_AUTH_TOKEN}');
   expect(document).toContain(`${fixture.directory}/instrumentation.js:/blackbox/instrumentation.js:ro`);

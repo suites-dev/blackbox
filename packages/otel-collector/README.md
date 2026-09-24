@@ -34,4 +34,4 @@ Receiver readiness means only that its socket and durable store are ready. An au
 
 The transport follows the [OTLP/HTTP specification](https://github.com/open-telemetry/opentelemetry-proto/blob/main/docs/specification.md), including the `/v1/traces` convention, JSON protobuf mapping, JSON response media type, gzip support, and bounded request parsing. OTLP JSON trace and span IDs use their specified hexadecimal wire representation.
 
-The runnable entrypoint also requires `BLACKBOX_OTEL_ACTIVATION_PATH`, `BLACKBOX_OTEL_READINESS_PATH`, and `BLACKBOX_OTEL_AUTH_TOKEN`. The production Dockerfile builds the local image `blackbox-otel-collector:dev` from the package directory after `pnpm build`. It prints one readiness JSON line, then drains and records shutdown on `SIGINT` or `SIGTERM`.
+The runnable entrypoint also requires `BLACKBOX_OTEL_ACTIVATION_PATH`, `BLACKBOX_OTEL_READINESS_PATH`, and `BLACKBOX_OTEL_AUTH_TOKEN`. Capsule mounts the packaged `dist` runtime into its pinned Node collector service, so users do not build a collector image. The entrypoint prints one readiness JSON line, then drains and records shutdown on `SIGINT` or `SIGTERM`.

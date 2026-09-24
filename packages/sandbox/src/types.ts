@@ -41,11 +41,8 @@ export interface SandboxTelemetryEnabledInput {
 
 export interface SandboxCollectorInput {
   readonly service: string;
-  readonly image: string;
   readonly containerPort: number;
-  readonly command:
-    | { readonly kind: 'image-default' }
-    | { readonly kind: 'argv'; readonly value: readonly [string, ...string[]] };
+  readonly runtime: SandboxCollectorRuntime;
   readonly environment: Readonly<Record<string, string>>;
   readonly readiness: {
     readonly kind: 'http';
@@ -56,6 +53,17 @@ export interface SandboxCollectorInput {
   };
   readonly drain: { readonly kind: 'signal'; readonly signal: 'SIGTERM' };
 }
+
+export type SandboxCollectorRuntime =
+  | { readonly kind: 'image-default'; readonly image: string }
+  | {
+      readonly kind: 'mounted-node';
+      readonly image: string;
+      readonly sourceDirectory: string;
+      readonly targetDirectory: string;
+      readonly entrypoint: string;
+      readonly user: string;
+    };
 
 export interface SandboxTelemetryMount {
   readonly source: string;

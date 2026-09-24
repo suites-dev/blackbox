@@ -9,7 +9,7 @@ import { runCapsuleManager } from '../../manager.js';
 import { managerRequest } from '../../ipc/client.js';
 import { readCapsuleProgress } from '../../progress/store.js';
 import { readCapsuleRecord } from '../../records.js';
-import { catalogFixture } from './acquisition.fixture.js';
+import { catalogFixture, readyCollectorRuntime } from './acquisition.fixture.js';
 import { requestFixture } from './request.fixture.js';
 
 function startWithEvents(input: { start: SandboxStartInput; sandbox: SandboxHandle }) {
@@ -33,6 +33,16 @@ function startWithEvents(input: { start: SandboxStartInput; sandbox: SandboxHand
     resources: input.sandbox.inspectResources({ kind: 'owned-compose-resources' }),
   });
   return Promise.resolve(input.sandbox);
+}
+
+function expectCollectorRuntime(start: SandboxStartInput): void {
+  expect(start.sandbox.telemetry).toMatchObject({
+    kind: 'enabled',
+    collector: {
+      service: 'blackbox-otel-collector',
+      runtime: { kind: 'image-default', image: 'collector:test' },
+    },
+  });
 }
 
 async function listenForHealth(status: number) {
@@ -96,6 +106,7 @@ it.each([204, 503])(
     try {
       const sandbox = observedSandbox(fixture.manager.sandbox, health.port);
       await runCapsuleManager(fixture, {
+        collectorRuntime: readyCollectorRuntime,
         catalog: {
           load: () => Promise.resolve(catalogFixture(fixture.projectDirectory)),
           resolve: ({ catalog, systemId }) =>
@@ -106,7 +117,10 @@ it.each([204, 503])(
         },
         sandbox: {
           projectName: () => 'test-compose',
-          start: (start) => startWithEvents({ start, sandbox }),
+          start: (start) => {
+            expectCollectorRuntime(start);
+            return startWithEvents({ start, sandbox });
+          },
         },
         now: () => new Date(),
       });
