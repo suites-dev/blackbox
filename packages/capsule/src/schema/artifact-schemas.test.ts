@@ -173,6 +173,7 @@ describe('Capsule operational report schema', () => {
       traceId: 'trace',
       spanId: 'span',
       parentSpanId: null,
+      spanKind: 'client',
       operation: 'GET',
       service: 'api',
       startTimeUnixNano: null,

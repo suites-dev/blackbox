@@ -16,6 +16,7 @@ function found(): Extract<
   const root = {
     traceId,
     spanId,
+    kind: 1,
     name: 'client request',
     startTimeUnixNano: '1000000000',
     endTimeUnixNano: '1100000000',
@@ -25,6 +26,7 @@ function found(): Extract<
   const child = {
     ...root,
     spanId: '3333333333333333',
+    kind: 3,
     parentSpanId: spanId,
     name: 'GET /orders',
     attributes: [
@@ -79,9 +81,11 @@ describe('bounded activity trace projection', () => {
     expect(result.kind).toBe('available');
     if (result.kind !== 'available') {throw new Error('expected available');}
     expect(result.spans).toHaveLength(2);
+    expect(result.spans[0]).toMatchObject({ spanKind: 'internal' });
     expect(result.spans[1]).toMatchObject({
       traceId,
       parentSpanId: spanId,
+      spanKind: 'client',
       service: 'orders-api',
       startTimeUnixNano: '1000000000',
       endTimeUnixNano: '1100000000',

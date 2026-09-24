@@ -522,6 +522,7 @@
                   "traceId",
                   "spanId",
                   "parentSpanId",
+                  "spanKind",
                   "operation",
                   "service",
                   "startTimeUnixNano",
@@ -541,6 +542,16 @@
                     "type": [
                       "string",
                       "null"
+                    ]
+                  },
+                  "spanKind": {
+                    "enum": [
+                      "unspecified",
+                      "internal",
+                      "server",
+                      "client",
+                      "producer",
+                      "consumer"
                     ]
                   },
                   "operation": {

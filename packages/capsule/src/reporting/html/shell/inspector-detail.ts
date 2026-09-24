@@ -1,5 +1,5 @@
 export const capsuleInspectorDetailScript = `
-function inspectSpan(root, span, activityId) {
+function inspectSpan(root, span, activityId, presentation) {
   const aside = root.querySelector('.report-inspector');
   resetInspector(aside);
   const body = aside.querySelector('.inspector-body');
@@ -10,12 +10,14 @@ function inspectSpan(root, span, activityId) {
   add(
     body,
     p('RAW TELEMETRY', 'eyebrow'),
-    n('h3', '', span.operation),
-    p(span.service, 'muted'),
+    n('h3', '', presentation.title),
+    p(presentation.direction, 'muted'),
     close,
   );
   const rows = [
     ['Activity', activityId],
+    ['Original OTEL operation', span.operation],
+    ['Span kind', span.spanKind],
     ['Trace ID', span.traceId],
     ['Span ID', span.spanId],
     ['Parent span ID', span.parentSpanId || 'Not retained'],

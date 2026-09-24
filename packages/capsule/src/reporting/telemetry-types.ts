@@ -3,6 +3,13 @@ export interface CapsuleReportSpan {
   readonly traceId: string;
   readonly spanId: string;
   readonly parentSpanId: string | null;
+  readonly spanKind:
+    | 'unspecified'
+    | 'internal'
+    | 'server'
+    | 'client'
+    | 'producer'
+    | 'consumer';
   readonly operation: string;
   readonly service: string;
   readonly startTimeUnixNano: string | null;

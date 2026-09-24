@@ -98,6 +98,7 @@ function hostileDocument(): CapsuleReportDocument {
             traceId: '11111111111111111111111111111111',
             spanId: '2222222222222222',
             parentSpanId: null,
+            spanKind: 'client',
             operation: hostile,
             service: hostile,
             startTimeUnixNano: null,
@@ -209,6 +210,8 @@ describe('shared mockup presentation', () => {
     expect(html).toContain('What was observed');
     expect(html).toContain("telemetry.spans.length + ' spans'");
     expect(html).toContain("return activity ? ['activity-' + activity.sequence] : open");
+    expect(html).toContain("method + ' ' + path");
+    expect(html).toContain("span.service + ' → '");
     expect(html).not.toContain('raw telemetry was not retained for this exact activity ID');
     expect(html).toContain("createElementNS('http://www.w3.org/2000/svg'");
     expect(html).toContain('Inter,ui-sans-serif,system-ui');

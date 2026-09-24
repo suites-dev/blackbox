@@ -17,6 +17,7 @@ const allowedAttributes = new Set([
   'db.operation',
   'messaging.operation.type',
   'messaging.operation',
+  'messaging.destination.name',
   'rpc.method',
 ]);
 
