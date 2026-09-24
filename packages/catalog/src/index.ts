@@ -22,6 +22,8 @@ export type {
 export type {
   Activation,
   BlackboxConfig,
+  CatalogClient,
+  CatalogClientTarget,
   CatalogEndpointRequest,
   CatalogEntry,
   CatalogEntryKind,
@@ -35,6 +37,8 @@ export type {
   ObservationPolicy,
   Participant,
   Readiness,
+  ResolvedCatalogClient,
+  ResolvedCatalogClientTarget,
 } from './model/catalog-types.js';
 export type {
   CatalogCommandDiagnostic,

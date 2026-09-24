@@ -45,6 +45,15 @@ function referencedPaths(catalog: LoadedCatalog): readonly ReferencedPath[] {
       instancePath: `/activations/${activationId}/ref`,
     });
   }
+  const clients = Object.entries(catalog.config.clients).sort(([left], [right]) =>
+    left.localeCompare(right),
+  );
+  for (const [clientId, client] of clients) {
+    references.push({
+      relativePath: client.ref,
+      instancePath: `/clients/${clientId}/ref`,
+    });
+  }
   return references;
 }
 

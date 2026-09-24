@@ -58,6 +58,30 @@ it('preserves Compose order in an explicit structural sandbox input', () => {
         timeoutMs: 60000,
       },
     ],
+    clients: {
+      http: {
+        id: 'http',
+        ref: '.blackbox/clients/http.mjs',
+        target: {
+          kind: 'entrypoint',
+          participantId: 'api',
+          service: 'api',
+          protocol: 'http',
+          containerPort: 3000,
+        },
+      },
+      postgres: {
+        id: 'postgres',
+        ref: '.blackbox/clients/postgres.mjs',
+        target: {
+          kind: 'participant',
+          participantId: 'database',
+          service: 'postgres',
+          protocol: 'postgresql',
+          containerPort: 5432,
+        },
+      },
+    },
     metadata: {
       kind: 'system',
       isolation: { kind: 'per-test' },

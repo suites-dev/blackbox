@@ -159,6 +159,26 @@ function semanticIssues(config: BlackboxConfig): CatalogValidationIssue[] {
   for (const [activationId, activation] of Object.entries(config.activations)) {
     issues.push(...validateRelativePath(activation.ref, `/activations/${activationId}/ref`));
   }
+  for (const [clientId, client] of Object.entries(config.clients)) {
+    const clientPath = `/clients/${clientId}`;
+    issues.push(...validateRelativePath(client.ref, `${clientPath}/ref`));
+    if (client.target.kind !== 'participant') {
+      continue;
+    }
+    const participantId = client.target.participant;
+    if (
+      !Object.values(config.catalog.entries).some((entry) =>
+        Object.hasOwn(entry.participants, participantId),
+      )
+    ) {
+      issues.push(
+        semanticIssue(
+          `${clientPath}/target/participant`,
+          `does not name a participant in any catalog entry: ${participantId}`,
+        ),
+      );
+    }
+  }
   return issues;
 }
 

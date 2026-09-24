@@ -54,6 +54,18 @@ export function validCatalogDocument(): BlackboxConfig {
         version: 1,
       },
     },
+    clients: {
+      http: { ref: '.blackbox/clients/http.mjs', target: { kind: 'entrypoint' } },
+      postgres: {
+        ref: '.blackbox/clients/postgres.mjs',
+        target: {
+          kind: 'participant',
+          participant: 'database',
+          protocol: 'postgresql',
+          containerPort: 5432,
+        },
+      },
+    },
   };
 }
 
@@ -109,6 +121,18 @@ export function validCatalogSourceDocument() {
         ref: '.blackbox/instrumentation/bootstrap.mjs',
         adapter: 'node-factory',
         version: 1,
+      },
+    },
+    clients: {
+      http: { ref: '.blackbox/clients/http.mjs', target: { kind: 'entrypoint' as const } },
+      postgres: {
+        ref: '.blackbox/clients/postgres.mjs',
+        target: {
+          kind: 'participant' as const,
+          participant: 'database',
+          protocol: 'postgresql',
+          containerPort: 5432,
+        },
       },
     },
   };

@@ -38,16 +38,22 @@ activations:
     ref: .blackbox/instrumentation/bootstrap.mjs
     adapter: node-factory
     version: 1
+clients:
+  http:
+    ref: .blackbox/clients/http.mjs
+    target: { kind: entrypoint }
 `;
 
 async function makeValidProject(): Promise<string> {
   const directory = await mkdtemp(join(tmpdir(), 'blackbox-catalog-command-'));
   await mkdir(join(directory, '.blackbox/compose'), { recursive: true });
   await mkdir(join(directory, '.blackbox/instrumentation'), { recursive: true });
+  await mkdir(join(directory, '.blackbox/clients'), { recursive: true });
   await Promise.all([
     writeFile(join(directory, 'blackbox.config.yaml'), validCatalog, 'utf8'),
     writeFile(join(directory, '.blackbox/compose/orders.yml'), 'services: {}\n', 'utf8'),
     writeFile(join(directory, '.blackbox/instrumentation/bootstrap.mjs'), 'export {};\n', 'utf8'),
+    writeFile(join(directory, '.blackbox/clients/http.mjs'), 'export {};\n', 'utf8'),
   ]);
   return directory;
 }
@@ -71,7 +77,7 @@ it('returns structured invalid-config diagnostics without printing or exiting', 
   const projectDirectory = await mkdtemp(join(tmpdir(), 'blackbox-catalog-invalid-'));
   await writeFile(
     join(projectDirectory, 'blackbox.config.yaml'),
-    'schemaVersion: 1\ncatalog: []\nactivations: {}\n',
+    'schemaVersion: 1\ncatalog: []\nactivations: {}\nclients: {}\n',
     'utf8',
   );
 
@@ -127,9 +133,11 @@ it('classifies an unreadable project location as an operational failure', async 
 it('rejects a valid catalog whose Compose file is missing', async () => {
   const projectDirectory = await mkdtemp(join(tmpdir(), 'blackbox-catalog-reference-'));
   await mkdir(join(projectDirectory, '.blackbox/instrumentation'), { recursive: true });
+  await mkdir(join(projectDirectory, '.blackbox/clients'), { recursive: true });
   await Promise.all([
     writeFile(join(projectDirectory, 'blackbox.config.yaml'), validCatalog, 'utf8'),
     writeFile(join(projectDirectory, '.blackbox/instrumentation/bootstrap.mjs'), 'export {};\n'),
+    writeFile(join(projectDirectory, '.blackbox/clients/http.mjs'), 'export {};\n'),
   ]);
 
   const result = await runCatalogValidate({ projectDirectory });

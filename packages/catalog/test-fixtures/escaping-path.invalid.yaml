@@ -30,3 +30,4 @@ activations:
     ref: ../bootstrap.mjs
     adapter: node-factory
     version: 1
+clients: {}

@@ -4,3 +4,4 @@ catalog:
   default: missing
   entries: {}
 activations: {}
+clients: {}

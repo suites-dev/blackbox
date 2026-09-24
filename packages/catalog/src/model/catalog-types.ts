@@ -11,7 +11,22 @@ export interface BlackboxConfig {
     readonly entries: Readonly<Record<string, CatalogEntry>>;
   };
   readonly activations: Readonly<Record<string, Activation>>;
+  readonly clients: Readonly<Record<string, CatalogClient>>;
 }
+
+export interface CatalogClient {
+  readonly ref: string;
+  readonly target: CatalogClientTarget;
+}
+
+export type CatalogClientTarget =
+  | { readonly kind: 'entrypoint' }
+  | {
+      readonly kind: 'participant';
+      readonly participant: string;
+      readonly protocol: string;
+      readonly containerPort: number;
+    };
 
 export interface CatalogEntry {
   readonly kind: CatalogEntryKind;
@@ -91,6 +106,7 @@ export interface CatalogSandboxInput {
   readonly services: readonly string[];
   readonly endpoints: readonly CatalogEndpointRequest[];
   readonly readiness: readonly CatalogReadinessRequest[];
+  readonly clients: Readonly<Record<string, ResolvedCatalogClient>>;
   readonly metadata: {
     readonly kind: CatalogEntryKind;
     readonly isolation: CatalogIsolation;
@@ -99,6 +115,28 @@ export interface CatalogSandboxInput {
     readonly activations: Readonly<Record<string, Activation>>;
   };
 }
+
+export interface ResolvedCatalogClient {
+  readonly id: string;
+  readonly ref: string;
+  readonly target: ResolvedCatalogClientTarget;
+}
+
+export type ResolvedCatalogClientTarget =
+  | {
+      readonly kind: 'entrypoint';
+      readonly participantId: string;
+      readonly service: string;
+      readonly protocol: string;
+      readonly containerPort: number;
+    }
+  | {
+      readonly kind: 'participant';
+      readonly participantId: string;
+      readonly service: string;
+      readonly protocol: string;
+      readonly containerPort: number;
+    };
 
 export interface CatalogEndpointRequest {
   readonly name: string;
