@@ -5,8 +5,9 @@ import { createReadStream } from 'node:fs';
 import * as fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { capsuleEvidenceRoots, capsuleEvidenceSources, requireCapsuleSuccessEvidence } from './capsule-evidence-sources.mjs';
 
-const SOURCES = ['e2e/.blackbox/runs', 'e2e/test-results'];
+const SOURCES = ['e2e/.blackbox/runs', 'e2e/.blackbox/reports', 'e2e/test-results'];
 
 async function digest(file) {
   const hash = createHash('sha256');
@@ -34,7 +35,7 @@ async function containedPath(root, relative) {
   return target;
 }
 
-async function inventory(root) {
+async function inventory(root, project) {
   const entries = [];
   const sources = [];
   async function visit(relative) {
@@ -56,10 +57,14 @@ async function inventory(root) {
       throw new Error(`Unsupported evidence entry (not followed): ${relative}`);
     }
   }
-  for (const source of SOURCES) {
+  const selectedSources = project === 'capsule' ? await capsuleEvidenceSources(root) : SOURCES;
+  for (const source of selectedSources) {
     await containedPath(root, source);
     try {
-      await fs.lstat(path.join(root, source));
+      const stat = await fs.lstat(path.join(root, source));
+      if (source.startsWith('e2e/.blackbox/tmp/') && !stat.isFile()) {
+        throw new Error(`Capsule runtime receipt must be a regular file: ${source}`);
+      }
     } catch (error) {
       if (error.code !== 'ENOENT') throw error;
       sources.push({ path: source, status: 'missing' });
@@ -76,10 +81,12 @@ export async function retainE2eEvidence({
   outputDir = '.blackbox/tmp/ci-e2e-transport',
   testOutcome = 'not-run',
   tarCommand = 'tar',
+  project = 'legacy-harness',
 } = {}) {
   root = await fs.realpath(root);
   const output = await containedPath(root, outputDir);
-  for (const source of SOURCES) {
+  const protectedSources = project === 'capsule' ? [...capsuleEvidenceRoots, 'e2e/.blackbox/tmp'] : SOURCES;
+  for (const source of protectedSources) {
     const absolute = path.join(root, source);
     if (output === absolute || output.startsWith(`${absolute}${path.sep}`)) {
       throw new Error('Archive output cannot be inside an evidence source');
@@ -90,7 +97,7 @@ export async function retainE2eEvidence({
   await fs.mkdir(output);
   const receipt = {
     schemaVersion: 1,
-    purpose: 'legacy-harness-evidence-transport',
+    purpose: project === 'capsule' ? 'capsule-harness-evidence-transport' : 'legacy-harness-evidence-transport',
     testOutcome,
     productConformance: false,
     productExecutionIds: null,
@@ -103,7 +110,7 @@ export async function retainE2eEvidence({
     error: null,
   };
   try {
-    const before = await inventory(root);
+    const before = await inventory(root, project);
     Object.assign(receipt, before);
     const list = path.join(output, 'archive-inputs.list');
     await fs.writeFile(list, before.entries.map((entry) => `./${entry.path}\0`).join(''));
@@ -133,12 +140,15 @@ export async function retainE2eEvidence({
     );
     if (result.error || result.status !== 0)
       throw new Error('Archive command failed; see archive.log');
-    const after = await inventory(root);
+    const after = await inventory(root, project);
     if (JSON.stringify(before) !== JSON.stringify(after)) {
       throw new Error('Evidence changed during archiving; archive is not a verified snapshot');
     }
     receipt.archive = { path: 'evidence.tar', sha256: await digest(archive) };
-    if (['success', 'failure'].includes(testOutcome)) {
+    if (project === 'capsule' && testOutcome === 'success') {
+      await requireCapsuleSuccessEvidence(root, before.entries);
+    }
+    if (project !== 'capsule' && ['success', 'failure'].includes(testOutcome)) {
       const required = ['e2e/test-results/junit.xml', 'e2e/test-results/results.json'];
       const missing = required.filter(
         (name) =>
@@ -162,7 +172,10 @@ export async function retainE2eEvidence({
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  retainE2eEvidence({ testOutcome: process.env.E2E_TEST_OUTCOME || 'not-run' })
+  retainE2eEvidence({
+    testOutcome: process.env.E2E_TEST_OUTCOME || 'not-run',
+    project: process.env.E2E_PROJECT || 'legacy-harness',
+  })
     .then((receipt) => {
       process.stdout.write(`${JSON.stringify(receipt)}\n`);
       process.exitCode = receipt.status === 'complete' ? 0 : 1;

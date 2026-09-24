@@ -54,9 +54,12 @@ async function waitForStartup(input: {
         state: 'manager-failed',
         revision: record.revision + 1,
         updatedAt: new Date().toISOString(),
-        error: {
-          name: 'CapsuleManagerExit',
-          message: `Capsule manager exited with code ${input.manager.exitCode}`,
+        failure: {
+          kind: 'recorded',
+          error: {
+            name: 'CapsuleManagerExit',
+            message: `Capsule manager exited with code ${input.manager.exitCode}`,
+          },
         },
       } satisfies CapsuleSessionRecord;
       await writeCapsuleRecord({ projectDirectory: input.projectDirectory, record: failed });
@@ -66,7 +69,7 @@ async function waitForStartup(input: {
           kind: 'capsule-start-failed',
           sessionId: input.sessionId,
           stage: 'manager-handshake',
-          cause: failed.error,
+          cause: failed.failure.error,
         },
       });
       return failed;
@@ -114,20 +117,20 @@ function candidateRecord(input: {
     revision: 0,
     admittedAt,
     updatedAt: admittedAt,
-    managerPid: undefined,
+    manager: { kind: 'not-started' },
     socketPath: capsuleSocketPath({
       projectDirectory: input.projectDirectory,
       sessionId: input.identity.sessionId,
     }),
-    entrypoint: undefined,
+    entrypoint: { kind: 'unavailable' },
     containers: [],
     cleanup: { kind: 'not-attempted' },
-    error: undefined,
-    composeProject: undefined,
+    failure: { kind: 'none' },
+    composeProject: { kind: 'unavailable' },
     artifactRoot,
     networks: [],
     volumes: [],
-    readiness: undefined,
+    readiness: { kind: 'unavailable' },
   };
 }
 
@@ -212,32 +215,32 @@ export async function startCapsule(input: CapsuleStartInput): Promise<CapsuleSta
     });
     if (
       started.state !== 'running' ||
-      started.entrypoint === undefined ||
-      started.composeProject === undefined ||
-      started.readiness === undefined
+      started.entrypoint.kind !== 'available' ||
+      started.composeProject.kind !== 'available' ||
+      started.readiness.kind !== 'available'
     ) {
       return {
         kind: 'capsule-operation-failed',
         operation: 'start',
         sessionId,
-        error: started.error ?? {
-          name: 'Error',
-          message: `Capsule startup ended in ${started.state}`,
-        },
+        error:
+          started.failure.kind === 'recorded'
+            ? started.failure.error
+            : { name: 'Error', message: `Capsule startup ended in ${started.state}` },
       };
     }
     return {
       kind: 'capsule-started',
       sessionId,
       system: started.system,
-      title: started.title ?? started.system,
-      composeProject: started.composeProject,
+      title: started.title,
+      composeProject: started.composeProject.value,
       artifactRoot: started.artifactRoot,
-      entrypoint: started.entrypoint,
+      entrypoint: started.entrypoint.value,
       containers: started.containers,
       networks: started.networks,
       volumes: started.volumes,
-      readiness: started.readiness,
+      readiness: started.readiness.value,
     };
   } catch (error) {
     return capsuleFailure({ operation: 'start', sessionId, error });

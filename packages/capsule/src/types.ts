@@ -4,10 +4,26 @@ export interface CapsuleStartInput {
   readonly projectDirectory: string;
   readonly systemId: string;
   readonly title: string;
-  readonly description: string | undefined;
+  readonly description: CapsuleDescription;
   readonly environment: Readonly<Record<string, string>>;
   readonly progress: CapsuleProgressMode;
 }
+
+export type CapsuleDescription =
+  | { readonly kind: 'provided'; readonly value: string }
+  | { readonly kind: 'omitted' };
+
+export type CapsuleAvailability<Value> =
+  | { readonly kind: 'available'; readonly value: Value }
+  | { readonly kind: 'unavailable' };
+
+export type CapsuleManagerOwnership =
+  | { readonly kind: 'not-started' }
+  | { readonly kind: 'started'; readonly pid: number };
+
+export type CapsuleFailureRecord =
+  | { readonly kind: 'none' }
+  | { readonly kind: 'recorded'; readonly error: CapsuleRecordedError };
 
 export type CapsuleProgressMode =
   | { readonly kind: 'silent' }
@@ -67,7 +83,10 @@ export type CapsuleProgressEvent =
     })
   | (CapsuleProgressBase & { readonly kind: 'compose-configured'; readonly projectName: string })
   | (CapsuleProgressBase & { readonly kind: 'acquisition-started'; readonly projectName: string })
-  | (CapsuleProgressBase & { readonly kind: 'acquisition-observation'; readonly observation: CapsuleAcquisitionObservation })
+  | (CapsuleProgressBase & {
+      readonly kind: 'acquisition-observation';
+      readonly observation: CapsuleAcquisitionObservation;
+    })
   | (CapsuleProgressBase & {
       readonly kind: 'container-acquired';
       readonly participant: string;
@@ -197,8 +216,9 @@ export interface CapsuleReportInput {
 
 export interface CapsuleActivityReport {
   readonly sequence: number;
-  readonly target: 'host' | 'participant';
-  readonly participant: string | undefined;
+  readonly target:
+    | { readonly kind: 'host' }
+    | { readonly kind: 'participant'; readonly participant: string };
   readonly argv: readonly string[];
   readonly outcome: CapsuleProcessOutcome;
   readonly startedAt: string;

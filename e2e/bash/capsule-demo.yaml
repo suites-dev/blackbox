@@ -7,6 +7,14 @@ steps:
     explanation: Build the local packages and validate the canonical catalog.
     kind: shell
     command: e2e/bash/capsule-assets.sh
+  - id: instrumentation-install
+    explanation: Install the standalone Node instrumentation bundle and dependencies.
+    kind: cli
+    command: inst install --runtime node
+  - id: instrumentation-repeat
+    explanation: Repeat the same install; an existing installation stays unchanged.
+    kind: cli
+    command: inst install --runtime node
   - id: catalog-validate
     explanation: Ask Blackbox to validate the catalog and every referenced file.
     kind: cli

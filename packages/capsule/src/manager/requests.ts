@@ -52,8 +52,10 @@ async function handleExec(input: {
   const target = input.request.target;
   const activity = {
     sequence: input.manager.activities.length + 1,
-    target: target.kind,
-    participant: target.kind === 'participant' ? target.participant : undefined,
+    target:
+      target.kind === 'participant'
+        ? { kind: 'participant' as const, participant: target.participant }
+        : { kind: 'host' as const },
     argv: [...target.argv],
     outcome,
     startedAt,
@@ -89,7 +91,7 @@ async function handleStop(input: {
       input.bootstrap.projectDirectory,
       transition(input.manager.record, 'stop-failed', {
         cleanup: { kind: 'failed', error: recordedError(error) },
-        error: recordedError(error),
+        failure: { kind: 'recorded', error: recordedError(error) },
       }),
     );
     throw error;

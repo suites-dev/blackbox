@@ -1,5 +1,5 @@
 import { Flags } from '@oclif/core';
-import { StubCommand } from '../stub-command.js';
+import { StubCommand } from '../contract/stub-command.js';
 
 export default class Report extends StubCommand {
   static override description = 'Render a retained report.';

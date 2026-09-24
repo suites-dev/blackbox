@@ -11,6 +11,18 @@ set -Eeuo pipefail
 source "$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)/capsule-test-support.sh"
 
 run_captured_step \
+  'Install the standalone Node instrumentation bundle and its dependencies.' \
+  'blackbox inst install --runtime node' \
+  "$ARTIFACT_ROOT/instrumentation-install.txt" \
+  inst install --runtime node
+
+run_captured_step \
+  'Repeat installation: an already installed bundle is left unchanged.' \
+  'blackbox inst install --runtime node' \
+  "$ARTIFACT_ROOT/instrumentation-repeat.txt" \
+  inst install --runtime node
+
+run_captured_step \
   'Validate the catalog and every referenced Compose input.' \
   'blackbox catalog validate --json' \
   "$ARTIFACT_ROOT/catalog-validate.json" \

@@ -1,5 +1,8 @@
 export type CatalogEntryKind = 'system' | 'subsystem';
-export type CatalogIsolation = 'per-test' | 'per-worker' | 'group';
+export type CatalogIsolation =
+  | { readonly kind: 'per-test' }
+  | { readonly kind: 'per-worker' }
+  | { readonly kind: 'group'; readonly groupName: string };
 
 export interface BlackboxConfig {
   readonly schemaVersion: 1;
@@ -17,7 +20,6 @@ export interface CatalogEntry {
     readonly files: readonly string[];
   };
   readonly isolation: CatalogIsolation;
-  readonly groupName: string | undefined;
   readonly entrypoint: {
     readonly participant: string;
     readonly protocol: string;
@@ -37,8 +39,12 @@ export interface Participant {
   readonly service: string;
   readonly role: 'entrypoint' | 'application' | 'dependency';
   readonly runtime: string;
-  readonly activation: string | undefined;
+  readonly activation: ParticipantActivation;
 }
+
+export type ParticipantActivation =
+  | { readonly kind: 'unconfigured' }
+  | { readonly kind: 'configured'; readonly activationId: string };
 
 export interface Activation {
   readonly ref: string;

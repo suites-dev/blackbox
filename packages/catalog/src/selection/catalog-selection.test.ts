@@ -1,6 +1,6 @@
 import { expect, it } from 'vitest';
 
-import { validCatalogDocument } from '../test-fixtures/catalog-document.js';
+import { validCatalogSourceDocument } from '../test-fixtures/catalog-document.js';
 import {
   resolveCatalogEntry,
   selectCatalogEntry,
@@ -10,7 +10,7 @@ import {
 
 it('lists deterministically and selects an explicit or default entry', () => {
   const config = validateCatalogDocument({
-    document: validCatalogDocument(),
+    document: validCatalogSourceDocument(),
     sourceName: '<test>',
   });
   expect(selectCatalogEntry({ config, selection: { kind: 'default-entry' } }).id).toBe('orders');
@@ -30,7 +30,7 @@ it('lists deterministically and selects an explicit or default entry', () => {
 
 it('preserves Compose order in an explicit structural sandbox input', () => {
   const config = validateCatalogDocument({
-    document: validCatalogDocument(),
+    document: validCatalogSourceDocument(),
     sourceName: '<test>',
   });
   const input = resolveCatalogEntry({
@@ -60,7 +60,7 @@ it('preserves Compose order in an explicit structural sandbox input', () => {
     ],
     metadata: {
       kind: 'system',
-      isolation: 'per-test',
+      isolation: { kind: 'per-test' },
       participants: config.catalog.entries.orders.participants,
       observation: config.catalog.entries.orders.observation,
       activations: { 'node-runtime': config.activations['node-runtime'] },

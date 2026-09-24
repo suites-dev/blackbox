@@ -29,7 +29,9 @@ export async function runCapsuleManager(
     if (record.state !== 'start-failed') {
       await persist(
         bootstrap.projectDirectory,
-        transition(record, 'manager-failed', { error: recordedError(source) }),
+        transition(record, 'manager-failed', {
+          failure: { kind: 'recorded', error: recordedError(source) },
+        }),
       );
     }
   }

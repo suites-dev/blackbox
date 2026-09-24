@@ -15,28 +15,34 @@
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "bin"
   ],
   "scripts": {
+    "prebuild": "rimraf dist",
     "build": "tsc --project tsconfig.build.json",
-    "lint": "eslint src bin",
-    "test": "node --test 'dist/**/*.test.js'"
+    "prepack": "pnpm build",
+    "lint": "eslint src bin scripts",
+    "test": "node scripts/run-tests.mjs"
   },
   "dependencies": {
     "@oclif/core": "^4.14.0",
     "@suites/blackbox-catalog-internal": "workspace:*",
     "@suites/blackbox-capsule-internal": "workspace:*",
+    "@suites/blackbox-inst-runtime-node": "workspace:*",
+    "@suites/blackbox-instrumentation-internal": "workspace:*",
     "@suites/blackbox-report-server-internal": "workspace:*",
     "string-width": "4.2.3"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "rimraf": "catalog:",
+    "typescript": "catalog:"
   },
   "oclif": {
     "bin": "blackbox",
     "dirname": "blackbox",
     "commands": "./dist/commands",
     "topicSeparator": " "
-  },
-  "imports": {
-    "#reporting/*": "./dist/reporting/*.js",
-    "#capsule-output": "./dist/capsule-output.js"
   }
 }

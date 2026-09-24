@@ -26,19 +26,19 @@ function record(input: {
     sessionId: input.sessionId,
     executionId: '00000000-0000-4000-8000-000000000001',
     system: 'orders',
-    title: undefined,
-    description: undefined,
+    title: 'Orders experiment',
+    description: { kind: 'omitted' },
     state: 'stopped',
     revision: 2,
     admittedAt: input.admittedAt,
     updatedAt: input.admittedAt,
-    managerPid: undefined,
+    manager: { kind: 'not-started' },
     socketPath: join(input.projectDirectory, '.blackbox', 's', 'private.sock'),
-    entrypoint: undefined,
+    entrypoint: { kind: 'unavailable' },
     containers: [],
     cleanup: { kind: 'complete' },
-    error: undefined,
-    composeProject: undefined,
+    failure: { kind: 'none' },
+    composeProject: { kind: 'unavailable' },
     artifactRoot: join(
       input.projectDirectory,
       '.blackbox',
@@ -47,7 +47,7 @@ function record(input: {
     ),
     networks: [],
     volumes: [],
-    readiness: undefined,
+    readiness: { kind: 'unavailable' },
   };
 }
 
@@ -69,11 +69,19 @@ describe('Capsule session registry summaries', () => {
     const projectDirectory = await project();
     await admitCapsuleRecord({
       projectDirectory,
-      record: record({ projectDirectory, sessionId: 'quiet-river-ada', admittedAt: '2026-01-01T00:00:00.000Z' }),
+      record: record({
+        projectDirectory,
+        sessionId: 'quiet-river-ada',
+        admittedAt: '2026-01-01T00:00:00.000Z',
+      }),
     });
     await admitCapsuleRecord({
       projectDirectory,
-      record: record({ projectDirectory, sessionId: 'flying-suite-jacob', admittedAt: '2026-02-01T00:00:00.000Z' }),
+      record: record({
+        projectDirectory,
+        sessionId: 'flying-suite-jacob',
+        admittedAt: '2026-02-01T00:00:00.000Z',
+      }),
     });
     const result = await listCapsuleSessions({ projectDirectory });
     expect(result).toMatchObject({
@@ -98,16 +106,34 @@ describe('Capsule session registry failures', () => {
     await mkdir(join(root, 'capsule-rapid-harbor-alex'), { recursive: true });
     await writeFile(
       join(root, 'capsule-rapid-harbor-alex', 'session.json'),
-      JSON.stringify(record({ projectDirectory, sessionId: 'quiet-river-ada', admittedAt: '2026-01-01T00:00:00.000Z' })),
+      JSON.stringify(
+        record({
+          projectDirectory,
+          sessionId: 'quiet-river-ada',
+          admittedAt: '2026-01-01T00:00:00.000Z',
+        }),
+      ),
     );
     await mkdir(join(root, 'unrelated-directory'));
     const result = await listCapsuleSessions({ projectDirectory });
     expect(result).toMatchObject({
       kind: 'capsule-session-registry',
       entries: [
-        { kind: 'capsule-session-corrupt', directoryName: 'capsule-bright-comet-zoe', failure: { kind: 'record-corrupt' } },
-        { kind: 'capsule-session-corrupt', directoryName: 'capsule-calm-river-maya', failure: { kind: 'record-missing' } },
-        { kind: 'capsule-session-corrupt', directoryName: 'capsule-rapid-harbor-alex', failure: { kind: 'identity-mismatch' } },
+        {
+          kind: 'capsule-session-corrupt',
+          directoryName: 'capsule-bright-comet-zoe',
+          failure: { kind: 'record-corrupt' },
+        },
+        {
+          kind: 'capsule-session-corrupt',
+          directoryName: 'capsule-calm-river-maya',
+          failure: { kind: 'record-missing' },
+        },
+        {
+          kind: 'capsule-session-corrupt',
+          directoryName: 'capsule-rapid-harbor-alex',
+          failure: { kind: 'identity-mismatch' },
+        },
       ],
     });
   });

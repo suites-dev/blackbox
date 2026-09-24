@@ -4,7 +4,9 @@
   "private": true,
   "type": "module",
   "description": "Internal local report registry, viewer, and HTTP server.",
-  "files": ["dist", "schema"],
+  "files": [
+    "dist"
+  ],
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
@@ -15,11 +17,14 @@
     }
   },
   "scripts": {
+    "prebuild": "rimraf dist",
     "build": "tsc --project tsconfig.build.json",
+    "prepack": "pnpm build",
     "lint": "eslint .",
     "test": "vitest run --config vitest.config.ts"
   },
   "devDependencies": {
+    "rimraf": "catalog:",
     "@types/node": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"

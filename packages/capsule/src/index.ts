@@ -3,7 +3,7 @@ export { execCapsule, reportCapsule, stopCapsule } from './session/operations.js
 export { projectCapsuleReport } from './reporting/document.js';
 export { serializeCapsuleReportDocument } from './reporting/serialization.js';
 export { renderCapsuleHtml } from './reporting/html.js';
-export { capsuleReportClientView } from './reporting/client-view.js';
+export { capsuleReportClientView } from './reporting/html/client-view.js';
 export { listCapsuleSessions } from './registry/list.js';
 export { capsuleConnectionEnvironment } from './connection-environment.js';
 export { nodeCapsuleManagerPorts } from './manager/ports.js';
@@ -26,12 +26,16 @@ export {
 export type { CapsuleSessionRecord, CapsuleSessionSelector } from './records.js';
 export type {
   CapsuleActivityReport,
+  CapsuleAvailability,
   CapsuleCleanupReport,
   CapsuleContainerDetails,
+  CapsuleDescription,
   CapsuleEntrypoint,
   CapsuleExecInput,
   CapsuleExecResult,
   CapsuleExecTarget,
+  CapsuleFailureRecord,
+  CapsuleManagerOwnership,
   CapsuleOperationFailure,
   CapsuleProcessOutcome,
   CapsuleProgressEvent,
@@ -70,4 +74,8 @@ export type {
 } from './registry/types.js';
 
 export type { CapsuleAcquisitionObservation } from './progress/acquisition.js';
-export { capsuleProgressSchema, capsuleProgressSchemaUrl, type CapsuleProgressDocument } from './progress/schema.js';
+export {
+  capsuleProgressSchema,
+  capsuleProgressSchemaUrl,
+  type CapsuleProgressDocument,
+} from './progress/schema.js';

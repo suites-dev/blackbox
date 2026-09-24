@@ -31,7 +31,7 @@ env:
 
 jobs:
   e2e:
-    name: Harness E2E (testcontainers)
+    name: Capsule E2E (Testcontainers)
     runs-on: [self-hosted, linux, arm64, blackbox]
     timeout-minutes: 45
     steps:
@@ -54,15 +54,16 @@ jobs:
       - name: Validate evidence transport
         id: transport_tests
         run: >-
-          node .github/scripts/ci-evidence.mjs run --lane e2e --project legacy-harness
+          node .github/scripts/ci-evidence.mjs run --lane e2e --project capsule
           --evidence-dir .blackbox/tmp/ci-e2e-commands/transport-tests
           -- node --test .github/scripts/e2e-evidence.test.mjs
+          .github/scripts/capsule-evidence.test.mjs
 
       - name: Install dependencies
         id: install
         timeout-minutes: 15
         run: >-
-          node .github/scripts/ci-evidence.mjs run --lane e2e --project legacy-harness
+          node .github/scripts/ci-evidence.mjs run --lane e2e --project capsule
           --evidence-dir .blackbox/tmp/ci-e2e-commands/install
           -- pnpm install --frozen-lockfile
 
@@ -71,52 +72,49 @@ jobs:
         id: build
         timeout-minutes: 15
         run: >-
-          node .github/scripts/ci-evidence.mjs run --lane e2e --project legacy-harness
+          node .github/scripts/ci-evidence.mjs run --lane e2e --project capsule
           --evidence-dir .blackbox/tmp/ci-e2e-commands/build -- pnpm build
 
-      - name: Validate YAML catalog
-        id: catalog
-        timeout-minutes: 5
+      - name: Typecheck source and tests
+        id: typecheck
+        timeout-minutes: 10
         run: >-
-          node .github/scripts/ci-evidence.mjs run --lane e2e --project legacy-harness
-          --evidence-dir .blackbox/tmp/ci-e2e-commands/catalog
-          -- pnpm --dir e2e blackbox catalog validate --json
+          node .github/scripts/ci-evidence.mjs run --lane e2e --project capsule
+          --evidence-dir .blackbox/tmp/ci-e2e-commands/typecheck -- pnpm typecheck
 
       - name: Run e2e
         id: tests
         timeout-minutes: 20
         run: >-
-          node .github/scripts/ci-evidence.mjs run --lane e2e --project legacy-harness
-          --evidence-dir ci-evidence/e2e/legacy-harness -- pnpm test:e2e
+          node .github/scripts/ci-evidence.mjs run --lane e2e --project capsule
+          --evidence-dir ci-evidence/e2e/capsule -- pnpm test:e2e:capsule
 
       # Preserve hidden files and original colon-containing filenames inside tar.
-      # This remains the informational legacy harness, not product acceptance.
       - name: Archive exact harness output
         id: archive
         if: always()
         env:
           E2E_TEST_OUTCOME: ${{ steps.tests.outcome }}
+          E2E_PROJECT: capsule
         run: node .github/scripts/e2e-evidence.mjs
 
-      - name: Retain harness evidence
+      - name: Retain Capsule evidence
         id: evidence
         if: always()
         uses: ./.github/actions/ci-evidence
         with:
           lane: e2e
-          project: legacy-harness
-          evidence-dir: ci-evidence/e2e/legacy-harness
+          project: capsule
+          evidence-dir: ci-evidence/e2e/capsule
           setup-result: ${{ steps.install.outcome }}
           result: ${{ steps.tests.outcome }}
-          command: pnpm test:e2e
+          command: pnpm test:e2e:capsule
           expected: |
-            log=ci-evidence/e2e/legacy-harness/logs/command.log
+            log=ci-evidence/e2e/capsule/logs/command.log
             archive=.blackbox/tmp/ci-e2e-transport/evidence.tar
             transport=.blackbox/tmp/ci-e2e-transport/transport-receipt.json
             log?=.blackbox/tmp/ci-e2e-transport/archive.log
             logs?=.blackbox/tmp/ci-e2e-commands
-            junit?=e2e/test-results/junit.xml
-            json?=e2e/test-results/results.json
 
       - name: Enforce test and retention outcomes
         if: always()
@@ -124,12 +122,12 @@ jobs:
           TRANSPORT_TEST_OUTCOME: ${{ steps.transport_tests.outcome }}
           INSTALL_OUTCOME: ${{ steps.install.outcome }}
           BUILD_OUTCOME: ${{ steps.build.outcome }}
-          CATALOG_OUTCOME: ${{ steps.catalog.outcome }}
+          TYPECHECK_OUTCOME: ${{ steps.typecheck.outcome }}
           TEST_OUTCOME: ${{ steps.tests.outcome }}
           ARCHIVE_OUTCOME: ${{ steps.archive.outcome }}
           EVIDENCE_OUTCOME: ${{ steps.evidence.outcome }}
         run: |
-          for outcome in "$TRANSPORT_TEST_OUTCOME" "$INSTALL_OUTCOME" "$BUILD_OUTCOME" "$CATALOG_OUTCOME" \
+          for outcome in "$TRANSPORT_TEST_OUTCOME" "$INSTALL_OUTCOME" "$BUILD_OUTCOME" "$TYPECHECK_OUTCOME" \
             "$TEST_OUTCOME" "$ARCHIVE_OUTCOME" "$EVIDENCE_OUTCOME"; do
             [[ "$outcome" == success ]] || exit 1
           done

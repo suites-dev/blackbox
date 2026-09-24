@@ -10,6 +10,7 @@ REPO_ROOT="$(cd -- "$E2E_ROOT/.." && pwd)"
 
 SYSTEM_ID="subscription-system"
 FIXTURE_TOKEN="capsule-e2e-token"
+node "$SCRIPT_DIR/capsule-reset.mjs"
 mkdir -p "$E2E_ROOT/.blackbox/tmp"
 ARTIFACT_ROOT="$(mktemp -d "$E2E_ROOT/.blackbox/tmp/capsule-test.XXXXXX")"
 SESSION_ID=""
@@ -119,7 +120,7 @@ require_command curl
 
 cd "$E2E_ROOT"
 
-if [[ ! -s "$E2E_ROOT/.blackbox/tmp/capsule-assets/catalog-list.json" ]]; then
+if [[ ! -s "$REPO_ROOT/packages/cli/dist/commands/inst/install.js" ]]; then
   echo "capsule-test: run e2e/bash/capsule-assets.sh first" >&2
   exit 1
 fi

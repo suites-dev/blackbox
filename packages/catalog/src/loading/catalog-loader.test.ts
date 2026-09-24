@@ -5,19 +5,18 @@ import { expect, it } from 'vitest';
 import { listCatalogEntries } from '../selection/catalog-selection.js';
 import { loadCatalogFile, parseCatalogYaml } from './catalog-loader.js';
 
-it('loads the current E2E catalog including its YAML anchor and alias', async () => {
+it('loads a package-owned catalog including its YAML anchor and alias', async () => {
   const configFile = fileURLToPath(
-    new URL('../../../../e2e/blackbox.config.yaml', import.meta.url),
+    new URL('../../test-fixtures/anchors.valid.yaml', import.meta.url),
   );
   const loaded = await loadCatalogFile({ configFile });
-  expect(loaded.config.catalog.default).toBe('subscription-system');
-  expect(loaded.config.catalog.entries['payment-mock'].observation).toEqual(
-    loaded.config.catalog.entries['subscription-system'].observation,
+  expect(loaded.config.catalog.default).toBe('api');
+  expect(loaded.config.catalog.entries.worker.observation).toEqual(
+    loaded.config.catalog.entries.api.observation,
   );
   expect(listCatalogEntries({ config: loaded.config }).map(({ id }) => id)).toEqual([
-    'payment-mock',
-    'payment-mock-dist',
-    'subscription-system',
+    'api',
+    'worker',
   ]);
 });
 

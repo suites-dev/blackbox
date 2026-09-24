@@ -1,8 +1,11 @@
 import type {
   CapsuleActivityReport,
+  CapsuleAvailability,
   CapsuleCleanupReport,
   CapsuleContainerDetails,
+  CapsuleDescription,
   CapsuleEntrypoint,
+  CapsuleFailureRecord,
   CapsuleOperationFailure,
   CapsuleProcessOutcome,
   CapsuleProgressEvent,
@@ -25,13 +28,9 @@ export type CapsuleReportLifecycle =
       readonly retainedState: 'start-failed' | 'manager-failed' | 'stop-failed';
     };
 
-export type CapsuleReportAvailability<Value> =
-  | { readonly kind: 'available'; readonly value: Value }
-  | { readonly kind: 'unavailable' };
+export type CapsuleReportAvailability<Value> = CapsuleAvailability<Value>;
 
-export type CapsuleReportFailureRecord =
-  | { readonly kind: 'none' }
-  | { readonly kind: 'recorded'; readonly error: CapsuleRecordedError };
+export type CapsuleReportFailureRecord = CapsuleFailureRecord;
 
 export interface CapsuleReportActivity extends Omit<CapsuleActivityReport, 'argv' | 'outcome'> {
   readonly argv: readonly string[];
@@ -58,7 +57,7 @@ export interface CapsuleReportDocument {
     readonly sessionId: string;
     readonly system: string;
     readonly title: string;
-    readonly description: string | undefined;
+    readonly description: CapsuleDescription;
     readonly retainedState: CapsuleSessionState;
     readonly admittedAt: string;
     readonly updatedAt: string;
@@ -77,7 +76,10 @@ export interface CapsuleReportDocument {
   readonly progress: readonly CapsuleProgressEvent[];
   readonly cleanup: CapsuleCleanupReport;
   readonly failure: CapsuleReportFailureRecord;
-  readonly redactions: { readonly count: number; readonly entries: readonly CapsuleReportRedaction[] };
+  readonly redactions: {
+    readonly count: number;
+    readonly entries: readonly CapsuleReportRedaction[];
+  };
 }
 
 /** Presentation-neutral data safe for a standalone HTML renderer. */

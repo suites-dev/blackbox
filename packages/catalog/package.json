@@ -19,7 +19,9 @@
     "./schema/blackbox-config-v1.json": "./schema/blackbox-config-v1.json"
   },
   "scripts": {
+    "prebuild": "rimraf dist",
     "build": "tsc --project tsconfig.build.json",
+    "prepack": "pnpm build",
     "lint": "eslint .",
     "test": "vitest run --config vitest.config.ts"
   },
@@ -28,6 +30,7 @@
     "yaml": "2.8.3"
   },
   "devDependencies": {
+    "rimraf": "catalog:",
     "@types/node": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"

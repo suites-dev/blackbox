@@ -110,7 +110,7 @@ export async function prepareManager(
   });
   record = await persist(
     bootstrap.projectDirectory,
-    transition(record, 'sandbox-starting', { managerPid: process.pid }),
+    transition(record, 'sandbox-starting', { manager: { kind: 'started', pid: process.pid } }),
   );
   let sandbox: SandboxHandle | undefined;
   try {
@@ -121,12 +121,12 @@ export async function prepareManager(
     record = await persist(
       bootstrap.projectDirectory,
       transition(record, 'running', {
-        entrypoint: acquired.entrypoint,
+        entrypoint: { kind: 'available', value: acquired.entrypoint },
         containers: acquired.containers,
-        composeProject: sandbox.projectName,
+        composeProject: { kind: 'available', value: sandbox.projectName },
         networks: acquired.networks,
         volumes: acquired.volumes,
-        readiness: acquired.readiness,
+        readiness: { kind: 'available', value: acquired.readiness },
       }),
     );
     await emitProgress(bootstrap, {
@@ -148,7 +148,10 @@ export async function prepareManager(
     const cleanup = await cleanupFailedSandbox(sandbox);
     await persist(
       bootstrap.projectDirectory,
-      transition(record, 'start-failed', { error: recordedError(error), cleanup }),
+      transition(record, 'start-failed', {
+        failure: { kind: 'recorded', error: recordedError(error) },
+        cleanup,
+      }),
     );
     server.close();
     await unlink(record.socketPath).catch(() => undefined);

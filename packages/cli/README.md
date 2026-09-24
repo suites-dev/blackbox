@@ -8,6 +8,48 @@ reports are available now. Playwright and assurance routes remain fail-closed
 until their phase backends exist. A command that has no backend exits with code
 `3`; it never reports a fabricated success or artifact.
 
+Install Node.js auto-instrumentation into the current project with:
+
+```text
+blackbox inst install --runtime node
+```
+
+The command writes `.blackbox/instrumentation/package.json` and
+`.blackbox/instrumentation/instrumentation.js`, then installs the pinned
+OpenTelemetry dependencies into that same directory. The path is intentionally
+`instrumentation` (singular, correctly spelled). The generated bootstrap uses
+standard OpenTelemetry SDK environment variables and has no dependency on a
+Blackbox collector or HTTP server.
+
+Run CommonJS applications with the bootstrap preloaded:
+
+```text
+OTEL_SERVICE_NAME=my-service \
+  node --require ./.blackbox/instrumentation/instrumentation.js app.cjs
+```
+
+For ES modules, OpenTelemetry currently also requires its loader hook:
+
+```text
+OTEL_SERVICE_NAME=my-service \
+  node \
+  --experimental-loader=./.blackbox/instrumentation/node_modules/@opentelemetry/instrumentation/hook.mjs \
+  --import ./.blackbox/instrumentation/instrumentation.js \
+  app.mjs
+```
+
+Configure the exporter with standard variables such as
+`OTEL_TRACES_EXPORTER`, `OTEL_EXPORTER_OTLP_ENDPOINT`, and
+`OTEL_EXPORTER_OTLP_PROTOCOL`. Installation alone does not load the bootstrap
+or prove that an exporter is receiving spans.
+
+Repeated installation is idempotent: current files keep their contents and
+modification times, and current dependencies do not invoke npm again. A partial
+installation is completed when all existing managed files match the templates.
+If either managed file has been edited, the command reports the conflicting
+path and leaves it untouched. Java and Python are not supported by this command
+yet and fail explicitly.
+
 Capsule reports have two explicit actions:
 
 ```text

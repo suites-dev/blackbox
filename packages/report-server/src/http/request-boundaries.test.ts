@@ -5,24 +5,46 @@ import { fixtureProvider } from '../test-fixtures/provider.js';
 import type { ReportServer } from '../model/server.js';
 
 const servers: ReportServer[] = [];
-afterEach(async () => { await Promise.all(servers.splice(0).map(server => server.close())); });
+
+function requestHeaders(headers: Record<string, string>): Record<string, string> {
+  return headers;
+}
+
+afterEach(async () => {
+  await Promise.all(servers.splice(0).map((server) => server.close()));
+});
 
 async function setup() {
   const fixture = fixtureProvider();
-  const server = await startReportServer({ kind: 'start-report-server', port: 0,
-    selection: { kind: 'registry' }, providers: [fixture.provider] });
+  const server = await startReportServer({
+    kind: 'start-report-server',
+    port: 0,
+    selection: { kind: 'registry' },
+    providers: [fixture.provider],
+  });
   servers.push(server);
   return { ...fixture, server };
 }
 
 function rawRequest(input: { port: number; path: string; headers: Record<string, string> }) {
-  return new Promise<{ status: number | undefined; body: string }>((resolve, reject) => {
-    const outgoing = request({ hostname: '127.0.0.1', port: input.port, path: input.path, headers: input.headers }, response => {
-      let body = '';
-      response.setEncoding('utf8');
-      response.on('data', (chunk: string) => { body += chunk; });
-      response.on('end', () => { resolve({ status: response.statusCode, body }); });
-    });
+  return new Promise<{ status: number; body: string }>((resolve, reject) => {
+    const outgoing = request(
+      { hostname: '127.0.0.1', port: input.port, path: input.path, headers: input.headers },
+      (response) => {
+        let body = '';
+        response.setEncoding('utf8');
+        response.on('data', (chunk: string) => {
+          body += chunk;
+        });
+        response.on('end', () => {
+          if (response.statusCode === undefined) {
+            reject(new Error('HTTP response ended without a status code'));
+            return;
+          }
+          resolve({ status: response.statusCode, body });
+        });
+      },
+    );
     outgoing.on('error', reject);
     outgoing.end();
   });
@@ -30,10 +52,18 @@ function rawRequest(input: { port: number; path: string; headers: Record<string,
 
 test('raw traversal, malformed encoding, and invalid request targets never invoke providers', async () => {
   const { server, calls } = await setup();
-  const paths = ['//api/reports', 'http://attacker.example/api/reports', '/api//reports',
-    '/api/reports/capsule/..', '/api/reports/capsule/%2e%2e', '/api/reports/capsule/.',
-    '/api/reports/capsule/%', '/api/reports/capsule/%2fsecret', '/api/reports/capsule/exact-one/',
-    `/api/reports/capsule/${'a'.repeat(201)}`];
+  const paths = [
+    '//api/reports',
+    'http://attacker.example/api/reports',
+    '/api//reports',
+    '/api/reports/capsule/..',
+    '/api/reports/capsule/%2e%2e',
+    '/api/reports/capsule/.',
+    '/api/reports/capsule/%',
+    '/api/reports/capsule/%2fsecret',
+    '/api/reports/capsule/exact-one/',
+    `/api/reports/capsule/${'a'.repeat(201)}`,
+  ];
   for (const path of paths) {
     const result = await rawRequest({ port: server.port, path, headers: {} });
     expect(result.status, path).toBe(400);
@@ -44,9 +74,15 @@ test('raw traversal, malformed encoding, and invalid request targets never invok
 
 test('unknown route shapes do not fall through to loading a report', async () => {
   const { server, calls } = await setup();
-  for (const path of ['/elsewhere', '/api/other', '/reports', '/reports/capsule',
-    '/reports/capsule/exact-one/extra', '/api/reports/capsule/exact-one/extra',
-    '/api/reports/capsule/exact-one/artifacts']) {
+  for (const path of [
+    '/elsewhere',
+    '/api/other',
+    '/reports',
+    '/reports/capsule',
+    '/reports/capsule/exact-one/extra',
+    '/api/reports/capsule/exact-one/extra',
+    '/api/reports/capsule/exact-one/artifacts',
+  ]) {
     expect((await rawRequest({ port: server.port, path, headers: {} })).status, path).toBe(404);
   }
   expect(calls).toEqual([]);
@@ -55,9 +91,17 @@ test('unknown route shapes do not fall through to loading a report', async () =>
 test('requires exact local Host and Origin and accepts its own origin', async () => {
   const { server, calls } = await setup();
   const origin = new URL(server.url).origin;
-  for (const headers of [{ host: `localhost:${server.port}` }, { host: '127.0.0.1:1' },
-    { origin: 'null' }, { origin: `${origin}/` }, { origin: origin.replace('http:', 'https:') }]) {
-    expect((await rawRequest({ port: server.port, path: '/api/reports', headers })).status).toBe(403);
+  const rejectedHeaders = [
+    requestHeaders({ host: `localhost:${server.port}` }),
+    requestHeaders({ host: '127.0.0.1:1' }),
+    requestHeaders({ origin: 'null' }),
+    requestHeaders({ origin: `${origin}/` }),
+    requestHeaders({ origin: origin.replace('http:', 'https:') }),
+  ];
+  for (const headers of rejectedHeaders) {
+    expect((await rawRequest({ port: server.port, path: '/api/reports', headers })).status).toBe(
+      403,
+    );
   }
   expect(calls).toEqual([]);
   const allowed = await fetch(`${origin}/api/reports`, { headers: { origin } });
@@ -79,7 +123,13 @@ test('HEAD retains success and failure status and headers without exposing respo
     expect(result.headers.get('x-content-type-options')).toBe('nosniff');
     expect(await result.text()).toBe('');
   }
-  expect(calls).toEqual(['load:exact-one', 'render', 'load:missing', 'load:corrupt', 'artifact:exact-one:secrets.json']);
+  expect(calls).toEqual([
+    'load:exact-one',
+    'render',
+    'load:missing',
+    'load:corrupt',
+    'artifact:exact-one:secrets.json',
+  ]);
 });
 
 test('rejects each write verb without calling any provider', async () => {

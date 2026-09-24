@@ -17,9 +17,9 @@ export function resolveCatalogEntry(input: ResolveCatalogEntryInput): CatalogSan
     protocol: entry.entrypoint.protocol,
   };
   const activationIds = new Set(
-    Object.values(entry.participants)
-      .map((participant) => participant.activation)
-      .filter((activation): activation is string => activation !== undefined),
+    Object.values(entry.participants).flatMap((participant) =>
+      participant.activation.kind === 'configured' ? [participant.activation.activationId] : [],
+    ),
   );
   const activations = Object.fromEntries(
     [...activationIds]

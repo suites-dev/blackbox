@@ -102,7 +102,8 @@ interface PlannedSandboxInput {
 }
 
 export async function startPlannedSandbox(input: PlannedSandboxInput): Promise<{
-  readonly sandbox: SandboxHandle; readonly flushProgress: () => Promise<void>;
+  readonly sandbox: SandboxHandle;
+  readonly flushProgress: () => Promise<void>;
 }> {
   const projectName = input.ports.sandbox.projectName({ sandboxId: input.bootstrap.executionId });
   await emitProgress(input.bootstrap, {
@@ -140,10 +141,14 @@ export async function startPlannedSandbox(input: PlannedSandboxInput): Promise<{
     }),
   );
   let sandbox: SandboxHandle;
-  try { sandbox = await operation; }
-  catch (error) {
-    try { await progress.flush(); }
-    catch (persistenceError) { throw combinedStartFailure({ error, persistenceError }); }
+  try {
+    sandbox = await operation;
+  } catch (error) {
+    try {
+      await progress.flush();
+    } catch (persistenceError) {
+      throw combinedStartFailure({ error, persistenceError });
+    }
     throw error;
   }
   return { sandbox, flushProgress: () => runStartStage('persistence', progress.flush) };
@@ -166,11 +171,17 @@ export async function completePlannedSandbox(
   return { sandbox, entrypoint: capsuleEntrypoint, containers, networks, volumes, readiness };
 }
 
-function combinedStartFailure(input: { readonly error: unknown; readonly persistenceError: unknown }): CapsuleStageError {
+function combinedStartFailure(input: {
+  readonly error: unknown;
+  readonly persistenceError: unknown;
+}): CapsuleStageError {
   const acquisition = recordedError(input.error);
   const persistence = recordedError(input.persistenceError);
-  return new CapsuleStageError('persistence', new AggregateError(
-    [input.error, input.persistenceError],
-    `Acquisition failed: ${acquisition.message}; progress persistence failed: ${persistence.message}`,
-  ));
+  return new CapsuleStageError(
+    'persistence',
+    new AggregateError(
+      [input.error, input.persistenceError],
+      `Acquisition failed: ${acquisition.message}; progress persistence failed: ${persistence.message}`,
+    ),
+  );
 }

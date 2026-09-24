@@ -17,15 +17,18 @@
     }
   },
   "scripts": {
+    "prebuild": "rimraf dist",
     "build": "tsc --project tsconfig.build.json",
+    "prepack": "pnpm build",
     "lint": "eslint .",
     "test": "vitest run --config vitest.config.ts",
-    "test:docker": "BLACKBOX_SANDBOX_DOCKER_TEST=1 vitest run --config vitest.config.ts src/acquisition/concurrency.docker.test.ts"
+    "test:docker": "BLACKBOX_SANDBOX_DOCKER_TEST=1 vitest run --config vitest.config.ts src/acquisition/docker-proof"
   },
   "dependencies": {
     "testcontainers": "catalog:"
   },
   "devDependencies": {
+    "rimraf": "catalog:",
     "@types/node": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"

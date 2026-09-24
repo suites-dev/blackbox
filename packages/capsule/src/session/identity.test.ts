@@ -28,7 +28,8 @@ describe('Capsule identity reservation', () => {
     const start = {
       projectDirectory,
       systemId: 'orders',
-      description: undefined,
+      title: 'Orders collision test',
+      description: { kind: 'omitted' },
       environment: {},
       progress: { kind: 'silent' },
     } as const;

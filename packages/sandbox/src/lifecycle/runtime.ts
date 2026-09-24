@@ -48,13 +48,22 @@ export class SandboxRuntime {
         environment: input.environment,
         serviceSelection: input.serviceSelection,
         startupTimeoutMs: input.startupTimeoutMs,
-        observation: request.progress.kind === 'silent' ? { kind: 'silent' } : {
-          kind: 'events',
-          emit: (observation) => { emitProgress({ mode: request.progress, event: {
-            kind: 'acquisition-observation', observation,
-            ...progressCoordinates({ source: record, now: this.dependencies.now }),
-          } }); },
-        },
+        observation:
+          request.progress.kind === 'silent'
+            ? { kind: 'silent' }
+            : {
+                kind: 'events',
+                emit: (observation) => {
+                  emitProgress({
+                    mode: request.progress,
+                    event: {
+                      kind: 'acquisition-observation',
+                      observation,
+                      ...progressCoordinates({ source: record, now: this.dependencies.now }),
+                    },
+                  });
+                },
+              },
       });
     } catch (cause) {
       return failSandboxStart({

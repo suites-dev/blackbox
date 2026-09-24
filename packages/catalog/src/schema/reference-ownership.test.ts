@@ -1,12 +1,12 @@
 import { expect, it } from 'vitest';
 
 import { CatalogValidationError, validateCatalogDocument } from '../index.js';
-import { validCatalogDocument } from '../test-fixtures/catalog-document.js';
+import { validCatalogSourceDocument } from '../test-fixtures/catalog-document.js';
 
 it.each(['default', 'participant', 'activation'] as const)(
   'rejects inherited object properties as a catalog %s reference',
   (reference) => {
-    const base = validCatalogDocument();
+    const base = validCatalogSourceDocument();
     const orders = base.catalog.entries.orders;
     const document = {
       ...base,

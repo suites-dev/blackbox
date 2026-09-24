@@ -62,6 +62,7 @@ begin
   puts "#{blue}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━#{reset}"
   puts "#{cyan}[blackbox]#{reset} #{yellow}#{story.fetch('title')}#{reset}"
   puts "#{dim}Storyboard: #{story_path}#{reset}"
+  system('node', File.join(__dir__, 'capsule-reset.mjs')) || abort('Demo reset failed')
 
   story.fetch('steps').each_with_index do |step, index|
     kind = step.fetch('kind')

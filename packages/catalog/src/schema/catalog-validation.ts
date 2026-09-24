@@ -3,6 +3,7 @@ import { isAbsolute, posix, resolve, sep, win32 } from 'node:path';
 import { Ajv2020, type ErrorObject, type ValidateFunction } from 'ajv/dist/2020.js';
 
 import { catalogSchema } from './blackbox-schema.js';
+import { decodeCatalogConfig, type SchemaBlackboxConfig } from './catalog-decoder.js';
 import type {
   BlackboxConfig,
   CatalogValidationIssue,
@@ -13,7 +14,8 @@ const ajv = new Ajv2020({ allErrors: true, strict: true });
 if (!ajv.validateSchema(catalogSchema)) {
   throw new Error(`Invalid bundled Blackbox catalog schema: ${ajv.errorsText(ajv.errors)}`);
 }
-const validateSchema: ValidateFunction = ajv.compile(catalogSchema);
+const validateSchema: ValidateFunction<SchemaBlackboxConfig> =
+  ajv.compile<SchemaBlackboxConfig>(catalogSchema);
 
 export class CatalogValidationError extends Error {
   readonly sourceName: string;
@@ -127,11 +129,14 @@ function semanticIssues(config: BlackboxConfig): CatalogValidationIssue[] {
     }
 
     for (const [participantId, participant] of Object.entries(entry.participants)) {
-      if (participant.activation !== undefined && !Object.hasOwn(config.activations, participant.activation)) {
+      if (
+        participant.activation.kind === 'configured' &&
+        !Object.hasOwn(config.activations, participant.activation.activationId)
+      ) {
         issues.push(
           semanticIssue(
             `${entryPath}/participants/${participantId}/activation`,
-            `does not name an activation: ${participant.activation}`,
+            `does not name an activation: ${participant.activation.activationId}`,
           ),
         );
       }
@@ -170,7 +175,7 @@ export function validateCatalogDocument(input: ValidateCatalogDocumentInput): Bl
       issues: schemaIssues(validateSchema.errors),
     });
   }
-  const config = document as BlackboxConfig;
+  const config = decodeCatalogConfig(document);
   const issues = semanticIssues(config);
   if (issues.length > 0) {
     throw new CatalogValidationError({ sourceName, issues });

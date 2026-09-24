@@ -12,7 +12,10 @@ export interface InteractiveRendererInput {
 export class InteractiveProgressRenderer {
   private readonly block: TerminalBlock;
   private readonly view = new AcquisitionView();
-  private timer: NodeJS.Timeout | undefined;
+  private timer: { readonly kind: 'idle' } | { readonly kind: 'running'; handle: NodeJS.Timeout } =
+    {
+      kind: 'idle',
+    };
   private frame = 0;
   private finished = false;
   private received = false;
@@ -23,23 +26,47 @@ export class InteractiveProgressRenderer {
   }
 
   sink(event: CapsuleProgressEvent): void {
-    if (this.finished) { return; }
+    if (this.finished) {
+      return;
+    }
     this.received = true;
     this.view.update(event);
     this.draw();
-    if (this.view.complete) { this.finish(); return; }
-    if (this.timer === undefined) { this.timer = setInterval(() => { this.draw(); }, 100); this.timer.unref(); }
+    if (this.view.complete) {
+      this.finish();
+      return;
+    }
+    if (this.timer.kind === 'idle') {
+      const handle = setInterval(() => {
+        this.draw();
+      }, 100);
+      handle.unref();
+      this.timer = { kind: 'running', handle };
+    }
   }
 
   finish(): void {
-    if (this.finished) { return; }
-    if (this.timer !== undefined) { clearInterval(this.timer); this.timer = undefined; }
-    if (this.received && !this.view.complete) { this.view.interrupt(); this.draw(); }
+    if (this.finished) {
+      return;
+    }
+    if (this.timer.kind === 'running') {
+      clearInterval(this.timer.handle);
+      this.timer = { kind: 'idle' };
+    }
+    if (this.received && !this.view.complete) {
+      this.view.interrupt();
+      this.draw();
+    }
     this.block.finish();
     this.finished = true;
   }
 
   private draw(): void {
-    this.block.render({ lines: this.view.lines({ frame: this.frame++, elapsedMs: Math.max(0, this.input.now() - this.started) }) });
+    this.block.render({
+      lines: this.view.lines({
+        frame: this.frame++,
+        elapsedMs: Math.max(0, this.input.now() - this.started),
+      }),
+    });
   }
 }

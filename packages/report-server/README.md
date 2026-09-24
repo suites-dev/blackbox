@@ -38,15 +38,15 @@ Connection status refers to the viewer's requests, not the execution's liveness.
 export can call the same renderer directly. A provider may generate a projection on
 demand; the server does not persist or reinterpret it.
 
-| Route | Result |
-| --- | --- |
-| `/` | Registry browser shell |
-| `/api/server` | Versioned identity for a scoped viewer; no project filesystem path |
-| `/api/reports` | Registry across injected providers |
-| `/api/reports/:type` | Registry for one provider |
-| `/api/reports/:type/:id` | Exact report document envelope |
-| `/api/reports/:type/:id/artifacts/:artifact` | Exact allowlisted artifact envelope |
-| `/reports/:type/:id` | Provider-rendered report HTML |
+| Route                                        | Result                                                             |
+| -------------------------------------------- | ------------------------------------------------------------------ |
+| `/`                                          | Registry browser shell                                             |
+| `/api/server`                                | Versioned identity for a scoped viewer; no project filesystem path |
+| `/api/reports`                               | Registry across injected providers                                 |
+| `/api/reports/:type`                         | Registry for one provider                                          |
+| `/api/reports/:type/:id`                     | Exact report document envelope                                     |
+| `/api/reports/:type/:id/artifacts/:artifact` | Exact allowlisted artifact envelope                                |
+| `/reports/:type/:id`                         | Provider-rendered report HTML                                      |
 
 Only GET and HEAD are supported. Registry failures remain visible alongside
 readable providers. Missing records, unavailable artifacts, and provider failures

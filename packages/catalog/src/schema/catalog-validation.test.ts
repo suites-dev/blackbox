@@ -1,6 +1,6 @@
 import { expect, it } from 'vitest';
 
-import { validCatalogDocument } from '../test-fixtures/catalog-document.js';
+import { validCatalogSourceDocument } from '../test-fixtures/catalog-document.js';
 import {
   CatalogValidationError,
   validateBundledCatalogSchema,
@@ -12,7 +12,7 @@ it('self-validates the bundled Draft 2020-12 schema', () => {
 });
 
 it('reports schema failures with the source name and instance path', () => {
-  const base = validCatalogDocument();
+  const base = validCatalogSourceDocument();
   const document = {
     ...base,
     catalog: { ...base.catalog, entries: { orders: { unexpected: true } } },
@@ -23,7 +23,7 @@ it('reports schema failures with the source name and instance path', () => {
 });
 
 it('rejects unresolved references and project-root escapes', () => {
-  const base = validCatalogDocument();
+  const base = validCatalogSourceDocument();
   const orders = base.catalog.entries.orders;
   const document = {
     ...base,

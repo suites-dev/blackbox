@@ -19,7 +19,9 @@
     "./schema/capsule-progress-v1.json": "./schema/capsule-progress-v1.json"
   },
   "scripts": {
+    "prebuild": "rimraf dist",
     "build": "tsc --project tsconfig.build.json",
+    "prepack": "pnpm build",
     "lint": "eslint .",
     "test": "vitest run --config vitest.config.ts"
   },
@@ -29,6 +31,7 @@
     "ajv": "8.18.0"
   },
   "devDependencies": {
+    "rimraf": "catalog:",
     "@types/node": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"

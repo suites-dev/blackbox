@@ -7,11 +7,11 @@
   "author": "Suites",
   "description": "Monorepo for Suites Blackbox.",
   "scripts": {
-    "build": "pnpm --recursive --if-present run build",
-    "test": "pnpm run build && pnpm --recursive --if-present run test",
-    "lint": "eslint packages --cache",
+    "build": "pnpm --recursive run build",
+    "test": "pnpm run build && pnpm --recursive run test",
+    "lint": "node scripts/check-source-layout.mjs && eslint packages --cache",
     "lint:fix": "eslint packages --cache --fix",
-    "typecheck": "pnpm run build",
+    "typecheck": "tsc --project tsconfig.json --noEmit",
     "format": "prettier --write \"packages/**/*.{ts,tsx,js,jsx,json,md,yaml,yml}\" package.json pnpm-workspace.yaml",
     "prepare": "husky"
   },

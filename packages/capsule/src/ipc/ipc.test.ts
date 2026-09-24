@@ -31,9 +31,15 @@ async function socketServer(handler: (socket: Socket) => void) {
 
 afterEach(async () => {
   for (const resource of resources.splice(0)) {
-    for (const socket of resource.sockets) { socket.destroy(); }
+    for (const socket of resource.sockets) {
+      socket.destroy();
+    }
     if (resource.server.listening) {
-      await new Promise<void>((resolve) => resource.server.close(() => { resolve(); }));
+      await new Promise<void>((resolve) =>
+        resource.server.close(() => {
+          resolve();
+        }),
+      );
     }
     await rm(resource.directory, { recursive: true, force: true });
   }
@@ -78,7 +84,9 @@ it.each([
   ['oversized frame', 'x'.repeat(1_048_577), /exceeds 1 MiB/u],
 ])('rejects a %s request on the server boundary', async (_label, bytes, message) => {
   let complete: (result: unknown) => void = () => undefined;
-  const receive = new Promise<unknown>((resolve) => { complete = resolve; });
+  const receive = new Promise<unknown>((resolve) => {
+    complete = resolve;
+  });
   const socketPath = await socketServer((socket) => {
     void readRequest(socket).then(complete, complete);
   });

@@ -1,5 +1,5 @@
 import { Flags } from '@oclif/core';
-import { StubCommand } from '../stub-command.js';
+import { StubCommand } from '../contract/stub-command.js';
 
 export default class History extends StubCommand {
   static override description = 'List exact execution and Capsule records.';

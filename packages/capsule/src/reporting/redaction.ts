@@ -6,16 +6,21 @@ import type {
 import type { CapsuleReportActivity, CapsuleReportRedaction } from './types.js';
 
 const MASK = '[REDACTED]';
-const sensitiveName = /(?:authorization|proxy-authorization|cookie|set-cookie|token|secret|password|passwd|api[-_]?key)/iu;
+const sensitiveName =
+  /(?:authorization|proxy-authorization|cookie|set-cookie|token|secret|password|passwd|api[-_]?key)/iu;
 const header = /^(authorization|proxy-authorization|cookie|set-cookie|x-api-key|api-key)\s*:/iu;
 const assignment = /^([A-Za-z_][A-Za-z0-9_]*)=(.*)$/u;
-const socketPath = /(?:\/[^\s"']+)?\.blackbox\/s\/[^\s"']+\.sock/gu;
+const socketPath = /(?:\/[^\s"']+)?\.blackbox\/(?:s|tmp)\/[^\s"']+\.sock/gu;
 
 interface RedactionContext {
   readonly entries: CapsuleReportRedaction[];
 }
 
-function note(context: RedactionContext, kind: CapsuleReportRedaction['kind'], location: string): void {
+function note(
+  context: RedactionContext,
+  kind: CapsuleReportRedaction['kind'],
+  location: string,
+): void {
   context.entries.push({ kind, location });
 }
 
@@ -49,21 +54,14 @@ export function redactText(input: string, location: string, context: RedactionCo
       return `${prefix}${MASK}`;
     },
   );
-  value = value.replace(
-    /\b([A-Za-z_][A-Za-z0-9_]*=)[^\s,;]+/gu,
-    (_match, prefix: string) => {
-      note(context, 'environment-value', location);
-      return `${prefix}${MASK}`;
-    },
-  );
+  value = value.replace(/\b([A-Za-z_][A-Za-z0-9_]*=)[^\s,;]+/gu, (_match, prefix: string) => {
+    note(context, 'environment-value', location);
+    return `${prefix}${MASK}`;
+  });
   return value;
 }
 
-function redactArgument(
-  argument: string,
-  location: string,
-  context: RedactionContext,
-): string {
+function redactArgument(argument: string, location: string, context: RedactionContext): string {
   const env = assignment.exec(argument);
   if (env !== null) {
     note(context, 'environment-value', location);
@@ -155,8 +153,13 @@ export function createRedactionContext(): RedactionContext {
 }
 
 export function redactStandaloneError(error: unknown): CapsuleRecordedError {
-  const recorded = error instanceof Error
-    ? { name: error.name, message: error.message }
-    : { name: 'Error', message: String(error) };
-  return redactError({ error: recorded, location: 'artifact.error', context: createRedactionContext() });
+  const recorded =
+    error instanceof Error
+      ? { name: error.name, message: error.message }
+      : { name: 'Error', message: String(error) };
+  return redactError({
+    error: recorded,
+    location: 'artifact.error',
+    context: createRedactionContext(),
+  });
 }

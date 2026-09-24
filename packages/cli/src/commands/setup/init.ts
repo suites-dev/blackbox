@@ -1,5 +1,5 @@
 import { Flags } from '@oclif/core';
-import { StubCommand } from '../../stub-command.js';
+import { StubCommand } from '../../contract/stub-command.js';
 
 export default class SetupInit extends StubCommand {
   static override description = 'Initialize project setup and retain diagnostics.';

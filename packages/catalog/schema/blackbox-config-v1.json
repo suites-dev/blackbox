@@ -130,7 +130,13 @@
     "observation": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["policyId", "boundaries", "requiredBoundaries", "terminalObservationWindowMs", "redaction"],
+      "required": [
+        "policyId",
+        "boundaries",
+        "requiredBoundaries",
+        "terminalObservationWindowMs",
+        "redaction"
+      ],
       "properties": {
         "policyId": { "$ref": "#/$defs/identifier" },
         "boundaries": {

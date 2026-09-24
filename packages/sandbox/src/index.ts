@@ -72,4 +72,8 @@ export type {
   StartedComposeSandbox,
 } from './types.js';
 
-export type { ComposeAcquisitionObservation, ComposeServiceObservation, ComposeObservationMode } from './acquisition/observation.js';
+export type {
+  ComposeAcquisitionObservation,
+  ComposeServiceObservation,
+  ComposeObservationMode,
+} from './acquisition/observation.js';

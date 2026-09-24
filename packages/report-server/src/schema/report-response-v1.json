@@ -5,22 +5,13 @@
     {
       "type": "object",
       "additionalProperties": false,
-      "required": [
-        "kind",
-        "code",
-        "message"
-      ],
+      "required": ["kind", "code", "message"],
       "properties": {
         "kind": {
           "const": "report-failure"
         },
         "code": {
-          "enum": [
-            "not-found",
-            "invalid-request",
-            "artifact-unavailable",
-            "provider-error"
-          ]
+          "enum": ["not-found", "invalid-request", "artifact-unavailable", "provider-error"]
         },
         "message": {
           "type": "string"
@@ -30,10 +21,7 @@
     {
       "type": "object",
       "additionalProperties": false,
-      "required": [
-        "kind",
-        "document"
-      ],
+      "required": ["kind", "document"],
       "properties": {
         "kind": {
           "const": "report-document"
@@ -44,11 +32,7 @@
     {
       "type": "object",
       "additionalProperties": false,
-      "required": [
-        "kind",
-        "artifact",
-        "document"
-      ],
+      "required": ["kind", "artifact", "document"],
       "properties": {
         "kind": {
           "const": "report-artifact"

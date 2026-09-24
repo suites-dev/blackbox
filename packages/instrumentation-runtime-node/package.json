@@ -1,0 +1,37 @@
+{
+  "name": "@suites/blackbox-inst-runtime-node",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Node.js OpenTelemetry runtime provider for Blackbox instrumentation installation.",
+  "files": [
+    "dist"
+  ],
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "blackbox-source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./schema/node-instrumentation-package-v1.json": "./dist/runtime/schema/node-instrumentation-package-v1.json"
+  },
+  "scripts": {
+    "prebuild": "rimraf dist",
+    "build": "tsc --project tsconfig.build.json",
+    "prepack": "pnpm build",
+    "lint": "eslint .",
+    "test": "vitest run --config vitest.config.ts",
+    "test:integration": "vitest run --config vitest.integration.config.ts"
+  },
+  "dependencies": {
+    "@suites/blackbox-instrumentation-internal": "workspace:*"
+  },
+  "devDependencies": {
+    "rimraf": "catalog:",
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

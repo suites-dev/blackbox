@@ -1,7 +1,6 @@
 import { mkdir, mkdtemp, symlink, unlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { fileURLToPath } from 'node:url';
 
 import { expect, it } from 'vitest';
 
@@ -175,25 +174,21 @@ it('classifies an uninspectable reference as an operational failure', async () =
 });
 
 it('returns deterministic JSON-ready list output', async () => {
-  const e2eProject = fileURLToPath(new URL('../../../../e2e', import.meta.url));
+  const projectDirectory = await makeValidProject();
 
-  await expect(runCatalogList({ projectDirectory: e2eProject })).resolves.toEqual({
+  await expect(runCatalogList({ projectDirectory })).resolves.toEqual({
     kind: 'catalog-list-success',
     ok: true,
     operation: 'catalog.list',
     exitClass: 'success',
-    configFile: join(e2eProject, 'blackbox.config.yaml'),
-    defaultEntry: 'subscription-system',
-    entries: [
-      { id: 'payment-mock', kind: 'subsystem', isDefault: false },
-      { id: 'payment-mock-dist', kind: 'subsystem', isDefault: false },
-      { id: 'subscription-system', kind: 'system', isDefault: true },
-    ],
+    configFile: join(projectDirectory, 'blackbox.config.yaml'),
+    defaultEntry: 'orders',
+    entries: [{ id: 'orders', kind: 'system', isDefault: true }],
   });
 });
 
-it('validates every reference in the current E2E catalog', async () => {
-  const projectDirectory = fileURLToPath(new URL('../../../../e2e', import.meta.url));
+it('validates every reference in an owned project fixture', async () => {
+  const projectDirectory = await makeValidProject();
   await expect(runCatalogValidate({ projectDirectory })).resolves.toMatchObject({
     kind: 'catalog-validate-success',
     ok: true,

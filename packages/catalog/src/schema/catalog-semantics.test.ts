@@ -1,6 +1,6 @@
 import { expect, it } from 'vitest';
 
-import { validCatalogDocument } from '../test-fixtures/catalog-document.js';
+import { validCatalogSourceDocument } from '../test-fixtures/catalog-document.js';
 import { CatalogValidationError, validateCatalogDocument } from './catalog-validation.js';
 
 function issuePaths(document: unknown): readonly string[] {
@@ -16,7 +16,7 @@ function issuePaths(document: unknown): readonly string[] {
 }
 
 it('rejects blank, NUL, Windows-absolute, and parent-relative paths', () => {
-  const base = validCatalogDocument();
+  const base = validCatalogSourceDocument();
   const orders = base.catalog.entries.orders;
   const document = {
     ...base,
@@ -42,7 +42,7 @@ it('rejects blank, NUL, Windows-absolute, and parent-relative paths', () => {
 });
 
 it('rejects duplicate and missing required observation boundaries', () => {
-  const base = validCatalogDocument();
+  const base = validCatalogSourceDocument();
   const orders = base.catalog.entries.orders;
   const boundary = orders.observation.boundaries[0];
   const document = {

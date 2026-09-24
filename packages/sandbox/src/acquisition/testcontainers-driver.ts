@@ -5,9 +5,12 @@ import type {
   ComposeStartRequest,
   StartedComposeSandbox,
 } from '../types.js';
-import { observeComposeStartup } from './startup-observer.js';
-import { inspectComposeStartup } from './observation-inspector.js';
-import { inspectComposeResources } from './resource-inspector.js';
+import {
+  composeObservationClient,
+  inspectComposeStartup,
+} from './observation/observation-inspector.js';
+import { observeComposeStartup } from './observation/startup-observer.js';
+import { inspectComposeResources } from './resources/resource-inspector.js';
 
 export class TestcontainersComposeDriver implements ComposeSandboxDriver {
   async start(request: ComposeStartRequest): Promise<StartedComposeSandbox> {
@@ -23,10 +26,15 @@ export class TestcontainersComposeDriver implements ComposeSandboxDriver {
         : undefined;
     const client = await getContainerRuntimeClient();
     const observer = observeComposeStartup({
-      mode: request.observation, now: Date.now, intervalMs: 500,
-      inspect: ({ signal }) => inspectComposeStartup({
-        docker: client.container.dockerode, projectName: request.projectName, signal,
-      }),
+      mode: request.observation,
+      now: Date.now,
+      intervalMs: 500,
+      inspect: ({ signal }) =>
+        inspectComposeStartup({
+          docker: composeObservationClient(client.container.dockerode),
+          projectName: request.projectName,
+          signal,
+        }),
     });
     const started = await environment.up(services).finally(() => observer.stop());
     return {

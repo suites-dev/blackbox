@@ -7,6 +7,7 @@ import {
   recordedError,
   type CapsuleSessionRecord,
 } from '../records.js';
+import { decodeCapsuleSessionRecord } from '../persistence/decoder.js';
 import { canonicalProjectDirectory } from '../session/validation.js';
 import type {
   CapsuleRegistryEntry,
@@ -23,7 +24,7 @@ function summary(record: CapsuleSessionRecord): CapsuleSessionSummary {
   return {
     sessionId: record.sessionId,
     system: record.system,
-    title: record.title ?? record.system,
+    title: record.title,
     description: record.description,
     state: record.state,
     admittedAt: record.admittedAt,
@@ -33,40 +34,6 @@ function summary(record: CapsuleSessionRecord): CapsuleSessionSummary {
   };
 }
 
-const STATES = new Set([
-  'admitted', 'manager-starting', 'sandbox-starting', 'running', 'stopping', 'stopped',
-  'start-failed', 'stop-failed', 'manager-failed',
-]);
-
-function parseRecord(bytes: string): CapsuleSessionRecord {
-  const value: unknown = JSON.parse(bytes);
-  if (typeof value !== 'object' || value === null) {
-    throw new Error('Capsule session record must be an object');
-  }
-  const record = value as Record<string, unknown>;
-  const description = record.description;
-  const cleanup = record.cleanup;
-  if (
-    record.schemaVersion !== 1 ||
-    typeof record.sessionId !== 'string' ||
-    typeof record.system !== 'string' ||
-    (record.title !== undefined && typeof record.title !== 'string') ||
-    (description !== undefined && typeof description !== 'string') ||
-    typeof record.state !== 'string' ||
-    !STATES.has(record.state) ||
-    typeof record.admittedAt !== 'string' ||
-    typeof record.updatedAt !== 'string' ||
-    typeof record.artifactRoot !== 'string' ||
-    typeof cleanup !== 'object' ||
-    cleanup === null ||
-    !('kind' in cleanup) ||
-    !['not-attempted', 'complete', 'failed'].includes(String(cleanup.kind))
-  ) {
-    throw new Error('Capsule session record has an invalid registry shape');
-  }
-  return value as CapsuleSessionRecord;
-}
-
 async function readEntry(input: {
   readonly projectDirectory: string;
   readonly directoryName: string;
@@ -74,10 +41,13 @@ async function readEntry(input: {
   const directorySessionId = input.directoryName.slice('capsule-'.length);
   try {
     const bytes = await readFile(
-      capsuleRecordPath({ projectDirectory: input.projectDirectory, sessionId: directorySessionId }),
+      capsuleRecordPath({
+        projectDirectory: input.projectDirectory,
+        sessionId: directorySessionId,
+      }),
       'utf8',
     );
-    const record = parseRecord(bytes);
+    const record = decodeCapsuleSessionRecord({ bytes });
     if (record.sessionId !== directorySessionId) {
       return {
         kind: 'capsule-session-corrupt',
@@ -101,7 +71,10 @@ async function readEntry(input: {
     return {
       kind: 'capsule-session-corrupt',
       directoryName: input.directoryName,
-      failure: { kind: isMissing(error) ? 'record-missing' : 'record-corrupt', error: recordedError(error) },
+      failure: {
+        kind: isMissing(error) ? 'record-missing' : 'record-corrupt',
+        error: recordedError(error),
+      },
     };
   }
 }
@@ -109,8 +82,10 @@ async function readEntry(input: {
 function orderEntries(entries: readonly CapsuleRegistryEntry[]): readonly CapsuleRegistryEntry[] {
   return [...entries].sort((left, right) => {
     if (left.kind === 'capsule-session-summary' && right.kind === 'capsule-session-summary') {
-      return right.summary.admittedAt.localeCompare(left.summary.admittedAt) ||
-        left.summary.sessionId.localeCompare(right.summary.sessionId);
+      return (
+        right.summary.admittedAt.localeCompare(left.summary.admittedAt) ||
+        left.summary.sessionId.localeCompare(right.summary.sessionId)
+      );
     }
     if (left.kind === 'capsule-session-summary') {
       return -1;
@@ -129,7 +104,9 @@ export async function listCapsuleSessions(
     const projectDirectory = await canonicalProjectDirectory(input.projectDirectory);
     let directories;
     try {
-      directories = await readdir(capsuleRuntimeRoot({ projectDirectory }), { withFileTypes: true });
+      directories = await readdir(capsuleRuntimeRoot({ projectDirectory }), {
+        withFileTypes: true,
+      });
     } catch (error) {
       if (isMissing(error)) {
         return { kind: 'capsule-session-registry', projectDirectory, entries: [] };

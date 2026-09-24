@@ -10,6 +10,16 @@ import {
   startedSandbox,
 } from './runtime.fixture.js';
 
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  let reject!: (reason?: unknown) => void;
+  const promise = new Promise<T>((accept, decline) => {
+    resolve = accept;
+    reject = decline;
+  });
+  return { promise, reject, resolve };
+}
+
 it('bounds cleanup after resource inspection failure and never announces resources ready', async () => {
   const { input } = await sandboxFixture();
   const stop = vi.fn(() => new Promise<void>(() => undefined));
@@ -50,8 +60,8 @@ it('bounds cleanup after resource inspection failure and never announces resourc
 
 it('blocks execution as soon as stop starts, including after failed cleanup', async () => {
   const { input } = await sandboxFixture();
-  const pending = Promise.withResolvers<undefined>();
-  const stopEntered = Promise.withResolvers<undefined>();
+  const pending = deferred<undefined>();
+  const stopEntered = deferred<undefined>();
   const stop = () => {
     stopEntered.resolve(undefined);
     return pending.promise;

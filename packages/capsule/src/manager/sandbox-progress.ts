@@ -22,10 +22,18 @@ async function forward(input: {
       return;
     case 'acquisition-observation':
       await emitProgress(input.bootstrap, {
-        kind: 'acquisition-observation', sessionId: input.bootstrap.sessionId,
-        observation: input.event.observation.kind === 'service-state'
-          ? { ...input.event.observation, participant: participantForService(input.entry, input.event.observation.container.service) }
-          : input.event.observation,
+        kind: 'acquisition-observation',
+        sessionId: input.bootstrap.sessionId,
+        observation:
+          input.event.observation.kind === 'service-state'
+            ? {
+                ...input.event.observation,
+                participant: participantForService(
+                  input.entry,
+                  input.event.observation.container.service,
+                ),
+              }
+            : input.event.observation,
       });
       return;
     case 'containers-acquired':
@@ -71,16 +79,23 @@ export function sandboxProgressBridge(input: {
       sink: {
         emit: (event) => {
           pending = pending.then(async () => {
-            if (failure.kind === 'failed') { return; }
-            try { await forward({ ...input, event }); }
-            catch (error) { failure = { kind: 'failed', error }; }
+            if (failure.kind === 'failed') {
+              return;
+            }
+            try {
+              await forward({ ...input, event });
+            } catch (error) {
+              failure = { kind: 'failed', error };
+            }
           });
         },
       },
     },
     flush: async () => {
       await pending;
-      if (failure.kind === 'failed') { throw failure.error; }
+      if (failure.kind === 'failed') {
+        throw failure.error;
+      }
     },
   };
 }

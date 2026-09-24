@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.suites.dev/blackbox/collector-lifecycle-v1.json",
+  "title": "Blackbox collector lifecycle",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "sessionId", "executionId", "revision", "runs", "telemetry"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "sessionId": { "type": "string", "minLength": 1 },
+    "executionId": { "type": "string", "minLength": 1 },
+    "revision": { "type": "integer", "minimum": 1 },
+    "runs": { "type": "array", "items": { "$ref": "#/$defs/run" } },
+    "telemetry": { "$ref": "#/$defs/telemetry" }
+  },
+  "$defs": {
+    "failure": {
+      "type": ["object", "null"],
+      "properties": {
+        "name": { "type": "string" },
+        "message": { "type": "string", "minLength": 1 }
+      },
+      "required": ["name", "message"],
+      "additionalProperties": false
+    },
+    "run": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "instanceId",
+        "startedAt",
+        "updatedAt",
+        "stoppedAt",
+        "receiver",
+        "instrumentation",
+        "shutdown",
+        "failure",
+        "endpoint"
+      ],
+      "properties": {
+        "instanceId": { "type": "string", "minLength": 1 },
+        "startedAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" },
+        "stoppedAt": { "type": ["string", "null"] },
+        "receiver": { "enum": ["ready", "draining", "stopped", "failed", "interrupted"] },
+        "instrumentation": { "const": "unknown" },
+        "shutdown": { "enum": ["not-started", "draining", "complete", "timed-out", "interrupted"] },
+        "failure": { "$ref": "#/$defs/failure" },
+        "endpoint": { "$ref": "#/$defs/endpoint" }
+      }
+    },
+    "endpoint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "host",
+        "port",
+        "baseUrl",
+        "tracesPath",
+        "tracesUrl",
+        "readPath",
+        "readUrl"
+      ],
+      "properties": {
+        "kind": { "const": "http" },
+        "host": { "type": "string", "minLength": 1 },
+        "port": { "type": "integer", "minimum": 0, "maximum": 65535 },
+        "baseUrl": { "type": "string", "minLength": 1 },
+        "tracesPath": { "type": "string", "pattern": "^/" },
+        "tracesUrl": { "type": "string", "minLength": 1 },
+        "readPath": { "type": "string", "pattern": "^/" },
+        "readUrl": { "type": "string", "minLength": 1 }
+      }
+    },
+    "telemetry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "acceptedRequests", "acceptedSpans", "lastReceivedAt"],
+      "properties": {
+        "status": { "enum": ["not-received", "received"] },
+        "acceptedRequests": { "type": "integer", "minimum": 0 },
+        "acceptedSpans": { "type": "integer", "minimum": 0 },
+        "lastReceivedAt": { "type": ["string", "null"] }
+      }
+    }
+  }
+}
