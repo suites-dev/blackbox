@@ -1,17 +1,15 @@
 export const capsuleTelemetryRowsScript = `
 function rawTelemetry(d, a, root) {
+  const retained = activityTelemetry(d, a);
+  if (!retained || (retained.kind === 'unavailable' && retained.reason === 'not-retained')) {
+    return null;
+  }
   const block = n('div', 'raw-telemetry');
   add(block, n('h4', '', 'Raw telemetry'), p('What was observed', 'muted'));
-  const retained = d.activityTelemetry.find((item) => item.activityId === a.activityId);
-  if (!retained || retained.kind === 'unavailable') {
+  if (retained.kind === 'unavailable') {
     add(
       block,
-      p(
-        retained && retained.reason === 'corrupt'
-          ? 'Unavailable · retained telemetry could not be read.'
-          : 'Unavailable · raw telemetry was not retained for this exact activity ID.',
-        'telemetry-empty',
-      ),
+      p('Unavailable · retained telemetry could not be read.', 'telemetry-empty'),
     );
     return block;
   }

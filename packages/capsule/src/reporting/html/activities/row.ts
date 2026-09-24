@@ -20,7 +20,7 @@ function activityRow(a, open, d, root) {
       n('strong', '', command || '(empty command)'),
       n('small', '', date(a.startedAt)),
     ),
-    activityBadge(a),
+    add(n('span', 'activity-badges'), activityBadge(a), telemetryBadge(d, a)),
   );
   const body = n('div', 'activity-body');
   add(
@@ -47,7 +47,8 @@ function activityRow(a, open, d, root) {
       ['Standard error', a.outcome.stderr || '(no standard error)'],
     ])
       add(body, n('h4', '', label), n('pre', '', value));
-  add(body, rawTelemetry(d, a, root));
+  const telemetry = rawTelemetry(d, a, root);
+  if (telemetry) add(body, telemetry);
   add(summary, icon('chevron'));
   add(details, summary, body);
   return details;

@@ -207,6 +207,9 @@ describe('shared mockup presentation', () => {
     expect(html).toContain('report-inspector');
     expect(html).toContain('Raw telemetry');
     expect(html).toContain('What was observed');
+    expect(html).toContain("telemetry.spans.length + ' spans'");
+    expect(html).toContain("return activity ? ['activity-' + activity.sequence] : open");
+    expect(html).not.toContain('raw telemetry was not retained for this exact activity ID');
     expect(html).toContain("createElementNS('http://www.w3.org/2000/svg'");
     expect(html).toContain('Inter,ui-sans-serif,system-ui');
     expect(html).not.toContain('fonts.googleapis');
