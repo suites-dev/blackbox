@@ -70,6 +70,13 @@ export type {
   SandboxStopResult,
   SandboxTestcontainerInspection,
   StartedComposeSandbox,
+  SandboxCollectorInput,
+  SandboxTelemetryEnabledInput,
+  SandboxTelemetryEndpoints,
+  SandboxTelemetryInput,
+  SandboxTelemetryMount,
+  SandboxTelemetryParticipant,
+  SandboxTelemetryStatus,
 } from './types.js';
 
 export type {

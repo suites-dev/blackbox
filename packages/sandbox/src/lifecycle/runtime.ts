@@ -6,7 +6,7 @@ import {
   type SandboxProgressMode,
 } from '../acquisition/progress.js';
 import { asError, type CleanupOutcome } from './errors.js';
-import { composeProjectName, emitLifecycle, withTimeout } from './helpers.js';
+import { composeProjectName, emitLifecycle } from './helpers.js';
 import {
   admitSandboxRecord,
   writeSandboxRecord,
@@ -24,6 +24,7 @@ import type {
 import { validateSandboxInput } from '../validation/input.js';
 import { RunningSandbox } from './running-sandbox.js';
 import { failSandboxStart } from './start-failure.js';
+import { cleanupCompose } from './cleanup/compose.js';
 
 export class SandboxRuntime {
   constructor(private readonly dependencies: SandboxRuntimeDependencies) {}
@@ -48,6 +49,9 @@ export class SandboxRuntime {
         environment: input.environment,
         serviceSelection: input.serviceSelection,
         startupTimeoutMs: input.startupTimeoutMs,
+        endpoints: input.endpoints,
+        telemetry: input.telemetry,
+        generatedComposeDirectory: `${input.recordDirectory}/${input.sandboxId}.compose`,
         observation:
           request.progress.kind === 'silent'
             ? { kind: 'silent' }
@@ -135,6 +139,10 @@ export class SandboxRuntime {
       containers,
       observed,
     });
+    const telemetry = await input.compose.inspectTelemetry();
+    if (input.input.telemetry.kind === 'enabled' && telemetry.kind !== 'available') {
+      throw new Error('Telemetry collector did not become available after Compose startup');
+    }
     emitProgress({
       mode: input.progress,
       event: {
@@ -153,6 +161,7 @@ export class SandboxRuntime {
       endpoints: immutableMap(endpoints),
       containers: immutableMap(containers),
       resources,
+      telemetry,
       record,
     });
   }
@@ -202,10 +211,9 @@ export class SandboxRuntime {
     readonly compose: StartedComposeSandbox;
   }): Promise<CleanupOutcome> {
     try {
-      await withTimeout({
-        operation: input.compose.stop({ timeoutMs: input.input.stopTimeoutMs }),
+      await cleanupCompose({
+        compose: input.compose,
         timeoutMs: input.input.stopTimeoutMs,
-        label: 'Startup cleanup',
       });
       return { kind: 'complete' };
     } catch (cause) {

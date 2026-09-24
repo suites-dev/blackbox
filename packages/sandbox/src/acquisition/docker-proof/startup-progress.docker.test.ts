@@ -39,6 +39,7 @@ volumes:
     endpoints: [{ name: 'http', service: 'api', containerPort: 80 }],
     startupTimeoutMs: input.timeout,
     stopTimeoutMs: 10_000,
+    telemetry: { kind: 'disabled' },
   } satisfies SandboxInput;
   return { sandbox, projectName: composeProjectName(sandbox) };
 }

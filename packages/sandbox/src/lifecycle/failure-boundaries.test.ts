@@ -41,7 +41,7 @@ it('bounds cleanup after resource inspection failure and never announces resourc
   ).rejects.toMatchObject({
     failure: {
       startupError: { message: 'resource inventory unavailable' },
-      cleanup: { kind: 'failed', error: { message: 'Startup cleanup timed out after 10ms' } },
+      cleanup: { kind: 'failed', error: { message: 'Sandbox cleanup timed out after 10ms' } },
       record: { kind: 'written' },
     },
   });

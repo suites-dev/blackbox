@@ -27,6 +27,7 @@ async function testInput(): Promise<SandboxInput> {
     endpoints: [{ name: 'unmapped', service: 'echo', containerPort: 65000 }],
     startupTimeoutMs: 60_000,
     stopTimeoutMs: 20_000,
+    telemetry: { kind: 'disabled' },
   };
 }
 

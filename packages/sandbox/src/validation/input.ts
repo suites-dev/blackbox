@@ -41,6 +41,62 @@ export async function validateSandboxInput(input: SandboxInput): Promise<void> {
   validateEnvironment(input.environment);
   validateTimeouts(input);
   await validateComposeFiles(input);
+  await validateTelemetry(input);
+}
+
+async function validateTelemetry(input: SandboxInput): Promise<void> {
+  if (input.telemetry.kind === 'disabled') {
+    return;
+  }
+  const telemetry = input.telemetry;
+  if (!ID_PATTERN.test(telemetry.sessionId) || !ID_PATTERN.test(telemetry.executionId)) {
+    throw new SandboxInputError('telemetry sessionId and executionId must be valid identifiers');
+  }
+  if (telemetry.authorization.token.trim().length === 0) {
+    throw new SandboxInputError('telemetry bearer token must not be blank');
+  }
+  if (!SERVICE_PATTERN.test(telemetry.collector.service)) {
+    throw new SandboxInputError('telemetry collector service name is invalid');
+  }
+  if (selectedServices(input).includes(telemetry.collector.service)) {
+    throw new SandboxInputError('telemetry collector service must not replace an application service');
+  }
+  if (telemetry.collector.image.trim().length === 0) {
+    throw new SandboxInputError('telemetry collector image must not be blank');
+  }
+  const participantServices = telemetry.participants.map((participant) => participant.service);
+  requireUnique(participantServices, 'telemetry participant services');
+  for (const participant of telemetry.participants) {
+    if (!selectedServices(input).includes(participant.service)) {
+      throw new SandboxInputError(
+        `telemetry participant ${participant.service} is not a selected service`,
+      );
+    }
+    if (participant.runtime.trim().length === 0) {
+      throw new SandboxInputError(`telemetry participant ${participant.service} has no runtime`);
+    }
+    validateEnvironment(participant.environment);
+    for (const mount of participant.mounts) {
+      if (!isAbsolute(mount.source) || !isAbsolute(mount.target)) {
+        throw new SandboxInputError('telemetry mount source and target must be absolute paths');
+      }
+      await access(mount.source);
+    }
+  }
+  validateEnvironment(telemetry.collector.environment);
+  validateCollectorNumber(telemetry.collector.containerPort, 'collector container port', 65_535);
+  validateCollectorNumber(telemetry.collector.readiness.intervalSeconds, 'readiness interval', 300);
+  validateCollectorNumber(telemetry.collector.readiness.timeoutSeconds, 'readiness timeout', 300);
+  validateCollectorNumber(telemetry.collector.readiness.retries, 'readiness retries', 1_000);
+  if (!telemetry.collector.readiness.path.startsWith('/')) {
+    throw new SandboxInputError('collector readiness path must start with /');
+  }
+}
+
+function validateCollectorNumber(value: number, label: string, maximum: number): void {
+  if (!Number.isSafeInteger(value) || value < 1 || value > maximum) {
+    throw new SandboxInputError(`${label} must be an integer between 1 and ${maximum}`);
+  }
 }
 
 function validateLocations(input: SandboxInput): void {

@@ -47,6 +47,28 @@ it('stops once when concurrent and repeated callers request cleanup', async () =
   ).toBe('completed');
 });
 
+it('still tears Compose down when telemetry preparation fails', async () => {
+  const { input } = await sandboxFixture();
+  const stop = vi.fn(() => Promise.resolve());
+  const compose = startedSandbox({ stop });
+  const driver = {
+    start: () =>
+      Promise.resolve({
+        ...compose,
+        prepareStop: () => Promise.reject(new Error('collector drain failed')),
+      }),
+  } satisfies ComposeSandboxDriver;
+  const handle = await new SandboxRuntime({
+    driver,
+    now: deterministicClock(),
+    onEvent: () => undefined,
+  }).start(silentStart(input));
+  await expect(handle.stop({ reason: 'completed' })).rejects.toMatchObject({
+    name: 'SandboxStopError',
+  });
+  expect(stop).toHaveBeenCalledOnce();
+});
+
 it('surfaces stop failure and never repeats failed cleanup', async () => {
   const { input } = await sandboxFixture();
   const stop = vi.fn(() => Promise.reject(new Error('daemon unavailable')));

@@ -23,6 +23,51 @@ export interface SandboxInput {
   readonly endpoints: readonly SandboxEndpointRequest[];
   readonly startupTimeoutMs: number;
   readonly stopTimeoutMs: number;
+  readonly telemetry: SandboxTelemetryInput;
+}
+
+export type SandboxTelemetryInput =
+  | { readonly kind: 'disabled' }
+  | SandboxTelemetryEnabledInput;
+
+export interface SandboxTelemetryEnabledInput {
+  readonly kind: 'enabled';
+  readonly sessionId: string;
+  readonly executionId: string;
+  readonly authorization: { readonly kind: 'bearer-token'; readonly token: string };
+  readonly collector: SandboxCollectorInput;
+  readonly participants: readonly SandboxTelemetryParticipant[];
+}
+
+export interface SandboxCollectorInput {
+  readonly service: string;
+  readonly image: string;
+  readonly containerPort: number;
+  readonly command:
+    | { readonly kind: 'image-default' }
+    | { readonly kind: 'argv'; readonly value: readonly [string, ...string[]] };
+  readonly environment: Readonly<Record<string, string>>;
+  readonly readiness: {
+    readonly kind: 'http';
+    readonly path: string;
+    readonly intervalSeconds: number;
+    readonly timeoutSeconds: number;
+    readonly retries: number;
+  };
+  readonly drain: { readonly kind: 'signal'; readonly signal: 'SIGTERM' };
+}
+
+export interface SandboxTelemetryMount {
+  readonly source: string;
+  readonly target: string;
+  readonly access: 'read-only';
+}
+
+export interface SandboxTelemetryParticipant {
+  readonly service: string;
+  readonly runtime: string;
+  readonly environment: Readonly<Record<string, string>>;
+  readonly mounts: readonly SandboxTelemetryMount[];
 }
 
 export interface SandboxStartInput {
@@ -145,10 +190,28 @@ export interface SandboxHandle {
   readonly declaredEnvironment: Readonly<Record<string, string>>;
   readonly endpoints: ReadonlyMap<string, SandboxEndpoint>;
   readonly containers: ReadonlyMap<string, SandboxContainer>;
+  readonly telemetry: SandboxTelemetryStatus;
   getContainer(input: SandboxContainerSelector): SandboxContainer;
   inspectResources(input: SandboxResourceInspectionInput): SandboxResourceInspectionResult;
   execute(input: SandboxExecuteInput): Promise<SandboxExecuteResult>;
+  inspectTelemetry(): Promise<SandboxTelemetryStatus>;
   stop(input: SandboxStopInput): Promise<SandboxStopResult>;
+}
+
+export type SandboxTelemetryStatus =
+  | { readonly kind: 'disabled' }
+  | { readonly kind: 'available'; readonly endpoints: SandboxTelemetryEndpoints }
+  | {
+      readonly kind: 'unavailable';
+      readonly endpoints: SandboxTelemetryEndpoints;
+      readonly error: { readonly name: string; readonly message: string };
+    };
+
+export interface SandboxTelemetryEndpoints {
+  readonly baseUrl: string;
+  readonly tracesUrl: string;
+  readonly activationUrl: string;
+  readonly readUrl: string;
 }
 
 export interface ComposeContainer {
@@ -169,6 +232,8 @@ export interface StartedComposeSandbox {
     readonly combined: string;
   }>;
   inspectResources(input: ComposeResourceInspectionInput): Promise<ComposeResourceInspectionResult>;
+  inspectTelemetry(): Promise<SandboxTelemetryStatus>;
+  prepareStop(input: { readonly timeoutMs: number }): Promise<void>;
   stop(input: { readonly timeoutMs: number }): Promise<void>;
 }
 
@@ -180,6 +245,9 @@ export interface ComposeStartRequest {
   readonly environment: Readonly<Record<string, string>>;
   readonly serviceSelection: SandboxServiceSelection;
   readonly startupTimeoutMs: number;
+  readonly endpoints: readonly SandboxEndpointRequest[];
+  readonly telemetry: SandboxTelemetryInput;
+  readonly generatedComposeDirectory: string;
 }
 
 export interface ComposeSandboxDriver {

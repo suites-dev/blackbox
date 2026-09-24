@@ -84,6 +84,7 @@ async function startProofSandboxes(context: ProofContext): Promise<void> {
           endpoints: [{ name: 'http', service: 'echo', containerPort: 80 }],
           startupTimeoutMs: 60_000,
           stopTimeoutMs: 20_000,
+          telemetry: { kind: 'disabled' },
         },
         progress: {
           kind: 'events',

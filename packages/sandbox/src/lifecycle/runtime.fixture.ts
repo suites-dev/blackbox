@@ -29,6 +29,7 @@ export async function sandboxFixture(): Promise<SandboxFixture> {
       endpoints: [{ name: 'http', service: 'orders', containerPort: 3000 }],
       startupTimeoutMs: 5_000,
       stopTimeoutMs: 500,
+      telemetry: { kind: 'disabled' },
     },
   };
 }
@@ -75,6 +76,8 @@ export function startedSandbox(input: {
           },
         ],
       }),
+    inspectTelemetry: () => Promise.resolve({ kind: 'disabled' }),
+    prepareStop: () => Promise.resolve(),
     stop: input.stop,
   };
 }
