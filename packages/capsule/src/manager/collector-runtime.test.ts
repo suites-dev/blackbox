@@ -1,3 +1,5 @@
+import { userInfo } from 'node:os';
+
 import { resolveCatalogEntry } from '@suites/blackbox-catalog-internal';
 import { expect, it } from 'vitest';
 
@@ -19,7 +21,8 @@ it('uses a packaged collector on an immutable multi-architecture Node image', as
   if (runtime.kind === 'mounted-node') {
     expect(runtime.sourceDirectory).toMatch(/otel-collector\/dist$/u);
     expect(runtime.entrypoint).toBe('main.js');
-    expect(runtime.user).toBe('node');
+    expect(runtime.user).toMatch(/^\d+:\d+$/u);
+    expect(runtime.user).toBe(`${userInfo().uid}:${userInfo().gid}`);
   }
 });
 
