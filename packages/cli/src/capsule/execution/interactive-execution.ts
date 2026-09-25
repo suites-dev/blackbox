@@ -144,6 +144,7 @@ export async function runInteractiveCapsuleExec(
     return await input.execute({
       projectDirectory: input.projectDirectory,
       sessionId: input.sessionId,
+      name: input.name,
       purpose: input.purpose,
       target: input.target,
       terminal: input.ports.readTerminalSize(),

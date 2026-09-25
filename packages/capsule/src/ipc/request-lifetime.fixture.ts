@@ -12,6 +12,7 @@ export const requestLifetimeCases = [
     request: {
       kind: 'exec-request',
       requestId: 'exec-1',
+      name: { kind: 'omitted' },
       purpose: 'stimulus',
       target: { kind: 'host', argv: ['missing'] },
     },

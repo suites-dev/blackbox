@@ -1,13 +1,19 @@
 import {
   readCollectorSession,
   readCollectorTrace,
+  readCollectorTraces,
   type CollectorActivityReadResult,
   type CollectorIdentity,
   type CollectorSessionReadResult,
+  type CollectorTracesReadResult,
 } from '@suites/blackbox-otel-collector-internal';
 import { sandboxTelemetryStorageDirectory } from '@suites/blackbox-sandbox-internal';
 
-import { capsuleSandboxRecordDirectory, readCapsuleActivities } from '../records.js';
+import {
+  capsuleSandboxRecordDirectory,
+  readCapsuleActivities,
+  type CapsuleSessionRecord,
+} from '../records.js';
 import type {
   CapsuleObservationsInput,
   CapsuleObservationsResult,
@@ -21,6 +27,23 @@ import {
   validateSessionId,
 } from './validation.js';
 
+function collectorIdentity(input: {
+  readonly projectDirectory: string;
+  readonly record: CapsuleSessionRecord;
+}): CollectorIdentity & { readonly storageDirectory: string } {
+  return {
+    sessionId: input.record.sessionId,
+    executionId: input.record.executionId,
+    storageDirectory: sandboxTelemetryStorageDirectory({
+      recordDirectory: capsuleSandboxRecordDirectory({
+        projectDirectory: input.projectDirectory,
+        sessionId: input.record.sessionId,
+      }),
+      sandboxId: input.record.executionId,
+    }),
+  };
+}
+
 export async function readCapsuleObservations(
   input: CapsuleObservationsInput,
 ): Promise<CapsuleObservationsResult> {
@@ -31,17 +54,7 @@ export async function readCapsuleObservations(
     if (isFailure(record)) {
       return record;
     }
-    const identity = {
-      sessionId: record.sessionId,
-      executionId: record.executionId,
-      storageDirectory: sandboxTelemetryStorageDirectory({
-        recordDirectory: capsuleSandboxRecordDirectory({
-          projectDirectory,
-          sessionId: record.sessionId,
-        }),
-        sandboxId: record.executionId,
-      }),
-    };
+    const identity = collectorIdentity({ projectDirectory, record });
     switch (input.selection.kind) {
       case 'session':
         return await readCollectorSession(identity);
@@ -58,6 +71,13 @@ export async function readCapsuleObservations(
   } catch (error) {
     return capsuleFailure({ operation: 'observations', sessionId: input.sessionId, error });
   }
+}
+
+export async function readCapsuleTraceObservations(input: {
+  readonly projectDirectory: string;
+  readonly record: CapsuleSessionRecord;
+}): Promise<CollectorTracesReadResult> {
+  return readCollectorTraces(collectorIdentity(input));
 }
 
 async function readActivityScope(input: {

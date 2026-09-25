@@ -19,6 +19,7 @@ const p=(text,className='')=>n('p',className,text);
 const title=(eyebrow,heading,description)=>{const head=n('div','section-head'),left=n('div');add(left,p(eyebrow,'eyebrow'),n('h2','',heading));add(head,left,p(description));return head};
 const available=value=>value&&value.kind==='available';
 const date=value=>{const parsed=new Date(value);return Number.isNaN(parsed.valueOf())?String(value):parsed.toISOString().replace('T',' ').replace('.000Z',' UTC')};
+const duration=(start,end)=>{const elapsed=Math.max(0,(end===null?Date.now():Date.parse(end))-Date.parse(start));if(elapsed<1000)return elapsed+' ms';if(elapsed<60000)return (elapsed/1000).toFixed(elapsed<10000?1:0)+' s';const minutes=Math.floor(elapsed/60000),seconds=Math.floor((elapsed%60000)/1000);return minutes+'m '+seconds+'s'};
 function assertReport(d){if(!d||d.kind!=='capsule-operational-report'||d.schemaVersion!==1||!d.session||!Array.isArray(d.progress)||!Array.isArray(d.activities)||!Array.isArray(d.activityTelemetry)||!d.resources)throw new Error('Invalid Capsule report document.')}
 function navLink(id,label,count,glyph){const link=n('a','');link.href='#'+id;link.dataset.reportNav=id;add(link,icon(glyph),n('span','nav-label',label));if(count!==null)add(link,n('span','nav-count',count));return link}
 ${capsuleShellScript}

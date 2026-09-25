@@ -16,6 +16,10 @@ import type { CapsuleOperationFailure, CapsuleRecordedError } from '../types.js'
 
 export type CapsuleActivityPurpose = 'setup' | 'stimulus' | 'inspection';
 
+export type CapsuleActivityName =
+  | { readonly kind: 'omitted' }
+  | { readonly kind: 'provided'; readonly value: string };
+
 export interface CapsuleTerminalSize {
   readonly columns: number;
   readonly rows: number;
@@ -93,6 +97,7 @@ export type CapsuleExecTarget =
 export interface CapsuleExecInput {
   readonly projectDirectory: string;
   readonly sessionId: string;
+  readonly name: CapsuleActivityName;
   readonly purpose: CapsuleActivityPurpose;
   readonly target: CapsuleExecTarget;
 }
@@ -218,6 +223,7 @@ export type CapsuleObservationsResult =
 interface CapsuleActivityBase {
   readonly activityId: string;
   readonly sequence: number;
+  readonly name: CapsuleActivityName;
   readonly purpose: CapsuleActivityPurpose;
   readonly target:
     | { readonly kind: 'host' }

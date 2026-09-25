@@ -34,13 +34,14 @@ steps:
   - id: health
     explanation: Run user-owned curl directly on the host and record it as inspection.
     kind: cli
-    command: capsule exec --session ${SESSION_ID} --purpose inspection -- curl --fail --silent --show-error ${ENTRYPOINT_URL}/health
+    command: capsule exec --session ${SESSION_ID} --name "Check readiness" --purpose inspection -- curl --fail --silent --show-error ${ENTRYPOINT_URL}/health
   - id: fixture-reset
     explanation: Establish the known initial fixture state before the stimulus.
     kind: cli
     command: >-
       capsule exec
       --session ${SESSION_ID}
+      --name "Reset fixture state"
       --purpose setup
       -- curl --fail --silent --show-error
       --request POST
@@ -54,6 +55,7 @@ steps:
     command: >-
       capsule exec
       --session ${SESSION_ID}
+      --name "Create Alice subscription"
       --driver public-api
       --purpose stimulus
       --json
@@ -80,6 +82,7 @@ steps:
     command: >-
       capsule exec
       --session ${SESSION_ID}
+      --name "Inspect Alice subscription"
       --driver postgres
       --purpose inspection
       -- psql --username fixture --dbname subscriptions

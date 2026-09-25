@@ -1,4 +1,5 @@
 import type {
+  CapsuleActivityName,
   CapsuleActivityPurpose,
   CapsuleExecutionOutcome,
   CapsuleExecTarget,
@@ -10,12 +11,14 @@ export type CapsuleManagerRequest =
   | {
       readonly kind: 'exec-request';
       readonly requestId: string;
+      readonly name: CapsuleActivityName;
       readonly purpose: CapsuleActivityPurpose;
       readonly target: CapsuleExecTarget;
     }
   | {
       readonly kind: 'interactive-exec-request';
       readonly requestId: string;
+      readonly name: CapsuleActivityName;
       readonly purpose: CapsuleActivityPurpose;
       readonly target: CapsuleExecTarget;
       readonly terminal: CapsuleTerminalSize;

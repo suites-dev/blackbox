@@ -18,6 +18,7 @@ it.each([
     kind: 'running',
     activityId: 'activity-2',
     sequence: 2,
+    name: { kind: 'omitted' },
     purpose: 'setup',
     target: { kind: 'host' },
     argv: ['curl'],
@@ -28,6 +29,7 @@ it.each([
     kind: 'failed',
     activityId: 'activity-3',
     sequence: 3,
+    name: { kind: 'provided', value: 'Submit order' },
     purpose: 'stimulus',
     target: { kind: 'host' },
     argv: ['curl'],
@@ -43,6 +45,7 @@ it.each([
     kind: 'interrupted',
     activityId: 'activity-4',
     sequence: 4,
+    name: { kind: 'omitted' },
     purpose: 'inspection',
     target: { kind: 'driver', driverId: 'postgres' },
     argv: ['psql'],
@@ -99,6 +102,10 @@ it.each([
   { target: { kind: 'driver' } },
   { target: { kind: 'participant', participant: 'postgres' } },
   { target: { kind: 'client', clientId: 'old-client' } },
+  { name: { kind: 'future' } },
+  { name: { kind: 'provided', value: '' } },
+  { name: { kind: 'provided', value: '   ' } },
+  { name: { kind: 'provided', value: 'a'.repeat(121) } },
   { purpose: 'future' },
   { telemetry: activeTelemetry('wrong-for-completed') },
   { outcome: { ...activity.outcome, kind: 'future' } },
@@ -121,12 +128,15 @@ it.each([
   ).toThrow();
 });
 
-it.each(['target', 'purpose', 'telemetry', 'outcome'])('rejects a missing activity %s', (field) => {
+it.each(['name', 'target', 'purpose', 'telemetry', 'outcome'])(
+  'rejects a missing activity %s',
+  (field) => {
   const incomplete = Object.fromEntries(
     Object.entries(activity).filter(([name]) => name !== field),
   );
   expect(() => decodeCapsuleActivities({ bytes: JSON.stringify([incomplete]) })).toThrow();
-});
+  },
+);
 
 it('requires a canonical propagation record on a retained raw command', () => {
   const outcome = Object.fromEntries(

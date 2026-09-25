@@ -89,6 +89,7 @@ void test('streams output and forwards terminal controls without retaining input
   const running = runInteractiveCapsuleExec({
     projectDirectory: process.cwd(),
     sessionId: 'quiet-river-ada',
+    name: { kind: 'omitted' },
     purpose: 'stimulus',
     target: { kind: 'host', argv: ['cat'] },
     ports: fixture.ports,

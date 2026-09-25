@@ -34,6 +34,7 @@ it('persists real host output and its execution scope before acknowledging execu
       request: {
         kind: 'exec-request',
         requestId: 'host-1',
+        name: { kind: 'provided', value: '  Create subscription  ' },
         purpose: 'stimulus',
         target: {
           kind: 'host',
@@ -67,6 +68,7 @@ it('persists real host output and its execution scope before acknowledging execu
       {
         activityId: host.activityId,
         sequence: 1,
+        name: { kind: 'provided', value: 'Create subscription' },
         purpose: 'stimulus',
         target: { kind: 'host' },
         outcome: {
@@ -89,6 +91,7 @@ it('unknown drivers fail and missing host executables produce retained outcomes'
       request: {
         kind: 'exec-request',
         requestId: 'unknown-1',
+        name: { kind: 'omitted' },
         purpose: 'inspection',
         target: {
           kind: 'driver',
@@ -108,6 +111,7 @@ it('unknown drivers fail and missing host executables produce retained outcomes'
       request: {
         kind: 'exec-request',
         requestId: 'spawn-1',
+        name: { kind: 'omitted' },
         purpose: 'setup',
         target: { kind: 'host', argv: ['/missing/blackbox-command'] },
       },
@@ -144,6 +148,7 @@ it('serializes overlapping exec and stop requests without losing activities', as
       request: {
         kind: 'exec-request',
         requestId,
+        name: { kind: 'omitted' },
         purpose: 'stimulus',
         target: {
           kind: 'host',

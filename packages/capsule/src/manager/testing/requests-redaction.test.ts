@@ -83,6 +83,7 @@ function execute(fixture: Fixture) {
     request: {
       kind: 'exec-request',
       requestId: 'redaction-1',
+      name: { kind: 'omitted' },
       purpose: 'stimulus',
       target: {
         kind: 'driver',
@@ -175,7 +176,8 @@ it('never retains a driver-mapped container secret in response or activity artif
     const response = await managerRequest({
       socketPath: fixture.socketPath,
       request: {
-        kind: 'exec-request', requestId: 'environment-redaction', purpose: 'stimulus',
+        kind: 'exec-request', requestId: 'environment-redaction',
+        name: { kind: 'omitted' }, purpose: 'stimulus',
         target: { kind: 'driver', driverId: 'environment-secret',
           argv: [process.execPath, '-e', 'process.stdout.write(process.env.EXECUTION_SECRET)'],
           untraced: { kind: 'refuse' } },

@@ -100,6 +100,7 @@ it('streams output and controls bidirectionally over a real Unix socket', async 
     request: {
       kind: 'interactive-exec-request',
       requestId: 'interactive-1',
+      name: { kind: 'omitted' },
       purpose: 'stimulus',
       target: { kind: 'host', argv: ['missing'] },
       terminal: { columns: 80, rows: 24 },

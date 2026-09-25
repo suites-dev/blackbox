@@ -94,10 +94,11 @@ run_captured_step \
   'Ask the user-owned curl client to verify the public API readiness endpoint.' \
   "blackbox capsule exec \\
         --session $SESSION_ID \\
+        --name 'Check readiness' \\
         --purpose inspection \\
         -- curl --fail --silent --show-error $ENTRYPOINT_URL/health" \
   "$ARTIFACT_ROOT/health.json" \
-  capsule exec --session "$SESSION_ID" --purpose inspection -- \
+  capsule exec --session "$SESSION_ID" --name 'Check readiness' --purpose inspection -- \
   curl --fail --silent --show-error "$ENTRYPOINT_URL/health"
 
 jq -e '.status == "ready"' "$ARTIFACT_ROOT/health.json" >/dev/null
@@ -108,11 +109,12 @@ run_captured_step \
   'Run a host command through Capsule JSON mode and retain one parseable outcome.' \
   "blackbox capsule exec \\
         --session $SESSION_ID \\
+        --name 'Check CLI JSON mode' \\
         --purpose inspection \\
         --json \\
         -- node -e \"process.stdout.write('capsule-json-ok\\\\n')\"" \
   "$ARTIFACT_ROOT/exec-json.json" \
-  capsule exec --session "$SESSION_ID" --purpose inspection --json -- \
+  capsule exec --session "$SESSION_ID" --name 'Check CLI JSON mode' --purpose inspection --json -- \
   node -e "process.stdout.write('capsule-json-ok\\n')"
 jq -e \
   '.kind == "capsule-exec-completed" and .outcome.kind == "exited" and
@@ -125,6 +127,7 @@ run_captured_step \
   'Reset the real fixture through its authenticated control endpoint.' \
   "blackbox capsule exec \\
         --session $SESSION_ID \\
+        --name 'Reset fixture state' \\
         --purpose setup \\
         -- curl --fail --silent --show-error \\
         --request POST \\
@@ -133,7 +136,7 @@ run_captured_step \
         --data '{\"profile\":\"fresh\"}' \\
         $ENTRYPOINT_URL/fixture/reset" \
   "$ARTIFACT_ROOT/reset.json" \
-  capsule exec --session "$SESSION_ID" --purpose setup -- \
+  capsule exec --session "$SESSION_ID" --name 'Reset fixture state' --purpose setup -- \
   curl --fail --silent --show-error \
   --request POST \
   --header "Authorization: Bearer $FIXTURE_TOKEN" \
@@ -147,6 +150,7 @@ run_captured_step \
   'Run curl through the HTTP driver with automatic W3C trace propagation.' \
   "blackbox capsule exec \\
         --session $SESSION_ID \\
+        --name 'Create Alice subscription' \\
         --driver public-api \\
         --purpose stimulus \\
         --json \\
@@ -158,6 +162,7 @@ run_captured_step \
   "$ARTIFACT_ROOT/driver-execution.json" \
   capsule exec \
   --session "$SESSION_ID" \
+  --name 'Create Alice subscription' \
   --driver public-api \
   --purpose stimulus \
   --json \
@@ -234,6 +239,7 @@ run_captured_step \
   'Push one proof stimulus through the Redis shared-state driver.' \
   "blackbox capsule exec \\
         --session $SESSION_ID \\
+        --name 'Queue shared-state proof' \\
         --driver redis \\
         --purpose stimulus \\
         --json \\
@@ -241,6 +247,7 @@ run_captured_step \
   "$ARTIFACT_ROOT/redis-execution.json" \
   capsule exec \
   --session "$SESSION_ID" \
+  --name 'Queue shared-state proof' \
   --driver redis \
   --purpose stimulus \
   --json \
@@ -272,6 +279,7 @@ run_captured_step \
   'Read the resulting subscription from the PostgreSQL participant container.' \
   "blackbox capsule exec \\
         --session $SESSION_ID \\
+        --name 'Inspect Alice subscription' \\
         --driver postgres \\
         --purpose inspection \\
         --json \\
@@ -281,6 +289,7 @@ run_captured_step \
   "$ARTIFACT_ROOT/postgres.json" \
   capsule exec \
   --session "$SESSION_ID" \
+  --name 'Inspect Alice subscription' \
   --driver postgres \
   --purpose inspection \
   --json \
@@ -309,6 +318,7 @@ run_expected_status_step \
   'Retain an actionable failure when a driver-selected participant lacks a tool.' \
   "blackbox capsule exec \\
         --session $SESSION_ID \\
+        --name 'Probe missing participant tool' \\
         --driver postgres \\
         --purpose inspection \\
         --json \\
@@ -316,6 +326,7 @@ run_expected_status_step \
   "$ARTIFACT_ROOT/missing-executable.json" \
   capsule exec \
   --session "$SESSION_ID" \
+  --name 'Probe missing participant tool' \
   --driver postgres \
   --purpose inspection \
   --json \
@@ -338,12 +349,13 @@ run_captured_step \
   'Inspect the application fixture state through the user-owned HTTP wire.' \
   "blackbox capsule exec \\
         --session $SESSION_ID \\
+        --name 'Inspect fixture state' \\
         --purpose inspection \\
         -- curl --fail --silent --show-error \\
         --header \"Authorization: Bearer <redacted>\" \\
         $ENTRYPOINT_URL/fixture/state" \
   "$ARTIFACT_ROOT/fixture-state.json" \
-  capsule exec --session "$SESSION_ID" --purpose inspection -- \
+  capsule exec --session "$SESSION_ID" --name 'Inspect fixture state' --purpose inspection -- \
   curl --fail --silent --show-error \
   --header "Authorization: Bearer $FIXTURE_TOKEN" \
   "$ENTRYPOINT_URL/fixture/state"

@@ -15,10 +15,20 @@
     },
     "activityBase": {
       "type": "object",
-      "required": ["activityId", "sequence", "purpose", "target", "argv", "startedAt", "telemetry"],
+      "required": [
+        "activityId",
+        "sequence",
+        "name",
+        "purpose",
+        "target",
+        "argv",
+        "startedAt",
+        "telemetry"
+      ],
       "properties": {
         "activityId": { "type": "string", "minLength": 1 },
         "sequence": { "type": "integer", "minimum": 1 },
+        "name": { "$ref": "#/$defs/activityName" },
         "purpose": { "enum": ["setup", "stimulus", "inspection"] },
         "target": { "$ref": "#/$defs/target" },
         "argv": { "$ref": "#/$defs/argv" },
@@ -573,6 +583,25 @@
         "name": { "type": "string", "minLength": 1 },
         "message": { "type": "string" }
       }
+    },
+    "activityName": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind"],
+          "properties": { "kind": { "const": "omitted" } }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "value"],
+          "properties": {
+            "kind": { "const": "provided" },
+            "value": { "type": "string", "minLength": 1, "maxLength": 120, "pattern": "\\S" }
+          }
+        }
+      ]
     },
     "argv": { "type": "array", "minItems": 1, "items": { "type": "string" } }
   }

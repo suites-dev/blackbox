@@ -11,16 +11,8 @@ import type {
 } from '../model/types.js';
 import { fragmentDirectory, lifecyclePath } from './paths.js';
 import { parseLifecycle } from '../lifecycle/store.js';
-import {
-  filterTraceRequest,
-  traceIdsInRequest,
-  validateOtlpTraceRequest,
-} from '../otlp/json.js';
-import {
-  recordedFailure,
-  validateIdentity,
-  validateTraceId,
-} from '../model/validation.js';
+import { filterTraceRequest, traceIdsInRequest, validateOtlpTraceRequest } from '../otlp/json.js';
+import { recordedFailure, validateIdentity, validateTraceId } from '../model/validation.js';
 
 export function isMissing(error: unknown): boolean {
   return error instanceof Error && 'code' in error && error.code === 'ENOENT';

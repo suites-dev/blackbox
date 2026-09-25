@@ -116,7 +116,17 @@ function report(): CapsuleReportDocument {
           failure: { kind: 'none' },
         },
       ],
-      traces: { activityCorrelated: [], sessionOnly: ['trace-1'] },
+      traces: {
+        activityCorrelated: [],
+        sessionOnly: [
+          {
+            kind: 'unavailable',
+            traceId: 'trace-1',
+            association: { kind: 'session-only' },
+            reason: 'not-retained',
+          },
+        ],
+      },
     },
     cleanup: { kind: 'complete' },
     failure: { kind: 'none' },
@@ -146,6 +156,7 @@ describe('Capsule activities artifact schema', () => {
       kind: 'running',
       activityId: 'activity-2',
       sequence: 2,
+      name: { kind: 'omitted' },
       purpose: 'setup',
       target: { kind: 'host' },
       argv: ['true'],
@@ -170,6 +181,8 @@ describe('Capsule activities artifact schema', () => {
         },
       ],
       [{ ...activity(), purpose: 'future' }],
+      [{ ...activity(), name: { kind: 'provided', value: '   ' } }],
+      [{ ...activity(), name: { kind: 'provided', value: 'a'.repeat(121) } }],
     ]) {
       expect(validateActivities(invalid)).toBe(false);
     }

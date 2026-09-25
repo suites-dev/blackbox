@@ -44,6 +44,7 @@ void test('exec forwards literal host argv and purpose through real CLI-to-manag
     assert.match(result.stderr, /visible-error/u);
     assert.match(result.stderr, /command exited with 7/u);
     assert.equal(manager.requests.length, 1);
+    assert.deepEqual((manager.requests[0] as { name: unknown }).name, { kind: 'omitted' });
     assert.equal((manager.requests[0] as { purpose: unknown }).purpose, 'setup');
     assert.deepEqual((manager.requests[0] as { target: unknown }).target, {
       kind: 'host',
@@ -144,6 +145,26 @@ void test('usage errors are rejected before any Capsule acquisition', async () =
       ['capsule', 'start', '--system', 'orders', '--silent', '--interactive'],
       ['capsule', 'start', '--system', 'orders', '--env', 'NOT_AN_ASSIGNMENT'],
       ['capsule', 'exec', '--session', fixture.sessionId],
+      [
+        'capsule',
+        'exec',
+        '--session',
+        fixture.sessionId,
+        '--name',
+        '   ',
+        '--',
+        'true',
+      ],
+      [
+        'capsule',
+        'exec',
+        '--session',
+        fixture.sessionId,
+        '--name',
+        'a'.repeat(121),
+        '--',
+        'true',
+      ],
       [
         'capsule',
         'exec',

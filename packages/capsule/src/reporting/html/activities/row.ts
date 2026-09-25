@@ -90,30 +90,36 @@ function addTelemetryScope(body, telemetry) {
   }
 }
 function activityRow(a, open, d, root) {
-  const details = n('details', 'activity');
+  const details = n('details', 'activity purpose-' + a.purpose);
   details.id = 'activity-' + a.sequence;
+  details.dataset.activityId = a.activityId;
   details.open = open.includes(details.id);
   const summary = n('summary'),
     target = a.target.kind === 'host' ? 'Host' : 'Driver · ' + a.target.driverId,
-    command = a.argv.map((value) => JSON.stringify(value)).join(' ');
+    command = a.argv.map((value) => JSON.stringify(value)).join(' '),
+    named = a.name && a.name.kind === 'provided',
+    heading = named ? a.name.value : command || '(empty command)',
+    supporting = named ? command || '(empty command)' : date(a.startedAt);
   add(
     summary,
     n('span', 'sequence', String(a.sequence).padStart(2, '0')),
     add(
       n('span', 'activity-title'),
-      n('small', 'activity-role', a.purpose + ' · ' + target),
-      n('strong', '', command || '(empty command)'),
-      n('small', '', date(a.startedAt)),
+      n('small', 'activity-role', target + ' · ' + date(a.startedAt)),
+      n('strong', '', heading),
+      n('small', '', supporting),
     ),
-    add(n('span', 'activity-badges'), activityBadge(a), telemetryBadge(d, a)),
+    add(n('span', 'activity-badges'), purposeBadge(a.purpose), durationBadge(a),
+      activityBadge(a), telemetryBadge(d, a)),
   );
   const body = n('div', 'activity-body');
   add(
     body,
     p(
       a.kind === 'running'
-        ? date(a.startedAt) + ' → still running'
-        : date(a.startedAt) + ' → ' + date(a.completedAt),
+        ? date(a.startedAt) + ' → still running · ' + duration(a.startedAt, null) + ' elapsed'
+        : date(a.startedAt) + ' → ' + date(a.completedAt) + ' · ' +
+          duration(a.startedAt, a.completedAt),
       'muted',
     ),
     n('h4', '', 'Command'),
@@ -126,6 +132,8 @@ function activityRow(a, open, d, root) {
   addTelemetryScope(body, a.telemetry);
   const telemetry = rawTelemetry(d, a, root);
   if (telemetry) add(body, telemetry);
+  const windowTelemetry = activityWindowTelemetry(d, a, root);
+  if (windowTelemetry) add(body, windowTelemetry);
   add(summary, icon('chevron'));
   add(details, summary, body);
   return details;

@@ -1,6 +1,7 @@
 import { expect, it } from 'vitest';
 
 import { renderCapsuleHtml } from '../../index.js';
+import { completedHostActivity } from '../../persistence/testing/record.fixture.js';
 import type { CapsuleReportDocument } from '../types.js';
 
 function report(): CapsuleReportDocument {
@@ -22,8 +23,8 @@ function report(): CapsuleReportDocument {
     entrypoint: { kind: 'unavailable' },
     readiness: { kind: 'unavailable' },
     resources: { containers: [], networks: [], volumes: [] },
-    activities: [],
-    activityTelemetry: [],
+    activities: [completedHostActivity()],
+    activityTelemetry: [{ kind: 'unavailable', activityId: 'activity-1', reason: 'not-retained' }],
     progress: [],
     observations: {
       kind: 'collector-session-found',
@@ -50,7 +51,28 @@ function report(): CapsuleReportDocument {
       ],
       traces: {
         activityCorrelated: [],
-        sessionOnly: ['99999999999999999999999999999999'],
+        sessionOnly: [
+          {
+            kind: 'available',
+            traceId: '99999999999999999999999999999999',
+            association: { kind: 'activity-window', activityId: 'activity-1' },
+            spans: [
+              {
+                traceId: '99999999999999999999999999999999',
+                spanId: 'aaaaaaaaaaaaaaaa',
+                parentSpanId: null,
+                spanKind: 'consumer',
+                operation: 'consume redis job',
+                service: 'redis-proof-consumer',
+                startTimeUnixNano: '1789819200500000000',
+                endTimeUnixNano: '1789819200600000000',
+                statusCode: 1,
+                attributes: [],
+                links: [],
+              },
+            ],
+          },
+        ],
       },
     },
     cleanup: { kind: 'complete' },
@@ -63,6 +85,11 @@ it('labels session-only traces and exposes capture lifecycle failures', () => {
   const html = renderCapsuleHtml({ report: report() });
   expect(html).toContain('Session-only traces have no exact activity correlation.');
   expect(html).toContain('No causal relationship is claimed.');
+  expect(html).toContain('Observed after this activity');
+  expect(html).toContain('temporal only');
+  expect(html).toContain('Session observations');
+  expect(html).toContain('consume redis job');
+  expect(html).toContain('redis-proof-consumer');
   expect(html).toContain('instrumentation not activated');
   expect(html).toContain('"shutdown":"interrupted"');
   expect(html).toContain('CollectorInterrupted');

@@ -13,11 +13,12 @@ import type {
   CapsuleSessionState,
 } from '../types.js';
 import type { CapsuleSessionRecord } from '../records.js';
-import type { CapsuleActivityTelemetry } from './telemetry-types.js';
+import type { CapsuleActivityTelemetry, CapsuleReportSpan } from './telemetry-types.js';
 import type {
   CollectorActivityReadResult,
   CollectorInstrumentationStatus,
   CollectorSessionReadResult,
+  CollectorTracesReadResult,
 } from '@suites/blackbox-otel-collector-internal';
 
 export type CapsuleReportLifecycle =
@@ -74,8 +75,26 @@ export interface CapsuleReportTraceClassification {
     readonly traceId: string;
     readonly activityIds: readonly string[];
   }[];
-  readonly sessionOnly: readonly string[];
+  readonly sessionOnly: readonly CapsuleReportSessionTrace[];
 }
+
+export type CapsuleReportSessionTraceAssociation =
+  | { readonly kind: 'activity-window'; readonly activityId: string }
+  | { readonly kind: 'session-only' };
+
+export type CapsuleReportSessionTrace =
+  | {
+      readonly kind: 'available';
+      readonly traceId: string;
+      readonly association: CapsuleReportSessionTraceAssociation;
+      readonly spans: readonly CapsuleReportSpan[];
+    }
+  | {
+      readonly kind: 'unavailable';
+      readonly traceId: string;
+      readonly association: CapsuleReportSessionTraceAssociation;
+      readonly reason: 'not-retained' | 'corrupt';
+    };
 
 export type CapsuleReportObservations =
   | {
@@ -161,6 +180,7 @@ export interface CapsuleReportProjectionInput {
   readonly progress: readonly CapsuleProgressEvent[];
   readonly observations: CollectorSessionReadResult;
   readonly activityObservations: readonly CollectorActivityReadResult[];
+  readonly traceObservations: CollectorTracesReadResult;
 }
 
 export interface SerializeCapsuleReportDocumentInput {

@@ -66,6 +66,7 @@ describe('Capsule exact-session failure unions', () => {
     await expect(
       execCapsule({
         ...stopped,
+        name: { kind: 'omitted' },
         purpose: 'stimulus',
         target: { kind: 'host', argv: ['true'] },
       }),
@@ -84,6 +85,7 @@ describe('Capsule exact-session failure unions', () => {
     await expect(
       execCapsule({
         ...running,
+        name: { kind: 'omitted' },
         purpose: 'stimulus',
         target: { kind: 'host', argv: ['true'] },
       }),
@@ -123,6 +125,7 @@ describe('dead manager reader reconciliation', () => {
     await expect(
       execCapsule({
         ...session,
+        name: { kind: 'omitted' },
         purpose: 'inspection',
         target: { kind: 'host', argv: ['true'] },
       }),

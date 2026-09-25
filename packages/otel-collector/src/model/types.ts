@@ -199,6 +199,26 @@ export type CollectorTraceReadResult =
       readonly error: CollectorFailure;
     };
 
+export type CollectorTracesReadResult =
+  | {
+      readonly kind: 'collector-traces-found';
+      readonly identity: CollectorIdentity;
+      readonly traces: readonly {
+        readonly traceId: string;
+        readonly fragments: readonly TraceFragment[];
+      }[];
+    }
+  | {
+      readonly kind: 'collector-traces-missing';
+      readonly identity: CollectorIdentity;
+      readonly message: string;
+    }
+  | {
+      readonly kind: 'collector-traces-corrupt';
+      readonly identity: CollectorIdentity;
+      readonly error: CollectorFailure;
+    };
+
 export type CollectorActivityReadResult =
   | {
       readonly kind: 'collector-activity-found';

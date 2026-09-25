@@ -1,12 +1,22 @@
 import { Command, Flags } from '@oclif/core';
 import {
   execCapsule,
+  normalizeCapsuleActivityName,
+  type CapsuleActivityName,
   type CapsuleExecutionOutcome,
   type CapsuleProcessOutcome,
 } from '@suites/blackbox-capsule-internal';
 
 import { capsuleFailure } from '../../capsule/capsule-output.js';
 import { runProcessInteractiveCapsuleExec } from '../../capsule/execution/interactive-execution.js';
+
+function activityName(command: Command, input: CapsuleActivityName): CapsuleActivityName {
+  try {
+    return normalizeCapsuleActivityName(input);
+  } catch (error) {
+    command.error(error instanceof Error ? error.message : String(error), { exit: 2 });
+  }
+}
 
 function processOutcome(outcome: CapsuleExecutionOutcome): CapsuleProcessOutcome | null {
   return outcome.kind === 'driver-completed'
@@ -72,6 +82,7 @@ export default class CapsuleExec extends Command {
   static override description = 'Run a host command or use a catalog driver.';
   static override flags = {
     session: Flags.string({ required: true }),
+    name: Flags.string({ description: 'Human-readable name retained with the activity.' }),
     driver: Flags.string(),
     purpose: Flags.string({
       default: 'stimulus',
@@ -102,9 +113,16 @@ export default class CapsuleExec extends Command {
               ? ({ kind: 'allow' } as const)
               : ({ kind: 'refuse' } as const),
           };
+    const name = activityName(
+      this,
+      flags.name === undefined
+        ? { kind: 'omitted' }
+        : { kind: 'provided', value: flags.name },
+    );
     const execInput = {
       projectDirectory: process.cwd(),
       sessionId: flags.session,
+      name,
       purpose: flags.purpose as 'setup' | 'stimulus' | 'inspection',
       target,
     };

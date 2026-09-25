@@ -53,6 +53,7 @@ export function completedHostActivity(): Extract<
     kind: 'completed',
     activityId: 'activity-1',
     sequence: 1,
+    name: { kind: 'omitted' },
     purpose: 'stimulus',
     target: { kind: 'host' },
     argv: ['curl', 'http://localhost'],

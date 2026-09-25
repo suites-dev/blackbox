@@ -7,8 +7,16 @@ function topbar(d) {
     n('span', '', 'Experiments'),
     icon('chevron'),
     n('strong', '', d.session.title),
-    badge('Capsule'),
   );
+  if (d.lifecycle.kind === 'running') {
+    const signal = n('span', 'live-signal');
+    signal.setAttribute('role', 'status');
+    signal.setAttribute('aria-atomic', 'true');
+    const dot = n('span', 'live-signal-dot');
+    dot.setAttribute('aria-hidden', 'true');
+    add(signal, dot, n('span', '', 'Capsule running'));
+    add(bar, signal);
+  } else add(bar, badge('Capsule · ' + d.lifecycle.kind));
   return bar;
 }
 function reportNav(d) {
@@ -25,6 +33,9 @@ function reportNav(d) {
     p('Experiment', 'rail-label'),
     navLink('overview', 'Overview', null, 'grid'),
     navLink('activities', 'Activities', d.activities.length, 'terminal'),
+    navLink('session-observations', 'Session observations',
+      d.observations.kind === 'collector-session-found'
+        ? d.observations.traces.sessionOnly.length : 0, 'branch'),
     navLink('timeline', 'Startup timeline', d.progress.length, 'clock'),
     navLink('resources', 'Resources', d.resources.containers.length, 'stack'),
     p('Specification', 'rail-label'),

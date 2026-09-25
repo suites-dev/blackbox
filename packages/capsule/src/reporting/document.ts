@@ -153,6 +153,7 @@ export function projectCapsuleReport(input: CapsuleReportProjectionInput): Capsu
     activityTelemetry: activityTelemetry(input, context),
     observations: projectObservations({
       observations: input.observations,
+      traceObservations: input.traceObservations,
       activities: input.activities,
       context,
     }),

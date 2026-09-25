@@ -182,6 +182,7 @@ export interface CapsuleReportInput {
 
 export type {
   CapsuleActivityReport,
+  CapsuleActivityName,
   CapsuleActivityPurpose,
   CapsuleDriverDetails,
   CapsuleDriverOutcome,

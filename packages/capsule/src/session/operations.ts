@@ -1,12 +1,13 @@
 import { randomUUID } from 'node:crypto';
 
+import { normalizeCapsuleActivityName } from '../execution/activity-name.js';
 import { managerInteractiveRequest, managerRequest } from '../ipc/client.js';
 import { readCapsuleProgress } from '../progress/store.js';
 import { projectCapsuleReport } from '../reporting/document.js';
 import { redactStandaloneError } from '../reporting/redaction.js';
 import type { CapsuleReportArtifact, CapsuleReportResult } from '../reporting/types.js';
 import { readCapsuleActivities } from '../records.js';
-import { readCapsuleSessionObservations } from './observations.js';
+import { readCapsuleSessionObservations, readCapsuleTraceObservations } from './observations.js';
 import { readCapsuleActivityObservations } from './activity-observations.js';
 import type {
   CapsuleExecInput,
@@ -74,6 +75,7 @@ export async function execCapsule(input: CapsuleExecInput): Promise<CapsuleExecR
       request: {
         kind: 'exec-request',
         requestId: randomUUID(),
+        name: normalizeCapsuleActivityName(input.name),
         purpose: input.purpose,
         target: input.target,
       },
@@ -107,6 +109,7 @@ export async function execCapsuleInteractive(
       request: {
         kind: 'interactive-exec-request',
         requestId: randomUUID(),
+        name: normalizeCapsuleActivityName(input.name),
         purpose: input.purpose,
         target: input.target,
         terminal: input.terminal,
@@ -208,6 +211,7 @@ export async function reportCapsule(input: CapsuleReportInput): Promise<CapsuleR
         activities,
         progress,
         observations,
+        traceObservations: await readCapsuleTraceObservations({ projectDirectory, record }),
         activityObservations: await Promise.all(
           activities.map((activity) =>
             readCapsuleActivityObservations({

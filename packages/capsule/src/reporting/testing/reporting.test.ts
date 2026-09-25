@@ -89,6 +89,7 @@ const activity = {
   kind: 'completed',
   activityId: 'activity-1',
   sequence: 1,
+  name: { kind: 'omitted' },
   purpose: 'stimulus',
   target: { kind: 'host' },
   argv: ['curl', '--header', 'Authorization: Bearer capsule-e2e-token', 'API_TOKEN=raw-token'],

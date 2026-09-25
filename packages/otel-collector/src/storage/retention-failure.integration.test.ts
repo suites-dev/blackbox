@@ -1,7 +1,12 @@
 import { rename, rm, mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { expect, it } from 'vitest';
-import { readCollectorSession, readCollectorTrace, startCollector } from '../index.js';
+import {
+  readCollectorSession,
+  readCollectorTrace,
+  readCollectorTraces,
+  startCollector,
+} from '../index.js';
 import { fragmentDirectory, lifecyclePath } from './paths.js';
 import { postJson, traceA, traceRequest, withCollector } from '../test-fixtures/collector.js';
 
@@ -14,6 +19,7 @@ it('reports corruption when a previously acknowledged fragment disappears', asyn
     expect(await readCollectorTrace({ ...input, traceId: traceA })).toMatchObject({
       kind: 'collector-trace-corrupt',
     });
+    expect(await readCollectorTraces(input)).toMatchObject({ kind: 'collector-traces-corrupt' });
   });
 });
 

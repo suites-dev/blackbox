@@ -12,6 +12,10 @@ export { renderCapsuleHtml } from './reporting/html.js';
 export { capsuleReportClientView } from './reporting/html/client-view.js';
 export { listCapsuleSessions } from './registry/list.js';
 export { capsuleConnectionEnvironment } from './connection-environment.js';
+export {
+  CAPSULE_ACTIVITY_NAME_MAX_LENGTH,
+  normalizeCapsuleActivityName,
+} from './execution/activity-name.js';
 export { nodeCapsuleManagerPorts } from './manager/ports.js';
 export type {
   CapsuleCatalogPort,
@@ -37,6 +41,7 @@ export {
 export type { CapsuleSessionRecord, CapsuleSessionSelector } from './records.js';
 export type {
   CapsuleActivityReport,
+  CapsuleActivityName,
   CapsuleActivityPurpose,
   CapsuleAvailability,
   CapsuleCleanupReport,

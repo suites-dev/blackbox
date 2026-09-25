@@ -1,7 +1,7 @@
 import { readFile, readdir } from 'node:fs/promises';
 import { gzipSync } from 'node:zlib';
 import { expect, it } from 'vitest';
-import { readCollectorSession, readCollectorTrace } from '../index.js';
+import { readCollectorSession, readCollectorTrace, readCollectorTraces } from '../index.js';
 import { fragmentDirectory, lifecyclePath } from '../storage/paths.js';
 import {
   postJson,
@@ -35,6 +35,23 @@ it('acknowledges OTLP JSON hex identifiers only after fragments and lifecycle ar
     expect(lifecycle.telemetry).toMatchObject({ acceptedRequests: 1, acceptedSpans: 2 });
     const session = await readCollectorSession(input);
     expect(session).toMatchObject({ kind: 'collector-session-found', traceIds: [traceA, traceB] });
+    expect(await readCollectorTraces(input)).toMatchObject({
+      kind: 'collector-traces-found',
+      traces: [
+        {
+          traceId: traceA,
+          fragments: [
+            { request: { resourceSpans: [{ scopeSpans: [{ spans: [{ traceId: traceA }] }] }] } },
+          ],
+        },
+        {
+          traceId: traceB,
+          fragments: [
+            { request: { resourceSpans: [{ scopeSpans: [{ spans: [{ traceId: traceB }] }] }] } },
+          ],
+        },
+      ],
+    });
     const trace = await readCollectorTrace({ ...input, traceId: traceA });
     expect(trace.kind).toBe('collector-trace-found');
     if (trace.kind !== 'collector-trace-found') {

@@ -9,6 +9,7 @@ import {
 import type { DriverArgvRedaction } from '@suites/blackbox-driver';
 
 import { capsuleConnectionEnvironment } from '../connection-environment.js';
+import { normalizeCapsuleActivityName } from '../execution/activity-name.js';
 import { runHostWithInteraction } from '../execution/commands.js';
 import { runCapsuleDriver } from '../execution/driver-execution.js';
 import {
@@ -192,6 +193,7 @@ function executionContext(input: HandleExecInput): ExecutionContext {
     kind: 'running',
     activityId,
     sequence: input.manager.activities.length + 1,
+    name: normalizeCapsuleActivityName(input.request.name),
     purpose: input.request.purpose,
     target:
       target.kind === 'driver'

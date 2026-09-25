@@ -1,4 +1,7 @@
-import type { CollectorSessionReadResult } from '@suites/blackbox-otel-collector-internal';
+import type {
+  CollectorSessionReadResult,
+  CollectorTracesReadResult,
+} from '@suites/blackbox-otel-collector-internal';
 import { expect, it } from 'vitest';
 
 import type { CapsuleSessionRecord } from '../../records.js';
@@ -32,12 +35,51 @@ const record = {
 } satisfies CapsuleSessionRecord;
 
 function project(observations: CollectorSessionReadResult) {
+  const traceObservations = {
+    kind: 'collector-traces-found',
+    identity: { sessionId, executionId },
+    traces: [
+      {
+        traceId: '99999999999999999999999999999999',
+        fragments: [
+          {
+            sequence: 2,
+            receivedAt: '2026-09-23T12:00:00.500Z',
+            request: {
+              resourceSpans: [
+                {
+                  resource: {
+                    attributes: [{ key: 'service.name', value: { stringValue: 'worker' } }],
+                  },
+                  scopeSpans: [
+                    {
+                      spans: [
+                        {
+                          traceId: '99999999999999999999999999999999',
+                          spanId: 'aaaaaaaaaaaaaaaa',
+                          name: 'consume job',
+                          startTimeUnixNano: String(
+                            BigInt(Date.parse('2026-09-23T12:00:00.500Z')) * 1_000_000n,
+                          ),
+                        },
+                      ],
+                    },
+                  ],
+                },
+              ],
+            },
+          },
+        ],
+      },
+    ],
+  } satisfies CollectorTracesReadResult;
   return projectCapsuleReport({
     record,
     activities: [completedHostActivity()],
     progress: [],
     activityObservations: [],
     observations,
+    traceObservations,
   });
 }
 
@@ -89,10 +131,7 @@ function found(): Extract<
       { sequence: 1, receivedAt: '2026-09-24T10:00:20.000Z', spanCount: 2 },
       { sequence: 2, receivedAt: '2026-09-24T10:00:30.000Z', spanCount: 1 },
     ],
-    traceIds: [
-      '11111111111111111111111111111111',
-      '99999999999999999999999999999999',
-    ],
+    traceIds: ['11111111111111111111111111111111', '99999999999999999999999999999999'],
   };
 }
 
@@ -127,7 +166,19 @@ it('projects factual collector counts and trace identities without an assurance 
           activityIds: ['activity-1'],
         },
       ],
-      sessionOnly: ['99999999999999999999999999999999'],
+      sessionOnly: [
+        {
+          kind: 'available',
+          traceId: '99999999999999999999999999999999',
+          association: { kind: 'activity-window', activityId: 'activity-1' },
+          spans: [
+            expect.objectContaining({
+              service: 'worker',
+              operation: 'consume job',
+            }),
+          ],
+        },
+      ],
     },
   });
   expect(JSON.stringify(projected)).not.toMatch(/executionId|instanceId|endpoint/u);

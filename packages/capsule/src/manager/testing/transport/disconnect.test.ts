@@ -37,7 +37,8 @@ it('retains the terminal activity after an exec client disconnects and continues
   const socket = connect(fixture.socketPath);
   try {
     await once(socket, 'connect');
-    socket.write(`${JSON.stringify({ kind: 'exec-request', requestId: 'disconnected-exec', purpose: 'stimulus',
+    socket.write(`${JSON.stringify({ kind: 'exec-request', requestId: 'disconnected-exec',
+      name: { kind: 'omitted' }, purpose: 'stimulus',
       target: { kind: 'host', argv: [process.execPath, '-e', 'setTimeout(() => process.stdout.write("finished"), 100)'] },
     })}\n`);
     await vi.waitFor(async () => {

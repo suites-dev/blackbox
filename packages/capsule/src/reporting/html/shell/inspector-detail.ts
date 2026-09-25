@@ -1,5 +1,5 @@
 export const capsuleInspectorDetailScript = `
-function inspectSpan(root, span, activityId, presentation) {
+function inspectSpan(root, span, selection, presentation) {
   const aside = root.querySelector('.report-inspector');
   resetInspector(aside);
   const body = aside.querySelector('.inspector-body');
@@ -14,8 +14,13 @@ function inspectSpan(root, span, activityId, presentation) {
     p(presentation.direction, 'muted'),
     close,
   );
+  const association = selection.kind === 'exact-activity'
+    ? ['Activity correlation', 'Exact · ' + selection.activityId]
+    : selection.kind === 'temporal-activity'
+      ? ['Activity association', 'Temporal only · ' + selection.activityId]
+      : ['Activity association', 'Session only · no exact activity'];
   const rows = [
-    ['Activity', activityId],
+    association,
     ['Original OTEL operation', span.operation],
     ['Span kind', span.spanKind],
     ['Trace ID', span.traceId],
@@ -25,6 +30,7 @@ function inspectSpan(root, span, activityId, presentation) {
     ['End · Unix ns', span.endTimeUnixNano || 'Unavailable'],
     ['OTEL status code', span.statusCode === null ? 'Unavailable' : String(span.statusCode)],
   ];
+  if (selection.kind !== 'exact-activity') rows.splice(1, 0, ['Session trace', selection.traceId]);
   const fields = n('dl', 'inspector-fields');
   for (const [key, value] of rows) add(fields, n('dt', '', key), n('dd', '', value));
   add(

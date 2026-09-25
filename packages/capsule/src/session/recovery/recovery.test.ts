@@ -60,6 +60,7 @@ function runningActivity(activityId = 'activity-running'): CapsuleActivityReport
     kind: 'running',
     activityId,
     sequence: 2,
+    name: { kind: 'omitted' },
     purpose: 'stimulus',
     target: { kind: 'host' },
     argv: ['curl', 'http://localhost:3000'],

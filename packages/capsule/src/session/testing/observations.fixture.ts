@@ -17,6 +17,7 @@ function activity(activityId: string, startedAt: string) {
     kind: 'running',
     activityId,
     sequence: 1,
+    name: { kind: 'omitted' },
     purpose: 'stimulus',
     target: { kind: 'host' },
     argv: ['true'],

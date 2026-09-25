@@ -52,7 +52,8 @@ it.each([
   });
   try {
     const response = await managerRequest({ socketPath: fixture.socketPath, request: {
-      kind: 'exec-request', requestId: 'root-failure', purpose: 'stimulus',
+      kind: 'exec-request', requestId: 'root-failure',
+      name: { kind: 'omitted' }, purpose: 'stimulus',
       target: { kind: 'host', argv: [process.execPath, '-e',
         `process.stdout.write('retained-output'); process.stderr.write('retained-error'); process.exitCode = ${exitCode};`] },
     } });

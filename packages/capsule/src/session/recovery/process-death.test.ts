@@ -35,7 +35,8 @@ it.each(['admitted', 'manager-starting', 'sandbox-starting', 'running', 'stoppin
       const selector = { projectDirectory, sessionId: record.sessionId };
       await admitCapsuleRecord({ projectDirectory, record });
       await writeCapsuleActivities({ ...selector, activities: [{
-        kind: 'running', activityId: 'pending', sequence: 1, purpose: 'stimulus',
+        kind: 'running', activityId: 'pending', sequence: 1,
+        name: { kind: 'omitted' }, purpose: 'stimulus',
         target: { kind: 'host' }, argv: ['true'], startedAt: record.admittedAt,
         telemetry: activeTelemetry('pending'),
       }] });

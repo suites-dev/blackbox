@@ -11,6 +11,7 @@ function render(root, d, state = {}) {
     sections,
     overview(d),
     activities(d, state.open || [], root),
+    sessionObservations(d, root),
     timeline(d, state.open || []),
     resources(d),
     placeholder(

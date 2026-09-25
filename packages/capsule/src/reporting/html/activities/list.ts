@@ -18,6 +18,12 @@ function activityBadge(a) {
   if (a.outcome.kind === 'driver-propagation-refused') return badge('propagation refused', 'bad');
   return processBadge(processOutcome(a));
 }
+function purposeBadge(purpose) {
+  return badge(purpose, 'purpose purpose-' + purpose);
+}
+function durationBadge(a) {
+  return badge(duration(a.startedAt, a.kind === 'running' ? null : a.completedAt));
+}
 function activityTelemetry(d, a) {
   return d.activityTelemetry.find((item) => item.activityId === a.activityId);
 }
@@ -30,9 +36,14 @@ function telemetryBadge(d, a) {
 }
 function defaultOpenActivity(d, open) {
   if (open.length) return open;
-  const telemetry = d.activityTelemetry.find((item) => item.kind === 'available');
-  if (!telemetry) return open;
-  const activity = d.activities.find((item) => item.activityId === telemetry.activityId);
+  const activity = [...d.activities]
+    .sort((left, right) => right.sequence - left.sequence)
+    .find((item) => {
+      const telemetry = d.activityTelemetry.find(
+        (candidate) => candidate.activityId === item.activityId,
+      );
+      return telemetry && telemetry.kind === 'available';
+    });
   return activity ? ['activity-' + activity.sequence] : open;
 }
 function activities(d, open, root) {
@@ -49,7 +60,8 @@ function activities(d, open, root) {
   const panel = n('div', 'activity-list');
   if (!d.activities.length) add(panel, p('No activities were recorded for this session.', 'empty'));
   const expanded = defaultOpenActivity(d, open);
-  for (const item of d.activities) add(panel, activityRow(item, expanded, d, root));
+  const newest = [...d.activities].sort((left, right) => right.sequence - left.sequence);
+  for (const item of newest) add(panel, activityRow(item, expanded, d, root));
   add(section, panel);
   return section;
 }
