@@ -1,10 +1,10 @@
 import { projectActivityTelemetry } from './telemetry.js';
+import { projectObservations } from './observations.js';
 import type { CapsuleProgressEvent, CapsuleSessionState } from '../types.js';
 import { createRedactionContext, redactActivities, redactError, redactText } from './redaction.js';
 import type {
   CapsuleReportDocument,
   CapsuleReportLifecycle,
-  CapsuleReportObservations,
   CapsuleReportProjectionInput,
 } from './types.js';
 
@@ -78,35 +78,6 @@ function cleanupProjection(
     : input.record.cleanup;
 }
 
-function observationsProjection(
-  observations: CapsuleReportProjectionInput['observations'],
-): CapsuleReportObservations {
-  switch (observations.kind) {
-    case 'collector-session-found': {
-      const activations = observations.lifecycle.runs.flatMap((run) =>
-        run.instrumentation.kind === 'activated'
-          ? run.instrumentation.activations.map(({ runtime, serviceName, activatedAt }) => ({
-              runtime,
-              serviceName,
-              activatedAt,
-            }))
-          : [],
-      );
-      return {
-        kind: observations.kind,
-        telemetry: observations.lifecycle.telemetry,
-        fragmentCount: observations.fragments.length,
-        traceIds: observations.traceIds,
-        activations,
-      };
-    }
-    case 'collector-session-missing':
-      return { kind: observations.kind, message: observations.message };
-    case 'collector-session-corrupt':
-      return { kind: observations.kind, error: observations.error };
-  }
-}
-
 function activityTelemetry(
   input: CapsuleReportProjectionInput,
   context: ReturnType<typeof createRedactionContext>,
@@ -116,7 +87,7 @@ function activityTelemetry(
       (item) => item.activityId === activity.activityId,
     );
     return observation
-      ? projectActivityTelemetry(observation, context)
+      ? projectActivityTelemetry(observation, context, activity.telemetry.context.traceId)
       : {
           kind: 'unavailable' as const,
           activityId: activity.activityId,
@@ -180,7 +151,11 @@ export function projectCapsuleReport(input: CapsuleReportProjectionInput): Capsu
     activities: redactActivities({ activities: input.activities, context }),
     progress: redactProgress({ events: input.progress, context }),
     activityTelemetry: activityTelemetry(input, context),
-    observations: observationsProjection(input.observations),
+    observations: projectObservations({
+      observations: input.observations,
+      activities: input.activities,
+      context,
+    }),
     cleanup,
     failure:
       input.record.failure.kind === 'none'

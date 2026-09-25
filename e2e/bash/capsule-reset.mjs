@@ -42,8 +42,22 @@ export async function resetCapsuleDemo(input) {
   const runtime = join(input.projectDirectory, '.blackbox');
   if (!await directoryExists(runtime)) return;
   await stopPreviousSessions(input);
-  for (const name of ['reports', 'experiments', 'tmp', 'instrumentation']) {
+  const drivers = join(runtime, 'drivers');
+  const driversExist = await directoryExists(drivers);
+  for (const name of ['reports', 'experiments', 'tmp', 'instrumentation', 'clients']) {
     await rm(join(runtime, name), { recursive: true, force: true });
+  }
+  if (driversExist) {
+    for (const name of [
+      'package.json',
+      'blackbox-driver-runtime.json',
+      'node_modules',
+      'package-lock.json',
+      'pnpm-lock.yaml',
+      'yarn.lock',
+    ]) {
+      await rm(join(drivers, name), { recursive: true, force: true });
+    }
   }
   // Older versions left this empty directory after removing their IPC socket.
   // Never unlink an unknown live socket just to make a directory disappear.
@@ -53,17 +67,20 @@ export async function resetCapsuleDemo(input) {
 
 async function main() {
   const projectDirectory = resolve(dirname(scriptPath), '..');
-  const cli = resolve(projectDirectory, '../packages/cli/bin/run.js');
+  const cli = process.env.BLACKBOX_BIN;
+  if (cli === undefined || !cli.startsWith('/')) {
+    throw new Error('capsule-reset requires an absolute BLACKBOX_BIN from capsule-assets.sh');
+  }
   await resetCapsuleDemo({ projectDirectory, stopSession: async ({ sessionId }) => {
     process.stdout.write(`[blackbox] Stopping previous demo Capsule ${sessionId}\n`);
     const args = ['capsule', 'stop', '--session', sessionId, '--json'];
-    const result = process.env.BLACKBOX_BIN
-      ? await execute(process.env.BLACKBOX_BIN, args, { cwd: projectDirectory })
-      : await execute(process.execPath, [cli, ...args], { cwd: projectDirectory });
+    const result = await execute(cli, args, { cwd: projectDirectory });
     const outcome = JSON.parse(result.stdout);
     if (outcome.kind !== 'capsule-stopped' || outcome.cleanup !== 'complete') throw new Error(`Cleanup was not confirmed for ${sessionId}`);
   } });
-  process.stdout.write('[blackbox] Reset demo reports, experiments, temporary files, and instrumentation.\n');
+  process.stdout.write(
+    '[blackbox] Reset demo reports, experiments, temporary files, instrumentation, and generated driver state.\n',
+  );
 }
 
 if (process.argv[1] !== undefined && resolve(process.argv[1]) === scriptPath) {

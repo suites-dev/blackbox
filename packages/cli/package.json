@@ -29,6 +29,7 @@
     "@oclif/core": "^4.14.0",
     "@suites/blackbox-catalog-internal": "workspace:*",
     "@suites/blackbox-capsule-internal": "workspace:*",
+    "@suites/blackbox-driver": "workspace:*",
     "@suites/blackbox-inst-runtime-node": "workspace:*",
     "@suites/blackbox-instrumentation-internal": "workspace:*",
     "@suites/blackbox-report-server-internal": "workspace:*",

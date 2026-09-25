@@ -74,6 +74,7 @@ function observedSandbox(base: SandboxHandle, port: number): SandboxHandle {
         name: 'owned-api',
         host: '127.0.0.1',
         labels: {},
+        environment: {},
         networkNames: [],
         mappedPorts: new Map(),
         getMappedPort: () => port,

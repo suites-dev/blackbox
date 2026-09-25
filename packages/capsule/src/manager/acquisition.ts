@@ -2,7 +2,6 @@ import type { CatalogEntry, CatalogSandboxInput } from '@suites/blackbox-catalog
 import type { SandboxHandle } from '@suites/blackbox-sandbox-internal';
 
 import { awaitReadiness } from '../execution/commands.js';
-import { clientEndpointName } from '../execution/client-endpoint.js';
 import type { CapsuleManagerBootstrap } from '../protocol.js';
 import { capsuleSandboxRecordDirectory, recordedError } from '../records.js';
 import type {
@@ -13,6 +12,7 @@ import type {
 import { CapsuleStageError, emitProgress, runStartStage } from './progress.js';
 import type { CapsuleManagerPorts } from './ports.js';
 import { sandboxProgressBridge } from './sandbox-progress.js';
+import { verifyRequiredInstrumentationActivations } from './activation/verification.js';
 import { capsuleSandboxTelemetry, type CapsuleTelemetryAuthorization } from './telemetry.js';
 import type { CapsuleCollectorRuntime } from './collector-runtime.js';
 
@@ -131,18 +131,11 @@ export async function startPlannedSandbox(input: PlannedSandboxInput): Promise<{
         recordDirectory: capsuleSandboxRecordDirectory(input.bootstrap),
         environment: { ...input.plan.environment, ...input.bootstrap.environment },
         serviceSelection: { kind: 'selected', services: input.plan.services },
-        endpoints: [
-          ...input.plan.endpoints.map(({ name, service, containerPort }) => ({
-            name,
-            service,
-            containerPort,
-          })),
-          ...Object.values(input.plan.clients).map((client) => ({
-            name: clientEndpointName(client.id),
-            service: client.target.service,
-            containerPort: client.target.containerPort,
-          })),
-        ],
+        endpoints: input.plan.endpoints.map(({ name, service, containerPort }) => ({
+          name,
+          service,
+          containerPort,
+        })),
         startupTimeoutMs: Math.max(
           ...input.plan.readiness.map(({ timeoutMs }) => timeoutMs),
           120_000,
@@ -176,6 +169,17 @@ export async function completePlannedSandbox(
   const resources = sandbox.inspectResources({ kind: 'owned-compose-resources' });
   const networks = resources.networks.map(({ name }) => name).sort();
   const volumes = resources.volumes.map(({ name }) => name).sort();
+  await runStartStage('acquisition', () =>
+    verifyRequiredInstrumentationActivations({
+      kind: 'verify-required-instrumentation-activations',
+      plan: input.plan,
+      sandbox,
+      authorizationToken: input.authorization.token,
+      sessionId: input.bootstrap.sessionId,
+      executionId: input.bootstrap.executionId,
+      timeoutMs: input.entry.entrypoint.readiness.timeoutMs,
+    }),
+  );
   const readiness = await verifyReadiness({
     bootstrap: input.bootstrap,
     entry: input.entry,

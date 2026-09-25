@@ -86,5 +86,22 @@ in its terminal.
 The former `capsule report --serve`, `--html`, and `--json` forms have been replaced
 by these subcommands. `capsule report` displays help for both actions.
 
-`capsule exec -- <command>` preserves the delegated command. Host execution is the default. A participant container is
-selected only with `--participant <name>`.
+Prepare the project-owned Node driver directory with:
+
+```text
+blackbox driver install --runtime node
+```
+
+The command declares only the Blackbox driver SDK. Users install programs such
+as `curl`, `psql`, and `redis-cli` themselves. Repeating the command preserves
+user-owned dependencies and source files.
+
+`capsule exec -- <command>` preserves and runs the delegated command on the
+host. `capsule exec --driver <name> -- <command>` selects a catalog driver; the
+driver declaration decides whether the program runs on the host or in a
+participant container. There is no public participant execution selector.
+
+Every execution has `--purpose setup|stimulus|inspection`, defaulting to
+`stimulus`. A driver that promises propagation refuses to run when it cannot
+inject context. `--allow-untraced` permits that explicitly while retaining the
+limitation in the activity result.

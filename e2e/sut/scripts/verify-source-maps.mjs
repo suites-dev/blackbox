@@ -37,6 +37,8 @@ const authoredModules = [
   'payment-mock/routes.ts',
   'payment-mock/server.ts',
   'payment-mock/state.ts',
+  'redis-proof-consumer/consumer.ts',
+  'redis-proof-consumer/server.ts',
 ];
 const expectedGenerated = authoredModules
   .map((relative) => relative.replace(/\.ts$/, '.js'))

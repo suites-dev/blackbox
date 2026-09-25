@@ -6,6 +6,7 @@ import { spanProjection } from './telemetry/span.js';
 export function projectActivityTelemetry(
   result: CollectorActivityReadResult,
   context: Context,
+  exactTraceId: string,
 ): CapsuleActivityTelemetry {
   if (result.kind !== 'collector-activity-found') {
     return {
@@ -21,7 +22,7 @@ export function projectActivityTelemetry(
       return array(item.scopeSpans).flatMap((scope) =>
         array(object(scope).spans)
           .map(object)
-          .filter((span) => result.traceIds.includes(string(span.traceId)))
+          .filter((span) => string(span.traceId) === exactTraceId)
           .map((span) => spanProjection(span, service, context)),
       );
     }),

@@ -1,4 +1,41 @@
-import type { BlackboxConfig } from '../model/catalog-types.js';
+import type { BlackboxConfig, CatalogDriver } from '../model/catalog-types.js';
+
+function catalogDrivers(): Readonly<Record<string, CatalogDriver>> {
+  return {
+    http: {
+      kind: 'project-driver',
+      runtime: 'node',
+      ref: '.blackbox/drivers/http.mjs',
+      target: {
+        kind: 'participant',
+        participant: 'api',
+        protocol: 'http',
+        containerPort: 3000,
+      },
+      execution: { kind: 'host' },
+      propagation: {
+        kind: 'w3c-trace-context-propagation',
+        carrier: 'http-headers',
+      },
+    },
+    postgres: {
+      kind: 'project-driver',
+      runtime: 'node',
+      ref: '.blackbox/drivers/postgres.mjs',
+      target: {
+        kind: 'participant',
+        participant: 'database',
+        protocol: 'postgresql',
+        containerPort: 5432,
+      },
+      execution: { kind: 'participant', participant: 'database' },
+      propagation: {
+        kind: 'shared-state-propagation-unsupported',
+        resource: 'postgresql',
+      },
+    },
+  };
+}
 
 export function validCatalogDocument(): BlackboxConfig {
   return {
@@ -33,6 +70,7 @@ export function validCatalogDocument(): BlackboxConfig {
               activation: { kind: 'unconfigured' },
             },
           },
+          drivers: catalogDrivers(),
           observation: {
             policyId: 'orders-v1',
             boundaries: [{ id: 'effects.http', kind: 'http', authoritativeFor: ['HTTP effects'] }],
@@ -52,18 +90,6 @@ export function validCatalogDocument(): BlackboxConfig {
         ref: '.blackbox/instrumentation/bootstrap.mjs',
         adapter: 'node-factory',
         version: 1,
-      },
-    },
-    clients: {
-      http: { ref: '.blackbox/clients/http.mjs', target: { kind: 'entrypoint' } },
-      postgres: {
-        ref: '.blackbox/clients/postgres.mjs',
-        target: {
-          kind: 'participant',
-          participant: 'database',
-          protocol: 'postgresql',
-          containerPort: 5432,
-        },
       },
     },
   };
@@ -102,6 +128,7 @@ export function validCatalogSourceDocument() {
               runtime: 'infra',
             },
           },
+          drivers: catalogDrivers(),
           observation: {
             policyId: 'orders-v1',
             boundaries: [{ id: 'effects.http', kind: 'http', authoritativeFor: ['HTTP effects'] }],
@@ -121,18 +148,6 @@ export function validCatalogSourceDocument() {
         ref: '.blackbox/instrumentation/bootstrap.mjs',
         adapter: 'node-factory',
         version: 1,
-      },
-    },
-    clients: {
-      http: { ref: '.blackbox/clients/http.mjs', target: { kind: 'entrypoint' as const } },
-      postgres: {
-        ref: '.blackbox/clients/postgres.mjs',
-        target: {
-          kind: 'participant' as const,
-          participant: 'database',
-          protocol: 'postgresql',
-          containerPort: 5432,
-        },
       },
     },
   };

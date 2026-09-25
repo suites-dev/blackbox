@@ -14,6 +14,7 @@ import { inspectComposeResources } from './resources/resource-inspector.js';
 import { writeTelemetryComposeOverride } from '../telemetry/compose-override.js';
 import { composeTelemetryController } from '../telemetry/compose-controller.js';
 import { writeEndpointComposeOverride } from './endpoint-override.js';
+import { snapshotContainerEnvironment } from './container-environment.js';
 
 async function composeFilesFor(request: ComposeStartRequest): Promise<readonly string[]> {
   const endpointsOverride = await writeEndpointComposeOverride({
@@ -34,6 +35,68 @@ function selectedServices(request: ComposeStartRequest): string[] | undefined {
   return request.serviceSelection.kind === 'selected'
     ? [...request.serviceSelection.services]
     : undefined;
+}
+
+function selectedServiceNames(request: ComposeStartRequest): readonly string[] {
+  return request.serviceSelection.kind === 'selected'
+    ? request.serviceSelection.services
+    : request.serviceSelection.declaredServices;
+}
+
+async function inspectSelectedContainers(input: {
+  readonly request: ComposeStartRequest;
+  readonly started: Awaited<ReturnType<DockerComposeEnvironment['up']>>;
+  readonly docker: Awaited<ReturnType<typeof getContainerRuntimeClient>>['container']['dockerode'];
+}): Promise<ReadonlyMap<string, ComposeContainer>> {
+  const entries = await Promise.all(
+    selectedServiceNames(input.request).map(async (service) => {
+      const container = input.started.getContainer(`${service}-1`);
+      const inspected = await input.docker.getContainer(container.getId()).inspect();
+      const value = Object.freeze({
+        id: container.getId(),
+        name: container.getName(),
+        host: container.getHost(),
+        labels: Object.freeze({ ...container.getLabels() }),
+        environment: snapshotContainerEnvironment(inspected),
+        networkNames: Object.freeze([...container.getNetworkNames()]),
+        getMappedPort: (selector: { readonly containerPort: number }) =>
+          container.getMappedPort(selector.containerPort),
+      }) satisfies ComposeContainer;
+      return [service, value] as const;
+    }),
+  );
+  return new Map(entries);
+}
+
+async function inspectContainersOrCleanup(input: {
+  readonly request: ComposeStartRequest;
+  readonly started: Awaited<ReturnType<DockerComposeEnvironment['up']>>;
+  readonly docker: Awaited<ReturnType<typeof getContainerRuntimeClient>>['container']['dockerode'];
+}): Promise<ReadonlyMap<string, ComposeContainer>> {
+  try {
+    return await inspectSelectedContainers(input);
+  } catch (error) {
+    try {
+      await input.started.down({ removeVolumes: true });
+    } catch (cleanupError) {
+      throw new AggregateError(
+        [error, cleanupError],
+        'Container inspection failed and Compose cleanup also failed',
+      );
+    }
+    throw error;
+  }
+}
+
+function requiredContainer(
+  containers: ReadonlyMap<string, ComposeContainer>,
+  service: string,
+): ComposeContainer {
+  const container = containers.get(service);
+  if (container === undefined) {
+    throw new Error(`Compose service ${JSON.stringify(service)} was not selected for the sandbox`);
+  }
+  return container;
 }
 
 export class TestcontainersComposeDriver implements ComposeSandboxDriver {
@@ -64,6 +127,11 @@ export class TestcontainersComposeDriver implements ComposeSandboxDriver {
         }),
     });
     const started = await environment.up(services).finally(() => observer.stop());
+    const containers = await inspectContainersOrCleanup({
+      request,
+      started,
+      docker: client.container.dockerode,
+    });
     const telemetry =
       request.telemetry.kind === 'enabled'
         ? {
@@ -73,15 +141,7 @@ export class TestcontainersComposeDriver implements ComposeSandboxDriver {
         : { kind: 'disabled' as const };
     return {
       getContainer(input): ComposeContainer {
-        const container = started.getContainer(`${input.service}-1`);
-        return {
-          id: container.getId(),
-          name: container.getName(),
-          host: container.getHost(),
-          labels: container.getLabels(),
-          networkNames: container.getNetworkNames(),
-          getMappedPort: (selector) => container.getMappedPort(selector.containerPort),
-        };
+        return requiredContainer(containers, input.service);
       },
       async execute(input) {
         const container = started.getContainer(`${input.service}-1`);

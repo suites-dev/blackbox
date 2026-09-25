@@ -1,12 +1,13 @@
 import {
-  readCollectorActivity,
   readCollectorSession,
   readCollectorTrace,
+  type CollectorActivityReadResult,
+  type CollectorIdentity,
   type CollectorSessionReadResult,
 } from '@suites/blackbox-otel-collector-internal';
 import { sandboxTelemetryStorageDirectory } from '@suites/blackbox-sandbox-internal';
 
-import { capsuleSandboxRecordDirectory } from '../records.js';
+import { capsuleSandboxRecordDirectory, readCapsuleActivities } from '../records.js';
 import type {
   CapsuleObservationsInput,
   CapsuleObservationsResult,
@@ -45,13 +46,60 @@ export async function readCapsuleObservations(
       case 'session':
         return await readCollectorSession(identity);
       case 'activity':
-        return await readCollectorActivity({ ...identity, activityId: input.selection.activityId });
+        return await readActivityScope({
+          identity,
+          projectDirectory,
+          sessionId: input.sessionId,
+          activityId: input.selection.activityId,
+        });
       case 'trace':
         return await readCollectorTrace({ ...identity, traceId: input.selection.traceId });
     }
   } catch (error) {
     return capsuleFailure({ operation: 'observations', sessionId: input.sessionId, error });
   }
+}
+
+async function readActivityScope(input: {
+  readonly identity: CollectorIdentity & { readonly storageDirectory: string };
+  readonly projectDirectory: string;
+  readonly sessionId: string;
+  readonly activityId: string;
+}): Promise<CollectorActivityReadResult> {
+  const activities = await readCapsuleActivities(input);
+  const activity = activities.find((candidate) => candidate.activityId === input.activityId);
+  if (activity === undefined) {
+    return {
+      kind: 'collector-activity-missing',
+      identity: input.identity,
+      activityId: input.activityId,
+      message: 'The Capsule activity does not exist.',
+    };
+  }
+  const traceId = activity.telemetry.context.traceId;
+  const trace = await readCollectorTrace({ ...input.identity, traceId });
+  if (trace.kind === 'collector-trace-found') {
+    return {
+      kind: 'collector-activity-found',
+      identity: trace.identity,
+      activityId: input.activityId,
+      fragments: trace.fragments,
+      traceIds: [traceId],
+    };
+  }
+  return trace.kind === 'collector-trace-missing'
+    ? {
+        kind: 'collector-activity-missing',
+        identity: trace.identity,
+        activityId: input.activityId,
+        message: 'No spans were retained for the activity execution scope.',
+      }
+    : {
+        kind: 'collector-activity-corrupt',
+        identity: trace.identity,
+        activityId: input.activityId,
+        error: trace.error,
+      };
 }
 
 export async function readCapsuleSessionObservations(input: {

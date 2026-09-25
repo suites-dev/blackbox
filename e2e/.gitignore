@@ -1,8 +1,8 @@
 .blackbox/*
 !.blackbox/catalog/
-!.blackbox/clients/
-.blackbox/clients/package.json
-.blackbox/clients/blackbox-client-runtime.json
+!.blackbox/drivers/
+.blackbox/drivers/*
+!.blackbox/drivers/*.mjs
 !.blackbox/instrumentation/
 .blackbox/compose/**/node_modules/
 .blackbox/instrumentation/**/node_modules/

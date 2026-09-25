@@ -39,6 +39,23 @@ services:
       timeout: 3s
       retries: 60
 
+  redis-proof-consumer:
+    <<: *application
+    image: sut-redis-proof-consumer:local
+    build:
+      context: ../../sut
+      dockerfile: src/redis-proof-consumer/Dockerfile
+    command: ['node', 'dist/redis-proof-consumer/server.js']
+    environment:
+      FIXTURE_CONTROL_TOKEN: ${FIXTURE_CONTROL_TOKEN:-demo-fixture-token}
+      PUBLIC_API_URL: http://public-api:3000
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      public-api:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
   localstack:
     image: localstack/localstack:3.8
     environment:

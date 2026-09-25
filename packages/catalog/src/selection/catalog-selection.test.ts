@@ -47,7 +47,10 @@ it('preserves Compose order in an explicit structural sandbox input', () => {
     composeFiles: ['.blackbox/compose/base.yml', '.blackbox/compose/test.yml'],
     environment: {},
     services: ['api', 'postgres'],
-    endpoints: [{ name: 'entrypoint', service: 'api', containerPort: 3000, protocol: 'http' }],
+    endpoints: [
+      { name: 'entrypoint', service: 'api', containerPort: 3000, protocol: 'http' },
+      { name: 'driver-http', service: 'api', containerPort: 3000, protocol: 'http' },
+    ],
     readiness: [
       {
         name: 'entrypoint',
@@ -58,21 +61,27 @@ it('preserves Compose order in an explicit structural sandbox input', () => {
         timeoutMs: 60000,
       },
     ],
-    clients: {
+    drivers: {
       http: {
         id: 'http',
-        ref: '.blackbox/clients/http.mjs',
+        kind: 'project-driver',
+        runtime: 'node',
+        ref: '.blackbox/drivers/http.mjs',
         target: {
-          kind: 'entrypoint',
+          kind: 'participant',
           participantId: 'api',
           service: 'api',
           protocol: 'http',
           containerPort: 3000,
         },
+        execution: { kind: 'host' },
+        propagation: { kind: 'w3c-trace-context-propagation', carrier: 'http-headers' },
       },
       postgres: {
         id: 'postgres',
-        ref: '.blackbox/clients/postgres.mjs',
+        kind: 'project-driver',
+        runtime: 'node',
+        ref: '.blackbox/drivers/postgres.mjs',
         target: {
           kind: 'participant',
           participantId: 'database',
@@ -80,6 +89,12 @@ it('preserves Compose order in an explicit structural sandbox input', () => {
           protocol: 'postgresql',
           containerPort: 5432,
         },
+        execution: {
+          kind: 'participant',
+          participantId: 'database',
+          service: 'postgres',
+        },
+        propagation: { kind: 'shared-state-propagation-unsupported', resource: 'postgresql' },
       },
     },
     metadata: {

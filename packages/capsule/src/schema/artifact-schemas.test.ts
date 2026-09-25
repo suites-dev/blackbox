@@ -5,6 +5,7 @@ import type { ValidateFunction } from 'ajv';
 import type { CapsuleSessionRecord } from '../records.js';
 import type { CapsuleActivityReport } from '../types.js';
 import type { CapsuleReportDocument } from '../reporting/types.js';
+import { activeTelemetry, completedDriverActivity } from '../persistence/testing/record.fixture.js';
 import { capsuleProgressSchema } from '../progress/schema.js';
 import {
   capsuleActivitiesSchema,
@@ -60,21 +61,7 @@ function session(): CapsuleSessionRecord {
 }
 
 function activity(): Extract<CapsuleActivityReport, { readonly kind: 'completed' }> {
-  return {
-    kind: 'completed',
-    activityId: 'activity-1',
-    sequence: 1,
-    target: { kind: 'client', clientId: 'create-order' },
-    argv: ['one'],
-    startedAt: '2026-09-24T00:00:01.000Z',
-    completedAt: '2026-09-24T00:00:02.000Z',
-    outcome: {
-      kind: 'client-completed',
-      client: { id: 'create-order', name: 'create-order', behavior: 'entrypoint' },
-      result: { kind: 'json', value: { ok: true } },
-      telemetry: { kind: 'complete' },
-    },
-  };
+  return completedDriverActivity();
 }
 
 function report(): CapsuleReportDocument {
@@ -108,14 +95,28 @@ function report(): CapsuleReportDocument {
         lastReceivedAt: '2026-09-24T00:00:02.000Z',
       },
       fragmentCount: 1,
-      traceIds: ['trace-1'],
-      activations: [
+      runs: [
         {
-          runtime: 'node',
-          serviceName: 'orders-api',
-          activatedAt: '2026-09-24T00:00:01.000Z',
+          startedAt: '2026-09-24T00:00:00.000Z',
+          updatedAt: '2026-09-24T00:00:03.000Z',
+          stopped: { kind: 'stopped', at: '2026-09-24T00:00:03.000Z' },
+          receiver: 'stopped',
+          instrumentation: {
+            kind: 'activated',
+            activations: [
+              {
+                kind: 'instrumentation-activation',
+                runtime: 'node',
+                serviceName: 'orders-api',
+                activatedAt: '2026-09-24T00:00:01.000Z',
+              },
+            ],
+          },
+          shutdown: 'complete',
+          failure: { kind: 'none' },
         },
       ],
+      traces: { activityCorrelated: [], sessionOnly: ['trace-1'] },
     },
     cleanup: { kind: 'complete' },
     failure: { kind: 'none' },
@@ -145,8 +146,10 @@ describe('Capsule activities artifact schema', () => {
       kind: 'running',
       activityId: 'activity-2',
       sequence: 2,
+      purpose: 'setup',
       target: { kind: 'host' },
       argv: ['true'],
+      telemetry: activeTelemetry('activity-2'),
       startedAt: '2026-09-24T00:00:03.000Z',
     } satisfies CapsuleActivityReport;
     expect(validateActivities([validRunning, activity()])).toBe(true);
@@ -156,10 +159,17 @@ describe('Capsule activities artifact schema', () => {
       [
         {
           ...activity(),
-          outcome: { kind: 'signaled', argv: [], exitCode: 1, stdout: '', stderr: '' },
+          outcome: {
+            kind: 'signaled',
+            argv: ['psql'],
+            location: { kind: 'host' },
+            exitCode: 1,
+            stdout: '',
+            stderr: '',
+          },
         },
       ],
-      [{ ...activity(), outcome: { ...activity().outcome, telemetry: { kind: 'incomplete' } } }],
+      [{ ...activity(), purpose: 'future' }],
     ]) {
       expect(validateActivities(invalid)).toBe(false);
     }
@@ -220,7 +230,7 @@ describe('Capsule operational report schema', () => {
           identity: { executionId: 'private', sessionId: 'private' },
         },
       },
-      { ...base, observations: { kind: 'collector-session-found', traceIds: [] } },
+      { ...base, observations: { kind: 'collector-session-found', traces: [] } },
     ]) {
       expect(validateReport(invalid)).toBe(false);
     }

@@ -2,6 +2,7 @@ import type { CollectorSessionReadResult } from '@suites/blackbox-otel-collector
 import { expect, it } from 'vitest';
 
 import type { CapsuleSessionRecord } from '../../records.js';
+import { completedHostActivity } from '../../persistence/testing/record.fixture.js';
 import { projectCapsuleReport } from '../document.js';
 
 const sessionId = 'quiet-river-ada';
@@ -33,15 +34,18 @@ const record = {
 function project(observations: CollectorSessionReadResult) {
   return projectCapsuleReport({
     record,
-    activities: [],
+    activities: [completedHostActivity()],
     progress: [],
     activityObservations: [],
     observations,
   });
 }
 
-it('projects factual collector counts and trace identities without an assurance conclusion', () => {
-  const observations = {
+function found(): Extract<
+  CollectorSessionReadResult,
+  { readonly kind: 'collector-session-found' }
+> {
+  return {
     kind: 'collector-session-found',
     lifecycle: {
       schemaVersion: 1,
@@ -54,10 +58,10 @@ it('projects factual collector counts and trace identities without an assurance 
           startedAt: '2026-09-24T10:00:00.000Z',
           updatedAt: '2026-09-24T10:01:00.000Z',
           stoppedAt: '2026-09-24T10:01:00.000Z',
-          receiver: 'stopped',
+          receiver: 'interrupted',
           instrumentation: { kind: 'not-activated' },
-          shutdown: 'complete',
-          failure: null,
+          shutdown: 'interrupted',
+          failure: { name: 'CollectorInterrupted', message: 'collector connection closed' },
           endpoint: {
             kind: 'http',
             host: '127.0.0.1',
@@ -85,15 +89,46 @@ it('projects factual collector counts and trace identities without an assurance 
       { sequence: 1, receivedAt: '2026-09-24T10:00:20.000Z', spanCount: 2 },
       { sequence: 2, receivedAt: '2026-09-24T10:00:30.000Z', spanCount: 1 },
     ],
-    traceIds: ['11111111111111111111111111111111'],
-  } satisfies CollectorSessionReadResult;
+    traceIds: [
+      '11111111111111111111111111111111',
+      '99999999999999999999999999999999',
+    ],
+  };
+}
+
+it('projects factual collector counts and trace identities without an assurance conclusion', () => {
+  const observations = found();
   const projected = project(observations).observations;
   expect(projected).toEqual({
     kind: 'collector-session-found',
     telemetry: observations.lifecycle.telemetry,
     fragmentCount: 2,
-    traceIds: ['11111111111111111111111111111111'],
-    activations: [],
+    runs: [
+      {
+        startedAt: '2026-09-24T10:00:00.000Z',
+        updatedAt: '2026-09-24T10:01:00.000Z',
+        stopped: { kind: 'stopped', at: '2026-09-24T10:01:00.000Z' },
+        receiver: 'interrupted',
+        instrumentation: { kind: 'not-activated' },
+        shutdown: 'interrupted',
+        failure: {
+          kind: 'recorded',
+          error: {
+            name: 'CollectorInterrupted',
+            message: 'collector connection closed',
+          },
+        },
+      },
+    ],
+    traces: {
+      activityCorrelated: [
+        {
+          traceId: '11111111111111111111111111111111',
+          activityIds: ['activity-1'],
+        },
+      ],
+      sessionOnly: ['99999999999999999999999999999999'],
+    },
   });
   expect(JSON.stringify(projected)).not.toMatch(/executionId|instanceId|endpoint/u);
 });

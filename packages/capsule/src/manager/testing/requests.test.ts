@@ -4,7 +4,29 @@ import { managerRequest } from '../../ipc/client.js';
 import { readCapsuleActivities, readCapsuleRecord } from '../../records.js';
 import { requestFixture } from './request.fixture.js';
 
-it('persists real host output and injected participant output before acknowledging execution', async () => {
+async function waitFor(predicate: () => Promise<boolean>): Promise<void> {
+  const deadline = Date.now() + 2_000;
+  while (!(await predicate())) {
+    if (Date.now() >= deadline) {
+      throw new Error('Timed out waiting for manager test condition');
+    }
+    await new Promise((resolve) => setTimeout(resolve, 5));
+  }
+}
+
+function connections(fixture: Awaited<ReturnType<typeof requestFixture>>): Promise<number> {
+  return new Promise((resolve, reject) => {
+    fixture.manager.server.getConnections((error, count) => {
+      if (error === null) {
+        resolve(count);
+      } else {
+        reject(error);
+      }
+    });
+  });
+}
+
+it('persists real host output and its execution scope before acknowledging execution', async () => {
   const fixture = await requestFixture(() => Promise.resolve());
   try {
     const host = await managerRequest({
@@ -12,6 +34,7 @@ it('persists real host output and injected participant output before acknowledgi
       request: {
         kind: 'exec-request',
         requestId: 'host-1',
+        purpose: 'stimulus',
         target: {
           kind: 'host',
           argv: [
@@ -25,28 +48,32 @@ it('persists real host output and injected participant output before acknowledgi
     expect(host).toMatchObject({
       kind: 'exec-response',
       requestId: 'host-1',
-      outcome: { kind: 'exited', stdout: fixture.sessionId, exitCode: 0 },
-    });
-    const participant = await managerRequest({
-      socketPath: fixture.socketPath,
-      request: {
-        kind: 'exec-request',
-        requestId: 'db-1',
-        target: { kind: 'participant', participant: 'postgres', argv: ['psql', '--version'] },
+      outcome: {
+        kind: 'exited',
+        stdout: fixture.sessionId,
+        exitCode: 0,
+        propagation: {
+          kind: 'telemetry-propagation-v1',
+          expectation: { kind: 'propagation-not-requested' },
+          outcome: { kind: 'context-not-injected', reason: 'raw-command' },
+        },
       },
     });
-    expect(participant).toMatchObject({
-      kind: 'exec-response',
-      requestId: 'db-1',
-      outcome: { kind: 'exited', stdout: 'participant-output', exitCode: 7 },
-    });
-    expect(await readCapsuleActivities(fixture)).toMatchObject([
-      { sequence: 1, target: { kind: 'host' }, outcome: { stdout: fixture.sessionId } },
+    if (host.kind !== 'exec-response') {
+      throw new Error(`Expected exec response, received ${host.kind}`);
+    }
+    const activities = await readCapsuleActivities(fixture);
+    expect(activities).toMatchObject([
       {
-        sequence: 2,
-        target: { kind: 'participant', participant: 'postgres' },
-        argv: ['psql', '--version'],
-        outcome: { exitCode: 7 },
+        activityId: host.activityId,
+        sequence: 1,
+        purpose: 'stimulus',
+        target: { kind: 'host' },
+        outcome: {
+          stdout: fixture.sessionId,
+          propagation: { kind: 'telemetry-propagation-v1' },
+        },
+        telemetry: { kind: 'telemetry-execution-scope-completed-v1' },
       },
     ]);
   } finally {
@@ -54,7 +81,7 @@ it('persists real host output and injected participant output before acknowledgi
   }
 });
 
-it('unknown participants and spawn failures return explicit manager errors', async () => {
+it('unknown drivers fail and missing host executables produce retained outcomes', async () => {
   const fixture = await requestFixture(() => Promise.resolve());
   try {
     const unknown = await managerRequest({
@@ -62,40 +89,103 @@ it('unknown participants and spawn failures return explicit manager errors', asy
       request: {
         kind: 'exec-request',
         requestId: 'unknown-1',
-        target: { kind: 'participant', participant: 'foreign-container', argv: ['true'] },
+        purpose: 'inspection',
+        target: {
+          kind: 'driver',
+          driverId: 'foreign-driver',
+          argv: ['true'],
+          untraced: { kind: 'refuse' },
+        },
       },
     });
     expect(unknown).toMatchObject({
       kind: 'manager-error-response',
       requestId: 'unknown-1',
-      error: { message: 'Unknown participant "foreign-container"' },
+      error: { message: 'Unknown driver "foreign-driver"' },
     });
     const spawnFailure = await managerRequest({
       socketPath: fixture.socketPath,
       request: {
         kind: 'exec-request',
         requestId: 'spawn-1',
+        purpose: 'setup',
         target: { kind: 'host', argv: ['/missing/blackbox-command'] },
       },
     });
     expect(spawnFailure).toMatchObject({
-      kind: 'manager-error-response',
+      kind: 'exec-response',
       requestId: 'spawn-1',
-      error: { message: expect.stringContaining('ENOENT') },
+      outcome: { kind: 'executable-not-found', location: { kind: 'host' } },
     });
     expect(await readCapsuleActivities(fixture)).toMatchObject([
       {
         kind: 'failed',
         sequence: 1,
-        target: { kind: 'participant', participant: 'foreign-container' },
-        error: { message: 'Unknown participant "foreign-container"' },
+        target: { kind: 'driver', driverId: 'foreign-driver' },
+        error: { message: 'Unknown driver "foreign-driver"' },
       },
       {
-        kind: 'failed',
+        kind: 'completed',
         sequence: 2,
         target: { kind: 'host' },
-        error: { message: expect.stringContaining('ENOENT') },
+        outcome: { kind: 'executable-not-found' },
       },
+    ]);
+  } finally {
+    await fixture.close();
+  }
+});
+
+it('serializes overlapping exec and stop requests without losing activities', async () => {
+  const fixture = await requestFixture(() => Promise.resolve());
+  const execute = (requestId: string, value: string, delay: number) =>
+    managerRequest({
+      socketPath: fixture.socketPath,
+      request: {
+        kind: 'exec-request',
+        requestId,
+        purpose: 'stimulus',
+        target: {
+          kind: 'host',
+          argv: [
+            process.execPath,
+            '-e',
+            `setTimeout(() => process.stdout.write(${JSON.stringify(value)}), ${String(delay)})`,
+          ],
+        },
+      },
+    });
+  try {
+    const first = execute('overlap-1', 'first', 250);
+    await waitFor(async () => {
+      const activities = await readCapsuleActivities(fixture);
+      return activities.length > 0 && activities[0].kind === 'running';
+    });
+    const second = execute('overlap-2', 'second', 0);
+    await waitFor(async () => (await connections(fixture)) === 2);
+    const stop = managerRequest({
+      socketPath: fixture.socketPath,
+      request: { kind: 'stop-request', requestId: 'overlap-stop', reason: 'completed' },
+    });
+    await waitFor(async () => (await connections(fixture)) === 3);
+    const late = execute('overlap-late', 'late', 0);
+    await waitFor(async () => (await connections(fixture)) === 4);
+    const [firstResult, secondResult, stopResult, lateResult] = await Promise.all([
+      first,
+      second,
+      stop,
+      late,
+    ]);
+    expect(firstResult).toMatchObject({ kind: 'exec-response', outcome: { stdout: 'first' } });
+    expect(secondResult).toMatchObject({ kind: 'exec-response', outcome: { stdout: 'second' } });
+    expect(stopResult).toMatchObject({ kind: 'stop-response', cleanup: 'complete' });
+    expect(lateResult).toMatchObject({
+      kind: 'manager-error-response',
+      error: { message: 'Cannot execute against Capsule in stopped state' },
+    });
+    expect(await readCapsuleActivities(fixture)).toMatchObject([
+      { kind: 'completed', sequence: 1, outcome: { stdout: 'first' } },
+      { kind: 'completed', sequence: 2, outcome: { stdout: 'second' } },
     ]);
   } finally {
     await fixture.close();

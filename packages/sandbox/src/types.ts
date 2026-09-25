@@ -6,6 +6,10 @@ import type {
   SandboxResourceInspectionInput,
   SandboxResourceInspectionResult,
 } from './inspection/resources.js';
+import type {
+  SandboxContainerExecutionInput,
+  SandboxContainerExecutionStartResult,
+} from './execution/streaming/types.js';
 
 export interface SandboxEndpointRequest {
   readonly name: string;
@@ -158,6 +162,8 @@ export interface SandboxTestcontainerInspection {
   readonly name: string;
   readonly host: string;
   readonly labels: Readonly<Record<string, string>>;
+  /** Effective environment reported by Docker for this exact owned container. */
+  readonly environment: Readonly<Record<string, string>>;
   readonly networkNames: readonly string[];
   /** Ports explicitly requested by the caller, keyed by container port. */
   readonly mappedPorts: ReadonlyMap<number, number>;
@@ -202,6 +208,9 @@ export interface SandboxHandle {
   getContainer(input: SandboxContainerSelector): SandboxContainer;
   inspectResources(input: SandboxResourceInspectionInput): SandboxResourceInspectionResult;
   execute(input: SandboxExecuteInput): Promise<SandboxExecuteResult>;
+  startContainerExecution(
+    input: SandboxContainerExecutionInput,
+  ): Promise<SandboxContainerExecutionStartResult>;
   inspectTelemetry(): Promise<SandboxTelemetryStatus>;
   stop(input: SandboxStopInput): Promise<SandboxStopResult>;
 }
@@ -227,6 +236,7 @@ export interface ComposeContainer {
   readonly name: string;
   readonly host: string;
   readonly labels: Readonly<Record<string, string>>;
+  readonly environment: Readonly<Record<string, string>>;
   readonly networkNames: readonly string[];
   getMappedPort(input: SandboxMappedPortSelector): number;
 }

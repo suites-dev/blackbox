@@ -4,4 +4,5 @@
 # standard-library YAML parser handles it without adding a project dependency.
 set -Eeuo pipefail
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-exec ruby "$SCRIPT_DIR/capsule-player.rb" "$@"
+source "$SCRIPT_DIR/capsule-test-support.sh"
+ruby "$SCRIPT_DIR/capsule-player.rb" "$@"

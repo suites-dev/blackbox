@@ -3,6 +3,10 @@
 # each step so the presenter can explain what the audience is seeing.
 title: Blackbox Capsule discovery demo
 steps:
+  - id: driver-install
+    explanation: Prepare the project-owned Node driver directory; protocol clients remain user-owned.
+    kind: cli
+    command: driver install --runtime node --json
   - id: instrumentation-install
     explanation: Install the standalone Node instrumentation bundle and dependencies.
     kind: cli
@@ -11,10 +15,6 @@ steps:
     explanation: Repeat the same install; an existing installation stays unchanged.
     kind: cli
     command: inst install --runtime node
-  - id: client-install
-    explanation: Prepare the project-owned Node client directory without installing protocol libraries.
-    kind: cli
-    command: client install --runtime node --json
   - id: catalog-validate
     explanation: Ask Blackbox to validate the catalog and every referenced file.
     kind: cli
@@ -32,25 +32,59 @@ steps:
     kind: cli
     command: capsule start --system subscription-system --title "Recorded Capsule demo" --description "Explore subscription activation" --env FIXTURE_CONTROL_TOKEN=capsule-e2e-token --json
   - id: health
-    explanation: Use the user-owned curl client through Capsule to check readiness.
+    explanation: Run user-owned curl directly on the host and record it as inspection.
     kind: cli
-    command: capsule exec --session ${SESSION_ID} -- curl --fail --silent --show-error ${ENTRYPOINT_URL}/health
-  - id: entrypoint-client
-    explanation: Run the authored entrypoint client with automatic W3C trace propagation.
+    command: capsule exec --session ${SESSION_ID} --purpose inspection -- curl --fail --silent --show-error ${ENTRYPOINT_URL}/health
+  - id: fixture-reset
+    explanation: Establish the known initial fixture state before the stimulus.
     kind: cli
-    command: capsule exec --session ${SESSION_ID} --client create-subscription --json -- alice
+    command: >-
+      capsule exec
+      --session ${SESSION_ID}
+      --purpose setup
+      -- curl --fail --silent --show-error
+      --request POST
+      --header "Authorization: Bearer capsule-e2e-token"
+      --header "Content-Type: application/json"
+      --data '{"profile":"fresh"}'
+      ${ENTRYPOINT_URL}/fixture/reset
+  - id: http-driver
+    explanation: Pass a normal curl command through the HTTP driver, which adds endpoint and W3C context.
+    kind: cli
+    command: >-
+      capsule exec
+      --session ${SESSION_ID}
+      --driver public-api
+      --purpose stimulus
+      --json
+      -- curl --fail --silent --show-error
+      --request POST
+      --header "Content-Type: application/json"
+      --data '{"userId":"alice","paymentMethodId":"pm_capsule_alice"}'
+      /subscriptions
   - id: observations-session
     explanation: Read the retained telemetry summary for this exact Capsule execution.
     kind: cli
     command: observations --session ${SESSION_ID} --json
   - id: observations-activity
-    explanation: Pull only the spans correlated to the authored client activity.
+    explanation: Pull only the spans correlated to the traced HTTP driver activity.
     kind: cli
-    command: observations --session ${SESSION_ID} --activity ${CLIENT_ACTIVITY_ID} --json
+    command: observations --session ${SESSION_ID} --activity ${DRIVER_ACTIVITY_ID} --json
   - id: observations-trace
     explanation: Pull one exact W3C trace from the Capsule collector.
     kind: cli
     command: observations --session ${SESSION_ID} --trace ${TRACE_ID} --json
+  - id: postgres-driver
+    explanation: Run the unchanged psql command where the catalog says the client is available.
+    kind: cli
+    command: >-
+      capsule exec
+      --session ${SESSION_ID}
+      --driver postgres
+      --purpose inspection
+      -- psql --username fixture --dbname subscriptions
+      --tuples-only --no-align
+      --command "SELECT user_id || '|' || status FROM subscriptions WHERE user_id = 'alice';"
   - id: report-json
     explanation: Export the running experiment to JSON on stdout; flight control remains open.
     kind: cli

@@ -9,95 +9,88 @@
       "oneOf": [
         { "$ref": "#/$defs/runningActivity" },
         { "$ref": "#/$defs/completedActivity" },
+        { "$ref": "#/$defs/interruptedActivity" },
         { "$ref": "#/$defs/failedActivity" }
       ]
     },
     "activityBase": {
       "type": "object",
-      "required": ["activityId", "sequence", "target", "argv", "startedAt"],
+      "required": ["activityId", "sequence", "purpose", "target", "argv", "startedAt", "telemetry"],
       "properties": {
-        "activityId": { "type": "string" },
-        "sequence": { "type": "number" },
+        "activityId": { "type": "string", "minLength": 1 },
+        "sequence": { "type": "integer", "minimum": 1 },
+        "purpose": { "enum": ["setup", "stimulus", "inspection"] },
         "target": { "$ref": "#/$defs/target" },
-        "argv": { "$ref": "#/$defs/stringArray" },
-        "startedAt": { "type": "string" }
+        "argv": { "$ref": "#/$defs/argv" },
+        "startedAt": { "type": "string", "minLength": 1 },
+        "telemetry": true
       }
     },
     "runningActivity": {
+      "type": "object",
       "allOf": [
         { "$ref": "#/$defs/activityBase" },
         {
           "type": "object",
-          "additionalProperties": false,
-          "required": ["activityId", "sequence", "target", "argv", "startedAt", "kind"],
+          "required": ["kind"],
           "properties": {
-            "activityId": true,
-            "sequence": true,
-            "target": true,
-            "argv": true,
-            "startedAt": true,
-            "kind": { "const": "running" }
+            "kind": { "const": "running" },
+            "telemetry": { "$ref": "#/$defs/activeTelemetryScope" }
           }
         }
-      ]
+      ],
+      "unevaluatedProperties": false
     },
     "completedActivity": {
+      "type": "object",
       "allOf": [
         { "$ref": "#/$defs/activityBase" },
         {
           "type": "object",
-          "additionalProperties": false,
-          "required": [
-            "activityId",
-            "sequence",
-            "target",
-            "argv",
-            "startedAt",
-            "kind",
-            "outcome",
-            "completedAt"
-          ],
+          "required": ["kind", "outcome", "completedAt"],
           "properties": {
-            "activityId": true,
-            "sequence": true,
-            "target": true,
-            "argv": true,
-            "startedAt": true,
             "kind": { "const": "completed" },
+            "telemetry": { "$ref": "#/$defs/completedTelemetryScope" },
             "outcome": { "$ref": "#/$defs/outcome" },
-            "completedAt": { "type": "string" }
+            "completedAt": { "type": "string", "minLength": 1 }
           }
         }
-      ]
+      ],
+      "unevaluatedProperties": false
+    },
+    "interruptedActivity": {
+      "type": "object",
+      "allOf": [
+        { "$ref": "#/$defs/activityBase" },
+        {
+          "type": "object",
+          "required": ["kind", "error", "completedAt"],
+          "properties": {
+            "kind": { "const": "interrupted" },
+            "telemetry": { "$ref": "#/$defs/completedTelemetryScope" },
+            "error": { "$ref": "#/$defs/recordedError" },
+            "completedAt": { "type": "string", "minLength": 1 }
+          }
+        }
+      ],
+      "unevaluatedProperties": false
     },
     "failedActivity": {
+      "type": "object",
       "allOf": [
         { "$ref": "#/$defs/activityBase" },
         {
           "type": "object",
-          "additionalProperties": false,
-          "required": [
-            "activityId",
-            "sequence",
-            "target",
-            "argv",
-            "startedAt",
-            "kind",
-            "error",
-            "completedAt"
-          ],
+          "required": ["kind", "error", "completedAt"],
           "properties": {
-            "activityId": true,
-            "sequence": true,
-            "target": true,
-            "argv": true,
-            "startedAt": true,
             "kind": { "const": "failed" },
+            "telemetry": { "$ref": "#/$defs/completedTelemetryScope" },
             "error": { "$ref": "#/$defs/recordedError" },
-            "completedAt": { "type": "string" }
+            "completedAt": { "type": "string", "minLength": 1 }
           }
         }
-      ]
+      ],
+      "unevaluatedProperties": false
     },
     "target": {
       "oneOf": [
@@ -110,160 +103,464 @@
         {
           "type": "object",
           "additionalProperties": false,
-          "required": ["kind", "participant"],
+          "required": ["kind", "driverId"],
           "properties": {
-            "kind": { "const": "participant" },
-            "participant": { "type": "string" }
-          }
-        },
-        {
-          "type": "object",
-          "additionalProperties": false,
-          "required": ["kind", "clientId"],
-          "properties": {
-            "kind": { "const": "client" },
-            "clientId": { "type": "string" }
+            "kind": { "const": "driver" },
+            "driverId": { "type": "string", "minLength": 1 }
           }
         }
       ]
     },
     "outcome": {
       "oneOf": [
-        { "$ref": "#/$defs/exitedOutcome" },
-        { "$ref": "#/$defs/signaledOutcome" },
-        { "$ref": "#/$defs/clientOutcome" }
+        { "$ref": "#/$defs/rawProcessOutcome" },
+        { "$ref": "#/$defs/driverCompletedOutcome" },
+        { "$ref": "#/$defs/driverPrepareFailedOutcome" },
+        { "$ref": "#/$defs/driverPropagationRefusedOutcome" }
       ]
+    },
+    "processBase": {
+      "type": "object",
+      "required": ["argv", "location"],
+      "properties": {
+        "argv": { "$ref": "#/$defs/argv" },
+        "location": { "$ref": "#/$defs/executionLocation" },
+        "propagation": { "$ref": "#/$defs/telemetryPropagationRecord" }
+      }
     },
     "exitedOutcome": {
       "type": "object",
-      "additionalProperties": false,
-      "required": ["kind", "argv", "exitCode", "stdout", "stderr"],
-      "properties": {
-        "kind": { "const": "exited" },
-        "argv": { "$ref": "#/$defs/stringArray" },
-        "exitCode": { "type": "number" },
-        "stdout": { "type": "string" },
-        "stderr": { "type": "string" }
-      }
+      "allOf": [
+        { "$ref": "#/$defs/processBase" },
+        {
+          "type": "object",
+          "required": ["kind", "stdout", "stderr", "retention", "exitCode"],
+          "properties": {
+            "kind": { "const": "exited" },
+            "stdout": { "type": "string" },
+            "stderr": { "type": "string" },
+            "retention": { "$ref": "#/$defs/outputRetentionPair" },
+            "exitCode": { "type": "integer" }
+          }
+        }
+      ],
+      "unevaluatedProperties": false
     },
     "signaledOutcome": {
       "type": "object",
-      "additionalProperties": false,
-      "required": ["kind", "argv", "signal", "stdout", "stderr"],
-      "properties": {
-        "kind": { "const": "signaled" },
-        "argv": { "$ref": "#/$defs/stringArray" },
-        "signal": {
-          "enum": [
-            "SIGABRT",
-            "SIGALRM",
-            "SIGBUS",
-            "SIGCHLD",
-            "SIGCONT",
-            "SIGFPE",
-            "SIGHUP",
-            "SIGILL",
-            "SIGINT",
-            "SIGIO",
-            "SIGIOT",
-            "SIGKILL",
-            "SIGPIPE",
-            "SIGPOLL",
-            "SIGPROF",
-            "SIGPWR",
-            "SIGQUIT",
-            "SIGSEGV",
-            "SIGSTKFLT",
-            "SIGSTOP",
-            "SIGSYS",
-            "SIGTERM",
-            "SIGTRAP",
-            "SIGTSTP",
-            "SIGTTIN",
-            "SIGTTOU",
-            "SIGUNUSED",
-            "SIGURG",
-            "SIGUSR1",
-            "SIGUSR2",
-            "SIGVTALRM",
-            "SIGWINCH",
-            "SIGXCPU",
-            "SIGXFSZ",
-            "SIGBREAK",
-            "SIGLOST",
-            "SIGINFO"
-          ]
-        },
-        "stdout": { "type": "string" },
-        "stderr": { "type": "string" }
-      }
+      "allOf": [
+        { "$ref": "#/$defs/processBase" },
+        {
+          "type": "object",
+          "required": ["kind", "stdout", "stderr", "retention", "signal"],
+          "properties": {
+            "kind": { "const": "signaled" },
+            "stdout": { "type": "string" },
+            "stderr": { "type": "string" },
+            "retention": { "$ref": "#/$defs/outputRetentionPair" },
+            "signal": { "type": "string", "pattern": "^SIG[A-Z0-9]+$" }
+          }
+        }
+      ],
+      "unevaluatedProperties": false
     },
-    "clientOutcome": {
+    "executableNotFoundOutcome": {
+      "type": "object",
+      "allOf": [
+        { "$ref": "#/$defs/processBase" },
+        {
+          "type": "object",
+          "required": ["kind", "remediation"],
+          "properties": {
+            "kind": { "const": "executable-not-found" },
+            "remediation": { "type": "string", "minLength": 1 }
+          }
+        }
+      ],
+      "unevaluatedProperties": false
+    },
+    "driverCompletedOutcome": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["kind", "client", "result", "telemetry"],
+      "required": ["kind", "driver", "propagation", "redaction", "process"],
       "properties": {
-        "kind": { "const": "client-completed" },
-        "client": {
-          "type": "object",
-          "additionalProperties": false,
-          "required": ["id", "name", "behavior"],
-          "properties": {
-            "id": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
-            "name": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
-            "behavior": { "enum": ["entrypoint", "utility"] }
-          }
-        },
-        "result": { "$ref": "#/$defs/clientResult" },
-        "telemetry": { "$ref": "#/$defs/clientTelemetry" }
+        "kind": { "const": "driver-completed" },
+        "driver": { "$ref": "#/$defs/driverDetails" },
+        "propagation": { "$ref": "#/$defs/telemetryPropagationRecord" },
+        "redaction": { "$ref": "#/$defs/redaction" },
+        "process": { "$ref": "#/$defs/processOutcome" }
       }
     },
-    "clientResult": {
-      "oneOf": [
+    "driverPrepareFailedOutcome": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "driverId", "propagation", "error"],
+      "properties": {
+        "kind": { "const": "driver-prepare-failed" },
+        "driverId": { "type": "string", "minLength": 1 },
+        "propagation": { "$ref": "#/$defs/telemetryPropagationRecord" },
+        "error": { "$ref": "#/$defs/recordedError" }
+      }
+    },
+    "driverPropagationRefusedOutcome": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "driverId", "propagation"],
+      "properties": {
+        "kind": { "const": "driver-propagation-refused" },
+        "driverId": { "type": "string", "minLength": 1 },
+        "propagation": { "$ref": "#/$defs/telemetryPropagationRecord" }
+      }
+    },
+    "rawProcessOutcome": {
+      "allOf": [
+        { "$ref": "#/$defs/processOutcome" },
         {
           "type": "object",
-          "additionalProperties": false,
-          "required": ["kind", "value"],
-          "properties": { "kind": { "const": "json" }, "value": true }
-        },
-        {
-          "type": "object",
-          "additionalProperties": false,
-          "required": ["kind", "value"],
+          "required": ["propagation"],
           "properties": {
-            "kind": { "const": "text" },
-            "value": { "type": "string" }
+            "propagation": { "$ref": "#/$defs/telemetryPropagationRecord" }
           }
-        },
-        {
-          "type": "object",
-          "additionalProperties": false,
-          "required": ["kind"],
-          "properties": { "kind": { "const": "empty" } }
         }
       ]
     },
-    "clientTelemetry": {
+    "processOutcome": {
+      "oneOf": [
+        { "$ref": "#/$defs/exitedOutcome" },
+        { "$ref": "#/$defs/signaledOutcome" },
+        { "$ref": "#/$defs/executableNotFoundOutcome" }
+      ]
+    },
+    "driverDetails": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "target", "execution"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "target": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "participantId", "service", "protocol", "containerPort"],
+          "properties": {
+            "kind": { "const": "participant" },
+            "participantId": { "type": "string", "minLength": 1 },
+            "service": { "type": "string", "minLength": 1 },
+            "protocol": { "type": "string", "minLength": 1 },
+            "containerPort": { "type": "integer", "minimum": 1, "maximum": 65535 }
+          }
+        },
+        "execution": { "$ref": "#/$defs/executionLocation" }
+      }
+    },
+    "executionLocation": {
       "oneOf": [
         {
           "type": "object",
           "additionalProperties": false,
           "required": ["kind"],
-          "properties": { "kind": { "const": "not-requested" } }
+          "properties": { "kind": { "const": "host" } }
         },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "participantId", "service"],
+          "properties": {
+            "kind": { "const": "participant" },
+            "participantId": { "type": "string", "minLength": 1 },
+            "service": { "type": "string", "minLength": 1 }
+          }
+        }
+      ]
+    },
+    "outputRetentionPair": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["stdout", "stderr"],
+      "properties": {
+        "stdout": { "$ref": "#/$defs/outputRetention" },
+        "stderr": { "$ref": "#/$defs/outputRetention" }
+      }
+    },
+    "outputRetention": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "originalBytes"],
+          "properties": {
+            "kind": { "const": "complete" },
+            "originalBytes": { "type": "integer", "minimum": 0 }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "originalBytes", "retainedBytes", "omittedBytes", "retained"],
+          "properties": {
+            "kind": { "const": "truncated" },
+            "originalBytes": { "type": "integer", "minimum": 0 },
+            "retainedBytes": { "type": "integer", "minimum": 0 },
+            "omittedBytes": { "type": "integer", "minimum": 1 },
+            "retained": { "const": "head-and-tail" }
+          }
+        }
+      ]
+    },
+    "telemetryPropagationRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schemaVersion", "kind", "expectation", "outcome"],
+      "properties": {
+        "schemaVersion": { "const": 1 },
+        "kind": { "const": "telemetry-propagation-v1" },
+        "expectation": { "$ref": "#/$defs/propagationExpectation" },
+        "outcome": { "$ref": "#/$defs/propagationOutcome" }
+      }
+    },
+    "propagationExpectation": {
+      "oneOf": [
         {
           "type": "object",
           "additionalProperties": false,
           "required": ["kind"],
-          "properties": { "kind": { "const": "complete" } }
+          "properties": { "kind": { "const": "propagation-not-requested" } }
         },
         {
           "type": "object",
           "additionalProperties": false,
-          "required": ["kind", "error"],
+          "required": ["kind", "carrier"],
           "properties": {
-            "kind": { "const": "incomplete" },
-            "error": { "$ref": "#/$defs/recordedError" }
+            "kind": { "const": "w3c-trace-context-propagation" },
+            "carrier": { "enum": ["http-headers", "message-metadata", "process-environment"] }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "resource"],
+          "properties": {
+            "kind": { "const": "shared-state-propagation-unsupported" },
+            "resource": { "type": "string", "minLength": 1 }
+          }
+        }
+      ]
+    },
+    "propagationOutcome": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "reason"],
+          "properties": {
+            "kind": { "const": "context-not-injected" },
+            "reason": { "enum": ["raw-command", "driver-declared-none"] }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "format", "carrier"],
+          "properties": {
+            "kind": { "const": "context-injected" },
+            "format": { "const": "w3c-trace-context" },
+            "carrier": { "enum": ["http-headers", "message-metadata", "process-environment"] }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "boundary", "resource"],
+          "properties": {
+            "kind": { "const": "context-not-supported" },
+            "boundary": { "const": "shared-state" },
+            "resource": { "type": "string", "minLength": 1 }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "format", "carrier", "message"],
+          "properties": {
+            "kind": { "const": "context-injection-failed" },
+            "format": { "const": "w3c-trace-context" },
+            "carrier": { "enum": ["http-headers", "message-metadata", "process-environment"] },
+            "message": { "type": "string", "minLength": 1 }
+          }
+        }
+      ]
+    },
+    "redaction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "requestArgv", "preparedArgv", "environment"],
+      "properties": {
+        "kind": { "const": "driver-redaction" },
+        "requestArgv": {
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["kind"],
+              "properties": { "kind": { "const": "none" } }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["kind", "positions"],
+              "properties": {
+                "kind": { "const": "positions" },
+                "positions": {
+                  "type": "array",
+                  "uniqueItems": true,
+                  "items": { "type": "integer", "minimum": 0 }
+                }
+              }
+            }
+          ]
+        },
+        "preparedArgv": {
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["kind"],
+              "properties": { "kind": { "const": "none" } }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["kind", "positions"],
+              "properties": {
+                "kind": { "const": "positions" },
+                "positions": {
+                  "type": "array",
+                  "uniqueItems": true,
+                  "items": { "type": "integer", "minimum": 0 }
+                }
+              }
+            }
+          ]
+        },
+        "environment": {
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["kind"],
+              "properties": { "kind": { "const": "none" } }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["kind", "keys"],
+              "properties": {
+                "kind": { "const": "keys" },
+                "keys": {
+                  "type": "array",
+                  "uniqueItems": true,
+                  "items": { "type": "string", "minLength": 1 }
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "activeTelemetryScope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schemaVersion", "kind", "executionId", "operationName", "startedAt", "context"],
+      "properties": {
+        "schemaVersion": { "const": 1 },
+        "kind": { "const": "telemetry-execution-scope-active-v1" },
+        "executionId": { "type": "string", "minLength": 1 },
+        "operationName": { "type": "string", "minLength": 1 },
+        "startedAt": { "type": "string", "minLength": 1 },
+        "context": { "$ref": "#/$defs/w3cContext" }
+      }
+    },
+    "completedTelemetryScope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "kind",
+        "executionId",
+        "operationName",
+        "startedAt",
+        "endedAt",
+        "context",
+        "result"
+      ],
+      "properties": {
+        "schemaVersion": { "const": 1 },
+        "kind": { "const": "telemetry-execution-scope-completed-v1" },
+        "executionId": { "type": "string", "minLength": 1 },
+        "operationName": { "type": "string", "minLength": 1 },
+        "startedAt": { "type": "string", "minLength": 1 },
+        "endedAt": { "type": "string", "minLength": 1 },
+        "context": { "$ref": "#/$defs/w3cContext" },
+        "result": { "$ref": "#/$defs/telemetryResult" }
+      }
+    },
+    "w3cContext": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "traceId", "spanId", "traceFlags", "traceparent", "traceState"],
+      "properties": {
+        "kind": { "const": "w3c-trace-context" },
+        "traceId": { "type": "string", "pattern": "^(?!0{32}$)[0-9a-f]{32}$" },
+        "spanId": { "type": "string", "pattern": "^(?!0{16}$)[0-9a-f]{16}$" },
+        "traceFlags": { "const": "01" },
+        "traceparent": {
+          "type": "string",
+          "pattern": "^00-(?!0{32}-)[0-9a-f]{32}-(?!0{16}-)[0-9a-f]{16}-01$"
+        },
+        "traceState": {
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["kind"],
+              "properties": { "kind": { "const": "trace-state-absent" } }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["kind", "value"],
+              "properties": {
+                "kind": { "const": "trace-state-present" },
+                "value": { "type": "string", "minLength": 1 }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "telemetryResult": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind"],
+          "properties": { "kind": { "const": "telemetry-scope-succeeded" } }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "message"],
+          "properties": {
+            "kind": { "const": "telemetry-scope-failed" },
+            "message": { "type": "string", "minLength": 1 }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "reason"],
+          "properties": {
+            "kind": { "const": "telemetry-scope-interrupted" },
+            "reason": { "type": "string", "minLength": 1 }
           }
         }
       ]
@@ -273,13 +570,10 @@
       "additionalProperties": false,
       "required": ["name", "message"],
       "properties": {
-        "name": { "type": "string" },
+        "name": { "type": "string", "minLength": 1 },
         "message": { "type": "string" }
       }
     },
-    "stringArray": {
-      "type": "array",
-      "items": { "type": "string" }
-    }
+    "argv": { "type": "array", "minItems": 1, "items": { "type": "string" } }
   }
 }

@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.suites.dev/blackbox/driver-runtime/v1",
+  "title": "Blackbox project driver runtime v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "kind", "runtime"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "kind": { "const": "blackbox-driver-runtime" },
+    "runtime": { "const": "node" }
+  }
+}

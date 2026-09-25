@@ -25,9 +25,8 @@ export interface RunningManager {
   readonly server: Server;
   readonly sandbox: SandboxHandle;
   readonly entrypoint: CapsuleEntrypoint;
-  readonly participantServices: ReadonlyMap<string, string>;
   readonly telemetryAuthorization: CapsuleTelemetryAuthorization;
-  readonly clients: CatalogSandboxInput['clients'];
+  readonly drivers: CatalogSandboxInput['drivers'];
   activities: CapsuleActivityReport[];
   record: CapsuleSessionRecord;
 }
@@ -112,12 +111,6 @@ async function resolveCollectorRuntime(ports: CapsuleManagerPorts) {
   );
 }
 
-function participantServices(plan: CatalogSandboxInput): ReadonlyMap<string, string> {
-  return new Map(
-    Object.entries(plan.metadata.participants).map(([id, value]) => [id, value.service]),
-  );
-}
-
 export async function prepareManager(
   bootstrap: CapsuleManagerBootstrap,
   ports: CapsuleManagerPorts,
@@ -178,9 +171,8 @@ export async function prepareManager(
       sandbox,
       entrypoint: acquired.entrypoint,
       telemetryAuthorization,
-      clients: plan.clients,
+      drivers: plan.drivers,
       record,
-      participantServices: participantServices(plan),
       activities: [...(await readCapsuleActivities(bootstrap))],
     };
   } catch (error) {

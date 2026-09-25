@@ -7,6 +7,7 @@ import { decodeCatalogConfig, type SchemaBlackboxConfig } from './catalog-decode
 import type {
   BlackboxConfig,
   CatalogValidationIssue,
+  CatalogEntry,
   ObservationBoundary,
 } from '../model/catalog-types.js';
 
@@ -105,6 +106,34 @@ function duplicateBoundaryIssues(
   return issues;
 }
 
+function driverIssues(entryId: string, entry: CatalogEntry): CatalogValidationIssue[] {
+  const issues: CatalogValidationIssue[] = [];
+  for (const [driverId, driver] of Object.entries(entry.drivers)) {
+    const path = `/catalog/entries/${entryId}/drivers/${driverId}`;
+    issues.push(...validateRelativePath(driver.ref, `${path}/ref`));
+    if (!Object.hasOwn(entry.participants, driver.target.participant)) {
+      issues.push(
+        semanticIssue(
+          `${path}/target/participant`,
+          `does not name a participant in ${entryId}: ${driver.target.participant}`,
+        ),
+      );
+    }
+    if (
+      driver.execution.kind === 'participant' &&
+      !Object.hasOwn(entry.participants, driver.execution.participant)
+    ) {
+      issues.push(
+        semanticIssue(
+          `${path}/execution/participant`,
+          `does not name a participant in ${entryId}: ${driver.execution.participant}`,
+        ),
+      );
+    }
+  }
+  return issues;
+}
+
 function semanticIssues(config: BlackboxConfig): CatalogValidationIssue[] {
   const issues: CatalogValidationIssue[] = [];
   if (!Object.hasOwn(config.catalog.entries, config.catalog.default)) {
@@ -142,6 +171,8 @@ function semanticIssues(config: BlackboxConfig): CatalogValidationIssue[] {
       }
     }
 
+    issues.push(...driverIssues(entryId, entry));
+
     issues.push(...duplicateBoundaryIssues(entry.observation.boundaries, entryPath));
     const boundaryIds = new Set(entry.observation.boundaries.map((boundary) => boundary.id));
     for (const [index, boundaryId] of entry.observation.requiredBoundaries.entries()) {
@@ -158,26 +189,6 @@ function semanticIssues(config: BlackboxConfig): CatalogValidationIssue[] {
 
   for (const [activationId, activation] of Object.entries(config.activations)) {
     issues.push(...validateRelativePath(activation.ref, `/activations/${activationId}/ref`));
-  }
-  for (const [clientId, client] of Object.entries(config.clients)) {
-    const clientPath = `/clients/${clientId}`;
-    issues.push(...validateRelativePath(client.ref, `${clientPath}/ref`));
-    if (client.target.kind !== 'participant') {
-      continue;
-    }
-    const participantId = client.target.participant;
-    if (
-      !Object.values(config.catalog.entries).some((entry) =>
-        Object.hasOwn(entry.participants, participantId),
-      )
-    ) {
-      issues.push(
-        semanticIssue(
-          `${clientPath}/target/participant`,
-          `does not name a participant in any catalog entry: ${participantId}`,
-        ),
-      );
-    }
   }
   return issues;
 }

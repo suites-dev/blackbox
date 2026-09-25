@@ -6,8 +6,9 @@ import { tmpdir } from 'node:os';
 
 import { afterEach, expect, it } from 'vitest';
 
-import { managerRequest } from './client.js';
-import { readRequest, sendResponse } from './server.js';
+import { managerInteractiveRequest, managerRequest } from './client.js';
+import { readManagerFrames, readRequest, sendEvent, sendResponse } from './server.js';
+import type { CapsuleInteractiveEvent } from '../types.js';
 
 const resources: { server: Server; directory: string; sockets: Set<Socket> }[] = [];
 const request = { kind: 'stop-request', requestId: 'request-42', reason: 'completed' } as const;
@@ -55,6 +56,79 @@ it('round-trips an exact request and response through a real Unix socket', async
   });
   await expect(managerRequest({ socketPath, request })).resolves.toEqual(response);
   expect(received).toEqual(request);
+});
+
+it('streams output and controls bidirectionally over a real Unix socket', async () => {
+  const received: unknown[] = [];
+  const socketPath = await socketServer((socket) => {
+    void (async () => {
+      const frames = readManagerFrames(socket);
+      received.push((await frames.next()).value);
+      await sendEvent(socket, {
+        kind: 'exec-output',
+        requestId: 'interactive-1',
+        stream: 'stdout',
+        chunk: Buffer.from('live').toString('base64'),
+      });
+      received.push((await frames.next()).value);
+      await sendEvent(socket, {
+        kind: 'exec-control-result',
+        requestId: 'interactive-1',
+        controlId: 'input-1',
+        result: { kind: 'delivered', action: 'stdin-chunk', mechanism: 'host-process-stdin' },
+      });
+      await sendResponse(socket, {
+        kind: 'exec-response',
+        requestId: 'interactive-1',
+        activityId: '00000000-0000-4000-8000-000000000042',
+        outcome: {
+          kind: 'executable-not-found',
+          argv: ['missing'],
+          location: { kind: 'host' },
+          remediation: 'Install missing',
+        },
+      });
+    })();
+  });
+  const events: CapsuleInteractiveEvent[] = [];
+  async function* controls() {
+    await Promise.resolve();
+    yield { kind: 'stdin-chunk' as const, controlId: 'input-1', chunk: Buffer.from('secret') };
+  }
+  const result = await managerInteractiveRequest({
+    socketPath,
+    request: {
+      kind: 'interactive-exec-request',
+      requestId: 'interactive-1',
+      purpose: 'stimulus',
+      target: { kind: 'host', argv: ['missing'] },
+      terminal: { columns: 80, rows: 24 },
+    },
+    controls: controls(),
+    onEvent: (event) => events.push(event),
+  });
+  expect(result).toMatchObject({
+    kind: 'exec-response',
+    requestId: 'interactive-1',
+    activityId: '00000000-0000-4000-8000-000000000042',
+  });
+  expect(events).toEqual([
+    { kind: 'output', stream: 'stdout', chunk: Buffer.from('live') },
+    {
+      kind: 'control-result',
+      controlId: 'input-1',
+      result: { kind: 'delivered', action: 'stdin-chunk', mechanism: 'host-process-stdin' },
+    },
+  ]);
+  expect(received).toEqual([
+    expect.objectContaining({ kind: 'interactive-exec-request', requestId: 'interactive-1' }),
+    {
+      kind: 'exec-stdin-chunk',
+      requestId: 'interactive-1',
+      controlId: 'input-1',
+      chunk: Buffer.from('secret').toString('base64'),
+    },
+  ]);
 });
 
 it('waits for a complete fragmented response instead of interpreting a partial frame', async () => {

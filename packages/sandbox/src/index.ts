@@ -27,6 +27,14 @@ export {
   type StartFailedSandboxRecord,
   type StopFailedSandboxRecord,
 } from './ownership/records.js';
+export {
+  decodeSandboxRecord,
+  SandboxRecordValidationError,
+} from './ownership/record-decoder.js';
+export {
+  sandboxRecordSchema,
+  sandboxRecordSchemaUrl,
+} from './schema/sandbox-record-schema.js';
 export { TestcontainersComposeDriver } from './acquisition/testcontainers-driver.js';
 export {
   type SandboxProgressEvent,
@@ -83,6 +91,20 @@ export type {
   SandboxTelemetryParticipant,
   SandboxTelemetryStatus,
 } from './types.js';
+export type {
+  SandboxContainerControlResult,
+  SandboxContainerExecution,
+  SandboxContainerExecutionError,
+  SandboxContainerExecutionFailure,
+  SandboxContainerExecutionInput,
+  SandboxContainerExecutionOutcome,
+  SandboxContainerExecutionStartResult,
+  SandboxContainerOutputEvent,
+  SandboxContainerResizeInput,
+  SandboxContainerSignalInput,
+  SandboxContainerStdinChunk,
+  SandboxContainerTerminal,
+} from './execution/streaming/types.js';
 
 export type {
   ComposeAcquisitionObservation,

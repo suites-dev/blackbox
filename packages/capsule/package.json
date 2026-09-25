@@ -29,11 +29,12 @@
     "test": "vitest run --config vitest.config.ts"
   },
   "dependencies": {
-    "@suites/blackbox-client": "workspace:*",
+    "@suites/blackbox-driver": "workspace:*",
     "@suites/blackbox-catalog-internal": "workspace:*",
     "@suites/blackbox-inst-runtime-node": "workspace:*",
     "@suites/blackbox-otel-collector-internal": "workspace:*",
     "@suites/blackbox-sandbox-internal": "workspace:*",
+    "@suites/blackbox-telemetry-internal": "workspace:*",
     "ajv": "8.18.0"
   },
   "devDependencies": {

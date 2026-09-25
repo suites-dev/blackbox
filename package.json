@@ -20,7 +20,7 @@
     "node": ">=22.15"
   },
   "dependencies": {
-    "@suites/blackbox-client": "workspace:*"
+    "@suites/blackbox-driver": "workspace:*"
   },
   "packageManager": "pnpm@9.15.4",
   "devDependencies": {
@@ -45,5 +45,18 @@
     "*.ts": [
       "eslint --fix --no-warn-ignored"
     ]
-  }
+  },
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/suites-dev/blackbox.git"
+  },
+  "keywords": [],
+  "bugs": {
+    "url": "https://github.com/suites-dev/blackbox/issues"
+  },
+  "homepage": "https://github.com/suites-dev/blackbox#readme"
 }

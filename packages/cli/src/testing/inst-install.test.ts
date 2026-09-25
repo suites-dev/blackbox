@@ -50,15 +50,20 @@ void test('inst install creates the Node bootstrap and repeat installation leave
   }
 });
 
-void test('inst install rejects unsupported and conflicting installations', async () => {
+void test('inst install rejects unimplemented runtimes and conflicting installations', async () => {
   const projectDirectory = await mkdtemp(join(tmpdir(), 'blackbox-cli-inst-failure-'));
   try {
-    const unsupported = await runCli({
-      directory: projectDirectory,
-      argv: ['inst', 'install', '--runtime', 'python'],
-    });
-    assert.equal(unsupported.status, 1);
-    assert.match(unsupported.stderr, /Unsupported instrumentation runtime: python/u);
+    for (const runtime of ['java', 'python']) {
+      const unsupported = await runCli({
+        directory: projectDirectory,
+        argv: ['inst', 'install', '--runtime', runtime],
+      });
+      assert.equal(unsupported.status, 2);
+      assert.match(
+        unsupported.stderr,
+        new RegExp(`Expected --runtime=${runtime} to be one of: node`, 'u'),
+      );
+    }
 
     const target = join(projectDirectory, instrumentationDirectoryRelativePath);
     await mkdir(target, { recursive: true });

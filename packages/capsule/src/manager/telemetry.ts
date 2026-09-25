@@ -1,45 +1,13 @@
-import { basename, dirname, resolve } from 'node:path';
-
 import type { CatalogSandboxInput } from '@suites/blackbox-catalog-internal';
-import type {
-  SandboxTelemetryEnabledInput,
-  SandboxTelemetryParticipant,
-} from '@suites/blackbox-sandbox-internal';
+import type { SandboxTelemetryEnabledInput } from '@suites/blackbox-sandbox-internal';
 
 import type { CapsuleManagerBootstrap } from '../protocol.js';
 import type { CapsuleCollectorRuntime } from './collector-runtime.js';
+import { participantTelemetry } from './telemetry/participants.js';
 
 export interface CapsuleTelemetryAuthorization {
   readonly kind: 'bearer-token';
   readonly token: string;
-}
-
-function participantTelemetry(
-  plan: CatalogSandboxInput,
-): readonly SandboxTelemetryParticipant[] {
-  return Object.values(plan.metadata.participants).flatMap((participant) => {
-    if (participant.activation.kind === 'unconfigured') {
-      return [];
-    }
-    if (participant.runtime !== 'node') {
-      throw new Error(
-        `Activation for runtime ${JSON.stringify(participant.runtime)} is not supported`,
-      );
-    }
-    const activation = plan.metadata.activations[participant.activation.activationId];
-    const source = resolve(plan.projectDirectory, dirname(activation.ref));
-    const target = '/blackbox/instrumentation';
-    return [
-      {
-        service: participant.service,
-        runtime: participant.runtime,
-        environment: {
-          NODE_OPTIONS: `--require=${target}/${basename(activation.ref)}`,
-        },
-        mounts: [{ source, target, access: 'read-only' }],
-      },
-    ];
-  });
 }
 
 export function capsuleSandboxTelemetry(input: {
@@ -70,6 +38,6 @@ export function capsuleSandboxTelemetry(input: {
       },
       drain: { kind: 'signal', signal: 'SIGTERM' },
     },
-    participants: participantTelemetry(input.plan),
+    participants: participantTelemetry({ plan: input.plan, bootstrap: input.bootstrap }),
   };
 }

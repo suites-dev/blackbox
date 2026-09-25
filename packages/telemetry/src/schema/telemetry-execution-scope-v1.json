@@ -1,0 +1,99 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://blackbox.suites.dev/schemas/telemetry-execution-scope-v1.json",
+  "title": "Blackbox telemetry execution scope",
+  "$defs": {
+    "context": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "traceId", "spanId", "traceFlags", "traceparent", "traceState"],
+      "properties": {
+        "kind": { "const": "w3c-trace-context" },
+        "traceId": { "type": "string", "pattern": "^(?!0{32}$)[0-9a-f]{32}$" },
+        "spanId": { "type": "string", "pattern": "^(?!0{16}$)[0-9a-f]{16}$" },
+        "traceFlags": { "const": "01" },
+        "traceparent": {
+          "type": "string",
+          "pattern": "^00-(?!0{32}-)[0-9a-f]{32}-(?!0{16}-)[0-9a-f]{16}-01$"
+        },
+        "traceState": {
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["kind"],
+              "properties": { "kind": { "const": "trace-state-absent" } }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["kind", "value"],
+              "properties": {
+                "kind": { "const": "trace-state-present" },
+                "value": { "type": "string", "minLength": 1 }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "result": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind"],
+          "properties": { "kind": { "const": "telemetry-scope-succeeded" } }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "message"],
+          "properties": {
+            "kind": { "const": "telemetry-scope-failed" },
+            "message": { "type": "string", "minLength": 1 }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "reason"],
+          "properties": {
+            "kind": { "const": "telemetry-scope-interrupted" },
+            "reason": { "type": "string", "minLength": 1 }
+          }
+        }
+      ]
+    }
+  },
+  "oneOf": [
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schemaVersion", "kind", "executionId", "operationName", "startedAt", "context"],
+      "properties": {
+        "schemaVersion": { "const": 1 },
+        "kind": { "const": "telemetry-execution-scope-active-v1" },
+        "executionId": { "type": "string", "minLength": 1 },
+        "operationName": { "type": "string", "minLength": 1 },
+        "startedAt": { "type": "string", "format": "date-time" },
+        "context": { "$ref": "#/$defs/context" }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schemaVersion", "kind", "executionId", "operationName", "startedAt", "endedAt", "context", "result"],
+      "properties": {
+        "schemaVersion": { "const": 1 },
+        "kind": { "const": "telemetry-execution-scope-completed-v1" },
+        "executionId": { "type": "string", "minLength": 1 },
+        "operationName": { "type": "string", "minLength": 1 },
+        "startedAt": { "type": "string", "format": "date-time" },
+        "endedAt": { "type": "string", "format": "date-time" },
+        "context": { "$ref": "#/$defs/context" },
+        "result": { "$ref": "#/$defs/result" }
+      }
+    }
+  ]
+}

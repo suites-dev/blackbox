@@ -1,6 +1,11 @@
 import { asError, SandboxStopError, type RecordWriteOutcome } from './errors.js';
 import { cleanupCompose } from './cleanup/compose.js';
 import { executeInSandbox } from '../execution/container-exec.js';
+import { startContainerExecution } from '../execution/streaming/start.js';
+import type {
+  SandboxContainerExecutionInput,
+  SandboxContainerExecutionStartResult,
+} from '../execution/streaming/types.js';
 import type {
   SandboxResourceInspectionInput,
   SandboxResourceInspectionResult,
@@ -89,6 +94,16 @@ export class RunningSandbox implements SandboxHandle {
       state: this.#state,
       containers: this.containers,
       compose: this.options.compose,
+    });
+  }
+
+  startContainerExecution(
+    input: SandboxContainerExecutionInput,
+  ): Promise<SandboxContainerExecutionStartResult> {
+    return startContainerExecution({
+      request: input,
+      state: this.#state,
+      containers: this.containers,
     });
   }
 

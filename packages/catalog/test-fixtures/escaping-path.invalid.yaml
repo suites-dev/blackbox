@@ -15,6 +15,7 @@ catalog:
         readiness: { path: /health, timeoutMs: 30000 }
       participants:
         api: { service: api, role: entrypoint, runtime: node, activation: node-runtime }
+      drivers: {}
       observation:
         policyId: api-v1
         boundaries:
@@ -30,4 +31,3 @@ activations:
     ref: ../bootstrap.mjs
     adapter: node-factory
     version: 1
-clients: {}

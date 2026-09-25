@@ -1,3 +1,10 @@
+import type { PropagationExpectation } from '@suites/blackbox-telemetry-internal';
+
+export type CatalogDriverPropagation = Exclude<
+  PropagationExpectation,
+  { readonly kind: 'propagation-not-requested' }
+>;
+
 export type CatalogEntryKind = 'system' | 'subsystem';
 export type CatalogIsolation =
   | { readonly kind: 'per-test' }
@@ -11,22 +18,27 @@ export interface BlackboxConfig {
     readonly entries: Readonly<Record<string, CatalogEntry>>;
   };
   readonly activations: Readonly<Record<string, Activation>>;
-  readonly clients: Readonly<Record<string, CatalogClient>>;
 }
 
-export interface CatalogClient {
+export interface CatalogDriver {
+  readonly kind: 'project-driver';
+  readonly runtime: 'node';
   readonly ref: string;
-  readonly target: CatalogClientTarget;
+  readonly target: CatalogDriverTarget;
+  readonly execution: CatalogDriverExecution;
+  readonly propagation: CatalogDriverPropagation;
 }
 
-export type CatalogClientTarget =
-  | { readonly kind: 'entrypoint' }
-  | {
-      readonly kind: 'participant';
-      readonly participant: string;
-      readonly protocol: string;
-      readonly containerPort: number;
-    };
+export interface CatalogDriverTarget {
+  readonly kind: 'participant';
+  readonly participant: string;
+  readonly protocol: string;
+  readonly containerPort: number;
+}
+
+export type CatalogDriverExecution =
+  | { readonly kind: 'host' }
+  | { readonly kind: 'participant'; readonly participant: string };
 
 export interface CatalogEntry {
   readonly kind: CatalogEntryKind;
@@ -42,6 +54,7 @@ export interface CatalogEntry {
     readonly readiness: Readiness;
   };
   readonly participants: Readonly<Record<string, Participant>>;
+  readonly drivers: Readonly<Record<string, CatalogDriver>>;
   readonly observation: ObservationPolicy;
 }
 
@@ -106,7 +119,7 @@ export interface CatalogSandboxInput {
   readonly services: readonly string[];
   readonly endpoints: readonly CatalogEndpointRequest[];
   readonly readiness: readonly CatalogReadinessRequest[];
-  readonly clients: Readonly<Record<string, ResolvedCatalogClient>>;
+  readonly drivers: Readonly<Record<string, ResolvedCatalogDriver>>;
   readonly metadata: {
     readonly kind: CatalogEntryKind;
     readonly isolation: CatalogIsolation;
@@ -116,26 +129,30 @@ export interface CatalogSandboxInput {
   };
 }
 
-export interface ResolvedCatalogClient {
+export interface ResolvedCatalogDriver {
   readonly id: string;
+  readonly kind: 'project-driver';
+  readonly runtime: 'node';
   readonly ref: string;
-  readonly target: ResolvedCatalogClientTarget;
+  readonly target: ResolvedCatalogDriverTarget;
+  readonly execution: ResolvedCatalogDriverExecution;
+  readonly propagation: CatalogDriverPropagation;
 }
 
-export type ResolvedCatalogClientTarget =
-  | {
-      readonly kind: 'entrypoint';
-      readonly participantId: string;
-      readonly service: string;
-      readonly protocol: string;
-      readonly containerPort: number;
-    }
+export interface ResolvedCatalogDriverTarget {
+  readonly kind: 'participant';
+  readonly participantId: string;
+  readonly service: string;
+  readonly protocol: string;
+  readonly containerPort: number;
+}
+
+export type ResolvedCatalogDriverExecution =
+  | { readonly kind: 'host' }
   | {
       readonly kind: 'participant';
       readonly participantId: string;
       readonly service: string;
-      readonly protocol: string;
-      readonly containerPort: number;
     };
 
 export interface CatalogEndpointRequest {

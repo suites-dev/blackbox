@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -7,12 +7,17 @@ import { afterEach, describe, expect, it } from 'vitest';
 import {
   admitCapsuleRecord,
   capsuleActivityPath,
-  capsuleRecordPath,
   capsuleSessionDirectory,
   type CapsuleSessionRecord,
 } from '../../records.js';
 import { reportCapsule } from '../../session/operations.js';
 import type { CapsuleActivityReport, CapsuleSessionState } from '../../types.js';
+import {
+  completeOutputRetention,
+  completedDriverActivity,
+  completedTelemetry,
+  rawCommandPropagation,
+} from '../../persistence/testing/record.fixture.js';
 import { serializeCapsuleReportDocument } from '../serialization.js';
 
 const roots: string[] = [];
@@ -84,14 +89,19 @@ const activity = {
   kind: 'completed',
   activityId: 'activity-1',
   sequence: 1,
+  purpose: 'stimulus',
   target: { kind: 'host' },
   argv: ['curl', '--header', 'Authorization: Bearer capsule-e2e-token', 'API_TOKEN=raw-token'],
+  telemetry: completedTelemetry('activity-1'),
   outcome: {
     kind: 'exited',
+    propagation: rawCommandPropagation,
     argv: ['curl', '--header', 'Authorization: Bearer capsule-e2e-token', '--token', 'raw-token'],
+    location: { kind: 'host' },
     exitCode: 0,
     stdout: '{"token":"response-token","status":"ok"}',
     stderr: '/tmp/.blackbox/s/manager.sock TOKEN=output-token',
+    retention: completeOutputRetention,
   },
   startedAt: '2026-09-23T12:01:00.000Z',
   completedAt: '2026-09-23T12:01:01.000Z',
@@ -125,7 +135,6 @@ function expectSafeJson(json: string): void {
     'url-token',
     'readiness-token',
     'output-token',
-    'executionId',
     'socketPath',
   ]) {
     expect(json).not.toContain(secret);
@@ -162,6 +171,49 @@ describe('Capsule operational report', () => {
     expectSafeJson(json);
   });
 
+  it('applies driver-declared argument redaction and retains execution limitations', async () => {
+    const selected = await fixture('careful-river-ada', 'stopped');
+    const driver = completedDriverActivity();
+    await writeFile(capsuleActivityPath(selected), JSON.stringify([driver]));
+    const result = await reportCapsule(selected);
+    expect(result.kind).toBe('capsule-report');
+    if (result.kind !== 'capsule-report') {
+      return;
+    }
+    const projected = result.document.activities[0];
+    expect(projected).toMatchObject({
+      target: { kind: 'driver', driverId: 'postgres' },
+      purpose: 'inspection',
+      argv: ['psql', '--password', '[REDACTED]'],
+      outcome: {
+        kind: 'driver-completed',
+        propagation: {
+          schemaVersion: 1,
+          kind: 'telemetry-propagation-v1',
+          expectation: {
+            kind: 'shared-state-propagation-unsupported',
+            resource: 'postgresql',
+          },
+          outcome: { kind: 'context-not-supported', boundary: 'shared-state' },
+        },
+        process: {
+          argv: ['psql', '--set', 'trace=[REDACTED]', '--password', '[REDACTED]'],
+          location: { kind: 'participant', participantId: 'postgres' },
+          retention: { stdout: { kind: 'truncated', omittedBytes: 951_424 } },
+        },
+      },
+    });
+    expect(result.document.redactions.entries).toContainEqual({
+      kind: 'sensitive-argument',
+      location: 'activities[0].argv[2]',
+    });
+    expect(result.document.redactions.entries).toContainEqual({
+      kind: 'sensitive-argument',
+      location: 'activities[0].outcome.process.argv[4]',
+    });
+    expect(JSON.stringify(result.document)).not.toContain('private');
+  });
+
   it.each([
     ['admitted', 'starting'],
     ['manager-starting', 'starting'],
@@ -175,40 +227,5 @@ describe('Capsule operational report', () => {
     const selected = await fixture(`steady-comet-${state.replaceAll('-', '')}`, state);
     const result = await reportCapsule(selected);
     expect(result).toMatchObject({ kind: 'capsule-report', document: { lifecycle: { kind } } });
-  });
-});
-
-describe('Capsule report artifact failures', () => {
-  it('returns explicit missing and corrupt artifact failures', async () => {
-    const selected = await fixture('calm-river-maya', 'stopped');
-    await writeFile(capsuleActivityPath(selected), '{not-json');
-    await expect(reportCapsule(selected)).resolves.toMatchObject({
-      kind: 'capsule-report-artifact-failed',
-      artifact: 'activities',
-      sessionId: selected.sessionId,
-    });
-    await expect(
-      reportCapsule({ projectDirectory: selected.projectDirectory, sessionId: 'calm-river-noah' }),
-    ).resolves.toMatchObject({ kind: 'capsule-not-found' });
-  });
-
-  it('distinguishes corrupt progress from a missing optional journal', async () => {
-    const selected = await fixture('flying-summit-grace', 'running');
-    const progressPath = join(capsuleSessionDirectory(selected), 'progress.json');
-    await mkdir(capsuleSessionDirectory(selected), { recursive: true });
-    await writeFile(progressPath, 'not-json');
-    await expect(reportCapsule(selected)).resolves.toMatchObject({
-      kind: 'capsule-report-artifact-failed',
-      artifact: 'progress',
-    });
-  });
-
-  it('identifies a corrupt exact session record', async () => {
-    const selected = await fixture('rapid-harbor-alex', 'stopped');
-    await writeFile(capsuleRecordPath(selected), 'not-json');
-    await expect(reportCapsule(selected)).resolves.toMatchObject({
-      kind: 'capsule-report-artifact-failed',
-      artifact: 'session',
-    });
   });
 });

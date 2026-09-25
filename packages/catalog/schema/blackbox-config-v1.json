@@ -5,7 +5,7 @@
   "description": "Language-neutral schema for a Blackbox catalog authored as YAML or JSON.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schemaVersion", "catalog", "activations", "clients"],
+  "required": ["schemaVersion", "catalog", "activations"],
   "properties": {
     "schemaVersion": {
       "const": 1,
@@ -13,8 +13,7 @@
       "examples": [1]
     },
     "catalog": { "$ref": "#/$defs/catalog" },
-    "activations": { "$ref": "#/$defs/activations" },
-    "clients": { "$ref": "#/$defs/clients" }
+    "activations": { "$ref": "#/$defs/activations" }
   },
   "$defs": {
     "identifier": {
@@ -47,7 +46,15 @@
     "catalogEntry": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["kind", "acquisition", "isolation", "entrypoint", "participants", "observation"],
+      "required": [
+        "kind",
+        "acquisition",
+        "isolation",
+        "entrypoint",
+        "participants",
+        "drivers",
+        "observation"
+      ],
       "properties": {
         "kind": {
           "enum": ["system", "subsystem"],
@@ -65,6 +72,11 @@
           "minProperties": 1,
           "propertyNames": { "$ref": "#/$defs/identifier" },
           "additionalProperties": { "$ref": "#/$defs/participant" }
+        },
+        "drivers": {
+          "type": "object",
+          "propertyNames": { "$ref": "#/$defs/identifier" },
+          "additionalProperties": { "$ref": "#/$defs/driver" }
         },
         "observation": { "$ref": "#/$defs/observation" }
       },
@@ -196,37 +208,69 @@
         "version": { "type": "integer", "minimum": 1 }
       }
     },
-    "clients": {
-      "type": "object",
-      "propertyNames": { "$ref": "#/$defs/identifier" },
-      "additionalProperties": { "$ref": "#/$defs/client" }
-    },
-    "client": {
+    "driver": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["ref", "target"],
+      "required": ["kind", "runtime", "ref", "target", "execution", "propagation"],
       "properties": {
+        "kind": { "const": "project-driver" },
+        "runtime": { "const": "node" },
         "ref": { "$ref": "#/$defs/relativePath" },
-        "target": { "$ref": "#/$defs/clientTarget" }
+        "target": { "$ref": "#/$defs/driverTarget" },
+        "execution": { "$ref": "#/$defs/driverExecution" },
+        "propagation": { "$ref": "#/$defs/driverPropagation" }
       }
     },
-    "clientTarget": {
+    "driverTarget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "participant", "protocol", "containerPort"],
+      "properties": {
+        "kind": { "const": "participant" },
+        "participant": { "$ref": "#/$defs/identifier" },
+        "protocol": { "type": "string", "minLength": 1 },
+        "containerPort": { "type": "integer", "minimum": 1, "maximum": 65535 }
+      }
+    },
+    "driverExecution": {
       "oneOf": [
         {
           "type": "object",
           "additionalProperties": false,
           "required": ["kind"],
-          "properties": { "kind": { "const": "entrypoint" } }
+          "properties": { "kind": { "const": "host" } }
         },
         {
           "type": "object",
           "additionalProperties": false,
-          "required": ["kind", "participant", "protocol", "containerPort"],
+          "required": ["kind", "participant"],
           "properties": {
             "kind": { "const": "participant" },
-            "participant": { "$ref": "#/$defs/identifier" },
-            "protocol": { "type": "string", "minLength": 1 },
-            "containerPort": { "type": "integer", "minimum": 1, "maximum": 65535 }
+            "participant": { "$ref": "#/$defs/identifier" }
+          }
+        }
+      ]
+    },
+    "driverPropagation": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "carrier"],
+          "properties": {
+            "kind": { "const": "w3c-trace-context-propagation" },
+            "carrier": {
+              "enum": ["http-headers", "message-metadata", "process-environment"]
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "resource"],
+          "properties": {
+            "kind": { "const": "shared-state-propagation-unsupported" },
+            "resource": { "type": "string", "minLength": 1 }
           }
         }
       ]

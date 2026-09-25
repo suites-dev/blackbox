@@ -35,6 +35,7 @@ async function fixture() {
         activation: { kind: 'unconfigured' },
       },
     },
+    drivers: {},
     observation: {
       policyId: 'test',
       boundaries: [],

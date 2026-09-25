@@ -26,6 +26,7 @@
     "test": "vitest run --config vitest.config.ts"
   },
   "dependencies": {
+    "@suites/blackbox-telemetry-internal": "workspace:*",
     "ajv": "8.18.0",
     "yaml": "2.8.3"
   },

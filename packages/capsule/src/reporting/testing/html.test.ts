@@ -2,6 +2,11 @@ import { Script } from 'node:vm';
 import { describe, expect, it } from 'vitest';
 
 import { capsuleReportClientView, renderCapsuleHtml } from '../../index.js';
+import {
+  completeOutputRetention,
+  completedDriverActivity,
+  completedHostActivity,
+} from '../../persistence/testing/record.fixture.js';
 import type { CapsuleReportDocument } from '../types.js';
 
 const hostile = '<script>alert("x&y")</script>\'';
@@ -36,6 +41,28 @@ function document(): CapsuleReportDocument {
     cleanup: { kind: 'not-attempted' },
     failure: { kind: 'none' },
     redactions: { count: 0, entries: [] },
+  };
+}
+
+function hostileActivity() {
+  const activity = completedDriverActivity();
+  if (activity.outcome.kind !== 'driver-completed') {
+    throw new Error('Expected driver fixture');
+  }
+  return {
+    ...activity,
+    activityId: 'activity-1',
+    target: { kind: 'driver' as const, driverId: hostile },
+    argv: ['curl', hostile],
+    outcome: {
+      ...activity.outcome,
+      driver: { ...activity.outcome.driver, id: hostile },
+      process: {
+        ...activity.outcome.process,
+        argv: ['curl', hostile],
+        stdout: hostile,
+      },
+    },
   };
 }
 
@@ -77,18 +104,7 @@ function hostileDocument(): CapsuleReportDocument {
         durationMs: 25,
       },
     ],
-    activities: [
-      {
-        kind: 'completed',
-        activityId: 'activity-1',
-        sequence: 1,
-        target: { kind: 'participant', participant: hostile },
-        argv: [],
-        startedAt: '',
-        completedAt: '',
-        outcome: { kind: 'exited', argv: [], exitCode: 0, stdout: '', stderr: '' },
-      },
-    ],
+    activities: [hostileActivity()],
     activityTelemetry: [
       {
         kind: 'available',
@@ -147,14 +163,19 @@ describe('Capsule-owned HTML renderer', () => {
       cleanup: { kind: 'complete' },
       activities: [
         {
-          kind: 'completed',
+          ...completedHostActivity(),
           activityId: 'activity-2',
           sequence: 2,
-          target: { kind: 'host' },
-          argv: [],
-          startedAt: '',
-          completedAt: '',
-          outcome: { kind: 'signaled', argv: [], signal: 'SIGTERM', stdout: '', stderr: '' },
+          argv: ['sleep', '10'],
+          outcome: {
+            kind: 'signaled',
+            argv: ['sleep', '10'],
+            location: { kind: 'host' },
+            signal: 'SIGTERM',
+            stdout: '',
+            stderr: '',
+            retention: completeOutputRetention,
+          },
         },
       ],
     } satisfies CapsuleReportDocument;
@@ -201,7 +222,9 @@ describe('Capsule acquisition report presentation', () => {
 
 describe('shared mockup presentation', () => {
   it('embeds the exact served renderer and styles in offline exports with no network assets', () => {
-    const html = renderCapsuleHtml({ report: document() });
+    const html = renderCapsuleHtml({
+      report: { ...document(), activities: [completedDriverActivity()] },
+    });
     expect(html).toContain(capsuleReportClientView.script);
     expect(html).toContain(capsuleReportClientView.styles);
     expect(html).toContain('report-workspace');
@@ -212,6 +235,11 @@ describe('shared mockup presentation', () => {
     expect(html).toContain("return activity ? ['activity-' + activity.sequence] : open");
     expect(html).toContain("method + ' ' + path");
     expect(html).toContain("span.service + ' → '");
+    expect(html).toContain('Trace propagation');
+    expect(html).toContain('Execution location');
+    expect(html).toContain('"driverId":"postgres"');
+    expect(html).toContain('"kind":"context-not-supported"');
+    expect(html).toContain('"kind":"truncated"');
     expect(html).not.toContain('raw telemetry was not retained for this exact activity ID');
     expect(html).toContain("createElementNS('http://www.w3.org/2000/svg'");
     expect(html).toContain('Inter,ui-sans-serif,system-ui');

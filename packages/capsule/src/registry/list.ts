@@ -8,6 +8,7 @@ import {
   type CapsuleSessionRecord,
 } from '../records.js';
 import { decodeCapsuleSessionRecord } from '../persistence/decoder.js';
+import { reconcileDeadCapsuleManager } from '../session/recovery/index.js';
 import { canonicalProjectDirectory } from '../session/validation.js';
 import type {
   CapsuleRegistryEntry,
@@ -66,7 +67,11 @@ async function readEntry(input: {
     if (record.artifactRoot !== expectedRoot) {
       throw new Error('Capsule session record artifactRoot does not match its registry directory');
     }
-    return { kind: 'capsule-session-summary', summary: summary(record) };
+    const reconciled = await reconcileDeadCapsuleManager({
+      projectDirectory: input.projectDirectory,
+      sessionId: directorySessionId,
+    });
+    return { kind: 'capsule-session-summary', summary: summary(reconciled.record) };
   } catch (error) {
     return {
       kind: 'capsule-session-corrupt',

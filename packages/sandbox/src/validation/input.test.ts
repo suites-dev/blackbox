@@ -22,6 +22,10 @@ interface InvalidInputCase {
   readonly message: string;
 }
 
+function malformedEnvironment(value: unknown): SandboxInput['environment'] {
+  return value as SandboxInput['environment'];
+}
+
 const invalidInputs = [
   {
     name: 'invalid identity',
@@ -107,6 +111,14 @@ const invalidInputs = [
     name: 'invalid environment name',
     change: (input) => ({ ...input, environment: { 'BAD=NAME': 'x' } }),
     message: 'environment variable name',
+  },
+  {
+    name: 'non-string environment value',
+    change: (input) => ({
+      ...input,
+      environment: malformedEnvironment({ PORT: 3000 }),
+    }),
+    message: 'must be a string',
   },
   {
     name: 'invalid startup timeout',

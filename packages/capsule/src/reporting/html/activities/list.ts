@@ -1,14 +1,22 @@
 export const capsuleActivityListScript = `
+function processOutcome(a) {
+  if (a.kind !== 'completed') return null;
+  return a.outcome.kind === 'driver-completed' ? a.outcome.process :
+    ['exited', 'signaled', 'executable-not-found'].includes(a.outcome.kind) ? a.outcome : null;
+}
+function processBadge(outcome) {
+  if (!outcome) return null;
+  if (outcome.kind === 'executable-not-found') return badge('executable missing', 'bad');
+  if (outcome.kind === 'signaled') return badge('signal ' + outcome.signal, 'bad');
+  return badge('exit ' + outcome.exitCode, outcome.exitCode === 0 ? 'good' : 'bad');
+}
 function activityBadge(a) {
   if (a.kind === 'running') return badge('running', 'warn');
+  if (a.kind === 'interrupted') return badge('interrupted', 'bad');
   if (a.kind === 'failed') return badge('failed', 'bad');
-  if (a.outcome.kind === 'client-completed')
-    return a.outcome.telemetry.kind === 'incomplete'
-      ? badge('telemetry incomplete', 'warn')
-      : badge('client complete', 'good');
-  return a.outcome.kind === 'signaled'
-    ? badge('signal ' + a.outcome.signal, 'bad')
-    : badge('exit ' + a.outcome.exitCode, a.outcome.exitCode === 0 ? 'good' : 'bad');
+  if (a.outcome.kind === 'driver-prepare-failed') return badge('driver failed', 'bad');
+  if (a.outcome.kind === 'driver-propagation-refused') return badge('propagation refused', 'bad');
+  return processBadge(processOutcome(a));
 }
 function activityTelemetry(d, a) {
   return d.activityTelemetry.find((item) => item.activityId === a.activityId);
@@ -35,7 +43,7 @@ function activities(d, open, root) {
     title(
       'RECORDED INVOCATIONS',
       'Activity timeline',
-      'Recorded invocations and outcomes. Traced client activities include raw telemetry.',
+      'Recorded commands, execution locations, propagation outcomes, and raw telemetry.',
     ),
   );
   const panel = n('div', 'activity-list');

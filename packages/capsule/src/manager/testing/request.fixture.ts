@@ -4,7 +4,11 @@ import { createServer } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import type { SandboxHandle, SandboxStopInput } from '@suites/blackbox-sandbox-internal';
+import type {
+  SandboxEndpoint,
+  SandboxHandle,
+  SandboxStopInput,
+} from '@suites/blackbox-sandbox-internal';
 
 import { admitCapsuleRecord, type CapsuleSessionRecord } from '../../records.js';
 import { serveManager } from '../requests.js';
@@ -42,44 +46,46 @@ function recordFixture(directory: string): CapsuleSessionRecord {
   };
 }
 
-export async function requestFixture(stop: (input: SandboxStopInput) => Promise<void>) {
+function sandboxFixture(input: {
+  readonly stop: (request: SandboxStopInput) => Promise<void>;
+  readonly environment: Readonly<Record<string, string>>;
+}): { readonly sandbox: SandboxHandle; readonly endpoints: Map<string, SandboxEndpoint> } {
+  const testcontainer = {
+    id: 'api-container', name: 'api-1', host: '127.0.0.1', labels: {},
+    environment: { ...input.environment },
+    networkNames: [], mappedPorts: new Map<number, number>(), getMappedPort: () => 4567,
+  };
+  const container = { service: 'api', testcontainer };
+  const unused = () => { throw new Error('unused'); };
+  const endpoints = new Map<string, SandboxEndpoint>();
+  const sandbox = {
+    sandboxId: 'test-sandbox', projectName: 'test-compose', state: 'running',
+    declaredEnvironment: {}, endpoints,
+    containers: new Map([['api', container]]), telemetry: { kind: 'disabled' },
+    inspectTelemetry: () => Promise.resolve({ kind: 'disabled' }),
+    getContainer: () => container, inspectResources: unused,
+    execute: (request) => Promise.resolve({
+      kind: 'exited', service: request.service, exitCode: 7,
+      stdout: 'participant-output', stderr: 'participant-error', combined: '',
+    }),
+    startContainerExecution: unused,
+    stop: async (request) => {
+      await input.stop(request);
+      return { kind: 'stopped', sandboxId: 'test-sandbox',
+        reason: request.reason, cleanup: 'complete' };
+    },
+  } satisfies SandboxHandle;
+  return { sandbox, endpoints };
+}
+
+export async function requestFixture(
+  stop: (input: SandboxStopInput) => Promise<void>,
+  containerEnvironment: Readonly<Record<string, string>> = {},
+) {
   const directory = await mkdtemp(join(tmpdir(), 'bb-manager-'));
   const record = recordFixture(directory);
   await admitCapsuleRecord({ projectDirectory: directory, record });
-  const sandbox = {
-    sandboxId: 'test-sandbox',
-    projectName: 'test-compose',
-    state: 'running',
-    declaredEnvironment: {},
-    endpoints: new Map(),
-    containers: new Map(),
-    telemetry: { kind: 'disabled' },
-    inspectTelemetry: () => Promise.resolve({ kind: 'disabled' }),
-    getContainer: () => {
-      throw new Error('unused');
-    },
-    inspectResources: () => {
-      throw new Error('unused');
-    },
-    execute: (input) =>
-      Promise.resolve({
-        kind: 'exited',
-        service: input.service,
-        exitCode: 7,
-        stdout: 'participant-output',
-        stderr: 'participant-error',
-        combined: '',
-      }),
-    stop: async (input) => {
-      await stop(input);
-      return {
-        kind: 'stopped',
-        sandboxId: 'test-sandbox',
-        reason: input.reason,
-        cleanup: 'complete',
-      };
-    },
-  } satisfies SandboxHandle;
+  const { sandbox, endpoints } = sandboxFixture({ stop, environment: containerEnvironment });
   const server = createServer();
   const bootstrap = {
     projectDirectory: directory,
@@ -93,9 +99,8 @@ export async function requestFixture(stop: (input: SandboxStopInput) => Promise<
     sandbox,
     record,
     activities: [],
-    participantServices: new Map([['postgres', 'db-service']]),
     telemetryAuthorization: { kind: 'bearer-token', token: 'test-collector-token' },
-    clients: {},
+    drivers: {},
     entrypoint: { url: 'http://127.0.0.1:4567', host: '127.0.0.1', port: 4567, protocol: 'http' },
   } satisfies RunningManager;
   serveManager(bootstrap, manager);
@@ -105,6 +110,7 @@ export async function requestFixture(stop: (input: SandboxStopInput) => Promise<
     ...bootstrap,
     socketPath: record.socketPath,
     manager,
+    endpoints,
     close: async () => {
       if (server.listening) {
         await new Promise<void>((resolve) =>

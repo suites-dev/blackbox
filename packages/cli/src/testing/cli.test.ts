@@ -27,6 +27,7 @@ catalog:
         readiness: { path: /health, timeoutMs: 1000 }
       participants:
         api: { service: api, role: entrypoint, runtime: infra }
+      drivers: {}
       observation:
         policyId: orders-v1
         boundaries: []
@@ -34,7 +35,6 @@ catalog:
         terminalObservationWindowMs: 0
         redaction: { requestBodies: not-captured, headers: [], dynamicIdentifiers: none }
 activations: {}
-clients: {}
 `,
   );
   return directory;

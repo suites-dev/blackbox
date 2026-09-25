@@ -6,18 +6,21 @@ import { immutableResources } from './resources.js';
 
 it('takes inspection snapshots without exposing mutable maps or backing driver state', () => {
   const labels = { owner: 'original' };
+  const environment = { PRIVATE_TOKEN: 'original' };
   const networkNames = ['original-network'];
   const container = inspectableContainer({
     service: 'orders',
-    container: { ...composeContainer(), labels, networkNames },
+    container: { ...composeContainer(), labels, environment, networkNames },
     endpoints: [
       { name: 'http', service: 'orders', containerPort: 3000 },
       { name: 'db', service: 'postgres', containerPort: 5432 },
     ],
   });
   labels.owner = 'changed';
+  environment.PRIVATE_TOKEN = 'changed';
   networkNames.push('foreign-network');
   expect(container.testcontainer.labels).toEqual({ owner: 'original' });
+  expect(container.testcontainer.environment).toEqual({ PRIVATE_TOKEN: 'original' });
   expect(container.testcontainer.networkNames).toEqual(['original-network']);
   expect([...container.testcontainer.mappedPorts]).toEqual([[3000, 13_000]]);
   const source = new Map([['orders', container]]);
@@ -31,6 +34,9 @@ it('takes inspection snapshots without exposing mutable maps or backing driver s
     expect('clear' in map).toBe(false);
   });
   expect(() => Object.assign(container.testcontainer.labels, { owner: 'changed' })).toThrow();
+  expect(() =>
+    Object.assign(container.testcontainer.environment, { PRIVATE_TOKEN: 'changed' }),
+  ).toThrow();
   expect(() => Object.assign(container.testcontainer, { host: 'foreign-host' })).toThrow();
 });
 

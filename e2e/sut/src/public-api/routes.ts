@@ -76,6 +76,15 @@ export async function handlePublicApi(
     sendJson(response, 200, await routes.fixture.inspect());
     return;
   }
+  const proofPrefix = '/fixture/shared-state-proof/';
+  if (request.method === 'POST' && url.pathname.startsWith(proofPrefix)) {
+    const proofId = decodeURIComponent(url.pathname.slice(proofPrefix.length));
+    if (proofId.trim().length === 0) {
+      throw new HttpError(400, 'invalid-proof-id', 'proof ID must be non-empty');
+    }
+    sendJson(response, 202, { kind: 'shared-state-proof-observed', proofId });
+    return;
+  }
   throw new HttpError(404, 'not-found', 'route not found');
 }
 

@@ -7,7 +7,6 @@ import type {
   CapsuleEntrypoint,
   CapsuleFailureRecord,
   CapsuleOperationFailure,
-  CapsuleExecutionOutcome,
   CapsuleProgressEvent,
   CapsuleReadinessDetails,
   CapsuleRecordedError,
@@ -17,6 +16,7 @@ import type { CapsuleSessionRecord } from '../records.js';
 import type { CapsuleActivityTelemetry } from './telemetry-types.js';
 import type {
   CollectorActivityReadResult,
+  CollectorInstrumentationStatus,
   CollectorSessionReadResult,
 } from '@suites/blackbox-otel-collector-internal';
 
@@ -37,16 +37,7 @@ export type CapsuleReportAvailability<Value> = CapsuleAvailability<Value>;
 
 export type CapsuleReportFailureRecord = CapsuleFailureRecord;
 
-export type CapsuleReportActivity =
-  | Extract<CapsuleActivityReport, { readonly kind: 'running' }>
-  | (Omit<Extract<CapsuleActivityReport, { readonly kind: 'completed' }>, 'argv' | 'outcome'> & {
-      readonly argv: readonly string[];
-      readonly outcome: CapsuleExecutionOutcome;
-    })
-  | (Omit<Extract<CapsuleActivityReport, { readonly kind: 'failed' }>, 'argv' | 'error'> & {
-      readonly argv: readonly string[];
-      readonly error: CapsuleRecordedError;
-    });
+export type CapsuleReportActivity = CapsuleActivityReport;
 
 export type CapsuleReportRedactionKind =
   | 'authorization-credential'
@@ -59,6 +50,31 @@ export type CapsuleReportRedactionKind =
 export interface CapsuleReportRedaction {
   readonly kind: CapsuleReportRedactionKind;
   readonly location: string;
+}
+
+export interface CapsuleReportCollectorRun {
+  readonly startedAt: string;
+  readonly updatedAt: string;
+  readonly stopped:
+    | { readonly kind: 'not-stopped' }
+    | { readonly kind: 'stopped'; readonly at: string };
+  readonly receiver: 'ready' | 'draining' | 'stopped' | 'failed' | 'interrupted';
+  readonly instrumentation: CollectorInstrumentationStatus;
+  readonly shutdown: 'not-started' | 'draining' | 'complete' | 'timed-out' | 'interrupted';
+  readonly failure:
+    | { readonly kind: 'none' }
+    | {
+        readonly kind: 'recorded';
+        readonly error: { readonly name: string; readonly message: string };
+      };
+}
+
+export interface CapsuleReportTraceClassification {
+  readonly activityCorrelated: readonly {
+    readonly traceId: string;
+    readonly activityIds: readonly string[];
+  }[];
+  readonly sessionOnly: readonly string[];
 }
 
 export type CapsuleReportObservations =
@@ -78,12 +94,8 @@ export type CapsuleReportObservations =
             readonly lastReceivedAt: string;
           };
       readonly fragmentCount: number;
-      readonly traceIds: readonly string[];
-      readonly activations: readonly {
-        readonly runtime: string;
-        readonly serviceName: string;
-        readonly activatedAt: string;
-      }[];
+      readonly runs: readonly CapsuleReportCollectorRun[];
+      readonly traces: CapsuleReportTraceClassification;
     }
   | {
       readonly kind: 'collector-session-missing';

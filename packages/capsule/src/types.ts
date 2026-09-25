@@ -182,14 +182,25 @@ export interface CapsuleReportInput {
 
 export type {
   CapsuleActivityReport,
-  CapsuleClientOutcome,
+  CapsuleActivityPurpose,
+  CapsuleDriverDetails,
+  CapsuleDriverOutcome,
   CapsuleExecInput,
+  CapsuleInteractiveControl,
+  CapsuleInteractiveControlResult,
+  CapsuleInteractiveEvent,
+  CapsuleInteractiveExecInput,
   CapsuleExecResult,
   CapsuleExecTarget,
+  CapsuleExecutionInteraction,
   CapsuleExecutionOutcome,
+  CapsuleExecutionLocation,
   CapsuleObservationsInput,
   CapsuleObservationsResult,
+  CapsuleOutputRetention,
   CapsuleProcessOutcome,
+  CapsuleRawCommandOutcome,
+  CapsuleTerminalSize,
 } from './execution/types.js';
 
 export type CapsuleCleanupReport =

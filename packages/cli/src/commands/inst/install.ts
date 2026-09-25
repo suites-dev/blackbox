@@ -10,7 +10,7 @@ export default class InstInstall extends Command {
   static override flags = {
     runtime: Flags.string({
       description: 'Application runtime to instrument',
-      options: ['node', 'java', 'python'],
+      options: ['node'],
       required: true,
     }),
   };

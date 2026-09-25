@@ -40,6 +40,7 @@ export function composeContainer(): ComposeContainer {
     name: 'orders-1',
     host: '127.0.0.1',
     labels: { 'com.docker.compose.project': 'orders-project' },
+    environment: { MODE: 'container' },
     networkNames: ['orders_default'],
     getMappedPort(input) {
       return input.containerPort + 10_000;

@@ -77,9 +77,11 @@ function found(): Extract<
 
 describe('bounded activity trace projection', () => {
   it('retains downstream spans without an activity attribute, parent/link identity and timing, deduplicating spans in exact linked traces', () => {
-    const result = projectActivityTelemetry(found(), createRedactionContext());
+    const result = projectActivityTelemetry(found(), createRedactionContext(), traceId);
     expect(result.kind).toBe('available');
-    if (result.kind !== 'available') {throw new Error('expected available');}
+    if (result.kind !== 'available') {
+      throw new Error('expected available');
+    }
     expect(result.spans).toHaveLength(2);
     expect(result.spans[0]).toMatchObject({ spanKind: 'internal' });
     expect(result.spans[1]).toMatchObject({
@@ -114,6 +116,7 @@ describe('bounded activity trace projection', () => {
       projectActivityTelemetry(
         { kind: 'collector-activity-missing', identity, activityId, message: 'missing' },
         createRedactionContext(),
+        traceId,
       ),
     ).toEqual({ kind: 'unavailable', activityId, reason: 'not-retained' });
     expect(
@@ -125,10 +128,28 @@ describe('bounded activity trace projection', () => {
           error: { name: 'Error', message: '/Users/private-person' },
         },
         createRedactionContext(),
+        traceId,
       ),
     ).toEqual({ kind: 'unavailable', activityId, reason: 'corrupt' });
     expect(
-      projectActivityTelemetry({ ...found(), traceIds: [] }, createRedactionContext()),
-    ).toEqual({ kind: 'unavailable', activityId, reason: 'not-retained' });
+      projectActivityTelemetry(
+        found(),
+        createRedactionContext(),
+        'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+      ),
+    ).toEqual({
+      kind: 'unavailable',
+      activityId,
+      reason: 'not-retained',
+    });
+  });
+
+  it('uses the execution scope trace as the exact correlation key', () => {
+    const result = projectActivityTelemetry(
+      { ...found(), traceIds: ['99999999999999999999999999999999'] },
+      createRedactionContext(),
+      traceId,
+    );
+    expect(result).toMatchObject({ kind: 'available', activityId });
   });
 });

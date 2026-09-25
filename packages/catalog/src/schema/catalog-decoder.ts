@@ -1,7 +1,6 @@
 import type {
   Activation,
   BlackboxConfig,
-  CatalogClient,
   CatalogEntry,
   CatalogEntryKind,
   ObservationPolicy,
@@ -32,6 +31,7 @@ interface SchemaCatalogEntryFields {
     readonly readiness: Readiness;
   };
   readonly participants: Readonly<Record<string, SchemaParticipant>>;
+  readonly drivers: CatalogEntry['drivers'];
   readonly observation: ObservationPolicy;
 }
 
@@ -49,7 +49,6 @@ export interface SchemaBlackboxConfig {
     readonly entries: Readonly<Record<string, SchemaCatalogEntry>>;
   };
   readonly activations: Readonly<Record<string, Activation>>;
-  readonly clients: Readonly<Record<string, CatalogClient>>;
 }
 
 function decodeParticipant(participant: SchemaParticipant): Participant {
@@ -87,6 +86,7 @@ function decodeCatalogEntry(entry: SchemaCatalogEntry): CatalogEntry {
         decodeParticipant(participant),
       ]),
     ),
+    drivers: entry.drivers,
     observation: entry.observation,
   };
 }
@@ -104,6 +104,5 @@ export function decodeCatalogConfig(config: SchemaBlackboxConfig): BlackboxConfi
       ),
     },
     activations: config.activations,
-    clients: config.clients,
   };
 }

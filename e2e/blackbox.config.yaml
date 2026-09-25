@@ -45,10 +45,60 @@ catalog:
           service: redis
           role: dependency
           runtime: infra
+        redis-proof-consumer:
+          service: redis-proof-consumer
+          role: application
+          runtime: node
+          activation: sut-node-factory
         localstack:
           service: localstack
           role: dependency
           runtime: infra
+      drivers:
+        public-api:
+          kind: project-driver
+          runtime: node
+          ref: .blackbox/drivers/public-api.mjs
+          target:
+            kind: participant
+            participant: public-api
+            protocol: http
+            containerPort: 3000
+          execution:
+            kind: host
+          propagation:
+            kind: w3c-trace-context-propagation
+            carrier: http-headers
+        postgres:
+          kind: project-driver
+          runtime: node
+          ref: .blackbox/drivers/postgres.mjs
+          target:
+            kind: participant
+            participant: postgres
+            protocol: postgresql
+            containerPort: 5432
+          execution:
+            kind: participant
+            participant: postgres
+          propagation:
+            kind: shared-state-propagation-unsupported
+            resource: postgresql
+        redis:
+          kind: project-driver
+          runtime: node
+          ref: .blackbox/drivers/redis.mjs
+          target:
+            kind: participant
+            participant: redis
+            protocol: redis
+            containerPort: 6379
+          execution:
+            kind: participant
+            participant: redis
+          propagation:
+            kind: shared-state-propagation-unsupported
+            resource: redis
       observation: &observation
         policyId: e2e-all-participants-v1
         boundaries:
@@ -90,6 +140,7 @@ catalog:
           role: entrypoint
           runtime: node
           activation: sut-node-factory
+      drivers: {}
       observation: *observation
     payment-mock-dist:
       kind: subsystem
@@ -111,14 +162,10 @@ catalog:
           role: entrypoint
           runtime: node
           activation: sut-node-factory
+      drivers: {}
       observation: *observation
 activations:
   sut-node-factory:
     ref: .blackbox/instrumentation/instrumentation.js
     adapter: node-preload
     version: 1
-clients:
-  create-subscription:
-    ref: .blackbox/clients/create-subscription.mjs
-    target:
-      kind: entrypoint

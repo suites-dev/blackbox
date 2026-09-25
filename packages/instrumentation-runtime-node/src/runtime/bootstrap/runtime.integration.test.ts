@@ -10,6 +10,7 @@ import {
   instrumentationDirectoryRelativePath,
 } from '@suites/blackbox-instrumentation-internal';
 
+import { createNodeRuntimeActivation, type NodeRuntimeActivationAdapter } from './activation.js';
 import { nodeRuntimeProvider } from './provider.js';
 
 const commonJsApplication = `
@@ -37,6 +38,7 @@ server.listen(0, '127.0.0.1', () => {
 function telemetryEnvironment(): NodeJS.ProcessEnv {
   return {
     ...process.env,
+    TRACEPARENT: '00-0102030405060708090a0b0c0d0e0f10-1112131415161718-01',
     OTEL_SERVICE_NAME: 'blackbox-instrumentation-integration',
     OTEL_TRACES_EXPORTER: 'console',
     OTEL_METRICS_EXPORTER: 'none',
@@ -45,11 +47,27 @@ function telemetryEnvironment(): NodeJS.ProcessEnv {
   };
 }
 
+function activatedEnvironment(input: {
+  readonly adapter: NodeRuntimeActivationAdapter;
+  readonly bootstrap: string;
+  readonly directory: string;
+}): NodeJS.ProcessEnv {
+  const activation = createNodeRuntimeActivation({
+    kind: 'node-runtime-activation',
+    adapter: input.adapter,
+    bootstrapPath: input.bootstrap,
+    dependencyDirectory: join(input.directory, 'node_modules'),
+    inheritedNodeOptions: { kind: 'present', value: '--enable-source-maps' },
+  });
+  return { ...telemetryEnvironment(), ...activation.environment };
+}
+
 function expectHttpSpans(result: ReturnType<typeof spawnSync>): void {
   expect(result.status, result.stderr.toString()).toBe(0);
   const output = result.stdout.toString();
   expect(output).toContain('@opentelemetry/instrumentation-http');
-  expect(output).toMatch(/traceId: '[0-9a-f]{32}'/u);
+  expect(output).toContain("traceId: '0102030405060708090a0b0c0d0e0f10'");
+  expect(output).toContain("spanId: '1112131415161718'");
   expect(output).toMatch(/id: '[0-9a-f]{16}'/u);
   expect(output).toMatch(/name: 'GET'/u);
   expect(output).toMatch(/kind: [12]/u);
@@ -74,10 +92,10 @@ it('installs a standalone dependency tree and instruments real CommonJS and ESM 
     const commonJsEntry = join(projectDirectory, 'application.cjs');
     await writeFile(commonJsEntry, commonJsApplication);
     expectHttpSpans(
-      spawnSync(process.execPath, ['--require', bootstrap, commonJsEntry], {
+      spawnSync(process.execPath, [commonJsEntry], {
         cwd: projectDirectory,
         encoding: 'utf8',
-        env: telemetryEnvironment(),
+        env: activatedEnvironment({ adapter: 'node-preload', bootstrap, directory }),
         timeout: 15_000,
       }),
     );
@@ -85,16 +103,26 @@ it('installs a standalone dependency tree and instruments real CommonJS and ESM 
     const moduleEntry = join(projectDirectory, 'application.mjs');
     await writeFile(moduleEntry, moduleApplication);
     expectHttpSpans(
-      spawnSync(
-        process.execPath,
-        [`--experimental-loader=${hook}`, '--import', bootstrap, moduleEntry],
-        {
-          cwd: projectDirectory,
-          encoding: 'utf8',
-          env: telemetryEnvironment(),
-          timeout: 15_000,
-        },
-      ),
+      spawnSync(process.execPath, [moduleEntry], {
+        cwd: projectDirectory,
+        encoding: 'utf8',
+        env: activatedEnvironment({ adapter: 'node-esm', bootstrap, directory }),
+        timeout: 15_000,
+      }),
+    );
+
+    const invalidContext = spawnSync(process.execPath, ['--eval', 'void 0'], {
+      cwd: projectDirectory,
+      encoding: 'utf8',
+      env: {
+        ...activatedEnvironment({ adapter: 'node-preload', bootstrap, directory }),
+        TRACEPARENT: 'invalid',
+      },
+      timeout: 15_000,
+    });
+    expect(invalidContext.status).not.toBe(0);
+    expect(invalidContext.stderr).toContain(
+      'TRACEPARENT does not contain valid W3C trace context.',
     );
   } finally {
     await rm(projectDirectory, { recursive: true, force: true });

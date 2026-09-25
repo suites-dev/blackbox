@@ -1,6 +1,7 @@
 import { link, mkdir, readFile, readdir, rename, unlink, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { SandboxLifecycleState, SandboxStopReason } from '../types.js';
+import { decodeSandboxRecord } from './record-decoder.js';
 
 export interface RecordedError {
   readonly name: string;
@@ -112,7 +113,7 @@ export async function admitSandboxRecord(input: {
 
 export async function readSandboxRecord(input: SandboxRecordSelector): Promise<SandboxRecord> {
   const bytes = await readFile(sandboxRecordPath(input), 'utf8');
-  return JSON.parse(bytes) as SandboxRecord;
+  return decodeSandboxRecord(bytes);
 }
 
 function isActive(record: SandboxRecord): record is ActiveSandboxRecord {
@@ -135,9 +136,8 @@ export async function findInterruptedSandboxes(input: {
     names
       .filter((name) => name.endsWith('.json'))
       .sort()
-      .map(
-        async (name) =>
-          JSON.parse(await readFile(join(input.recordDirectory, name), 'utf8')) as SandboxRecord,
+      .map(async (name) =>
+        decodeSandboxRecord(await readFile(join(input.recordDirectory, name), 'utf8')),
       ),
   );
   return records.filter(isActive).map((record) => ({ status: 'interrupted', record }));

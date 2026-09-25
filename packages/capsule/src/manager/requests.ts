@@ -1,132 +1,91 @@
 import { unlink } from 'node:fs/promises';
-import { randomUUID } from 'node:crypto';
 import type { Socket } from 'node:net';
 
-import { capsuleConnectionEnvironment } from '../connection-environment.js';
-import { runCapsuleClient } from '../execution/client-process.js';
-import { runHost, runParticipant } from '../execution/commands.js';
-import { readRequest, sendResponse } from '../ipc/server.js';
-import type { CapsuleManagerBootstrap, CapsuleManagerRequest } from '../protocol.js';
-import { recordedError, writeCapsuleActivities } from '../records.js';
-import type { CapsuleActivityReport, CapsuleExecutionOutcome } from '../types.js';
+import { readManagerFrames, sendEvent, sendResponse } from '../ipc/server.js';
+import type {
+  CapsuleManagerBootstrap,
+  CapsuleManagerClientFrame,
+  CapsuleManagerControlFrame,
+  CapsuleManagerRequest,
+} from '../protocol.js';
+import { recordedError } from '../records.js';
+import type {
+  CapsuleExecutionInteraction,
+  CapsuleInteractiveControl,
+  CapsuleInteractiveEvent,
+} from '../types.js';
+import { handleExec } from './exec-request.js';
 import { persist, transition, type RunningManager } from './runtime.js';
 
 function assertNever(value: never): never {
   throw new Error(`Unhandled Capsule request: ${JSON.stringify(value)}`);
 }
 
-async function executeTarget(input: {
-  readonly request: Extract<CapsuleManagerRequest, { readonly kind: 'exec-request' }>;
-  readonly bootstrap: CapsuleManagerBootstrap;
-  readonly manager: RunningManager;
-  readonly activityId: string;
-}): Promise<CapsuleExecutionOutcome> {
-  const { target } = input.request;
-  switch (target.kind) {
-    case 'host':
-      return runHost({
-        argv: target.argv,
-        cwd: input.bootstrap.projectDirectory,
-        environment: capsuleConnectionEnvironment({
-          sessionId: input.bootstrap.sessionId,
-          entrypoint: input.manager.entrypoint,
-        }),
-      });
-    case 'participant': {
-      const service = input.manager.participantServices.get(target.participant);
-      if (service === undefined) {
-        throw new Error(`Unknown participant ${JSON.stringify(target.participant)}`);
-      }
-      return runParticipant({ sandbox: input.manager.sandbox, service, argv: target.argv });
-    }
-    case 'client': {
-      if (!Object.hasOwn(input.manager.clients, target.clientId)) {
-        throw new Error(`Unknown client ${JSON.stringify(target.clientId)}`);
-      }
-      const client = input.manager.clients[target.clientId];
-      return runCapsuleClient({
-        projectDirectory: input.bootstrap.projectDirectory,
-        sessionId: input.bootstrap.sessionId,
-        executionId: input.bootstrap.executionId,
-        activityId: input.activityId,
-        client,
-        args: target.args,
-        sandbox: input.manager.sandbox,
-        authorization: input.manager.telemetryAuthorization,
-      });
-    }
+function isControl(frame: CapsuleManagerClientFrame): frame is CapsuleManagerControlFrame {
+  return frame.kind.startsWith('exec-') && frame.kind !== 'exec-request';
+}
+
+function decodeControl(frame: CapsuleManagerControlFrame): CapsuleInteractiveControl {
+  switch (frame.kind) {
+    case 'exec-stdin-chunk':
+      return {
+        kind: 'stdin-chunk',
+        controlId: frame.controlId,
+        chunk: Buffer.from(frame.chunk, 'base64'),
+      };
+    case 'exec-stdin-end':
+      return { kind: 'stdin-end', controlId: frame.controlId };
+    case 'exec-resize':
+      return { kind: 'resize', controlId: frame.controlId, size: frame.terminal };
+    case 'exec-signal':
+      return { kind: 'signal', controlId: frame.controlId, signal: frame.signal };
     default:
-      return assertNever(target);
+      return assertNever(frame);
   }
 }
 
-async function handleExec(input: {
-  readonly socket: Socket;
-  readonly request: Extract<CapsuleManagerRequest, { readonly kind: 'exec-request' }>;
-  readonly bootstrap: CapsuleManagerBootstrap;
-  readonly manager: RunningManager;
-}): Promise<void> {
-  const startedAt = new Date().toISOString();
-  const target = input.request.target;
-  const activityId = randomUUID();
-  const admitted = {
-    kind: 'running',
-    activityId,
-    sequence: input.manager.activities.length + 1,
-    target:
-      target.kind === 'participant'
-        ? { kind: 'participant' as const, participant: target.participant }
-        : target.kind === 'client'
-          ? { kind: 'client' as const, clientId: target.clientId }
-          : { kind: 'host' as const },
-    argv: target.kind === 'client' ? [...target.args] : [...target.argv],
-    startedAt,
-  } satisfies CapsuleActivityReport;
-  input.manager.activities = [...input.manager.activities, admitted];
-  await writeCapsuleActivities({
-    projectDirectory: input.bootstrap.projectDirectory,
-    sessionId: input.bootstrap.sessionId,
-    activities: input.manager.activities,
-  });
-  let outcome: CapsuleExecutionOutcome;
-  try {
-    outcome = await executeTarget({ ...input, activityId });
-  } catch (error) {
-    input.manager.activities = [
-      ...input.manager.activities.slice(0, -1),
-      {
-        ...admitted,
-        kind: 'failed',
-        error: recordedError(error),
-        completedAt: new Date().toISOString(),
-      },
-    ];
-    await writeCapsuleActivities({
-      projectDirectory: input.bootstrap.projectDirectory,
-      sessionId: input.bootstrap.sessionId,
-      activities: input.manager.activities,
-    });
-    throw error;
+async function* interactiveControls(input: {
+  readonly frames: AsyncGenerator<CapsuleManagerClientFrame>;
+  readonly requestId: string;
+}): AsyncGenerator<CapsuleInteractiveControl> {
+  for await (const frame of input.frames) {
+    if (!isControl(frame)) {
+      throw new Error(`Unexpected ${frame.kind} after interactive execution started`);
+    }
+    if (frame.requestId !== input.requestId) {
+      throw new Error('Interactive control request identity does not match execution');
+    }
+    yield decodeControl(frame);
   }
-  input.manager.activities = [
-    ...input.manager.activities.slice(0, -1),
-    {
-      ...admitted,
-      kind: 'completed',
-      outcome,
-      completedAt: new Date().toISOString(),
+}
+
+function interactiveTransport(input: {
+  readonly socket: Socket;
+  readonly request: Extract<CapsuleManagerRequest, { readonly kind: 'interactive-exec-request' }>;
+  readonly frames: AsyncGenerator<CapsuleManagerClientFrame>;
+}): CapsuleExecutionInteraction {
+  return {
+    kind: 'interactive',
+    terminal: input.request.terminal,
+    controls: interactiveControls({ frames: input.frames, requestId: input.request.requestId }),
+    onEvent: (event: CapsuleInteractiveEvent) => {
+      const frame =
+        event.kind === 'output'
+          ? {
+              kind: 'exec-output' as const,
+              requestId: input.request.requestId,
+              stream: event.stream,
+              chunk: Buffer.from(event.chunk).toString('base64'),
+            }
+          : {
+              kind: 'exec-control-result' as const,
+              requestId: input.request.requestId,
+              controlId: event.controlId,
+              result: event.result,
+            };
+      void sendEvent(input.socket, frame).catch(() => undefined);
     },
-  ];
-  await writeCapsuleActivities({
-    projectDirectory: input.bootstrap.projectDirectory,
-    sessionId: input.bootstrap.sessionId,
-    activities: input.manager.activities,
-  });
-  await sendResponse(input.socket, {
-    kind: 'exec-response',
-    requestId: input.request.requestId,
-    outcome,
-  });
+  };
 }
 
 async function handleStop(input: {
@@ -171,10 +130,30 @@ async function handleConnection(
 ): Promise<void> {
   let request: CapsuleManagerRequest | undefined;
   try {
-    request = await readRequest(socket);
+    const frames = readManagerFrames(socket);
+    const first = await frames.next();
+    if (first.done || isControl(first.value)) {
+      throw new Error('Capsule manager connection must start with a request');
+    }
+    request = first.value;
     switch (request.kind) {
       case 'exec-request':
-        await handleExec({ socket, request, bootstrap, manager });
+        await handleExec({
+          socket,
+          request,
+          bootstrap,
+          manager,
+          interaction: { kind: 'captured' },
+        });
+        break;
+      case 'interactive-exec-request':
+        await handleExec({
+          socket,
+          request,
+          bootstrap,
+          manager,
+          interaction: interactiveTransport({ socket, request, frames }),
+        });
         break;
       case 'stop-request':
         await handleStop({ socket, request, bootstrap, manager });
@@ -192,7 +171,11 @@ async function handleConnection(
 }
 
 export function serveManager(bootstrap: CapsuleManagerBootstrap, manager: RunningManager): void {
+  let tail = Promise.resolve();
   manager.server.on('connection', (socket) => {
-    void handleConnection(socket, bootstrap, manager);
+    tail = tail.then(() => handleConnection(socket, bootstrap, manager));
+    void tail.catch(() => {
+      return undefined;
+    });
   });
 }

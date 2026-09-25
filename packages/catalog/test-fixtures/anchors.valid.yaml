@@ -13,6 +13,7 @@ catalog:
         readiness: { path: /health, timeoutMs: 30000 }
       participants:
         api: { service: api, role: entrypoint, runtime: node, activation: node-runtime }
+      drivers: {}
       observation: &shared-observation
         policyId: shared-v1
         boundaries: [{ id: effects.http, kind: http, authoritativeFor: [HTTP effects] }]
@@ -33,10 +34,10 @@ catalog:
         readiness: { path: /health, timeoutMs: 30000 }
       participants:
         worker: { service: worker, role: entrypoint, runtime: node, activation: node-runtime }
+      drivers: {}
       observation: *shared-observation
 activations:
   node-runtime:
     ref: .blackbox/instrumentation/bootstrap.mjs
     adapter: node-factory
     version: 1
-clients: {}

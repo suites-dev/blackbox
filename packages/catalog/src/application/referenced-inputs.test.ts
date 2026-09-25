@@ -26,13 +26,13 @@ function catalogAt(
           orders: {
             ...orders,
             acquisition: { ...orders.acquisition, files: [composeFile] },
+            drivers: {},
           },
         },
       },
       activations: {
         'node-runtime': { ...base.activations['node-runtime'], ref: activationFile },
       },
-      clients: {},
     },
   };
 }
@@ -79,8 +79,8 @@ it('rejects directory references and symlinks that resolve outside the project',
   ]);
 });
 
-it('reports a missing project-authored client module', async () => {
-  const projectDirectory = await mkdtemp(join(tmpdir(), 'blackbox-catalog-client-'));
+it('reports a missing project-authored driver module', async () => {
+  const projectDirectory = await mkdtemp(join(tmpdir(), 'blackbox-catalog-driver-'));
   await mkdir(join(projectDirectory, '.blackbox/catalog'), { recursive: true });
   await mkdir(join(projectDirectory, '.blackbox/instrumentation'), { recursive: true });
   await Promise.all([
@@ -92,24 +92,45 @@ it('reports a missing project-authored client module', async () => {
     '.blackbox/catalog/orders.yml',
     '.blackbox/instrumentation/node.mjs',
   );
-  const withClient = {
+  const baseEntry = catalog.config.catalog.entries.orders;
+  const withDriver = {
     ...catalog,
     config: {
       ...catalog.config,
-      clients: {
-        orders: {
-          ref: '.blackbox/clients/missing.mjs',
-          target: { kind: 'entrypoint' },
+      catalog: {
+        ...catalog.config.catalog,
+        entries: {
+          orders: {
+            ...baseEntry,
+            drivers: {
+              orders: {
+                kind: 'project-driver',
+                runtime: 'node',
+                ref: '.blackbox/drivers/missing.mjs',
+                target: {
+                  kind: 'participant',
+                  participant: 'api',
+                  protocol: 'http',
+                  containerPort: 3000,
+                },
+                execution: { kind: 'host' },
+                propagation: {
+                  kind: 'w3c-trace-context-propagation',
+                  carrier: 'http-headers',
+                },
+              },
+            },
+          },
         },
       },
     },
   } satisfies LoadedCatalog;
 
-  await expect(validateReferencedInputs({ catalog: withClient })).resolves.toEqual([
+  await expect(validateReferencedInputs({ catalog: withDriver })).resolves.toEqual([
     {
       kind: 'semantic',
-      instancePath: '/clients/orders/ref',
-      message: 'referenced file does not exist: .blackbox/clients/missing.mjs',
+      instancePath: '/catalog/entries/orders/drivers/orders/ref',
+      message: 'referenced file does not exist: .blackbox/drivers/missing.mjs',
     },
   ]);
 });

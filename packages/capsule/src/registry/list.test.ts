@@ -2,7 +2,7 @@ import { mkdir, mkdtemp, realpath, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { admitCapsuleRecord, capsuleRuntimeRoot, type CapsuleSessionRecord } from '../records.js';
 import { listCapsuleSessions } from './list.js';
@@ -52,6 +52,7 @@ function record(input: {
 }
 
 afterEach(async () => {
+  vi.restoreAllMocks();
   await Promise.all(roots.splice(0).map((root) => rm(root, { recursive: true, force: true })));
 });
 
@@ -93,6 +94,39 @@ describe('Capsule session registry summaries', () => {
     });
     expect(JSON.stringify(result)).not.toContain('executionId');
     expect(JSON.stringify(result)).not.toContain('socketPath');
+  });
+});
+
+describe('Capsule registry dead manager reconciliation', () => {
+  it('reconciles a dead retained manager before publishing its summary', async () => {
+    const projectDirectory = await project();
+    const running = {
+      ...record({
+        projectDirectory,
+        sessionId: 'quiet-river-ada',
+        admittedAt: '2026-01-01T00:00:00.000Z',
+      }),
+      state: 'manager-starting',
+      cleanup: { kind: 'not-attempted' },
+      manager: { kind: 'started', pid: 42_424 },
+    } satisfies CapsuleSessionRecord;
+    await admitCapsuleRecord({ projectDirectory, record: running });
+    vi.spyOn(process, 'kill').mockImplementation(() => {
+      throw Object.assign(new Error('dead'), { code: 'ESRCH' });
+    });
+    await expect(listCapsuleSessions({ projectDirectory })).resolves.toMatchObject({
+      kind: 'capsule-session-registry',
+      entries: [
+        {
+          kind: 'capsule-session-summary',
+          summary: {
+            sessionId: running.sessionId,
+            state: 'manager-failed',
+            cleanup: 'not-attempted',
+          },
+        },
+      ],
+    });
   });
 });
 

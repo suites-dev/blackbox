@@ -17,7 +17,6 @@ export function catalogFixture(directory: string): LoadedCatalog {
     config: {
       schemaVersion: 1,
       activations: {},
-      clients: {},
       catalog: {
         default: 'orders',
         entries: {
@@ -39,6 +38,7 @@ export function catalogFixture(directory: string): LoadedCatalog {
                 activation: { kind: 'unconfigured' },
               },
             },
+            drivers: {},
             observation: {
               policyId: 'test',
               boundaries: [],

@@ -8,6 +8,7 @@ import { capsuleSessionDirectory } from '@suites/blackbox-capsule-internal';
 import { cliExecutable } from '../../testing/cli-path.fixture.js';
 
 const cli = cliExecutable();
+export const fixtureActivityId = '00000000-0000-4000-8000-000000000042';
 
 export async function commandFixture(state: 'running' | 'stopped') {
   const directory = await realpath(await mkdtemp(join(tmpdir(), 'bb-cli-')));
@@ -94,7 +95,12 @@ export async function fakeManager(input: {
       const request = JSON.parse(bytes.slice(0, bytes.indexOf('\n'))) as { requestId: string };
       requests.push(request);
       socket.end(
-        `${JSON.stringify({ kind: 'exec-response', requestId: request.requestId, outcome: input.outcome })}\n`,
+        `${JSON.stringify({
+          kind: 'exec-response',
+          requestId: request.requestId,
+          activityId: fixtureActivityId,
+          outcome: input.outcome,
+        })}\n`,
       );
     });
   });

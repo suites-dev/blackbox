@@ -1,65 +1,203 @@
-import type { ClientResult } from '@suites/blackbox-client';
+import type {
+  DriverRedaction,
+} from '@suites/blackbox-driver';
 import type {
   CollectorActivityReadResult,
   CollectorSessionReadResult,
   CollectorTraceReadResult,
 } from '@suites/blackbox-otel-collector-internal';
+import type {
+  ActiveTelemetryExecutionScopeRecord,
+  CompletedTelemetryExecutionScopeRecord,
+  TelemetryPropagationRecord,
+} from '@suites/blackbox-telemetry-internal';
 
 import type { CapsuleOperationFailure, CapsuleRecordedError } from '../types.js';
+
+export type CapsuleActivityPurpose = 'setup' | 'stimulus' | 'inspection';
+
+export interface CapsuleTerminalSize {
+  readonly columns: number;
+  readonly rows: number;
+}
+
+export type CapsuleInteractiveControl =
+  | {
+      readonly kind: 'stdin-chunk';
+      readonly controlId: string;
+      readonly chunk: Uint8Array;
+    }
+  | { readonly kind: 'stdin-end'; readonly controlId: string }
+  | {
+      readonly kind: 'resize';
+      readonly controlId: string;
+      readonly size: CapsuleTerminalSize;
+    }
+  | {
+      readonly kind: 'signal';
+      readonly controlId: string;
+      readonly signal: 'SIGINT' | 'SIGQUIT';
+    };
+
+export type CapsuleInteractiveControlResult =
+  | {
+      readonly kind: 'delivered';
+      readonly action: 'stdin-chunk' | 'stdin-end' | 'resize' | 'signal';
+      readonly mechanism:
+        | 'host-process-stdin'
+        | 'host-process-signal'
+        | 'docker-stream'
+        | 'docker-exec-resize'
+        | 'tty-control-character';
+    }
+  | {
+      readonly kind: 'unsupported';
+      readonly action: 'resize' | 'signal';
+      readonly reason:
+        | 'host-pty-unavailable'
+        | 'tty-required'
+        | 'docker-exec-signal-unsupported';
+    }
+  | {
+      readonly kind: 'rejected';
+      readonly action: 'stdin-chunk' | 'stdin-end' | 'resize' | 'signal';
+      readonly reason: 'execution-completed' | 'stdin-ended' | 'invalid-terminal-size';
+    }
+  | {
+      readonly kind: 'failed';
+      readonly action: 'stdin-chunk' | 'stdin-end' | 'resize' | 'signal';
+      readonly error: CapsuleRecordedError;
+    };
+
+export type CapsuleInteractiveEvent =
+  | {
+      readonly kind: 'output';
+      readonly stream: 'stdout' | 'stderr' | 'terminal';
+      readonly chunk: Uint8Array;
+    }
+  | {
+      readonly kind: 'control-result';
+      readonly controlId: string;
+      readonly result: CapsuleInteractiveControlResult;
+    };
 
 export type CapsuleExecTarget =
   | { readonly kind: 'host'; readonly argv: readonly [string, ...string[]] }
   | {
-      readonly kind: 'participant';
-      readonly participant: string;
+      readonly kind: 'driver';
+      readonly driverId: string;
       readonly argv: readonly [string, ...string[]];
-    }
-  | {
-      readonly kind: 'client';
-      readonly clientId: string;
-      readonly args: readonly string[];
+      readonly untraced: { readonly kind: 'refuse' } | { readonly kind: 'allow' };
     };
 
 export interface CapsuleExecInput {
   readonly projectDirectory: string;
   readonly sessionId: string;
+  readonly purpose: CapsuleActivityPurpose;
   readonly target: CapsuleExecTarget;
 }
 
-export type CapsuleProcessOutcome =
-  | {
-      readonly kind: 'exited';
-      readonly argv: readonly string[];
-      readonly exitCode: number;
-      readonly stdout: string;
-      readonly stderr: string;
-    }
-  | {
-      readonly kind: 'signaled';
-      readonly argv: readonly string[];
-      readonly signal: NodeJS.Signals;
-      readonly stdout: string;
-      readonly stderr: string;
-    };
-
-export interface CapsuleClientOutcome {
-  readonly kind: 'client-completed';
-  readonly client: {
-    readonly id: string;
-    readonly name: string;
-    readonly behavior: 'entrypoint' | 'utility';
-  };
-  readonly result: ClientResult;
-  readonly telemetry:
-    | { readonly kind: 'not-requested' }
-    | { readonly kind: 'complete' }
-    | { readonly kind: 'incomplete'; readonly error: CapsuleRecordedError };
+export interface CapsuleInteractiveExecInput extends CapsuleExecInput {
+  readonly terminal: CapsuleTerminalSize;
+  readonly controls: AsyncIterable<CapsuleInteractiveControl>;
+  readonly onEvent: (event: CapsuleInteractiveEvent) => void;
 }
 
-export type CapsuleExecutionOutcome = CapsuleProcessOutcome | CapsuleClientOutcome;
+export type CapsuleExecutionInteraction =
+  | { readonly kind: 'captured' }
+  | {
+      readonly kind: 'interactive';
+      readonly terminal: CapsuleTerminalSize;
+      readonly controls: AsyncIterable<CapsuleInteractiveControl>;
+      readonly onEvent: (event: CapsuleInteractiveEvent) => void;
+    };
+
+export type CapsuleExecutionLocation =
+  | { readonly kind: 'host' }
+  | {
+      readonly kind: 'participant';
+      readonly participantId: string;
+      readonly service: string;
+    };
+
+export type CapsuleOutputRetention =
+  | { readonly kind: 'complete'; readonly originalBytes: number }
+  | {
+      readonly kind: 'truncated';
+      readonly originalBytes: number;
+      readonly retainedBytes: number;
+      readonly omittedBytes: number;
+      readonly retained: 'head-and-tail';
+    };
+
+interface CapsuleProcessFields {
+  readonly argv: readonly string[];
+  readonly location: CapsuleExecutionLocation;
+  readonly stdout: string;
+  readonly stderr: string;
+  readonly retention: {
+    readonly stdout: CapsuleOutputRetention;
+    readonly stderr: CapsuleOutputRetention;
+  };
+}
+
+export type CapsuleProcessOutcome =
+  | (CapsuleProcessFields & { readonly kind: 'exited'; readonly exitCode: number })
+  | (CapsuleProcessFields & { readonly kind: 'signaled'; readonly signal: NodeJS.Signals })
+  | {
+      readonly kind: 'executable-not-found';
+      readonly argv: readonly string[];
+      readonly location: CapsuleExecutionLocation;
+      readonly remediation: string;
+    };
+
+export interface CapsuleDriverDetails {
+  readonly id: string;
+  readonly target: {
+    readonly kind: 'participant';
+    readonly participantId: string;
+    readonly service: string;
+    readonly protocol: string;
+    readonly containerPort: number;
+  };
+  readonly execution: CapsuleExecutionLocation;
+}
+
+export type CapsuleDriverOutcome =
+  | {
+      readonly kind: 'driver-completed';
+      readonly driver: CapsuleDriverDetails;
+      readonly propagation: TelemetryPropagationRecord;
+      readonly redaction: DriverRedaction;
+      readonly process: CapsuleProcessOutcome;
+    }
+  | {
+      readonly kind: 'driver-prepare-failed';
+      readonly driverId: string;
+      readonly propagation: TelemetryPropagationRecord;
+      readonly error: CapsuleRecordedError;
+    }
+  | {
+      readonly kind: 'driver-propagation-refused';
+      readonly driverId: string;
+      readonly propagation: TelemetryPropagationRecord;
+    };
+
+export type CapsuleRawCommandOutcome = CapsuleProcessOutcome & {
+  readonly propagation: TelemetryPropagationRecord;
+};
+
+export type CapsuleExecutionOutcome =
+  | CapsuleProcessOutcome
+  | CapsuleRawCommandOutcome
+  | CapsuleDriverOutcome;
 
 export type CapsuleExecResult =
-  | { readonly kind: 'capsule-exec-completed'; readonly outcome: CapsuleExecutionOutcome }
+  | {
+      readonly kind: 'capsule-exec-completed';
+      readonly activityId: string;
+      readonly outcome: CapsuleExecutionOutcome;
+    }
   | CapsuleOperationFailure;
 
 export interface CapsuleObservationsInput {
@@ -80,23 +218,34 @@ export type CapsuleObservationsResult =
 interface CapsuleActivityBase {
   readonly activityId: string;
   readonly sequence: number;
+  readonly purpose: CapsuleActivityPurpose;
   readonly target:
     | { readonly kind: 'host' }
-    | { readonly kind: 'participant'; readonly participant: string }
-    | { readonly kind: 'client'; readonly clientId: string };
+    | { readonly kind: 'driver'; readonly driverId: string };
   readonly argv: readonly string[];
   readonly startedAt: string;
 }
 
 export type CapsuleActivityReport =
-  | (CapsuleActivityBase & { readonly kind: 'running' })
+  | (CapsuleActivityBase & {
+      readonly kind: 'running';
+      readonly telemetry: ActiveTelemetryExecutionScopeRecord;
+    })
   | (CapsuleActivityBase & {
       readonly kind: 'completed';
+      readonly telemetry: CompletedTelemetryExecutionScopeRecord;
       readonly outcome: CapsuleExecutionOutcome;
       readonly completedAt: string;
     })
   | (CapsuleActivityBase & {
+      readonly kind: 'interrupted';
+      readonly telemetry: CompletedTelemetryExecutionScopeRecord;
+      readonly error: CapsuleRecordedError;
+      readonly completedAt: string;
+    })
+  | (CapsuleActivityBase & {
       readonly kind: 'failed';
+      readonly telemetry: CompletedTelemetryExecutionScopeRecord;
       readonly error: CapsuleRecordedError;
       readonly completedAt: string;
     });
