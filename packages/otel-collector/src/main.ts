@@ -42,10 +42,7 @@ async function run(): Promise<void> {
       shutdownTimeoutMs: integerEnvironment('BLACKBOX_OTEL_SHUTDOWN_TIMEOUT_MS'),
     },
   });
-  process.stdout.write(
-    `${JSON.stringify({ kind: 'collector-ready', endpoint: collector.endpoint, status: collector.status() })}\n`,
-  );
-  await new Promise<void>((resolve) => {
+  const stopped = new Promise<void>((resolve) => {
     let stopping = false;
     const stop = (): void => {
       if (stopping) {
@@ -63,6 +60,10 @@ async function run(): Promise<void> {
     process.once('SIGINT', stop);
     process.once('SIGTERM', stop);
   });
+  process.stdout.write(
+    `${JSON.stringify({ kind: 'collector-ready', endpoint: collector.endpoint, status: collector.status() })}\n`,
+  );
+  await stopped;
 }
 
 run().catch((error: unknown) => {
