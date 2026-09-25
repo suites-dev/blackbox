@@ -3,9 +3,6 @@ name: E2E Tests
 # Docker-backed and slow, so it is a workflow of its own: the fast package
 # gate in ci.yml never waits on it.
 on:
-  push:
-    branches:
-      - '**'
   pull_request:
     branches:
       - main

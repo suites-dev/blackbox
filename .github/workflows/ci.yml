@@ -4,9 +4,6 @@ name: Continuous Integration
 # source. Docker-backed Capsule e2e lives in e2e.yml so this lane stays fast.
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - '**'
   pull_request:
     branches:
       - main
@@ -17,7 +14,7 @@ on:
 permissions:
   contents: read
 
-# A new push to the same ref supersedes the previous run.
+# A new commit on the same pull request supersedes the previous run.
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
