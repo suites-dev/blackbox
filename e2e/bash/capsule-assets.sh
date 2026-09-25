@@ -107,7 +107,12 @@ done
 
 printf '%s[blackbox]%s Install only packed package artifacts into an external consumer.\n' \
   "$C_CYAN" "$C_RESET"
-pnpm --dir "$CONSUMER_ROOT" install --ignore-workspace --offline --ignore-scripts \
+# Packages come from the workspace store, never from a fresh download: the
+# consumer proves the packed tarballs carry their own closure. Resolution still
+# reads registry metadata, which a frozen-lockfile install never writes, so a
+# cold CI cache has no package mirror to resolve against. --prefer-offline keeps
+# the store as the source of the packages and fetches only the missing metadata.
+pnpm --dir "$CONSUMER_ROOT" install --ignore-workspace --prefer-offline --ignore-scripts \
   --store-dir "$PNPM_STORE_DIR"
 BLACKBOX_BIN="$CONSUMER_ROOT/node_modules/.bin/blackbox"
 if [[ ! -x "$BLACKBOX_BIN" ]]; then
