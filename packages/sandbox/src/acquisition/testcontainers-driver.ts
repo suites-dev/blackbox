@@ -105,6 +105,7 @@ export class TestcontainersComposeDriver implements ComposeSandboxDriver {
     const environment = new DockerComposeEnvironment(request.projectDirectory, [
       ...composeFiles,
     ])
+      .withBuild()
       .withProjectName(request.projectName)
       .withEnvironment({
         ...request.environment,

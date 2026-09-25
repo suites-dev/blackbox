@@ -28,17 +28,29 @@ export interface CapsuleCollectorRuntimePort {
 const NODE_RUNTIME_IMAGE =
   'docker.io/library/node:22-alpine@sha256:0a7108bf6c7bf5de370ffb1a3ed6be93d405b43ff159f681a8d18c0e2bc2e402';
 
-// The collector writes its session storage into a bind mount owned by whoever
-// runs the Capsule. The image's own `node` account is uid 1000, which cannot
-// write that directory on a Linux host whose user is any other uid, so the
-// container runs as the calling user instead.
-function callingUser(): string {
+type CollectorHostIdentity =
+  | { readonly kind: 'posix'; readonly userId: number; readonly groupId: number }
+  | { readonly kind: 'non-posix' };
+
+function collectorHostIdentity(): CollectorHostIdentity {
   const readUserId = process.getuid;
   const readGroupId = process.getgid;
   if (readUserId === undefined || readGroupId === undefined) {
-    throw new Error('A Capsule collector requires a POSIX host to own its telemetry storage.');
+    return { kind: 'non-posix' };
   }
-  return `${readUserId.call(process)}:${readGroupId.call(process)}`;
+  return {
+    kind: 'posix',
+    userId: readUserId.call(process),
+    groupId: readGroupId.call(process),
+  };
+}
+
+// A POSIX bind mount keeps host ownership, so the collector must use that
+// exact uid:gid to retain telemetry. Docker Desktop translates bind-mount
+// access on non-POSIX hosts, where Node exposes no numeric host identity and
+// the image's unprivileged account remains the portable choice.
+export function collectorContainerUser(input: CollectorHostIdentity): string {
+  return input.kind === 'posix' ? `${input.userId}:${input.groupId}` : 'node';
 }
 
 export const nodeCapsuleCollectorRuntime = {
@@ -54,7 +66,7 @@ export const nodeCapsuleCollectorRuntime = {
           sourceDirectory: packaged.directory,
           targetDirectory: '/blackbox/collector',
           entrypoint: packaged.entrypoint,
-          user: callingUser(),
+          user: collectorContainerUser(collectorHostIdentity()),
         },
       };
     } catch (error) {

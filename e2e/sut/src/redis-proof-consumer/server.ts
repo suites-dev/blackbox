@@ -42,6 +42,7 @@ async function main(): Promise<void> {
           method: 'POST',
           headers: { authorization: `Bearer ${fixtureToken}` },
         });
+        await response.arrayBuffer();
         if (!response.ok) {
           throw new Error(`Shared-state proof endpoint returned HTTP ${String(response.status)}`);
         }

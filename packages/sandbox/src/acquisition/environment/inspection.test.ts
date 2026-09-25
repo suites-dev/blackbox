@@ -16,6 +16,7 @@ const docker = vi.hoisted(() => {
     getNetworkNames: () => ['owned_default'], getMappedPort: () => 12345,
   };
   return { inspect, down,
+    build: vi.fn(),
     selected: vi.fn((_service: string) => container),
     lookup: vi.fn((_id: string) => ({ inspect })),
     up: vi.fn<(services: string[] | undefined) => void>(),
@@ -24,6 +25,7 @@ const docker = vi.hoisted(() => {
 
 vi.mock('testcontainers', () => ({
   DockerComposeEnvironment: class {
+    withBuild() { docker.build(); return this; }
     withProjectName() { return this; }
     withEnvironment() { return this; }
     withStartupTimeout() { return this; }
@@ -66,6 +68,7 @@ it.each(['selected', 'all'] as const)('inspects only the exact acquired containe
       ? { kind, services: ['api'] } : { kind, declaredServices: ['api'] },
   });
   expect(docker.up).toHaveBeenCalledWith(kind === 'selected' ? ['api'] : undefined);
+  expect(docker.build).toHaveBeenCalledOnce();
   expect(docker.selected.mock.calls).toEqual([['api-1']]);
   expect(docker.lookup.mock.calls).toEqual([['owned-container-id']]);
   expect(docker.inspect).toHaveBeenCalledOnce();

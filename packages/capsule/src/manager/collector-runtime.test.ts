@@ -1,10 +1,9 @@
-import { userInfo } from 'node:os';
-
 import { resolveCatalogEntry } from '@suites/blackbox-catalog-internal';
 import { expect, it } from 'vitest';
 
 import { capsuleSandboxTelemetry } from './telemetry.js';
 import {
+  collectorContainerUser,
   nodeCapsuleCollectorRuntime,
   requireCollectorRuntime,
   type CapsuleCollectorRuntimeReadiness,
@@ -21,9 +20,19 @@ it('uses a packaged collector on an immutable multi-architecture Node image', as
   if (runtime.kind === 'mounted-node') {
     expect(runtime.sourceDirectory).toMatch(/otel-collector\/dist$/u);
     expect(runtime.entrypoint).toBe('main.js');
-    expect(runtime.user).toMatch(/^\d+:\d+$/u);
-    expect(runtime.user).toBe(`${userInfo().uid}:${userInfo().gid}`);
+    if (process.getuid === undefined || process.getgid === undefined) {
+      expect(runtime.user).toBe('node');
+    } else {
+      expect(runtime.user).toBe(`${process.getuid()}:${process.getgid()}`);
+    }
   }
+});
+
+it('selects a writable collector identity for POSIX and non-POSIX hosts', () => {
+  expect(
+    collectorContainerUser({ kind: 'posix', userId: 1001, groupId: 121 }),
+  ).toBe('1001:121');
+  expect(collectorContainerUser({ kind: 'non-posix' })).toBe('node');
 });
 
 it('keeps a local image override explicit at the manager composition boundary', () => {

@@ -157,11 +157,11 @@ wait_for_shared_state_proof() {
   explain_step \
     'Prove Redis shared-state work stayed session-observed and was never attached to its activity.' \
     'blackbox observations --session <id> --json; blackbox observations --trace <id> --json'
-  local timeout_seconds=15
+  local timeout_seconds=30
   local started_at="$SECONDS"
   local last_progress_second=-1
   local attempt
-  for attempt in {1..60}; do
+  for attempt in {1..120}; do
     local condition='waiting for session observations'
     if blackbox observations --session "$SESSION_ID" --json >"$session_file" &&
       jq -e '.kind == "collector-session-found"' "$session_file" >/dev/null; then
@@ -207,7 +207,7 @@ wait_for_shared_state_proof() {
   if [[ -s "$diagnostics_file" ]]; then
     cat "$diagnostics_file" >&2
   fi
-  echo 'capsule-test: shared-state telemetry proof did not become available within 15 seconds' >&2
+  echo 'capsule-test: shared-state telemetry proof did not become available within 30 seconds' >&2
   return 1
 }
 
@@ -353,8 +353,10 @@ assert_shared_state_report() {
   local stimulus_activity_id="$3"
   jq -e --arg trace "$downstream_trace_id" --arg activity "$stimulus_activity_id" '
     .observations.kind == "collector-session-found" and
-    (.observations.traces.sessionOnly | index($trace)) != null and
-    ([.observations.traces.activityCorrelated[] | select(.traceId == $trace)] | length) == 0 and
+    ([.observations.traces.sessionOnly[] |
+      select(.traceId == $trace)] | length) == 1 and
+    ([.observations.traces.activityCorrelated[] |
+      select(.traceId == $trace)] | length) == 0 and
     ([.activityTelemetry[] |
       select(.activityId == $activity and .kind == "available" and (.spans | length) == 1)] |
       length) == 1

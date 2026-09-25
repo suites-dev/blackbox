@@ -23,12 +23,29 @@ function image(id, labels) {
   };
 }
 
+function container(imageId, composeProject = project) {
+  return {
+    Id: 'proof-container',
+    Image: imageId,
+    Config: {
+      Labels: {
+        'com.docker.compose.project': composeProject,
+        'com.docker.compose.service': 'redis-proof-consumer',
+      },
+    },
+  };
+}
+
 function dockerFixture(initial) {
   let current = initial;
+  let containerProject = project;
   const calls = [];
   return {
     calls,
     current: () => current,
+    setContainerProject: (next) => {
+      containerProject = next;
+    },
     set: (next) => {
       current = next;
     },
@@ -40,6 +57,14 @@ function dockerFixture(initial) {
       if (arguments_[0] === 'image' && arguments_[1] === 'inspect') {
         assert.notEqual(current, null);
         return { stdout: JSON.stringify([current]), stderr: '' };
+      }
+      if (arguments_[0] === 'container' && arguments_[1] === 'inspect') {
+        assert.equal(arguments_[2], 'proof-container');
+        assert.notEqual(current, null);
+        return {
+          stdout: JSON.stringify([container(current.Id, containerProject)]),
+          stderr: '',
+        };
       }
       if (arguments_[0] === 'image' && arguments_[1] === 'tag') {
         assert.equal(arguments_[2], baselineId);
@@ -63,16 +88,22 @@ async function paths(context) {
   const sessionFile = join(directory, 'session.json');
   await writeFile(
     sessionFile,
-    JSON.stringify({ composeProject: { kind: 'available', value: project } }),
+    JSON.stringify({
+      composeProject: { kind: 'available', value: project },
+      containers: [
+        {
+          participant: 'redis-proof-consumer',
+          service: 'redis-proof-consumer',
+          containerId: 'proof-container',
+        },
+      ],
+    }),
   );
   return { resultFile, sessionFile, stateFile };
 }
 
 function ownedCreatedImage() {
-  return image(createdId, {
-    'com.docker.compose.project': project,
-    'com.docker.compose.service': 'redis-proof-consumer',
-  });
+  return image(createdId, {});
 }
 
 void test('removes the exact proof image created from an absent baseline', async (context) => {
@@ -119,4 +150,20 @@ void test('restores a pre-existing image after removing the owned replacement', 
     restoredId: baselineId,
   });
   assert.ok(docker.calls.some((call) => call.join(' ') === `image rm ${createdId}`));
+});
+
+void test('refuses an image whose exact session container belongs to another project', async (context) => {
+  const files = await paths(context);
+  const docker = dockerFixture(null);
+  await captureImageBaseline({ execute: docker.execute, stateFile: files.stateFile });
+  docker.set(ownedCreatedImage());
+  docker.setContainerProject('foreign-project');
+  await assert.rejects(
+    captureAcquiredImage({
+      execute: docker.execute,
+      stateFile: files.stateFile,
+      sessionFile: files.sessionFile,
+    }),
+    /proof container Compose project is not owned/u,
+  );
 });

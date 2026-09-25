@@ -54,17 +54,45 @@ async function writeJson(path, value) {
   await writeFile(path, `${JSON.stringify(value, null, 2)}\n`);
 }
 
-function ownedImage(image, projectName) {
-  assert.equal(image.kind, 'present', 'proof image was not created during acquisition');
-  assert.equal(image.labels[projectLabel], projectName, 'proof image Compose project is not owned');
+async function ownedContainer(input) {
+  const matches = input.session.containers.filter(
+    (container) => container.service === proofService,
+  );
+  assert.equal(matches.length, 1, `expected one ${proofService} session container`);
+  const sessionContainer = matches[0];
+  const inspected = JSON.parse(
+    (await input.execute(['container', 'inspect', sessionContainer.containerId])).stdout,
+  );
+  assert.ok(
+    Array.isArray(inspected) && inspected.length === 1,
+    'expected one inspected proof container',
+  );
+  const container = inspected[0];
+  assert.equal(container.Id, sessionContainer.containerId, 'proof container identity changed');
   assert.equal(
-    image.labels[serviceLabel],
+    container.Config?.Labels?.[projectLabel],
+    input.projectName,
+    'proof container Compose project is not owned',
+  );
+  assert.equal(
+    container.Config?.Labels?.[serviceLabel],
     proofService,
-    'proof image Compose service is not owned',
+    'proof container Compose service is not owned',
+  );
+  return { containerId: container.Id, imageId: container.Image };
+}
+
+function ownedImage(image, container, projectName) {
+  assert.equal(image.kind, 'present', 'proof image was not created during acquisition');
+  assert.equal(
+    image.id,
+    container.imageId,
+    'proof image does not match the exact owned session container',
   );
   return {
     kind: 'owned-compose-image',
     id: image.id,
+    containerId: container.containerId,
     projectName,
     service: proofService,
   };
@@ -88,10 +116,20 @@ export async function captureAcquiredImage(input) {
   assert.equal(session.composeProject.kind, 'available', 'session Compose project is unavailable');
   const projectName = session.composeProject.value;
   const image = await taggedImage(input.execute);
+  const container = await ownedContainer({
+    execute: input.execute,
+    projectName,
+    session,
+  });
+  assert.equal(
+    image.kind === 'present' ? image.id : undefined,
+    container.imageId,
+    'tagged proof image does not match the exact owned session container',
+  );
   const acquisition =
     state.baseline.kind === 'present' && image.kind === 'present' && image.id === state.baseline.id
       ? { kind: 'baseline-image-reused', id: image.id }
-      : ownedImage(image, projectName);
+      : ownedImage(image, container, projectName);
   await writeJson(input.stateFile, { ...state, acquisition });
 }
 
@@ -99,7 +137,6 @@ async function cleanupOwnedImage(input, state, image) {
   const owned = state.acquisition;
   assert.equal(image.kind, 'present', 'owned proof image disappeared before cleanup');
   assert.equal(image.id, owned.id, 'proof image tag changed ownership before cleanup');
-  ownedImage(image, owned.projectName);
   if (state.baseline.kind === 'present') {
     await input.execute(['image', 'tag', state.baseline.id, proofImage]);
     const otherTags = image.repoTags.filter((tag) => tag !== proofImage);
