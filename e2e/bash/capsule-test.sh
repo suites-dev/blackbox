@@ -235,6 +235,10 @@ sed 's/^/        /' "$ARTIFACT_ROOT/http-telemetry-proof.json"
 # is unchanged inside the Redis participant; no trace context can ride in this
 # list item. A blocking SUT consumer reacts and calls public-api on another trace.
 PROOF_ID="shared-state-$SESSION_ID"
+blackbox observations --session "$SESSION_ID" --json \
+  >"$ARTIFACT_ROOT/observations-session-before-shared-state.json"
+jq -e '.kind == "collector-session-found"' \
+  "$ARTIFACT_ROOT/observations-session-before-shared-state.json" >/dev/null
 run_captured_step \
   'Push one proof stimulus through the Redis shared-state driver.' \
   "blackbox capsule exec \\
@@ -267,6 +271,7 @@ wait_for_shared_state_proof \
   "$ARTIFACT_ROOT/redis-execution.json" \
   "$ARTIFACT_ROOT/observations-redis-activity.json" \
   "$PROOF_ID" \
+  "$ARTIFACT_ROOT/observations-session-before-shared-state.json" \
   "$ARTIFACT_ROOT/observations-session-shared-state.json" \
   "$ARTIFACT_ROOT/shared-state-traces" \
   "$ARTIFACT_ROOT/shared-state-telemetry-proof.json"

@@ -148,9 +148,10 @@ wait_for_shared_state_proof() {
   local execution_file="$1"
   local activity_file="$2"
   local proof_id="$3"
-  local session_file="$4"
-  local trace_directory="$5"
-  local proof_file="$6"
+  local baseline_session_file="$4"
+  local session_file="$5"
+  local trace_directory="$6"
+  local proof_file="$7"
   local diagnostics_file="${proof_file}.stderr"
   local trace_ids_file="${proof_file}.trace-ids"
 
@@ -167,7 +168,9 @@ wait_for_shared_state_proof() {
       jq -e '.kind == "collector-session-found"' "$session_file" >/dev/null; then
       rm -rf "$trace_directory"
       mkdir -p "$trace_directory"
-      jq -er '.traceIds[]' "$session_file" >"$trace_ids_file"
+      jq -r --slurpfile baseline "$baseline_session_file" \
+        '(.traceIds - ($baseline[0].traceIds // []))[]' \
+        "$session_file" >"$trace_ids_file"
       local trace_count
       trace_count="$(wc -l <"$trace_ids_file" | tr -d '[:space:]')"
       condition="reading $trace_count exact traces"
