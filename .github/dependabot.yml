@@ -3,7 +3,7 @@ updates:
   - package-ecosystem: npm
     directory: '/'
     schedule:
-      interval: weekly
+      interval: daily
     open-pull-requests-limit: 10
     commit-message:
       prefix: chore
@@ -29,3 +29,11 @@ updates:
       interval: weekly
     commit-message:
       prefix: ci
+
+  # This standalone Docker build context is not part of the pnpm workspace.
+  - package-ecosystem: npm
+    directory: '/e2e/sut'
+    schedule:
+      interval: daily
+    commit-message:
+      prefix: chore
