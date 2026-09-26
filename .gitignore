@@ -56,6 +56,10 @@ packages/*/docs/
 trace-store
 e2e/tests/suite.spec.d.ts
 blackbox-docs-draft-gpt-v1-old
-.agents
+.agents/*
+!.agents/skills/
+.agents/skills/*
+!.agents/skills/repo-setup/
+!.agents/skills/capsule-bash-e2e/
 archive
 plans
