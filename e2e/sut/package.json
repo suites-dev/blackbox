@@ -10,7 +10,7 @@
     "smoke": "node scripts/smoke.mjs"
   },
   "dependencies": {
-    "@aws-sdk/client-sqs": "3.1057.0",
+    "@aws-sdk/client-sqs": "3.1138.0",
     "@opentelemetry/auto-instrumentations-node": "0.55.3",
     "@opentelemetry/exporter-trace-otlp-http": "0.57.2",
     "@opentelemetry/instrumentation-aws-sdk": "0.74.0",
