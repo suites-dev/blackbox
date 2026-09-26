@@ -62,7 +62,11 @@ async function* noControls(): AsyncGenerator<CapsuleExecutionControl> {
 export function runHost(input: HostProcessInput): Promise<CapsuleProcessOutcome> {
   return runHostWithInteraction({
     ...input,
-    interaction: { kind: 'captured', controls: noControls() },
+    interaction: {
+      kind: 'captured',
+      cancellation: { kind: 'not-cancellable' },
+      controls: noControls(),
+    },
   });
 }
 

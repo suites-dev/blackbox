@@ -6,6 +6,7 @@ import type { DriverPrepareRequest } from '../../model/driver-context.js';
 import type { DriverPrepareResponse } from '../../model/preparation.js';
 import { decodeDriverPrepareResponse } from '../../protocol/decode.js';
 import { validateDriverPreparation } from '../../protocol/preparation-validation.js';
+import { driverPreparationTimeoutMs } from '../../protocol/timeout.js';
 import { runProjectDriverProcess } from '../runtime/project-driver-process.js';
 import { createNodeDriverRunnerSource } from '../runtime/runner-source.js';
 
@@ -37,6 +38,7 @@ export async function prepareNodeProjectDriver(
     source,
     projectDirectory,
     requestJson: JSON.stringify(input.request),
+    timeoutMs: driverPreparationTimeoutMs,
   });
   const response = decodeDriverPrepareResponse(output.stdout.trim());
   if (response.kind === 'driver-prepare-succeeded') {

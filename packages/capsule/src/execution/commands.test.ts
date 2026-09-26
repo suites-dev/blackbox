@@ -117,6 +117,7 @@ it('streams real host output and reports unsupported terminal resize explicitly'
     environment: {},
     interaction: {
       kind: 'interactive',
+      cancellation: { kind: 'not-cancellable' },
       terminal: { columns: 120, rows: 40 },
       controls: controls(),
       onEvent: (event) => {
@@ -164,6 +165,7 @@ it('forwards SIGINT to a real interactive host child', async () => {
     environment: {},
     interaction: {
       kind: 'interactive',
+      cancellation: { kind: 'not-cancellable' },
       terminal: { columns: 80, rows: 24 },
       controls: controls(),
       onEvent: (event) => {

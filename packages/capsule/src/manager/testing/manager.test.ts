@@ -52,6 +52,7 @@ describe('Capsule manager startup failure', () => {
       executionId: '00000000-0000-4000-8000-000000000001',
       systemId: 'orders',
       environment: {},
+      runtimeActivationAdapters: [],
     };
     const record = managerRecord(projectDirectory, sessionId);
     try {

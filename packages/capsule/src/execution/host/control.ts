@@ -1,6 +1,7 @@
 import type { ChildProcessWithoutNullStreams } from 'node:child_process';
 
 import type {
+  CapsuleExecutionCancellation,
   CapsuleExecutionControl,
   CapsuleExecutionInteraction,
   CapsuleInteractiveControl,
@@ -45,11 +46,39 @@ function rejectedControl(
 
 function writeHostStdin(input: {
   readonly child: ChildProcessWithoutNullStreams;
+  readonly cancellation: CapsuleExecutionCancellation;
   readonly control: Extract<CapsuleInteractiveControl, { readonly kind: 'stdin-chunk' }>;
 }): Promise<CapsuleInteractiveControlResult> {
   return new Promise((resolve) => {
+    const signal = input.cancellation.kind === 'abort-signal' ? input.cancellation.signal : null;
+    let settled = false;
+    const finish = (result: CapsuleInteractiveControlResult): void => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      if (signal !== null) {
+        signal.removeEventListener('abort', abort);
+      }
+      resolve(result);
+    };
+    const abort = (): void => {
+      input.child.stdin.destroy();
+      finish({
+        kind: 'failed',
+        action: 'stdin-chunk',
+        error: { name: 'AbortError', message: 'Host stdin write was cancelled.' },
+      });
+    };
+    if (signal !== null && signal.aborted) {
+      abort();
+      return;
+    }
+    if (signal !== null) {
+      signal.addEventListener('abort', abort, { once: true });
+    }
     input.child.stdin.write(Buffer.from(input.control.chunk), (error) => {
-      resolve(
+      finish(
         error === null || error === undefined
           ? { kind: 'delivered', action: 'stdin-chunk', mechanism: 'host-process-stdin' }
           : {
@@ -84,6 +113,7 @@ function signalFailure(error: unknown): CapsuleInteractiveControlResult {
 async function hostControl(input: {
   readonly child: ChildProcessWithoutNullStreams;
   readonly state: HostControlState;
+  readonly interaction: CapsuleExecutionInteraction;
   readonly control: CapsuleExecutionControl;
 }): Promise<CapsuleInteractiveControlResult> {
   const { control } = input;
@@ -110,10 +140,21 @@ async function hostControl(input: {
     return rejectedControl(control.kind, 'stdin-ended');
   }
   if (control.kind === 'stdin-chunk') {
-    return await writeHostStdin({ child: input.child, control });
+    return await writeHostStdin({
+      child: input.child,
+      cancellation: input.interaction.cancellation,
+      control,
+    });
   }
   if (control.kind === 'stdin-end') {
     input.state.stdinEnded = true;
+    if (
+      input.interaction.cancellation.kind === 'abort-signal' &&
+      input.interaction.cancellation.signal.aborted
+    ) {
+      input.child.stdin.destroy();
+      return rejectedControl('stdin-end', 'stdin-ended');
+    }
     return await endHostStdin(input.child);
   }
   if (control.kind === 'resize') {
@@ -134,7 +175,12 @@ export async function pumpHostControls(input: {
   readonly interaction: CapsuleExecutionInteraction;
 }): Promise<void> {
   for await (const control of input.interaction.controls) {
-    const result = await hostControl({ child: input.child, state: input.state, control });
+    const result = await hostControl({
+      child: input.child,
+      state: input.state,
+      interaction: input.interaction,
+      control,
+    });
     if (input.interaction.kind === 'interactive') {
       await input.interaction
         .onEvent({ kind: 'control-result', controlId: control.controlId, result })

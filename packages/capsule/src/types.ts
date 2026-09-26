@@ -1,3 +1,5 @@
+import type { RuntimeActivationAdapter } from '@suites/blackbox-instrumentation-internal';
+
 import type { CapsuleAcquisitionObservation } from './progress/acquisition.js';
 
 export interface CapsuleStartInput {
@@ -6,6 +8,7 @@ export interface CapsuleStartInput {
   readonly title: string;
   readonly description: CapsuleDescription;
   readonly environment: Readonly<Record<string, string>>;
+  readonly runtimeActivationAdapters: readonly RuntimeActivationAdapter[];
   readonly progress: CapsuleProgressMode;
 }
 

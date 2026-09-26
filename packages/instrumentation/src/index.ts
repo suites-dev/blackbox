@@ -20,3 +20,8 @@ export type {
   RuntimePreparationSuccess,
   UnsupportedInstrumentationRuntimeFailure,
 } from './installation/model.js';
+export type {
+  RuntimeActivationAdapter,
+  RuntimeActivationEnvironmentAppend,
+  RuntimeActivationValuePart,
+} from './activation/model.js';

@@ -10,8 +10,7 @@ import { participantTelemetry } from './participants.js';
 let projectDirectory = '';
 let externalDirectory = '';
 
-const bootstrap = () =>
-  participantBootstrap({ NODE_OPTIONS: ' --enable-source-maps ' });
+const bootstrap = () => participantBootstrap({ NODE_OPTIONS: ' --enable-source-maps ' });
 const plan = (adapter: string) =>
   participantPlan({
     adapter,
@@ -64,9 +63,7 @@ describe('participant telemetry activation', () => {
   it('rejects an adapter the runtime provider does not implement', async () => {
     await expect(
       participantTelemetry({ plan: plan('node-register'), bootstrap: bootstrap() }),
-    ).rejects.toThrow(
-      'Unsupported Node activation adapter "node-register"',
-    );
+    ).rejects.toThrow('Activation adapter "node-register" for runtime "node" is unavailable');
   });
 
   it('omits participants without configured instrumentation', async () => {
@@ -88,10 +85,8 @@ describe('participant telemetry activation', () => {
       configured: true,
       projectDirectory,
     });
-    await expect(
-      participantTelemetry({ plan: python, bootstrap: bootstrap() }),
-    ).rejects.toThrow(
-      'Activation for runtime "python" is unsupported',
+    await expect(participantTelemetry({ plan: python, bootstrap: bootstrap() })).rejects.toThrow(
+      'Activation adapter "node-preload" for runtime "python" is unavailable',
     );
   });
 
@@ -106,13 +101,10 @@ describe('participant telemetry activation', () => {
         },
       },
     };
-    await expect(
-      participantTelemetry({ plan: unsafe, bootstrap: bootstrap() }),
-    ).rejects.toThrow(
+    await expect(participantTelemetry({ plan: unsafe, bootstrap: bootstrap() })).rejects.toThrow(
       'must be inside .blackbox/instrumentation',
     );
   });
-
 });
 
 it('rejects an instrumentation directory symlink that escapes the project', async () => {
@@ -135,12 +127,7 @@ it('rejects an instrumentation directory symlink that escapes the project', asyn
 });
 
 it('rejects an activation asset symlink that escapes its instrumentation directory', async () => {
-  const escapedAsset = join(
-    projectDirectory,
-    '.blackbox',
-    'instrumentation',
-    'escaped.js',
-  );
+  const escapedAsset = join(projectDirectory, '.blackbox', 'instrumentation', 'escaped.js');
   await symlink(join(externalDirectory, 'instrumentation.js'), escapedAsset);
   try {
     const configured = plan('node-preload');

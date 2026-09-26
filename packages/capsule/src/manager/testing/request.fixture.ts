@@ -55,28 +55,49 @@ function sandboxFixture(input: {
   readonly environment: Readonly<Record<string, string>>;
 }): { readonly sandbox: SandboxHandle; readonly endpoints: Map<string, SandboxEndpoint> } {
   const testcontainer = {
-    id: 'api-container', name: 'api-1', host: '127.0.0.1', labels: {},
+    id: 'api-container',
+    name: 'api-1',
+    host: '127.0.0.1',
+    labels: {},
     environment: { ...input.environment },
-    networkNames: [], mappedPorts: new Map<number, number>(), getMappedPort: () => 4567,
+    networkNames: [],
+    mappedPorts: new Map<number, number>(),
+    getMappedPort: () => 4567,
   };
   const container = { service: 'api', testcontainer };
-  const unused = () => { throw new Error('unused'); };
+  const unused = () => {
+    throw new Error('unused');
+  };
   const endpoints = new Map<string, SandboxEndpoint>();
   const sandbox = {
-    sandboxId: 'test-sandbox', projectName: 'test-compose', state: 'running',
-    declaredEnvironment: {}, endpoints,
-    containers: new Map([['api', container]]), telemetry: { kind: 'disabled' },
+    sandboxId: 'test-sandbox',
+    projectName: 'test-compose',
+    state: 'running',
+    declaredEnvironment: {},
+    endpoints,
+    containers: new Map([['api', container]]),
+    telemetry: { kind: 'disabled' },
     inspectTelemetry: () => Promise.resolve({ kind: 'disabled' }),
-    getContainer: () => container, inspectResources: unused,
-    execute: (request) => Promise.resolve({
-      kind: 'exited', service: request.service, exitCode: 7,
-      stdout: 'participant-output', stderr: 'participant-error', combined: '',
-    }),
+    getContainer: () => container,
+    inspectResources: unused,
+    execute: (request) =>
+      Promise.resolve({
+        kind: 'exited',
+        service: request.service,
+        exitCode: 7,
+        stdout: 'participant-output',
+        stderr: 'participant-error',
+        combined: '',
+      }),
     startContainerExecution: unused,
     stop: async (request) => {
       await input.stop(request);
-      return { kind: 'stopped', sandboxId: 'test-sandbox',
-        reason: request.reason, cleanup: 'complete' };
+      return {
+        kind: 'stopped',
+        sandboxId: 'test-sandbox',
+        reason: request.reason,
+        cleanup: 'complete',
+      };
     },
   } satisfies SandboxHandle;
   return { sandbox, endpoints };
@@ -97,6 +118,7 @@ export async function requestFixture(
     executionId: record.executionId,
     systemId: 'orders',
     environment: {},
+    runtimeActivationAdapters: [],
   };
   const manager = {
     server,

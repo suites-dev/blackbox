@@ -1,5 +1,6 @@
 import { Command, Flags } from '@oclif/core';
 import { startCapsule, type CapsuleProgressMode } from '@suites/blackbox-capsule-internal';
+import { nodeRuntimeActivationAdapters } from '@suites/blackbox-inst-runtime-node';
 import { capsuleFailure } from '../../capsule/capsule-output.js';
 import { createCapsuleProgressRenderer } from '../../capsule/capsule-progress.js';
 
@@ -57,6 +58,7 @@ export default class CapsuleStart extends Command {
           ? { kind: 'omitted' }
           : { kind: 'provided', value: flags.description },
       environment,
+      runtimeActivationAdapters: nodeRuntimeActivationAdapters,
       progress,
     });
     renderer.finish();

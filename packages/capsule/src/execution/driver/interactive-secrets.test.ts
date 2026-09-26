@@ -2,7 +2,12 @@ import { afterEach, expect, it } from 'vitest';
 
 import type { CapsuleInteractiveEvent, CapsuleInteractiveControl } from '../types.js';
 import { runCapsuleDriver } from '../driver-execution.js';
-import { cleanDriverProjects, driverInput, driverProject, driverSandbox } from './testing/execution.fixture.js';
+import {
+  cleanDriverProjects,
+  driverInput,
+  driverProject,
+  driverSandbox,
+} from './testing/execution.fixture.js';
 
 afterEach(cleanDriverProjects);
 
@@ -32,7 +37,10 @@ it('masks declared values before interactive events leave the execution, across 
       API_TOKEN: environmentSecret,
       ARGV_SECRET: argvSecret,
     }),
-    argv: [process.execPath, '-e', `
+    argv: [
+      process.execPath,
+      '-e',
+      `
       const value = Buffer.from(
         '🔑before:' + process.env.PRIVATE + '|' + process.argv[1] + ':after'
       );
@@ -43,22 +51,35 @@ it('masks declared values before interactive events leave the execution, across 
         process.stderr.write(value.subarray(index, index + 1));
         index += 1;
       }, 2);
-    `],
-    interaction: { kind: 'interactive', terminal: { columns: 80, rows: 24 },
-      controls: controls(), onEvent: (event) => { events.push(event); return Promise.resolve(); } },
+    `,
+    ],
+    interaction: {
+      kind: 'interactive',
+      cancellation: { kind: 'not-cancellable' },
+      terminal: { columns: 80, rows: 24 },
+      controls: controls(),
+      onEvent: (event) => {
+        events.push(event);
+        return Promise.resolve();
+      },
+    },
   });
   for (const stream of ['stdout', 'stderr'] as const) {
-    const output = Buffer.concat(events.flatMap((event) =>
-      event.kind === 'output' && event.stream === stream ? [Buffer.from(event.chunk)] : [],
-    )).toString('utf8');
+    const output = Buffer.concat(
+      events.flatMap((event) =>
+        event.kind === 'output' && event.stream === stream ? [Buffer.from(event.chunk)] : [],
+      ),
+    ).toString('utf8');
     expect(output).toBe('🔑before:[REDACTED]|[REDACTED]:after');
   }
-  expect(result).toMatchObject({ kind: 'driver-completed',
+  expect(result).toMatchObject({
+    kind: 'driver-completed',
     process: {
       argv: [process.execPath, '-e', expect.any(String), '[REDACTED]'],
       stdout: '🔑before:[REDACTED]|[REDACTED]:after',
       stderr: '🔑before:[REDACTED]|[REDACTED]:after',
-    } });
+    },
+  });
   expect(JSON.stringify(result)).not.toContain(environmentSecret);
   expect(JSON.stringify(result)).not.toContain(argvSecret);
 });

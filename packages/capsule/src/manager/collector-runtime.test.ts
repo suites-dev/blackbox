@@ -29,9 +29,7 @@ it('uses a packaged collector on an immutable multi-architecture Node image', as
 });
 
 it('selects a writable collector identity for POSIX and non-POSIX hosts', () => {
-  expect(
-    collectorContainerUser({ kind: 'posix', userId: 1001, groupId: 121 }),
-  ).toBe('1001:121');
+  expect(collectorContainerUser({ kind: 'posix', userId: 1001, groupId: 121 })).toBe('1001:121');
   expect(collectorContainerUser({ kind: 'non-posix' })).toBe('node');
 });
 
@@ -49,6 +47,7 @@ it('keeps a local image override explicit at the manager composition boundary', 
       executionId: 'execution-1',
       systemId: 'orders',
       environment: {},
+      runtimeActivationAdapters: [],
     },
     plan,
     authorization: {

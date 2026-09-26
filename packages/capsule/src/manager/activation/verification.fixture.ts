@@ -2,9 +2,26 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
 import { resolveCatalogEntry, type LoadedCatalog } from '@suites/blackbox-catalog-internal';
+import type { RuntimeActivationAdapter } from '@suites/blackbox-instrumentation-internal';
 import type { SandboxHandle } from '@suites/blackbox-sandbox-internal';
 
 import { catalogFixture } from '../testing/acquisition.fixture.js';
+
+export const activationRuntimeAdapters = [
+  {
+    kind: 'runtime-activation-adapter',
+    runtime: 'node',
+    adapter: 'node-preload',
+    sourceDirectoryRelativePath: '.blackbox/instrumentation',
+    targetDirectory: '/blackbox/instrumentation',
+    environment: {
+      kind: 'append-environment-variable',
+      name: 'NODE_OPTIONS',
+      separator: ' ',
+      value: [{ kind: 'activation-asset-path', prefix: '--require=' }],
+    },
+  },
+] as const satisfies readonly RuntimeActivationAdapter[];
 
 export function activationPlan(input: {
   readonly configured: boolean;

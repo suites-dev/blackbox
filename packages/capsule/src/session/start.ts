@@ -51,15 +51,16 @@ async function waitForStartup(input: {
     const termination = managerTermination(input.manager);
     if (termination.kind === 'manager-terminated') {
       const reconciliation = await reconcileDeadCapsuleManager(input);
-      const failed = reconciliation.kind === 'capsule-manager-reconciled'
-        ? reconciliation.record
-        : ({
-            ...record,
-            state: 'manager-failed',
-            revision: record.revision + 1,
-            updatedAt: new Date().toISOString(),
-            failure: { kind: 'recorded', error: termination.error },
-          } satisfies CapsuleSessionRecord);
+      const failed =
+        reconciliation.kind === 'capsule-manager-reconciled'
+          ? reconciliation.record
+          : ({
+              ...record,
+              state: 'manager-failed',
+              revision: record.revision + 1,
+              updatedAt: new Date().toISOString(),
+              failure: { kind: 'recorded', error: termination.error },
+            } satisfies CapsuleSessionRecord);
       if (reconciliation.kind !== 'capsule-manager-reconciled') {
         await writeCapsuleRecord({ projectDirectory: input.projectDirectory, record: failed });
       }
@@ -69,9 +70,7 @@ async function waitForStartup(input: {
           kind: 'capsule-start-failed',
           sessionId: input.sessionId,
           stage: 'manager-handshake',
-          cause: failed.failure.kind === 'recorded'
-            ? failed.failure.error
-            : termination.error,
+          cause: failed.failure.kind === 'recorded' ? failed.failure.error : termination.error,
         },
       });
       return failed;
@@ -192,6 +191,7 @@ async function admitAndLaunch(
     executionId: record.executionId,
     systemId: input.systemId,
     environment: { ...input.environment },
+    runtimeActivationAdapters: input.runtimeActivationAdapters,
   });
   await appendCapsuleProgress({
     projectDirectory,

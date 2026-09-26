@@ -1,6 +1,6 @@
-import { spawn } from 'node:child_process';
+import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process';
 
-import { DriverPreparationTimeoutError, driverPreparationTimeoutMs } from '../../protocol/timeout.js';
+import { DriverPreparationTimeoutError } from '../../protocol/timeout.js';
 
 const MAX_PROTOCOL_OUTPUT_BYTES = 1024 * 1024;
 
@@ -8,11 +8,27 @@ export interface RunProjectDriverProcessInput {
   readonly source: string;
   readonly projectDirectory: string;
   readonly requestJson: string;
+  readonly timeoutMs: number;
 }
 
 export interface ProjectDriverProcessOutput {
   readonly stdout: string;
   readonly stderr: string;
+}
+
+function terminateProjectDriver(child: ChildProcessWithoutNullStreams): void {
+  if (process.platform === 'win32' || child.pid === undefined) {
+    child.kill('SIGKILL');
+  } else {
+    try {
+      process.kill(-child.pid, 'SIGKILL');
+    } catch {
+      child.kill('SIGKILL');
+    }
+  }
+  child.stdin.destroy();
+  child.stdout.destroy();
+  child.stderr.destroy();
 }
 
 export function runProjectDriverProcess(
@@ -21,6 +37,7 @@ export function runProjectDriverProcess(
   return new Promise((resolve, reject) => {
     const child = spawn(process.execPath, ['--input-type=module', '--eval', input.source], {
       cwd: input.projectDirectory,
+      detached: process.platform !== 'win32',
       env: process.env,
       shell: false,
       stdio: ['pipe', 'pipe', 'pipe'],
@@ -30,6 +47,7 @@ export function runProjectDriverProcess(
     let retainedBytes = 0;
     let outputLimitExceeded = false;
     let settled = false;
+    let stdinError: Error | null = null;
     const retainOutput = (chunks: Buffer[], chunk: Buffer): void => {
       if (outputLimitExceeded) {
         return;
@@ -45,18 +63,21 @@ export function runProjectDriverProcess(
         retainedBytes += remaining;
       }
       outputLimitExceeded = true;
-      child.kill('SIGKILL');
+      terminateProjectDriver(child);
     };
     const timeout = setTimeout(() => {
       settled = true;
-      child.kill('SIGKILL');
+      terminateProjectDriver(child);
       reject(new DriverPreparationTimeoutError());
-    }, driverPreparationTimeoutMs);
+    }, input.timeoutMs);
     child.stdout.on('data', (chunk: Buffer) => {
       retainOutput(stdout, chunk);
     });
     child.stderr.on('data', (chunk: Buffer) => {
       retainOutput(stderr, chunk);
+    });
+    child.stdin.on('error', (error) => {
+      stdinError = error;
     });
     child.on('error', (error) => {
       clearTimeout(timeout);
@@ -76,7 +97,11 @@ export function runProjectDriverProcess(
       if (outputLimitExceeded) {
         reject(new Error('Driver protocol output exceeded 1 MiB'));
       } else if (code !== 0) {
-        reject(new Error(`Driver runner exited with code ${code}, signal ${signal}: ${errorOutput}`));
+        reject(
+          new Error(`Driver runner exited with code ${code}, signal ${signal}: ${errorOutput}`),
+        );
+      } else if (stdinError !== null) {
+        reject(stdinError);
       } else {
         resolve({ stdout: output, stderr: errorOutput });
       }

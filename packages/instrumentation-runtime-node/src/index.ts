@@ -1,4 +1,5 @@
 export { nodeRuntimeProvider, createNodeRuntimeProvider } from './runtime/bootstrap/provider.js';
+export { nodeRuntimeActivationAdapters } from './runtime/bootstrap/adapters.js';
 export type { CreateNodeRuntimeProviderInput } from './runtime/bootstrap/provider.js';
 export {
   createNodeRuntimeActivation,
@@ -31,6 +32,4 @@ export type {
   NodeDependencyInstallRequest,
   NodeDependencyInstallResult,
 } from './runtime/dependencies/dependency-installer.js';
-export {
-  instrumentationDirectoryRelativePath as nodeInstrumentationDirectoryRelativePath,
-} from '@suites/blackbox-instrumentation-internal';
+export { instrumentationDirectoryRelativePath as nodeInstrumentationDirectoryRelativePath } from '@suites/blackbox-instrumentation-internal';

@@ -15,34 +15,64 @@ async function* noControls() {
   yield* [];
 }
 const driver = {
-  id: 'http', kind: 'project-driver', runtime: 'node', ref: 'driver.mjs',
-  target: { kind: 'participant', participantId: 'api', service: 'api',
-    protocol: 'http', containerPort: 3000 },
+  id: 'http',
+  kind: 'project-driver',
+  runtime: 'node',
+  ref: 'driver.mjs',
+  target: {
+    kind: 'participant',
+    participantId: 'api',
+    service: 'api',
+    protocol: 'http',
+    containerPort: 3000,
+  },
   execution: { kind: 'host' },
   propagation: { kind: 'w3c-trace-context-propagation', carrier: 'process-environment' },
 } satisfies ResolvedCatalogDriver;
 
 function sandbox(): SandboxHandle {
-  const unused = () => { throw new Error('unused'); };
-  const testcontainer = { id: 'api', name: 'api-1', host: '127.0.0.1', labels: {},
-    environment: {}, networkNames: [], mappedPorts: new Map<number, number>(),
-    getMappedPort: () => 4321 };
+  const unused = () => {
+    throw new Error('unused');
+  };
+  const testcontainer = {
+    id: 'api',
+    name: 'api-1',
+    host: '127.0.0.1',
+    labels: {},
+    environment: {},
+    networkNames: [],
+    mappedPorts: new Map<number, number>(),
+    getMappedPort: () => 4321,
+  };
   const container = { service: 'api', testcontainer };
   return {
-    sandboxId: 'sandbox', projectName: 'project', state: 'running', declaredEnvironment: {},
-    endpoints: new Map([['driver-http', { name: 'driver-http', service: 'api',
-      containerPort: 3000, host: '127.0.0.1', port: 4321 }]]),
-    containers: new Map([['api', container]]), telemetry: { kind: 'disabled' },
-    getContainer: () => container, inspectResources: unused,
-    execute: unused, startContainerExecution: unused,
-    inspectTelemetry: () => Promise.resolve({ kind: 'disabled' }), stop: unused,
+    sandboxId: 'sandbox',
+    projectName: 'project',
+    state: 'running',
+    declaredEnvironment: {},
+    endpoints: new Map([
+      [
+        'driver-http',
+        { name: 'driver-http', service: 'api', containerPort: 3000, host: '127.0.0.1', port: 4321 },
+      ],
+    ]),
+    containers: new Map([['api', container]]),
+    telemetry: { kind: 'disabled' },
+    getContainer: () => container,
+    inspectResources: unused,
+    execute: unused,
+    startContainerExecution: unused,
+    inspectTelemetry: () => Promise.resolve({ kind: 'disabled' }),
+    stop: unused,
   };
 }
 
 async function execute(environment: string) {
   const projectDirectory = await mkdtemp(join(tmpdir(), 'capsule-process-env-'));
   roots.push(projectDirectory);
-  await writeFile(join(projectDirectory, 'driver.mjs'), `export default {
+  await writeFile(
+    join(projectDirectory, 'driver.mjs'),
+    `export default {
     kind: 'project-driver', name: 'http', prepare(request) {
       return { kind: 'prepared-command', argv: request.command.argv,
         environment: { TRACEPARENT: ${environment} },
@@ -51,14 +81,24 @@ async function execute(environment: string) {
         redaction: { kind: 'driver-redaction', requestArgv: { kind: 'none' },
           preparedArgv: { kind: 'none' }, environment: { kind: 'none' } } };
     }
-  };`);
+  };`,
+  );
   const scope = createTelemetryExecutionScope({ executionId: 'activity-1', operationName: 'test' });
   const result = await runCapsuleDriver({
-    projectDirectory, sessionId: 'quiet-river-ada', activityId: 'activity-1', driver,
+    projectDirectory,
+    sessionId: 'quiet-river-ada',
+    activityId: 'activity-1',
+    driver,
     entrypoint: { url: 'http://localhost:4321', host: 'localhost', port: 4321, protocol: 'http' },
     argv: [process.execPath, '-e', 'process.stdout.write(process.env.TRACEPARENT)'],
-    untraced: { kind: 'refuse' }, sandbox: sandbox(), scope,
-    interaction: { kind: 'captured', controls: noControls() },
+    untraced: { kind: 'refuse' },
+    sandbox: sandbox(),
+    scope,
+    interaction: {
+      kind: 'captured',
+      cancellation: { kind: 'not-cancellable' },
+      controls: noControls(),
+    },
   });
   return { result, traceparent: scope.active.context.traceparent };
 }
@@ -76,7 +116,11 @@ it('refuses a contradictory process environment', async () => {
   const { result } = await execute("'contradictory'");
   expect(result).toMatchObject({
     kind: 'driver-propagation-refused',
-    propagation: { outcome: { kind: 'context-injection-failed',
-      message: expect.stringContaining('contradicts canonical TRACEPARENT') } },
+    propagation: {
+      outcome: {
+        kind: 'context-injection-failed',
+        message: expect.stringContaining('contradicts canonical TRACEPARENT'),
+      },
+    },
   });
 });

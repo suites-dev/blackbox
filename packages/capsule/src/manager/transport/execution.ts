@@ -173,6 +173,7 @@ function interactiveTransport(input: {
 }): CapsuleExecutionInteraction {
   return {
     kind: 'interactive',
+    cancellation: { kind: 'abort-signal', signal: input.active.cancelled.signal },
     terminal: input.request.terminal,
     controls: interactiveControls({ active: input.active, frames: input.frames }),
     onEvent: async (event: CapsuleInteractiveEvent) => {
@@ -225,7 +226,11 @@ export class ManagerExecutionCoordinator {
     const interaction =
       input.request.kind === 'interactive-exec-request'
         ? interactiveTransport({ active, request: input.request, frames: input.frames })
-        : { kind: 'captured' as const, controls: capturedControls(active) };
+        : {
+            kind: 'captured' as const,
+            cancellation: { kind: 'abort-signal' as const, signal: active.cancelled.signal },
+            controls: capturedControls(active),
+          };
     return {
       interaction,
       release: () => {

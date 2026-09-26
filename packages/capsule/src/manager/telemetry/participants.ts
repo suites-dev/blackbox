@@ -2,11 +2,10 @@ import { realpath } from 'node:fs/promises';
 import { isAbsolute, posix, relative, resolve, sep } from 'node:path';
 
 import type { CatalogSandboxInput } from '@suites/blackbox-catalog-internal';
-import {
-  createNodeRuntimeActivation,
-  isNodeRuntimeActivationAdapter,
-  nodeInstrumentationDirectoryRelativePath,
-} from '@suites/blackbox-inst-runtime-node';
+import type {
+  RuntimeActivationAdapter,
+  RuntimeActivationValuePart,
+} from '@suites/blackbox-instrumentation-internal';
 import type { SandboxTelemetryParticipant } from '@suites/blackbox-sandbox-internal';
 
 import type { CapsuleManagerBootstrap } from '../../protocol.js';
@@ -23,17 +22,19 @@ function containedPath(parent: string, candidate: string): boolean {
 
 async function instrumentationAsset(input: {
   readonly projectDirectory: string;
+  readonly sourceDirectoryRelativePath: string;
+  readonly targetDirectory: string;
   readonly ref: string;
-}): Promise<{ readonly source: string; readonly bootstrapPath: string }> {
+}): Promise<{ readonly source: string; readonly mountedAssetPath: string }> {
   const projectDirectory = await realpath(input.projectDirectory);
-  const requestedSource = resolve(
-    projectDirectory,
-    nodeInstrumentationDirectoryRelativePath,
-  );
+  const requestedSource = resolve(projectDirectory, input.sourceDirectoryRelativePath);
   const requestedAsset = resolve(projectDirectory, input.ref);
-  if (!containedPath(requestedSource, requestedAsset)) {
+  if (
+    !containedPath(projectDirectory, requestedSource) ||
+    !containedPath(requestedSource, requestedAsset)
+  ) {
     throw new Error(
-      `Instrumentation activation ${JSON.stringify(input.ref)} must be inside ${nodeInstrumentationDirectoryRelativePath}`,
+      `Instrumentation activation ${JSON.stringify(input.ref)} must be inside ${input.sourceDirectoryRelativePath}`,
     );
   }
   const source = await realpath(requestedSource);
@@ -43,19 +44,46 @@ async function instrumentationAsset(input: {
     );
   }
   const asset = await realpath(requestedAsset);
-  const assetRelativePath = relative(source, asset);
   if (!containedPath(source, asset)) {
     throw new Error(
-      `Instrumentation activation ${JSON.stringify(input.ref)} must be inside ${nodeInstrumentationDirectoryRelativePath}`,
+      `Instrumentation activation ${JSON.stringify(input.ref)} must be inside ${input.sourceDirectoryRelativePath}`,
     );
   }
+  const assetRelativePath = relative(source, asset);
   return {
     source,
-    bootstrapPath: posix.join(
-      '/blackbox/instrumentation',
-      ...assetRelativePath.split(sep),
-    ),
+    mountedAssetPath: posix.join(input.targetDirectory, ...assetRelativePath.split(sep)),
   };
+}
+
+function activationPart(input: {
+  readonly part: RuntimeActivationValuePart;
+  readonly adapter: RuntimeActivationAdapter;
+  readonly mountedAssetPath: string;
+}): string {
+  if (input.part.kind === 'activation-asset-path') {
+    return `${input.part.prefix}${input.mountedAssetPath}`;
+  }
+  return `${input.part.prefix}${posix.join(
+    input.adapter.targetDirectory,
+    input.part.relativePath,
+  )}`;
+}
+
+function adapterFor(input: {
+  readonly bootstrap: CapsuleManagerBootstrap;
+  readonly runtime: string;
+  readonly adapter: string;
+}): RuntimeActivationAdapter {
+  const selected = input.bootstrap.runtimeActivationAdapters.find(
+    (candidate) => candidate.runtime === input.runtime && candidate.adapter === input.adapter,
+  );
+  if (selected === undefined) {
+    throw new Error(
+      `Activation adapter ${JSON.stringify(input.adapter)} for runtime ${JSON.stringify(input.runtime)} is unavailable`,
+    );
+  }
+  return selected;
 }
 
 export async function participantTelemetry(input: {
@@ -67,40 +95,35 @@ export async function participantTelemetry(input: {
     if (participant.activation.kind === 'unconfigured') {
       continue;
     }
-    if (participant.runtime !== 'node') {
-      throw new Error(
-        `Activation for runtime ${JSON.stringify(participant.runtime)} is unsupported`,
-      );
-    }
     const activation = input.plan.metadata.activations[participant.activation.activationId];
-    if (!isNodeRuntimeActivationAdapter(activation.adapter)) {
-      throw new Error(`Unsupported Node activation adapter ${JSON.stringify(activation.adapter)}`);
-    }
-    const target = '/blackbox/instrumentation';
+    const adapter = adapterFor({
+      bootstrap: input.bootstrap,
+      runtime: participant.runtime,
+      adapter: activation.adapter,
+    });
     const asset = await instrumentationAsset({
       projectDirectory: input.plan.projectDirectory,
+      sourceDirectoryRelativePath: adapter.sourceDirectoryRelativePath,
+      targetDirectory: adapter.targetDirectory,
       ref: activation.ref,
-    });
-    const configured = createNodeRuntimeActivation({
-      kind: 'node-runtime-activation',
-      adapter: activation.adapter,
-      bootstrapPath: asset.bootstrapPath,
-      dependencyDirectory: `${target}/node_modules`,
-      inheritedNodeOptions: { kind: 'absent' },
     });
     participants.push({
       service: participant.service,
       runtime: participant.runtime,
       environment: {},
       activation: {
-        kind: 'append-environment-variable',
-        name: 'NODE_OPTIONS',
-        value: configured.environment.NODE_OPTIONS,
+        kind: adapter.environment.kind,
+        name: adapter.environment.name,
+        value: adapter.environment.value
+          .map((part) =>
+            activationPart({ part, adapter, mountedAssetPath: asset.mountedAssetPath }),
+          )
+          .join(adapter.environment.separator),
       },
       mounts: [
         {
           source: asset.source,
-          target,
+          target: adapter.targetDirectory,
           access: 'read-only',
         },
       ],

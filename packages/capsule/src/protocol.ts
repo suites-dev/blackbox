@@ -6,6 +6,7 @@ import type {
   CapsuleInteractiveControlResult,
   CapsuleTerminalSize,
 } from './types.js';
+import type { RuntimeActivationAdapter } from '@suites/blackbox-instrumentation-internal';
 
 export type CapsuleManagerRequest =
   | {
@@ -110,4 +111,5 @@ export interface CapsuleManagerBootstrap {
   readonly executionId: string;
   readonly systemId: string;
   readonly environment: Readonly<Record<string, string>>;
+  readonly runtimeActivationAdapters: readonly RuntimeActivationAdapter[];
 }

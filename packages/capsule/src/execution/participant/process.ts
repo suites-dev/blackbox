@@ -1,21 +1,19 @@
 import type {
-  SandboxContainerControlResult,
-  SandboxContainerExecution,
   SandboxContainerExecutionFailure,
   SandboxHandle,
 } from '@suites/blackbox-sandbox-internal';
 
 import type {
-  CapsuleExecutionControl,
   CapsuleExecutionInteraction,
   CapsuleExecutionLocation,
   CapsuleProcessOutcome,
-} from './types.js';
+} from '../types.js';
+import { pumpParticipantControls } from './control.js';
 import {
   createOutputRetention,
   retainedOutputMetadata,
   retainedOutputText,
-} from './output-retention.js';
+} from '../output-retention.js';
 
 function failedExecution(input: {
   readonly failure: SandboxContainerExecutionFailure;
@@ -66,9 +64,10 @@ export async function runParticipantCaptured(input: {
       location: input.location,
     });
   }
-  void pumpControls({ execution: started.execution, interaction: input.interaction }).catch(
-    () => undefined,
-  );
+  void pumpParticipantControls({
+    execution: started.execution,
+    interaction: input.interaction,
+  }).catch(() => undefined);
   await started.execution.endStdin();
   const completed = await started.execution.completion;
   if (completed.kind === 'execution-failed') {
@@ -92,38 +91,6 @@ export async function runParticipantCaptured(input: {
       stderr: retainedOutputMetadata(retainedStderr),
     },
   };
-}
-
-async function participantControl(
-  execution: SandboxContainerExecution,
-  control: CapsuleExecutionControl,
-): Promise<SandboxContainerControlResult> {
-  switch (control.kind) {
-    case 'stdin-chunk':
-      return execution.writeStdin({ kind: 'stdin-chunk', chunk: control.chunk });
-    case 'stdin-end':
-      return execution.endStdin();
-    case 'resize':
-      return execution.resize(control.size);
-    case 'signal':
-      return execution.signal({ signal: control.signal });
-    case 'force-terminate':
-      return execution.forceTerminate();
-  }
-}
-
-async function pumpControls(input: {
-  readonly execution: SandboxContainerExecution;
-  readonly interaction: CapsuleExecutionInteraction;
-}): Promise<void> {
-  for await (const control of input.interaction.controls) {
-    const result = await participantControl(input.execution, control);
-    if (input.interaction.kind === 'interactive') {
-      await input.interaction
-        .onEvent({ kind: 'control-result', controlId: control.controlId, result })
-        .catch(() => undefined);
-    }
-  }
 }
 
 function completedOutcome(input: {
@@ -179,9 +146,10 @@ export async function runParticipantInteractive(input: {
       location: input.location,
     });
   }
-  void pumpControls({ execution: started.execution, interaction: input.interaction }).catch(
-    () => undefined,
-  );
+  void pumpParticipantControls({
+    execution: started.execution,
+    interaction: input.interaction,
+  }).catch(() => undefined);
   const completed = await started.execution.completion;
   if (completed.kind === 'execution-failed') {
     return failedExecution({

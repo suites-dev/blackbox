@@ -80,7 +80,9 @@ async function expectApplicationSignalHandler(input: {
 }): Promise<void> {
   const marker = join(input.directory, 'signal-handler-completed');
   const entry = join(input.directory, 'signal-application.cjs');
-  await writeFile(entry, `
+  await writeFile(
+    entry,
+    `
     const { writeFileSync } = require('node:fs');
     process.on('SIGTERM', () => {
       setTimeout(() => {
@@ -90,7 +92,8 @@ async function expectApplicationSignalHandler(input: {
     });
     process.stdout.write('ready\\n');
     setInterval(() => undefined, 1_000);
-  `);
+  `,
+  );
   const child = spawn(process.execPath, [entry], {
     cwd: input.directory,
     env: activatedEnvironment({
@@ -114,6 +117,50 @@ async function expectApplicationSignalHandler(input: {
   const [exitCode, signal] = await once(child, 'exit');
   expect({ exitCode, signal }).toEqual({ exitCode: 0, signal: null });
   expect(await readFile(marker, 'utf8')).toBe('complete');
+}
+
+async function expectEventEmitterContext(input: {
+  readonly bootstrap: string;
+  readonly directory: string;
+}): Promise<void> {
+  const entry = join(input.directory, 'event-emitter-context.cjs');
+  const expectedTraceId = '2122232425262728292a2b2c2d2e2f30';
+  const ambientTraceId = '3132333435363738393a3b3c3d3e3f40';
+  const source = `
+    const { EventEmitter } = require('node:events');
+    const { createRequire } = require('node:module');
+    const fromBootstrap = createRequire(${JSON.stringify(input.bootstrap)});
+    const { ROOT_CONTEXT, context, trace } = fromBootstrap('@opentelemetry/api');
+    const emitter = new EventEmitter();
+    const bound = trace.setSpanContext(ROOT_CONTEXT, {
+      traceId: ${JSON.stringify(expectedTraceId)},
+      spanId: '4142434445464748',
+      traceFlags: 1,
+    });
+    const ambient = trace.setSpanContext(ROOT_CONTEXT, {
+      traceId: ${JSON.stringify(ambientTraceId)},
+      spanId: '5152535455565758',
+      traceFlags: 1,
+    });
+    context.bind(bound, emitter);
+    emitter.on('proof', () => {
+      process.stdout.write(trace.getSpanContext(context.active()).traceId);
+    });
+    context.with(ambient, () => emitter.emit('proof'));
+  `;
+  await writeFile(entry, source);
+  const result = spawnSync(process.execPath, [entry], {
+    cwd: input.directory,
+    encoding: 'utf8',
+    env: activatedEnvironment({
+      adapter: 'node-preload',
+      bootstrap: input.bootstrap,
+      directory: input.directory,
+    }),
+    timeout: 15_000,
+  });
+  expect(result.status, result.stderr).toBe(0);
+  expect(result.stdout).toBe(expectedTraceId);
 }
 
 it('installs a standalone dependency tree and instruments real CommonJS and ESM applications', async () => {
@@ -154,6 +201,7 @@ it('installs a standalone dependency tree and instruments real CommonJS and ESM 
       }),
     );
 
+    await expectEventEmitterContext({ bootstrap, directory });
     await expectApplicationSignalHandler({ bootstrap, directory });
 
     const invalidContext = spawnSync(process.execPath, ['--eval', 'void 0'], {

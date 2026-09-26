@@ -6,7 +6,11 @@ import { readCapsuleRecord } from '../../records.js';
 import { catalogFixture, readyCollectorRuntime } from '../testing/acquisition.fixture.js';
 import { requestFixture } from '../testing/request.fixture.js';
 import { activationStartupSandbox } from './startup.fixture.js';
-import { activationPlan, installActivationFixture } from './verification.fixture.js';
+import {
+  activationPlan,
+  activationRuntimeAdapters,
+  installActivationFixture,
+} from './verification.fixture.js';
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -40,21 +44,28 @@ it('records startup failure before application readiness when activation is miss
     }),
   );
   try {
-    await runCapsuleManager(fixture, {
-      collectorRuntime: readyCollectorRuntime,
-      catalog: {
-        load: () => Promise.resolve(catalogFixture(fixture.projectDirectory)),
-        resolve: () => activationPlan({
-          configured: true,
-          projectDirectory: fixture.projectDirectory,
-        }),
+    await runCapsuleManager(
+      {
+        ...fixture,
+        runtimeActivationAdapters: activationRuntimeAdapters,
       },
-      sandbox: {
-        projectName: () => 'project',
-        start: () => Promise.resolve(activationStartupSandbox(fixture.manager.sandbox)),
+      {
+        collectorRuntime: readyCollectorRuntime,
+        catalog: {
+          load: () => Promise.resolve(catalogFixture(fixture.projectDirectory)),
+          resolve: () =>
+            activationPlan({
+              configured: true,
+              projectDirectory: fixture.projectDirectory,
+            }),
+        },
+        sandbox: {
+          projectName: () => 'project',
+          start: () => Promise.resolve(activationStartupSandbox(fixture.manager.sandbox)),
+        },
+        now: () => new Date(),
       },
-      now: () => new Date(),
-    });
+    );
     expect(await readCapsuleRecord(fixture)).toMatchObject({
       state: 'start-failed',
       cleanup: { kind: 'complete' },

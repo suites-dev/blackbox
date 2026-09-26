@@ -21,16 +21,21 @@ function participantSandbox(observed: {
 }): SandboxHandle {
   const base = driverSandbox();
   const testcontainer = Object.freeze({
-    id: 'postgres-container', name: 'postgres-1', host: '127.0.0.1',
-    labels: Object.freeze({}), environment: Object.freeze({ POSTGRES_DB: 'app' }),
-    networkNames: Object.freeze(['project_default']), mappedPorts: new Map<number, number>(),
+    id: 'postgres-container',
+    name: 'postgres-1',
+    host: '127.0.0.1',
+    labels: Object.freeze({}),
+    environment: Object.freeze({ POSTGRES_DB: 'app' }),
+    networkNames: Object.freeze(['project_default']),
+    mappedPorts: new Map<number, number>(),
     getMappedPort: () => 5432,
   });
   const container = Object.freeze({ service: 'postgres', testcontainer });
   return {
     ...base,
     containers: new Map([...base.containers, ['postgres', container]]),
-    getContainer: ({ service }) => service === 'postgres' ? container : base.getContainer({ service }),
+    getContainer: ({ service }) =>
+      service === 'postgres' ? container : base.getContainer({ service }),
     startContainerExecution: async (request) => {
       observed.requests.push(request);
       await request.onOutput({ kind: 'terminal-output', chunk: Buffer.from('participant-live') });
@@ -49,7 +54,11 @@ function participantSandbox(observed: {
         if (action === 'stdin-end') {
           finish();
         }
-        return Promise.resolve({ kind: 'delivered' as const, action, mechanism: 'docker-stream' as const });
+        return Promise.resolve({
+          kind: 'delivered' as const,
+          action,
+          mechanism: 'docker-stream' as const,
+        });
       };
       return {
         kind: 'started',
@@ -147,9 +156,13 @@ it('streams a driver-selected participant TTY and forwards every control', async
     sandbox: participantSandbox(observed),
     interaction: {
       kind: 'interactive',
+      cancellation: { kind: 'not-cancellable' },
       terminal: { columns: 120, rows: 40 },
       controls: controls(),
-      onEvent: (event) => { events.push(event); return Promise.resolve(); },
+      onEvent: (event) => {
+        events.push(event);
+        return Promise.resolve();
+      },
     },
   });
   expect(result).toMatchObject({

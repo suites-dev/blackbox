@@ -108,13 +108,19 @@ export interface CapsuleInteractiveExecInput extends CapsuleExecInput {
   readonly onEvent: (event: CapsuleInteractiveEvent) => Promise<void>;
 }
 
+export type CapsuleExecutionCancellation =
+  | { readonly kind: 'not-cancellable' }
+  | { readonly kind: 'abort-signal'; readonly signal: AbortSignal };
+
 export type CapsuleExecutionInteraction =
   | {
       readonly kind: 'captured';
+      readonly cancellation: CapsuleExecutionCancellation;
       readonly controls: AsyncIterable<CapsuleExecutionControl>;
     }
   | {
       readonly kind: 'interactive';
+      readonly cancellation: CapsuleExecutionCancellation;
       readonly terminal: CapsuleTerminalSize;
       readonly controls: AsyncIterable<CapsuleExecutionControl>;
       readonly onEvent: (event: CapsuleInteractiveEvent) => Promise<void>;

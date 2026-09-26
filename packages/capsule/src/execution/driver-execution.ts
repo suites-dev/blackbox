@@ -27,7 +27,7 @@ import {
 import {
   runParticipantCaptured,
   runParticipantInteractive,
-} from './participant-process.js';
+} from './participant/process.js';
 import { redactValues } from './output/value-redaction.js';
 
 export interface RunCapsuleDriverInput {

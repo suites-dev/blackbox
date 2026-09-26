@@ -37,6 +37,7 @@ it('pauses a noisy host child while interactive output delivery is blocked', asy
     environment: {},
     interaction: {
       kind: 'interactive',
+      cancellation: { kind: 'not-cancellable' },
       terminal: { columns: 80, rows: 24 },
       controls: noControls(),
       onEvent: async (event) => {

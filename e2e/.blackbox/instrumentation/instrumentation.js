@@ -4,6 +4,7 @@ const { NodeSDK } = require('@opentelemetry/sdk-node');
 const { ROOT_CONTEXT, trace } = require('@opentelemetry/api');
 const { getNodeAutoInstrumentations } = require('@opentelemetry/auto-instrumentations-node');
 const { W3CTraceContextPropagator } = require('@opentelemetry/core');
+const { AsyncLocalStorageContextManager } = require('@opentelemetry/context-async-hooks');
 const { OTLPTraceExporter } = require('@opentelemetry/exporter-trace-otlp-http');
 const { EnvironmentGetter } = require('@opentelemetry/propagator-env-carrier');
 const { AsyncLocalStorage } = require('node:async_hooks');
@@ -19,8 +20,9 @@ function required(name) {
 const tracesEndpoint = process.env.BLACKBOX_OTEL_TRACES_ENDPOINT;
 const blackboxEnabled = typeof tracesEndpoint === 'string' && tracesEndpoint.trim() !== '';
 const token = blackboxEnabled ? required('BLACKBOX_OTEL_AUTH_TOKEN') : '';
-class ProcessContextManager {
+class ProcessContextManager extends AsyncLocalStorageContextManager {
   constructor() {
+    super();
     this.storage = new AsyncLocalStorage();
   }
   active() {
@@ -29,15 +31,6 @@ class ProcessContextManager {
   with(context, callback, thisArg, ...args) {
     const bound = thisArg == null ? callback : callback.bind(thisArg);
     return this.storage.run(context, bound, ...args);
-  }
-  bind(context, target) {
-    if (typeof target !== 'function') {
-      return target;
-    }
-    const manager = this;
-    return function blackboxContextBound(...args) {
-      return manager.with(context, target, this, ...args);
-    };
   }
   enter(context) {
     this.storage.enterWith(context);

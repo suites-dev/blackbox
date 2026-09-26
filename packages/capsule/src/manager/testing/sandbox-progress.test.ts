@@ -15,6 +15,7 @@ async function fixture() {
     executionId: 'execution',
     systemId: 'orders',
     environment: {},
+    runtimeActivationAdapters: [],
   };
   await mkdir(capsuleSessionDirectory(bootstrap), { recursive: true });
   const entry = {

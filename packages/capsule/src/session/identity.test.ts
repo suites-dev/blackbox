@@ -32,6 +32,7 @@ describe('Capsule identity reservation', () => {
       title: 'Orders collision test',
       description: { kind: 'omitted' },
       environment: {},
+      runtimeActivationAdapters: [],
       progress: { kind: 'silent' },
     } as const;
     const nextIdentity = () => {
