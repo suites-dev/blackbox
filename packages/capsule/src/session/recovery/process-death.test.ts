@@ -20,7 +20,10 @@ it.each(['admitted', 'manager-starting', 'sandbox-starting', 'running', 'stoppin
       throw new Error('Manager test process did not receive a PID');
     }
     try {
-      const record = { ...retainedRecord(projectDirectory), state, manager: { kind: 'started' as const, pid },
+      const record = { ...retainedRecord(projectDirectory), state, manager: {
+        kind: 'started' as const, pid,
+        identity: { kind: 'socket-instance' as const, instanceId: 'exited-manager' },
+      },
         entrypoint: { kind: 'available' as const, value: {
           url: 'http://localhost:4321', host: 'localhost', port: 4321, protocol: 'http',
         } },

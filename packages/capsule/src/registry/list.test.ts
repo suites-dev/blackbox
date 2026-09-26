@@ -108,7 +108,11 @@ describe('Capsule registry dead manager reconciliation', () => {
       }),
       state: 'manager-starting',
       cleanup: { kind: 'not-attempted' },
-      manager: { kind: 'started', pid: 42_424 },
+      manager: {
+        kind: 'started',
+        pid: 42_424,
+        identity: { kind: 'socket-instance', instanceId: 'dead-manager' },
+      },
     } satisfies CapsuleSessionRecord;
     await admitCapsuleRecord({ projectDirectory, record: running });
     vi.spyOn(process, 'kill').mockImplementation(() => {

@@ -14,7 +14,11 @@ import {
   writeCapsuleRecord,
   type CapsuleSessionRecord,
 } from '../records.js';
-import type { CapsuleActivityReport, CapsuleEntrypoint } from '../types.js';
+import type {
+  CapsuleActivityReport,
+  CapsuleEntrypoint,
+  CapsuleManagerOwnership,
+} from '../types.js';
 import { completePlannedSandbox, startPlannedSandbox } from './acquisition.js';
 import { emitProgress, runStartStage } from './progress.js';
 import type { CapsuleManagerPorts } from './ports.js';
@@ -109,6 +113,17 @@ function createTelemetryAuthorization(): CapsuleTelemetryAuthorization {
   };
 }
 
+function startedManager(): CapsuleManagerOwnership {
+  return {
+    kind: 'started',
+    pid: process.pid,
+    identity: {
+      kind: 'socket-instance',
+      instanceId: randomBytes(32).toString('base64url'),
+    },
+  };
+}
+
 async function resolveCollectorRuntime(ports: CapsuleManagerPorts) {
   return runStartStage('acquisition', async () =>
     requireCollectorRuntime(await ports.collectorRuntime.resolve()),
@@ -129,7 +144,9 @@ export async function prepareManager(
   });
   record = await persist(
     bootstrap.projectDirectory,
-    transition(record, 'sandbox-starting', { manager: { kind: 'started', pid: process.pid } }),
+    transition(record, 'sandbox-starting', {
+      manager: startedManager(),
+    }),
   );
   let sandbox: SandboxHandle | undefined;
   const telemetryAuthorization = createTelemetryAuthorization();

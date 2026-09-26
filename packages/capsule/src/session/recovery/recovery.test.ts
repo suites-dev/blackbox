@@ -39,6 +39,7 @@ describe('dead Capsule manager reconciliation', () => {
     const ports = {
       now: () => completedAt,
       signal: () => { throw processError('ESRCH'); },
+      probeManager: () => Promise.resolve({ kind: 'manager-instance-exact' }),
       readRecord: () => Promise.resolve(record),
       readActivities: () => Promise.resolve(activities),
       writeActivities: (input) => {
@@ -95,40 +96,6 @@ describe('dead Capsule manager reconciliation', () => {
 
 });
 
-describe('Capsule manager process proof', () => {
-  it.each([
-    { label: 'live', signal: () => true as const, reason: 'manager-alive' },
-    { label: 'permission denied', signal: () => { throw processError('EPERM'); }, reason: 'manager-alive' },
-    {
-      label: 'unknown probe failure',
-      signal: () => { throw processError('EIO'); },
-      reason: 'manager-liveness-unconfirmed',
-    },
-  ])('does not reconcile a $label manager probe', async ({ signal, reason }) => {
-    const record = runningRecord('/project');
-    const writeActivities = vi.fn<CapsuleManagerRecoveryPorts['writeActivities']>();
-    const writeRecord = vi.fn<CapsuleManagerRecoveryPorts['writeRecord']>();
-    const ports = {
-      now: () => completedAt,
-      signal,
-      readRecord: () => Promise.resolve(record),
-      readActivities: () => Promise.resolve([runningActivity()]),
-      writeActivities,
-      writeRecord,
-      recoverSandbox: noSandboxRecord,
-    } satisfies CapsuleManagerRecoveryPorts;
-    await expect(
-      reconcileDeadCapsuleManagerWithPorts(
-        { projectDirectory: '/project', sessionId: record.sessionId },
-        ports,
-      ),
-    ).resolves.toMatchObject({ kind: 'capsule-manager-reconciliation-skipped', reason });
-    expect(writeActivities).not.toHaveBeenCalled();
-    expect(writeRecord).not.toHaveBeenCalled();
-  });
-
-});
-
 describe('Capsule manager reconciliation admission', () => {
   it('requires a nonterminal session with recorded manager ownership', async () => {
     const base = runningRecord('/project');
@@ -144,6 +111,7 @@ describe('Capsule manager reconciliation admission', () => {
         {
           now: () => completedAt,
           signal: () => { throw processError('ESRCH'); },
+          probeManager: () => Promise.resolve({ kind: 'manager-instance-exact' }),
           readRecord: () => Promise.resolve(record),
           readActivities: () => Promise.resolve([runningActivity()]),
           writeActivities: () => Promise.resolve(),
@@ -171,6 +139,7 @@ describe('Capsule manager reconciliation admission', () => {
       {
         now: () => completedAt,
         signal: () => { throw processError('ESRCH'); },
+        probeManager: () => Promise.resolve({ kind: 'manager-instance-exact' }),
         readRecord: () => Promise.resolve(record),
         readActivities: () => Promise.resolve([]),
         writeActivities: () => Promise.resolve(),

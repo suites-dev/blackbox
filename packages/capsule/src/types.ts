@@ -19,7 +19,13 @@ export type CapsuleAvailability<Value> =
 
 export type CapsuleManagerOwnership =
   | { readonly kind: 'not-started' }
-  | { readonly kind: 'started'; readonly pid: number };
+  | {
+      readonly kind: 'started';
+      readonly pid: number;
+      readonly identity:
+        | { readonly kind: 'legacy-pid-only' }
+        | { readonly kind: 'socket-instance'; readonly instanceId: string };
+    };
 
 export type CapsuleFailureRecord =
   | { readonly kind: 'none' }

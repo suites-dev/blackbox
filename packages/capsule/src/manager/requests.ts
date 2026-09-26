@@ -102,6 +102,18 @@ async function executeRequest(input: {
       case 'stop-request':
         await handleStop({ socket, request, bootstrap: input.bootstrap, manager: input.manager });
         break;
+      case 'manager-identity-request': {
+        const ownership = input.manager.record.manager;
+        if (ownership.kind !== 'started' || ownership.identity.kind !== 'socket-instance') {
+          throw new Error('Capsule manager process identity is unavailable');
+        }
+        await sendResponse(socket, {
+          kind: 'manager-identity-response',
+          requestId: request.requestId,
+          instanceId: ownership.identity.instanceId,
+        });
+        break;
+      }
       default:
         assertNever(request);
     }

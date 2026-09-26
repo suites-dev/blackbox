@@ -20,7 +20,11 @@ export function runningRecord(projectDirectory: string): CapsuleSessionRecord {
     revision: 4,
     admittedAt: '2026-09-25T09:00:00.000Z',
     updatedAt: '2026-09-25T09:01:00.000Z',
-    manager: { kind: 'started', pid: 42_424 },
+    manager: {
+      kind: 'started',
+      pid: 42_424,
+      identity: { kind: 'socket-instance', instanceId: 'manager-instance-a' },
+    },
     socketPath: join(projectDirectory, 'manager.sock'),
     entrypoint: {
       kind: 'available',

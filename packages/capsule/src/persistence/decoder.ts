@@ -1,6 +1,8 @@
 import type { CapsuleSessionRecord } from '../records.js';
+import type { CapsuleManagerOwnership } from '../types.js';
 
 type JsonObject = Record<string, unknown>;
+type ValidatedSessionRecord = JsonObject & Omit<CapsuleSessionRecord, 'manager'>;
 
 export function object(value: unknown, location: string): JsonObject {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) {
@@ -45,11 +47,30 @@ function description(value: unknown): void {
   }
 }
 
-function manager(value: unknown): void {
+function manager(value: unknown): CapsuleManagerOwnership {
   const item = object(value, 'session.manager');
-  if (discriminator(item, ['not-started', 'started'], 'session.manager') === 'started') {
-    number(item.pid, 'session.manager.pid');
+  if (discriminator(item, ['not-started', 'started'], 'session.manager') === 'not-started') {
+    return { kind: 'not-started' };
   }
+  const pid = number(item.pid, 'session.manager.pid');
+  if (item.identity === undefined) {
+    return { kind: 'started', pid, identity: { kind: 'legacy-pid-only' } };
+  }
+  const identity = object(item.identity, 'session.manager.identity');
+  if (
+    discriminator(
+      identity,
+      ['legacy-pid-only', 'socket-instance'],
+      'session.manager.identity',
+    ) === 'legacy-pid-only'
+  ) {
+    return { kind: 'started', pid, identity: { kind: 'legacy-pid-only' } };
+  }
+  const instanceId = string(identity.instanceId, 'session.manager.identity.instanceId');
+  if (instanceId.length === 0) {
+    throw new Error('session.manager.identity.instanceId must not be empty');
+  }
+  return { kind: 'started', pid, identity: { kind: 'socket-instance', instanceId } };
 }
 
 export function recordedError(value: unknown, location: string): void {
@@ -111,7 +132,7 @@ function failure(value: unknown): void {
   }
 }
 
-function validateSession(record: JsonObject): void {
+function validateSession(record: JsonObject): asserts record is ValidatedSessionRecord {
   if (record.schemaVersion !== 1) {
     throw new Error('session.schemaVersion must be 1');
   }
@@ -177,5 +198,5 @@ export function decodeCapsuleSessionRecord(input: {
   const value: unknown = JSON.parse(input.bytes);
   const record = object(value, 'session');
   validateSession(record);
-  return value as CapsuleSessionRecord;
+  return { ...record, manager: manager(record.manager) };
 }

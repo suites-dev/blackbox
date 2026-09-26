@@ -10,6 +10,10 @@ import {
   type CapsuleSessionRecord,
 } from '../../records.js';
 import { cleanupAfterManagerDeath } from './sandbox-cleanup.js';
+import {
+  probeManagerInstance,
+  type ManagerInstanceProbe,
+} from './manager-instance.js';
 
 export interface ReconcileDeadCapsuleManagerInput {
   readonly projectDirectory: string;
@@ -36,6 +40,7 @@ export type CapsuleManagerReconciliationResult =
 export interface CapsuleManagerRecoveryPorts {
   readonly now: () => string;
   readonly signal: (pid: number, signal: 0) => true;
+  readonly probeManager: typeof probeManagerInstance;
   readonly readRecord: typeof readCapsuleRecord;
   readonly readActivities: typeof readCapsuleActivities;
   readonly writeActivities: typeof writeCapsuleActivities;
@@ -57,6 +62,7 @@ const terminalStates = new Set<CapsuleSessionRecord['state']>([
 const productionPorts = {
   now: () => new Date().toISOString(),
   signal: (pid: number, signal: 0) => process.kill(pid, signal),
+  probeManager: probeManagerInstance,
   readRecord: readCapsuleRecord,
   readActivities: readCapsuleActivities,
   writeActivities: writeCapsuleActivities,
@@ -64,7 +70,10 @@ const productionPorts = {
   recoverSandbox,
 } satisfies CapsuleManagerRecoveryPorts;
 
-function processStatus(pid: number, signal: CapsuleManagerRecoveryPorts['signal']): ManagerProcessStatus {
+function signalStatus(
+  pid: number,
+  signal: CapsuleManagerRecoveryPorts['signal'],
+): ManagerProcessStatus {
   if (!Number.isSafeInteger(pid) || pid <= 0) {
     return {
       kind: 'unconfirmed',
@@ -83,6 +92,52 @@ function processStatus(pid: number, signal: CapsuleManagerRecoveryPorts['signal'
     }
     return { kind: 'unconfirmed', error: recordedError(error) };
   }
+}
+
+function probedStatus(probe: ManagerInstanceProbe): ManagerProcessStatus {
+  switch (probe.kind) {
+    case 'manager-instance-exact':
+      return { kind: 'alive' };
+    case 'manager-instance-different':
+    case 'manager-socket-missing':
+      return { kind: 'dead' };
+    case 'manager-instance-unavailable':
+      return {
+        kind: 'unconfirmed',
+        error: {
+          name: 'CapsuleManagerIdentityUnavailable',
+          message: 'Capsule manager process identity could not be verified',
+        },
+      };
+  }
+}
+
+async function processStatus(input: {
+  readonly manager: Extract<CapsuleSessionRecord['manager'], { readonly kind: 'started' }>;
+  readonly socketPath: string;
+  readonly ports: CapsuleManagerRecoveryPorts;
+}): Promise<ManagerProcessStatus> {
+  const signaled = signalStatus(input.manager.pid, input.ports.signal);
+  if (signaled.kind !== 'alive' || input.manager.identity.kind === 'legacy-pid-only') {
+    return signaled;
+  }
+  const probe = await input.ports.probeManager({
+    socketPath: input.socketPath,
+    instanceId: input.manager.identity.instanceId,
+  });
+  return probedStatus(probe);
+}
+
+function sameManager(
+  left: Extract<CapsuleSessionRecord['manager'], { readonly kind: 'started' }>,
+  right: Extract<CapsuleSessionRecord['manager'], { readonly kind: 'started' }>,
+): boolean {
+  if (left.pid !== right.pid || left.identity.kind !== right.identity.kind) {
+    return false;
+  }
+  return left.identity.kind === 'legacy-pid-only' ||
+    (right.identity.kind === 'socket-instance' &&
+      left.identity.instanceId === right.identity.instanceId);
 }
 
 function interruptActivity(input: {
@@ -134,7 +189,7 @@ export async function reconcileDeadCapsuleManagerWithPorts(
   if (record.manager.kind !== 'started') {
     return { kind: 'capsule-manager-reconciliation-skipped', record, reason: 'manager-not-started' };
   }
-  const status = processStatus(record.manager.pid, ports.signal);
+  const status = await processStatus({ manager: record.manager, socketPath: record.socketPath, ports });
   if (status.kind !== 'dead') {
     return {
       kind: 'capsule-manager-reconciliation-skipped',
@@ -158,7 +213,7 @@ export async function reconcileDeadCapsuleManagerWithPorts(
       reason: 'manager-not-started',
     };
   }
-  if (currentRecord.manager.pid !== record.manager.pid) {
+  if (!sameManager(currentRecord.manager, record.manager)) {
     return {
       kind: 'capsule-manager-reconciliation-skipped',
       record: currentRecord,

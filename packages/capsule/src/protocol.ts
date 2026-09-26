@@ -27,6 +27,10 @@ export type CapsuleManagerRequest =
       readonly kind: 'stop-request';
       readonly requestId: string;
       readonly reason: 'completed' | 'cancelled' | 'failed' | 'interrupted';
+    }
+  | {
+      readonly kind: 'manager-identity-request';
+      readonly requestId: string;
     };
 
 export type CapsuleManagerControlFrame =
@@ -72,7 +76,17 @@ export type CapsuleManagerResponse =
       readonly kind: 'manager-error-response';
       readonly requestId: string;
       readonly error: { readonly name: string; readonly message: string };
+    }
+  | {
+      readonly kind: 'manager-identity-response';
+      readonly requestId: string;
+      readonly instanceId: string;
     };
+
+export type CapsuleManagerOperationResponse = Exclude<
+  CapsuleManagerResponse,
+  { readonly kind: 'manager-identity-response' }
+>;
 
 export type CapsuleManagerEvent =
   | {

@@ -12,9 +12,18 @@ import {
   writeCapsuleRecord,
   type CapsuleSessionRecord,
 } from '../records.js';
+import type { CapsuleManagerOwnership } from '../types.js';
 import { execCapsule, reportCapsule, stopCapsule } from './operations.js';
 
 const roots: string[] = [];
+
+function deadManagerOwnership(): CapsuleManagerOwnership {
+  return {
+    kind: 'started',
+    pid: 42_424,
+    identity: { kind: 'socket-instance', instanceId: 'dead-manager' },
+  };
+}
 
 async function sessionFixture(
   state: CapsuleSessionRecord['state'],
@@ -118,7 +127,10 @@ describe('dead manager reader reconciliation', () => {
     const record = await readCapsuleRecord(session);
     await writeCapsuleRecord({
       projectDirectory: session.projectDirectory,
-      record: { ...record, manager: { kind: 'started', pid: 42_424 } },
+      record: {
+        ...record,
+        manager: deadManagerOwnership(),
+      },
     });
     vi.spyOn(process, 'kill').mockImplementation(() => {
       throw Object.assign(new Error('dead'), { code: 'ESRCH' });

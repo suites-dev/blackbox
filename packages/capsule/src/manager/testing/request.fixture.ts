@@ -26,7 +26,11 @@ function recordFixture(directory: string): CapsuleSessionRecord {
     revision: 1,
     admittedAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
-    manager: { kind: 'started', pid: process.pid },
+    manager: {
+      kind: 'started',
+      pid: process.pid,
+      identity: { kind: 'socket-instance', instanceId: 'request-fixture-manager' },
+    },
     socketPath: join(directory, 'ipc.sock'),
     entrypoint: {
       kind: 'available',

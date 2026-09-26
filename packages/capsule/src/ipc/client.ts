@@ -4,6 +4,7 @@ import { connect, type Socket } from 'node:net';
 import type { CapsuleInteractiveControl, CapsuleInteractiveEvent } from '../types.js';
 import type {
   CapsuleManagerClientFrame,
+  CapsuleManagerOperationResponse,
   CapsuleManagerRequest,
   CapsuleManagerResponse,
   CapsuleManagerServerFrame,
@@ -27,8 +28,11 @@ async function connectedSocket(socketPath: string): Promise<Socket> {
 
 export async function managerRequest(input: {
   readonly socketPath: string;
-  readonly request: Exclude<CapsuleManagerRequest, { readonly kind: 'interactive-exec-request' }>;
-}): Promise<CapsuleManagerResponse> {
+  readonly request: Exclude<
+    CapsuleManagerRequest,
+    { readonly kind: 'interactive-exec-request' | 'manager-identity-request' }
+  >;
+}): Promise<CapsuleManagerOperationResponse> {
   const socket = await connectedSocket(input.socketPath);
   try {
     // Captured execution and teardown own no cancellation protocol. Disconnecting
@@ -40,6 +44,9 @@ export async function managerRequest(input: {
     }
     if (first.value.kind === 'exec-output' || first.value.kind === 'exec-control-result') {
       throw new Error(`Unexpected manager event for captured request: ${first.value.kind}`);
+    }
+    if (first.value.kind === 'manager-identity-response') {
+      throw new Error('Unexpected manager identity response for operation request');
     }
     return first.value;
   } finally {
@@ -115,7 +122,7 @@ export async function managerInteractiveRequest(input: {
   readonly request: Extract<CapsuleManagerRequest, { readonly kind: 'interactive-exec-request' }>;
   readonly controls: AsyncIterable<CapsuleInteractiveControl>;
   readonly onEvent: (event: CapsuleInteractiveEvent) => Promise<void>;
-}): Promise<CapsuleManagerResponse> {
+}): Promise<CapsuleManagerOperationResponse> {
   const socket = await connectedSocket(input.socketPath);
   try {
     await writeJsonLine(socket, input.request);
@@ -133,6 +140,9 @@ export async function managerInteractiveRequest(input: {
         continue;
       }
       if (isResponse(frame)) {
+        if (frame.kind === 'manager-identity-response') {
+          throw new Error('Unexpected manager identity response for interactive request');
+        }
         return frame;
       }
     }

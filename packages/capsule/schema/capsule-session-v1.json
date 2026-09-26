@@ -181,7 +181,26 @@
           "required": ["kind", "pid"],
           "properties": {
             "kind": { "const": "started" },
-            "pid": { "type": "number" }
+            "pid": { "type": "number" },
+            "identity": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["kind"],
+                  "properties": { "kind": { "const": "legacy-pid-only" } }
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["kind", "instanceId"],
+                  "properties": {
+                    "kind": { "const": "socket-instance" },
+                    "instanceId": { "type": "string", "minLength": 1 }
+                  }
+                }
+              ]
+            }
           }
         }
       ]

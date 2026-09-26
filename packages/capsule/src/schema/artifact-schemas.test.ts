@@ -26,9 +26,7 @@ function schemaValidator(id: string): ValidateFunction {
   return validator;
 }
 
-const validateSession = schemaValidator(
-  'https://suites.dev/blackbox/schemas/capsule-session-v1.json',
-);
+const validateSession = schemaValidator('https://suites.dev/blackbox/schemas/capsule-session-v1.json');
 const validateActivities = schemaValidator(
   'https://suites.dev/blackbox/schemas/capsule-activities-v1.json',
 );
@@ -138,9 +136,19 @@ describe('Capsule session artifact schema', () => {
   it('accepts the retained record and rejects invalid union branches', () => {
     expect(validateSession(session())).toBe(true);
     const base = session();
+    expect(validateSession({
+      ...base,
+      manager: { kind: 'started', pid: 12, identity: {
+        kind: 'socket-instance', instanceId: 'manager-instance-a',
+      } },
+    })).toBe(true);
+    expect(validateSession({ ...base, manager: { kind: 'started', pid: 12 } })).toBe(true);
     for (const invalid of [
       { ...base, description: { kind: 'omitted', value: 'not allowed' } },
       { ...base, manager: { kind: 'started' } },
+      { ...base, manager: { kind: 'started', pid: 12, identity: {
+        kind: 'socket-instance', instanceId: '',
+      } } },
       { ...base, entrypoint: { kind: 'unknown' } },
       { ...base, cleanup: { kind: 'failed' } },
       { ...base, state: 'running' },
