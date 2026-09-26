@@ -158,22 +158,34 @@ export async function captureAcquiredImage(input) {
 
 async function cleanupOwnedImage(input, state, image) {
   const owned = state.acquisition;
-  assert.equal(image.kind, 'present', 'owned proof image disappeared before cleanup');
-  assert.equal(image.id, owned.id, 'proof image tag changed ownership before cleanup');
+  if (image.kind === 'present') {
+    assert.equal(image.id, owned.id, 'proof image tag changed ownership before cleanup');
+  }
   if (state.baseline.kind === 'present') {
     await input.execute(['image', 'tag', state.baseline.id, proofImage]);
-    const otherTags = image.repoTags.filter((tag) => tag !== proofImage);
-    if (otherTags.length === 0) {
+    const otherTags = image.kind === 'present'
+      ? image.repoTags.filter((tag) => tag !== proofImage)
+      : [];
+    if (image.kind === 'present' && otherTags.length === 0) {
       await input.execute(['image', 'rm', owned.id]);
     }
     const restored = await taggedImage(input.execute);
     assert.equal(restored.kind, 'present', 'pre-existing proof image tag was not restored');
     assert.equal(restored.id, state.baseline.id, 'proof image baseline identity was not restored');
-    return {
-      kind: 'owned-image-removed-baseline-restored',
-      removedId: owned.id,
-      restoredId: state.baseline.id,
-    };
+    return image.kind === 'present'
+      ? {
+          kind: 'owned-image-removed-baseline-restored',
+          removedId: owned.id,
+          restoredId: state.baseline.id,
+        }
+      : {
+          kind: 'owned-image-already-absent-baseline-restored',
+          absentId: owned.id,
+          restoredId: state.baseline.id,
+        };
+  }
+  if (image.kind === 'absent') {
+    return { kind: 'owned-image-already-absent', absentId: owned.id };
   }
   await input.execute(['image', 'rm', proofImage]);
   assert.equal(

@@ -150,6 +150,34 @@ void test('removes the exact proof image created from an absent baseline', async
   });
 });
 
+void test('accepts an owned image already absent after teardown', async (context) => {
+  const files = await paths(context);
+  const docker = dockerFixture(null);
+  await captureImageBaseline({ execute: docker.execute, stateFile: files.stateFile });
+  docker.set(ownedCreatedImage());
+  await captureAcquiredImage({
+    execute: docker.execute,
+    stateFile: files.stateFile,
+    sessionFile: files.sessionFile,
+  });
+  docker.set(null);
+
+  await cleanupAcquiredImage({
+    execute: docker.execute,
+    stateFile: files.stateFile,
+    resultFile: files.resultFile,
+  });
+
+  assert.deepEqual(JSON.parse(await readFile(files.resultFile, 'utf8')), {
+    kind: 'owned-image-already-absent',
+    absentId: createdId,
+  });
+  assert.equal(
+    docker.calls.some((call) => call[0] === 'image' && call[1] === 'rm'),
+    false,
+  );
+});
+
 void test('restores a pre-existing image after removing the owned replacement', async (context) => {
   const files = await paths(context);
   const docker = dockerFixture(image(baselineId, {}));
@@ -172,6 +200,32 @@ void test('restores a pre-existing image after removing the owned replacement', 
     restoredId: baselineId,
   });
   assert.ok(docker.calls.some((call) => call.join(' ') === `image rm ${createdId}`));
+});
+
+void test('restores a pre-existing image when the owned replacement is already absent', async (context) => {
+  const files = await paths(context);
+  const docker = dockerFixture(image(baselineId, {}));
+  await captureImageBaseline({ execute: docker.execute, stateFile: files.stateFile });
+  docker.set(ownedCreatedImage());
+  await captureAcquiredImage({
+    execute: docker.execute,
+    stateFile: files.stateFile,
+    sessionFile: files.sessionFile,
+  });
+  docker.set(null);
+
+  await cleanupAcquiredImage({
+    execute: docker.execute,
+    stateFile: files.stateFile,
+    resultFile: files.resultFile,
+  });
+
+  assert.equal(docker.current().Id, baselineId);
+  assert.deepEqual(JSON.parse(await readFile(files.resultFile, 'utf8')), {
+    kind: 'owned-image-already-absent-baseline-restored',
+    absentId: createdId,
+    restoredId: baselineId,
+  });
 });
 
 void test('refuses an image whose exact session container belongs to another project', async (context) => {
