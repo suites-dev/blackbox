@@ -86,6 +86,7 @@ export class RunningCollectorStore implements CollectorStore {
           'Collector retention limit reached; telemetry intake stopped before writing the fragment.',
         );
       }
+      await this.#lease.assertOwned();
       await durableJsonWrite({
         target: join(fragmentDirectory(this.#lease), fragmentName(this.#sequence)),
         token: this.#lease.token,
@@ -233,6 +234,7 @@ export class RunningCollectorStore implements CollectorStore {
   }
 
   private async persist(): Promise<void> {
+    await this.#lease.assertOwned();
     await durableJsonWrite({
       target: lifecyclePath(this.#lease),
       token: `${this.#lease.token}.${String(this.#record.revision)}`,

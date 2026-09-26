@@ -1,6 +1,4 @@
-import type {
-  DriverRedaction,
-} from '@suites/blackbox-driver';
+import type { DriverRedaction } from '@suites/blackbox-driver';
 import type {
   CollectorActivityReadResult,
   CollectorSessionReadResult,
@@ -62,10 +60,7 @@ export type CapsuleInteractiveControlResult =
   | {
       readonly kind: 'unsupported';
       readonly action: 'resize' | 'signal';
-      readonly reason:
-        | 'host-pty-unavailable'
-        | 'tty-required'
-        | 'docker-exec-signal-unsupported';
+      readonly reason: 'host-pty-unavailable' | 'tty-required' | 'docker-exec-signal-unsupported';
     }
   | {
       readonly kind: 'rejected';
@@ -110,16 +105,19 @@ export interface CapsuleExecInput {
 export interface CapsuleInteractiveExecInput extends CapsuleExecInput {
   readonly terminal: CapsuleTerminalSize;
   readonly controls: AsyncIterable<CapsuleInteractiveControl>;
-  readonly onEvent: (event: CapsuleInteractiveEvent) => void;
+  readonly onEvent: (event: CapsuleInteractiveEvent) => Promise<void>;
 }
 
 export type CapsuleExecutionInteraction =
-  | { readonly kind: 'captured' }
+  | {
+      readonly kind: 'captured';
+      readonly controls: AsyncIterable<CapsuleExecutionControl>;
+    }
   | {
       readonly kind: 'interactive';
       readonly terminal: CapsuleTerminalSize;
       readonly controls: AsyncIterable<CapsuleExecutionControl>;
-      readonly onEvent: (event: CapsuleInteractiveEvent) => void;
+      readonly onEvent: (event: CapsuleInteractiveEvent) => Promise<void>;
     };
 
 export type CapsuleExecutionLocation =

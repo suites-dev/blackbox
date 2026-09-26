@@ -45,7 +45,7 @@ it('masks declared values before interactive events leave the execution, across 
       }, 2);
     `],
     interaction: { kind: 'interactive', terminal: { columns: 80, rows: 24 },
-      controls: controls(), onEvent: (event) => events.push(event) },
+      controls: controls(), onEvent: (event) => { events.push(event); return Promise.resolve(); } },
   });
   for (const stream of ['stdout', 'stderr'] as const) {
     const output = Buffer.concat(events.flatMap((event) =>

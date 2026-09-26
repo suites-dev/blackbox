@@ -8,22 +8,22 @@ type OutputEvent = Extract<CapsuleInteractiveEvent, { readonly kind: 'output' }>
 function streamRedactor(input: {
   readonly values: readonly string[];
   readonly stream: OutputEvent['stream'];
-  readonly emit: (event: CapsuleInteractiveEvent) => void;
+  readonly emit: (event: CapsuleInteractiveEvent) => Promise<void>;
 }) {
   const decoder = new StringDecoder('utf8');
   const redactor = createStreamingValueRedactor(input.values);
-  function emit(text: string): void {
+  async function emit(text: string): Promise<void> {
     if (text !== '') {
-      input.emit({ kind: 'output', stream: input.stream, chunk: Buffer.from(text) });
+      await input.emit({ kind: 'output', stream: input.stream, chunk: Buffer.from(text) });
     }
   }
   return {
-    append: (chunk: Uint8Array) => {
-      emit(redactor.append(decoder.write(Buffer.from(chunk))));
+    append: async (chunk: Uint8Array) => {
+      await emit(redactor.append(decoder.write(Buffer.from(chunk))));
     },
-    finish: () => {
-      emit(redactor.append(decoder.end()));
-      emit(redactor.finish());
+    finish: async () => {
+      await emit(redactor.append(decoder.end()));
+      await emit(redactor.finish());
     },
   };
 }
@@ -31,10 +31,10 @@ function streamRedactor(input: {
 export function createRedactedInteraction(input: {
   readonly interaction: CapsuleExecutionInteraction;
   readonly values: readonly string[];
-}): { readonly interaction: CapsuleExecutionInteraction; readonly finish: () => void } {
+}): { readonly interaction: CapsuleExecutionInteraction; readonly finish: () => Promise<void> } {
   const { interaction, values } = input;
   if (interaction.kind === 'captured' || values.length === 0) {
-    return { interaction, finish: () => undefined };
+    return { interaction, finish: () => Promise.resolve() };
   }
   const streams = {
     stdout: streamRedactor({ values, stream: 'stdout', emit: interaction.onEvent }),
@@ -44,21 +44,31 @@ export function createRedactedInteraction(input: {
   return {
     interaction: {
       ...interaction,
-      onEvent(event) {
+      async onEvent(event) {
         if (event.kind === 'output') {
-          streams[event.stream].append(event.chunk);
+          await streams[event.stream].append(event.chunk);
         } else if (event.result.kind === 'failed') {
-          interaction.onEvent({ ...event, result: { ...event.result, error: {
-            name: redactValues(event.result.error.name, values),
-            message: redactValues(event.result.error.message, values),
-          } } });
+          await interaction.onEvent({
+            ...event,
+            result: {
+              ...event.result,
+              error: {
+                name: redactValues(event.result.error.name, values),
+                message: redactValues(event.result.error.message, values),
+              },
+            },
+          });
         } else {
-          interaction.onEvent(event);
+          await interaction.onEvent(event);
         }
       },
     },
-    finish: () => {
-      Object.values(streams).forEach((stream) => { stream.finish(); });
+    finish: async () => {
+      await Promise.all(
+        Object.values(streams).map(async (stream) => {
+          await stream.finish();
+        }),
+      );
     },
   };
 }

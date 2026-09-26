@@ -131,7 +131,7 @@ function runDriverProcess(input: {
     argv, environment, secrets };
   return interaction.kind === 'interactive'
     ? runParticipantInteractive({ ...shared, interaction })
-    : runParticipantCaptured(shared);
+    : runParticipantCaptured({ ...shared, interaction });
 }
 
 export async function runCapsuleDriver(
@@ -191,7 +191,7 @@ export async function runCapsuleDriver(
       values: secrets.diagnostic,
     });
   } finally {
-    redactedInteraction.finish();
+    await redactedInteraction.finish();
   }
   const argvRedacted =
     prepared.command.redaction.preparedArgv.kind === 'positions'

@@ -106,7 +106,10 @@ it('streams output and controls bidirectionally over a real Unix socket', async 
       terminal: { columns: 80, rows: 24 },
     },
     controls: controls(),
-    onEvent: (event) => events.push(event),
+    onEvent: (event) => {
+      events.push(event);
+      return Promise.resolve();
+    },
   });
   expect(result).toMatchObject({
     kind: 'exec-response',

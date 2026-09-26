@@ -1,13 +1,13 @@
-import { Writable, type Duplex } from 'node:stream';
+import type { Duplex, Writable } from 'node:stream';
 import { getContainerRuntimeClient } from 'testcontainers';
 import { asError } from '../../lifecycle/errors.js';
 import { dockerExecutionControl } from './docker-control.js';
+import { attachDockerOutput, type DockerOutputObservation } from './docker-output.js';
 import type {
   SandboxContainerExecutionFailure,
   SandboxContainerExecutionInput,
   SandboxContainerExecutionOutcome,
   SandboxContainerExecutionStartResult,
-  SandboxContainerOutputEvent,
 } from './types.js';
 
 export async function startDockerContainerExecution(input: {
@@ -47,15 +47,20 @@ export async function startDockerContainerExecutionWithClient(input: {
   } catch (cause) {
     return { kind: 'execution-failed', failure: startFailure(input.request, cause) };
   }
-  const diagnostics = { text: '' };
-  attachOutput({ client, stream, request: input.request, diagnostics });
+  const output = attachDockerOutput({
+    stream,
+    request: input.request,
+    demux: (request) => {
+      client.demux(request);
+    },
+  });
   const state = { completed: false, stdinEnded: false };
   const completion = observeCompletion({
     exec,
     stream,
     service: input.request.service,
     executable: input.request.argv[0],
-    diagnostics,
+    output,
     state,
   });
   return {
@@ -85,24 +90,6 @@ function createOptions(input: SandboxContainerExecutionInput) {
   };
 }
 
-function attachOutput(input: {
-  readonly client: DockerExecutionClient;
-  readonly stream: Duplex;
-  readonly request: SandboxContainerExecutionInput;
-  readonly diagnostics: ExecutionDiagnostics;
-}): void {
-  if (input.request.terminal.kind === 'tty') {
-    input.stream.on('data', (chunk: Buffer) => {
-      retainDiagnostic(input.diagnostics, chunk);
-      emit(input.request, 'terminal-output', chunk);
-    });
-    return;
-  }
-  const stdout = outputSink(input.request, 'stdout', input.diagnostics);
-  const stderr = outputSink(input.request, 'stderr', input.diagnostics);
-  input.client.demux({ stream: input.stream, stdout, stderr });
-}
-
 function dockerExecutionClient(
   runtime: Awaited<ReturnType<typeof getContainerRuntimeClient>>,
 ): DockerExecutionClient {
@@ -114,56 +101,30 @@ function dockerExecutionClient(
   };
 }
 
-function outputSink(
-  request: SandboxContainerExecutionInput,
-  kind: 'stdout' | 'stderr',
-  diagnostics: ExecutionDiagnostics,
-): Writable {
-  return new Writable({
-    write(chunk: Buffer, _encoding, callback) {
-      retainDiagnostic(diagnostics, chunk);
-      emit(request, kind, chunk);
-      callback();
-    },
-  });
-}
-
-function emit(
-  request: SandboxContainerExecutionInput,
-  kind: SandboxContainerOutputEvent['kind'],
-  chunk: Buffer,
-): void {
-  try {
-    const event = { kind, chunk: new Uint8Array(chunk) } satisfies SandboxContainerOutputEvent;
-    request.onOutput(event);
-  } catch {
-    // An observer cannot break or terminate the owned Docker exec stream.
-  }
-}
-
 function observeCompletion(input: {
   readonly exec: { inspect(): Promise<{ Running: boolean; ExitCode: number | null }> };
   readonly stream: Duplex;
   readonly service: string;
   readonly executable: string;
-  readonly diagnostics: ExecutionDiagnostics;
+  readonly output: DockerOutputObservation;
   readonly state: { completed: boolean };
 }): Promise<SandboxContainerExecutionOutcome> {
   return new Promise((resolve) => {
     let settled = false;
-    const finish = (outcome: SandboxContainerExecutionOutcome): void => {
+    const finish = async (outcome: SandboxContainerExecutionOutcome): Promise<void> => {
       if (settled) {
         return;
       }
       settled = true;
+      await input.output.settled();
       input.state.completed = true;
       resolve(outcome);
     };
     input.stream.once('error', (cause) => {
-      finish(failed(runtimeFailure('stream', cause)));
+      void finish(failed(runtimeFailure('stream', cause)));
     });
     const inspect = (): void => {
-      void inspectOutcome(input).then(finish);
+      void inspectOutcome({ ...input, diagnostics: input.output.diagnostics }).then(finish);
     };
     input.stream.once('end', inspect);
     input.stream.once('close', inspect);
@@ -174,7 +135,7 @@ async function inspectOutcome(input: {
   readonly exec: { inspect(): Promise<{ Running: boolean; ExitCode: number | null }> };
   readonly service: string;
   readonly executable: string;
-  readonly diagnostics: ExecutionDiagnostics;
+  readonly diagnostics: { readonly text: string };
 }): Promise<SandboxContainerExecutionOutcome> {
   try {
     const inspection = await input.exec.inspect();
@@ -221,10 +182,6 @@ function isMissingExecutable(message: string, executable: string): boolean {
   );
 }
 
-interface ExecutionDiagnostics {
-  text: string;
-}
-
 interface DockerExecutionClient {
   getContainer(input: { readonly id: string }): DockerContainerPort;
   demux(input: {
@@ -247,11 +204,6 @@ interface DockerExecPort {
   }): Promise<Duplex>;
   inspect(): Promise<{ readonly Running: boolean; readonly ExitCode: number | null }>;
   resize(input: { readonly h: number; readonly w: number }): Promise<unknown>;
-}
-
-function retainDiagnostic(target: ExecutionDiagnostics, chunk: Buffer): void {
-  const limit = 65_536;
-  target.text = `${target.text}${chunk.toString('utf8')}`.slice(-limit);
 }
 
 function runtimeFailure(

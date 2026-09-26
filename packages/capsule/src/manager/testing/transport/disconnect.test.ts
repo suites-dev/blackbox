@@ -1,5 +1,7 @@
 import { once } from 'node:events';
+import { access, readFile } from 'node:fs/promises';
 import { connect, type Socket } from 'node:net';
+import { join } from 'node:path';
 
 import { expect, it, vi } from 'vitest';
 
@@ -123,6 +125,50 @@ it('force-cancels an abandoned interactive execution before serving stop', async
     ]);
   } finally {
     socket.destroy();
+    await fixture.close();
+  }
+});
+
+it('preempts an abandoned captured child before stop and retains terminal cleanup', async () => {
+  const fixture = await requestFixture(() => Promise.resolve());
+  const socket = connect(fixture.socketPath);
+  const pidPath = join(fixture.projectDirectory, 'blocked-child.pid');
+  let childPid = 0;
+  try {
+    await once(socket, 'connect');
+    socket.write(`${JSON.stringify({
+      kind: 'exec-request', requestId: 'abandoned-captured',
+      name: { kind: 'omitted' }, purpose: 'inspection',
+      target: { kind: 'host', argv: [process.execPath, '-e',
+        'require("node:fs").writeFileSync(process.argv[1], String(process.pid)); ' +
+        'process.on("SIGINT", () => undefined); setInterval(() => undefined, 1000)', pidPath] },
+    })}\n`);
+    await vi.waitFor(async () => {
+      childPid = Number(await readFile(pidPath, 'utf8'));
+      expect(childPid).toBeGreaterThan(0);
+      expect(await readCapsuleActivities(fixture)).toMatchObject([{ kind: 'running' }]);
+    }, { timeout: 1_000, interval: 10 });
+    socket.destroy();
+    await once(socket, 'close');
+    await expect(managerRequest({ socketPath: fixture.socketPath,
+      request: { kind: 'stop-request', requestId: 'stop-captured', reason: 'cancelled' },
+    })).resolves.toEqual({
+      kind: 'stop-response', requestId: 'stop-captured', cleanup: 'complete',
+    });
+    expect(await readCapsuleActivities(fixture)).toMatchObject([
+      { kind: 'completed', outcome: { kind: 'signaled', signal: 'SIGKILL' } },
+    ]);
+    expect(await readCapsuleRecord(fixture)).toMatchObject({
+      state: 'stopped', cleanup: { kind: 'complete' },
+    });
+    expect(fixture.manager.server.listening).toBe(false);
+    await expect(access(fixture.socketPath)).rejects.toMatchObject({ code: 'ENOENT' });
+    expect(() => { process.kill(childPid, 0); }).toThrow(expect.objectContaining({ code: 'ESRCH' }));
+  } finally {
+    socket.destroy();
+    if (childPid > 0) {
+      try { process.kill(childPid, 'SIGKILL'); } catch { /* The manager already reaped it. */ }
+    }
     await fixture.close();
   }
 });

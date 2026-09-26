@@ -33,7 +33,10 @@ describe.skipIf(process.env.BLACKBOX_SANDBOX_DOCKER_TEST !== '1')(
         argv: ['/bin/cat'],
         environment: { PGDATABASE: 'subscriptions' },
         terminal: { kind: 'captured' },
-        onOutput: (event) => output.push(event),
+        onOutput: (event) => {
+          output.push(event);
+          return Promise.resolve();
+        },
       });
       const execution = requireStarted(started);
       const sql = "select '$HOME; still literal';\n";
@@ -56,7 +59,7 @@ describe.skipIf(process.env.BLACKBOX_SANDBOX_DOCKER_TEST !== '1')(
         argv: ['blackbox-missing-psql'],
         environment: {},
         terminal: { kind: 'captured' },
-        onOutput: () => undefined,
+        onOutput: () => Promise.resolve(),
       });
       const execution = requireStarted(result);
       await expect(execution.completion).resolves.toMatchObject({

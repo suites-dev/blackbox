@@ -17,6 +17,12 @@ export function lockPath(input: CollectorIdentity & { readonly storageDirectory:
   return join(sessionDirectory(input), 'collector.lock');
 }
 
+export function lockDirectoryPath(
+  input: CollectorIdentity & { readonly storageDirectory: string },
+): string {
+  return join(sessionDirectory(input), 'collector-locks');
+}
+
 export function fragmentDirectory(
   input: CollectorIdentity & { readonly storageDirectory: string },
 ): string {

@@ -114,7 +114,7 @@ export async function managerInteractiveRequest(input: {
   readonly socketPath: string;
   readonly request: Extract<CapsuleManagerRequest, { readonly kind: 'interactive-exec-request' }>;
   readonly controls: AsyncIterable<CapsuleInteractiveControl>;
-  readonly onEvent: (event: CapsuleInteractiveEvent) => void;
+  readonly onEvent: (event: CapsuleInteractiveEvent) => Promise<void>;
 }): Promise<CapsuleManagerResponse> {
   const socket = await connectedSocket(input.socketPath);
   try {
@@ -129,7 +129,7 @@ export async function managerInteractiveRequest(input: {
     for await (const frame of responseFrames(socket)) {
       const event = interactiveEvent(frame);
       if (event !== null) {
-        input.onEvent(event);
+        await input.onEvent(event);
         continue;
       }
       if (isResponse(frame)) {

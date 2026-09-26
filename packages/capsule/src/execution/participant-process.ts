@@ -38,6 +38,7 @@ export async function runParticipantCaptured(input: {
   readonly location: Extract<CapsuleExecutionLocation, { readonly kind: 'participant' }>;
   readonly argv: readonly [string, ...string[]];
   readonly environment: Readonly<Record<string, string>>;
+  readonly interaction: Extract<CapsuleExecutionInteraction, { readonly kind: 'captured' }>;
   readonly secrets: readonly string[];
 }): Promise<CapsuleProcessOutcome> {
   const stdout = createOutputRetention({ secrets: input.secrets });
@@ -55,6 +56,7 @@ export async function runParticipantCaptured(input: {
       } else {
         stderr.append(chunk);
       }
+      return Promise.resolve();
     },
   });
   if (started.kind === 'execution-failed') {
@@ -64,6 +66,9 @@ export async function runParticipantCaptured(input: {
       location: input.location,
     });
   }
+  void pumpControls({ execution: started.execution, interaction: input.interaction }).catch(
+    () => undefined,
+  );
   await started.execution.endStdin();
   const completed = await started.execution.completion;
   if (completed.kind === 'execution-failed') {
@@ -89,8 +94,6 @@ export async function runParticipantCaptured(input: {
   };
 }
 
-type Interactive = Extract<CapsuleExecutionInteraction, { readonly kind: 'interactive' }>;
-
 async function participantControl(
   execution: SandboxContainerExecution,
   control: CapsuleExecutionControl,
@@ -111,14 +114,15 @@ async function participantControl(
 
 async function pumpControls(input: {
   readonly execution: SandboxContainerExecution;
-  readonly interaction: Interactive;
+  readonly interaction: CapsuleExecutionInteraction;
 }): Promise<void> {
   for await (const control of input.interaction.controls) {
-    input.interaction.onEvent({
-      kind: 'control-result',
-      controlId: control.controlId,
-      result: await participantControl(input.execution, control),
-    });
+    const result = await participantControl(input.execution, control);
+    if (input.interaction.kind === 'interactive') {
+      await input.interaction
+        .onEvent({ kind: 'control-result', controlId: control.controlId, result })
+        .catch(() => undefined);
+    }
   }
 }
 
@@ -150,7 +154,7 @@ export async function runParticipantInteractive(input: {
   readonly location: Extract<CapsuleExecutionLocation, { readonly kind: 'participant' }>;
   readonly argv: readonly [string, ...string[]];
   readonly environment: Readonly<Record<string, string>>;
-  readonly interaction: Interactive;
+  readonly interaction: Extract<CapsuleExecutionInteraction, { readonly kind: 'interactive' }>;
   readonly secrets: readonly string[];
 }): Promise<CapsuleProcessOutcome> {
   const stdout = createOutputRetention({ secrets: input.secrets });
@@ -161,22 +165,30 @@ export async function runParticipantInteractive(input: {
     argv: input.argv,
     environment: input.environment,
     terminal: { kind: 'tty', ...input.interaction.terminal },
-    onOutput: (event) => {
+    onOutput: async (event) => {
       const chunk = Buffer.from(event.chunk);
       const stream = event.kind === 'stderr' ? 'stderr' : 'terminal';
       (event.kind === 'stderr' ? stderr : stdout).append(chunk);
-      input.interaction.onEvent({ kind: 'output', stream, chunk });
+      await input.interaction.onEvent({ kind: 'output', stream, chunk });
     },
   });
   if (started.kind === 'execution-failed') {
-    return failedExecution({ failure: started.failure, argv: input.argv, location: input.location });
+    return failedExecution({
+      failure: started.failure,
+      argv: input.argv,
+      location: input.location,
+    });
   }
   void pumpControls({ execution: started.execution, interaction: input.interaction }).catch(
     () => undefined,
   );
   const completed = await started.execution.completion;
   if (completed.kind === 'execution-failed') {
-    return failedExecution({ failure: completed.failure, argv: input.argv, location: input.location });
+    return failedExecution({
+      failure: completed.failure,
+      argv: input.argv,
+      location: input.location,
+    });
   }
   return completedOutcome({
     argv: input.argv,

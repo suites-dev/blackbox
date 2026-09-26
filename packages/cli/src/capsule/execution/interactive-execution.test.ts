@@ -77,7 +77,7 @@ void test('streams output and forwards terminal controls without retaining input
   });
   const execute = async (input: CapsuleInteractiveExecInput) => {
     assert.equal(fixture.rawMode(), true);
-    input.onEvent({ kind: 'output', stream: 'stdout', chunk: Buffer.from('live-output') });
+    await input.onEvent({ kind: 'output', stream: 'stdout', chunk: Buffer.from('live-output') });
     const iterator = input.controls[Symbol.asyncIterator]();
     for (let index = 0; index < 4; index += 1) {
       const next = await iterator.next();
@@ -85,7 +85,7 @@ void test('streams output and forwards terminal controls without retaining input
         controls.push(next.value);
       }
     }
-    input.onEvent({
+    await input.onEvent({
       kind: 'control-result',
       controlId: 'terminal-visible',
       result: { kind: 'unsupported', action: 'resize', reason: 'host-pty-unavailable' },

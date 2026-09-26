@@ -119,7 +119,10 @@ it('streams real host output and reports unsupported terminal resize explicitly'
       kind: 'interactive',
       terminal: { columns: 120, rows: 40 },
       controls: controls(),
-      onEvent: (event) => events.push(event),
+      onEvent: (event) => {
+        events.push(event);
+        return Promise.resolve();
+      },
     },
   });
   expect(events).toContainEqual({
@@ -168,6 +171,7 @@ it('forwards SIGINT to a real interactive host child', async () => {
         if (event.kind === 'output' && Buffer.from(event.chunk).includes(Buffer.from('ready'))) {
           markReady();
         }
+        return Promise.resolve();
       },
     },
   });

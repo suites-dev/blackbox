@@ -5,8 +5,13 @@ import { join } from 'node:path';
 import type { ResolvedCatalogDriver } from '@suites/blackbox-catalog-internal';
 import type { SandboxHandle } from '@suites/blackbox-sandbox-internal';
 import { createTelemetryExecutionScope } from '@suites/blackbox-telemetry-internal';
+import type { CapsuleExecutionControl } from '../../types.js';
 
 const roots: string[] = [];
+async function* noControls(): AsyncGenerator<CapsuleExecutionControl> {
+  await Promise.resolve();
+  yield* [];
+}
 
 export const httpDriver = {
   id: 'http', kind: 'project-driver', runtime: 'node', ref: '.blackbox/drivers/http.mjs',
@@ -61,7 +66,7 @@ export function driverInput(
     argv: [process.execPath, '-e', 'process.stdout.write(process.env.DRIVER_VALUE)'] as const,
     untraced: { kind: 'refuse' as const }, sandbox: driverSandbox(),
     scope: createTelemetryExecutionScope({ executionId: 'activity-1', operationName: 'test' }),
-    interaction: { kind: 'captured' as const },
+    interaction: { kind: 'captured' as const, controls: noControls() },
   };
 }
 

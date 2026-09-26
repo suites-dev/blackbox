@@ -106,16 +106,28 @@ function controlMessage(result: CapsuleInteractiveControlResult): string | null 
   }
 }
 
-function writeEvent(ports: InteractiveTerminalPorts, event: CapsuleInteractiveEvent): void {
+function writeOutput(destination: Writable, value: Uint8Array | string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    destination.write(value, (error) => {
+      if (error === null || error === undefined) {
+        resolve();
+      } else {
+        reject(error);
+      }
+    });
+  });
+}
+
+function writeEvent(
+  ports: InteractiveTerminalPorts,
+  event: CapsuleInteractiveEvent,
+): Promise<void> {
   if (event.kind === 'output') {
     const destination = event.stream === 'stderr' ? ports.stderr : ports.stdout;
-    destination.write(Buffer.from(event.chunk));
-    return;
+    return writeOutput(destination, event.chunk);
   }
   const message = controlMessage(event.result);
-  if (message !== null) {
-    ports.stderr.write(message);
-  }
+  return message === null ? Promise.resolve() : writeOutput(ports.stderr, message);
 }
 
 type ControlWithoutId =
@@ -212,9 +224,7 @@ export async function runInteractiveCapsuleExec(
       target: input.target,
       terminal: input.ports.readTerminalSize(),
       controls: queue,
-      onEvent: (event) => {
-        writeEvent(input.ports, event);
-      },
+      onEvent: (event) => writeEvent(input.ports, event),
     });
   } finally {
     queue.close();

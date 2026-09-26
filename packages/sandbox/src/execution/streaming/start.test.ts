@@ -25,7 +25,7 @@ function request(
     argv: ['psql', '--no-psqlrc'],
     environment: {},
     terminal,
-    onOutput: () => undefined,
+    onOutput: () => Promise.resolve(),
   };
 }
 

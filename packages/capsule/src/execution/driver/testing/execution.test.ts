@@ -31,9 +31,9 @@ function participantSandbox(observed: {
     ...base,
     containers: new Map([...base.containers, ['postgres', container]]),
     getContainer: ({ service }) => service === 'postgres' ? container : base.getContainer({ service }),
-    startContainerExecution: (request) => {
+    startContainerExecution: async (request) => {
       observed.requests.push(request);
-      request.onOutput({ kind: 'terminal-output', chunk: Buffer.from('participant-live') });
+      await request.onOutput({ kind: 'terminal-output', chunk: Buffer.from('participant-live') });
       let finish: () => void = () => undefined;
       const completion = new Promise<{
         readonly kind: 'exited';
@@ -51,7 +51,7 @@ function participantSandbox(observed: {
         }
         return Promise.resolve({ kind: 'delivered' as const, action, mechanism: 'docker-stream' as const });
       };
-      return Promise.resolve({
+      return {
         kind: 'started',
         execution: {
           completion,
@@ -61,7 +61,7 @@ function participantSandbox(observed: {
           signal: () => delivered('signal'),
           forceTerminate: () => delivered('signal'),
         },
-      });
+      };
     },
   };
 }
@@ -149,7 +149,7 @@ it('streams a driver-selected participant TTY and forwards every control', async
       kind: 'interactive',
       terminal: { columns: 120, rows: 40 },
       controls: controls(),
-      onEvent: (event) => events.push(event),
+      onEvent: (event) => { events.push(event); return Promise.resolve(); },
     },
   });
   expect(result).toMatchObject({

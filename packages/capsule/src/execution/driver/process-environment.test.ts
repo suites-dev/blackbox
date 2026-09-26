@@ -10,6 +10,10 @@ import { afterEach, expect, it } from 'vitest';
 import { runCapsuleDriver } from '../driver-execution.js';
 
 const roots: string[] = [];
+async function* noControls() {
+  await Promise.resolve();
+  yield* [];
+}
 const driver = {
   id: 'http', kind: 'project-driver', runtime: 'node', ref: 'driver.mjs',
   target: { kind: 'participant', participantId: 'api', service: 'api',
@@ -54,7 +58,7 @@ async function execute(environment: string) {
     entrypoint: { url: 'http://localhost:4321', host: 'localhost', port: 4321, protocol: 'http' },
     argv: [process.execPath, '-e', 'process.stdout.write(process.env.TRACEPARENT)'],
     untraced: { kind: 'refuse' }, sandbox: sandbox(), scope,
-    interaction: { kind: 'captured' },
+    interaction: { kind: 'captured', controls: noControls() },
   });
   return { result, traceparent: scope.active.context.traceparent };
 }

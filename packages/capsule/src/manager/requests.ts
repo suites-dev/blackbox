@@ -1,7 +1,7 @@
 import { unlink } from 'node:fs/promises';
 import type { Socket } from 'node:net';
 
-import { readManagerFrames, sendEvent, sendResponse } from '../ipc/server.js';
+import { readManagerFrames, sendResponse } from '../ipc/server.js';
 import type {
   CapsuleManagerBootstrap,
   CapsuleManagerClientFrame,
@@ -9,13 +9,8 @@ import type {
   CapsuleManagerRequest,
 } from '../protocol.js';
 import { recordedError } from '../records.js';
-import type {
-  CapsuleExecutionControl,
-  CapsuleExecutionInteraction,
-  CapsuleInteractiveControl,
-  CapsuleInteractiveEvent,
-} from '../types.js';
 import { handleExec } from './exec-request.js';
+import { ManagerExecutionCoordinator } from './transport/execution.js';
 import { persist, transition, type RunningManager } from './runtime.js';
 
 function assertNever(value: never): never {
@@ -24,93 +19,6 @@ function assertNever(value: never): never {
 
 function isControl(frame: CapsuleManagerClientFrame): frame is CapsuleManagerControlFrame {
   return frame.kind.startsWith('exec-') && frame.kind !== 'exec-request';
-}
-
-function decodeControl(frame: CapsuleManagerControlFrame): CapsuleInteractiveControl {
-  switch (frame.kind) {
-    case 'exec-stdin-chunk':
-      return {
-        kind: 'stdin-chunk',
-        controlId: frame.controlId,
-        chunk: Buffer.from(frame.chunk, 'base64'),
-      };
-    case 'exec-stdin-end':
-      return { kind: 'stdin-end', controlId: frame.controlId };
-    case 'exec-resize':
-      return { kind: 'resize', controlId: frame.controlId, size: frame.terminal };
-    case 'exec-signal':
-      return { kind: 'signal', controlId: frame.controlId, signal: frame.signal };
-    default:
-      return assertNever(frame);
-  }
-}
-
-function disconnectGracePeriod(): Promise<void> {
-  return new Promise((resolve) => {
-    const timer = setTimeout(resolve, 250);
-    timer.unref();
-  });
-}
-
-async function* interactiveControls(input: {
-  readonly frames: AsyncGenerator<CapsuleManagerClientFrame>;
-  readonly requestId: string;
-}): AsyncGenerator<CapsuleExecutionControl> {
-  try {
-    for await (const frame of input.frames) {
-      if (!isControl(frame)) {
-        throw new Error(`Unexpected ${frame.kind} after interactive execution started`);
-      }
-      if (frame.requestId !== input.requestId) {
-        throw new Error('Interactive control request identity does not match execution');
-      }
-      yield decodeControl(frame);
-    }
-  } finally {
-    yield {
-      kind: 'signal',
-      controlId: `${input.requestId}-transport-close-signal`,
-      signal: 'SIGINT',
-    };
-    yield {
-      kind: 'stdin-end',
-      controlId: `${input.requestId}-transport-close-stdin`,
-    };
-    await disconnectGracePeriod();
-    yield {
-      kind: 'force-terminate',
-      controlId: `${input.requestId}-transport-close-kill`,
-    };
-  }
-}
-
-function interactiveTransport(input: {
-  readonly socket: Socket;
-  readonly request: Extract<CapsuleManagerRequest, { readonly kind: 'interactive-exec-request' }>;
-  readonly frames: AsyncGenerator<CapsuleManagerClientFrame>;
-}): CapsuleExecutionInteraction {
-  return {
-    kind: 'interactive',
-    terminal: input.request.terminal,
-    controls: interactiveControls({ frames: input.frames, requestId: input.request.requestId }),
-    onEvent: (event: CapsuleInteractiveEvent) => {
-      const frame =
-        event.kind === 'output'
-          ? {
-              kind: 'exec-output' as const,
-              requestId: input.request.requestId,
-              stream: event.stream,
-              chunk: Buffer.from(event.chunk).toString('base64'),
-            }
-          : {
-              kind: 'exec-control-result' as const,
-              requestId: input.request.requestId,
-              controlId: event.controlId,
-              result: event.result,
-            };
-      void sendEvent(input.socket, frame).catch(() => undefined);
-    },
-  };
 }
 
 async function handleStop(input: {
@@ -151,40 +59,48 @@ async function handleStop(input: {
   }
 }
 
-async function handleConnection(
-  socket: Socket,
-  bootstrap: CapsuleManagerBootstrap,
-  manager: RunningManager,
-): Promise<void> {
-  let request: CapsuleManagerRequest | undefined;
+interface AdmittedConnection {
+  readonly socket: Socket;
+  readonly frames: AsyncGenerator<CapsuleManagerClientFrame>;
+  readonly request: CapsuleManagerRequest;
+}
+
+async function admitConnection(socket: Socket): Promise<AdmittedConnection> {
+  const frames = readManagerFrames(socket);
+  const first = await frames.next();
+  if (first.done || isControl(first.value)) {
+    throw new Error('Capsule manager connection must start with a request');
+  }
+  return { socket, frames, request: first.value };
+}
+
+async function executeRequest(input: {
+  readonly connection: AdmittedConnection;
+  readonly bootstrap: CapsuleManagerBootstrap;
+  readonly manager: RunningManager;
+  readonly executions: ManagerExecutionCoordinator;
+}): Promise<void> {
+  const { socket, request, frames } = input.connection;
   try {
-    const frames = readManagerFrames(socket);
-    const first = await frames.next();
-    if (first.done || isControl(first.value)) {
-      throw new Error('Capsule manager connection must start with a request');
-    }
-    request = first.value;
     switch (request.kind) {
       case 'exec-request':
-        await handleExec({
-          socket,
-          request,
-          bootstrap,
-          manager,
-          interaction: { kind: 'captured' },
-        });
+      case 'interactive-exec-request': {
+        const execution = input.executions.begin({ socket, request, frames });
+        try {
+          await handleExec({
+            socket,
+            request,
+            bootstrap: input.bootstrap,
+            manager: input.manager,
+            interaction: execution.interaction,
+          });
+        } finally {
+          execution.release();
+        }
         break;
-      case 'interactive-exec-request':
-        await handleExec({
-          socket,
-          request,
-          bootstrap,
-          manager,
-          interaction: interactiveTransport({ socket, request, frames }),
-        });
-        break;
+      }
       case 'stop-request':
-        await handleStop({ socket, request, bootstrap, manager });
+        await handleStop({ socket, request, bootstrap: input.bootstrap, manager: input.manager });
         break;
       default:
         assertNever(request);
@@ -192,7 +108,7 @@ async function handleConnection(
   } catch (error) {
     await sendResponse(socket, {
       kind: 'manager-error-response',
-      requestId: request === undefined ? 'unknown' : request.requestId,
+      requestId: request.requestId,
       error: recordedError(error),
     }).catch(() => undefined);
   }
@@ -200,10 +116,22 @@ async function handleConnection(
 
 export function serveManager(bootstrap: CapsuleManagerBootstrap, manager: RunningManager): void {
   let tail = Promise.resolve();
+  const executions = new ManagerExecutionCoordinator();
   manager.server.on('connection', (socket) => {
-    tail = tail.then(() => handleConnection(socket, bootstrap, manager));
-    void tail.catch(() => {
-      return undefined;
-    });
+    void admitConnection(socket)
+      .then((connection) => {
+        if (connection.request.kind === 'stop-request') {
+          executions.requestStop();
+        }
+        tail = tail.then(() => executeRequest({ connection, bootstrap, manager, executions }));
+        void tail.catch(() => undefined);
+      })
+      .catch(async (error: unknown) => {
+        await sendResponse(socket, {
+          kind: 'manager-error-response',
+          requestId: 'unknown',
+          error: recordedError(error),
+        }).catch(() => undefined);
+      });
   });
 }

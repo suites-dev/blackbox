@@ -8,7 +8,7 @@ export interface SandboxContainerExecutionInput {
   readonly argv: readonly [string, ...string[]];
   readonly environment: Readonly<Record<string, string>>;
   readonly terminal: SandboxContainerTerminal;
-  readonly onOutput: (event: SandboxContainerOutputEvent) => void;
+  readonly onOutput: (event: SandboxContainerOutputEvent) => Promise<void>;
 }
 
 export type SandboxContainerOutputEvent =

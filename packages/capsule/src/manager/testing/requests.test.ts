@@ -1,17 +1,16 @@
-import { expect, it } from 'vitest';
+import { expect, it, vi } from 'vitest';
 
 import { managerRequest } from '../../ipc/client.js';
 import { readCapsuleActivities, readCapsuleRecord } from '../../records.js';
 import { requestFixture } from './request.fixture.js';
 
-async function waitFor(predicate: () => Promise<boolean>): Promise<void> {
-  const deadline = Date.now() + 2_000;
-  while (!(await predicate())) {
-    if (Date.now() >= deadline) {
-      throw new Error('Timed out waiting for manager test condition');
-    }
-    await new Promise((resolve) => setTimeout(resolve, 5));
-  }
+function waitFor(predicate: () => Promise<boolean>): Promise<void> {
+  return vi.waitFor(
+    async () => {
+      expect(await predicate()).toBe(true);
+    },
+    { timeout: 2_000, interval: 5 },
+  );
 }
 
 function connections(fixture: Awaited<ReturnType<typeof requestFixture>>): Promise<number> {
@@ -140,59 +139,56 @@ it('unknown drivers fail and missing host executables produce retained outcomes'
   }
 });
 
-it('serializes overlapping exec and stop requests without losing activities', async () => {
+it('lets stop preempt the active exec and refuses an already queued exec', async () => {
   const fixture = await requestFixture(() => Promise.resolve());
-  const execute = (requestId: string, value: string, delay: number) =>
-    managerRequest({
-      socketPath: fixture.socketPath,
-      request: {
-        kind: 'exec-request',
-        requestId,
-        name: { kind: 'omitted' },
-        purpose: 'stimulus',
-        target: {
-          kind: 'host',
-          argv: [
-            process.execPath,
-            '-e',
-            'setTimeout(() => process.stdout.write(process.argv[1]), Number(process.argv[2]))',
-            value,
-            String(delay),
-          ],
+  const observe = <Value>(promise: Promise<Value>) =>
+    promise.then(
+      (value) => ({ kind: 'fulfilled' as const, value }),
+      (error: unknown) => ({ kind: 'rejected' as const, error }),
+    );
+  const execute = (requestId: string, source: string) =>
+    observe(
+      managerRequest({
+        socketPath: fixture.socketPath,
+        request: {
+          kind: 'exec-request',
+          requestId,
+          name: { kind: 'omitted' },
+          purpose: 'stimulus',
+          target: {
+            kind: 'host',
+            argv: [process.execPath, '-e', source],
+          },
         },
-      },
-    });
+      }),
+    );
   try {
-    const first = execute('overlap-1', 'first', 250);
+    const first = execute('overlap-1', 'setInterval(() => undefined, 1000)');
     await waitFor(async () => {
       const activities = await readCapsuleActivities(fixture);
       return activities.length > 0 && activities[0].kind === 'running';
     });
-    const second = execute('overlap-2', 'second', 0);
-    await waitFor(async () => (await connections(fixture)) === 2);
+    const second = execute('overlap-2', 'process.stdout.write("second")');
+    await waitFor(async () => (await connections(fixture)) >= 2);
     const stop = managerRequest({
       socketPath: fixture.socketPath,
       request: { kind: 'stop-request', requestId: 'overlap-stop', reason: 'completed' },
     });
-    await waitFor(async () => (await connections(fixture)) === 3);
-    const late = execute('overlap-late', 'late', 0);
-    await waitFor(async () => (await connections(fixture)) === 4);
-    const [firstResult, secondResult, stopResult, lateResult] = await Promise.all([
-      first,
-      second,
-      stop,
-      late,
-    ]);
-    expect(firstResult).toMatchObject({ kind: 'exec-response', outcome: { stdout: 'first' } });
-    expect(secondResult).toMatchObject({ kind: 'exec-response', outcome: { stdout: 'second' } });
-    expect(stopResult).toMatchObject({ kind: 'stop-response', cleanup: 'complete' });
-    expect(lateResult).toMatchObject({
-      kind: 'manager-error-response',
-      error: { message: 'Cannot execute against Capsule in stopped state' },
+    const [firstResult, secondResult, stopResult] = await Promise.all([first, second, stop]);
+    expect(firstResult).toMatchObject({ kind: 'rejected', error: expect.any(Error) });
+    expect(secondResult).toMatchObject({
+      kind: 'fulfilled',
+      value: {
+        kind: 'manager-error-response',
+        error: { message: 'Cannot execute after Capsule stop was requested' },
+      },
+    });
+    expect(stopResult).toMatchObject({
+      kind: 'stop-response',
+      cleanup: 'complete',
     });
     expect(await readCapsuleActivities(fixture)).toMatchObject([
-      { kind: 'completed', sequence: 1, outcome: { stdout: 'first' } },
-      { kind: 'completed', sequence: 2, outcome: { stdout: 'second' } },
+      { kind: 'completed', sequence: 1, outcome: { kind: 'signaled' } },
     ]);
   } finally {
     await fixture.close();
