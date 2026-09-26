@@ -19,7 +19,7 @@ catalog:
   globals: ^15.14.0
 
   # Code quality
-  prettier: ^3.4.2
+  prettier: ^3.9.9
 
   # Repository hooks
   husky: ^9.1.7
