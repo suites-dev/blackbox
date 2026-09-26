@@ -1,11 +1,9 @@
-import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process';
+import { spawn } from 'node:child_process';
 import type { Readable } from 'node:stream';
 
 import type {
   CapsuleExecutionControl,
   CapsuleExecutionInteraction,
-  CapsuleInteractiveControl,
-  CapsuleInteractiveControlResult,
   CapsuleProcessOutcome,
 } from '../types.js';
 import {
@@ -13,111 +11,12 @@ import {
   retainedOutputMetadata,
   retainedOutputText,
 } from '../output-retention.js';
+import { pumpHostControls } from './control.js';
 
 interface HostProcessInput {
   readonly argv: readonly [string, ...string[]];
   readonly cwd: string;
   readonly environment: Readonly<Record<string, string>>;
-}
-
-interface HostControlState {
-  completed: boolean;
-  stdinEnded: boolean;
-}
-
-function rejectedControl(
-  action: CapsuleInteractiveControlResult['action'],
-  reason: 'execution-completed' | 'stdin-ended',
-): CapsuleInteractiveControlResult {
-  return { kind: 'rejected', action, reason };
-}
-
-function writeHostStdin(input: {
-  readonly child: ChildProcessWithoutNullStreams;
-  readonly control: Extract<CapsuleInteractiveControl, { readonly kind: 'stdin-chunk' }>;
-}): Promise<CapsuleInteractiveControlResult> {
-  return new Promise((resolve) => {
-    input.child.stdin.write(Buffer.from(input.control.chunk), (error) => {
-      resolve(
-        error === null || error === undefined
-          ? { kind: 'delivered', action: 'stdin-chunk', mechanism: 'host-process-stdin' }
-          : {
-              kind: 'failed',
-              action: 'stdin-chunk',
-              error: { name: error.name, message: error.message },
-            },
-      );
-    });
-  });
-}
-
-function endHostStdin(
-  child: ChildProcessWithoutNullStreams,
-): Promise<CapsuleInteractiveControlResult> {
-  return new Promise((resolve) => {
-    child.stdin.end(() => {
-      resolve({ kind: 'delivered', action: 'stdin-end', mechanism: 'host-process-stdin' });
-    });
-  });
-}
-
-async function hostControl(input: {
-  readonly child: ChildProcessWithoutNullStreams;
-  readonly state: HostControlState;
-  readonly control: CapsuleExecutionControl;
-}): Promise<CapsuleInteractiveControlResult> {
-  const { control } = input;
-  if (input.state.completed) {
-    return rejectedControl(
-      control.kind === 'force-terminate' ? 'signal' : control.kind,
-      'execution-completed',
-    );
-  }
-  if (control.kind === 'force-terminate') {
-    return input.child.kill('SIGKILL')
-      ? { kind: 'delivered', action: 'signal', mechanism: 'host-process-signal' }
-      : rejectedControl('signal', 'execution-completed');
-  }
-  if (input.state.stdinEnded && (control.kind === 'stdin-chunk' || control.kind === 'stdin-end')) {
-    return rejectedControl(control.kind, 'stdin-ended');
-  }
-  if (control.kind === 'stdin-chunk') {
-    return await writeHostStdin({ child: input.child, control });
-  }
-  if (control.kind === 'stdin-end') {
-    input.state.stdinEnded = true;
-    return await endHostStdin(input.child);
-  }
-  if (control.kind === 'resize') {
-    return { kind: 'unsupported', action: 'resize', reason: 'host-pty-unavailable' };
-  }
-  try {
-    return input.child.kill(control.signal)
-      ? { kind: 'delivered', action: 'signal', mechanism: 'host-process-signal' }
-      : rejectedControl('signal', 'execution-completed');
-  } catch (error) {
-    const failure = error instanceof Error ? error : new Error(String(error));
-    return {
-      kind: 'failed',
-      action: 'signal',
-      error: { name: failure.name, message: failure.message },
-    };
-  }
-}
-
-async function pumpHostControls(input: {
-  readonly child: ChildProcessWithoutNullStreams;
-  readonly state: HostControlState;
-  readonly interaction: CapsuleExecutionInteraction;
-}): Promise<void> {
-  for await (const control of input.interaction.controls) {
-    const result = await hostControl({ child: input.child, state: input.state, control });
-    if (input.interaction.kind === 'interactive') {
-      await input.interaction
-        .onEvent({ kind: 'control-result', controlId: control.controlId, result })
-        .catch(() => undefined);
-    }
-  }
 }
 
 function observeOutput(input: {
@@ -204,6 +103,7 @@ export function runHostWithRedaction(
     const [command, ...arguments_] = input.argv;
     const child = spawn(command, arguments_, {
       cwd: input.cwd,
+      detached: process.platform !== 'win32',
       env: { ...process.env, ...input.environment },
       stdio: ['pipe', 'pipe', 'pipe'],
     });

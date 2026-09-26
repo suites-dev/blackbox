@@ -1,11 +1,11 @@
 import { expect, it } from 'vitest';
 
-import { createRedactedError, redactEnvironmentError, redactProcessMetadata } from './secrets.js';
+import { createRedactedError, redactPreparationError, redactProcessMetadata } from './secrets.js';
 
 it('redacts error names and messages, including overlapping and empty environment values', () => {
   const error = Object.assign(new Error('long-private, private, empty'), { name: 'privateFailure' });
   const environment = { LONG: 'long-private', SHORT: 'private', EMPTY: '' };
-  expect(redactEnvironmentError({ error, environment })).toEqual({
+  expect(redactPreparationError({ error, environment, requestArgv: ['tool'] })).toEqual({
     name: '[REDACTED]Failure', message: '[REDACTED], [REDACTED], empty',
   });
   const redacted = createRedactedError({ error, values: Object.values(environment) });
@@ -13,9 +13,10 @@ it('redacts error names and messages, including overlapping and empty environmen
 });
 
 it('does not reprocess generated masks when a secret overlaps the mask spelling', () => {
-  expect(redactEnvironmentError({
+  expect(redactPreparationError({
     error: new Error('private-long REDACTED'),
     environment: { FIRST: 'private-long', SECOND: 'REDACTED' },
+    requestArgv: ['tool'],
   })).toEqual({ name: 'Error', message: '[REDACTED] [REDACTED]' });
 });
 

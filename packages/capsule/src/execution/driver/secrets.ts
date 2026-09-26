@@ -35,11 +35,18 @@ export function selectedArgvValues(input: {
     .sort((left, right) => right.length - left.length);
 }
 
-export function redactEnvironmentError(input: {
+export function redactPreparationError(input: {
   readonly error: unknown;
   readonly environment: Readonly<Record<string, string>>;
+  readonly requestArgv: readonly string[];
 }): CapsuleRecordedError {
-  return redactErrorValues({ error: input.error, values: Object.values(input.environment) });
+  return redactErrorValues({
+    error: input.error,
+    values: [
+      ...Object.values(input.environment),
+      ...input.requestArgv.slice(1),
+    ],
+  });
 }
 
 function redactErrorValues(input: {

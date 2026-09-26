@@ -13,7 +13,7 @@ import {
 
 import type { CapsuleDriverOutcome, CapsuleRecordedError } from '../../types.js';
 import { failedPropagation } from './propagation.js';
-import { redactEnvironmentError, selectedArgvValues } from './secrets.js';
+import { redactPreparationError, selectedArgvValues } from './secrets.js';
 import { redactValues } from '../output/value-redaction.js';
 
 type PreparationFailure = Exclude<CapsuleDriverOutcome, { readonly kind: 'driver-completed' }>;
@@ -51,15 +51,20 @@ export async function prepareCapsuleDriver(input: {
   } catch (error) {
     return failed(
       input.driver,
-      redactEnvironmentError({ error, environment: input.request.target.environment }),
+      redactPreparationError({
+        error,
+        environment: input.request.target.environment,
+        requestArgv: input.request.command.argv,
+      }),
     );
   }
   if (response.kind === 'driver-prepare-failed') {
     return failed(
       input.driver,
-      redactEnvironmentError({
+      redactPreparationError({
         error: Object.assign(new Error(response.error.message), { name: response.error.name }),
         environment: input.request.target.environment,
+        requestArgv: input.request.command.argv,
       }),
     );
   }

@@ -55,6 +55,42 @@ it('masks a driver failure name as well as its message through a real subprocess
   expect(JSON.stringify(result)).not.toContain(secret);
 });
 
+it('treats request arguments as sensitive until preparation succeeds', async () => {
+  const secret = 'request-argument-private';
+  const directory = await driverProject(`export default {
+    kind: 'project-driver', name: 'http', prepare(request) {
+      const secret = request.command.argv[2];
+      throw Object.assign(new Error('failed ' + secret), { name: secret + 'Failure' });
+    }
+  };`);
+  const result = await runCapsuleDriver({
+    ...driverInput(directory),
+    argv: [process.execPath, '--token', secret],
+  });
+
+  expect(result).toMatchObject({ kind: 'driver-prepare-failed',
+    error: { name: '[REDACTED]Failure', message: 'failed [REDACTED]' } });
+  expect(JSON.stringify(result)).not.toContain(secret);
+});
+
+it('redacts request arguments from malformed runner output', async () => {
+  const secret = 'request-runner-private-1234567890-abcdefghijklmnopqrstuvwxyz';
+  const directory = await driverProject(`export default {
+    kind: 'project-driver', name: 'http', prepare(request) {
+      console.log(request.command.argv[2]);
+      throw new Error('preparation failed');
+    }
+  };`);
+  const result = await runCapsuleDriver({
+    ...driverInput(directory),
+    argv: [process.execPath, '--token', secret],
+  });
+
+  expect(result).toMatchObject({ kind: 'driver-prepare-failed',
+    error: { message: expect.stringContaining('Invalid JSON') } });
+  expect(JSON.stringify(result)).not.toContain(secret.slice(0, 10));
+});
+
 it.each(['refuse', 'allow'] as const)('masks secrets in an injection failure with untraced=%s', async (kind) => {
   const secret = 'target-secret';
   const directory = await driverProject(`export default {
