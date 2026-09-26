@@ -30,10 +30,11 @@ async function fixture(context) {
 }
 
 async function session(input) {
-  const directory = join(input.runtime, 'experiments', 'capsule-bright-river-ada');
+  const sessionId = 'bright-river-ada-123456789012';
+  const directory = join(input.runtime, 'experiments', `capsule-${sessionId}`);
   await mkdir(directory);
   await writeFile(join(directory, 'session.json'), JSON.stringify({
-    sessionId: 'bright-river-ada', state: input.state, cleanup: { kind: input.cleanup },
+    sessionId, state: input.state, cleanup: { kind: input.cleanup },
   }));
 }
 
@@ -45,7 +46,7 @@ void test('reset releases an active session before deleting only demo outputs an
     assert.ok((await readdir(join(input.runtime, 'experiments'))).length);
     stopped.push(sessionId);
   } });
-  assert.deepEqual(stopped, ['bright-river-ada']);
+  assert.deepEqual(stopped, ['bright-river-ada-123456789012']);
   assert.deepEqual((await readdir(input.runtime)).sort(), ['compose', 'drivers']);
   assert.deepEqual(await readdir(join(input.runtime, 'drivers')), ['postgres.mjs']);
   assert.equal(await readFile(join(input.runtime, 'compose', 'sut.yaml'), 'utf8'), 'compose');

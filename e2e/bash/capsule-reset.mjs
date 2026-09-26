@@ -26,7 +26,10 @@ async function stopPreviousSessions(input) {
     const directory = join(experiments, entry.name);
     await directoryExists(directory);
     const record = JSON.parse(await readFile(join(directory, 'session.json'), 'utf8'));
-    if (typeof record.sessionId !== 'string' || !/^[a-z]+-[a-z]+-[a-z]+$/u.test(record.sessionId) || entry.name !== `capsule-${record.sessionId}`) {
+    const validSessionId =
+      typeof record.sessionId === 'string' &&
+      /^[a-z]+-[a-z]+-[a-z]+(?:-[0-9]{12})?$/u.test(record.sessionId);
+    if (!validSessionId || entry.name !== `capsule-${record.sessionId}`) {
       throw new Error(`Cannot reset an experiment with invalid identity: ${directory}`);
     }
     if (record.state === 'running' || record.state === 'stop-failed') {
