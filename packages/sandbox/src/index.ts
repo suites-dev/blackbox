@@ -31,6 +31,11 @@ export {
   decodeSandboxRecord,
   SandboxRecordValidationError,
 } from './ownership/record-decoder.js';
+export { recoverSandbox } from './recovery/recover.js';
+export type {
+  RecoverSandboxInput,
+  SandboxRecoveryResult,
+} from './recovery/types.js';
 export {
   sandboxRecordSchema,
   sandboxRecordSchemaUrl,

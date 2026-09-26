@@ -1,4 +1,4 @@
-import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -6,6 +6,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
   admitCapsuleRecord,
+  capsuleSandboxRecordDirectory,
   capsuleSessionDirectory,
   readCapsuleRecord,
   writeCapsuleRecord,
@@ -131,15 +132,60 @@ describe('dead manager reader reconciliation', () => {
       }),
     ).resolves.toMatchObject({ kind: 'capsule-invalid-state', state: 'manager-failed' });
     await expect(stopCapsule({ ...session, reason: 'failed' })).resolves.toMatchObject({
-      kind: 'capsule-invalid-state',
-      state: 'manager-failed',
+      kind: 'capsule-stopped',
+      cleanup: 'complete',
+      alreadyStopped: true,
     });
     await expect(reportCapsule(session)).resolves.toMatchObject({
       kind: 'capsule-report',
       document: {
         lifecycle: { kind: 'failed', retainedState: 'manager-failed' },
-        cleanup: { kind: 'not-attempted' },
+        cleanup: { kind: 'complete' },
       },
+    });
+  });
+
+  it('retries a failed dead-manager cleanup through stop and retains success', async () => {
+    const session = await sessionFixture('manager-failed');
+    const record = await readCapsuleRecord(session);
+    await writeCapsuleRecord({
+      projectDirectory: session.projectDirectory,
+      record: {
+        ...record,
+        cleanup: {
+          kind: 'failed',
+          error: { name: 'DockerError', message: 'first cleanup failed' },
+        },
+        failure: {
+          kind: 'recorded',
+          error: { name: 'CapsuleManagerUnavailable', message: 'manager exited' },
+        },
+      },
+    });
+    const sandboxDirectory = capsuleSandboxRecordDirectory(session);
+    await mkdir(sandboxDirectory, { recursive: true });
+    await writeFile(join(sandboxDirectory, `${record.executionId}.json`), `${JSON.stringify({
+      schemaVersion: 1,
+      sandboxId: record.executionId,
+      projectName: 'bb-owned',
+      composeFiles: ['/project/compose.yaml'],
+      state: 'completed',
+      revision: 3,
+      admittedAt: record.admittedAt,
+      updatedAt: record.updatedAt,
+      stopReason: 'interrupted',
+      cleanup: 'complete',
+    })}\n`);
+
+    await expect(stopCapsule({ ...session, reason: 'interrupted' })).resolves.toMatchObject({
+      kind: 'capsule-stopped',
+      cleanup: 'complete',
+      alreadyStopped: true,
+    });
+    await expect(readCapsuleRecord(session)).resolves.toMatchObject({
+      state: 'manager-failed',
+      cleanup: { kind: 'complete' },
+      failure: { kind: 'recorded', error: { name: 'CapsuleManagerUnavailable' } },
     });
   });
 });

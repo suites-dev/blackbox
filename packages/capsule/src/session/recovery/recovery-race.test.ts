@@ -58,6 +58,7 @@ it('does not overwrite a terminal record written during the liveness check', asy
         readActivities: () => Promise.resolve([]),
         writeActivities,
         writeRecord,
+        recoverSandbox: () => Promise.reject(new Error('must not recover after race loss')),
       },
     ),
   ).resolves.toMatchObject({

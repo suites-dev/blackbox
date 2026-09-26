@@ -11,7 +11,7 @@ import { admitCapsuleRecord, readCapsuleActivities, readCapsuleRecord, writeCaps
 import { reconcileDeadCapsuleManager } from './index.js';
 
 it.each(['admitted', 'manager-starting', 'sandbox-starting', 'running', 'stopping', 'stop-failed'] as const)(
-  'reconciles an exact exited manager PID in %s without claiming resource cleanup', async (state) => {
+  'reconciles an exact exited manager PID in %s and proves no Sandbox cleanup is required', async (state) => {
     const projectDirectory = await mkdtemp(join(tmpdir(), 'capsule-dead-process-'));
     const child = spawn(process.execPath, ['-e', 'process.exit(0)']);
     await once(child, 'exit');
@@ -42,7 +42,7 @@ it.each(['admitted', 'manager-starting', 'sandbox-starting', 'running', 'stoppin
       }] });
       await expect(reconcileDeadCapsuleManager(selector)).resolves.toMatchObject({
         kind: 'capsule-manager-reconciled', interruptedActivityIds: ['pending'],
-        record: { state: 'manager-failed', manager: { pid }, cleanup: record.cleanup },
+        record: { state: 'manager-failed', manager: { pid }, cleanup: { kind: 'complete' } },
       });
       const persisted = await readCapsuleRecord(selector);
       expect(await readCapsuleActivities(selector)).toMatchObject([{ kind: 'interrupted',

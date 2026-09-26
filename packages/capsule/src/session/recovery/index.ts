@@ -1,3 +1,5 @@
+import { recoverSandbox } from '@suites/blackbox-sandbox-internal';
+
 import type { CapsuleActivityReport, CapsuleRecordedError } from '../../types.js';
 import {
   readCapsuleActivities,
@@ -7,6 +9,7 @@ import {
   writeCapsuleRecord,
   type CapsuleSessionRecord,
 } from '../../records.js';
+import { cleanupAfterManagerDeath } from './sandbox-cleanup.js';
 
 export interface ReconcileDeadCapsuleManagerInput {
   readonly projectDirectory: string;
@@ -37,6 +40,7 @@ export interface CapsuleManagerRecoveryPorts {
   readonly readActivities: typeof readCapsuleActivities;
   readonly writeActivities: typeof writeCapsuleActivities;
   readonly writeRecord: typeof writeCapsuleRecord;
+  readonly recoverSandbox: typeof recoverSandbox;
 }
 
 type ManagerProcessStatus =
@@ -57,6 +61,7 @@ const productionPorts = {
   readActivities: readCapsuleActivities,
   writeActivities: writeCapsuleActivities,
   writeRecord: writeCapsuleRecord,
+  recoverSandbox,
 } satisfies CapsuleManagerRecoveryPorts;
 
 function processStatus(pid: number, signal: CapsuleManagerRecoveryPorts['signal']): ManagerProcessStatus {
@@ -171,12 +176,18 @@ export async function reconcileDeadCapsuleManagerWithPorts(
     completedAt,
     error,
   });
+  const cleanup = await cleanupAfterManagerDeath({
+    selector: input,
+    record: currentRecord,
+    recover: ports.recoverSandbox,
+  });
   const failedRecord = {
     ...currentRecord,
     state: 'manager-failed',
     revision: currentRecord.revision + 1,
     updatedAt: completedAt,
     failure: { kind: 'recorded', error },
+    cleanup,
   } satisfies CapsuleSessionRecord;
   await ports.writeActivities({ ...input, activities: reconciled.activities });
   await ports.writeRecord({ projectDirectory: input.projectDirectory, record: failedRecord });

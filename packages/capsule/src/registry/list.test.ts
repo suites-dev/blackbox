@@ -122,7 +122,7 @@ describe('Capsule registry dead manager reconciliation', () => {
           summary: {
             sessionId: running.sessionId,
             state: 'manager-failed',
-            cleanup: 'not-attempted',
+            cleanup: 'complete',
           },
         },
       ],

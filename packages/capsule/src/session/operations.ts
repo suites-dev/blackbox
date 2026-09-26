@@ -8,6 +8,7 @@ import { redactStandaloneError } from '../reporting/redaction.js';
 import type { CapsuleReportArtifact, CapsuleReportResult } from '../reporting/types.js';
 import { readCapsuleActivities } from '../records.js';
 import { readCapsuleReportObservations } from './observations.js';
+import { retryManagerFailedCleanup } from './recovery/sandbox-cleanup.js';
 import type {
   CapsuleExecInput,
   CapsuleExecResult,
@@ -126,7 +127,7 @@ export async function stopCapsule(input: CapsuleStopInput): Promise<CapsuleStopR
   try {
     validateSessionId(input.sessionId);
     const projectDirectory = await canonicalProjectDirectory(input.projectDirectory);
-    const record = await readRecordOrNotFound({ projectDirectory, sessionId: input.sessionId });
+    let record = await readRecordOrNotFound({ projectDirectory, sessionId: input.sessionId });
     if (isFailure(record)) {
       return record;
     }
@@ -136,6 +137,28 @@ export async function stopCapsule(input: CapsuleStopInput): Promise<CapsuleStopR
         sessionId: input.sessionId,
         cleanup: 'complete',
         alreadyStopped: true,
+      };
+    }
+    if (record.state === 'manager-failed') {
+      record = await retryManagerFailedCleanup({ projectDirectory, sessionId: input.sessionId });
+      if (record.cleanup.kind === 'complete') {
+        return {
+          kind: 'capsule-stopped',
+          sessionId: input.sessionId,
+          cleanup: 'complete',
+          alreadyStopped: true,
+        };
+      }
+      return {
+        kind: 'capsule-operation-failed',
+        operation: 'stop',
+        sessionId: input.sessionId,
+        error: record.cleanup.kind === 'failed'
+          ? record.cleanup.error
+          : {
+              name: 'CapsuleCleanupUnavailable',
+              message: 'Capsule cleanup did not reach a terminal result',
+            },
       };
     }
     if (record.state !== 'running' && record.state !== 'stop-failed') {

@@ -11,75 +11,28 @@ import {
   writeCapsuleActivities,
   type CapsuleSessionRecord,
 } from '../../records.js';
-import { activeTelemetry, completedHostActivity } from '../../persistence/testing/record.fixture.js';
-import type { CapsuleActivityReport } from '../../types.js';
+import { completedHostActivity } from '../../persistence/testing/record.fixture.js';
 import {
   reconcileDeadCapsuleManager,
   reconcileDeadCapsuleManagerWithPorts,
   type CapsuleManagerRecoveryPorts,
 } from './index.js';
+import {
+  completedAt,
+  noSandboxRecord,
+  processError,
+  runningActivity,
+  runningRecord,
+} from './recovery.fixture.js';
 
 const roots: string[] = [];
-const completedAt = '2026-09-25T10:00:00.000Z';
-
-function runningRecord(projectDirectory: string): CapsuleSessionRecord {
-  const sessionId = 'quiet-river-ada';
-  return {
-    schemaVersion: 1,
-    sessionId,
-    executionId: '11111111-1111-4111-8111-111111111111',
-    system: 'orders',
-    title: 'Orders experiment',
-    description: { kind: 'omitted' },
-    state: 'running',
-    revision: 4,
-    admittedAt: '2026-09-25T09:00:00.000Z',
-    updatedAt: '2026-09-25T09:01:00.000Z',
-    manager: { kind: 'started', pid: 42_424 },
-    socketPath: join(projectDirectory, 'manager.sock'),
-    entrypoint: {
-      kind: 'available',
-      value: { url: 'http://localhost:3000', host: 'localhost', port: 3000, protocol: 'http' },
-    },
-    containers: [],
-    cleanup: { kind: 'not-attempted' },
-    failure: { kind: 'none' },
-    composeProject: { kind: 'available', value: 'bb-orders' },
-    artifactRoot: join(projectDirectory, '.blackbox', 'experiments', `capsule-${sessionId}`),
-    networks: ['bb-orders_default'],
-    volumes: ['bb-orders_data'],
-    readiness: {
-      kind: 'available',
-      value: { url: 'http://localhost:3000/health', status: 'ready', durationMs: 100 },
-    },
-  };
-}
-
-function runningActivity(activityId = 'activity-running'): CapsuleActivityReport {
-  return {
-    kind: 'running',
-    activityId,
-    sequence: 2,
-    name: { kind: 'omitted' },
-    purpose: 'stimulus',
-    target: { kind: 'host' },
-    argv: ['curl', 'http://localhost:3000'],
-    telemetry: activeTelemetry(activityId),
-    startedAt: '2026-09-25T09:02:00.000Z',
-  };
-}
-
-function processError(code: string): NodeJS.ErrnoException {
-  return Object.assign(new Error(code), { code });
-}
-
 afterEach(async () => {
   vi.restoreAllMocks();
   await Promise.all(roots.splice(0).map((root) => rm(root, { recursive: true, force: true })));
 });
 
 describe('dead Capsule manager reconciliation', () => {
-  it('interrupts running activities before recording manager failure without claiming cleanup', async () => {
+  it('interrupts running activities and records completed cleanup', async () => {
     let record = runningRecord('/project');
     let activities = [completedHostActivity(), runningActivity()];
     const writes: string[] = [];
@@ -98,6 +51,7 @@ describe('dead Capsule manager reconciliation', () => {
         record = input.record;
         return Promise.resolve();
       },
+      recoverSandbox: noSandboxRecord,
     } satisfies CapsuleManagerRecoveryPorts;
 
     await expect(
@@ -111,7 +65,7 @@ describe('dead Capsule manager reconciliation', () => {
       record: {
         state: 'manager-failed',
         revision: 5,
-        cleanup: { kind: 'not-attempted' },
+        cleanup: { kind: 'complete' },
         failure: { kind: 'recorded', error: { name: 'CapsuleManagerUnavailable' } },
       },
     });
@@ -161,6 +115,7 @@ describe('Capsule manager process proof', () => {
       readActivities: () => Promise.resolve([runningActivity()]),
       writeActivities,
       writeRecord,
+      recoverSandbox: noSandboxRecord,
     } satisfies CapsuleManagerRecoveryPorts;
     await expect(
       reconcileDeadCapsuleManagerWithPorts(
@@ -193,6 +148,7 @@ describe('Capsule manager reconciliation admission', () => {
           readActivities: () => Promise.resolve([runningActivity()]),
           writeActivities: () => Promise.resolve(),
           writeRecord: writes,
+          recoverSandbox: noSandboxRecord,
         },
       );
       expect(result.kind).toBe('capsule-manager-reconciliation-skipped');
@@ -200,7 +156,7 @@ describe('Capsule manager reconciliation admission', () => {
     expect(writes).not.toHaveBeenCalled();
   });
 
-  it('preserves failed cleanup when a stop-failed manager is dead', async () => {
+  it('retains a new recovery failure when a stop-failed manager is dead', async () => {
     const initialRecord = {
       ...runningRecord('/project'),
       state: 'stop-failed',
@@ -222,6 +178,7 @@ describe('Capsule manager reconciliation admission', () => {
           record = input.record;
           return Promise.resolve();
         },
+        recoverSandbox: () => Promise.reject(new Error('recovery still unavailable')),
       },
     );
     expect(result).toMatchObject({
@@ -230,7 +187,7 @@ describe('Capsule manager reconciliation admission', () => {
         state: 'manager-failed',
         cleanup: {
           kind: 'failed',
-          error: { name: 'DockerError', message: 'resource release failed' },
+          error: { name: 'Error', message: 'recovery still unavailable' },
         },
       },
     });
@@ -257,7 +214,7 @@ describe('persisted Capsule manager reconciliation', () => {
     await expect(readCapsuleActivities({ projectDirectory, sessionId: record.sessionId }))
       .resolves.toMatchObject([{ kind: 'interrupted' }]);
     await expect(readCapsuleRecord({ projectDirectory, sessionId: record.sessionId }))
-      .resolves.toMatchObject({ state: 'manager-failed', cleanup: { kind: 'not-attempted' } });
+      .resolves.toMatchObject({ state: 'manager-failed', cleanup: { kind: 'complete' } });
     await expect(
       reconcileDeadCapsuleManager({ projectDirectory, sessionId: record.sessionId }),
     ).resolves.toMatchObject({

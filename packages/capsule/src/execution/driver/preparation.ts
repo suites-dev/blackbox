@@ -13,7 +13,7 @@ import {
 
 import type { CapsuleDriverOutcome, CapsuleRecordedError } from '../../types.js';
 import { failedPropagation } from './propagation.js';
-import { redactEnvironmentError } from './secrets.js';
+import { redactEnvironmentError, selectedArgvValues } from './secrets.js';
 import { redactValues } from '../output/value-redaction.js';
 
 type PreparationFailure = Exclude<CapsuleDriverOutcome, { readonly kind: 'driver-completed' }>;
@@ -64,9 +64,22 @@ export async function prepareCapsuleDriver(input: {
     );
   }
   const command = response.preparation;
+  const requestArgvValues = selectedArgvValues({
+    argv: input.request.command.argv,
+    selection: command.redaction.requestArgv,
+  });
+  const preparedArgvValues = selectedArgvValues({
+    argv: command.argv,
+    selection: command.redaction.preparedArgv,
+  });
   const outcome = command.propagation.kind === 'context-injection-failed'
     ? { ...command.propagation, message: redactValues(command.propagation.message,
-        [...Object.values(input.request.target.environment), ...Object.values(command.environment)]) }
+        [
+          ...Object.values(input.request.target.environment),
+          ...Object.values(command.environment),
+          ...requestArgvValues,
+          ...preparedArgvValues,
+        ]) }
     : command.propagation;
   const propagation = createTelemetryPropagationRecord({
     expectation: input.driver.propagation,
