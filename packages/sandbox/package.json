@@ -27,7 +27,7 @@
     "test:docker": "BLACKBOX_SANDBOX_DOCKER_TEST=1 vitest run --config vitest.config.ts src/acquisition/docker-proof"
   },
   "dependencies": {
-    "ajv": "8.18.0",
+    "ajv": "8.20.0",
     "docker-compose": "1.4.2",
     "testcontainers": "catalog:"
   },
