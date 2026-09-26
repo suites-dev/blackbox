@@ -1,0 +1,40 @@
+name: Feature request
+description: Propose a product idea for triage, not implementation
+type: Feature
+projects: ['suites-dev/5']
+title: '[feature] '
+labels: [enhancement]
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        A feature request is an intake and discussion path only. Before implementation, maintainers must create a separately scoped Task or Bug in GitHub Project suites-dev #5 with its required delivery contract. Do not implement directly from this request.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem and use case
+    validations: { required: true }
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+    validations: { required: true }
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+    validations: { required: true }
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+    validations: { required: false }
+  - type: checkboxes
+    id: implementation_scope
+    attributes:
+      label: Implementation scope
+      options:
+        - label: >-
+            I understand that implementation requires a separate, scoped Task or Bug linked to its parent milestone in Project #5.
+          required: true
