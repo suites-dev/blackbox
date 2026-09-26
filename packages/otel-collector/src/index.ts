@@ -1,6 +1,13 @@
 export { readCollectorSession, readCollectorTrace } from './storage/reader.js';
 export { readCollectorTraces } from './storage/trace-set-reader.js';
 export { readCollectorActivity } from './storage/activity-reader.js';
+export { readCollectorSnapshot } from './storage/snapshot/snapshot-reader.js';
+export {
+  projectCollectorActivity,
+  projectCollectorSession,
+  projectCollectorTrace,
+  projectCollectorTraces,
+} from './storage/snapshot/snapshot-projections.js';
 export {
   collectorActivationSchema,
   collectorFragmentSchema,
@@ -21,6 +28,7 @@ export type {
   CollectorLifecycleRecord,
   CollectorInstrumentationStatus,
   CollectorSessionReadResult,
+  CollectorSnapshotReadResult,
   CollectorStatus,
   CollectorTelemetryStatus,
   CollectorTraceReadResult,

@@ -222,6 +222,28 @@ export type CollectorTracesReadResult =
       readonly error: CollectorFailure;
     };
 
+export type CollectorSnapshotReadResult =
+  | {
+      readonly kind: 'collector-snapshot-found';
+      readonly identity: CollectorIdentity;
+      readonly lifecycle: CollectorLifecycleRecord;
+      readonly fragments: readonly RetainedFragmentSummary[];
+      readonly traces: readonly {
+        readonly traceId: string;
+        readonly fragments: readonly TraceFragment[];
+      }[];
+    }
+  | {
+      readonly kind: 'collector-snapshot-missing';
+      readonly identity: CollectorIdentity;
+      readonly message: string;
+    }
+  | {
+      readonly kind: 'collector-snapshot-corrupt';
+      readonly identity: CollectorIdentity;
+      readonly error: CollectorFailure;
+    };
+
 export type CollectorActivityReadResult =
   | {
       readonly kind: 'collector-activity-found';

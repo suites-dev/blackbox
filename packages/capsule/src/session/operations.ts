@@ -7,8 +7,7 @@ import { projectCapsuleReport } from '../reporting/document.js';
 import { redactStandaloneError } from '../reporting/redaction.js';
 import type { CapsuleReportArtifact, CapsuleReportResult } from '../reporting/types.js';
 import { readCapsuleActivities } from '../records.js';
-import { readCapsuleSessionObservations, readCapsuleTraceObservations } from './observations.js';
-import { readCapsuleActivityObservations } from './activity-observations.js';
+import { readCapsuleReportObservations } from './observations.js';
 import type {
   CapsuleExecInput,
   CapsuleExecResult,
@@ -193,17 +192,12 @@ export async function reportCapsule(input: CapsuleReportInput): Promise<CapsuleR
     artifact = 'progress';
     const progress = await readCapsuleProgress({ projectDirectory, sessionId: input.sessionId });
     artifact = 'observations';
-    const observations = await readCapsuleSessionObservations({
+    const retained = await readCapsuleReportObservations({
       projectDirectory,
-      sessionId: input.sessionId,
+      record,
+      activities,
     });
-    if (
-      observations.kind === 'capsule-not-found' ||
-      observations.kind === 'capsule-invalid-state' ||
-      observations.kind === 'capsule-operation-failed'
-    ) {
-      return observations;
-    }
+    const observations = retained.observations;
     return {
       kind: 'capsule-report',
       document: projectCapsuleReport({
@@ -211,16 +205,8 @@ export async function reportCapsule(input: CapsuleReportInput): Promise<CapsuleR
         activities,
         progress,
         observations,
-        traceObservations: await readCapsuleTraceObservations({ projectDirectory, record }),
-        activityObservations: await Promise.all(
-          activities.map((activity) =>
-            readCapsuleActivityObservations({
-              projectDirectory,
-              sessionId: input.sessionId,
-              activityId: activity.activityId,
-            }),
-          ),
-        ),
+        traceObservations: retained.traceObservations,
+        activityObservations: retained.activityObservations,
       }),
     };
   } catch (error) {

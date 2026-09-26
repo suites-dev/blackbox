@@ -14,6 +14,7 @@ import {
 } from '../records.js';
 import type { CapsuleProgressMode, CapsuleStartInput, CapsuleStartResult } from '../types.js';
 import { generateCapsuleIdentity } from './identity.js';
+import { managerTermination } from './startup/manager-termination.js';
 
 export function deliverProgress(
   progress: CapsuleProgressMode,
@@ -46,7 +47,8 @@ async function waitForStartup(input: {
     if (['running', 'start-failed', 'manager-failed'].includes(record.state)) {
       return record;
     }
-    if (input.manager.exitCode !== null) {
+    const termination = managerTermination(input.manager);
+    if (termination.kind === 'manager-terminated') {
       const failed = {
         ...record,
         state: 'manager-failed',
@@ -54,10 +56,7 @@ async function waitForStartup(input: {
         updatedAt: new Date().toISOString(),
         failure: {
           kind: 'recorded',
-          error: {
-            name: 'CapsuleManagerExit',
-            message: `Capsule manager exited with code ${input.manager.exitCode}`,
-          },
+          error: termination.error,
         },
       } satisfies CapsuleSessionRecord;
       await writeCapsuleRecord({ projectDirectory: input.projectDirectory, record: failed });

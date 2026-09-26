@@ -4,16 +4,14 @@
 
 <h1 align="center">Suites - Blackbox</h1>
 
-**A system verification framework for developers and coding agents.**
+**A system testing and runtime verification framework for real applications.**
 
-**Blackbox runs applications and subsystems in isolated environments through native Playwright tests and interactive CLI
-experiments.** It observes runtime behavior using OpenTelemetry, retains structured evidence from each execution, and
-evaluates behavioral expectations against that evidence.
+Blackbox gives developers working with coding agents the infrastructure to run experiments and tests, inspect runtime
+evidence, receive deterministic findings, repair the implementation, and rerun against the same behavioral expectations.
 
-**It gives developers and coding agents a verification loop grounded in execution rather than test output, logs, or
-inference alone.** They can inspect what happened at runtime, receive deterministic findings, repair the implementation,
-and rerun against the same accepted behavior while Blackbox keeps satisfied expectations, established violations, and
-unresolved questions distinct.
+It runs applications or subsystems in isolated environments and uses OpenTelemetry to capture HTTP calls, database
+operations, cache access, and messaging. Those observations become structured evidence that agents and developers can
+inspect directly or assert within native Playwright tests.
 
 ## License
 

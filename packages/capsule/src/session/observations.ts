@@ -1,7 +1,11 @@
 import {
   readCollectorSession,
+  readCollectorSnapshot,
   readCollectorTrace,
   readCollectorTraces,
+  projectCollectorActivity,
+  projectCollectorSession,
+  projectCollectorTraces,
   type CollectorActivityReadResult,
   type CollectorIdentity,
   type CollectorSessionReadResult,
@@ -15,6 +19,7 @@ import {
   type CapsuleSessionRecord,
 } from '../records.js';
 import type {
+  CapsuleActivityReport,
   CapsuleObservationsInput,
   CapsuleObservationsResult,
   CapsuleOperationFailure,
@@ -78,6 +83,25 @@ export async function readCapsuleTraceObservations(input: {
   readonly record: CapsuleSessionRecord;
 }): Promise<CollectorTracesReadResult> {
   return readCollectorTraces(collectorIdentity(input));
+}
+
+export async function readCapsuleReportObservations(input: {
+  readonly projectDirectory: string;
+  readonly record: CapsuleSessionRecord;
+  readonly activities: readonly CapsuleActivityReport[];
+}) {
+  const snapshot = await readCollectorSnapshot(collectorIdentity(input));
+  return {
+    observations: projectCollectorSession(snapshot),
+    traceObservations: projectCollectorTraces(snapshot),
+    activityObservations: input.activities.map((activity) =>
+      projectCollectorActivity({
+        snapshot,
+        activityId: activity.activityId,
+        traceId: activity.telemetry.context.traceId,
+      }),
+    ),
+  };
 }
 
 async function readActivityScope(input: {
