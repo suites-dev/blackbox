@@ -32,7 +32,7 @@ for (const mode of ['--silent', '--non-interactive', '--interactive']) {
       if (typeof sessionId !== 'string') {
         throw new Error('Expected session ID');
       }
-      assert.match(sessionId, /^[a-z]+-[a-z]+-[a-z]+$/u);
+      assert.match(sessionId, /^[a-z]+-[a-z]+-[a-z]+-[0-9]{12}$/u);
       assert.doesNotMatch(result.stdout + result.stderr, /private-test-value/u);
       assert.equal(result.stdout.includes('\u001b'), false);
       if (mode === '--interactive') {

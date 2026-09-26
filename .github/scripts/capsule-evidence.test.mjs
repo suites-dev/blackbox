@@ -6,7 +6,7 @@ import path from 'node:path';
 import test from 'node:test';
 import { retainE2eEvidence } from './e2e-evidence.mjs';
 
-const sessionId = 'bright-river-ada';
+const sessionId = 'bright-river-ada-123456789012';
 const experiment = `e2e/.blackbox/experiments/capsule-${sessionId}`;
 const runtime = 'e2e/.blackbox/tmp/capsule-test.ABC123';
 
@@ -81,6 +81,18 @@ test('a missing journey receipt prevents successful Capsule evidence acceptance'
   const receipt = await retainE2eEvidence({ root, project: 'capsule', testOutcome: 'success' });
   assert.equal(receipt.status, 'failed');
   assert.match(receipt.error, /exactly one nonempty journey receipt/u);
+});
+
+test('a legacy low-entropy journey identity cannot qualify successful evidence', async (context) => {
+  const { root } = await fixture(context);
+  await write(root, `${runtime}/receipt.txt`, 'session=bright-river-ada\n');
+  const receipt = await retainE2eEvidence({
+    root,
+    project: 'capsule',
+    testOutcome: 'success',
+  });
+  assert.equal(receipt.status, 'failed');
+  assert.match(receipt.error, /one exact session identity/u);
 });
 
 test('allowlisted receipt names cannot smuggle directories or symlink targets into the archive', async (context) => {

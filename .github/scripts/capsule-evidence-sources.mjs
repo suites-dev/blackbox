@@ -36,7 +36,10 @@ export async function requireCapsuleSuccessEvidence(root, entries) {
   const receiptPath = receipts[0];
   const receipt = await fs.readFile(path.join(root, receiptPath), 'utf8');
   const identities = receipt.split('\n').filter((line) => line.startsWith('session='));
-  if (identities.length !== 1 || !/^session=[a-z]+-[a-z]+-[a-z]+$/u.test(identities[0])) {
+  if (
+    identities.length !== 1
+    || !/^session=[a-z]+-[a-z]+-[a-z]+-[0-9]{12}$/u.test(identities[0])
+  ) {
     throw new Error('Capsule journey receipt requires one exact session identity');
   }
   const sessionId = identities[0].slice('session='.length);
