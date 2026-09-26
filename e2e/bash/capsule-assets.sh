@@ -113,8 +113,13 @@ printf '%s[blackbox]%s Install only packed package artifacts into an external co
 pnpm --dir "$CONSUMER_ROOT" install --ignore-workspace --prefer-offline --ignore-scripts \
   --store-dir "$PNPM_STORE_DIR"
 BLACKBOX_BIN="$CONSUMER_ROOT/node_modules/.bin/blackbox"
+BLACKBOX_ENTRYPOINT="$CONSUMER_ROOT/node_modules/@suites/blackbox-cli/bin/run.js"
 if [[ ! -x "$BLACKBOX_BIN" ]]; then
   echo 'capsule-assets: the packed CLI did not install its blackbox executable' >&2
+  exit 1
+fi
+if [[ ! -f "$BLACKBOX_ENTRYPOINT" ]]; then
+  echo 'capsule-assets: the packed CLI did not install its Node entrypoint' >&2
   exit 1
 fi
 
@@ -127,7 +132,7 @@ done
 
 # Reset before installing generated assets: reset deliberately removes generated
 # driver state. Existing live sessions are stopped through the packed CLI.
-BLACKBOX_BIN="$BLACKBOX_BIN" node "$SCRIPT_DIR/capsule-reset.mjs"
+BLACKBOX_ENTRYPOINT="$BLACKBOX_ENTRYPOINT" node "$SCRIPT_DIR/capsule-reset.mjs"
 mkdir -p "$ARTIFACT_ROOT" "$DRIVER_DIRECTORY"
 cat >"$DRIVER_DIRECTORY/package.json" <<EOF
 {

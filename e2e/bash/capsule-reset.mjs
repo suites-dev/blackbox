@@ -67,14 +67,18 @@ export async function resetCapsuleDemo(input) {
 
 async function main() {
   const projectDirectory = resolve(dirname(scriptPath), '..');
-  const cli = process.env.BLACKBOX_BIN;
-  if (cli === undefined || !cli.startsWith('/')) {
-    throw new Error('capsule-reset requires an absolute BLACKBOX_BIN from capsule-assets.sh');
+  const cliEntrypoint = process.env.BLACKBOX_ENTRYPOINT;
+  if (cliEntrypoint === undefined || !cliEntrypoint.startsWith('/')) {
+    throw new Error(
+      'capsule-reset requires an absolute BLACKBOX_ENTRYPOINT from capsule-assets.sh',
+    );
   }
   await resetCapsuleDemo({ projectDirectory, stopSession: async ({ sessionId }) => {
     process.stdout.write(`[blackbox] Stopping previous demo Capsule ${sessionId}\n`);
     const args = ['capsule', 'stop', '--session', sessionId, '--json'];
-    const result = await execute(process.execPath, [cli, ...args], { cwd: projectDirectory });
+    const result = await execute(process.execPath, [cliEntrypoint, ...args], {
+      cwd: projectDirectory,
+    });
     const outcome = JSON.parse(result.stdout);
     if (outcome.kind !== 'capsule-stopped' || outcome.cleanup !== 'complete') throw new Error(`Cleanup was not confirmed for ${sessionId}`);
   } });
