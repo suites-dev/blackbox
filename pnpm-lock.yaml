@@ -10,8 +10,8 @@ catalogs:
       specifier: ^19.8.1
       version: 19.8.1
     '@commitlint/config-conventional':
-      specifier: ^19.8.1
-      version: 19.8.1
+      specifier: ^21.2.3
+      version: 21.2.3
     '@eslint/js':
       specifier: ^9.19.0
       version: 9.39.4
@@ -90,7 +90,7 @@ importers:
         version: 19.8.1(@types/node@22.19.17)(typescript@5.7.3)
       '@commitlint/config-conventional':
         specifier: 'catalog:'
-        version: 19.8.1
+        version: 21.2.3
       '@eslint/js':
         specifier: 'catalog:'
         version: 9.39.4
@@ -407,9 +407,9 @@ packages:
     engines: {node: '>=v18'}
     hasBin: true
 
-  '@commitlint/config-conventional@19.8.1':
-    resolution: {integrity: sha512-/AZHJL6F6B/G959CsMAzrPKKZjeEiAVifRyEwXxcT6qtqbPwGw+iQxmNS+Bu+i09OCtdNRW6pNpBvgPrtMr9EQ==}
-    engines: {node: '>=v18'}
+  '@commitlint/config-conventional@21.2.3':
+    resolution: {integrity: sha512-EP2n5DN2GwRWNVrLX0Jx3mpQlW5PfFi9HnD9OJ8hN/H0xFqpCFyHeGDhg+0P8/21iMMcdkcQgbNqmVklebqYsQ==}
+    engines: {node: '>=22.12.0'}
 
   '@commitlint/config-validator@19.8.1':
     resolution: {integrity: sha512-0jvJ4u+eqGPBIzzSdqKNX1rvdbSU1lPNYlfQQRIFnBgLy26BtC0cFnr7c/AyuzExMxWsMOte6MkTi9I3SQ3iGQ==}
@@ -470,6 +470,10 @@ packages:
   '@commitlint/types@19.8.1':
     resolution: {integrity: sha512-/yCrWGCoA1SVKOks25EGadP9Pnj0oAIHGpl2wH2M2Y46dPM2ueb8wyCVOD7O3WCTkaJ0IkKvzhl1JY7+uCT2Dw==}
     engines: {node: '>=v18'}
+
+  '@commitlint/types@21.2.3':
+    resolution: {integrity: sha512-sGEA473TlCvhCGNoTBY9OXZVWdscIXdGt0dm8EpB+2MRfmt8LNh/X56P/T3nCtEB+eH5qGEa3odphSAoUxSfSQ==}
+    engines: {node: '>=22.12.0'}
 
   '@conventional-changelog/git-client@3.1.2':
     resolution: {integrity: sha512-jZqwnJwf7nboIlAcw/mkOjVa6DexCcUOgT2oOQgkoi3z9vR8tGFkcMy2BFcYwjhL9sYcDDXkRQDayiDieCoW7A==}
@@ -1956,9 +1960,9 @@ packages:
     resolution: {integrity: sha512-oWSL6ZhnXbYraOFTK3PgRAQJ8fADDAEv5K6AdeyQPLvjFmhG8+ejL0jZZp/R7vTmGJaBvZEE+sE7dB4bCv7sAw==}
     engines: {node: '>=22'}
 
-  conventional-changelog-conventionalcommits@7.0.2:
-    resolution: {integrity: sha512-NKXYmMR/Hr1DevQegFB4MwfM5Vv0m4UIxKZTTYuD98lpTknaZlSRrDOG4X7wIXpGkfsYxZTghUN+Qq+T0YQI7w==}
-    engines: {node: '>=16'}
+  conventional-changelog-conventionalcommits@10.4.0:
+    resolution: {integrity: sha512-Rriac6ZrAlVm6cy9Bz4NSp+WMHpwNXoPIYex+HjCgduAVUSbnew29DQjQw0C4g9u3HtSYzGiGY+pdBXAZo+4aA==}
+    engines: {node: '>=22'}
 
   conventional-changelog-preset-loader@6.0.1:
     resolution: {integrity: sha512-GZ8E3RQzXQb3JFy0pKl8oeSf7ENIhvAMvJr+PlWkavZOesLHHdhkfNJ4SvW35eo1Fu2+EyVxWQ1tVvtzAG2iWg==}
@@ -2265,6 +2269,7 @@ packages:
   eslint@9.39.4:
     resolution: {integrity: sha512-XoMjdBOwe/esVgEvLmNsD3IRHkm7fbKIUGvrleloJXUZgDHig2IPWNniv+GwjyJXzuNqVjlr5+4yVUZjycJwfQ==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
+    deprecated: This version is no longer supported. Please see https://eslint.org/version-support for other options.
     hasBin: true
     peerDependencies:
       jiti: '*'
@@ -4166,10 +4171,10 @@ snapshots:
       - '@types/node'
       - typescript
 
-  '@commitlint/config-conventional@19.8.1':
+  '@commitlint/config-conventional@21.2.3':
     dependencies:
-      '@commitlint/types': 19.8.1
-      conventional-changelog-conventionalcommits: 7.0.2
+      '@commitlint/types': 21.2.3
+      conventional-changelog-conventionalcommits: 10.4.0
 
   '@commitlint/config-validator@19.8.1':
     dependencies:
@@ -4262,6 +4267,11 @@ snapshots:
     dependencies:
       '@types/conventional-commits-parser': 5.0.2
       chalk: 5.6.2
+
+  '@commitlint/types@21.2.3':
+    dependencies:
+      conventional-commits-parser: 7.1.2
+      picocolors: 1.1.1
 
   '@conventional-changelog/git-client@3.1.2(conventional-commits-filter@6.0.1)(conventional-commits-parser@7.1.2)':
     dependencies:
@@ -5680,9 +5690,9 @@ snapshots:
     dependencies:
       '@conventional-changelog/template': 1.4.0
 
-  conventional-changelog-conventionalcommits@7.0.2:
+  conventional-changelog-conventionalcommits@10.4.0:
     dependencies:
-      compare-func: 2.0.0
+      '@conventional-changelog/template': 1.4.0
 
   conventional-changelog-preset-loader@6.0.1: {}
 

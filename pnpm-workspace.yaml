@@ -26,7 +26,7 @@ catalog:
   husky: ^9.1.7
   lint-staged: ^15.5.2
   '@commitlint/cli': ^19.8.1
-  '@commitlint/config-conventional': ^19.8.1
+  '@commitlint/config-conventional': ^21.2.3
 
   # Unit testing
   vitest: 5.0.1
