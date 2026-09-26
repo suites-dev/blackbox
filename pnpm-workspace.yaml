@@ -4,7 +4,7 @@ packages:
 
 catalog:
   # TypeScript
-  typescript: ~5.7.3
+  typescript: ~6.0.3
 
   # Node types
   '@types/node': ^22.13.0
