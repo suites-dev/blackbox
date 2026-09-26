@@ -15,7 +15,7 @@ Types: feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert
 - Parent milestone: #N (link separately; do not close)
 - Desired implementation branch: `agent/<stream>/<issue>-<slug>`
 - Actual publication/source branch:
-- Release base: `release/v0.0.1-alpha` for phases 0–6; for `Post-Alpha`, enter the base recorded in the owning Project item.
+- Target base: `main` for development, or the active `release/**` branch for stabilization. Alpha phases 0–6 still use `release/v0.0.1-alpha`; see `maintainers/docs/releasing.md`.
 - Delivery phase: `0 Contract`–`6 Release` or `Post-Alpha`
 - Product milestone: `Alpha 1`, `Alpha 2`, `Alpha 3`, or `Post-Alpha`
 - Testing bundle(s):
@@ -46,7 +46,16 @@ Types: feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert
 - Known limitations or failures:
 - Departures from the issue contract:
 
-## Independent review
+## Security impact
+
+- Trust boundaries affected (listeners, outbound connections, processes, containers, files, telemetry), or `none`:
+- Negative tests and results:
+- Dependency/security findings and disposition:
+- [ ] No secrets or private traces are included in code, logs, or artifacts
+- [ ] Security requirements in `SECURITY.md` were checked for affected boundaries
+- [ ] CI, E2E, security gates, and an independent code-owner review are required before merge
+
+## Independent review evidence
 
 - Completed GitHub Codex review link:
 - Reviewed head SHA:
