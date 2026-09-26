@@ -1,4 +1,4 @@
-import { lstat, mkdir, realpath } from 'node:fs/promises';
+import { chmod, lstat, mkdir, realpath } from 'node:fs/promises';
 import { isAbsolute, join, relative, resolve } from 'node:path';
 
 function errorCode(error: unknown): string {
@@ -43,11 +43,13 @@ export async function instrumentationInstallDirectory(projectDirectory: string):
     name: '.blackbox',
     projectRoot,
   });
-  return await ensureDirectory({
+  const instrumentation = await ensureDirectory({
     parent: blackbox,
     name: 'instrumentation',
     projectRoot,
   });
+  await chmod(instrumentation, 0o755);
+  return instrumentation;
 }
 
 export async function rejectUnsafeInstrumentationEntries(input: {

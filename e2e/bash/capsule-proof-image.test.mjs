@@ -80,7 +80,7 @@ function dockerFixture(initial) {
   };
 }
 
-async function paths(context) {
+async function paths(context, composeProject = { kind: 'available', value: project }) {
   const directory = await mkdtemp(join(tmpdir(), 'blackbox-proof-image-'));
   context.after(() => rm(directory, { recursive: true, force: true }));
   const stateFile = join(directory, 'state.json');
@@ -89,7 +89,7 @@ async function paths(context) {
   await writeFile(
     sessionFile,
     JSON.stringify({
-      composeProject: { kind: 'available', value: project },
+      composeProject,
       containers: [
         {
           participant: 'redis-proof-consumer',
@@ -101,6 +101,28 @@ async function paths(context) {
   );
   return { resultFile, sessionFile, stateFile };
 }
+
+void test('accepts the successful start response Compose project string', async (context) => {
+  const files = await paths(context, project);
+  const docker = dockerFixture(null);
+  await captureImageBaseline({ execute: docker.execute, stateFile: files.stateFile });
+  docker.set(ownedCreatedImage());
+
+  await captureAcquiredImage({
+    execute: docker.execute,
+    stateFile: files.stateFile,
+    sessionFile: files.sessionFile,
+  });
+
+  const state = JSON.parse(await readFile(files.stateFile, 'utf8'));
+  assert.deepEqual(state.acquisition, {
+    kind: 'owned-compose-image',
+    id: createdId,
+    containerId: 'proof-container',
+    projectName: project,
+    service: 'redis-proof-consumer',
+  });
+});
 
 function ownedCreatedImage() {
   return image(createdId, {});

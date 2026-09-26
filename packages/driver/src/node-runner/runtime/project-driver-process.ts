@@ -27,22 +27,36 @@ export function runProjectDriverProcess(
     });
     const stdout: Buffer[] = [];
     const stderr: Buffer[] = [];
-    let outputBytes = 0;
+    let retainedBytes = 0;
+    let outputLimitExceeded = false;
     let settled = false;
+    const retainOutput = (chunks: Buffer[], chunk: Buffer): void => {
+      if (outputLimitExceeded) {
+        return;
+      }
+      const remaining = MAX_PROTOCOL_OUTPUT_BYTES - retainedBytes;
+      if (chunk.byteLength <= remaining) {
+        chunks.push(chunk);
+        retainedBytes += chunk.byteLength;
+        return;
+      }
+      if (remaining > 0) {
+        chunks.push(chunk.subarray(0, remaining));
+        retainedBytes += remaining;
+      }
+      outputLimitExceeded = true;
+      child.kill('SIGKILL');
+    };
     const timeout = setTimeout(() => {
       settled = true;
       child.kill('SIGKILL');
       reject(new DriverPreparationTimeoutError());
     }, driverPreparationTimeoutMs);
     child.stdout.on('data', (chunk: Buffer) => {
-      outputBytes += chunk.byteLength;
-      stdout.push(chunk);
-      if (outputBytes > MAX_PROTOCOL_OUTPUT_BYTES) {
-        child.kill('SIGKILL');
-      }
+      retainOutput(stdout, chunk);
     });
     child.stderr.on('data', (chunk: Buffer) => {
-      stderr.push(chunk);
+      retainOutput(stderr, chunk);
     });
     child.on('error', (error) => {
       clearTimeout(timeout);
@@ -59,7 +73,7 @@ export function runProjectDriverProcess(
       settled = true;
       const output = Buffer.concat(stdout).toString('utf8');
       const errorOutput = Buffer.concat(stderr).toString('utf8');
-      if (outputBytes > MAX_PROTOCOL_OUTPUT_BYTES) {
+      if (outputLimitExceeded) {
         reject(new Error('Driver protocol output exceeded 1 MiB'));
       } else if (code !== 0) {
         reject(new Error(`Driver runner exited with code ${code}, signal ${signal}: ${errorOutput}`));

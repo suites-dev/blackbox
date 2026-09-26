@@ -117,7 +117,7 @@ async function verifyPackage(input) {
   return { name: input.name, packageRoot: resolvedPackage, entrypoint };
 }
 
-async function verify() {
+export async function verifyCapsuleAssetBoundary() {
   const state = await readState();
   const workspaceRoot = await canonical(workspacePath);
   const assetRoot = await canonical(state.assetRoot);
@@ -166,7 +166,7 @@ async function verify() {
   );
 }
 
-async function cleanup() {
+export async function cleanupCapsuleAssets() {
   let state;
   try {
     state = await readState();
@@ -197,13 +197,4 @@ async function cleanup() {
   }
   await rm(state.assetRoot, { recursive: true, force: true });
   await rm(statePath, { force: true });
-}
-
-const [operation, ...unexpected] = process.argv.slice(2);
-if (operation === 'verify' && unexpected.length === 0) {
-  await verify();
-} else if (operation === 'cleanup' && unexpected.length === 0) {
-  await cleanup();
-} else {
-  throw new Error('Usage: capsule-asset-boundary.mjs <verify|cleanup>');
 }

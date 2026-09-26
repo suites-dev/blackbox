@@ -29,3 +29,13 @@ it('terminates a driver that exceeds the bounded protocol output', async () => {
     }),
   ).rejects.toThrow('Driver protocol output exceeded 1 MiB');
 });
+
+it('includes stderr in the bounded protocol output', async () => {
+  await expect(
+    runProjectDriverProcess({
+      source: `process.stderr.write('x'.repeat(1024 * 1024 + 1));`,
+      projectDirectory: await projectDirectory(),
+      requestJson: '{}',
+    }),
+  ).rejects.toThrow('Driver protocol output exceeded 1 MiB');
+});

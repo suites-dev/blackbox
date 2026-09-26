@@ -62,6 +62,8 @@ describe('installInstrumentation', () => {
       runtimeDisplayName: 'Test Runtime',
     });
     const target = join(projectDirectory, instrumentationDirectoryRelativePath);
+    expect((await stat(target)).mode & 0o777).toBe(0o755);
+    expect((await stat(join(projectDirectory, '.blackbox'))).mode & 0o777).toBe(0o700);
     const before = await Promise.all(
       files.map(async (file) => await stat(join(target, file.name))),
     );

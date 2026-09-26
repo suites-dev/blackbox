@@ -49,8 +49,10 @@ jq -e --arg system "$SYSTEM_ID" '.entries | any(.id == $system)' \
 
 # Record the exact image baseline before acquisition. Cleanup later removes only
 # an image proven to have been built for this Capsule's Compose project.
-PROOF_IMAGE_STATE="$ARTIFACT_ROOT/proof-consumer-image-ownership.json"
-node "$SCRIPT_DIR/capsule-proof-image.mjs" baseline "$ARTIFACT_NAME"
+PROOF_IMAGE_STATE="$E2E_ROOT/.blackbox/tmp/proof-consumer-image-ownership.json"
+PROOF_IMAGE_SESSION="$E2E_ROOT/.blackbox/tmp/proof-consumer-session.json"
+PROOF_IMAGE_RESULT="$E2E_ROOT/.blackbox/tmp/proof-consumer-image-cleanup.json"
+node "$SCRIPT_DIR/capsule-proof-image-baseline.mjs"
 
 # Start the registry before acquisition so admission/startup can appear live.
 # In a terminal this executes: blackbox capsule report serve --open (default port)
@@ -81,9 +83,9 @@ mkdir -p "$REPORT_ROOT"
 jq -e --arg session "$SESSION_ID" --arg system "$SYSTEM_ID" \
   '.sessionId == $session and .system == $system' \
   "$ARTIFACT_ROOT/capsule-start.json" >/dev/null
-node "$SCRIPT_DIR/capsule-proof-image.mjs" capture \
-  "$ARTIFACT_NAME" \
-  "$SESSION_ID"
+cp "$ARTIFACT_ROOT/capsule-start.json" "$PROOF_IMAGE_SESSION"
+node "$SCRIPT_DIR/capsule-proof-image-capture.mjs"
+cp "$PROOF_IMAGE_STATE" "$ARTIFACT_ROOT/proof-consumer-image-ownership.json"
 
 assert_served_report running "$ARTIFACT_ROOT/served-running-before.json"
 inspect_in_browser "Select '$SESSION_ID' in the registry. Watch its startup records and resources; the experiment is running."

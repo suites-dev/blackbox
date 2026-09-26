@@ -53,7 +53,7 @@ ASSET_ROOT="$(jq -er '.assetRoot' "$STATE_FILE")"
 BLACKBOX_BIN="$(jq -er '.blackboxBin' "$STATE_FILE")"
 BLACKBOX_ENTRYPOINT="$ASSET_ROOT/consumer/node_modules/@suites/blackbox-cli/bin/run.js"
 export BLACKBOX_BIN
-node "$SCRIPT_DIR/capsule-asset-boundary.mjs" verify \
+node "$SCRIPT_DIR/capsule-asset-verify.mjs" \
   >"$E2E_ROOT/.blackbox/tmp/capsule-package-boundary.json"
 BLACKBOX_COMMAND=("$BLACKBOX_BIN")
 
@@ -236,13 +236,16 @@ cleanup() {
   fi
 
   if [[ -n "$PROOF_IMAGE_STATE" && -s "$PROOF_IMAGE_STATE" ]]; then
-    if ! node "$SCRIPT_DIR/capsule-proof-image.mjs" cleanup "$ARTIFACT_NAME"; then
+    if ! node "$SCRIPT_DIR/capsule-proof-image-cleanup.mjs"; then
       echo 'capsule-test: owned proof-consumer image cleanup failed' >&2
       final_status=1
+    else
+      cp "$PROOF_IMAGE_STATE" "$ARTIFACT_ROOT/proof-consumer-image-ownership.json"
+      cp "$PROOF_IMAGE_RESULT" "$ARTIFACT_ROOT/proof-consumer-image-cleanup.json"
     fi
   fi
 
-  if ! node "$SCRIPT_DIR/capsule-asset-boundary.mjs" cleanup; then
+  if ! node "$SCRIPT_DIR/capsule-asset-cleanup.mjs"; then
     echo "capsule-test: packed asset cleanup failed for $ASSET_ROOT" >&2
     final_status=1
   fi

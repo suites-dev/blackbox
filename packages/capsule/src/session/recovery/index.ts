@@ -25,6 +25,7 @@ export type CapsuleManagerReconciliationResult =
       readonly reason:
         | 'terminal-session'
         | 'manager-not-started'
+        | 'manager-changed'
         | 'manager-alive'
         | 'manager-liveness-unconfirmed';
     };
@@ -137,6 +138,29 @@ export async function reconcileDeadCapsuleManagerWithPorts(
     };
   }
 
+  const currentRecord = await ports.readRecord(input);
+  if (terminalStates.has(currentRecord.state)) {
+    return {
+      kind: 'capsule-manager-reconciliation-skipped',
+      record: currentRecord,
+      reason: 'terminal-session',
+    };
+  }
+  if (currentRecord.manager.kind !== 'started') {
+    return {
+      kind: 'capsule-manager-reconciliation-skipped',
+      record: currentRecord,
+      reason: 'manager-not-started',
+    };
+  }
+  if (currentRecord.manager.pid !== record.manager.pid) {
+    return {
+      kind: 'capsule-manager-reconciliation-skipped',
+      record: currentRecord,
+      reason: 'manager-changed',
+    };
+  }
+
   const completedAt = ports.now();
   const error = {
     name: 'CapsuleManagerUnavailable',
@@ -148,9 +172,9 @@ export async function reconcileDeadCapsuleManagerWithPorts(
     error,
   });
   const failedRecord = {
-    ...record,
+    ...currentRecord,
     state: 'manager-failed',
-    revision: record.revision + 1,
+    revision: currentRecord.revision + 1,
     updatedAt: completedAt,
     failure: { kind: 'recorded', error },
   } satisfies CapsuleSessionRecord;

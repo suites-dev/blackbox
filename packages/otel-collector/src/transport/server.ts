@@ -58,20 +58,23 @@ function stopListening(input: {
   readonly timeoutMs: number;
 }): Promise<boolean> {
   return new Promise((resolve) => {
-    const timeoutMs = Math.min(input.timeoutMs, MAX_COLLECTOR_SHUTDOWN_TIMEOUT_MS);
+    const deadline =
+      Date.now() + Math.min(input.timeoutMs, MAX_COLLECTOR_SHUTDOWN_TIMEOUT_MS);
     let settled = false;
     const finish = (timedOut: boolean): void => {
       if (settled) {
         return;
       }
       settled = true;
-      clearTimeout(timer);
+      clearInterval(timer);
       resolve(timedOut);
     };
-    const timer = setTimeout(() => {
-      input.server.closeAllConnections();
-      finish(true);
-    }, timeoutMs);
+    const timer = setInterval(() => {
+      if (Date.now() >= deadline) {
+        input.server.closeAllConnections();
+        finish(true);
+      }
+    }, 100);
     timer.unref();
     input.server.close(() => {
       finish(false);

@@ -8,6 +8,19 @@ import { promisify } from 'node:util';
 const executeFile = promisify(execFile);
 const scriptPath = fileURLToPath(import.meta.url);
 const e2eRoot = resolve(dirname(scriptPath), '..');
+const proofStateFile = join(
+  e2eRoot,
+  '.blackbox',
+  'tmp',
+  'proof-consumer-image-ownership.json',
+);
+const proofSessionFile = join(e2eRoot, '.blackbox', 'tmp', 'proof-consumer-session.json');
+const proofResultFile = join(
+  e2eRoot,
+  '.blackbox',
+  'tmp',
+  'proof-consumer-image-cleanup.json',
+);
 const proofImage = 'sut-redis-proof-consumer:local';
 const projectLabel = 'com.docker.compose.project';
 const serviceLabel = 'com.docker.compose.service';
@@ -114,8 +127,17 @@ export async function captureImageBaseline(input) {
 export async function captureAcquiredImage(input) {
   const state = await readJson(input.stateFile);
   const session = await readJson(input.sessionFile);
-  assert.equal(session.composeProject.kind, 'available', 'session Compose project is unavailable');
-  const projectName = session.composeProject.value;
+  const projectName =
+    typeof session.composeProject === 'string'
+      ? session.composeProject
+      : session.composeProject?.kind === 'available'
+        ? session.composeProject.value
+        : undefined;
+  assert.equal(
+    typeof projectName,
+    'string',
+    'session Compose project is unavailable',
+  );
   const image = await taggedImage(input.execute);
   const container = await ownedContainer({
     execute: input.execute,
@@ -180,54 +202,22 @@ export async function cleanupAcquiredImage(input) {
   await writeJson(input.resultFile, cleanup);
 }
 
-async function main() {
-  const [operation, artifactName, sessionId, ...unexpected] = process.argv.slice(2);
-  if (
-    artifactName === undefined ||
-    !/^capsule-test\.[A-Za-z0-9]+$/u.test(artifactName) ||
-    unexpected.length > 0
-  ) {
-    throw new Error(
-      'Usage: capsule-proof-image.mjs <baseline run|capture run session|cleanup run>',
-    );
-  }
-  const artifactRoot = join(e2eRoot, '.blackbox', 'tmp', artifactName);
-  const stateFile = join(artifactRoot, 'proof-consumer-image-ownership.json');
-  if (operation === 'baseline' && sessionId === undefined) {
-    await captureImageBaseline({ execute: dockerExecute, stateFile });
-    return;
-  }
-  if (
-    operation === 'capture' &&
-    sessionId !== undefined &&
-    /^[a-z]+-[a-z]+-[a-z]+$/u.test(sessionId)
-  ) {
-    await captureAcquiredImage({
-      execute: dockerExecute,
-      stateFile,
-      sessionFile: join(
-        e2eRoot,
-        '.blackbox',
-        'experiments',
-        `capsule-${sessionId}`,
-        'session.json',
-      ),
-    });
-    return;
-  }
-  if (operation === 'cleanup' && sessionId === undefined) {
-    await cleanupAcquiredImage({
-      execute: dockerExecute,
-      stateFile,
-      resultFile: join(artifactRoot, 'proof-consumer-image-cleanup.json'),
-    });
-    return;
-  }
-  throw new Error(
-    'Usage: capsule-proof-image.mjs <baseline run|capture run session|cleanup run>',
-  );
+export async function runProofImageBaseline() {
+  await captureImageBaseline({ execute: dockerExecute, stateFile: proofStateFile });
 }
 
-if (process.argv[1] !== undefined && resolve(process.argv[1]) === scriptPath) {
-  await main();
+export async function runProofImageCapture() {
+  await captureAcquiredImage({
+    execute: dockerExecute,
+    stateFile: proofStateFile,
+    sessionFile: proofSessionFile,
+  });
+}
+
+export async function runProofImageCleanup() {
+  await cleanupAcquiredImage({
+    execute: dockerExecute,
+    stateFile: proofStateFile,
+    resultFile: proofResultFile,
+  });
 }
