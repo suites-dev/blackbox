@@ -183,7 +183,7 @@ jobs:
         id: codecov
         continue-on-error: true
         if: ${{ always() && needs.test.result == 'success' && steps.merge.outcome == 'success' && hashFiles('coverage/lcov.info') != '' }}
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v7
         with:
           name: codecov-umbrella
           token: ${{ secrets.CODECOV_TOKEN }}
