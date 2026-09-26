@@ -1,4 +1,5 @@
-import { spawnSync } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
+import { once } from 'node:events';
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -73,6 +74,48 @@ function expectHttpSpans(result: ReturnType<typeof spawnSync>): void {
   expect(output).toMatch(/kind: [12]/u);
 }
 
+async function expectApplicationSignalHandler(input: {
+  readonly bootstrap: string;
+  readonly directory: string;
+}): Promise<void> {
+  const marker = join(input.directory, 'signal-handler-completed');
+  const entry = join(input.directory, 'signal-application.cjs');
+  await writeFile(entry, `
+    const { writeFileSync } = require('node:fs');
+    process.on('SIGTERM', () => {
+      setTimeout(() => {
+        writeFileSync(${JSON.stringify(marker)}, 'complete');
+        process.exit(0);
+      }, 100);
+    });
+    process.stdout.write('ready\\n');
+    setInterval(() => undefined, 1_000);
+  `);
+  const child = spawn(process.execPath, [entry], {
+    cwd: input.directory,
+    env: activatedEnvironment({
+      adapter: 'node-preload',
+      bootstrap: input.bootstrap,
+      directory: input.directory,
+    }),
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
+  await new Promise<void>((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      reject(new Error('signal application did not become ready'));
+    }, 10_000);
+    child.stdout.once('data', () => {
+      clearTimeout(timeout);
+      resolve();
+    });
+    child.once('error', reject);
+  });
+  child.kill('SIGTERM');
+  const [exitCode, signal] = await once(child, 'exit');
+  expect({ exitCode, signal }).toEqual({ exitCode: 0, signal: null });
+  expect(await readFile(marker, 'utf8')).toBe('complete');
+}
+
 it('installs a standalone dependency tree and instruments real CommonJS and ESM applications', async () => {
   const projectDirectory = await mkdtemp(join(tmpdir(), 'blackbox-real-instrumentation-'));
   try {
@@ -110,6 +153,8 @@ it('installs a standalone dependency tree and instruments real CommonJS and ESM 
         timeout: 15_000,
       }),
     );
+
+    await expectApplicationSignalHandler({ bootstrap, directory });
 
     const invalidContext = spawnSync(process.execPath, ['--eval', 'void 0'], {
       cwd: projectDirectory,

@@ -2,7 +2,6 @@ import type { SandboxTelemetryEnabledInput, SandboxTelemetryParticipant } from '
 
 export const COLLECTOR_TRACES_PATH = '/v1/traces';
 export const COLLECTOR_ACTIVATION_PATH = '/v1/activation';
-export const COLLECTOR_READINESS_PATH = '/ready';
 export const COLLECTOR_STATUS_PATH = '/status';
 
 export function collectorInternalUrl(input: SandboxTelemetryEnabledInput): string {
@@ -21,7 +20,7 @@ export function collectorEnvironment(
     BLACKBOX_OTEL_PORT: String(input.collector.containerPort),
     BLACKBOX_OTEL_TRACES_PATH: COLLECTOR_TRACES_PATH,
     BLACKBOX_OTEL_ACTIVATION_PATH: COLLECTOR_ACTIVATION_PATH,
-    BLACKBOX_OTEL_READINESS_PATH: COLLECTOR_READINESS_PATH,
+    BLACKBOX_OTEL_READINESS_PATH: input.collector.readiness.path,
     BLACKBOX_OTEL_READ_PATH: COLLECTOR_STATUS_PATH,
     BLACKBOX_OTEL_AUTH_TOKEN: token,
     BLACKBOX_OTEL_STORAGE_DIRECTORY: '/blackbox/telemetry',

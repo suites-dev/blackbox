@@ -1,9 +1,6 @@
 import { StringDecoder } from 'node:string_decoder';
 
-import type { DriverEnvironmentRedaction } from '@suites/blackbox-driver';
-
 import type { CapsuleExecutionInteraction, CapsuleInteractiveEvent } from '../types.js';
-import { selectedValues } from './secrets.js';
 import { createStreamingValueRedactor, redactValues } from '../output/value-redaction.js';
 
 type OutputEvent = Extract<CapsuleInteractiveEvent, { readonly kind: 'output' }>;
@@ -33,15 +30,10 @@ function streamRedactor(input: {
 
 export function createRedactedInteraction(input: {
   readonly interaction: CapsuleExecutionInteraction;
-  readonly environment: Readonly<Record<string, string>>;
-  readonly redaction: DriverEnvironmentRedaction;
+  readonly values: readonly string[];
 }): { readonly interaction: CapsuleExecutionInteraction; readonly finish: () => void } {
-  const { interaction, redaction } = input;
-  if (interaction.kind === 'captured' || redaction.kind === 'none') {
-    return { interaction, finish: () => undefined };
-  }
-  const values = selectedValues({ environment: input.environment, selection: redaction });
-  if (values.length === 0) {
+  const { interaction, values } = input;
+  if (interaction.kind === 'captured' || values.length === 0) {
     return { interaction, finish: () => undefined };
   }
   const streams = {

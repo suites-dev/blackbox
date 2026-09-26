@@ -51,6 +51,37 @@ async function request(): Promise<ComposeStartRequest> {
     generatedComposeDirectory: join(projectDirectory, 'generated') };
 }
 
+async function telemetryRequest(): Promise<ComposeStartRequest> {
+  const input = await request();
+  return {
+    ...input,
+    telemetry: {
+      kind: 'enabled',
+      sessionId: 'quiet-river-ada',
+      executionId: 'sandbox-1',
+      authorization: { kind: 'bearer-token', token: 'private-token' },
+      collector: {
+        service: 'blackbox-collector',
+        containerPort: 4318,
+        runtime: {
+          kind: 'image-default',
+          image: 'blackbox-collector:test',
+        },
+        environment: {},
+        readiness: {
+          kind: 'http',
+          path: '/ready',
+          intervalSeconds: 1,
+          timeoutSeconds: 1,
+          retries: 3,
+        },
+        drain: { kind: 'signal', signal: 'SIGTERM' },
+      },
+      participants: [],
+    },
+  };
+}
+
 beforeEach(() => {
   vi.clearAllMocks();
   docker.inspect.mockResolvedValue({ Config: { Env: ['PRIVATE=effective=value', 'EMPTY='] } });
@@ -84,6 +115,31 @@ it('cleans up acquired containers when environment inspection is malformed witho
   docker.inspect.mockResolvedValue({ Config: { Env: [secret] } });
   await expect(new TestcontainersComposeDriver().start(await request()))
     .rejects.toThrow('Malformed Docker container environment entry at index 0');
+  expect(docker.down).toHaveBeenCalledExactlyOnceWith({ removeVolumes: true });
+});
+
+it('starts the collector alongside an explicit application service selection', async () => {
+  await new TestcontainersComposeDriver().start(await telemetryRequest());
+  expect(docker.up).toHaveBeenCalledWith(['api', 'blackbox-collector']);
+  expect(docker.selected.mock.calls).toEqual([
+    ['api-1'],
+    ['blackbox-collector-1'],
+  ]);
+});
+
+it('cleans up if the selected collector cannot be resolved after startup', async () => {
+  docker.selected
+    .mockImplementationOnce((_service: string) => ({
+      getId: () => 'owned-container-id', getName: () => 'owned-api-1',
+      getHost: () => '127.0.0.1',
+      getLabels: () => ({ 'com.docker.compose.project': 'owned' }),
+      getNetworkNames: () => ['owned_default'], getMappedPort: () => 12345,
+    }))
+    .mockImplementationOnce(() => {
+      throw new Error('collector was not started');
+    });
+  await expect(new TestcontainersComposeDriver().start(await telemetryRequest()))
+    .rejects.toThrow('collector was not started');
   expect(docker.down).toHaveBeenCalledExactlyOnceWith({ removeVolumes: true });
 });
 

@@ -20,15 +20,25 @@ function retainedEmpty() {
   };
 }
 
-function terminalFixture() {
+function terminalFixture(initialRaw = false) {
   const stdin = new PassThrough();
   const stdout = new PassThrough();
   const stderr = new PassThrough();
   const terminal = new EventEmitter();
+  let rawMode = initialRaw;
+  const rawModeChanges: boolean[] = [];
   const ports = {
     stdin,
     stdout,
     stderr,
+    terminalMode: {
+      kind: 'raw-mode' as const,
+      isRaw: () => rawMode,
+      setRawMode: (enabled: boolean) => {
+        rawMode = enabled;
+        rawModeChanges.push(enabled);
+      },
+    },
     readTerminalSize: () => ({ columns: 100, rows: 30 }),
     addResizeListener: (listener: () => void) => {
       terminal.on('resize', listener);
@@ -43,7 +53,15 @@ function terminalFixture() {
       terminal.off(signal, listener);
     },
   } satisfies InteractiveTerminalPorts;
-  return { stdin, stdout, stderr, terminal, ports };
+  return {
+    stdin,
+    stdout,
+    stderr,
+    terminal,
+    ports,
+    rawMode: () => rawMode,
+    rawModeChanges,
+  };
 }
 
 void test('streams output and forwards terminal controls without retaining input', async () => {
@@ -58,6 +76,7 @@ void test('streams output and forwards terminal controls without retaining input
     controlsReady = resolve;
   });
   const execute = async (input: CapsuleInteractiveExecInput) => {
+    assert.equal(fixture.rawMode(), true);
     input.onEvent({ kind: 'output', stream: 'stdout', chunk: Buffer.from('live-output') });
     const iterator = input.controls[Symbol.asyncIterator]();
     for (let index = 0; index < 4; index += 1) {
@@ -111,4 +130,24 @@ void test('streams output and forwards terminal controls without retaining input
   assert.equal(first.kind, 'stdin-chunk');
   assert.equal(Buffer.from(first.chunk).toString(), 'typed-value');
   assert.equal(JSON.stringify(result).includes('typed-value'), false);
+  assert.equal(fixture.rawMode(), false);
+  assert.deepEqual(fixture.rawModeChanges, [true, false]);
+});
+
+void test('restores the prior terminal mode when execution fails', async () => {
+  const fixture = terminalFixture(true);
+  await assert.rejects(
+    runInteractiveCapsuleExec({
+      projectDirectory: process.cwd(),
+      sessionId: 'quiet-river-ada',
+      name: { kind: 'omitted' },
+      purpose: 'inspection',
+      target: { kind: 'host', argv: ['cat'] },
+      ports: fixture.ports,
+      execute: () => Promise.reject(new Error('execution failed')),
+    }),
+    /execution failed/u,
+  );
+  assert.equal(fixture.rawMode(), true);
+  assert.deepEqual(fixture.rawModeChanges, []);
 });

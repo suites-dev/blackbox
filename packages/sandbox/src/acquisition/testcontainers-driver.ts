@@ -32,9 +32,14 @@ async function composeFilesFor(request: ComposeStartRequest): Promise<readonly s
 }
 
 function selectedServices(request: ComposeStartRequest): string[] | undefined {
-  return request.serviceSelection.kind === 'selected'
-    ? [...request.serviceSelection.services]
-    : undefined;
+  if (request.serviceSelection.kind !== 'selected') {
+    return undefined;
+  }
+  const services = [...request.serviceSelection.services];
+  if (request.telemetry.kind === 'enabled') {
+    services.push(request.telemetry.collector.service);
+  }
+  return services;
 }
 
 function selectedServiceNames(request: ComposeStartRequest): readonly string[] {
@@ -68,24 +73,39 @@ async function inspectSelectedContainers(input: {
   return new Map(entries);
 }
 
-async function inspectContainersOrCleanup(input: {
-  readonly request: ComposeStartRequest;
+async function afterStartOrCleanup<T>(input: {
   readonly started: Awaited<ReturnType<DockerComposeEnvironment['up']>>;
-  readonly docker: Awaited<ReturnType<typeof getContainerRuntimeClient>>['container']['dockerode'];
-}): Promise<ReadonlyMap<string, ComposeContainer>> {
+  readonly operation: () => Promise<T> | T;
+  readonly failureMessage: string;
+}): Promise<T> {
   try {
-    return await inspectSelectedContainers(input);
+    return await input.operation();
   } catch (error) {
     try {
       await input.started.down({ removeVolumes: true });
     } catch (cleanupError) {
       throw new AggregateError(
         [error, cleanupError],
-        'Container inspection failed and Compose cleanup also failed',
+        input.failureMessage,
       );
     }
     throw error;
   }
+}
+
+function telemetryController(input: {
+  readonly request: ComposeStartRequest;
+  readonly started: Awaited<ReturnType<DockerComposeEnvironment['up']>>;
+}) {
+  return input.request.telemetry.kind === 'enabled'
+    ? {
+        kind: 'enabled' as const,
+        controller: composeTelemetryController({
+          started: input.started,
+          telemetry: input.request.telemetry,
+        }),
+      }
+    : { kind: 'disabled' as const };
 }
 
 function requiredContainer(
@@ -128,18 +148,20 @@ export class TestcontainersComposeDriver implements ComposeSandboxDriver {
         }),
     });
     const started = await environment.up(services).finally(() => observer.stop());
-    const containers = await inspectContainersOrCleanup({
-      request,
+    const containers = await afterStartOrCleanup({
       started,
-      docker: client.container.dockerode,
+      operation: () => inspectSelectedContainers({
+        request,
+        started,
+        docker: client.container.dockerode,
+      }),
+      failureMessage: 'Container inspection failed and Compose cleanup also failed',
     });
-    const telemetry =
-      request.telemetry.kind === 'enabled'
-        ? {
-            kind: 'enabled' as const,
-            controller: composeTelemetryController({ started, telemetry: request.telemetry }),
-          }
-        : { kind: 'disabled' as const };
+    const telemetry = await afterStartOrCleanup({
+      started,
+      operation: () => telemetryController({ request, started }),
+      failureMessage: 'Telemetry setup failed and Compose cleanup also failed',
+    });
     return {
       getContainer(input): ComposeContainer {
         return requiredContainer(containers, input.service);

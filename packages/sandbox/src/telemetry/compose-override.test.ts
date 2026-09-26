@@ -93,8 +93,18 @@ it('injects Blackbox identity and standard OTLP configuration', async () => {
 
 it('configures the collector readiness route used by its health check', async () => {
   const { telemetry } = await telemetryFixture();
-  expect(collectorEnvironment(telemetry, 'resolved-token')).toMatchObject({
-    BLACKBOX_OTEL_READINESS_PATH: '/ready',
+  const custom = {
+    ...telemetry,
+    collector: {
+      ...telemetry.collector,
+      readiness: {
+        ...telemetry.collector.readiness,
+        path: '/health/collector',
+      },
+    },
+  };
+  expect(collectorEnvironment(custom, 'resolved-token')).toMatchObject({
+    BLACKBOX_OTEL_READINESS_PATH: '/health/collector',
   });
 });
 

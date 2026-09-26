@@ -18,6 +18,13 @@ export interface InteractiveTerminalPorts {
   readonly stdin: Readable;
   readonly stdout: Writable;
   readonly stderr: Writable;
+  readonly terminalMode:
+    | { readonly kind: 'raw-mode-unavailable' }
+    | {
+        readonly kind: 'raw-mode';
+        readonly isRaw: () => boolean;
+        readonly setRawMode: (enabled: boolean) => void;
+      };
   readonly readTerminalSize: () => CapsuleTerminalSize;
   readonly addResizeListener: (listener: () => void) => void;
   readonly removeResizeListener: (listener: () => void) => void;
@@ -40,10 +47,20 @@ function terminalSize(): CapsuleTerminalSize {
 }
 
 export function processTerminalPorts(): InteractiveTerminalPorts {
+  const terminalMode = process.stdin.isTTY
+    ? {
+        kind: 'raw-mode' as const,
+        isRaw: () => process.stdin.isRaw,
+        setRawMode: (enabled: boolean) => {
+          process.stdin.setRawMode(enabled);
+        },
+      }
+    : { kind: 'raw-mode-unavailable' as const };
   return {
     stdin: process.stdin,
     stdout: process.stdout,
     stderr: process.stderr,
+    terminalMode,
     readTerminalSize: terminalSize,
     addResizeListener: (listener) => {
       process.stdout.on('resize', listener);
@@ -57,6 +74,22 @@ export function processTerminalPorts(): InteractiveTerminalPorts {
     removeSignalListener: (signal, listener) => {
       process.off(signal, listener);
     },
+  };
+}
+
+function enterTerminalMode(ports: InteractiveTerminalPorts): () => void {
+  if (ports.terminalMode.kind === 'raw-mode-unavailable') {
+    return () => undefined;
+  }
+  const terminalMode = ports.terminalMode;
+  const wasRaw = terminalMode.isRaw();
+  if (!wasRaw) {
+    terminalMode.setRawMode(true);
+  }
+  return () => {
+    if (!wasRaw) {
+      terminalMode.setRawMode(false);
+    }
   };
 }
 
@@ -119,6 +152,7 @@ export async function runInteractiveCapsuleExec(
   const queue = new ControlQueue();
   const send = controlFactory(queue);
   const wasPaused = input.ports.stdin.isPaused();
+  const restoreTerminalMode = enterTerminalMode(input.ports);
   const onData = (chunk: Buffer | string) => {
     send({ kind: 'stdin-chunk', chunk: Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk) });
   };
@@ -134,13 +168,13 @@ export async function runInteractiveCapsuleExec(
   const onSigquit = () => {
     send({ kind: 'signal', signal: 'SIGQUIT' });
   };
-  input.ports.stdin.on('data', onData);
-  input.ports.stdin.on('end', onEnd);
-  input.ports.addResizeListener(onResize);
-  input.ports.addSignalListener('SIGINT', onSigint);
-  input.ports.addSignalListener('SIGQUIT', onSigquit);
-  input.ports.stdin.resume();
   try {
+    input.ports.stdin.on('data', onData);
+    input.ports.stdin.on('end', onEnd);
+    input.ports.addResizeListener(onResize);
+    input.ports.addSignalListener('SIGINT', onSigint);
+    input.ports.addSignalListener('SIGQUIT', onSigquit);
+    input.ports.stdin.resume();
     return await input.execute({
       projectDirectory: input.projectDirectory,
       sessionId: input.sessionId,
@@ -163,6 +197,7 @@ export async function runInteractiveCapsuleExec(
     if (wasPaused) {
       input.ports.stdin.pause();
     }
+    restoreTerminalMode();
   }
 }
 

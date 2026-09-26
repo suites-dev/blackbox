@@ -1,6 +1,10 @@
 import type { ResolvedCatalogDriver } from '@suites/blackbox-catalog-internal';
+import type { DriverPreparation } from '@suites/blackbox-driver';
 import type { SandboxHandle } from '@suites/blackbox-sandbox-internal';
-import type { TelemetryExecutionScope } from '@suites/blackbox-telemetry-internal';
+import type {
+  TelemetryExecutionScope,
+  TelemetryPropagationRecord,
+} from '@suites/blackbox-telemetry-internal';
 
 import { capsuleConnectionEnvironment } from '../connection-environment.js';
 import type {
@@ -17,6 +21,7 @@ import { createRedactedInteraction } from './driver/interactive-redaction.js';
 import {
   createRedactedError,
   redactProcessMetadata,
+  selectedArgvValues,
   selectedValues,
 } from './driver/secrets.js';
 import {
@@ -51,14 +56,62 @@ function executableArgv(argv: readonly string[]): [string, ...string[]] {
   return [executable, ...arguments_];
 }
 
+function executionSecrets(input: {
+  readonly command: DriverPreparation;
+  readonly argv: readonly string[];
+  readonly targetEnvironment: Readonly<Record<string, string>>;
+}) {
+  const argv = selectedArgvValues({
+    argv: input.argv,
+    selection: input.command.redaction.preparedArgv,
+  });
+  const environment = input.command.redaction.environment.kind === 'none'
+    ? []
+    : selectedValues({
+        environment: input.command.environment,
+        selection: input.command.redaction.environment,
+      });
+  return {
+    argv,
+    retained: [...new Set([...environment, ...argv])]
+      .sort((left, right) => right.length - left.length),
+    diagnostic: [
+      ...Object.values(input.targetEnvironment),
+      ...Object.values(input.command.environment),
+      ...argv,
+    ],
+  } as const;
+}
+
+function driverEnvironment(input: {
+  readonly request: RunCapsuleDriverInput;
+  readonly command: DriverPreparation;
+  readonly propagation: TelemetryPropagationRecord;
+}): Readonly<Record<string, string>> {
+  return executionEnvironment({
+    base: input.request.driver.execution.kind === 'host'
+      ? capsuleConnectionEnvironment({
+          sessionId: input.request.sessionId,
+          entrypoint: input.request.entrypoint,
+        })
+      : {},
+    prepared: input.command.environment,
+    propagation: input.propagation,
+    scope: input.request.scope,
+  });
+}
+
 function redactProcess(
   process: CapsuleProcessOutcome,
   positions: readonly number[],
+  values: readonly string[],
 ): CapsuleProcessOutcome {
   const argv = process.argv.map((value, index) =>
     positions.includes(index) ? '[REDACTED]' : value,
   );
-  return { ...process, argv };
+  return process.kind === 'executable-not-found'
+    ? { ...process, argv, remediation: redactValues(process.remediation, values) }
+    : { ...process, argv };
 }
 
 function runDriverProcess(input: {
@@ -82,8 +135,7 @@ function runDriverProcess(input: {
 }
 
 export async function runCapsuleDriver(
-  input: RunCapsuleDriverInput,
-): Promise<CapsuleDriverOutcome> {
+  input: RunCapsuleDriverInput): Promise<CapsuleDriverOutcome> {
   const request = createDriverPrepareRequest(input);
   const prepared = await prepareCapsuleDriver({
     projectDirectory: input.projectDirectory,
@@ -95,51 +147,59 @@ export async function runCapsuleDriver(
     return prepared;
   }
   const propagation = prepared.propagation;
-  const secretValues = [...Object.values(request.target.environment), ...Object.values(prepared.command.environment)];
   const argv = executableArgv(prepared.command.argv);
-  const baseEnvironment = capsuleConnectionEnvironment({
-    sessionId: input.sessionId,
-    entrypoint: input.entrypoint,
+  const secrets = executionSecrets({
+    command: prepared.command,
+    argv,
+    targetEnvironment: request.target.environment,
   });
   let environment: Readonly<Record<string, string>>;
   try {
-    environment = executionEnvironment({
-      base: input.driver.execution.kind === 'host' ? baseEnvironment : {},
-      prepared: prepared.command.environment,
+    environment = driverEnvironment({
+      request: input,
+      command: prepared.command,
       propagation,
-      scope: input.scope,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     return {
       kind: 'driver-propagation-refused',
       driverId: input.driver.id,
-      propagation: failedPropagation(input.driver.propagation, redactValues(message, secretValues)),
+      propagation: failedPropagation(
+        input.driver.propagation,
+        redactValues(message, secrets.diagnostic),
+      ),
     };
   }
   let process: CapsuleProcessOutcome;
   const redactedInteraction = createRedactedInteraction({
     interaction: input.interaction,
-    environment: prepared.command.environment,
-    redaction: prepared.command.redaction.environment,
+    values: secrets.retained,
   });
   const { interaction } = redactedInteraction;
-  const selection = prepared.command.redaction.environment;
-  const secrets = selection.kind === 'none' ? []
-    : selectedValues({ environment: prepared.command.environment, selection });
   try {
-    process = await runDriverProcess({ driverInput: input, argv, environment, interaction, secrets });
+    process = await runDriverProcess({
+      driverInput: input,
+      argv,
+      environment,
+      interaction,
+      secrets: secrets.retained,
+    });
   } catch (error) {
     throw createRedactedError({
       error,
-      values: secretValues,
+      values: secrets.diagnostic,
     });
   } finally {
     redactedInteraction.finish();
   }
   const argvRedacted =
     prepared.command.redaction.preparedArgv.kind === 'positions'
-      ? redactProcess(process, prepared.command.redaction.preparedArgv.positions)
+      ? redactProcess(
+          process,
+          prepared.command.redaction.preparedArgv.positions,
+          secrets.argv,
+        )
       : process;
   const redacted = redactProcessMetadata({
     process: argvRedacted,

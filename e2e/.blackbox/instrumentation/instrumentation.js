@@ -131,19 +131,25 @@ function shutdown() {
   return shutdownPromise;
 }
 
-async function stopForSignal(signal) {
+async function stopForSignal(signal, applicationOwnsSignal) {
   try {
     await shutdown();
   } catch (error) {
     process.stderr.write('[blackbox] OpenTelemetry shutdown failed: ' + String(error) + '\n');
     process.exitCode = 1;
   }
-  process.removeAllListeners(signal);
-  process.kill(process.pid, signal);
+  if (!applicationOwnsSignal) {
+    process.kill(process.pid, signal);
+  }
 }
 
-process.once('SIGINT', () => { void stopForSignal('SIGINT'); });
-process.once('SIGTERM', () => { void stopForSignal('SIGTERM'); });
+function handleSignal(signal) {
+  const applicationOwnsSignal = process.listenerCount(signal) > 0;
+  void stopForSignal(signal, applicationOwnsSignal);
+}
+
+process.once('SIGINT', () => { handleSignal('SIGINT'); });
+process.once('SIGTERM', () => { handleSignal('SIGTERM'); });
 process.once('beforeExit', () => { void shutdown(); });
 
 module.exports = { activation, sdk, shutdown };

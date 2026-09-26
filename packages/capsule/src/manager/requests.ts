@@ -48,14 +48,26 @@ async function* interactiveControls(input: {
   readonly frames: AsyncGenerator<CapsuleManagerClientFrame>;
   readonly requestId: string;
 }): AsyncGenerator<CapsuleInteractiveControl> {
-  for await (const frame of input.frames) {
-    if (!isControl(frame)) {
-      throw new Error(`Unexpected ${frame.kind} after interactive execution started`);
+  try {
+    for await (const frame of input.frames) {
+      if (!isControl(frame)) {
+        throw new Error(`Unexpected ${frame.kind} after interactive execution started`);
+      }
+      if (frame.requestId !== input.requestId) {
+        throw new Error('Interactive control request identity does not match execution');
+      }
+      yield decodeControl(frame);
     }
-    if (frame.requestId !== input.requestId) {
-      throw new Error('Interactive control request identity does not match execution');
-    }
-    yield decodeControl(frame);
+  } finally {
+    yield {
+      kind: 'signal',
+      controlId: `${input.requestId}-transport-close-signal`,
+      signal: 'SIGINT',
+    };
+    yield {
+      kind: 'stdin-end',
+      controlId: `${input.requestId}-transport-close-stdin`,
+    };
   }
 }
 

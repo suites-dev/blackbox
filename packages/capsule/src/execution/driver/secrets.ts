@@ -1,4 +1,7 @@
-import type { DriverEnvironmentRedaction } from '@suites/blackbox-driver';
+import type {
+  DriverArgvRedaction,
+  DriverEnvironmentRedaction,
+} from '@suites/blackbox-driver';
 
 import type { CapsuleProcessOutcome, CapsuleRecordedError } from '../../types.js';
 import { redactValues } from '../output/value-redaction.js';
@@ -16,6 +19,19 @@ export function selectedValues(input: {
     : input.selection.keys;
   return [...new Set(keys.filter((key) => Object.hasOwn(input.environment, key))
     .map((key) => input.environment[key]).filter((value) => value !== ''))]
+    .sort((left, right) => right.length - left.length);
+}
+
+export function selectedArgvValues(input: {
+  readonly argv: readonly string[];
+  readonly selection: DriverArgvRedaction;
+}): readonly string[] {
+  if (input.selection.kind === 'none') {
+    return [];
+  }
+  return [...new Set(input.selection.positions
+    .map((position) => input.argv[position])
+    .filter((value) => value !== ''))]
     .sort((left, right) => right.length - left.length);
 }
 

@@ -59,3 +59,46 @@ it('retains the terminal activity after an exec client disconnects and continues
     await fixture.close();
   }
 });
+
+it('cancels an abandoned interactive execution before serving stop', async () => {
+  const fixture = await requestFixture(() => Promise.resolve());
+  const socket = connect(fixture.socketPath);
+  try {
+    await once(socket, 'connect');
+    socket.write(`${JSON.stringify({
+      kind: 'interactive-exec-request',
+      requestId: 'abandoned-interactive',
+      name: { kind: 'omitted' },
+      purpose: 'inspection',
+      terminal: { columns: 80, rows: 24 },
+      target: {
+        kind: 'host',
+        argv: [process.execPath, '-e', 'setInterval(() => undefined, 1000)'],
+      },
+    })}\n`);
+    await vi.waitFor(async () => {
+      expect(await readCapsuleActivities(fixture)).toMatchObject([
+        { kind: 'running' },
+      ]);
+    }, { timeout: 1_000, interval: 10 });
+    socket.destroy();
+    await once(socket, 'close');
+    await expect(managerRequest({
+      socketPath: fixture.socketPath,
+      request: {
+        kind: 'stop-request',
+        requestId: 'stop-after-abandonment',
+        reason: 'cancelled',
+      },
+    })).resolves.toMatchObject({
+      kind: 'stop-response',
+      cleanup: 'complete',
+    });
+    expect(await readCapsuleActivities(fixture)).toMatchObject([
+      { kind: 'completed', outcome: { kind: 'signaled', signal: 'SIGINT' } },
+    ]);
+  } finally {
+    socket.destroy();
+    await fixture.close();
+  }
+});
