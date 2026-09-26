@@ -28,7 +28,7 @@ catalog:
   '@commitlint/config-conventional': ^19.8.1
 
   # Unit testing
-  vitest: 3.2.6
+  vitest: 4.1.11
 
   # Sandbox runtime
   testcontainers: ^10.18.0
