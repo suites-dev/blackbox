@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="742" viewBox="0 0 1120 742" role="img" aria-labelledby="f11-title f11-desc">
+<title id="f11-title">Observe the process that performs the operation.</title><desc id="f11-desc">Sharing a database or container does not make another process observable.</desc>
+<defs>
+<marker id="f11-a-neutral" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="m0 0 8 4-8 4Z" fill="#8B8B94"/></marker>
+<marker id="f11-a-pink" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="m0 0 8 4-8 4Z" fill="#E67189"/></marker>
+<marker id="f11-a-blue" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="m0 0 8 4-8 4Z" fill="#93C5FD"/></marker>
+</defs>
+<rect x="0" y="0" width="1120" height="742" rx="0" fill="#0F0F12"/>
+<text x="44" y="35" font-family="Geist, Inter, Arial, sans-serif" font-size="13" font-weight="600" text-anchor="start" fill="#EF9DAB" letter-spacing="1.4">SUITES / BLACKBOX     11</text>
+<text x="44" y="80" font-family="Geist, Inter, Arial, sans-serif" font-size="29" font-weight="600" text-anchor="start" fill="#F4F4F5" data-max-width="1032">Observe the process that performs the operation.</text>
+<text x="44" y="111" font-family="Geist, Inter, Arial, sans-serif" font-size="16" font-weight="400" text-anchor="start" fill="#A1A1AA" data-max-width="1032">Sharing a database or container does not make another process observable.</text>
+<rect x="44" y="158" width="1032" height="201" rx="18" fill="#17171C" stroke="#FFFFFF" stroke-opacity="0.13" stroke-width="1.5"/>
+<rect x="65" y="183" width="404" height="132" rx="18" fill="#17171C" stroke="#DB486F" stroke-opacity="0.42" stroke-width="1.5"/>
+<svg x="85" y="203" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#EF9DAB" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 9 5v9l-9 5-9-5V8l9-5ZM3 8l9 5 9-5M12 13v9M8 5l9 5"/></svg>
+<text x="122" y="222" font-family="Geist, Inter, Arial, sans-serif" font-size="19" font-weight="575" text-anchor="start" fill="#F4F4F5" data-max-width="331">Instrumented Node application</text>
+<text x="87" y="255" font-family="Geist, Inter, Arial, sans-serif" font-size="15" font-weight="400" text-anchor="start" fill="#A1A1AA" data-max-width="365">Supported pg client</text>
+<text x="87" y="277" font-family="Geist, Inter, Arial, sans-serif" font-size="15" font-weight="400" text-anchor="start" fill="#A1A1AA" data-max-width="365">produces a SQL observation.</text>
+<path d="M469 247 H767" fill="none" stroke="#E67189" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#f11-a-pink)"/>
+<text x="616" y="220" font-family="Geist, Inter, Arial, sans-serif" font-size="14" font-weight="400" text-anchor="middle" fill="#EF9DAB">observed client operation</text>
+<rect x="773" y="203" width="281" height="91" rx="18" fill="#17171C" stroke="#FFFFFF" stroke-opacity="0.13" stroke-width="1.5"/>
+<svg x="793" y="223" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#A1A1AA" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 4 16 4 16 0V5M4 12c0 4 16 4 16 0"/></svg>
+<text x="830" y="242" font-family="Geist, Inter, Arial, sans-serif" font-size="20" font-weight="575" text-anchor="start" fill="#F4F4F5" data-max-width="208">PostgreSQL</text>
+<text x="795" y="275" font-family="Geist, Inter, Arial, sans-serif" font-size="15" font-weight="400" text-anchor="start" fill="#A1A1AA" data-max-width="242">Database dependency</text>
+<rect x="44" y="389" width="1032" height="166" rx="18" fill="#17171C" stroke="#FFFFFF" stroke-opacity="0.13" stroke-width="1.5"/>
+<rect x="65" y="410" width="404" height="120" rx="18" fill="#17171C" stroke="#FFFFFF" stroke-opacity="0.13" stroke-width="1.5"/>
+<svg x="85" y="430" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#A1A1AA" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 6 5 6-5 6M13 18h6"/></svg>
+<text x="122" y="449" font-family="Geist, Inter, Arial, sans-serif" font-size="19" font-weight="575" text-anchor="start" fill="#F4F4F5" data-max-width="331">Separate psql / seed process</text>
+<text x="87" y="482" font-family="Geist, Inter, Arial, sans-serif" font-size="15" font-weight="400" text-anchor="start" fill="#A1A1AA" data-max-width="365">Wrapped: invocation + result retained.</text>
+<text x="87" y="504" font-family="Geist, Inter, Arial, sans-serif" font-size="15" font-weight="400" text-anchor="start" fill="#A1A1AA" data-max-width="365">Direct: no Activity automatically recorded.</text>
+<path d="M469 470 H908 V300" fill="none" stroke="#8B8B94" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="5 6" marker-end="url(#f11-a-neutral)"/>
+<text x="630" y="450" font-family="Geist, Inter, Arial, sans-serif" font-size="14" font-weight="400" text-anchor="middle" fill="#A1A1AA">can reach the same database</text>
+<text x="527" y="501" font-family="Geist, Inter, Arial, sans-serif" font-size="15" font-weight="400" text-anchor="start" fill="#FB923C" data-max-width="500">Not seen by the Node app’s pg instrumentation.</text>
+<rect x="44" y="585" width="1032" height="90" rx="18" fill="#202027" stroke="#FFFFFF" stroke-opacity="0.13" stroke-width="1.5"/>
+<svg x="65" y="608" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#93C5FD" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16M4 12h16M4 19h16"/><circle cx="8" cy="5" r="2" fill="#17171C"/><circle cx="16" cy="12" r="2" fill="#17171C"/><circle cx="9" cy="19" r="2" fill="#17171C"/></svg>
+<text x="105" y="616" font-family="Geist, Inter, Arial, sans-serif" font-size="18" font-weight="575" text-anchor="start" fill="#F4F4F5">Python / Java / another Node subprocess</text>
+<text x="106" y="649" font-family="Geist, Inter, Arial, sans-serif" font-size="15" font-weight="400" text-anchor="start" fill="#A1A1AA" data-max-width="940">Each needs its own compatible observer, ingestion path and correlation—not just a runtime label.</text>
+<path d="M44 689 H1076" fill="none" stroke="#8B8B94" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="44" y="716" font-family="Geist, Inter, Arial, sans-serif" font-size="14" font-weight="400" text-anchor="start" fill="#A1A1AA" data-max-width="1032">Direct access is allowed. Activity role describes intent; observed origin and attribution need actual supporting evidence.</text>
+</svg>

@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="744" viewBox="0 0 1120 744" role="img" aria-labelledby="f07-title f07-desc">
+<title id="f07-title">The same observations can justify different answers.</title><desc id="f07-desc">Qualification depends on the claim, the observation source and the bounded capture window.</desc>
+<defs>
+<marker id="f07-a-neutral" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="m0 0 8 4-8 4Z" fill="#8B8B94"/></marker>
+<marker id="f07-a-pink" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="m0 0 8 4-8 4Z" fill="#E67189"/></marker>
+<marker id="f07-a-blue" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="m0 0 8 4-8 4Z" fill="#93C5FD"/></marker>
+</defs>
+<rect x="0" y="0" width="1120" height="744" rx="0" fill="#0F0F12"/>
+<text x="44" y="35" font-family="Geist, Inter, Arial, sans-serif" font-size="13" font-weight="600" text-anchor="start" fill="#EF9DAB" letter-spacing="1.4">SUITES / BLACKBOX     07</text>
+<text x="44" y="80" font-family="Geist, Inter, Arial, sans-serif" font-size="29" font-weight="600" text-anchor="start" fill="#F4F4F5" data-max-width="1032">The same observations can justify different answers.</text>
+<text x="44" y="111" font-family="Geist, Inter, Arial, sans-serif" font-size="16" font-weight="400" text-anchor="start" fill="#A1A1AA" data-max-width="1032">Qualification depends on the claim, the observation source and the bounded capture window.</text>
+<rect x="357" y="154" width="348" height="114" rx="18" fill="#17171C" stroke="#FFFFFF" stroke-opacity="0.13" stroke-width="1.5"/>
+<svg x="377" y="174" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#A1A1AA" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>
+<text x="414" y="193" font-family="Geist, Inter, Arial, sans-serif" font-size="19" font-weight="575" text-anchor="start" fill="#F4F4F5" data-max-width="275">HTTP window complete</text>
+<text x="379" y="226" font-family="Geist, Inter, Arial, sans-serif" font-size="15" font-weight="400" text-anchor="start" fill="#A1A1AA" data-max-width="309">1 × POST /orders</text>
+<text x="379" y="248" font-family="Geist, Inter, Arial, sans-serif" font-size="15" font-weight="400" text-anchor="start" fill="#A1A1AA" data-max-width="309">0 × POST /refunds</text>
+<rect x="725" y="154" width="351" height="114" rx="18" fill="#17171C" stroke="#FFFFFF" stroke-opacity="0.13" stroke-width="1.5"/>
+<svg x="745" y="174" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#A1A1AA" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9 9a3 3 0 0 1 6 0c0 3-3 2-3 5m0 3h.01"/></svg>
+<text x="782" y="193" font-family="Geist, Inter, Arial, sans-serif" font-size="19" font-weight="575" text-anchor="start" fill="#F4F4F5" data-max-width="278">HTTP capture incomplete</text>
+<text x="747" y="226" font-family="Geist, Inter, Arial, sans-serif" font-size="15" font-weight="400" text-anchor="start" fill="#A1A1AA" data-max-width="312">1 × POST /orders observed</text>
+<text x="747" y="248" font-family="Geist, Inter, Arial, sans-serif" font-size="15" font-weight="400" text-anchor="start" fill="#A1A1AA" data-max-width="312">0 × POST /refunds observed</text>
+<text x="65" y="246" font-family="Geist, Inter, Arial, sans-serif" font-size="14" font-weight="575" text-anchor="start" fill="#A1A1AA" letter-spacing="1">CLAIM</text>
+<rect x="44" y="292" width="1032" height="82" rx="18" fill="#17171C" stroke="#FFFFFF" stroke-opacity="0.13" stroke-width="1.5"/>
+<text x="65" y="323" font-family="Geist, Inter, Arial, sans-serif" font-size="16" font-weight="575" text-anchor="start" fill="#F4F4F5" data-max-width="280">An order request occurred</text>
+<text x="65" y="351" font-family="Geist, Inter, Arial, sans-serif" font-size="13" font-weight="400" text-anchor="start" fill="#A1A1AA" data-max-width="280">A qualified witness is enough.</text>
+<svg x="395" y="316" width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="#86EFAC" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12 5 5L20 5"/></svg>
+<text x="436" y="338" font-family="Geist, Inter, Arial, sans-serif" font-size="20" font-weight="575" text-anchor="start" fill="#86EFAC">TRUE</text>
+<svg x="763" y="316" width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="#86EFAC" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12 5 5L20 5"/></svg>
+<text x="804" y="338" font-family="Geist, Inter, Arial, sans-serif" font-size="20" font-weight="575" text-anchor="start" fill="#86EFAC">TRUE</text>
+<rect x="44" y="390" width="1032" height="82" rx="18" fill="#17171C" stroke="#FFFFFF" stroke-opacity="0.13" stroke-width="1.5"/>
+<text x="65" y="421" font-family="Geist, Inter, Arial, sans-serif" font-size="16" font-weight="575" text-anchor="start" fill="#F4F4F5" data-max-width="280">No refund request occurred</text>
+<text x="65" y="449" font-family="Geist, Inter, Arial, sans-serif" font-size="13" font-weight="400" text-anchor="start" fill="#A1A1AA" data-max-width="280">Silence needs a sufficient window.</text>
+<svg x="395" y="414" width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="#86EFAC" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12 5 5L20 5"/></svg>
+<text x="436" y="436" font-family="Geist, Inter, Arial, sans-serif" font-size="20" font-weight="575" text-anchor="start" fill="#86EFAC">TRUE</text>
+<svg x="763" y="414" width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="#FB923C" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9 9a3 3 0 0 1 6 0c0 3-3 2-3 5m0 3h.01"/></svg>
+<text x="804" y="436" font-family="Geist, Inter, Arial, sans-serif" font-size="20" font-weight="575" text-anchor="start" fill="#FB923C">UNKNOWN</text>
+<rect x="44" y="488" width="1032" height="82" rx="18" fill="#17171C" stroke="#FFFFFF" stroke-opacity="0.13" stroke-width="1.5"/>
+<text x="65" y="519" font-family="Geist, Inter, Arial, sans-serif" font-size="16" font-weight="575" text-anchor="start" fill="#F4F4F5" data-max-width="280">Exactly one order request occurred</text>
+<text x="65" y="547" font-family="Geist, Inter, Arial, sans-serif" font-size="13" font-weight="400" text-anchor="start" fill="#A1A1AA" data-max-width="280">More requests may be missing.</text>
+<svg x="395" y="512" width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="#86EFAC" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12 5 5L20 5"/></svg>
+<text x="436" y="534" font-family="Geist, Inter, Arial, sans-serif" font-size="20" font-weight="575" text-anchor="start" fill="#86EFAC">TRUE</text>
+<svg x="763" y="512" width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="#FB923C" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9 9a3 3 0 0 1 6 0c0 3-3 2-3 5m0 3h.01"/></svg>
+<text x="804" y="534" font-family="Geist, Inter, Arial, sans-serif" font-size="20" font-weight="575" text-anchor="start" fill="#FB923C">UNKNOWN</text>
+<rect x="44" y="613" width="1032" height="62" rx="18" fill="#202027" stroke="#FFFFFF" stroke-opacity="0.13" stroke-width="1.5"/>
+<svg x="65" y="633" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FF6B6B" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 5 14 14M19 5 5 19"/></svg>
+<text x="106" y="640" font-family="Geist, Inter, Arial, sans-serif" font-size="17" font-weight="400" text-anchor="start" fill="#F4F4F5" data-max-width="938">Two distinct qualified witnesses can refute “exactly one,” even with other gaps.</text>
+<path d="M44 691 H1076" fill="none" stroke="#8B8B94" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="44" y="718" font-family="Geist, Inter, Arial, sans-serif" font-size="14" font-weight="400" text-anchor="start" fill="#A1A1AA" data-max-width="1032">Illustrative qualified HTTP evidence. UNKNOWN is not false; complete-for-this-check is not universal completeness.</text>
+</svg>
