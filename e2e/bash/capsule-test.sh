@@ -50,7 +50,7 @@ jq -e --arg system "$SYSTEM_ID" '.entries | any(.id == $system)' \
 # Record the exact image baseline before acquisition. Cleanup later removes only
 # an image proven to have been built for this Capsule's Compose project.
 PROOF_IMAGE_STATE="$ARTIFACT_ROOT/proof-consumer-image-ownership.json"
-node "$SCRIPT_DIR/capsule-proof-image.mjs" baseline "$PROOF_IMAGE_STATE"
+node "$SCRIPT_DIR/capsule-proof-image.mjs" baseline "$ARTIFACT_NAME"
 
 # Start the registry before acquisition so admission/startup can appear live.
 # In a terminal this executes: blackbox capsule report serve --open (default port)
@@ -82,8 +82,8 @@ jq -e --arg session "$SESSION_ID" --arg system "$SYSTEM_ID" \
   '.sessionId == $session and .system == $system' \
   "$ARTIFACT_ROOT/capsule-start.json" >/dev/null
 node "$SCRIPT_DIR/capsule-proof-image.mjs" capture \
-  "$PROOF_IMAGE_STATE" \
-  "$E2E_ROOT/.blackbox/experiments/capsule-$SESSION_ID/session.json"
+  "$ARTIFACT_NAME" \
+  "$SESSION_ID"
 
 assert_served_report running "$ARTIFACT_ROOT/served-running-before.json"
 inspect_in_browser "Select '$SESSION_ID' in the registry. Watch its startup records and resources; the experiment is running."
@@ -219,7 +219,7 @@ explain_step \
         --trace $TRACE_ID \\
         --json"
 node "$SCRIPT_DIR/capsule-telemetry-proof.mjs" http-until \
-  "$BLACKBOX_BIN" \
+  "$BLACKBOX_ENTRYPOINT" \
   "$SESSION_ID" \
   "$TRACE_ID" \
   "$ARTIFACT_ROOT/driver-execution.json" \

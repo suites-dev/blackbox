@@ -151,8 +151,16 @@ async function pollHttpTrace(input) {
   for (let attempt = 1; attempt <= httpTraceAttempts; attempt += 1) {
     try {
       const result = await execute(
-        input.blackboxBin,
-        ['observations', '--session', input.sessionId, '--trace', input.traceId, '--json'],
+        process.execPath,
+        [
+          input.blackboxEntrypoint,
+          'observations',
+          '--session',
+          input.sessionId,
+          '--trace',
+          input.traceId,
+          '--json',
+        ],
         { maxBuffer: 16 * 1024 * 1024 },
       );
       await writeFile(input.traceFile, result.stdout);
@@ -237,7 +245,7 @@ if (operation === 'http' && arguments_.length === 3) {
   );
 } else if (operation === 'http-until' && arguments_.length === 7) {
   proof = await pollHttpTrace({
-    blackboxBin: resolve(arguments_[0]),
+    blackboxEntrypoint: resolve(arguments_[0]),
     sessionId: arguments_[1],
     traceId: arguments_[2],
     executionFile: arguments_[3],
@@ -255,7 +263,7 @@ if (operation === 'http' && arguments_.length === 3) {
   );
 } else {
   throw new Error(
-    'Usage: capsule-telemetry-proof.mjs <http execution activity trace|http-until blackbox-bin session-id trace-id execution activity trace-output diagnostic-output|shared-state execution activity session trace-directory proof-id>',
+    'Usage: capsule-telemetry-proof.mjs <http execution activity trace|http-until blackbox-entrypoint session-id trace-id execution activity trace-output diagnostic-output|shared-state execution activity session trace-directory proof-id>',
   );
 }
 process.stdout.write(`${JSON.stringify(proof, null, 2)}\n`);

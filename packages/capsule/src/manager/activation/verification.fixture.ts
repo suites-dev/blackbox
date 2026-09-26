@@ -14,7 +14,11 @@ export function activationPlan(configured: boolean) {
     config: {
       ...base.config,
       activations: {
-        node: { ref: 'instrumentation.js', adapter: 'node-preload', version: 1 },
+        node: {
+          ref: '.blackbox/instrumentation/instrumentation.js',
+          adapter: 'node-preload',
+          version: 1,
+        },
       },
       catalog: {
         ...base.config.catalog,

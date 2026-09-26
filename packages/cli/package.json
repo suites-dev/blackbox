@@ -45,5 +45,6 @@
     "dirname": "blackbox",
     "commands": "./dist/commands",
     "topicSeparator": " "
-  }
+  },
+  "license": "Apache-2.0"
 }

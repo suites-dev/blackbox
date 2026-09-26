@@ -52,8 +52,14 @@ async function validateTelemetry(input: SandboxInput): Promise<void> {
   if (!ID_PATTERN.test(telemetry.sessionId) || !ID_PATTERN.test(telemetry.executionId)) {
     throw new SandboxInputError('telemetry sessionId and executionId must be valid identifiers');
   }
-  if (telemetry.authorization.token.trim().length === 0) {
-    throw new SandboxInputError('telemetry bearer token must not be blank');
+  if (
+    telemetry.authorization.ingestToken.trim().length === 0 ||
+    telemetry.authorization.controlToken.trim().length === 0
+  ) {
+    throw new SandboxInputError('telemetry ingest and control tokens must not be blank');
+  }
+  if (telemetry.authorization.ingestToken === telemetry.authorization.controlToken) {
+    throw new SandboxInputError('telemetry ingest and control tokens must differ');
   }
   if (!SERVICE_PATTERN.test(telemetry.collector.service)) {
     throw new SandboxInputError('telemetry collector service name is invalid');
@@ -78,6 +84,17 @@ async function validateTelemetry(input: SandboxInput): Promise<void> {
       throw new SandboxInputError(`telemetry participant ${participant.service} has no runtime`);
     }
     validateEnvironment(participant.environment);
+    if (participant.activation.kind === 'append-environment-variable') {
+      validateEnvironment({ [participant.activation.name]: participant.activation.value });
+      if (participant.activation.value.trim() === '') {
+        throw new SandboxInputError('telemetry activation environment value must not be blank');
+      }
+      if (Object.hasOwn(participant.environment, participant.activation.name)) {
+        throw new SandboxInputError(
+          `telemetry activation environment duplicates ${participant.activation.name}`,
+        );
+      }
+    }
     for (const mount of participant.mounts) {
       if (!isAbsolute(mount.source) || !isAbsolute(mount.target)) {
         throw new SandboxInputError('telemetry mount source and target must be absolute paths');

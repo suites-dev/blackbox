@@ -134,6 +134,58 @@ void test('streams output and forwards terminal controls without retaining input
   assert.deepEqual(fixture.rawModeChanges, [true, false]);
 });
 
+void test('translates raw host control bytes into signals without forwarding them to stdin', async () => {
+  const fixture = terminalFixture();
+  const controls: CapsuleInteractiveControl[] = [];
+  const execute = async (input: CapsuleInteractiveExecInput) => {
+    const iterator = input.controls[Symbol.asyncIterator]();
+    for (let index = 0; index < 5; index += 1) {
+      const next = await iterator.next();
+      if (!next.done) {
+        controls.push(next.value);
+      }
+    }
+    return {
+      kind: 'capsule-exec-completed' as const,
+      activityId: '00000000-0000-4000-8000-000000000043',
+      outcome: {
+        kind: 'exited' as const,
+        argv: ['cat'],
+        location: { kind: 'host' as const },
+        exitCode: 0,
+        stdout: '',
+        stderr: '',
+        retention: retainedEmpty(),
+      },
+    };
+  };
+  const running = runInteractiveCapsuleExec({
+    projectDirectory: process.cwd(),
+    sessionId: 'quiet-river-ada',
+    name: { kind: 'omitted' },
+    purpose: 'stimulus',
+    target: { kind: 'host', argv: ['cat'] },
+    ports: fixture.ports,
+    execute,
+  });
+  fixture.stdin.write(Buffer.from([0x61, 0x03, 0x62, 0x1c, 0x63]));
+  await running;
+  assert.deepEqual(
+    controls.map((control) =>
+      control.kind === 'stdin-chunk'
+        ? { kind: control.kind, value: Buffer.from(control.chunk).toString() }
+        : { kind: control.kind, signal: control.kind === 'signal' ? control.signal : undefined },
+    ),
+    [
+      { kind: 'stdin-chunk', value: 'a' },
+      { kind: 'signal', signal: 'SIGINT' },
+      { kind: 'stdin-chunk', value: 'b' },
+      { kind: 'signal', signal: 'SIGQUIT' },
+      { kind: 'stdin-chunk', value: 'c' },
+    ],
+  );
+});
+
 void test('restores the prior terminal mode when execution fails', async () => {
   const fixture = terminalFixture(true);
   await assert.rejects(

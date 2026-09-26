@@ -50,7 +50,7 @@ fi
 
 # A killed earlier run can leave its external consumer behind. The state file
 # is accepted only when the cleanup helper proves the path belongs to this test.
-node "$SCRIPT_DIR/capsule-asset-boundary.mjs" cleanup "$STATE_FILE"
+node "$SCRIPT_DIR/capsule-asset-boundary.mjs" cleanup
 
 ASSET_ROOT="$(mktemp -d "${TMPDIR:-/tmp}/blackbox-capsule-assets.XXXXXX")"
 PACK_ROOT="$ASSET_ROOT/tarballs"
@@ -177,7 +177,7 @@ jq -n \
     driverDirectory: $driverDirectory, packages: $packages}' \
   >"$STATE_FILE"
 chmod 600 "$STATE_FILE"
-node "$SCRIPT_DIR/capsule-asset-boundary.mjs" verify "$STATE_FILE" "$REPO_ROOT" \
+node "$SCRIPT_DIR/capsule-asset-boundary.mjs" verify \
   >"$ARTIFACT_ROOT/package-boundary.json"
 env -u NODE_OPTIONS "$BLACKBOX_BIN" --help >/dev/null
 

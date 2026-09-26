@@ -21,7 +21,7 @@ it('incorporates late descendants while keeping an independent shared-state trac
     const response = await fetch(collector.endpoint.tracesUrl, {
       method: 'POST',
       headers: {
-        authorization: 'Bearer observations-test-token',
+        authorization: 'Bearer observations-ingest-token',
         'content-type': 'application/json',
       },
       body: JSON.stringify({ resourceSpans: [{ scopeSpans: [{ spans }] }] }),

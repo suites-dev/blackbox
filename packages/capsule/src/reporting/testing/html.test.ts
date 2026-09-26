@@ -150,7 +150,7 @@ describe('Capsule-owned HTML renderer', () => {
   it('escapes retained strings as text in every rendered domain, including cleanup failures', () => {
     const html = renderCapsuleHtml({ report: hostileDocument() });
     expect(html).not.toContain(hostile);
-    expect(html.match(/<script>/gu)).toHaveLength(1);
+    expect(html.match(/<script>/giu)).toHaveLength(1);
     expect(html).toContain(`<title>Capsule ${escaped}</title>`);
     expect(html).toContain('\\u003cscript>alert(\\"x&y\\")\\u003c/script>');
     expect(html).toContain('http://localhost:3000');

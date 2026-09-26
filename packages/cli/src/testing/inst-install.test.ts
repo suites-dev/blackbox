@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { mkdir, mkdtemp, readFile, rm, stat, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, open, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 
@@ -18,6 +18,15 @@ async function seedDependencies(directory: string): Promise<void> {
   }
 }
 
+async function modifiedAt(path: string): Promise<number> {
+  const file = await open(path, 'r');
+  try {
+    return (await file.stat()).mtimeMs;
+  } finally {
+    await file.close();
+  }
+}
+
 void test('inst install creates the Node bootstrap and repeat installation leaves files unchanged', async () => {
   const projectDirectory = await mkdtemp(join(tmpdir(), 'blackbox-cli-inst-'));
   try {
@@ -31,18 +40,18 @@ void test('inst install creates the Node bootstrap and repeat installation leave
     assert.match(first.stdout, /Node instrumentation installed/u);
     const packageFile = join(target, 'package.json');
     const sourceFile = join(target, 'instrumentation.js');
-    const before = await Promise.all([stat(packageFile), stat(sourceFile)]);
+    const before = await Promise.all([modifiedAt(packageFile), modifiedAt(sourceFile)]);
 
     const second = await runCli({
       directory: projectDirectory,
       argv: ['inst', 'install', '--runtime', 'node'],
     });
-    const after = await Promise.all([stat(packageFile), stat(sourceFile)]);
+    const after = await Promise.all([modifiedAt(packageFile), modifiedAt(sourceFile)]);
     assert.equal(second.status, 0, second.stderr);
     assert.match(second.stdout, /already current/u);
     assert.deepEqual(
-      after.map((entry) => entry.mtimeMs),
-      before.map((entry) => entry.mtimeMs),
+      after,
+      before,
     );
     assert.equal(JSON.parse(await readFile(packageFile, 'utf8')).private, true);
   } finally {

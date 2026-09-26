@@ -28,6 +28,7 @@
   },
   "dependencies": {
     "ajv": "8.18.0",
+    "docker-compose": "1.4.2",
     "testcontainers": "catalog:"
   },
   "devDependencies": {
@@ -35,5 +36,6 @@
     "@types/node": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
-  }
+  },
+  "license": "Apache-2.0"
 }

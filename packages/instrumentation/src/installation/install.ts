@@ -9,6 +9,10 @@ import type {
   InstrumentationInstallResult,
   RuntimeInstrumentationProvider,
 } from './model.js';
+import {
+  instrumentationInstallDirectory,
+  rejectUnsafeInstrumentationEntries,
+} from './safe-paths.js';
 
 export const instrumentationDirectoryRelativePath = '.blackbox/instrumentation';
 
@@ -106,10 +110,20 @@ async function installProvider(
   projectDirectory: string,
   provider: RuntimeInstrumentationProvider,
 ): Promise<InstrumentationInstallResult> {
-  const directory = resolve(projectDirectory, instrumentationDirectoryRelativePath);
-  const lockDirectory = join(directory, '.install.lock');
+  const requestedDirectory = resolve(projectDirectory, instrumentationDirectoryRelativePath);
+  let directory = requestedDirectory;
+  let lockDirectory = join(directory, '.install.lock');
   try {
-    await mkdir(directory, { recursive: true });
+    directory = await instrumentationInstallDirectory(projectDirectory);
+    lockDirectory = join(directory, '.install.lock');
+    await rejectUnsafeInstrumentationEntries({
+      directory,
+      names: [
+        ...provider.files.map((file) => file.name),
+        'node_modules',
+        'package-lock.json',
+      ],
+    });
     const initial = await inspectFiles(directory, provider.files);
     const conflicts = initial.filter((file) => file.kind === 'conflict').map((file) => file.path);
     if (conflicts.length > 0) {
@@ -127,7 +141,7 @@ async function installProvider(
   } catch (error) {
     return operationalFailure(
       provider.runtime,
-      directory,
+      requestedDirectory,
       `Could not install ${provider.displayName} instrumentation: ${errorMessage(error)}`,
     );
   }

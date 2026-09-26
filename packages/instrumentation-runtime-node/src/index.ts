@@ -31,3 +31,6 @@ export type {
   NodeDependencyInstallRequest,
   NodeDependencyInstallResult,
 } from './runtime/dependencies/dependency-installer.js';
+export {
+  instrumentationDirectoryRelativePath as nodeInstrumentationDirectoryRelativePath,
+} from '@suites/blackbox-instrumentation-internal';

@@ -99,7 +99,11 @@ export async function requestFixture(
     sandbox,
     record,
     activities: [],
-    telemetryAuthorization: { kind: 'bearer-token', token: 'test-collector-token' },
+    telemetryAuthorization: {
+      kind: 'split-bearer-tokens',
+      ingestToken: 'test-ingest-token',
+      controlToken: 'test-control-token',
+    },
     drivers: {},
     entrypoint: { url: 'http://127.0.0.1:4567', host: '127.0.0.1', port: 4567, protocol: 'http' },
   } satisfies RunningManager;

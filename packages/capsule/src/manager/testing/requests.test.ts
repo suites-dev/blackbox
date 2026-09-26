@@ -155,7 +155,9 @@ it('serializes overlapping exec and stop requests without losing activities', as
           argv: [
             process.execPath,
             '-e',
-            `setTimeout(() => process.stdout.write(${JSON.stringify(value)}), ${String(delay)})`,
+            'setTimeout(() => process.stdout.write(process.argv[1]), Number(process.argv[2]))',
+            value,
+            String(delay),
           ],
         },
       },

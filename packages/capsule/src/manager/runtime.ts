@@ -102,7 +102,11 @@ async function cleanupFailedSandbox(sandbox: SandboxHandle | undefined) {
 }
 
 function createTelemetryAuthorization(): CapsuleTelemetryAuthorization {
-  return { kind: 'bearer-token', token: randomBytes(32).toString('base64url') };
+  return {
+    kind: 'split-bearer-tokens',
+    ingestToken: randomBytes(32).toString('base64url'),
+    controlToken: randomBytes(32).toString('base64url'),
+  };
 }
 
 async function resolveCollectorRuntime(ports: CapsuleManagerPorts) {

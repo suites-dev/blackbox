@@ -74,7 +74,7 @@ async function main() {
   await resetCapsuleDemo({ projectDirectory, stopSession: async ({ sessionId }) => {
     process.stdout.write(`[blackbox] Stopping previous demo Capsule ${sessionId}\n`);
     const args = ['capsule', 'stop', '--session', sessionId, '--json'];
-    const result = await execute(cli, args, { cwd: projectDirectory });
+    const result = await execute(process.execPath, [cli, ...args], { cwd: projectDirectory });
     const outcome = JSON.parse(result.stdout);
     if (outcome.kind !== 'capsule-stopped' || outcome.cleanup !== 'complete') throw new Error(`Cleanup was not confirmed for ${sessionId}`);
   } });

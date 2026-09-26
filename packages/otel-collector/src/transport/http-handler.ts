@@ -8,6 +8,7 @@ import { parseActivation } from '../activation/validation.js';
 import { requireAuthorization } from './authorization.js';
 import { RequestFailure, writeJson } from './response.js';
 import { serveCollectorRead } from './read-handler.js';
+import { CollectorRetentionLimitError } from '../lifecycle/retention.js';
 
 function readEncodedBody(input: {
   readonly request: IncomingMessage;
@@ -170,18 +171,37 @@ export async function handleCollectorRequest(input: {
     if (input.store === null) {
       throw new RequestFailure(503, 'Collector storage is not ready.');
     }
-    requireAuthorization(input);
     if (path === input.config.endpoint.tracesPath) {
+      requireAuthorization({
+        request: input.request,
+        authorization: input.config.authorization,
+        scope: { kind: 'ingest' },
+      });
       await acceptTraces({ ...input, store: input.store });
     } else if (path === input.config.endpoint.activationPath) {
+      requireAuthorization({
+        request: input.request,
+        authorization: input.config.authorization,
+        scope: { kind: 'ingest' },
+      });
       await activateInstrumentation({ ...input, store: input.store });
     } else {
+      requireAuthorization({
+        request: input.request,
+        authorization: input.config.authorization,
+        scope: { kind: 'control' },
+      });
       await serveCollectorRead({ ...input, store: input.store, path });
     }
   } catch (error) {
     const failure = recordedFailure(error);
-    const status = error instanceof RequestFailure ? error.status : 500;
-    if (status === 500 && input.store !== null) {
+    const status =
+      error instanceof RequestFailure
+        ? error.status
+        : error instanceof CollectorRetentionLimitError
+          ? 507
+          : 500;
+    if ((status === 500 || status === 507) && input.store !== null) {
       await input.store.fail(error).catch(() => undefined);
     }
     if (!input.response.headersSent) {

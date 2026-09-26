@@ -59,7 +59,11 @@ async function telemetryRequest(): Promise<ComposeStartRequest> {
       kind: 'enabled',
       sessionId: 'quiet-river-ada',
       executionId: 'sandbox-1',
-      authorization: { kind: 'bearer-token', token: 'private-token' },
+      authorization: {
+        kind: 'split-bearer-tokens',
+        ingestToken: 'private-ingest-token',
+        controlToken: 'private-control-token',
+      },
       collector: {
         service: 'blackbox-collector',
         containerPort: 4318,

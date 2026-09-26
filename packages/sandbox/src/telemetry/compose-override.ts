@@ -33,7 +33,11 @@ function collectorService(input: {
 }): object {
   const base = {
     image: input.telemetry.collector.runtime.image,
-    environment: collectorEnvironment(input.telemetry, '${BLACKBOX_SANDBOX_OTEL_AUTH_TOKEN}'),
+    environment: collectorEnvironment(input.telemetry, {
+      kind: 'split-bearer-tokens',
+      ingestToken: '${BLACKBOX_SANDBOX_OTEL_INGEST_TOKEN}',
+      controlToken: '${BLACKBOX_SANDBOX_OTEL_CONTROL_TOKEN}',
+    }),
     ports: [`127.0.0.1::${input.telemetry.collector.containerPort}`],
     volumes: collectorVolumes(input),
     healthcheck: {
@@ -61,11 +65,12 @@ function collectorService(input: {
 function participantService(input: {
   readonly telemetry: SandboxTelemetryEnabledInput;
   readonly participant: SandboxTelemetryEnabledInput['participants'][number];
+  readonly effectiveEnvironment: Readonly<Record<string, string>>;
 }): object {
   return {
     environment: participantEnvironment({
       ...input,
-      token: '${BLACKBOX_SANDBOX_OTEL_AUTH_TOKEN}',
+      ingestToken: '${BLACKBOX_SANDBOX_OTEL_INGEST_TOKEN}',
     }),
     volumes: input.participant.mounts.map(
       (mount) => `${mount.source}:${mount.target}:ro`,
@@ -79,6 +84,7 @@ function participantService(input: {
 export async function writeTelemetryComposeOverride(input: {
   readonly telemetry: SandboxTelemetryEnabledInput;
   readonly directory: string;
+  readonly effectiveEnvironments: ReadonlyMap<string, Readonly<Record<string, string>>>;
 }): Promise<string> {
   await mkdir(input.directory, { recursive: true });
   const storageDirectory = join(input.directory, 'collector');
@@ -90,9 +96,16 @@ export async function writeTelemetryComposeOverride(input: {
     storageDirectory,
   });
   for (const participant of input.telemetry.participants) {
+    const effectiveEnvironment = input.effectiveEnvironments.get(participant.service);
+    if (effectiveEnvironment === undefined) {
+      throw new Error(
+        `Effective environment is unavailable for telemetry participant ${JSON.stringify(participant.service)}`,
+      );
+    }
     services[participant.service] = participantService({
       telemetry: input.telemetry,
       participant,
+      effectiveEnvironment,
     });
   }
   await writeFile(path, `${JSON.stringify({ services }, null, 2)}\n`, 'utf8');

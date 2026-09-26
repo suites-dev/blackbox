@@ -1,28 +1,39 @@
-import { basename, dirname, resolve } from 'node:path';
+import { isAbsolute, posix, relative, resolve, sep } from 'node:path';
 
 import type { CatalogSandboxInput } from '@suites/blackbox-catalog-internal';
 import {
   createNodeRuntimeActivation,
   isNodeRuntimeActivationAdapter,
-  type InheritedNodeOptions,
+  nodeInstrumentationDirectoryRelativePath,
 } from '@suites/blackbox-inst-runtime-node';
 import type { SandboxTelemetryParticipant } from '@suites/blackbox-sandbox-internal';
 
 import type { CapsuleManagerBootstrap } from '../../protocol.js';
 
-function inheritedNodeOptions(input: {
-  readonly plan: CatalogSandboxInput;
-  readonly bootstrap: CapsuleManagerBootstrap;
-}): InheritedNodeOptions {
-  if (Object.hasOwn(input.bootstrap.environment, 'NODE_OPTIONS')) {
-    const value = input.bootstrap.environment.NODE_OPTIONS;
-    return value.trim() === '' ? { kind: 'absent' } : { kind: 'present', value };
+function instrumentationAsset(input: {
+  readonly projectDirectory: string;
+  readonly ref: string;
+}): { readonly source: string; readonly bootstrapPath: string } {
+  const source = resolve(input.projectDirectory, nodeInstrumentationDirectoryRelativePath);
+  const asset = resolve(input.projectDirectory, input.ref);
+  const assetRelativePath = relative(source, asset);
+  if (
+    assetRelativePath === '' ||
+    assetRelativePath.startsWith(`..${sep}`) ||
+    assetRelativePath === '..' ||
+    isAbsolute(assetRelativePath)
+  ) {
+    throw new Error(
+      `Instrumentation activation ${JSON.stringify(input.ref)} must be inside ${nodeInstrumentationDirectoryRelativePath}`,
+    );
   }
-  if (Object.hasOwn(input.plan.environment, 'NODE_OPTIONS')) {
-    const value = input.plan.environment.NODE_OPTIONS;
-    return value.trim() === '' ? { kind: 'absent' } : { kind: 'present', value };
-  }
-  return { kind: 'absent' };
+  return {
+    source,
+    bootstrapPath: posix.join(
+      '/blackbox/instrumentation',
+      ...assetRelativePath.split(sep),
+    ),
+  };
 }
 
 export function participantTelemetry(input: {
@@ -43,21 +54,30 @@ export function participantTelemetry(input: {
       throw new Error(`Unsupported Node activation adapter ${JSON.stringify(activation.adapter)}`);
     }
     const target = '/blackbox/instrumentation';
+    const asset = instrumentationAsset({
+      projectDirectory: input.plan.projectDirectory,
+      ref: activation.ref,
+    });
     const configured = createNodeRuntimeActivation({
       kind: 'node-runtime-activation',
       adapter: activation.adapter,
-      bootstrapPath: `${target}/${basename(activation.ref)}`,
+      bootstrapPath: asset.bootstrapPath,
       dependencyDirectory: `${target}/node_modules`,
-      inheritedNodeOptions: inheritedNodeOptions(input),
+      inheritedNodeOptions: { kind: 'absent' },
     });
     return [
       {
         service: participant.service,
         runtime: participant.runtime,
-        environment: configured.environment,
+        environment: {},
+        activation: {
+          kind: 'append-environment-variable',
+          name: 'NODE_OPTIONS',
+          value: configured.environment.NODE_OPTIONS,
+        },
         mounts: [
           {
-            source: resolve(input.plan.projectDirectory, dirname(activation.ref)),
+            source: asset.source,
             target,
             access: 'read-only',
           },

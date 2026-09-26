@@ -5,6 +5,7 @@ import { readCollectorSession, readCollectorTrace, readCollectorTraces } from '.
 import { fragmentDirectory, lifecyclePath } from '../storage/paths.js';
 import {
   postJson,
+  collectorControlHeaders,
   collectorHeaders,
   traceA,
   traceB,
@@ -144,7 +145,10 @@ it.each([
   await withCollector(async ({ collector }) => {
     const response = await fetch(`${collector.endpoint.baseUrl}${path}`, {
       method,
-      headers: collectorHeaders({ 'content-type': contentType }),
+      headers:
+        path === '/v1/traces'
+          ? collectorHeaders({ 'content-type': contentType })
+          : collectorControlHeaders({ 'content-type': contentType }),
       body,
     });
     expect(response.status).toBe(status);

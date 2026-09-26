@@ -7,11 +7,18 @@ import type { CollectorHandle, StartCollectorInput } from '../model/types.js';
 export const traceA = '11111111111111111111111111111111';
 export const traceB = '22222222222222222222222222222222';
 export const collectorToken = 'collector-test-token';
+export const collectorControlToken = 'collector-control-test-token';
 
 export function collectorHeaders(
   headers: Readonly<Record<string, string>> = {},
 ): Readonly<Record<string, string>> {
   return { authorization: `Bearer ${collectorToken}`, ...headers };
+}
+
+export function collectorControlHeaders(
+  headers: Readonly<Record<string, string>> = {},
+): Readonly<Record<string, string>> {
+  return { authorization: `Bearer ${collectorControlToken}`, ...headers };
 }
 
 export function span(traceId: string, spanId: string): Record<string, unknown> {
@@ -73,8 +80,17 @@ export async function withCollector(test: (fixture: Fixture) => Promise<void>): 
       readinessPath: '/ready',
       readPath: '/status',
     },
-    authorization: { kind: 'bearer-token', token: collectorToken },
-    limits: { maxRequestBytes: 2048, shutdownTimeoutMs: 100 },
+    authorization: {
+      kind: 'split-bearer-tokens',
+      ingestToken: collectorToken,
+      controlToken: collectorControlToken,
+    },
+    limits: {
+      maxRequestBytes: 2048,
+      maxRetainedBytes: 32_768,
+      maxRetainedFragments: 16,
+      shutdownTimeoutMs: 100,
+    },
   } satisfies StartCollectorInput;
   let collector: CollectorHandle | null = null;
   try {

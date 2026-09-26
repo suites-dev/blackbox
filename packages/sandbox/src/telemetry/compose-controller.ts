@@ -54,7 +54,9 @@ export function composeTelemetryController(input: {
     async inspect(): Promise<SandboxTelemetryStatus> {
       try {
         const response = await fetch(resolvedEndpoints.readUrl, {
-          headers: { Authorization: `Bearer ${input.telemetry.authorization.token}` },
+          headers: {
+            Authorization: `Bearer ${input.telemetry.authorization.controlToken}`,
+          },
           signal: AbortSignal.timeout(2_000),
         });
         if (!response.ok) {
@@ -70,19 +72,24 @@ export function composeTelemetryController(input: {
       }
     },
     async prepareStop(request): Promise<void> {
-      const timeout = Math.max(1, Math.ceil(request.timeoutMs / 1_000));
+      const totalSeconds = Math.max(1, Math.floor(request.timeoutMs / 1_000));
+      const collectorTimeout = Math.max(1, Math.ceil(totalSeconds / 4));
+      const participantTimeout = Math.max(0, totalSeconds - collectorTimeout);
       const errors: unknown[] = [];
-      for (const participant of input.telemetry.participants) {
-        try {
-          await input.started
+      const participantStops = await Promise.allSettled(
+        input.telemetry.participants.map(async (participant) =>
+          input.started
             .getContainer(`${participant.service}-1`)
-            .stop({ timeout, remove: false, removeVolumes: false });
-        } catch (error) {
-          errors.push(error);
+            .stop({ timeout: participantTimeout, remove: false, removeVolumes: false }),
+        ),
+      );
+      for (const result of participantStops) {
+        if (result.status === 'rejected') {
+          errors.push(result.reason);
         }
       }
       try {
-        await collector.stop({ timeout, remove: false, removeVolumes: false });
+        await collector.stop({ timeout: collectorTimeout, remove: false, removeVolumes: false });
       } catch (error) {
         errors.push(error);
       }

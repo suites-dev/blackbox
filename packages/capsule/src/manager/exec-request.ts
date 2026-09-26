@@ -111,7 +111,7 @@ async function exportRoot(
   const { input } = context;
   const exported: RootSpanExportResult = await exportActivityRootSpan({
     sandbox: input.manager.sandbox,
-    authorizationToken: input.manager.telemetryAuthorization.token,
+    authorizationToken: input.manager.telemetryAuthorization.ingestToken,
     sessionId: input.bootstrap.sessionId,
     activityId: context.activityId,
     purpose: input.request.purpose,

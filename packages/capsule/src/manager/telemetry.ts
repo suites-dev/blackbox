@@ -6,8 +6,9 @@ import type { CapsuleCollectorRuntime } from './collector-runtime.js';
 import { participantTelemetry } from './telemetry/participants.js';
 
 export interface CapsuleTelemetryAuthorization {
-  readonly kind: 'bearer-token';
-  readonly token: string;
+  readonly kind: 'split-bearer-tokens';
+  readonly ingestToken: string;
+  readonly controlToken: string;
 }
 
 export function capsuleSandboxTelemetry(input: {
@@ -27,6 +28,8 @@ export function capsuleSandboxTelemetry(input: {
       runtime: input.collectorRuntime,
       environment: {
         BLACKBOX_OTEL_MAX_REQUEST_BYTES: String(16 * 1024 * 1024),
+        BLACKBOX_OTEL_MAX_RETAINED_BYTES: String(256 * 1024 * 1024),
+        BLACKBOX_OTEL_MAX_RETAINED_FRAGMENTS: '4096',
         BLACKBOX_OTEL_SHUTDOWN_TIMEOUT_MS: '10000',
       },
       readiness: {

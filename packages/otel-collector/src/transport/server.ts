@@ -9,7 +9,11 @@ import type {
 import { type CollectorStore, createCollectorStore } from '../lifecycle/store.js';
 import { acquireStorageLease, type CollectorStorageLease } from '../storage/lease.js';
 import { handleCollectorRequest } from './http-handler.js';
-import { recordedFailure, validateStartInput } from '../model/validation.js';
+import {
+  MAX_COLLECTOR_SHUTDOWN_TIMEOUT_MS,
+  recordedFailure,
+  validateStartInput,
+} from '../model/validation.js';
 
 function listen(input: {
   readonly server: Server;
@@ -54,6 +58,7 @@ function stopListening(input: {
   readonly timeoutMs: number;
 }): Promise<boolean> {
   return new Promise((resolve) => {
+    const timeoutMs = Math.min(input.timeoutMs, MAX_COLLECTOR_SHUTDOWN_TIMEOUT_MS);
     let settled = false;
     const finish = (timedOut: boolean): void => {
       if (settled) {
@@ -66,7 +71,7 @@ function stopListening(input: {
     const timer = setTimeout(() => {
       input.server.closeAllConnections();
       finish(true);
-    }, input.timeoutMs);
+    }, timeoutMs);
     timer.unref();
     input.server.close(() => {
       finish(false);
@@ -159,6 +164,10 @@ export async function startCollector(input: StartCollectorInput): Promise<Collec
       lease,
       endpoint: actualEndpoint,
       instanceId: randomUUID(),
+      limits: {
+        maxRetainedBytes: input.limits.maxRetainedBytes,
+        maxRetainedFragments: input.limits.maxRetainedFragments,
+      },
     });
   } catch (error) {
     await abandonStartup({ server, lease });

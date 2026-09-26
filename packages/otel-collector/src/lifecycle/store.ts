@@ -7,6 +7,7 @@ import type {
 import type { CollectorStorageLease } from '../storage/lease.js';
 import { fragmentDirectory, lifecyclePath } from '../storage/paths.js';
 import { RunningCollectorStore, type CollectorStore } from './running-store.js';
+import { retainedUsage, type CollectorRetentionLimits } from './retention.js';
 
 function isMissing(error: unknown): boolean {
   return error instanceof Error && 'code' in error && error.code === 'ENOENT';
@@ -25,7 +26,6 @@ function validFailure(value: unknown): boolean {
       value.message !== '')
   );
 }
-
 function validEndpoint(value: unknown): boolean {
   return (
     isRecord(value) &&
@@ -234,15 +234,17 @@ export async function createCollectorStore(input: {
   readonly lease: CollectorStorageLease;
   readonly endpoint: CollectorEndpoint;
   readonly instanceId: string;
+  readonly limits: CollectorRetentionLimits;
 }): Promise<CollectorStore> {
   const record = initialRecord({ ...input, previous: await previousLifecycle(input.lease) });
   const store = new RunningCollectorStore({
     lease: input.lease,
     record,
     sequence: await findNextSequence(input.lease),
+    usage: await retainedUsage(input.lease),
+    limits: input.limits,
   });
   await store.initialize();
   return store;
 }
-
 export type { CollectorStore } from './running-store.js';

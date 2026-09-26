@@ -20,8 +20,17 @@ function validInput(storageDirectory: string): StartCollectorInput {
       readinessPath: '/ready',
       readPath: '/v1/collector',
     },
-    authorization: { kind: 'bearer-token', token: 'validation-token' },
-    limits: { maxRequestBytes: 4096, shutdownTimeoutMs: 75 },
+    authorization: {
+      kind: 'split-bearer-tokens',
+      ingestToken: 'validation-ingest-token',
+      controlToken: 'validation-control-token',
+    },
+    limits: {
+      maxRequestBytes: 4096,
+      maxRetainedBytes: 65_536,
+      maxRetainedFragments: 32,
+      shutdownTimeoutMs: 75,
+    },
   };
 }
 

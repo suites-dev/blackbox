@@ -25,7 +25,11 @@ async function enabledInput(): Promise<SandboxInput> {
       kind: 'enabled',
       sessionId: 'session-01',
       executionId: 'execution-01',
-      authorization: { kind: 'bearer-token', token: 'secret' },
+      authorization: {
+        kind: 'split-bearer-tokens',
+        ingestToken: 'ingest-secret',
+        controlToken: 'control-secret',
+      },
       collector: {
         service: 'blackbox-collector',
         containerPort: 4318,
@@ -45,6 +49,7 @@ async function enabledInput(): Promise<SandboxInput> {
           service: 'orders',
           runtime: 'node',
           environment: {},
+          activation: { kind: 'none' },
           mounts: [{ source: bundle, target: '/bundle.js', access: 'read-only' }],
         },
       ],

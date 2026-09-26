@@ -1,5 +1,6 @@
 import { expect, it } from 'vitest';
 import {
+  collectorControlHeaders,
   collectorHeaders,
   postJson,
   span,
@@ -73,7 +74,7 @@ it('supports uppercase hex and parent identity without changing retained payload
     });
     expect((await postJson(collector, value)).status).toBe(200);
     const trace = await fetch(`${collector.endpoint.readUrl}/traces/${'a'.repeat(32)}`, {
-      headers: collectorHeaders(),
+      headers: collectorControlHeaders(),
     });
     expect(trace.status).toBe(200);
     expect(await trace.json()).toMatchObject({
@@ -86,16 +87,16 @@ it('supports uppercase hex and parent identity without changing retained payload
 it('serves status/session/trace views and reports absent traces without marking the receiver failed', async () => {
   await withCollector(async ({ collector }) => {
     expect(
-      (await fetch(collector.endpoint.readUrl, { headers: collectorHeaders() })).status,
+      (await fetch(collector.endpoint.readUrl, { headers: collectorControlHeaders() })).status,
     ).toBe(200);
     const session = await fetch(`${collector.endpoint.readUrl}/session`, {
-      headers: collectorHeaders(),
+      headers: collectorControlHeaders(),
     });
     expect(await session.json()).toMatchObject({ kind: 'collector-session-found', traceIds: [] });
     expect(
       (
         await fetch(`${collector.endpoint.readUrl}/traces/${traceA}`, {
-          headers: collectorHeaders(),
+          headers: collectorControlHeaders(),
         })
       ).status,
     ).toBe(404);
@@ -103,7 +104,7 @@ it('serves status/session/trace views and reports absent traces without marking 
       (
         await fetch(collector.endpoint.readUrl, {
           method: 'POST',
-          headers: collectorHeaders(),
+          headers: collectorControlHeaders(),
         })
       ).status,
     ).toBe(405);

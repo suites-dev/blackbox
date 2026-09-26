@@ -108,8 +108,17 @@ export async function collectorFixture(
       readinessPath: '/ready',
       readPath: '/v1/collector',
     },
-    authorization: { kind: 'bearer-token', token: 'observations-test-token' },
-    limits: { maxRequestBytes: 4096, shutdownTimeoutMs: 100 },
+    authorization: {
+      kind: 'split-bearer-tokens',
+      ingestToken: 'observations-ingest-token',
+      controlToken: 'observations-control-token',
+    },
+    limits: {
+      maxRequestBytes: 4096,
+      maxRetainedBytes: 65_536,
+      maxRetainedFragments: 32,
+      shutdownTimeoutMs: 100,
+    },
   });
   collectors.push(collector);
   return collector;
@@ -148,7 +157,7 @@ export async function postTrace(collector: CollectorHandle, activityId: string):
   const response = await fetch(collector.endpoint.tracesUrl, {
     method: 'POST',
     headers: {
-      authorization: 'Bearer observations-test-token',
+      authorization: 'Bearer observations-ingest-token',
       'content-type': 'application/json',
     },
     body: JSON.stringify(traceRequest(activityId)),

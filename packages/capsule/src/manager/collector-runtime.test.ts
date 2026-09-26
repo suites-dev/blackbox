@@ -51,7 +51,11 @@ it('keeps a local image override explicit at the manager composition boundary', 
       environment: {},
     },
     plan,
-    authorization: { kind: 'bearer-token', token: 'secret' },
+    authorization: {
+      kind: 'split-bearer-tokens',
+      ingestToken: 'ingest-secret',
+      controlToken: 'control-secret',
+    },
     collectorRuntime,
   });
   expect(telemetry.collector.runtime).toEqual(collectorRuntime);

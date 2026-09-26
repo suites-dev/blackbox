@@ -20,7 +20,11 @@ async function telemetryFixture(): Promise<{
       kind: 'enabled',
       sessionId: 'steady-harbor-alex',
       executionId: 'client-01',
-      authorization: { kind: 'bearer-token', token: 'private-token' },
+      authorization: {
+        kind: 'split-bearer-tokens',
+        ingestToken: 'private-ingest-token',
+        controlToken: 'private-control-token',
+      },
       collector: {
         service: 'blackbox-collector',
         containerPort: 4318,
@@ -46,7 +50,12 @@ async function telemetryFixture(): Promise<{
         {
           service: 'orders',
           runtime: 'node',
-          environment: { NODE_OPTIONS: '--import=/blackbox/instrumentation.js' },
+          environment: {},
+          activation: {
+            kind: 'append-environment-variable',
+            name: 'NODE_OPTIONS',
+            value: '--import=/blackbox/instrumentation.js',
+          },
           mounts: [{ source: bundle, target: '/blackbox/instrumentation.js', access: 'read-only' }],
         },
       ],
@@ -56,7 +65,12 @@ async function telemetryFixture(): Promise<{
 
 it('writes a Compose override without retaining the bearer token', async () => {
   const fixture = await telemetryFixture();
-  const path = await writeTelemetryComposeOverride(fixture);
+  const path = await writeTelemetryComposeOverride({
+    ...fixture,
+    effectiveEnvironments: new Map([
+      ['orders', { NODE_OPTIONS: '--enable-source-maps' }],
+    ]),
+  });
   const document = await readFile(path, 'utf8');
   expect(document).toContain('node:test@sha256:runtime');
   expect(document).toContain(`${fixture.directory}:/blackbox/collector:ro`);
@@ -64,8 +78,12 @@ it('writes a Compose override without retaining the bearer token', async () => {
   expect(document).toContain('/blackbox/collector/instrumentation.js');
   expect(document).toContain('"user": "node"');
   expect(document).toContain('127.0.0.1::4318');
-  expect(document).toContain('${BLACKBOX_SANDBOX_OTEL_AUTH_TOKEN}');
+  expect(document).toContain('${BLACKBOX_SANDBOX_OTEL_INGEST_TOKEN}');
+  expect(document).toContain('${BLACKBOX_SANDBOX_OTEL_CONTROL_TOKEN}');
   expect(document).toContain(`${fixture.directory}/instrumentation.js:/blackbox/instrumentation.js:ro`);
+  expect(document).toContain(
+    '--enable-source-maps --import=/blackbox/instrumentation.js',
+  );
   expect(document).not.toContain('private-token');
 });
 
@@ -74,7 +92,8 @@ it('injects Blackbox identity and standard OTLP configuration', async () => {
   const environment = participantEnvironment({
     telemetry,
     participant: telemetry.participants[0],
-    token: 'resolved-token',
+    ingestToken: 'resolved-token',
+    effectiveEnvironment: { NODE_OPTIONS: '--trace-warnings' },
   });
   expect(environment).toMatchObject({
     BLACKBOX_OTEL_SESSION_ID: 'steady-harbor-alex',
@@ -88,6 +107,7 @@ it('injects Blackbox identity and standard OTLP configuration', async () => {
     OTEL_EXPORTER_OTLP_HEADERS: 'authorization=Bearer resolved-token',
     OTEL_METRICS_EXPORTER: 'none',
     OTEL_LOGS_EXPORTER: 'none',
+    NODE_OPTIONS: '--trace-warnings --import=/blackbox/instrumentation.js',
   });
 });
 
@@ -103,7 +123,13 @@ it('configures the collector readiness route used by its health check', async ()
       },
     },
   };
-  expect(collectorEnvironment(custom, 'resolved-token')).toMatchObject({
+  expect(
+    collectorEnvironment(custom, {
+      kind: 'split-bearer-tokens',
+      ingestToken: 'resolved-ingest-token',
+      controlToken: 'resolved-control-token',
+    }),
+  ).toMatchObject({
     BLACKBOX_OTEL_READINESS_PATH: '/health/collector',
   });
 });

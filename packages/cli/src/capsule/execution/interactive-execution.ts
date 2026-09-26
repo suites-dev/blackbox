@@ -124,6 +124,32 @@ type ControlWithoutId =
   | { readonly kind: 'resize'; readonly size: CapsuleTerminalSize }
   | { readonly kind: 'signal'; readonly signal: 'SIGINT' | 'SIGQUIT' };
 
+function forwardInput(
+  target: CapsuleExecInput['target'],
+  chunk: Buffer,
+  send: (control: ControlWithoutId) => void,
+): void {
+  if (target.kind !== 'host') {
+    send({ kind: 'stdin-chunk', chunk });
+    return;
+  }
+  let start = 0;
+  for (const [index, byte] of chunk.entries()) {
+    const signal = byte === 0x03 ? 'SIGINT' : byte === 0x1c ? 'SIGQUIT' : undefined;
+    if (signal === undefined) {
+      continue;
+    }
+    if (index > start) {
+      send({ kind: 'stdin-chunk', chunk: chunk.subarray(start, index) });
+    }
+    send({ kind: 'signal', signal });
+    start = index + 1;
+  }
+  if (start < chunk.length) {
+    send({ kind: 'stdin-chunk', chunk: chunk.subarray(start) });
+  }
+}
+
 function controlFactory(queue: ControlQueue) {
   let sequence = 0;
   return (control: ControlWithoutId): void => {
@@ -154,7 +180,7 @@ export async function runInteractiveCapsuleExec(
   const wasPaused = input.ports.stdin.isPaused();
   const restoreTerminalMode = enterTerminalMode(input.ports);
   const onData = (chunk: Buffer | string) => {
-    send({ kind: 'stdin-chunk', chunk: Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk) });
+    forwardInput(input.target, Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk), send);
   };
   const onEnd = () => {
     send({ kind: 'stdin-end' });

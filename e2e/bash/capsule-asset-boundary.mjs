@@ -3,6 +3,24 @@ import { access, lstat, readFile, realpath, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { createRequire } from 'node:module';
+import { fileURLToPath } from 'node:url';
+
+const scriptDirectory = dirname(fileURLToPath(import.meta.url));
+const e2eRoot = resolve(scriptDirectory, '..');
+const workspacePath = resolve(e2eRoot, '..');
+const statePath = join(e2eRoot, '.blackbox', 'capsule-assets.json');
+const packedPackages = [
+  '@suites/blackbox-capsule-internal',
+  '@suites/blackbox-catalog-internal',
+  '@suites/blackbox-cli',
+  '@suites/blackbox-driver',
+  '@suites/blackbox-inst-runtime-node',
+  '@suites/blackbox-instrumentation-internal',
+  '@suites/blackbox-otel-collector-internal',
+  '@suites/blackbox-report-server-internal',
+  '@suites/blackbox-sandbox-internal',
+  '@suites/blackbox-telemetry-internal',
+];
 
 function isWithin(path, root) {
   const difference = relative(root, path);
@@ -25,8 +43,8 @@ function assertOutside(path, root, label) {
   }
 }
 
-async function readState(path) {
-  const value = JSON.parse(await readFile(path, 'utf8'));
+async function readState() {
+  const value = JSON.parse(await readFile(statePath, 'utf8'));
   if (
     value === null ||
     typeof value !== 'object' ||
@@ -37,9 +55,27 @@ async function readState(path) {
     !Array.isArray(value.packages) ||
     !value.packages.every((name) => typeof name === 'string')
   ) {
-    throw new Error(`Invalid Capsule asset state: ${path}`);
+    throw new Error(`Invalid Capsule asset state: ${statePath}`);
   }
-  return value;
+  const assetName = basename(value.assetRoot);
+  if (!/^blackbox-capsule-assets\.[A-Za-z0-9]+$/u.test(assetName)) {
+    throw new Error(`Invalid Capsule asset root identity: ${assetName}`);
+  }
+  const assetRoot = join(tmpdir(), assetName);
+  const consumerRoot = join(assetRoot, 'consumer');
+  const blackboxBin = join(consumerRoot, 'node_modules', '.bin', 'blackbox');
+  const driverDirectory = join(e2eRoot, '.blackbox', 'drivers');
+  const actualPackages = [...value.packages].sort();
+  if (
+    resolve(value.assetRoot) !== resolve(assetRoot) ||
+    resolve(value.consumerRoot) !== resolve(consumerRoot) ||
+    resolve(value.blackboxBin) !== resolve(blackboxBin) ||
+    resolve(value.driverDirectory) !== resolve(driverDirectory) ||
+    JSON.stringify(actualPackages) !== JSON.stringify([...packedPackages].sort())
+  ) {
+    throw new Error('Capsule asset state does not match the fixed E2E asset layout.');
+  }
+  return { assetRoot, consumerRoot, blackboxBin, driverDirectory, packages: packedPackages };
 }
 
 async function verifyPackage(input) {
@@ -81,8 +117,8 @@ async function verifyPackage(input) {
   return { name: input.name, packageRoot: resolvedPackage, entrypoint };
 }
 
-async function verify(statePath, workspacePath) {
-  const state = await readState(statePath);
+async function verify() {
+  const state = await readState();
   const workspaceRoot = await canonical(workspacePath);
   const assetRoot = await canonical(state.assetRoot);
   const consumerRoot = await canonical(state.consumerRoot);
@@ -130,10 +166,10 @@ async function verify(statePath, workspacePath) {
   );
 }
 
-async function cleanup(statePath) {
+async function cleanup() {
   let state;
   try {
-    state = await readState(statePath);
+    state = await readState();
   } catch (error) {
     if (error instanceof Error && 'code' in error && error.code === 'ENOENT') return;
     throw error;
@@ -163,11 +199,11 @@ async function cleanup(statePath) {
   await rm(statePath, { force: true });
 }
 
-const [operation, statePath, workspacePath] = process.argv.slice(2);
-if (operation === 'verify' && statePath !== undefined && workspacePath !== undefined) {
-  await verify(resolve(statePath), resolve(workspacePath));
-} else if (operation === 'cleanup' && statePath !== undefined) {
-  await cleanup(resolve(statePath));
+const [operation, ...unexpected] = process.argv.slice(2);
+if (operation === 'verify' && unexpected.length === 0) {
+  await verify();
+} else if (operation === 'cleanup' && unexpected.length === 0) {
+  await cleanup();
 } else {
-  throw new Error('Usage: capsule-asset-boundary.mjs <verify state workspace|cleanup state>');
+  throw new Error('Usage: capsule-asset-boundary.mjs <verify|cleanup>');
 }

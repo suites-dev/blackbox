@@ -14,12 +14,15 @@ export interface CollectorHttpInput {
 }
 
 export interface CollectorAuthorization {
-  readonly kind: 'bearer-token';
-  readonly token: string;
+  readonly kind: 'split-bearer-tokens';
+  readonly ingestToken: string;
+  readonly controlToken: string;
 }
 
 export interface CollectorLimits {
   readonly maxRequestBytes: number;
+  readonly maxRetainedBytes: number;
+  readonly maxRetainedFragments: number;
   readonly shutdownTimeoutMs: number;
 }
 

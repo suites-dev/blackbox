@@ -23,12 +23,33 @@
     "@suites/blackbox-driver": "workspace:*"
   },
   "packageManager": "pnpm@9.15.4",
+  "pnpm": {
+    "overrides": {
+      "@grpc/grpc-js": "1.14.4",
+      "@protobufjs/utf8": "1.1.1",
+      "axios": "1.18.0",
+      "baseline-browser-mapping": "2.11.0",
+      "brace-expansion@1": "1.1.18",
+      "brace-expansion@2": "2.1.4",
+      "brace-expansion@5": "5.0.9",
+      "browserslist": "4.28.7",
+      "fast-uri": "3.1.6",
+      "js-yaml": "4.3.2",
+      "nanoid@3": "3.3.18",
+      "pacote": "21.5.1",
+      "protobufjs": "7.6.5",
+      "smol-toml": "1.7.1",
+      "tmp": "0.2.7",
+      "undici": "6.28.0",
+      "uuid": "11.1.1"
+    }
+  },
   "devDependencies": {
     "@commitlint/cli": "catalog:",
     "@commitlint/config-conventional": "catalog:",
     "@eslint/js": "catalog:",
     "@types/node": "catalog:",
-    "@vitest/coverage-v8": "3.2.6",
+    "@vitest/coverage-v8": "5.0.1",
     "eslint": "catalog:",
     "eslint-config-prettier": "catalog:",
     "eslint-plugin-import-x": "catalog:",
@@ -36,6 +57,7 @@
     "globals": "catalog:",
     "husky": "catalog:",
     "lint-staged": "catalog:",
+    "lerna": "10.0.1",
     "prettier": "catalog:",
     "typescript": "catalog:",
     "typescript-eslint": "catalog:",

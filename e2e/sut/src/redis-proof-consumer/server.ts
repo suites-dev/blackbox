@@ -27,7 +27,6 @@ function createProofSource(client: ReturnType<typeof createClient>): RedisProofS
 
 async function main(): Promise<void> {
   const fixtureToken = requiredEnvironment('FIXTURE_CONTROL_TOKEN');
-  const publicApiUrl = requiredEnvironment('PUBLIC_API_URL');
   const client = createClient({ url: requiredEnvironment('REDIS_URL') });
   client.on('error', (error) =>
     writeError(new Error('Redis proof consumer error', { cause: error })),
@@ -38,7 +37,7 @@ async function main(): Promise<void> {
     sink: {
       async deliver(proofId) {
         const path = `/fixture/shared-state-proof/${encodeURIComponent(proofId)}`;
-        const response = await fetch(`${publicApiUrl}${path}`, {
+        const response = await fetch(`http://public-api:3000${path}`, {
           method: 'POST',
           headers: { authorization: `Bearer ${fixtureToken}` },
         });

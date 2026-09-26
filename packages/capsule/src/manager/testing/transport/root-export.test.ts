@@ -68,7 +68,7 @@ it.each([
     }, telemetry: { kind: 'telemetry-execution-scope-completed-v1',
       result: { kind: 'telemetry-scope-failed', message } } }]);
     expect(receiver.observed).toHaveLength(1);
-    expect(receiver.observed[0].authorization).toBe('Bearer test-collector-token');
+    expect(receiver.observed[0].authorization).toBe('Bearer test-ingest-token');
     expect(JSON.parse(receiver.observed[0].body)).toMatchObject({ resourceSpans: [{
       scopeSpans: [{ spans: [{ traceId: activities[0].telemetry.context.traceId,
         spanId: activities[0].telemetry.context.spanId, status: { code: exitCode === 0 ? 1 : 2 } }] }],

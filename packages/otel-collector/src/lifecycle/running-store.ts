@@ -11,6 +11,11 @@ import type {
 import { durableJsonWrite } from '../storage/durable-json.js';
 import { fragmentDirectory, fragmentName, lifecyclePath } from '../storage/paths.js';
 import { recordedFailure } from '../model/validation.js';
+import {
+  CollectorRetentionLimitError,
+  type CollectorRetentionLimits,
+  type CollectorRetentionUsage,
+} from './retention.js';
 
 export interface FragmentAcceptance {
   readonly rawJson: string;
@@ -44,16 +49,24 @@ export class RunningCollectorStore implements CollectorStore {
   readonly #lease: CollectorStorageLease;
   #record: CollectorLifecycleRecord;
   #sequence: number;
+  #retainedBytes: number;
+  #retainedFragments: number;
+  readonly #limits: CollectorRetentionLimits;
   #tail: Promise<void> = Promise.resolve();
 
   public constructor(input: {
     readonly lease: CollectorStorageLease;
     readonly record: CollectorLifecycleRecord;
     readonly sequence: number;
+    readonly usage: CollectorRetentionUsage;
+    readonly limits: CollectorRetentionLimits;
   }) {
     this.#lease = input.lease;
     this.#record = input.record;
     this.#sequence = input.sequence;
+    this.#retainedBytes = input.usage.retainedBytes;
+    this.#retainedFragments = input.usage.retainedFragments;
+    this.#limits = input.limits;
   }
 
   public async initialize(): Promise<void> {
@@ -64,12 +77,23 @@ export class RunningCollectorStore implements CollectorStore {
     return this.enqueue(async () => {
       const receivedAt = new Date().toISOString();
       const fragment = this.fragment({ ...input, receivedAt });
+      const retainedBytes = Buffer.byteLength(`${JSON.stringify(fragment, null, 2)}\n`, 'utf8');
+      if (
+        this.#retainedFragments + 1 > this.#limits.maxRetainedFragments ||
+        this.#retainedBytes + retainedBytes > this.#limits.maxRetainedBytes
+      ) {
+        throw new CollectorRetentionLimitError(
+          'Collector retention limit reached; telemetry intake stopped before writing the fragment.',
+        );
+      }
       await durableJsonWrite({
         target: join(fragmentDirectory(this.#lease), fragmentName(this.#sequence)),
         token: this.#lease.token,
         value: fragment,
       });
       this.#sequence += 1;
+      this.#retainedBytes += retainedBytes;
+      this.#retainedFragments += 1;
       await this.update((current) => ({
         ...current,
         revision: current.revision + 1,

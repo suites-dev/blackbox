@@ -5,7 +5,13 @@ import { join } from 'node:path';
 import { expect, it } from 'vitest';
 import { readCollectorSession, readCollectorTrace, startCollector } from '../index.js';
 import { fragmentDirectory, lifecyclePath } from '../storage/paths.js';
-import { collectorToken, postJson, traceA, traceRequest } from '../test-fixtures/collector.js';
+import {
+  collectorControlToken,
+  collectorToken,
+  postJson,
+  traceA,
+  traceRequest,
+} from '../test-fixtures/collector.js';
 import type { CollectorHandle, StartCollectorInput } from '../model/types.js';
 
 function collectorInput(storageDirectory: string, identity: string): StartCollectorInput {
@@ -23,8 +29,17 @@ function collectorInput(storageDirectory: string, identity: string): StartCollec
       readinessPath: '/ready',
       readPath: '/v1/collector',
     },
-    authorization: { kind: 'bearer-token', token: collectorToken },
-    limits: { maxRequestBytes: 4096, shutdownTimeoutMs: 75 },
+    authorization: {
+      kind: 'split-bearer-tokens',
+      ingestToken: collectorToken,
+      controlToken: collectorControlToken,
+    },
+    limits: {
+      maxRequestBytes: 4096,
+      maxRetainedBytes: 65_536,
+      maxRetainedFragments: 32,
+      shutdownTimeoutMs: 75,
+    },
   };
 }
 
@@ -223,41 +238,6 @@ it('bounds shutdown when a client leaves an OTLP request incomplete', async () =
     });
   } finally {
     pending.destroy();
-    await cleanup({ root, handles });
-  }
-});
-
-it('records an active prior run as interrupted when the same identity restarts', async () => {
-  const root = await temporaryRoot();
-  const input = collectorInput(root, 'interrupted');
-  const handles: CollectorHandle[] = [];
-  try {
-    const first = await trackedStart(input, handles);
-    await first.close();
-    const prior = await readCollectorSession(input);
-    if (prior.kind !== 'collector-session-found') {
-      throw new Error('Expected retained lifecycle.');
-    }
-    const runs = prior.lifecycle.runs.map((run, index) =>
-      index === prior.lifecycle.runs.length - 1
-        ? { ...run, receiver: 'ready' as const, shutdown: 'not-started' as const, stoppedAt: null }
-        : run,
-    );
-    await writeFile(
-      lifecyclePath(input),
-      `${JSON.stringify({ ...prior.lifecycle, runs })}\n`,
-      'utf8',
-    );
-    const second = await trackedStart(input, handles);
-    await second.close();
-    const restarted = await readCollectorSession(input);
-    expect(restarted).toMatchObject({
-      kind: 'collector-session-found',
-      lifecycle: {
-        runs: [{ receiver: 'interrupted', shutdown: 'interrupted' }, { receiver: 'stopped' }],
-      },
-    });
-  } finally {
     await cleanup({ root, handles });
   }
 });

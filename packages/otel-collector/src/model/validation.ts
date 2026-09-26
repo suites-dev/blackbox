@@ -3,6 +3,7 @@ import type { StartCollectorInput } from './types.js';
 
 const IDENTITY_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/u;
 const PATH_PATTERN = /^\/[A-Za-z0-9._~!$&'()*+,;=:@/-]*$/u;
+export const MAX_COLLECTOR_SHUTDOWN_TIMEOUT_MS = 60_000;
 
 function validatePath(input: { readonly name: string; readonly value: string }): void {
   if (!PATH_PATTERN.test(input.value) || input.value.includes('//') || input.value.endsWith('/')) {
@@ -52,14 +53,35 @@ export function validateStartInput(input: StartCollectorInput): void {
   if (new Set(paths).size !== paths.length) {
     throw new Error('Trace ingest, activation, readiness, and read paths must differ.');
   }
-  if (input.authorization.token.trim() === '') {
-    throw new Error('authorization.token must be explicit and non-empty.');
+  if (input.authorization.ingestToken.trim() === '') {
+    throw new Error('authorization.ingestToken must be explicit and non-empty.');
+  }
+  if (input.authorization.controlToken.trim() === '') {
+    throw new Error('authorization.controlToken must be explicit and non-empty.');
+  }
+  if (input.authorization.ingestToken === input.authorization.controlToken) {
+    throw new Error('Collector ingest and control tokens must differ.');
   }
   if (!Number.isSafeInteger(input.limits.maxRequestBytes) || input.limits.maxRequestBytes < 1) {
     throw new Error('limits.maxRequestBytes must be a positive safe integer.');
   }
-  if (!Number.isSafeInteger(input.limits.shutdownTimeoutMs) || input.limits.shutdownTimeoutMs < 1) {
-    throw new Error('limits.shutdownTimeoutMs must be a positive safe integer.');
+  if (!Number.isSafeInteger(input.limits.maxRetainedBytes) || input.limits.maxRetainedBytes < 1) {
+    throw new Error('limits.maxRetainedBytes must be a positive safe integer.');
+  }
+  if (
+    !Number.isSafeInteger(input.limits.maxRetainedFragments) ||
+    input.limits.maxRetainedFragments < 1
+  ) {
+    throw new Error('limits.maxRetainedFragments must be a positive safe integer.');
+  }
+  if (
+    !Number.isSafeInteger(input.limits.shutdownTimeoutMs) ||
+    input.limits.shutdownTimeoutMs < 1 ||
+    input.limits.shutdownTimeoutMs > MAX_COLLECTOR_SHUTDOWN_TIMEOUT_MS
+  ) {
+    throw new Error(
+      `limits.shutdownTimeoutMs must be an integer from 1 through ${String(MAX_COLLECTOR_SHUTDOWN_TIMEOUT_MS)}.`,
+    );
   }
 }
 

@@ -15,8 +15,16 @@ import { writeTelemetryComposeOverride } from '../telemetry/compose-override.js'
 import { composeTelemetryController } from '../telemetry/compose-controller.js';
 import { writeEndpointComposeOverride } from './endpoint-override.js';
 import { snapshotContainerEnvironment } from './container-environment.js';
+import { inspectEffectiveParticipantEnvironments } from './environment/effective.js';
 
-async function composeFilesFor(request: ComposeStartRequest): Promise<readonly string[]> {
+type Dockerode = Awaited<
+  ReturnType<typeof getContainerRuntimeClient>
+>['container']['dockerode'];
+
+async function composeFilesFor(
+  request: ComposeStartRequest,
+  docker: Dockerode,
+): Promise<readonly string[]> {
   const endpointsOverride = await writeEndpointComposeOverride({
     endpoints: request.endpoints,
     directory: request.generatedComposeDirectory,
@@ -24,9 +32,14 @@ async function composeFilesFor(request: ComposeStartRequest): Promise<readonly s
   if (request.telemetry.kind === 'disabled') {
     return [...request.composeFiles, endpointsOverride];
   }
+  const effectiveEnvironments = await inspectEffectiveParticipantEnvironments({
+    request,
+    docker,
+  });
   const override = await writeTelemetryComposeOverride({
     telemetry: request.telemetry,
     directory: request.generatedComposeDirectory,
+    effectiveEnvironments,
   });
   return [...request.composeFiles, endpointsOverride, override];
 }
@@ -46,6 +59,17 @@ function selectedServiceNames(request: ComposeStartRequest): readonly string[] {
   return request.serviceSelection.kind === 'selected'
     ? request.serviceSelection.services
     : request.serviceSelection.declaredServices;
+}
+
+function composeEnvironment(request: ComposeStartRequest): Readonly<Record<string, string>> {
+  if (request.telemetry.kind === 'disabled') {
+    return request.environment;
+  }
+  return {
+    ...request.environment,
+    BLACKBOX_SANDBOX_OTEL_INGEST_TOKEN: request.telemetry.authorization.ingestToken,
+    BLACKBOX_SANDBOX_OTEL_CONTROL_TOKEN: request.telemetry.authorization.controlToken,
+  };
 }
 
 async function inspectSelectedContainers(input: {
@@ -121,21 +145,16 @@ function requiredContainer(
 
 export class TestcontainersComposeDriver implements ComposeSandboxDriver {
   async start(request: ComposeStartRequest): Promise<StartedComposeSandbox> {
-    const composeFiles = await composeFilesFor(request);
+    const client = await getContainerRuntimeClient();
+    const composeFiles = await composeFilesFor(request, client.container.dockerode);
     const environment = new DockerComposeEnvironment(request.projectDirectory, [
       ...composeFiles,
     ])
       .withBuild()
       .withProjectName(request.projectName)
-      .withEnvironment({
-        ...request.environment,
-        ...(request.telemetry.kind === 'enabled'
-          ? { BLACKBOX_SANDBOX_OTEL_AUTH_TOKEN: request.telemetry.authorization.token }
-          : {}),
-      })
+      .withEnvironment(composeEnvironment(request))
       .withStartupTimeout(request.startupTimeoutMs);
     const services = selectedServices(request);
-    const client = await getContainerRuntimeClient();
     const observer = observeComposeStartup({
       mode: request.observation,
       now: Date.now,

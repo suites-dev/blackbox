@@ -14,7 +14,11 @@ function mountedInput(input: SandboxInput, sourceDirectory: string): SandboxInpu
       kind: 'enabled',
       sessionId: 'session-1',
       executionId: 'execution-1',
-      authorization: { kind: 'bearer-token', token: 'secret' },
+      authorization: {
+        kind: 'split-bearer-tokens',
+        ingestToken: 'ingest-secret',
+        controlToken: 'control-secret',
+      },
       collector: {
         service: 'blackbox-collector',
         containerPort: 4318,
@@ -36,7 +40,15 @@ function mountedInput(input: SandboxInput, sourceDirectory: string): SandboxInpu
         },
         drain: { kind: 'signal', signal: 'SIGTERM' },
       },
-      participants: [{ service: 'orders', runtime: 'node', environment: {}, mounts: [] }],
+      participants: [
+        {
+          service: 'orders',
+          runtime: 'node',
+          environment: {},
+          activation: { kind: 'none' },
+          mounts: [],
+        },
+      ],
     },
   };
 }

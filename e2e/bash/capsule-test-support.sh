@@ -13,6 +13,7 @@ SYSTEM_ID="subscription-system"
 FIXTURE_TOKEN="capsule-e2e-token"
 mkdir -p "$E2E_ROOT/.blackbox/tmp"
 ARTIFACT_ROOT="$(mktemp -d "$E2E_ROOT/.blackbox/tmp/capsule-test.XXXXXX")"
+ARTIFACT_NAME="$(basename "$ARTIFACT_ROOT")"
 SESSION_ID=""
 SESSION_STOPPED=0
 REPORT_SERVER_PID=""
@@ -50,8 +51,9 @@ if [[ ! -s "$STATE_FILE" ]]; then
 fi
 ASSET_ROOT="$(jq -er '.assetRoot' "$STATE_FILE")"
 BLACKBOX_BIN="$(jq -er '.blackboxBin' "$STATE_FILE")"
+BLACKBOX_ENTRYPOINT="$ASSET_ROOT/consumer/node_modules/@suites/blackbox-cli/bin/run.js"
 export BLACKBOX_BIN
-node "$SCRIPT_DIR/capsule-asset-boundary.mjs" verify "$STATE_FILE" "$REPO_ROOT" \
+node "$SCRIPT_DIR/capsule-asset-boundary.mjs" verify \
   >"$E2E_ROOT/.blackbox/tmp/capsule-package-boundary.json"
 BLACKBOX_COMMAND=("$BLACKBOX_BIN")
 
@@ -234,14 +236,13 @@ cleanup() {
   fi
 
   if [[ -n "$PROOF_IMAGE_STATE" && -s "$PROOF_IMAGE_STATE" ]]; then
-    if ! node "$SCRIPT_DIR/capsule-proof-image.mjs" cleanup \
-      "$PROOF_IMAGE_STATE" "$ARTIFACT_ROOT/proof-consumer-image-cleanup.json"; then
+    if ! node "$SCRIPT_DIR/capsule-proof-image.mjs" cleanup "$ARTIFACT_NAME"; then
       echo 'capsule-test: owned proof-consumer image cleanup failed' >&2
       final_status=1
     fi
   fi
 
-  if ! node "$SCRIPT_DIR/capsule-asset-boundary.mjs" cleanup "$STATE_FILE"; then
+  if ! node "$SCRIPT_DIR/capsule-asset-boundary.mjs" cleanup; then
     echo "capsule-test: packed asset cleanup failed for $ASSET_ROOT" >&2
     final_status=1
   fi

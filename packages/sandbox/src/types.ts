@@ -10,6 +10,7 @@ import type {
   SandboxContainerExecutionInput,
   SandboxContainerExecutionStartResult,
 } from './execution/streaming/types.js';
+import type { SandboxTelemetryActivation } from './telemetry/types.js';
 
 export interface SandboxEndpointRequest {
   readonly name: string;
@@ -38,7 +39,11 @@ export interface SandboxTelemetryEnabledInput {
   readonly kind: 'enabled';
   readonly sessionId: string;
   readonly executionId: string;
-  readonly authorization: { readonly kind: 'bearer-token'; readonly token: string };
+  readonly authorization: {
+    readonly kind: 'split-bearer-tokens';
+    readonly ingestToken: string;
+    readonly controlToken: string;
+  };
   readonly collector: SandboxCollectorInput;
   readonly participants: readonly SandboxTelemetryParticipant[];
 }
@@ -79,6 +84,7 @@ export interface SandboxTelemetryParticipant {
   readonly service: string;
   readonly runtime: string;
   readonly environment: Readonly<Record<string, string>>;
+  readonly activation: SandboxTelemetryActivation;
   readonly mounts: readonly SandboxTelemetryMount[];
 }
 

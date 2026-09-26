@@ -14,9 +14,18 @@ describe('participant telemetry activation', () => {
       '--enable-source-maps --experimental-loader=/blackbox/instrumentation/node_modules/' +
         '@opentelemetry/instrumentation/hook.mjs --require=/blackbox/instrumentation/instrumentation.js',
     ],
-  ])('uses the provider contract for %s', (adapter, nodeOptions) => {
+  ])('defers the effective %s environment merge to Sandbox', (adapter, nodeOptions) => {
     expect(participantTelemetry({ plan: plan(adapter), bootstrap })).toMatchObject([
-      { service: 'api', runtime: 'node', environment: { NODE_OPTIONS: nodeOptions } },
+      {
+        service: 'api',
+        runtime: 'node',
+        environment: {},
+        activation: {
+          kind: 'append-environment-variable',
+          name: 'NODE_OPTIONS',
+          value: nodeOptions.replace('--enable-source-maps ', ''),
+        },
+      },
     ]);
   });
 
@@ -35,18 +44,6 @@ describe('participant telemetry activation', () => {
     expect(participantTelemetry({ plan: unconfigured, bootstrap })).toEqual([]);
   });
 
-  it('preserves inherited plan options when the Capsule does not override them', () => {
-    const configured = plan('node-preload');
-    const inherited = { ...configured, environment: { NODE_OPTIONS: '--trace-warnings' } };
-    const result = participantTelemetry({
-      plan: inherited,
-      bootstrap: participantBootstrap({}),
-    });
-    expect(result[0].environment.NODE_OPTIONS).toBe(
-      '--trace-warnings --require=/blackbox/instrumentation/instrumentation.js',
-    );
-  });
-
   it('rejects configured runtimes without an activation provider', () => {
     const python = participantPlan({
       adapter: 'node-preload',
@@ -55,6 +52,22 @@ describe('participant telemetry activation', () => {
     });
     expect(() => participantTelemetry({ plan: python, bootstrap })).toThrow(
       'Activation for runtime "python" is unsupported',
+    );
+  });
+
+  it('rejects activation assets outside the dedicated instrumentation directory', () => {
+    const configured = plan('node-preload');
+    const unsafe = {
+      ...configured,
+      metadata: {
+        ...configured.metadata,
+        activations: {
+          node: { ref: 'instrumentation.js', adapter: 'node-preload', version: 1 },
+        },
+      },
+    };
+    expect(() => participantTelemetry({ plan: unsafe, bootstrap })).toThrow(
+      'must be inside .blackbox/instrumentation',
     );
   });
 });

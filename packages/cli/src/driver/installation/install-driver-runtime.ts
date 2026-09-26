@@ -13,6 +13,7 @@ import {
   type DriverRuntimeInstallationResult,
   type InstallDriverRuntimeInput,
 } from './types.js';
+import { driverInstallDirectory, rejectUnsafeDriverEntries } from './safe-paths.js';
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
@@ -119,10 +120,21 @@ async function installLocked(
 export async function installDriverRuntime(
   input: InstallDriverRuntimeInput,
 ): Promise<DriverRuntimeInstallationResult> {
-  const directory = resolve(input.projectDirectory, '.blackbox', 'drivers');
-  const lockDirectory = join(directory, '.install.lock');
+  const requestedDirectory = resolve(input.projectDirectory, '.blackbox', 'drivers');
+  let directory = requestedDirectory;
+  let lockDirectory = join(directory, '.install.lock');
   try {
-    await mkdir(directory, { recursive: true, mode: 0o700 });
+    directory = await driverInstallDirectory(input.projectDirectory);
+    lockDirectory = join(directory, '.install.lock');
+    await rejectUnsafeDriverEntries({
+      directory,
+      names: [
+        'package.json',
+        'blackbox-driver-runtime.json',
+        'node_modules',
+        'package-lock.json',
+      ],
+    });
     const lockFailure = await acquireLock(directory, lockDirectory);
     if (lockFailure !== null) {
       return lockFailure;
@@ -135,7 +147,7 @@ export async function installDriverRuntime(
   } catch (error) {
     const reason = errorMessage(error);
     return failed(
-      directory,
+      requestedDirectory,
       { kind: 'driver-installation-operational-failure', reason },
       `Could not install the Node driver runtime: ${reason}`,
     );

@@ -34,11 +34,14 @@ async function run(): Promise<void> {
       readPath: requiredEnvironment('BLACKBOX_OTEL_READ_PATH'),
     },
     authorization: {
-      kind: 'bearer-token',
-      token: requiredEnvironment('BLACKBOX_OTEL_AUTH_TOKEN'),
+      kind: 'split-bearer-tokens',
+      ingestToken: requiredEnvironment('BLACKBOX_OTEL_INGEST_TOKEN'),
+      controlToken: requiredEnvironment('BLACKBOX_OTEL_CONTROL_TOKEN'),
     },
     limits: {
       maxRequestBytes: integerEnvironment('BLACKBOX_OTEL_MAX_REQUEST_BYTES'),
+      maxRetainedBytes: integerEnvironment('BLACKBOX_OTEL_MAX_RETAINED_BYTES'),
+      maxRetainedFragments: integerEnvironment('BLACKBOX_OTEL_MAX_RETAINED_FRAGMENTS'),
       shutdownTimeoutMs: integerEnvironment('BLACKBOX_OTEL_SHUTDOWN_TIMEOUT_MS'),
     },
   });

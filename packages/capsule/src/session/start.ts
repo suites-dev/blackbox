@@ -36,13 +36,11 @@ export function deliverProgress(
 async function waitForStartup(input: {
   readonly projectDirectory: string;
   readonly sessionId: string;
-  readonly timeoutMs: number;
   readonly manager: ChildProcess;
   readonly progress: CapsuleProgressMode;
 }): Promise<CapsuleSessionRecord> {
-  const deadline = Date.now() + input.timeoutMs;
   let delivered = 0;
-  while (Date.now() < deadline) {
+  for (;;) {
     delivered = deliverProgress(input.progress, await readCapsuleProgress(input), delivered);
     const record = await readCapsuleRecord(input);
     if (['running', 'start-failed', 'manager-failed'].includes(record.state)) {
@@ -76,7 +74,6 @@ async function waitForStartup(input: {
     }
     await new Promise((resolve) => setTimeout(resolve, 100));
   }
-  throw new Error(`Capsule manager did not finish startup within ${input.timeoutMs}ms`);
 }
 
 async function launchManager(bootstrap: CapsuleManagerBootstrap): Promise<ChildProcess> {
@@ -209,7 +206,6 @@ export async function startCapsule(input: CapsuleStartInput): Promise<CapsuleSta
     const started = await waitForStartup({
       projectDirectory,
       sessionId,
-      timeoutMs: 240_000,
       manager: admitted.manager,
       progress: input.progress,
     });

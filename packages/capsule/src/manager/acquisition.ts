@@ -174,7 +174,7 @@ export async function completePlannedSandbox(
       kind: 'verify-required-instrumentation-activations',
       plan: input.plan,
       sandbox,
-      authorizationToken: input.authorization.token,
+      authorizationToken: input.authorization.controlToken,
       sessionId: input.bootstrap.sessionId,
       executionId: input.bootstrap.executionId,
       timeoutMs: input.entry.entrypoint.readiness.timeoutMs,
