@@ -3,9 +3,11 @@ import type { ReportProvider } from '../model/provider.js';
 import { REGISTRY_SCRIPT } from './registry-script.js';
 import { REGISTRY_STYLES } from './registry-styles.js';
 
-export function renderRegistryPage(input: { readonly providers: readonly ReportProvider[] }): string {
-  const viewStyles = input.providers.map(provider => provider.view.styles).join('\n');
-  const viewScripts = input.providers.map(provider => provider.view.script).join('\n');
+export function renderRegistryPage(input: {
+  readonly providers: readonly ReportProvider[];
+}): string {
+  const viewStyles = input.providers.map((provider) => provider.view.styles).join('\n');
+  const viewScripts = input.providers.map((provider) => provider.view.script).join('\n');
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="dark"><title>Blackbox experiments</title><style>${REGISTRY_STYLES}</style></head><body>
 <a class="skip" href="#registry-content">Skip to experiments</a><header><a class="brand" href="/" aria-label="Blackbox experiment registry"><span aria-hidden="true">B</span>BLACKBOX</a><p>Capsule registry</p><button id="refresh" type="button">Refresh <span aria-hidden="true">↻</span></button></header>
 <main id="registry-content"><section id="registry-view"><section class="hero"><p class="eyebrow">CAPSULE · EXPERIMENT REGISTRY</p><h1>Experiments</h1><p>Browse live and retained Capsule sessions. Select an exact session to open its read-only operational report. Viewing a report never runs a command or changes its evidence.</p><div class="stats" aria-label="Registry summary"><span><strong id="total-count">—</strong>experiments</span><span><strong id="running-count">—</strong>running</span><span><strong id="stopped-count">—</strong>stopped</span><span><strong id="failed-count">—</strong>failed</span></div></section>
@@ -15,6 +17,8 @@ export function renderRegistryPage(input: { readonly providers: readonly ReportP
 }
 
 export function selectionQuery(input: { selection: ReportSelection }): string {
-  if (input.selection.kind === 'registry') { return ''; }
+  if (input.selection.kind === 'registry') {
+    return '';
+  }
   return `?${new URLSearchParams({ type: input.selection.type, id: input.selection.id }).toString()}`;
 }

@@ -1,0 +1,48 @@
+{
+  "name": "@suites/blackbox-driver",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Language-neutral Blackbox command driver contract and Node authoring SDK.",
+  "files": [
+    "dist",
+    "schema"
+  ],
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "blackbox-source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./node-runner": {
+      "blackbox-source": "./src/node-runner/index.ts",
+      "types": "./dist/node-runner/index.d.ts",
+      "import": "./dist/node-runner/index.js",
+      "default": "./dist/node-runner/index.js"
+    },
+    "./schema/driver-prepare-request-v1.json": "./schema/driver-prepare-request-v1.json",
+    "./schema/driver-prepare-response-v1.json": "./schema/driver-prepare-response-v1.json",
+    "./schema/driver-runtime-v1.json": "./schema/driver-runtime-v1.json"
+  },
+  "scripts": {
+    "prebuild": "rimraf dist",
+    "build": "tsc --project tsconfig.build.json",
+    "prepack": "pnpm build",
+    "lint": "eslint .",
+    "pretest": "pnpm build",
+    "test": "vitest run --config vitest.config.ts"
+  },
+  "dependencies": {
+    "@suites/blackbox-telemetry-internal": "workspace:*",
+    "ajv": "8.18.0"
+  },
+  "devDependencies": {
+    "rimraf": "catalog:",
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "license": "Apache-2.0"
+}

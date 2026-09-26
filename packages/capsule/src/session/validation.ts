@@ -1,14 +1,15 @@
 import { access, realpath } from 'node:fs/promises';
 import { isAbsolute, join } from 'node:path';
 
-import { readCapsuleRecord, recordedError, type CapsuleSessionRecord } from '../records.js';
+import { recordedError, type CapsuleSessionRecord } from '../records.js';
 import type { CapsuleOperationFailure } from '../types.js';
+import { reconcileDeadCapsuleManager } from './recovery/index.js';
 
 const SESSION_PATTERN =
   /^(?:[a-z]+-[a-z]+-[a-z]+(?:-[0-9]+)?|capsule-[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/u;
 
 export function capsuleFailure(input: {
-  readonly operation: 'start' | 'exec' | 'stop' | 'report';
+  readonly operation: 'start' | 'exec' | 'stop' | 'report' | 'observations';
   readonly sessionId: string;
   readonly error: unknown;
 }): CapsuleOperationFailure {
@@ -40,7 +41,7 @@ export async function readRecordOrNotFound(input: {
   readonly sessionId: string;
 }): Promise<CapsuleSessionRecord | CapsuleOperationFailure> {
   try {
-    return await readCapsuleRecord(input);
+    return (await reconcileDeadCapsuleManager(input)).record;
   } catch (error) {
     if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
       return {

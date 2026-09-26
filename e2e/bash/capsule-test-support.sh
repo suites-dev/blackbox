@@ -7,15 +7,18 @@ set -Eeuo pipefail
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 E2E_ROOT="$(cd -- "$SCRIPT_DIR/.." && pwd)"
 REPO_ROOT="$(cd -- "$E2E_ROOT/.." && pwd)"
+STATE_FILE="$E2E_ROOT/.blackbox/capsule-assets.json"
 
 SYSTEM_ID="subscription-system"
 FIXTURE_TOKEN="capsule-e2e-token"
 mkdir -p "$E2E_ROOT/.blackbox/tmp"
 ARTIFACT_ROOT="$(mktemp -d "$E2E_ROOT/.blackbox/tmp/capsule-test.XXXXXX")"
+ARTIFACT_NAME="$(basename "$ARTIFACT_ROOT")"
 SESSION_ID=""
 SESSION_STOPPED=0
 REPORT_SERVER_PID=""
 REPORT_SERVER_REUSED=0
+PROOF_IMAGE_STATE=""
 INTERACTIVE=0
 if [[ -t 0 && -t 1 ]]; then
   INTERACTIVE=1
@@ -32,16 +35,7 @@ if [[ -t 1 && -z "${NO_COLOR:-}" ]]; then
 else
   C_RESET=''; C_DIM=''; C_CYAN=''; C_BLUE=''; C_GREEN=''; C_YELLOW=''; C_RED=''
 fi
-
-if [[ -n "${BLACKBOX_BIN:-}" ]]; then
-  BLACKBOX_COMMAND=("$BLACKBOX_BIN")
-elif [[ -f "$REPO_ROOT/packages/cli/bin/run.js" ]]; then
-  # A checkout must exercise the CLI built from this tree, not a stale global
-  # executable that may expose an older command registry.
-  BLACKBOX_COMMAND=(node "$REPO_ROOT/packages/cli/bin/run.js")
-else
-  BLACKBOX_COMMAND=(blackbox)
-fi
+source "$SCRIPT_DIR/capsule-poll-progress.sh"
 
 require_command() {
   if ! command -v "$1" >/dev/null 2>&1; then
@@ -49,6 +43,19 @@ require_command() {
     exit 1
   fi
 }
+
+require_command jq
+if [[ ! -s "$STATE_FILE" ]]; then
+  echo 'capsule-test: run e2e/bash/capsule-assets.sh first' >&2
+  exit 1
+fi
+ASSET_ROOT="$(jq -er '.assetRoot' "$STATE_FILE")"
+BLACKBOX_BIN="$(jq -er '.blackboxBin' "$STATE_FILE")"
+BLACKBOX_ENTRYPOINT="$ASSET_ROOT/consumer/node_modules/@suites/blackbox-cli/bin/run.js"
+export BLACKBOX_BIN
+node "$SCRIPT_DIR/capsule-asset-verify.mjs" \
+  >"$E2E_ROOT/.blackbox/tmp/capsule-package-boundary.json"
+BLACKBOX_COMMAND=("$BLACKBOX_BIN")
 
 blackbox() {
   "${BLACKBOX_COMMAND[@]}" "$@"
@@ -87,6 +94,128 @@ run_captured_step() {
   fi
 }
 
+run_expected_status_step() {
+  local expected_status="$1"
+  local explanation="$2"
+  local command_display="$3"
+  local output_file="$4"
+  shift 4
+
+  explain_step "$explanation" "$command_display"
+  local error_file="${output_file}.stderr"
+  local status=0
+  blackbox "$@" >"$output_file" 2>"$error_file" || status=$?
+  if [[ "$status" -ne "$expected_status" ]]; then
+    cat "$error_file" >&2
+    echo "capsule-test: expected exit $expected_status, received $status" >&2
+    return 1
+  fi
+  printf '%s[blackbox]%s %s✓ expected exit %s retained%s\n' \
+    "$C_CYAN" "$C_RESET" "$C_GREEN" "$expected_status" "$C_RESET"
+  if [[ -s "$output_file" ]]; then
+    printf '%s[blackbox] output%s\n' "$C_DIM" "$C_RESET"
+    sed 's/^/        /' "$output_file"
+  fi
+  if [[ -s "$error_file" ]]; then
+    printf '%s[blackbox] diagnostics%s\n' "$C_DIM" "$C_RESET"
+    sed 's/^/        /' "$error_file"
+  fi
+}
+
+run_json_until() {
+  local explanation="$1"
+  local command_display="$2"
+  local output_file="$3"
+  local predicate="$4"
+  shift 4
+
+  explain_step "$explanation" "$command_display"
+  local attempt
+  for attempt in {1..150}; do
+    if blackbox "$@" >"$output_file" && jq -e "$predicate" "$output_file" >/dev/null; then
+      printf '%s[blackbox]%s %s✓ observation available%s\n' \
+        "$C_CYAN" "$C_RESET" "$C_GREEN" "$C_RESET"
+      printf '%s[blackbox] output%s\n' "$C_DIM" "$C_RESET"
+      sed 's/^/        /' "$output_file"
+      return 0
+    fi
+    sleep 0.1
+  done
+  cat "$output_file" >&2
+  echo 'capsule-test: observation did not become available within 15 seconds' >&2
+  return 1
+}
+
+wait_for_shared_state_proof() {
+  local execution_file="$1"
+  local activity_file="$2"
+  local proof_id="$3"
+  local baseline_session_file="$4"
+  local session_file="$5"
+  local trace_directory="$6"
+  local proof_file="$7"
+  local diagnostics_file="${proof_file}.stderr"
+  local trace_ids_file="${proof_file}.trace-ids"
+
+  explain_step \
+    'Prove Redis shared-state work stayed session-observed and was never attached to its activity.' \
+    'blackbox observations --session <id> --json; blackbox observations --trace <id> --json'
+  local timeout_seconds=30
+  local started_at="$SECONDS"
+  local last_progress_second=-1
+  local attempt
+  for attempt in {1..120}; do
+    local condition='waiting for session observations'
+    if blackbox observations --session "$SESSION_ID" --json >"$session_file" &&
+      jq -e '.kind == "collector-session-found"' "$session_file" >/dev/null; then
+      rm -rf "$trace_directory"
+      mkdir -p "$trace_directory"
+      jq -r --slurpfile baseline "$baseline_session_file" \
+        '(.traceIds - ($baseline[0].traceIds // []))[]' \
+        "$session_file" >"$trace_ids_file"
+      local trace_count
+      trace_count="$(wc -l <"$trace_ids_file" | tr -d '[:space:]')"
+      condition="reading $trace_count exact traces"
+      local traces_complete=1
+      while IFS= read -r trace_id; do
+        if [[ ! "$trace_id" =~ ^[0-9a-f]{32}$ ]] ||
+          ! blackbox observations --session "$SESSION_ID" --trace "$trace_id" --json \
+            >"$trace_directory/$trace_id.json"; then
+          traces_complete=0
+          break
+        fi
+      done <"$trace_ids_file"
+      if [[ "$traces_complete" -eq 1 ]]; then
+        condition='waiting for separate consumer -> public-api trace'
+        if node "$SCRIPT_DIR/capsule-telemetry-proof.mjs" shared-state \
+          "$execution_file" "$activity_file" "$session_file" \
+          "$trace_directory" "$proof_id" >"$proof_file" 2>"$diagnostics_file"; then
+          finish_poll_progress
+          printf '%s[blackbox]%s %s✓ session-only shared-state telemetry proven%s\n' \
+            "$C_CYAN" "$C_RESET" "$C_GREEN" "$C_RESET"
+          sed 's/^/        /' "$proof_file"
+          return 0
+        fi
+      fi
+    fi
+    local elapsed_seconds=$((SECONDS - started_at))
+    if [[ "$INTERACTIVE" -eq 1 || "$elapsed_seconds" -ne "$last_progress_second" ]]; then
+      render_poll_progress "$elapsed_seconds" "$timeout_seconds" "$condition"
+      last_progress_second="$elapsed_seconds"
+    fi
+    if [[ "$elapsed_seconds" -ge "$timeout_seconds" ]]; then
+      break
+    fi
+    sleep 0.25
+  done
+  finish_poll_progress
+  if [[ -s "$diagnostics_file" ]]; then
+    cat "$diagnostics_file" >&2
+  fi
+  echo 'capsule-test: shared-state telemetry proof did not become available within 30 seconds' >&2
+  return 1
+}
+
 cleanup() {
   local original_status=$?
   local final_status=$original_status
@@ -106,6 +235,21 @@ cleanup() {
     fi
   fi
 
+  if [[ -n "$PROOF_IMAGE_STATE" && -s "$PROOF_IMAGE_STATE" ]]; then
+    if ! node "$SCRIPT_DIR/capsule-proof-image-cleanup.mjs"; then
+      echo 'capsule-test: owned proof-consumer image cleanup failed' >&2
+      final_status=1
+    else
+      cp "$PROOF_IMAGE_STATE" "$ARTIFACT_ROOT/proof-consumer-image-ownership.json"
+      cp "$PROOF_IMAGE_RESULT" "$ARTIFACT_ROOT/proof-consumer-image-cleanup.json"
+    fi
+  fi
+
+  if ! node "$SCRIPT_DIR/capsule-asset-cleanup.mjs"; then
+    echo "capsule-test: packed asset cleanup failed for $ASSET_ROOT" >&2
+    final_status=1
+  fi
+
   echo "capsule-test: artifacts retained at $ARTIFACT_ROOT" >&2
   exit "$final_status"
 }
@@ -114,13 +258,12 @@ trap cleanup EXIT
 trap 'exit 130' INT
 trap 'exit 143' TERM
 
-require_command jq
 require_command curl
 
 cd "$E2E_ROOT"
 
-if [[ ! -s "$E2E_ROOT/.blackbox/tmp/capsule-assets/catalog-list.json" ]]; then
-  echo "capsule-test: run e2e/bash/capsule-assets.sh first" >&2
+if [[ "$BLACKBOX_BIN" == "$REPO_ROOT"/* || ! -x "$BLACKBOX_BIN" ]]; then
+  echo 'capsule-test: acceptance requires the externally installed packed CLI' >&2
   exit 1
 fi
 
@@ -209,6 +352,22 @@ assert_report() {
   jq -e --arg session "$SESSION_ID" --arg state "$2" \
     '.kind == "capsule-operational-report" and .session.sessionId == $session and .lifecycle.kind == $state' \
     "$1" >/dev/null
+}
+
+assert_shared_state_report() {
+  local report_file="$1"
+  local downstream_trace_id="$2"
+  local stimulus_activity_id="$3"
+  jq -e --arg trace "$downstream_trace_id" --arg activity "$stimulus_activity_id" '
+    .observations.kind == "collector-session-found" and
+    ([.observations.traces.sessionOnly[] |
+      select(.traceId == $trace)] | length) == 1 and
+    ([.observations.traces.activityCorrelated[] |
+      select(.traceId == $trace)] | length) == 0 and
+    ([.activityTelemetry[] |
+      select(.activityId == $activity and .kind == "available" and (.spans | length) == 1)] |
+      length) == 1
+  ' "$report_file" >/dev/null
 }
 
 assert_served_report() {

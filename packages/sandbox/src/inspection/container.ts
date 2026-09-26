@@ -80,6 +80,7 @@ function createInspection(input: {
     name: input.container.name,
     host: input.container.host,
     labels: Object.freeze({ ...input.container.labels }),
+    environment: Object.freeze({ ...input.container.environment }),
     networkNames: Object.freeze([...input.container.networkNames]),
     mappedPorts: immutableMap(input.mappedPorts),
     getMappedPort: (selector: SandboxMappedPortSelector) => input.container.getMappedPort(selector),

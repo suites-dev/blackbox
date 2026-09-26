@@ -10,6 +10,10 @@ import {
   type SandboxHandle,
   type SandboxStartInput,
 } from '@suites/blackbox-sandbox-internal';
+import {
+  nodeCapsuleCollectorRuntime,
+  type CapsuleCollectorRuntimePort,
+} from './collector-runtime.js';
 
 export interface CapsuleCatalogPort {
   load(input: { readonly configFile: string }): Promise<LoadedCatalog>;
@@ -26,6 +30,7 @@ export interface CapsuleSandboxPort {
 
 export interface CapsuleManagerPorts {
   readonly catalog: CapsuleCatalogPort;
+  readonly collectorRuntime: CapsuleCollectorRuntimePort;
   readonly sandbox: CapsuleSandboxPort;
   readonly now: () => Date;
 }
@@ -36,6 +41,7 @@ export const nodeCapsuleManagerPorts = {
     resolve: ({ catalog, systemId }) =>
       resolveCatalogEntry({ catalog, selection: { kind: 'explicit-entry', entryId: systemId } }),
   },
+  collectorRuntime: nodeCapsuleCollectorRuntime,
   sandbox: {
     projectName: (input) => composeProjectName(input),
     start: (input) => startSandbox(input),

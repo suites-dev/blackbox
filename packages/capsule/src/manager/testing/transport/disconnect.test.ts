@@ -1,0 +1,174 @@
+import { once } from 'node:events';
+import { access, readFile } from 'node:fs/promises';
+import { connect, type Socket } from 'node:net';
+import { join } from 'node:path';
+
+import { expect, it, vi } from 'vitest';
+
+import { readCapsuleActivities, readCapsuleRecord } from '../../../records.js';
+import { managerRequest } from '../../../ipc/client.js';
+import { requestFixture } from '../request.fixture.js';
+
+it('finishes stop and closes the listener when the requesting client disconnects during cleanup', async () => {
+  let entered: () => void = () => undefined;
+  let release: () => void = () => undefined;
+  const admitted = new Promise<void>((resolve) => { entered = resolve; });
+  const blocked = new Promise<void>((resolve) => { release = resolve; });
+  const fixture = await requestFixture(() => { entered(); return blocked; });
+  const accepted = new Promise<Socket>((resolve) => {
+    fixture.manager.server.once('connection', resolve);
+  });
+  const socket = connect(fixture.socketPath);
+  const managerSocket = await accepted;
+  try {
+    await once(socket, 'connect');
+    socket.write(`${JSON.stringify({ kind: 'stop-request', requestId: 'disconnected-stop', reason: 'completed' })}\n`);
+    await admitted;
+    Object.defineProperty(managerSocket, 'end', {
+      configurable: true,
+      value: () => {
+        managerSocket.emit('error', new Error('stop response transport failed'));
+        return managerSocket;
+      },
+    });
+    socket.destroy();
+    await once(socket, 'close');
+    release();
+    await vi.waitFor(async () => {
+      expect(await readCapsuleRecord(fixture)).toMatchObject({ state: 'stopped', cleanup: { kind: 'complete' } });
+      expect(fixture.manager.server.listening).toBe(false);
+    }, { timeout: 1_000, interval: 10 });
+  } finally {
+    release();
+    socket.destroy();
+    await fixture.close();
+  }
+});
+
+it('retains the terminal activity after an exec client disconnects and continues serving', async () => {
+  const fixture = await requestFixture(() => Promise.resolve());
+  const socket = connect(fixture.socketPath);
+  try {
+    await once(socket, 'connect');
+    socket.write(`${JSON.stringify({ kind: 'exec-request', requestId: 'disconnected-exec',
+      name: { kind: 'omitted' }, purpose: 'stimulus',
+      target: { kind: 'host', argv: [process.execPath, '-e', 'setTimeout(() => process.stdout.write("finished"), 100)'] },
+    })}\n`);
+    await vi.waitFor(async () => {
+      expect(await readCapsuleActivities(fixture)).toMatchObject([{ kind: 'running' }]);
+    }, { timeout: 1_000, interval: 10 });
+    socket.destroy();
+    await once(socket, 'close');
+    await vi.waitFor(async () => {
+      expect(await readCapsuleActivities(fixture)).toMatchObject([
+        { kind: 'completed', outcome: { stdout: 'finished', exitCode: 0 } },
+      ]);
+    }, { timeout: 1_000, interval: 10 });
+    await expect(managerRequest({ socketPath: fixture.socketPath,
+      request: { kind: 'stop-request', requestId: 'followup-stop', reason: 'completed' },
+    })).resolves.toMatchObject({ kind: 'stop-response', cleanup: 'complete' });
+  } finally {
+    socket.destroy();
+    await fixture.close();
+  }
+});
+
+it('force-cancels an abandoned interactive execution before serving stop', async () => {
+  const fixture = await requestFixture(() => Promise.resolve());
+  const socket = connect(fixture.socketPath);
+  const childReady = new Promise<void>((resolve) => {
+    socket.on('data', (chunk: Buffer) => {
+      if (chunk.toString().includes('exec-output')) {
+        resolve();
+      }
+    });
+  });
+  try {
+    await once(socket, 'connect');
+    socket.write(`${JSON.stringify({
+      kind: 'interactive-exec-request',
+      requestId: 'abandoned-interactive',
+      name: { kind: 'omitted' },
+      purpose: 'inspection',
+      terminal: { columns: 80, rows: 24 },
+      target: {
+        kind: 'host',
+        argv: [
+          process.execPath,
+          '-e',
+          'process.on("SIGINT", () => undefined); process.stdout.write("ready"); ' +
+            'setInterval(() => undefined, 1000)',
+        ],
+      },
+    })}\n`);
+    await vi.waitFor(async () => {
+      expect(await readCapsuleActivities(fixture)).toMatchObject([
+        { kind: 'running' },
+      ]);
+    }, { timeout: 1_000, interval: 10 });
+    await childReady;
+    socket.destroy();
+    await once(socket, 'close');
+    await expect(managerRequest({
+      socketPath: fixture.socketPath,
+      request: {
+        kind: 'stop-request',
+        requestId: 'stop-after-abandonment',
+        reason: 'cancelled',
+      },
+    })).resolves.toMatchObject({
+      kind: 'stop-response',
+      cleanup: 'complete',
+    });
+    expect(await readCapsuleActivities(fixture)).toMatchObject([
+      { kind: 'completed', outcome: { kind: 'signaled', signal: 'SIGKILL' } },
+    ]);
+  } finally {
+    socket.destroy();
+    await fixture.close();
+  }
+});
+
+it('preempts an abandoned captured child before stop and retains terminal cleanup', async () => {
+  const fixture = await requestFixture(() => Promise.resolve());
+  const socket = connect(fixture.socketPath);
+  const pidPath = join(fixture.projectDirectory, 'blocked-child.pid');
+  let childPid = 0;
+  try {
+    await once(socket, 'connect');
+    socket.write(`${JSON.stringify({
+      kind: 'exec-request', requestId: 'abandoned-captured',
+      name: { kind: 'omitted' }, purpose: 'inspection',
+      target: { kind: 'host', argv: [process.execPath, '-e',
+        'require("node:fs").writeFileSync(process.argv[1], String(process.pid)); ' +
+        'process.on("SIGINT", () => undefined); setInterval(() => undefined, 1000)', pidPath] },
+    })}\n`);
+    await vi.waitFor(async () => {
+      childPid = Number(await readFile(pidPath, 'utf8'));
+      expect(childPid).toBeGreaterThan(0);
+      expect(await readCapsuleActivities(fixture)).toMatchObject([{ kind: 'running' }]);
+    }, { timeout: 1_000, interval: 10 });
+    socket.destroy();
+    await once(socket, 'close');
+    await expect(managerRequest({ socketPath: fixture.socketPath,
+      request: { kind: 'stop-request', requestId: 'stop-captured', reason: 'cancelled' },
+    })).resolves.toEqual({
+      kind: 'stop-response', requestId: 'stop-captured', cleanup: 'complete',
+    });
+    expect(await readCapsuleActivities(fixture)).toMatchObject([
+      { kind: 'completed', outcome: { kind: 'signaled', signal: 'SIGKILL' } },
+    ]);
+    expect(await readCapsuleRecord(fixture)).toMatchObject({
+      state: 'stopped', cleanup: { kind: 'complete' },
+    });
+    expect(fixture.manager.server.listening).toBe(false);
+    await expect(access(fixture.socketPath)).rejects.toMatchObject({ code: 'ENOENT' });
+    expect(() => { process.kill(childPid, 0); }).toThrow(expect.objectContaining({ code: 'ESRCH' }));
+  } finally {
+    socket.destroy();
+    if (childPid > 0) {
+      try { process.kill(childPid, 'SIGKILL'); } catch { /* The manager already reaped it. */ }
+    }
+    await fixture.close();
+  }
+});

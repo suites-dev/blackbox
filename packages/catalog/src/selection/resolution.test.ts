@@ -49,6 +49,11 @@ it('resolves only the selected participants activations and preserves ordered Co
   expect(result.composeFiles).not.toBe(config.catalog.entries.orders.acquisition.files);
   expect(result.services).toEqual(['api', 'postgres']);
   expect(result.endpoints[0].service).toBe('api');
+  expect(result.endpoints).toEqual([
+    { name: 'entrypoint', service: 'api', containerPort: 3000, protocol: 'http' },
+    { name: 'driver-http', service: 'api', containerPort: 3000, protocol: 'http' },
+  ]);
+  expect(result.endpoints.some((endpoint) => endpoint.name === 'driver-postgres')).toBe(false);
   expect(result.readiness[0]).toMatchObject({ path: '/health', timeoutMs: 60_000 });
   expect(base.catalog.entries.orders.acquisition.files).toEqual(result.composeFiles);
 });

@@ -5,18 +5,12 @@
   "type": "commonjs",
   "scripts": {
     "build": "node scripts/clean-build.mjs && tsc -p tsconfig.json",
-    "test": "npm run verify:source-maps && node --test dist/domain.test.js dist/lib/http.test.js dist/lib/queue.test.js dist/fixture-control-auth.test.js dist/public-api/subscriptions.test.js dist/fraud-check/assessment.test.js dist/order-service/orders.test.js dist/payment-mock/state.test.js scripts/driver-fence.test.mjs",
+    "test": "npm run verify:source-maps && node --test dist/domain.test.js dist/lib/http.test.js dist/lib/queue.test.js dist/fixture-control-auth.test.js dist/public-api/subscriptions.test.js dist/fraud-check/assessment.test.js dist/order-service/orders.test.js dist/payment-mock/state.test.js dist/redis-proof-consumer/consumer.test.js scripts/driver-fence.test.mjs",
     "verify:source-maps": "npm run build && node scripts/verify-source-maps.mjs",
     "smoke": "node scripts/smoke.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-sqs": "3.1057.0",
-    "@opentelemetry/auto-instrumentations-node": "0.55.3",
-    "@opentelemetry/exporter-trace-otlp-http": "0.57.2",
-    "@opentelemetry/instrumentation-aws-sdk": "0.74.0",
-    "@opentelemetry/resources": "1.30.1",
-    "@opentelemetry/sdk-node": "0.57.2",
-    "@opentelemetry/sdk-trace-base": "1.30.1",
     "pg": "8.16.3",
     "redis": "4.7.1"
   },

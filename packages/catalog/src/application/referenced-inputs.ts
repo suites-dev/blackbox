@@ -35,6 +35,15 @@ function referencedPaths(catalog: LoadedCatalog): readonly ReferencedPath[] {
         instancePath: `/catalog/entries/${entryId}/acquisition/files/${index}`,
       });
     }
+    const drivers = Object.entries(entry.drivers).sort(([left], [right]) =>
+      left.localeCompare(right),
+    );
+    for (const [driverId, driver] of drivers) {
+      references.push({
+        relativePath: driver.ref,
+        instancePath: `/catalog/entries/${entryId}/drivers/${driverId}/ref`,
+      });
+    }
   }
   const activations = Object.entries(catalog.config.activations).sort(([left], [right]) =>
     left.localeCompare(right),

@@ -1,0 +1,196 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.suites.dev/blackbox/driver-prepare-request/v1",
+  "title": "Blackbox driver prepare request v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "kind",
+    "protocolVersion",
+    "driverId",
+    "command",
+    "target",
+    "execution",
+    "propagation",
+    "telemetry"
+  ],
+  "properties": {
+    "kind": { "const": "driver-prepare-request" },
+    "protocolVersion": { "const": 1 },
+    "driverId": { "$ref": "#/$defs/identifier" },
+    "command": { "$ref": "#/$defs/command" },
+    "target": { "$ref": "#/$defs/target" },
+    "execution": { "$ref": "#/$defs/execution" },
+    "propagation": { "$ref": "#/$defs/propagation" },
+    "telemetry": { "$ref": "#/$defs/telemetry" }
+  },
+  "$defs": {
+    "identifier": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+    },
+    "environment": {
+      "type": "object",
+      "additionalProperties": { "type": "string" }
+    },
+    "command": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "argv"],
+      "properties": {
+        "kind": { "const": "command" },
+        "argv": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "endpoint": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "host", "port", "url"],
+          "properties": {
+            "kind": { "const": "host" },
+            "host": { "type": "string", "minLength": 1 },
+            "port": { "type": "integer", "minimum": 1, "maximum": 65535 },
+            "url": { "type": "string", "minLength": 1 }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "host", "port", "url"],
+          "properties": {
+            "kind": { "const": "participant" },
+            "host": { "type": "string", "minLength": 1 },
+            "port": { "type": "integer", "minimum": 1, "maximum": 65535 },
+            "url": { "type": "string", "minLength": 1 }
+          }
+        }
+      ]
+    },
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "participantId",
+        "service",
+        "protocol",
+        "containerPort",
+        "environment",
+        "endpoint"
+      ],
+      "properties": {
+        "kind": { "const": "participant" },
+        "participantId": { "$ref": "#/$defs/identifier" },
+        "service": { "$ref": "#/$defs/identifier" },
+        "protocol": { "type": "string", "minLength": 1 },
+        "containerPort": { "type": "integer", "minimum": 1, "maximum": 65535 },
+        "environment": { "$ref": "#/$defs/environment" },
+        "endpoint": { "$ref": "#/$defs/endpoint" }
+      }
+    },
+    "execution": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind"],
+          "properties": { "kind": { "const": "host" } }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "participantId", "service"],
+          "properties": {
+            "kind": { "const": "participant" },
+            "participantId": { "$ref": "#/$defs/identifier" },
+            "service": { "$ref": "#/$defs/identifier" }
+          }
+        }
+      ]
+    },
+    "propagation": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind"],
+          "properties": { "kind": { "const": "propagation-not-requested" } }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "carrier"],
+          "properties": {
+            "kind": { "const": "w3c-trace-context-propagation" },
+            "carrier": {
+              "enum": ["http-headers", "message-metadata", "process-environment"]
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "resource"],
+          "properties": {
+            "kind": { "const": "shared-state-propagation-unsupported" },
+            "resource": { "type": "string", "minLength": 1 }
+          }
+        }
+      ]
+    },
+    "telemetry": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind"],
+          "properties": { "kind": { "const": "disabled" } }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "sessionId",
+            "activityId",
+            "traceparent",
+            "tracestate"
+          ],
+          "properties": {
+            "kind": { "const": "w3c-trace-context" },
+            "sessionId": { "type": "string", "minLength": 1 },
+            "activityId": { "type": "string", "minLength": 1 },
+            "traceparent": { "type": "string", "minLength": 1 },
+            "tracestate": { "$ref": "#/$defs/tracestate" }
+          }
+        }
+      ]
+    },
+    "tracestate": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind"],
+          "properties": { "kind": { "const": "absent" } }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "value"],
+          "properties": {
+            "kind": { "const": "present" },
+            "value": { "type": "string", "minLength": 1 }
+          }
+        }
+      ]
+    }
+  }
+}

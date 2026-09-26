@@ -1,0 +1,713 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://suites.dev/blackbox/schemas/capsule-operational-report-v1.json",
+  "title": "Blackbox Capsule operational report v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "kind",
+    "session",
+    "lifecycle",
+    "composeProject",
+    "entrypoint",
+    "resources",
+    "readiness",
+    "activities",
+    "progress",
+    "observations",
+    "cleanup",
+    "failure",
+    "redactions",
+    "activityTelemetry"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "kind": {
+      "const": "capsule-operational-report"
+    },
+    "session": {
+      "$ref": "#/$defs/reportSession"
+    },
+    "lifecycle": {
+      "$ref": "#/$defs/lifecycle"
+    },
+    "composeProject": {
+      "$ref": "#/$defs/stringAvailability"
+    },
+    "entrypoint": {
+      "$ref": "#/$defs/entrypointAvailability"
+    },
+    "resources": {
+      "$ref": "#/$defs/resources"
+    },
+    "readiness": {
+      "$ref": "#/$defs/readinessAvailability"
+    },
+    "activities": {
+      "type": "array",
+      "items": {
+        "$ref": "https://suites.dev/blackbox/schemas/capsule-activities-v1.json#/$defs/activity"
+      }
+    },
+    "progress": {
+      "type": "array",
+      "items": {
+        "$ref": "https://suites.dev/blackbox/schemas/capsule-progress-v1.json#/properties/events/items"
+      }
+    },
+    "observations": {
+      "$ref": "#/$defs/observations"
+    },
+    "cleanup": {
+      "$ref": "https://suites.dev/blackbox/schemas/capsule-session-v1.json#/$defs/cleanup"
+    },
+    "failure": {
+      "$ref": "https://suites.dev/blackbox/schemas/capsule-session-v1.json#/$defs/failure"
+    },
+    "redactions": {
+      "$ref": "#/$defs/redactions"
+    },
+    "activityTelemetry": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/activityTelemetry"
+      }
+    }
+  },
+  "$defs": {
+    "reportSession": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sessionId",
+        "system",
+        "title",
+        "description",
+        "retainedState",
+        "admittedAt",
+        "updatedAt",
+        "artifactRoot"
+      ],
+      "properties": {
+        "sessionId": {
+          "type": "string"
+        },
+        "system": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "description": {
+          "$ref": "https://suites.dev/blackbox/schemas/capsule-session-v1.json#/$defs/description"
+        },
+        "retainedState": {
+          "$ref": "https://suites.dev/blackbox/schemas/capsule-session-v1.json#/$defs/sessionState"
+        },
+        "admittedAt": {
+          "type": "string"
+        },
+        "updatedAt": {
+          "type": "string"
+        },
+        "artifactRoot": {
+          "type": "string"
+        }
+      }
+    },
+    "lifecycle": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "retainedState"],
+          "properties": {
+            "kind": {
+              "const": "running"
+            },
+            "retainedState": {
+              "const": "running"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "retainedState"],
+          "properties": {
+            "kind": {
+              "const": "starting"
+            },
+            "retainedState": {
+              "enum": ["admitted", "manager-starting", "sandbox-starting"]
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "retainedState"],
+          "properties": {
+            "kind": {
+              "const": "stopping"
+            },
+            "retainedState": {
+              "const": "stopping"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "retainedState"],
+          "properties": {
+            "kind": {
+              "const": "stopped"
+            },
+            "retainedState": {
+              "const": "stopped"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "retainedState"],
+          "properties": {
+            "kind": {
+              "const": "failed"
+            },
+            "retainedState": {
+              "enum": ["start-failed", "manager-failed", "stop-failed"]
+            }
+          }
+        }
+      ]
+    },
+    "unavailable": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind"],
+      "properties": {
+        "kind": {
+          "const": "unavailable"
+        }
+      }
+    },
+    "stringAvailability": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/unavailable"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "value"],
+          "properties": {
+            "kind": {
+              "const": "available"
+            },
+            "value": {
+              "type": "string"
+            }
+          }
+        }
+      ]
+    },
+    "entrypointAvailability": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/unavailable"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "value"],
+          "properties": {
+            "kind": {
+              "const": "available"
+            },
+            "value": {
+              "$ref": "https://suites.dev/blackbox/schemas/capsule-session-v1.json#/$defs/entrypoint"
+            }
+          }
+        }
+      ]
+    },
+    "readinessAvailability": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/unavailable"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "value"],
+          "properties": {
+            "kind": {
+              "const": "available"
+            },
+            "value": {
+              "$ref": "https://suites.dev/blackbox/schemas/capsule-session-v1.json#/$defs/readiness"
+            }
+          }
+        }
+      ]
+    },
+    "resources": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["containers", "networks", "volumes"],
+      "properties": {
+        "containers": {
+          "type": "array",
+          "items": {
+            "$ref": "https://suites.dev/blackbox/schemas/capsule-session-v1.json#/$defs/container"
+          }
+        },
+        "networks": {
+          "$ref": "https://suites.dev/blackbox/schemas/capsule-session-v1.json#/$defs/stringArray"
+        },
+        "volumes": {
+          "$ref": "https://suites.dev/blackbox/schemas/capsule-session-v1.json#/$defs/stringArray"
+        }
+      }
+    },
+    "observations": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "telemetry", "fragmentCount", "runs", "traces"],
+          "properties": {
+            "kind": {
+              "const": "collector-session-found"
+            },
+            "telemetry": {
+              "$ref": "#/$defs/telemetry"
+            },
+            "fragmentCount": {
+              "type": "number"
+            },
+            "runs": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/collectorRun"
+              }
+            },
+            "traces": { "$ref": "#/$defs/traceClassification" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "message"],
+          "properties": {
+            "kind": {
+              "const": "collector-session-missing"
+            },
+            "message": {
+              "type": "string"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "error"],
+          "properties": {
+            "kind": {
+              "const": "collector-session-corrupt"
+            },
+            "error": {
+              "$ref": "https://suites.dev/blackbox/schemas/capsule-session-v1.json#/$defs/recordedError"
+            }
+          }
+        }
+      ]
+    },
+    "telemetry": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["status", "acceptedRequests", "acceptedSpans", "lastReceivedAt"],
+          "properties": {
+            "status": {
+              "const": "not-received"
+            },
+            "acceptedRequests": {
+              "const": 0
+            },
+            "acceptedSpans": {
+              "const": 0
+            },
+            "lastReceivedAt": {
+              "type": "null"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["status", "acceptedRequests", "acceptedSpans", "lastReceivedAt"],
+          "properties": {
+            "status": {
+              "const": "received"
+            },
+            "acceptedRequests": {
+              "type": "number"
+            },
+            "acceptedSpans": {
+              "type": "number"
+            },
+            "lastReceivedAt": {
+              "type": "string"
+            }
+          }
+        }
+      ]
+    },
+    "activation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "runtime", "serviceName", "activatedAt"],
+      "properties": {
+        "kind": { "const": "instrumentation-activation" },
+        "runtime": {
+          "type": "string"
+        },
+        "serviceName": {
+          "type": "string"
+        },
+        "activatedAt": {
+          "type": "string"
+        }
+      }
+    },
+    "collectorRun": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "startedAt",
+        "updatedAt",
+        "stopped",
+        "receiver",
+        "instrumentation",
+        "shutdown",
+        "failure"
+      ],
+      "properties": {
+        "startedAt": { "type": "string", "minLength": 1 },
+        "updatedAt": { "type": "string", "minLength": 1 },
+        "stopped": {
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["kind"],
+              "properties": { "kind": { "const": "not-stopped" } }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["kind", "at"],
+              "properties": {
+                "kind": { "const": "stopped" },
+                "at": { "type": "string", "minLength": 1 }
+              }
+            }
+          ]
+        },
+        "receiver": {
+          "enum": ["ready", "draining", "stopped", "failed", "interrupted"]
+        },
+        "instrumentation": {
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["kind"],
+              "properties": { "kind": { "const": "not-activated" } }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["kind", "activations"],
+              "properties": {
+                "kind": { "const": "activated" },
+                "activations": {
+                  "type": "array",
+                  "items": { "$ref": "#/$defs/activation" }
+                }
+              }
+            }
+          ]
+        },
+        "shutdown": {
+          "enum": ["not-started", "draining", "complete", "timed-out", "interrupted"]
+        },
+        "failure": {
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["kind"],
+              "properties": { "kind": { "const": "none" } }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["kind", "error"],
+              "properties": {
+                "kind": { "const": "recorded" },
+                "error": {
+                  "$ref": "https://suites.dev/blackbox/schemas/capsule-session-v1.json#/$defs/recordedError"
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "traceClassification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["activityCorrelated", "sessionOnly"],
+      "properties": {
+        "activityCorrelated": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["traceId", "activityIds"],
+            "properties": {
+              "traceId": { "type": "string", "minLength": 1 },
+              "activityIds": {
+                "type": "array",
+                "minItems": 1,
+                "items": { "type": "string", "minLength": 1 }
+              }
+            }
+          }
+        },
+        "sessionOnly": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/sessionTrace" }
+        }
+      }
+    },
+    "sessionTraceAssociation": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "activityId"],
+          "properties": {
+            "kind": { "const": "activity-window" },
+            "activityId": { "type": "string", "minLength": 1 }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind"],
+          "properties": { "kind": { "const": "session-only" } }
+        }
+      ]
+    },
+    "sessionTrace": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "traceId", "association", "spans"],
+          "properties": {
+            "kind": { "const": "available" },
+            "traceId": { "type": "string", "minLength": 1 },
+            "association": { "$ref": "#/$defs/sessionTraceAssociation" },
+            "spans": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/$defs/activityTelemetry/oneOf/0/properties/spans/items"
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "traceId", "association", "reason"],
+          "properties": {
+            "kind": { "const": "unavailable" },
+            "traceId": { "type": "string", "minLength": 1 },
+            "association": { "$ref": "#/$defs/sessionTraceAssociation" },
+            "reason": { "enum": ["not-retained", "corrupt"] }
+          }
+        }
+      ]
+    },
+    "redactions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["count", "entries"],
+      "properties": {
+        "count": {
+          "type": "number"
+        },
+        "entries": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["kind", "location"],
+            "properties": {
+              "kind": {
+                "enum": [
+                  "authorization-credential",
+                  "environment-value",
+                  "sensitive-argument",
+                  "sensitive-header",
+                  "sensitive-output",
+                  "private-ipc-path"
+                ]
+              },
+              "location": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "activityTelemetry": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "activityId", "spans"],
+          "properties": {
+            "kind": {
+              "const": "available"
+            },
+            "activityId": {
+              "type": "string"
+            },
+            "spans": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "traceId",
+                  "spanId",
+                  "parentSpanId",
+                  "spanKind",
+                  "operation",
+                  "service",
+                  "startTimeUnixNano",
+                  "endTimeUnixNano",
+                  "statusCode",
+                  "attributes",
+                  "links"
+                ],
+                "properties": {
+                  "traceId": {
+                    "type": "string"
+                  },
+                  "spanId": {
+                    "type": "string"
+                  },
+                  "parentSpanId": {
+                    "type": ["string", "null"]
+                  },
+                  "spanKind": {
+                    "enum": ["unspecified", "internal", "server", "client", "producer", "consumer"]
+                  },
+                  "operation": {
+                    "type": "string"
+                  },
+                  "service": {
+                    "type": "string"
+                  },
+                  "startTimeUnixNano": {
+                    "type": ["string", "null"]
+                  },
+                  "endTimeUnixNano": {
+                    "type": ["string", "null"]
+                  },
+                  "statusCode": {
+                    "type": ["number", "null"]
+                  },
+                  "attributes": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["key", "value"],
+                      "properties": {
+                        "key": {
+                          "type": "string"
+                        },
+                        "value": {
+                          "oneOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "type": "boolean"
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  },
+                  "links": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["traceId", "spanId"],
+                      "properties": {
+                        "traceId": {
+                          "type": "string"
+                        },
+                        "spanId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "activityId", "reason"],
+          "properties": {
+            "kind": {
+              "const": "unavailable"
+            },
+            "activityId": {
+              "type": "string"
+            },
+            "reason": {
+              "enum": ["not-retained", "corrupt"]
+            }
+          }
+        }
+      ]
+    }
+  }
+}

@@ -3,6 +3,15 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
+      "@suites/blackbox-capsule-internal": ["packages/capsule/src/index.ts"],
+      "@suites/blackbox-catalog-internal": ["packages/catalog/src/index.ts"],
+      "@suites/blackbox-driver": ["packages/driver/src/index.ts"],
+      "@suites/blackbox-inst-runtime-node": ["packages/instrumentation-runtime-node/src/index.ts"],
+      "@suites/blackbox-instrumentation-internal": ["packages/instrumentation/src/index.ts"],
+      "@suites/blackbox-otel-collector-internal": ["packages/otel-collector/src/index.ts"],
+      "@suites/blackbox-report-server-internal": ["packages/report-server/src/index.ts"],
+      "@suites/blackbox-sandbox-internal": ["packages/sandbox/src/index.ts"],
+      "@suites/blackbox-telemetry-internal": ["packages/telemetry/src/index.ts"],
       "@suites/blackbox-analyzer": ["packages/analyzer/src/index.ts"],
       "@suites/blackbox-analyzer/ledger": ["packages/analyzer/src/ledger.ts"],
       "@suites/blackbox-analyzer/contract": ["packages/analyzer/src/contract.ts"],

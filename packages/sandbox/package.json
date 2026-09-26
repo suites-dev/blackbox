@@ -5,7 +5,8 @@
   "type": "module",
   "description": "Internal catalog-independent Docker Compose sandbox engine.",
   "files": [
-    "dist"
+    "dist",
+    "schema"
   ],
   "types": "./dist/index.d.ts",
   "exports": {
@@ -14,20 +15,27 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "default": "./dist/index.js"
-    }
+    },
+    "./schema/sandbox-record-v1.json": "./schema/sandbox-record-v1.json"
   },
   "scripts": {
+    "prebuild": "rimraf dist",
     "build": "tsc --project tsconfig.build.json",
+    "prepack": "pnpm build",
     "lint": "eslint .",
     "test": "vitest run --config vitest.config.ts",
-    "test:docker": "BLACKBOX_SANDBOX_DOCKER_TEST=1 vitest run --config vitest.config.ts src/acquisition/concurrency.docker.test.ts"
+    "test:docker": "BLACKBOX_SANDBOX_DOCKER_TEST=1 vitest run --config vitest.config.ts src/acquisition/docker-proof"
   },
   "dependencies": {
+    "ajv": "8.18.0",
+    "docker-compose": "1.4.2",
     "testcontainers": "catalog:"
   },
   "devDependencies": {
+    "rimraf": "catalog:",
     "@types/node": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
-  }
+  },
+  "license": "Apache-2.0"
 }

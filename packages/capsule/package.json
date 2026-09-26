@@ -16,21 +16,32 @@
       "import": "./dist/index.js",
       "default": "./dist/index.js"
     },
-    "./schema/capsule-progress-v1.json": "./schema/capsule-progress-v1.json"
+    "./schema/capsule-progress-v1.json": "./schema/capsule-progress-v1.json",
+    "./schema/capsule-session-v1.json": "./schema/capsule-session-v1.json",
+    "./schema/capsule-activities-v1.json": "./schema/capsule-activities-v1.json",
+    "./schema/capsule-operational-report-v1.json": "./schema/capsule-operational-report-v1.json"
   },
   "scripts": {
+    "prebuild": "rimraf dist",
     "build": "tsc --project tsconfig.build.json",
+    "prepack": "pnpm build",
     "lint": "eslint .",
     "test": "vitest run --config vitest.config.ts"
   },
   "dependencies": {
+    "@suites/blackbox-driver": "workspace:*",
     "@suites/blackbox-catalog-internal": "workspace:*",
+    "@suites/blackbox-instrumentation-internal": "workspace:*",
+    "@suites/blackbox-otel-collector-internal": "workspace:*",
     "@suites/blackbox-sandbox-internal": "workspace:*",
+    "@suites/blackbox-telemetry-internal": "workspace:*",
     "ajv": "8.18.0"
   },
   "devDependencies": {
+    "rimraf": "catalog:",
     "@types/node": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
-  }
+  },
+  "license": "Apache-2.0"
 }

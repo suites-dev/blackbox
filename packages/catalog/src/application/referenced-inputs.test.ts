@@ -26,6 +26,7 @@ function catalogAt(
           orders: {
             ...orders,
             acquisition: { ...orders.acquisition, files: [composeFile] },
+            drivers: {},
           },
         },
       },
@@ -74,6 +75,62 @@ it('rejects directory references and symlinks that resolve outside the project',
       kind: 'semantic',
       instancePath: '/activations/node-runtime/ref',
       message: 'resolves outside the project directory: .blackbox/catalog/outside.mjs',
+    },
+  ]);
+});
+
+it('reports a missing project-authored driver module', async () => {
+  const projectDirectory = await mkdtemp(join(tmpdir(), 'blackbox-catalog-driver-'));
+  await mkdir(join(projectDirectory, '.blackbox/catalog'), { recursive: true });
+  await mkdir(join(projectDirectory, '.blackbox/instrumentation'), { recursive: true });
+  await Promise.all([
+    writeFile(join(projectDirectory, '.blackbox/catalog/orders.yml'), 'services: {}\n'),
+    writeFile(join(projectDirectory, '.blackbox/instrumentation/node.mjs'), 'export {};\n'),
+  ]);
+  const catalog = catalogAt(
+    projectDirectory,
+    '.blackbox/catalog/orders.yml',
+    '.blackbox/instrumentation/node.mjs',
+  );
+  const baseEntry = catalog.config.catalog.entries.orders;
+  const withDriver = {
+    ...catalog,
+    config: {
+      ...catalog.config,
+      catalog: {
+        ...catalog.config.catalog,
+        entries: {
+          orders: {
+            ...baseEntry,
+            drivers: {
+              orders: {
+                kind: 'project-driver',
+                runtime: 'node',
+                ref: '.blackbox/drivers/missing.mjs',
+                target: {
+                  kind: 'participant',
+                  participant: 'api',
+                  protocol: 'http',
+                  containerPort: 3000,
+                },
+                execution: { kind: 'host' },
+                propagation: {
+                  kind: 'w3c-trace-context-propagation',
+                  carrier: 'http-headers',
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  } satisfies LoadedCatalog;
+
+  await expect(validateReferencedInputs({ catalog: withDriver })).resolves.toEqual([
+    {
+      kind: 'semantic',
+      instancePath: '/catalog/entries/orders/drivers/orders/ref',
+      message: 'referenced file does not exist: .blackbox/drivers/missing.mjs',
     },
   ]);
 });

@@ -1,77 +1,109 @@
 # Sandbox
 
-`@suites/blackbox-sandbox-internal` is Blackbox's catalog-independent Docker
-Compose runtime. A caller supplies already-resolved Compose inputs. This package
-validates those inputs, records admission before Docker is touched, starts the
-requested services through Testcontainers, resolves explicitly requested
-endpoints, and performs bounded idempotent cleanup.
+`@suites/blackbox-sandbox-internal` owns the lifecycle of one isolated Docker
+Compose environment. It turns already-resolved Compose inputs into a running
+sandbox with mapped endpoints, inspectable resources, optional telemetry, command
+execution, retained ownership records, and bounded cleanup.
 
-It does not read `blackbox.config.yaml`, discover catalogs, execute user
-commands, or implement telemetry, instrumentation, Playwright, effects, or
-assurance.
+This is a private workspace package. It is infrastructure for other Blackbox
+packages, not a standalone installation or user-facing configuration layer.
 
-```ts
-import { startSandbox } from '@suites/blackbox-sandbox-internal';
+## Where Sandbox Fits
 
-const sandbox = await startSandbox({
-  sandbox: {
-    sandboxId: 'orders-discovery-01',
-    projectDirectory: '/absolute/path/to/project',
-    composeFiles: ['.blackbox/catalog/orders.compose.yaml'],
-    recordDirectory: '/absolute/path/to/project/.blackbox/runs/sandboxes',
-    environment: { FEATURE_MODE: 'discovery' },
-    serviceSelection: { kind: 'selected', services: ['orders', 'postgres'] },
-    endpoints: [{ name: 'orders-http', service: 'orders', containerPort: 3000 }],
-    startupTimeoutMs: 60_000,
-    stopTimeoutMs: 30_000,
-  },
-  progress: {
-    kind: 'events',
-    sink: { emit: (event) => console.error(`[blackbox] ${event.kind}`) },
-  },
-});
-
-console.log(sandbox.endpoints.get('orders-http'));
-console.log(sandbox.getContainer({ service: 'orders' }).testcontainer.labels);
-console.log(sandbox.inspectResources({ kind: 'owned-compose-resources' }));
-const result = await sandbox.execute({
-  kind: 'container-exec',
-  service: 'postgres',
-  argv: ['psql', '--version'],
-});
-await sandbox.stop({ reason: 'completed' });
+```text
+Catalog-resolved Compose plan
+            |
+            v
+Capsule manager -----> Sandbox -----> Testcontainers / Docker Compose
+   |                     |                         |
+   |                     +-- endpoints/resources -+
+   |                     +-- telemetry overrides
+   |                     +-- execution controls
+   |                     +-- lifecycle records and recovery
+   v
+readiness, retained experiment state, and reports
 ```
 
-Records are atomically replaced, but this first slice does not claim fsync or
-power-loss durability. Use `findInterruptedSandboxes()` after restart to expose
-records which were admitted but never reached a terminal state.
+[Capsule](../capsule/README.md) is the current workspace consumer. It supplies a
+resolved catalog plan, asks Sandbox to acquire the Compose project, uses the
+returned handle for endpoints, inspection, telemetry, and participant execution,
+and delegates cleanup recovery back to Sandbox. See the Capsule
+[manager ports](../capsule/src/manager/ports.ts),
+[acquisition flow](../capsule/src/manager/acquisition.ts), and
+[recovery adapter](../capsule/src/session/recovery/sandbox-cleanup.ts).
 
-Lifecycle callbacks run only after the corresponding record is persisted. They
-are best-effort presentation hooks; the record remains authoritative if a
-callback throws.
+A future Playwright adapter is planned to reuse this lifecycle around Playwright
+`test()` blocks. No Playwright fixture, adapter, or public test API is implemented
+in this package today.
 
-The returned sandbox exposes immutable snapshots of the caller-supplied Compose
-environment, requested endpoints, and explicitly selected/requested containers.
-Each container has a `testcontainer` inspection facade for identity, labels,
-networks, host, and mapped ports. It deliberately has no `exec`, copy, restart,
-stop, or other mutation capability. The environment snapshot is only the
-Compose substitution environment supplied by the caller; it does not claim to
-describe image-internal environment variables.
+## Lifecycle And Ownership
 
-Resource inspection reports only containers selected by the caller and networks
-and volumes observed with the exact Compose project label. It does not expose a
-Docker client or any resource mutator. Progress is explicitly silent or emitted
-through a sink; sink failures cannot change acquisition or cleanup results.
+[`SandboxRuntime.start()`](src/lifecycle/runtime.ts) validates input and persists an
+admission record before touching Docker. It then starts the selected Compose
+services, resolves explicitly requested endpoints, snapshots owned resources, and
+returns a [`SandboxHandle`](src/types.ts).
 
-Run `pnpm --dir packages/sandbox test:docker` to opt into the bounded Docker
-proof. It starts five isolated Compose projects concurrently, validates their
-dynamic ports and responses against Docker inspection, then requires every
-proof-owned container, network, and volume to be gone.
+```text
+validate -> admit -> start Compose -> inspect -> running -> stop -> completed
+                         |                          |
+                         +-> start-failed           +-> stop-failed
+```
 
-During Compose startup, progress sinks receive exact-project Docker observations
-before `up()` resolves: container state, Docker health, exit code, and discovered
-networks/volumes. Polling runs every 500ms, emits changed facts and a waiting event
-every five seconds, and aborts when acquisition succeeds or fails. Docker health
-is not application readiness. Fast intermediate states between polls may be
-missed; image pull/build progress is not claimed. Inspection outages emit an
-explicit unavailable event and recovery notification without changing acquisition.
+The handle provides:
+
+- Immutable views of selected containers, mapped endpoints, and Compose-owned
+  resources.
+- One-shot and streaming command execution inside selected containers.
+- Optional collector and participant telemetry wiring through generated Compose
+  overrides.
+- Idempotent stop behavior with volume removal and retained cleanup outcomes.
+
+Lifecycle records follow the exported
+[`sandbox-record-v1` schema](schema/sandbox-record-v1.json). After interruption,
+[`recoverSandbox()`](src/recovery/recover.ts) uses the retained Compose project
+identity to retry cleanup and record the result.
+
+## Boundaries
+
+Sandbox deliberately does not load `blackbox.config.yaml`, resolve catalog
+entries, own Capsule sessions or reports, or decide that an application is ready.
+Compose container state and Docker health observations describe acquisition;
+Capsule performs its separate application-readiness check.
+
+The caller also owns policy: which services and endpoints are allowed, what
+environment is passed to Compose, whether telemetry is enabled, and when the
+sandbox should stop.
+
+## Source Map
+
+- [`src/index.ts`](src/index.ts) defines the package export surface.
+- [`src/acquisition/testcontainers-driver.ts`](src/acquisition/testcontainers-driver.ts)
+  adapts Testcontainers and Docker Compose.
+- [`src/lifecycle/`](src/lifecycle/) coordinates admission, startup, stop, and
+  failure transitions.
+- [`src/ownership/`](src/ownership/) persists and decodes lifecycle records.
+- [`src/telemetry/`](src/telemetry/) creates and controls optional telemetry
+  integration.
+- [`src/execution/`](src/execution/) implements captured and streaming container
+  execution.
+- [`src/recovery/`](src/recovery/) cleans interrupted Compose projects.
+
+## Validate Changes
+
+Run package checks from the repository root:
+
+```bash
+pnpm --filter @suites/blackbox-sandbox-internal lint
+pnpm --filter @suites/blackbox-sandbox-internal build
+pnpm --filter @suites/blackbox-sandbox-internal test
+```
+
+The unit suite does not opt into Docker-backed proof tests. With a disposable
+local Docker environment available, run the bounded proof explicitly:
+
+```bash
+pnpm --filter @suites/blackbox-sandbox-internal test:docker
+```
+
+The Docker proof creates isolated Compose projects and requires its owned
+containers, networks, and volumes to be removed before it succeeds.

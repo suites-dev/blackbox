@@ -3,14 +3,27 @@ export interface ComposeServiceObservation {
   readonly service: string;
   readonly containerId: string;
   readonly containerName: string;
-  readonly state: 'created' | 'running' | 'paused' | 'restarting' | 'removing' | 'exited' | 'dead' | 'unknown';
+  readonly state:
+    | 'created'
+    | 'running'
+    | 'paused'
+    | 'restarting'
+    | 'removing'
+    | 'exited'
+    | 'dead'
+    | 'unknown';
   readonly health: 'not-configured' | 'starting' | 'healthy' | 'unhealthy' | 'unknown';
-  readonly termination: { readonly kind: 'none' } | { readonly kind: 'exited'; readonly exitCode: number };
+  readonly termination:
+    | { readonly kind: 'none' }
+    | { readonly kind: 'exited'; readonly exitCode: number };
 }
 
 export type ComposeAcquisitionObservation =
   | { readonly kind: 'service-state'; readonly container: ComposeServiceObservation }
-  | { readonly kind: 'resource-discovered'; readonly resource: { readonly kind: 'network' | 'volume'; readonly name: string } }
+  | {
+      readonly kind: 'resource-discovered';
+      readonly resource: { readonly kind: 'network' | 'volume'; readonly name: string };
+    }
   | { readonly kind: 'waiting'; readonly elapsedMs: number }
   | { readonly kind: 'observation-status'; readonly status: 'available' | 'unavailable' };
 

@@ -3,9 +3,11 @@ import { isAbsolute, posix, resolve, sep, win32 } from 'node:path';
 import { Ajv2020, type ErrorObject, type ValidateFunction } from 'ajv/dist/2020.js';
 
 import { catalogSchema } from './blackbox-schema.js';
+import { decodeCatalogConfig, type SchemaBlackboxConfig } from './catalog-decoder.js';
 import type {
   BlackboxConfig,
   CatalogValidationIssue,
+  CatalogEntry,
   ObservationBoundary,
 } from '../model/catalog-types.js';
 
@@ -13,7 +15,8 @@ const ajv = new Ajv2020({ allErrors: true, strict: true });
 if (!ajv.validateSchema(catalogSchema)) {
   throw new Error(`Invalid bundled Blackbox catalog schema: ${ajv.errorsText(ajv.errors)}`);
 }
-const validateSchema: ValidateFunction = ajv.compile(catalogSchema);
+const validateSchema: ValidateFunction<SchemaBlackboxConfig> =
+  ajv.compile<SchemaBlackboxConfig>(catalogSchema);
 
 export class CatalogValidationError extends Error {
   readonly sourceName: string;
@@ -103,6 +106,34 @@ function duplicateBoundaryIssues(
   return issues;
 }
 
+function driverIssues(entryId: string, entry: CatalogEntry): CatalogValidationIssue[] {
+  const issues: CatalogValidationIssue[] = [];
+  for (const [driverId, driver] of Object.entries(entry.drivers)) {
+    const path = `/catalog/entries/${entryId}/drivers/${driverId}`;
+    issues.push(...validateRelativePath(driver.ref, `${path}/ref`));
+    if (!Object.hasOwn(entry.participants, driver.target.participant)) {
+      issues.push(
+        semanticIssue(
+          `${path}/target/participant`,
+          `does not name a participant in ${entryId}: ${driver.target.participant}`,
+        ),
+      );
+    }
+    if (
+      driver.execution.kind === 'participant' &&
+      !Object.hasOwn(entry.participants, driver.execution.participant)
+    ) {
+      issues.push(
+        semanticIssue(
+          `${path}/execution/participant`,
+          `does not name a participant in ${entryId}: ${driver.execution.participant}`,
+        ),
+      );
+    }
+  }
+  return issues;
+}
+
 function semanticIssues(config: BlackboxConfig): CatalogValidationIssue[] {
   const issues: CatalogValidationIssue[] = [];
   if (!Object.hasOwn(config.catalog.entries, config.catalog.default)) {
@@ -127,15 +158,20 @@ function semanticIssues(config: BlackboxConfig): CatalogValidationIssue[] {
     }
 
     for (const [participantId, participant] of Object.entries(entry.participants)) {
-      if (participant.activation !== undefined && !Object.hasOwn(config.activations, participant.activation)) {
+      if (
+        participant.activation.kind === 'configured' &&
+        !Object.hasOwn(config.activations, participant.activation.activationId)
+      ) {
         issues.push(
           semanticIssue(
             `${entryPath}/participants/${participantId}/activation`,
-            `does not name an activation: ${participant.activation}`,
+            `does not name an activation: ${participant.activation.activationId}`,
           ),
         );
       }
     }
+
+    issues.push(...driverIssues(entryId, entry));
 
     issues.push(...duplicateBoundaryIssues(entry.observation.boundaries, entryPath));
     const boundaryIds = new Set(entry.observation.boundaries.map((boundary) => boundary.id));
@@ -170,7 +206,7 @@ export function validateCatalogDocument(input: ValidateCatalogDocumentInput): Bl
       issues: schemaIssues(validateSchema.errors),
     });
   }
-  const config = document as BlackboxConfig;
+  const config = decodeCatalogConfig(document);
   const issues = semanticIssues(config);
   if (issues.length > 0) {
     throw new CatalogValidationError({ sourceName, issues });

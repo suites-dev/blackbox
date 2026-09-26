@@ -1,14 +1,18 @@
 import { randomUUID } from 'node:crypto';
 
-import { managerRequest } from '../ipc/client.js';
+import { normalizeCapsuleActivityName } from '../execution/activity-name.js';
+import { managerInteractiveRequest, managerRequest } from '../ipc/client.js';
 import { readCapsuleProgress } from '../progress/store.js';
 import { projectCapsuleReport } from '../reporting/document.js';
 import { redactStandaloneError } from '../reporting/redaction.js';
 import type { CapsuleReportArtifact, CapsuleReportResult } from '../reporting/types.js';
 import { readCapsuleActivities } from '../records.js';
+import { readCapsuleReportObservations } from './observations.js';
+import { retryManagerFailedCleanup } from './recovery/sandbox-cleanup.js';
 import type {
   CapsuleExecInput,
   CapsuleExecResult,
+  CapsuleInteractiveExecInput,
   CapsuleReportInput,
   CapsuleStopInput,
   CapsuleStopResult,
@@ -23,6 +27,31 @@ import {
 
 function assertNever(value: never): never {
   throw new Error(`Unhandled Capsule response: ${JSON.stringify(value)}`);
+}
+
+function execResult(
+  response: Awaited<ReturnType<typeof managerRequest>>,
+  sessionId: string,
+): CapsuleExecResult {
+  switch (response.kind) {
+    case 'exec-response':
+      return {
+        kind: 'capsule-exec-completed',
+        activityId: response.activityId,
+        outcome: response.outcome,
+      };
+    case 'manager-error-response':
+      return {
+        kind: 'capsule-operation-failed',
+        operation: 'exec',
+        sessionId,
+        error: response.error,
+      };
+    case 'stop-response':
+      throw new Error('Capsule manager returned a stop response for exec');
+    default:
+      return assertNever(response);
+  }
 }
 
 export async function execCapsule(input: CapsuleExecInput): Promise<CapsuleExecResult> {
@@ -43,23 +72,52 @@ export async function execCapsule(input: CapsuleExecInput): Promise<CapsuleExecR
     }
     const response = await managerRequest({
       socketPath: record.socketPath,
-      request: { kind: 'exec-request', requestId: randomUUID(), target: input.target },
+      request: {
+        kind: 'exec-request',
+        requestId: randomUUID(),
+        name: normalizeCapsuleActivityName(input.name),
+        purpose: input.purpose,
+        target: input.target,
+      },
     });
-    switch (response.kind) {
-      case 'exec-response':
-        return { kind: 'capsule-exec-completed', outcome: response.outcome };
-      case 'manager-error-response':
-        return {
-          kind: 'capsule-operation-failed',
-          operation: 'exec',
-          sessionId: input.sessionId,
-          error: response.error,
-        };
-      case 'stop-response':
-        throw new Error('Capsule manager returned a stop response for exec');
-      default:
-        return assertNever(response);
+    return execResult(response, input.sessionId);
+  } catch (error) {
+    return capsuleFailure({ operation: 'exec', sessionId: input.sessionId, error });
+  }
+}
+
+export async function execCapsuleInteractive(
+  input: CapsuleInteractiveExecInput,
+): Promise<CapsuleExecResult> {
+  try {
+    validateSessionId(input.sessionId);
+    const projectDirectory = await canonicalProjectDirectory(input.projectDirectory);
+    const record = await readRecordOrNotFound({ projectDirectory, sessionId: input.sessionId });
+    if (isFailure(record)) {
+      return record;
     }
+    if (record.state !== 'running') {
+      return {
+        kind: 'capsule-invalid-state',
+        sessionId: input.sessionId,
+        state: record.state,
+        message: `Cannot execute against Capsule in ${record.state} state`,
+      };
+    }
+    const response = await managerInteractiveRequest({
+      socketPath: record.socketPath,
+      request: {
+        kind: 'interactive-exec-request',
+        requestId: randomUUID(),
+        name: normalizeCapsuleActivityName(input.name),
+        purpose: input.purpose,
+        target: input.target,
+        terminal: input.terminal,
+      },
+      controls: input.controls,
+      onEvent: input.onEvent,
+    });
+    return execResult(response, input.sessionId);
   } catch (error) {
     return capsuleFailure({ operation: 'exec', sessionId: input.sessionId, error });
   }
@@ -69,7 +127,7 @@ export async function stopCapsule(input: CapsuleStopInput): Promise<CapsuleStopR
   try {
     validateSessionId(input.sessionId);
     const projectDirectory = await canonicalProjectDirectory(input.projectDirectory);
-    const record = await readRecordOrNotFound({ projectDirectory, sessionId: input.sessionId });
+    let record = await readRecordOrNotFound({ projectDirectory, sessionId: input.sessionId });
     if (isFailure(record)) {
       return record;
     }
@@ -79,6 +137,28 @@ export async function stopCapsule(input: CapsuleStopInput): Promise<CapsuleStopR
         sessionId: input.sessionId,
         cleanup: 'complete',
         alreadyStopped: true,
+      };
+    }
+    if (record.state === 'manager-failed') {
+      record = await retryManagerFailedCleanup({ projectDirectory, sessionId: input.sessionId });
+      if (record.cleanup.kind === 'complete') {
+        return {
+          kind: 'capsule-stopped',
+          sessionId: input.sessionId,
+          cleanup: 'complete',
+          alreadyStopped: true,
+        };
+      }
+      return {
+        kind: 'capsule-operation-failed',
+        operation: 'stop',
+        sessionId: input.sessionId,
+        error: record.cleanup.kind === 'failed'
+          ? record.cleanup.error
+          : {
+              name: 'CapsuleCleanupUnavailable',
+              message: 'Capsule cleanup did not reach a terminal result',
+            },
       };
     }
     if (record.state !== 'running' && record.state !== 'stop-failed') {
@@ -134,9 +214,23 @@ export async function reportCapsule(input: CapsuleReportInput): Promise<CapsuleR
     });
     artifact = 'progress';
     const progress = await readCapsuleProgress({ projectDirectory, sessionId: input.sessionId });
+    artifact = 'observations';
+    const retained = await readCapsuleReportObservations({
+      projectDirectory,
+      record,
+      activities,
+    });
+    const observations = retained.observations;
     return {
       kind: 'capsule-report',
-      document: projectCapsuleReport({ record, activities, progress }),
+      document: projectCapsuleReport({
+        record,
+        activities,
+        progress,
+        observations,
+        traceObservations: retained.traceObservations,
+        activityObservations: retained.activityObservations,
+      }),
     };
   } catch (error) {
     return {

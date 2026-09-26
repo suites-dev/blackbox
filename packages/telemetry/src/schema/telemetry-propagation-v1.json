@@ -1,0 +1,90 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://blackbox.suites.dev/schemas/telemetry-propagation-v1.json",
+  "title": "Blackbox telemetry propagation record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "kind", "expectation", "outcome"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "kind": { "const": "telemetry-propagation-v1" },
+    "expectation": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind"],
+          "properties": { "kind": { "const": "propagation-not-requested" } }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "carrier"],
+          "properties": {
+            "kind": { "const": "w3c-trace-context-propagation" },
+            "carrier": {
+              "enum": ["http-headers", "message-metadata", "process-environment"]
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "resource"],
+          "properties": {
+            "kind": { "const": "shared-state-propagation-unsupported" },
+            "resource": { "type": "string", "minLength": 1 }
+          }
+        }
+      ]
+    },
+    "outcome": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "reason"],
+          "properties": {
+            "kind": { "const": "context-not-injected" },
+            "reason": { "enum": ["raw-command", "driver-declared-none"] }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "format", "carrier"],
+          "properties": {
+            "kind": { "const": "context-injected" },
+            "format": { "const": "w3c-trace-context" },
+            "carrier": {
+              "enum": ["http-headers", "message-metadata", "process-environment"]
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "boundary", "resource"],
+          "properties": {
+            "kind": { "const": "context-not-supported" },
+            "boundary": { "const": "shared-state" },
+            "resource": { "type": "string", "minLength": 1 }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "format", "carrier", "message"],
+          "properties": {
+            "kind": { "const": "context-injection-failed" },
+            "format": { "const": "w3c-trace-context" },
+            "carrier": {
+              "enum": ["http-headers", "message-metadata", "process-environment"]
+            },
+            "message": { "type": "string", "minLength": 1 }
+          }
+        }
+      ]
+    }
+  }
+}

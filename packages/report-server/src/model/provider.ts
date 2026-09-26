@@ -3,9 +3,7 @@ export interface ReportSummary {
   id: string;
   type: string;
   title: string;
-  description:
-    | { kind: 'available'; value: string }
-    | { kind: 'unavailable' };
+  description: { kind: 'available'; value: string } | { kind: 'unavailable' };
   state: string;
   createdAt: string;
 }
@@ -20,9 +18,7 @@ export type ReportListResult =
   | { kind: 'report-list'; reports: readonly ReportSummary[] }
   | ReportFailure;
 
-export type ReportLoadResult =
-  | { kind: 'report-document'; document: unknown }
-  | ReportFailure;
+export type ReportLoadResult = { kind: 'report-document'; document: unknown } | ReportFailure;
 
 export type ReportArtifactResult =
   | { kind: 'report-artifact'; artifact: string; document: unknown }
@@ -42,7 +38,9 @@ export interface ReportProvider {
   list(input: { kind: 'list-reports' }): Promise<ReportListResult>;
   load(input: { kind: 'load-report'; id: string }): Promise<ReportLoadResult>;
   artifact(input: {
-    kind: 'load-artifact'; id: string; artifact: string;
+    kind: 'load-artifact';
+    id: string;
+    artifact: string;
   }): Promise<ReportArtifactResult>;
   render(input: { kind: 'render-report'; document: unknown }): string;
 }

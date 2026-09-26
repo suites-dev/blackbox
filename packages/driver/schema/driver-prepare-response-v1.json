@@ -1,0 +1,187 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.suites.dev/blackbox/driver-prepare-response/v1",
+  "title": "Blackbox driver prepare response v1",
+  "oneOf": [
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "protocolVersion", "driver", "preparation"],
+      "properties": {
+        "kind": { "const": "driver-prepare-succeeded" },
+        "protocolVersion": { "const": 1 },
+        "driver": { "$ref": "#/$defs/availableDriver" },
+        "preparation": { "$ref": "#/$defs/preparation" }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "protocolVersion", "driver", "error"],
+      "properties": {
+        "kind": { "const": "driver-prepare-failed" },
+        "protocolVersion": { "const": 1 },
+        "driver": { "$ref": "#/$defs/driverAvailability" },
+        "error": { "$ref": "#/$defs/error" }
+      }
+    }
+  ],
+  "$defs": {
+    "availableDriver": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "name"],
+      "properties": {
+        "kind": { "const": "available" },
+        "name": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+        }
+      }
+    },
+    "driverAvailability": {
+      "oneOf": [
+        { "$ref": "#/$defs/availableDriver" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind"],
+          "properties": { "kind": { "const": "unavailable" } }
+        }
+      ]
+    },
+    "preparation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "argv", "environment", "propagation", "redaction"],
+      "properties": {
+        "kind": { "const": "prepared-command" },
+        "argv": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string" }
+        },
+        "environment": {
+          "type": "object",
+          "additionalProperties": { "type": "string" }
+        },
+        "propagation": { "$ref": "#/$defs/propagationOutcome" },
+        "redaction": { "$ref": "#/$defs/redaction" }
+      }
+    },
+    "propagationOutcome": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "reason"],
+          "properties": {
+            "kind": { "const": "context-not-injected" },
+            "reason": { "enum": ["raw-command", "driver-declared-none"] }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "format", "carrier"],
+          "properties": {
+            "kind": { "const": "context-injected" },
+            "format": { "const": "w3c-trace-context" },
+            "carrier": {
+              "enum": ["http-headers", "message-metadata", "process-environment"]
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "boundary", "resource"],
+          "properties": {
+            "kind": { "const": "context-not-supported" },
+            "boundary": { "const": "shared-state" },
+            "resource": { "type": "string", "minLength": 1 }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "format", "carrier", "message"],
+          "properties": {
+            "kind": { "const": "context-injection-failed" },
+            "format": { "const": "w3c-trace-context" },
+            "carrier": {
+              "enum": ["http-headers", "message-metadata", "process-environment"]
+            },
+            "message": { "type": "string", "minLength": 1 }
+          }
+        }
+      ]
+    },
+    "redaction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "requestArgv", "preparedArgv", "environment"],
+      "properties": {
+        "kind": { "const": "driver-redaction" },
+        "requestArgv": { "$ref": "#/$defs/argvRedaction" },
+        "preparedArgv": { "$ref": "#/$defs/argvRedaction" },
+        "environment": { "$ref": "#/$defs/environmentRedaction" }
+      }
+    },
+    "argvRedaction": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind"],
+          "properties": { "kind": { "const": "none" } }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "positions"],
+          "properties": {
+            "kind": { "const": "positions" },
+            "positions": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": { "type": "integer", "minimum": 0 }
+            }
+          }
+        }
+      ]
+    },
+    "environmentRedaction": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind"],
+          "properties": { "kind": { "const": "none" } }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "keys"],
+          "properties": {
+            "kind": { "const": "keys" },
+            "keys": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": { "type": "string", "minLength": 1 }
+            }
+          }
+        }
+      ]
+    },
+    "error": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "message"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "message": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}

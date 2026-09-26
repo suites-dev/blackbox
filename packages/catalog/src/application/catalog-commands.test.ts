@@ -1,7 +1,6 @@
 import { mkdir, mkdtemp, symlink, unlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { fileURLToPath } from 'node:url';
 
 import { expect, it } from 'vitest';
 
@@ -24,6 +23,14 @@ catalog:
         readiness: { path: /health, timeoutMs: 60000 }
       participants:
         api: { service: api, role: entrypoint, runtime: node, activation: node-runtime }
+      drivers:
+        http:
+          kind: project-driver
+          runtime: node
+          ref: .blackbox/drivers/http.mjs
+          target: { kind: participant, participant: api, protocol: http, containerPort: 3000 }
+          execution: { kind: host }
+          propagation: { kind: w3c-trace-context-propagation, carrier: http-headers }
       observation:
         policyId: orders-v1
         boundaries:
@@ -45,10 +52,12 @@ async function makeValidProject(): Promise<string> {
   const directory = await mkdtemp(join(tmpdir(), 'blackbox-catalog-command-'));
   await mkdir(join(directory, '.blackbox/compose'), { recursive: true });
   await mkdir(join(directory, '.blackbox/instrumentation'), { recursive: true });
+  await mkdir(join(directory, '.blackbox/drivers'), { recursive: true });
   await Promise.all([
     writeFile(join(directory, 'blackbox.config.yaml'), validCatalog, 'utf8'),
     writeFile(join(directory, '.blackbox/compose/orders.yml'), 'services: {}\n', 'utf8'),
     writeFile(join(directory, '.blackbox/instrumentation/bootstrap.mjs'), 'export {};\n', 'utf8'),
+    writeFile(join(directory, '.blackbox/drivers/http.mjs'), 'export {};\n', 'utf8'),
   ]);
   return directory;
 }
@@ -128,9 +137,11 @@ it('classifies an unreadable project location as an operational failure', async 
 it('rejects a valid catalog whose Compose file is missing', async () => {
   const projectDirectory = await mkdtemp(join(tmpdir(), 'blackbox-catalog-reference-'));
   await mkdir(join(projectDirectory, '.blackbox/instrumentation'), { recursive: true });
+  await mkdir(join(projectDirectory, '.blackbox/drivers'), { recursive: true });
   await Promise.all([
     writeFile(join(projectDirectory, 'blackbox.config.yaml'), validCatalog, 'utf8'),
     writeFile(join(projectDirectory, '.blackbox/instrumentation/bootstrap.mjs'), 'export {};\n'),
+    writeFile(join(projectDirectory, '.blackbox/drivers/http.mjs'), 'export {};\n'),
   ]);
 
   const result = await runCatalogValidate({ projectDirectory });
@@ -175,25 +186,21 @@ it('classifies an uninspectable reference as an operational failure', async () =
 });
 
 it('returns deterministic JSON-ready list output', async () => {
-  const e2eProject = fileURLToPath(new URL('../../../../e2e', import.meta.url));
+  const projectDirectory = await makeValidProject();
 
-  await expect(runCatalogList({ projectDirectory: e2eProject })).resolves.toEqual({
+  await expect(runCatalogList({ projectDirectory })).resolves.toEqual({
     kind: 'catalog-list-success',
     ok: true,
     operation: 'catalog.list',
     exitClass: 'success',
-    configFile: join(e2eProject, 'blackbox.config.yaml'),
-    defaultEntry: 'subscription-system',
-    entries: [
-      { id: 'payment-mock', kind: 'subsystem', isDefault: false },
-      { id: 'payment-mock-dist', kind: 'subsystem', isDefault: false },
-      { id: 'subscription-system', kind: 'system', isDefault: true },
-    ],
+    configFile: join(projectDirectory, 'blackbox.config.yaml'),
+    defaultEntry: 'orders',
+    entries: [{ id: 'orders', kind: 'system', isDefault: true }],
   });
 });
 
-it('validates every reference in the current E2E catalog', async () => {
-  const projectDirectory = fileURLToPath(new URL('../../../../e2e', import.meta.url));
+it('validates every reference in an owned project fixture', async () => {
+  const projectDirectory = await makeValidProject();
   await expect(runCatalogValidate({ projectDirectory })).resolves.toMatchObject({
     kind: 'catalog-validate-success',
     ok: true,

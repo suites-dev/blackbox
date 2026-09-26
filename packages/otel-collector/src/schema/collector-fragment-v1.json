@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.suites.dev/blackbox/collector-fragment-v1.json",
+  "title": "Blackbox retained OTLP fragment",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "sequence",
+    "sessionId",
+    "executionId",
+    "receivedAt",
+    "contentType",
+    "contentEncoding",
+    "spanCount",
+    "rawJson"
+  ],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "sequence": { "type": "integer", "minimum": 1 },
+    "sessionId": { "type": "string", "minLength": 1 },
+    "executionId": { "type": "string", "minLength": 1 },
+    "receivedAt": { "type": "string", "format": "date-time" },
+    "contentType": { "const": "application/json" },
+    "contentEncoding": { "enum": ["identity", "gzip"] },
+    "spanCount": { "type": "integer", "minimum": 0 },
+    "rawJson": { "type": "string" }
+  }
+}

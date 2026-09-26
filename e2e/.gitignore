@@ -1,5 +1,8 @@
 .blackbox/*
 !.blackbox/catalog/
+!.blackbox/drivers/
+.blackbox/drivers/*
+!.blackbox/drivers/*.mjs
 !.blackbox/instrumentation/
 .blackbox/compose/**/node_modules/
 .blackbox/instrumentation/**/node_modules/

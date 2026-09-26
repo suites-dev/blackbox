@@ -1,0 +1,4 @@
+interface:
+  display_name: 'Maintainer Capsule Bash E2E'
+  short_description: 'Verify the packed Capsule journey and its evidence'
+  default_prompt: 'Use $capsule-bash-e2e to validate the maintainer Capsule journey and inspect its evidence safely.'

@@ -20,4 +20,9 @@ export interface EnsureReportServerInput {
 
 export type EnsureReportServerResult =
   | { readonly kind: 'report-server-started'; readonly server: ReportServer }
-  | { readonly kind: 'report-server-reused'; readonly hostname: '127.0.0.1'; readonly port: number; readonly url: string };
+  | {
+      readonly kind: 'report-server-reused';
+      readonly hostname: '127.0.0.1';
+      readonly port: number;
+      readonly url: string;
+    };

@@ -1,6 +1,6 @@
 import { access, realpath } from 'node:fs/promises';
 import { isAbsolute, relative, resolve, sep } from 'node:path';
-import type { SandboxInput } from '../types.js';
+import type { SandboxCollectorRuntime, SandboxInput } from '../types.js';
 
 const ID_PATTERN = /^[a-zA-Z0-9][a-zA-Z0-9._-]{0,127}$/;
 const SERVICE_PATTERN = /^[a-zA-Z0-9][a-zA-Z0-9._-]*$/;
@@ -41,6 +41,100 @@ export async function validateSandboxInput(input: SandboxInput): Promise<void> {
   validateEnvironment(input.environment);
   validateTimeouts(input);
   await validateComposeFiles(input);
+  await validateTelemetry(input);
+}
+
+async function validateTelemetry(input: SandboxInput): Promise<void> {
+  if (input.telemetry.kind === 'disabled') {
+    return;
+  }
+  const telemetry = input.telemetry;
+  if (!ID_PATTERN.test(telemetry.sessionId) || !ID_PATTERN.test(telemetry.executionId)) {
+    throw new SandboxInputError('telemetry sessionId and executionId must be valid identifiers');
+  }
+  if (
+    telemetry.authorization.ingestToken.trim().length === 0 ||
+    telemetry.authorization.controlToken.trim().length === 0
+  ) {
+    throw new SandboxInputError('telemetry ingest and control tokens must not be blank');
+  }
+  if (telemetry.authorization.ingestToken === telemetry.authorization.controlToken) {
+    throw new SandboxInputError('telemetry ingest and control tokens must differ');
+  }
+  if (!SERVICE_PATTERN.test(telemetry.collector.service)) {
+    throw new SandboxInputError('telemetry collector service name is invalid');
+  }
+  if (selectedServices(input).includes(telemetry.collector.service)) {
+    throw new SandboxInputError('telemetry collector service must not replace an application service');
+  }
+  const runtime = telemetry.collector.runtime;
+  if (runtime.image.trim().length === 0) {
+    throw new SandboxInputError('telemetry collector image must not be blank');
+  }
+  await validateCollectorRuntime(runtime);
+  const participantServices = telemetry.participants.map((participant) => participant.service);
+  requireUnique(participantServices, 'telemetry participant services');
+  for (const participant of telemetry.participants) {
+    if (!selectedServices(input).includes(participant.service)) {
+      throw new SandboxInputError(
+        `telemetry participant ${participant.service} is not a selected service`,
+      );
+    }
+    if (participant.runtime.trim().length === 0) {
+      throw new SandboxInputError(`telemetry participant ${participant.service} has no runtime`);
+    }
+    validateEnvironment(participant.environment);
+    if (participant.activation.kind === 'append-environment-variable') {
+      validateEnvironment({ [participant.activation.name]: participant.activation.value });
+      if (participant.activation.value.trim() === '') {
+        throw new SandboxInputError('telemetry activation environment value must not be blank');
+      }
+      if (Object.hasOwn(participant.environment, participant.activation.name)) {
+        throw new SandboxInputError(
+          `telemetry activation environment duplicates ${participant.activation.name}`,
+        );
+      }
+    }
+    for (const mount of participant.mounts) {
+      if (!isAbsolute(mount.source) || !isAbsolute(mount.target)) {
+        throw new SandboxInputError('telemetry mount source and target must be absolute paths');
+      }
+      await access(mount.source);
+    }
+  }
+  validateEnvironment(telemetry.collector.environment);
+  validateCollectorNumber(telemetry.collector.containerPort, 'collector container port', 65_535);
+  validateCollectorNumber(telemetry.collector.readiness.intervalSeconds, 'readiness interval', 300);
+  validateCollectorNumber(telemetry.collector.readiness.timeoutSeconds, 'readiness timeout', 300);
+  validateCollectorNumber(telemetry.collector.readiness.retries, 'readiness retries', 1_000);
+  if (!telemetry.collector.readiness.path.startsWith('/')) {
+    throw new SandboxInputError('collector readiness path must start with /');
+  }
+}
+
+async function validateCollectorRuntime(
+  runtime: SandboxCollectorRuntime,
+): Promise<void> {
+  if (runtime.kind === 'image-default') {
+    return;
+  }
+  if (!isAbsolute(runtime.sourceDirectory) || !isAbsolute(runtime.targetDirectory)) {
+    throw new SandboxInputError('telemetry collector runtime paths must be absolute');
+  }
+  if (isAbsolute(runtime.entrypoint) || runtime.user.trim().length === 0) {
+    throw new SandboxInputError('telemetry collector runtime entrypoint and user are invalid');
+  }
+  const sourceDirectory = await realpath(runtime.sourceDirectory);
+  const entrypoint = await realpath(resolve(sourceDirectory, runtime.entrypoint));
+  if (!isWithin(sourceDirectory, entrypoint)) {
+    throw new SandboxInputError('telemetry collector entrypoint escapes its runtime');
+  }
+}
+
+function validateCollectorNumber(value: number, label: string, maximum: number): void {
+  if (!Number.isSafeInteger(value) || value < 1 || value > maximum) {
+    throw new SandboxInputError(`${label} must be an integer between 1 and ${maximum}`);
+  }
 }
 
 function validateLocations(input: SandboxInput): void {

@@ -6,6 +6,11 @@ import type {
   SandboxResourceInspectionInput,
   SandboxResourceInspectionResult,
 } from './inspection/resources.js';
+import type {
+  SandboxContainerExecutionInput,
+  SandboxContainerExecutionStartResult,
+} from './execution/streaming/types.js';
+import type { SandboxTelemetryActivation } from './telemetry/types.js';
 
 export interface SandboxEndpointRequest {
   readonly name: string;
@@ -23,6 +28,64 @@ export interface SandboxInput {
   readonly endpoints: readonly SandboxEndpointRequest[];
   readonly startupTimeoutMs: number;
   readonly stopTimeoutMs: number;
+  readonly telemetry: SandboxTelemetryInput;
+}
+
+export type SandboxTelemetryInput =
+  | { readonly kind: 'disabled' }
+  | SandboxTelemetryEnabledInput;
+
+export interface SandboxTelemetryEnabledInput {
+  readonly kind: 'enabled';
+  readonly sessionId: string;
+  readonly executionId: string;
+  readonly authorization: {
+    readonly kind: 'split-bearer-tokens';
+    readonly ingestToken: string;
+    readonly controlToken: string;
+  };
+  readonly collector: SandboxCollectorInput;
+  readonly participants: readonly SandboxTelemetryParticipant[];
+}
+
+export interface SandboxCollectorInput {
+  readonly service: string;
+  readonly containerPort: number;
+  readonly runtime: SandboxCollectorRuntime;
+  readonly environment: Readonly<Record<string, string>>;
+  readonly readiness: {
+    readonly kind: 'http';
+    readonly path: string;
+    readonly intervalSeconds: number;
+    readonly timeoutSeconds: number;
+    readonly retries: number;
+  };
+  readonly drain: { readonly kind: 'signal'; readonly signal: 'SIGTERM' };
+}
+
+export type SandboxCollectorRuntime =
+  | { readonly kind: 'image-default'; readonly image: string }
+  | {
+      readonly kind: 'mounted-node';
+      readonly image: string;
+      readonly sourceDirectory: string;
+      readonly targetDirectory: string;
+      readonly entrypoint: string;
+      readonly user: string;
+    };
+
+export interface SandboxTelemetryMount {
+  readonly source: string;
+  readonly target: string;
+  readonly access: 'read-only';
+}
+
+export interface SandboxTelemetryParticipant {
+  readonly service: string;
+  readonly runtime: string;
+  readonly environment: Readonly<Record<string, string>>;
+  readonly activation: SandboxTelemetryActivation;
+  readonly mounts: readonly SandboxTelemetryMount[];
 }
 
 export interface SandboxStartInput {
@@ -105,6 +168,8 @@ export interface SandboxTestcontainerInspection {
   readonly name: string;
   readonly host: string;
   readonly labels: Readonly<Record<string, string>>;
+  /** Effective environment reported by Docker for this exact owned container. */
+  readonly environment: Readonly<Record<string, string>>;
   readonly networkNames: readonly string[];
   /** Ports explicitly requested by the caller, keyed by container port. */
   readonly mappedPorts: ReadonlyMap<number, number>;
@@ -145,10 +210,31 @@ export interface SandboxHandle {
   readonly declaredEnvironment: Readonly<Record<string, string>>;
   readonly endpoints: ReadonlyMap<string, SandboxEndpoint>;
   readonly containers: ReadonlyMap<string, SandboxContainer>;
+  readonly telemetry: SandboxTelemetryStatus;
   getContainer(input: SandboxContainerSelector): SandboxContainer;
   inspectResources(input: SandboxResourceInspectionInput): SandboxResourceInspectionResult;
   execute(input: SandboxExecuteInput): Promise<SandboxExecuteResult>;
+  startContainerExecution(
+    input: SandboxContainerExecutionInput,
+  ): Promise<SandboxContainerExecutionStartResult>;
+  inspectTelemetry(): Promise<SandboxTelemetryStatus>;
   stop(input: SandboxStopInput): Promise<SandboxStopResult>;
+}
+
+export type SandboxTelemetryStatus =
+  | { readonly kind: 'disabled' }
+  | { readonly kind: 'available'; readonly endpoints: SandboxTelemetryEndpoints }
+  | {
+      readonly kind: 'unavailable';
+      readonly endpoints: SandboxTelemetryEndpoints;
+      readonly error: { readonly name: string; readonly message: string };
+    };
+
+export interface SandboxTelemetryEndpoints {
+  readonly baseUrl: string;
+  readonly tracesUrl: string;
+  readonly activationUrl: string;
+  readonly readUrl: string;
 }
 
 export interface ComposeContainer {
@@ -156,6 +242,7 @@ export interface ComposeContainer {
   readonly name: string;
   readonly host: string;
   readonly labels: Readonly<Record<string, string>>;
+  readonly environment: Readonly<Record<string, string>>;
   readonly networkNames: readonly string[];
   getMappedPort(input: SandboxMappedPortSelector): number;
 }
@@ -169,6 +256,8 @@ export interface StartedComposeSandbox {
     readonly combined: string;
   }>;
   inspectResources(input: ComposeResourceInspectionInput): Promise<ComposeResourceInspectionResult>;
+  inspectTelemetry(): Promise<SandboxTelemetryStatus>;
+  prepareStop(input: { readonly timeoutMs: number }): Promise<void>;
   stop(input: { readonly timeoutMs: number }): Promise<void>;
 }
 
@@ -180,6 +269,9 @@ export interface ComposeStartRequest {
   readonly environment: Readonly<Record<string, string>>;
   readonly serviceSelection: SandboxServiceSelection;
   readonly startupTimeoutMs: number;
+  readonly endpoints: readonly SandboxEndpointRequest[];
+  readonly telemetry: SandboxTelemetryInput;
+  readonly generatedComposeDirectory: string;
 }
 
 export interface ComposeSandboxDriver {

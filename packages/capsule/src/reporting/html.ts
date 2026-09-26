@@ -1,5 +1,5 @@
-import { capsuleReportClientView } from './client-view.js';
-import { escapeHtml } from './html-format.js';
+import { capsuleReportClientView } from './html/client-view.js';
+import { escapeHtml } from './html/format.js';
 import type { CapsuleReportDocument } from './types.js';
 
 export interface CapsuleHtmlInput {
@@ -10,8 +10,10 @@ export interface CapsuleHtmlInput {
 export function renderCapsuleHtml(input: CapsuleHtmlInput): string {
   const { report } = input;
   const { artifactRoot: _artifactRoot, ...safeSession } = report.session;
-  const data = JSON.stringify({ ...report, session: safeSession }).replaceAll('<', '\\u003c')
-    .replaceAll('\u2028', '\\u2028').replaceAll('\u2029', '\\u2029');
+  const data = JSON.stringify({ ...report, session: safeSession })
+    .replaceAll('<', '\\u003c')
+    .replaceAll('\u2028', '\\u2028')
+    .replaceAll('\u2029', '\\u2029');
   return `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="dark"><title>Capsule ${escapeHtml(report.session.sessionId)}</title>

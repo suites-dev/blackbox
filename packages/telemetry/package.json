@@ -1,0 +1,37 @@
+{
+  "name": "@suites/blackbox-telemetry-internal",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Shared Blackbox execution scopes and W3C propagation contracts.",
+  "files": [
+    "dist"
+  ],
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "blackbox-source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./schema/telemetry-execution-scope-v1.json": "./dist/schema/telemetry-execution-scope-v1.json",
+    "./schema/telemetry-propagation-v1.json": "./dist/schema/telemetry-propagation-v1.json"
+  },
+  "scripts": {
+    "prebuild": "rimraf dist",
+    "build": "tsc --project tsconfig.build.json",
+    "prepack": "pnpm build",
+    "lint": "eslint .",
+    "test": "vitest run --config vitest.config.ts",
+    "test:coverage": "vitest run --coverage --config vitest.config.ts"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "ajv": "8.18.0",
+    "rimraf": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "license": "Apache-2.0"
+}

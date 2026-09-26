@@ -2,7 +2,7 @@ import { mkdir, mkdtemp, realpath, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { admitCapsuleRecord, capsuleRuntimeRoot, type CapsuleSessionRecord } from '../records.js';
 import { listCapsuleSessions } from './list.js';
@@ -26,19 +26,19 @@ function record(input: {
     sessionId: input.sessionId,
     executionId: '00000000-0000-4000-8000-000000000001',
     system: 'orders',
-    title: undefined,
-    description: undefined,
+    title: 'Orders experiment',
+    description: { kind: 'omitted' },
     state: 'stopped',
     revision: 2,
     admittedAt: input.admittedAt,
     updatedAt: input.admittedAt,
-    managerPid: undefined,
+    manager: { kind: 'not-started' },
     socketPath: join(input.projectDirectory, '.blackbox', 's', 'private.sock'),
-    entrypoint: undefined,
+    entrypoint: { kind: 'unavailable' },
     containers: [],
     cleanup: { kind: 'complete' },
-    error: undefined,
-    composeProject: undefined,
+    failure: { kind: 'none' },
+    composeProject: { kind: 'unavailable' },
     artifactRoot: join(
       input.projectDirectory,
       '.blackbox',
@@ -47,11 +47,12 @@ function record(input: {
     ),
     networks: [],
     volumes: [],
-    readiness: undefined,
+    readiness: { kind: 'unavailable' },
   };
 }
 
 afterEach(async () => {
+  vi.restoreAllMocks();
   await Promise.all(roots.splice(0).map((root) => rm(root, { recursive: true, force: true })));
 });
 
@@ -69,11 +70,19 @@ describe('Capsule session registry summaries', () => {
     const projectDirectory = await project();
     await admitCapsuleRecord({
       projectDirectory,
-      record: record({ projectDirectory, sessionId: 'quiet-river-ada', admittedAt: '2026-01-01T00:00:00.000Z' }),
+      record: record({
+        projectDirectory,
+        sessionId: 'quiet-river-ada',
+        admittedAt: '2026-01-01T00:00:00.000Z',
+      }),
     });
     await admitCapsuleRecord({
       projectDirectory,
-      record: record({ projectDirectory, sessionId: 'flying-suite-jacob', admittedAt: '2026-02-01T00:00:00.000Z' }),
+      record: record({
+        projectDirectory,
+        sessionId: 'flying-suite-jacob',
+        admittedAt: '2026-02-01T00:00:00.000Z',
+      }),
     });
     const result = await listCapsuleSessions({ projectDirectory });
     expect(result).toMatchObject({
@@ -88,6 +97,43 @@ describe('Capsule session registry summaries', () => {
   });
 });
 
+describe('Capsule registry dead manager reconciliation', () => {
+  it('reconciles a dead retained manager before publishing its summary', async () => {
+    const projectDirectory = await project();
+    const running = {
+      ...record({
+        projectDirectory,
+        sessionId: 'quiet-river-ada',
+        admittedAt: '2026-01-01T00:00:00.000Z',
+      }),
+      state: 'manager-starting',
+      cleanup: { kind: 'not-attempted' },
+      manager: {
+        kind: 'started',
+        pid: 42_424,
+        identity: { kind: 'socket-instance', instanceId: 'dead-manager' },
+      },
+    } satisfies CapsuleSessionRecord;
+    await admitCapsuleRecord({ projectDirectory, record: running });
+    vi.spyOn(process, 'kill').mockImplementation(() => {
+      throw Object.assign(new Error('dead'), { code: 'ESRCH' });
+    });
+    await expect(listCapsuleSessions({ projectDirectory })).resolves.toMatchObject({
+      kind: 'capsule-session-registry',
+      entries: [
+        {
+          kind: 'capsule-session-summary',
+          summary: {
+            sessionId: running.sessionId,
+            state: 'manager-failed',
+            cleanup: 'complete',
+          },
+        },
+      ],
+    });
+  });
+});
+
 describe('Capsule session registry failures', () => {
   it('retains missing, corrupt, and mismatched entries as explicit outcomes', async () => {
     const projectDirectory = await project();
@@ -98,16 +144,34 @@ describe('Capsule session registry failures', () => {
     await mkdir(join(root, 'capsule-rapid-harbor-alex'), { recursive: true });
     await writeFile(
       join(root, 'capsule-rapid-harbor-alex', 'session.json'),
-      JSON.stringify(record({ projectDirectory, sessionId: 'quiet-river-ada', admittedAt: '2026-01-01T00:00:00.000Z' })),
+      JSON.stringify(
+        record({
+          projectDirectory,
+          sessionId: 'quiet-river-ada',
+          admittedAt: '2026-01-01T00:00:00.000Z',
+        }),
+      ),
     );
     await mkdir(join(root, 'unrelated-directory'));
     const result = await listCapsuleSessions({ projectDirectory });
     expect(result).toMatchObject({
       kind: 'capsule-session-registry',
       entries: [
-        { kind: 'capsule-session-corrupt', directoryName: 'capsule-bright-comet-zoe', failure: { kind: 'record-corrupt' } },
-        { kind: 'capsule-session-corrupt', directoryName: 'capsule-calm-river-maya', failure: { kind: 'record-missing' } },
-        { kind: 'capsule-session-corrupt', directoryName: 'capsule-rapid-harbor-alex', failure: { kind: 'identity-mismatch' } },
+        {
+          kind: 'capsule-session-corrupt',
+          directoryName: 'capsule-bright-comet-zoe',
+          failure: { kind: 'record-corrupt' },
+        },
+        {
+          kind: 'capsule-session-corrupt',
+          directoryName: 'capsule-calm-river-maya',
+          failure: { kind: 'record-missing' },
+        },
+        {
+          kind: 'capsule-session-corrupt',
+          directoryName: 'capsule-rapid-harbor-alex',
+          failure: { kind: 'identity-mismatch' },
+        },
       ],
     });
   });

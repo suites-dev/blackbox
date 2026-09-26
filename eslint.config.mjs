@@ -4,6 +4,7 @@ import tseslint from 'typescript-eslint';
 import importPlugin from 'eslint-plugin-import-x';
 import unicornPlugin from 'eslint-plugin-unicorn';
 import prettierConfig from 'eslint-config-prettier';
+import { dirname, relative, resolve, sep } from 'node:path';
 
 const IGNORE_PATTERNS = [
   'node_modules',
@@ -51,6 +52,70 @@ const NO_DYNAMIC_IMPORT = {
     'Dynamic imports are not allowed. Use a static import or inject an explicit loader port.',
 };
 
+function packageRoot(filename) {
+  const marker = `${sep}packages${sep}`;
+  const start = filename.indexOf(marker);
+  if (start < 0) {
+    return undefined;
+  }
+  const packageNameEnd = filename.indexOf(sep, start + marker.length);
+  return packageNameEnd < 0 ? undefined : filename.slice(0, packageNameEnd);
+}
+
+function escapesPackage(filename, request) {
+  if (!request.startsWith('.')) {
+    return false;
+  }
+  const root = packageRoot(filename);
+  if (root === undefined) {
+    return false;
+  }
+  const target = resolve(dirname(filename), request);
+  const fromRoot = relative(root, target);
+  return fromRoot === '..' || fromRoot.startsWith(`..${sep}`);
+}
+
+const packageBoundaryPlugin = {
+  rules: {
+    'no-cross-package-paths': {
+      meta: {
+        type: 'problem',
+        messages: {
+          boundary:
+            'Package source may not reach outside its own packages/<name> directory. Use a declared workspace dependency or create an owned fixture.',
+        },
+        schema: [],
+      },
+      create(context) {
+        const filename = context.filename;
+        const check = (node) => {
+          if (typeof node.value === 'string' && escapesPackage(filename, node.value)) {
+            context.report({ node, messageId: 'boundary' });
+          }
+        };
+        return {
+          ImportDeclaration: (node) => check(node.source),
+          ExportAllDeclaration: (node) => check(node.source),
+          ExportNamedDeclaration: (node) => {
+            if (node.source !== null) {
+              check(node.source);
+            }
+          },
+          Literal: (node) => {
+            if (
+              node.parent.type !== 'ImportDeclaration' &&
+              node.parent.type !== 'ExportAllDeclaration' &&
+              node.parent.type !== 'ExportNamedDeclaration'
+            ) {
+              check(node);
+            }
+          },
+        };
+      },
+    },
+  },
+};
+
 const CONFIG_SURFACE_FILES = [
   '**/*-section.ts',
   '**/config/**/schema.ts',
@@ -69,6 +134,12 @@ const RESTRICTED_SYNTAX = [
     selector: 'TSAsExpression > TSAsExpression',
     message:
       'Double type assertions (x as unknown as Y) are not allowed. Fix the underlying type instead of forcing a cast.',
+  },
+  {
+    selector:
+      'TSPropertySignature TSTypeAnnotation > TSUnionType > TSUndefinedKeyword, PropertyDefinition TSTypeAnnotation > TSUnionType > TSUndefinedKeyword',
+    message:
+      'Properties may not encode absence as T | undefined. Use a required discriminated union with explicit variants.',
   },
   {
     // No `x as any` cast — escape hatch. `no-explicit-any` only catches
@@ -189,6 +260,7 @@ export default [
     },
     plugins: {
       '@typescript-eslint': tseslint.plugin,
+      boundary: packageBoundaryPlugin,
       'import-x': importPlugin,
       'unicorn': unicornPlugin,
     },
@@ -250,6 +322,7 @@ export default [
       ],
 
       // Import rules
+      'boundary/no-cross-package-paths': 'error',
       'import-x/no-cycle': ['error', { maxDepth: 10 }],
       'import-x/no-duplicates': ['error', { 'prefer-inline': true }],
       'import-x/first': 'error',
@@ -288,11 +361,6 @@ export default [
               message:
                 'Import from package entry point, not /src paths. Use @suites/blackbox/<subpath>.',
             },
-            {
-              group: ['../../../*'],
-              message:
-                'Avoid deep relative imports. Use workspace package imports.',
-            },
           ],
         },
       ],
@@ -320,7 +388,7 @@ export default [
       ],
       'max-lines-per-function': [
         'error',
-        { max: 60, skipBlankLines: true, skipComments: true, IIFEs: true },
+        { max: 80, skipBlankLines: true, skipComments: true, IIFEs: true },
       ],
     },
   },

@@ -1,0 +1,4 @@
+interface:
+  display_name: 'Blackbox Repo Setup'
+  short_description: 'Set up Blackbox and qualify changes with evidence'
+  default_prompt: 'Use $repo-setup to prepare this Blackbox checkout and validate the task.'

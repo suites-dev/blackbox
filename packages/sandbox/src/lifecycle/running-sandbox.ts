@@ -1,10 +1,16 @@
 import { asError, SandboxStopError, type RecordWriteOutcome } from './errors.js';
+import { cleanupCompose } from './cleanup/compose.js';
 import { executeInSandbox } from '../execution/container-exec.js';
+import { startContainerExecution } from '../execution/streaming/start.js';
+import type {
+  SandboxContainerExecutionInput,
+  SandboxContainerExecutionStartResult,
+} from '../execution/streaming/types.js';
 import type {
   SandboxResourceInspectionInput,
   SandboxResourceInspectionResult,
 } from '../inspection/resources.js';
-import { emitLifecycle, withTimeout } from './helpers.js';
+import { emitLifecycle } from './helpers.js';
 import {
   recordedError,
   writeSandboxRecord,
@@ -20,6 +26,7 @@ import type {
   SandboxHandle,
   SandboxInput,
   SandboxLifecycleEvent,
+  SandboxTelemetryStatus,
   SandboxStopInput,
   SandboxStopResult,
   StartedComposeSandbox,
@@ -34,6 +41,7 @@ interface RunningSandboxInput {
   readonly endpoints: ReadonlyMap<string, SandboxEndpoint>;
   readonly containers: ReadonlyMap<string, SandboxContainer>;
   readonly resources: SandboxResourceInspectionResult;
+  readonly telemetry: SandboxTelemetryStatus;
   readonly record: ActiveSandboxRecord;
 }
 
@@ -43,6 +51,7 @@ export class RunningSandbox implements SandboxHandle {
   readonly endpoints: ReadonlyMap<string, SandboxEndpoint>;
   readonly containers: ReadonlyMap<string, SandboxContainer>;
   readonly declaredEnvironment: Readonly<Record<string, string>>;
+  readonly telemetry: SandboxTelemetryStatus;
   #state: 'running' | 'stopping' | 'completed' | 'stop-failed' = 'running';
   #stopState:
     | { readonly kind: 'not-started' }
@@ -57,6 +66,7 @@ export class RunningSandbox implements SandboxHandle {
     this.endpoints = options.endpoints;
     this.containers = options.containers;
     this.record = options.record;
+    this.telemetry = options.telemetry;
     this.declaredEnvironment = Object.freeze({ ...options.input.environment });
   }
 
@@ -85,6 +95,20 @@ export class RunningSandbox implements SandboxHandle {
       containers: this.containers,
       compose: this.options.compose,
     });
+  }
+
+  startContainerExecution(
+    input: SandboxContainerExecutionInput,
+  ): Promise<SandboxContainerExecutionStartResult> {
+    return startContainerExecution({
+      request: input,
+      state: this.#state,
+      containers: this.containers,
+    });
+  }
+
+  inspectTelemetry(): Promise<SandboxTelemetryStatus> {
+    return this.options.compose.inspectTelemetry();
   }
 
   stop(input: SandboxStopInput): Promise<SandboxStopResult> {
@@ -118,10 +142,9 @@ export class RunningSandbox implements SandboxHandle {
     { readonly kind: 'complete' } | { readonly kind: 'failed'; readonly error: Error }
   > {
     try {
-      await withTimeout({
-        operation: this.options.compose.stop({ timeoutMs: this.options.input.stopTimeoutMs }),
+      await cleanupCompose({
+        compose: this.options.compose,
         timeoutMs: this.options.input.stopTimeoutMs,
-        label: 'Sandbox cleanup',
       });
       return { kind: 'complete' };
     } catch (cause) {

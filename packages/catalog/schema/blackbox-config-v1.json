@@ -46,7 +46,15 @@
     "catalogEntry": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["kind", "acquisition", "isolation", "entrypoint", "participants", "observation"],
+      "required": [
+        "kind",
+        "acquisition",
+        "isolation",
+        "entrypoint",
+        "participants",
+        "drivers",
+        "observation"
+      ],
       "properties": {
         "kind": {
           "enum": ["system", "subsystem"],
@@ -64,6 +72,11 @@
           "minProperties": 1,
           "propertyNames": { "$ref": "#/$defs/identifier" },
           "additionalProperties": { "$ref": "#/$defs/participant" }
+        },
+        "drivers": {
+          "type": "object",
+          "propertyNames": { "$ref": "#/$defs/identifier" },
+          "additionalProperties": { "$ref": "#/$defs/driver" }
         },
         "observation": { "$ref": "#/$defs/observation" }
       },
@@ -130,7 +143,13 @@
     "observation": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["policyId", "boundaries", "requiredBoundaries", "terminalObservationWindowMs", "redaction"],
+      "required": [
+        "policyId",
+        "boundaries",
+        "requiredBoundaries",
+        "terminalObservationWindowMs",
+        "redaction"
+      ],
       "properties": {
         "policyId": { "$ref": "#/$defs/identifier" },
         "boundaries": {
@@ -188,6 +207,73 @@
         "adapter": { "type": "string", "minLength": 1 },
         "version": { "type": "integer", "minimum": 1 }
       }
+    },
+    "driver": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "runtime", "ref", "target", "execution", "propagation"],
+      "properties": {
+        "kind": { "const": "project-driver" },
+        "runtime": { "const": "node" },
+        "ref": { "$ref": "#/$defs/relativePath" },
+        "target": { "$ref": "#/$defs/driverTarget" },
+        "execution": { "$ref": "#/$defs/driverExecution" },
+        "propagation": { "$ref": "#/$defs/driverPropagation" }
+      }
+    },
+    "driverTarget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "participant", "protocol", "containerPort"],
+      "properties": {
+        "kind": { "const": "participant" },
+        "participant": { "$ref": "#/$defs/identifier" },
+        "protocol": { "type": "string", "minLength": 1 },
+        "containerPort": { "type": "integer", "minimum": 1, "maximum": 65535 }
+      }
+    },
+    "driverExecution": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind"],
+          "properties": { "kind": { "const": "host" } }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "participant"],
+          "properties": {
+            "kind": { "const": "participant" },
+            "participant": { "$ref": "#/$defs/identifier" }
+          }
+        }
+      ]
+    },
+    "driverPropagation": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "carrier"],
+          "properties": {
+            "kind": { "const": "w3c-trace-context-propagation" },
+            "carrier": {
+              "enum": ["http-headers", "message-metadata", "process-environment"]
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "resource"],
+          "properties": {
+            "kind": { "const": "shared-state-propagation-unsupported" },
+            "resource": { "type": "string", "minLength": 1 }
+          }
+        }
+      ]
     }
   }
 }

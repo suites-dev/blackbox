@@ -2,11 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://suites.dev/blackbox/schemas/capsule-progress-v1.json",
   "type": "object",
-  "required": [
-    "schemaVersion",
-    "kind",
-    "events"
-  ],
+  "required": ["schemaVersion", "kind", "events"],
   "additionalProperties": false,
   "properties": {
     "schemaVersion": {
@@ -77,14 +73,7 @@
           },
           {
             "type": "object",
-            "required": [
-              "sessionId",
-              "sequence",
-              "at",
-              "stage",
-              "kind",
-              "managerPid"
-            ],
+            "required": ["sessionId", "sequence", "at", "stage", "kind", "managerPid"],
             "additionalProperties": false,
             "properties": {
               "sessionId": {
@@ -123,14 +112,7 @@
           },
           {
             "type": "object",
-            "required": [
-              "sessionId",
-              "sequence",
-              "at",
-              "stage",
-              "kind",
-              "managerPid"
-            ],
+            "required": ["sessionId", "sequence", "at", "stage", "kind", "managerPid"],
             "additionalProperties": false,
             "properties": {
               "sessionId": {
@@ -169,15 +151,7 @@
           },
           {
             "type": "object",
-            "required": [
-              "sessionId",
-              "sequence",
-              "at",
-              "stage",
-              "kind",
-              "system",
-              "configFile"
-            ],
+            "required": ["sessionId", "sequence", "at", "stage", "kind", "system", "configFile"],
             "additionalProperties": false,
             "properties": {
               "sessionId": {
@@ -281,14 +255,7 @@
           },
           {
             "type": "object",
-            "required": [
-              "sessionId",
-              "sequence",
-              "at",
-              "stage",
-              "kind",
-              "projectName"
-            ],
+            "required": ["sessionId", "sequence", "at", "stage", "kind", "projectName"],
             "additionalProperties": false,
             "properties": {
               "sessionId": {
@@ -326,14 +293,7 @@
           },
           {
             "type": "object",
-            "required": [
-              "sessionId",
-              "sequence",
-              "at",
-              "stage",
-              "kind",
-              "projectName"
-            ],
+            "required": ["sessionId", "sequence", "at", "stage", "kind", "projectName"],
             "additionalProperties": false,
             "properties": {
               "sessionId": {
@@ -371,14 +331,7 @@
           },
           {
             "type": "object",
-            "required": [
-              "sessionId",
-              "sequence",
-              "at",
-              "stage",
-              "kind",
-              "observation"
-            ],
+            "required": ["sessionId", "sequence", "at", "stage", "kind", "observation"],
             "additionalProperties": false,
             "properties": {
               "sessionId": {
@@ -413,11 +366,7 @@
                 "oneOf": [
                   {
                     "type": "object",
-                    "required": [
-                      "kind",
-                      "participant",
-                      "container"
-                    ],
+                    "required": ["kind", "participant", "container"],
                     "additionalProperties": false,
                     "properties": {
                       "kind": {
@@ -472,9 +421,7 @@
                             "oneOf": [
                               {
                                 "type": "object",
-                                "required": [
-                                  "kind"
-                                ],
+                                "required": ["kind"],
                                 "additionalProperties": false,
                                 "properties": {
                                   "kind": {
@@ -484,10 +431,7 @@
                               },
                               {
                                 "type": "object",
-                                "required": [
-                                  "kind",
-                                  "exitCode"
-                                ],
+                                "required": ["kind", "exitCode"],
                                 "additionalProperties": false,
                                 "properties": {
                                   "kind": {
@@ -506,10 +450,7 @@
                   },
                   {
                     "type": "object",
-                    "required": [
-                      "kind",
-                      "resource"
-                    ],
+                    "required": ["kind", "resource"],
                     "additionalProperties": false,
                     "properties": {
                       "kind": {
@@ -517,17 +458,11 @@
                       },
                       "resource": {
                         "type": "object",
-                        "required": [
-                          "kind",
-                          "name"
-                        ],
+                        "required": ["kind", "name"],
                         "additionalProperties": false,
                         "properties": {
                           "kind": {
-                            "enum": [
-                              "network",
-                              "volume"
-                            ]
+                            "enum": ["network", "volume"]
                           },
                           "name": {
                             "type": "string"
@@ -538,10 +473,7 @@
                   },
                   {
                     "type": "object",
-                    "required": [
-                      "kind",
-                      "elapsedMs"
-                    ],
+                    "required": ["kind", "elapsedMs"],
                     "additionalProperties": false,
                     "properties": {
                       "kind": {
@@ -555,20 +487,14 @@
                   },
                   {
                     "type": "object",
-                    "required": [
-                      "kind",
-                      "status"
-                    ],
+                    "required": ["kind", "status"],
                     "additionalProperties": false,
                     "properties": {
                       "kind": {
                         "const": "observation-status"
                       },
                       "status": {
-                        "enum": [
-                          "available",
-                          "unavailable"
-                        ]
+                        "enum": ["available", "unavailable"]
                       }
                     }
                   }
@@ -642,14 +568,7 @@
           },
           {
             "type": "object",
-            "required": [
-              "sessionId",
-              "sequence",
-              "at",
-              "stage",
-              "kind",
-              "endpoint"
-            ],
+            "required": ["sessionId", "sequence", "at", "stage", "kind", "endpoint"],
             "additionalProperties": false,
             "properties": {
               "sessionId": {
@@ -682,12 +601,7 @@
               },
               "endpoint": {
                 "type": "object",
-                "required": [
-                  "url",
-                  "host",
-                  "port",
-                  "protocol"
-                ],
+                "required": ["url", "host", "port", "protocol"],
                 "additionalProperties": false,
                 "properties": {
                   "url": {
@@ -709,14 +623,7 @@
           },
           {
             "type": "object",
-            "required": [
-              "sessionId",
-              "sequence",
-              "at",
-              "stage",
-              "kind",
-              "resource"
-            ],
+            "required": ["sessionId", "sequence", "at", "stage", "kind", "resource"],
             "additionalProperties": false,
             "properties": {
               "sessionId": {
@@ -749,17 +656,11 @@
               },
               "resource": {
                 "type": "object",
-                "required": [
-                  "kind",
-                  "name"
-                ],
+                "required": ["kind", "name"],
                 "additionalProperties": false,
                 "properties": {
                   "kind": {
-                    "enum": [
-                      "network",
-                      "volume"
-                    ]
+                    "enum": ["network", "volume"]
                   },
                   "name": {
                     "type": "string"
@@ -770,15 +671,7 @@
           },
           {
             "type": "object",
-            "required": [
-              "sessionId",
-              "sequence",
-              "at",
-              "stage",
-              "kind",
-              "url",
-              "timeoutMs"
-            ],
+            "required": ["sessionId", "sequence", "at", "stage", "kind", "url", "timeoutMs"],
             "additionalProperties": false,
             "properties": {
               "sessionId": {
@@ -820,15 +713,7 @@
           },
           {
             "type": "object",
-            "required": [
-              "sessionId",
-              "sequence",
-              "at",
-              "stage",
-              "kind",
-              "url",
-              "durationMs"
-            ],
+            "required": ["sessionId", "sequence", "at", "stage", "kind", "url", "durationMs"],
             "additionalProperties": false,
             "properties": {
               "sessionId": {
@@ -870,14 +755,7 @@
           },
           {
             "type": "object",
-            "required": [
-              "sessionId",
-              "sequence",
-              "at",
-              "stage",
-              "kind",
-              "durationMs"
-            ],
+            "required": ["sessionId", "sequence", "at", "stage", "kind", "durationMs"],
             "additionalProperties": false,
             "properties": {
               "sessionId": {
@@ -916,14 +794,7 @@
           },
           {
             "type": "object",
-            "required": [
-              "sessionId",
-              "sequence",
-              "at",
-              "stage",
-              "kind",
-              "cause"
-            ],
+            "required": ["sessionId", "sequence", "at", "stage", "kind", "cause"],
             "additionalProperties": false,
             "properties": {
               "sessionId": {
@@ -956,10 +827,7 @@
               },
               "cause": {
                 "type": "object",
-                "required": [
-                  "name",
-                  "message"
-                ],
+                "required": ["name", "message"],
                 "additionalProperties": false,
                 "properties": {
                   "name": {

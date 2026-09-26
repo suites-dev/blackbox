@@ -12,6 +12,9 @@ import type {
 import { CapsuleStageError, emitProgress, runStartStage } from './progress.js';
 import type { CapsuleManagerPorts } from './ports.js';
 import { sandboxProgressBridge } from './sandbox-progress.js';
+import { verifyRequiredInstrumentationActivations } from './activation/verification.js';
+import { capsuleSandboxTelemetry, type CapsuleTelemetryAuthorization } from './telemetry.js';
+import type { CapsuleCollectorRuntime } from './collector-runtime.js';
 
 export interface AcquiredCapsuleSandbox {
   readonly sandbox: SandboxHandle;
@@ -99,10 +102,13 @@ interface PlannedSandboxInput {
   readonly plan: CatalogSandboxInput;
   readonly entry: CatalogEntry;
   readonly ports: CapsuleManagerPorts;
+  readonly authorization: CapsuleTelemetryAuthorization;
+  readonly collectorRuntime: CapsuleCollectorRuntime;
 }
 
 export async function startPlannedSandbox(input: PlannedSandboxInput): Promise<{
-  readonly sandbox: SandboxHandle; readonly flushProgress: () => Promise<void>;
+  readonly sandbox: SandboxHandle;
+  readonly flushProgress: () => Promise<void>;
 }> {
   const projectName = input.ports.sandbox.projectName({ sandboxId: input.bootstrap.executionId });
   await emitProgress(input.bootstrap, {
@@ -116,8 +122,9 @@ export async function startPlannedSandbox(input: PlannedSandboxInput): Promise<{
     projectName,
   });
   const progress = sandboxProgressBridge({ bootstrap: input.bootstrap, entry: input.entry });
-  const operation = runStartStage('acquisition', () =>
-    input.ports.sandbox.start({
+  const operation = runStartStage('acquisition', async () => {
+    const telemetry = await capsuleSandboxTelemetry(input);
+    return input.ports.sandbox.start({
       sandbox: {
         sandboxId: input.bootstrap.executionId,
         projectDirectory: input.plan.projectDirectory,
@@ -135,15 +142,20 @@ export async function startPlannedSandbox(input: PlannedSandboxInput): Promise<{
           120_000,
         ),
         stopTimeoutMs: 60_000,
+        telemetry,
       },
       progress: progress.mode,
-    }),
-  );
+    });
+  });
   let sandbox: SandboxHandle;
-  try { sandbox = await operation; }
-  catch (error) {
-    try { await progress.flush(); }
-    catch (persistenceError) { throw combinedStartFailure({ error, persistenceError }); }
+  try {
+    sandbox = await operation;
+  } catch (error) {
+    try {
+      await progress.flush();
+    } catch (persistenceError) {
+      throw combinedStartFailure({ error, persistenceError });
+    }
     throw error;
   }
   return { sandbox, flushProgress: () => runStartStage('persistence', progress.flush) };
@@ -158,6 +170,17 @@ export async function completePlannedSandbox(
   const resources = sandbox.inspectResources({ kind: 'owned-compose-resources' });
   const networks = resources.networks.map(({ name }) => name).sort();
   const volumes = resources.volumes.map(({ name }) => name).sort();
+  await runStartStage('acquisition', () =>
+    verifyRequiredInstrumentationActivations({
+      kind: 'verify-required-instrumentation-activations',
+      plan: input.plan,
+      sandbox,
+      authorizationToken: input.authorization.controlToken,
+      sessionId: input.bootstrap.sessionId,
+      executionId: input.bootstrap.executionId,
+      timeoutMs: input.entry.entrypoint.readiness.timeoutMs,
+    }),
+  );
   const readiness = await verifyReadiness({
     bootstrap: input.bootstrap,
     entry: input.entry,
@@ -166,11 +189,17 @@ export async function completePlannedSandbox(
   return { sandbox, entrypoint: capsuleEntrypoint, containers, networks, volumes, readiness };
 }
 
-function combinedStartFailure(input: { readonly error: unknown; readonly persistenceError: unknown }): CapsuleStageError {
+function combinedStartFailure(input: {
+  readonly error: unknown;
+  readonly persistenceError: unknown;
+}): CapsuleStageError {
   const acquisition = recordedError(input.error);
   const persistence = recordedError(input.persistenceError);
-  return new CapsuleStageError('persistence', new AggregateError(
-    [input.error, input.persistenceError],
-    `Acquisition failed: ${acquisition.message}; progress persistence failed: ${persistence.message}`,
-  ));
+  return new CapsuleStageError(
+    'persistence',
+    new AggregateError(
+      [input.error, input.persistenceError],
+      `Acquisition failed: ${acquisition.message}; progress persistence failed: ${persistence.message}`,
+    ),
+  );
 }

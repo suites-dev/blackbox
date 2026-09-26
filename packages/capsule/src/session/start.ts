@@ -14,6 +14,8 @@ import {
 } from '../records.js';
 import type { CapsuleProgressMode, CapsuleStartInput, CapsuleStartResult } from '../types.js';
 import { generateCapsuleIdentity } from './identity.js';
+import { reconcileDeadCapsuleManager } from './recovery/index.js';
+import { managerTermination } from './startup/manager-termination.js';
 
 export function deliverProgress(
   progress: CapsuleProgressMode,
@@ -36,44 +38,45 @@ export function deliverProgress(
 async function waitForStartup(input: {
   readonly projectDirectory: string;
   readonly sessionId: string;
-  readonly timeoutMs: number;
   readonly manager: ChildProcess;
   readonly progress: CapsuleProgressMode;
 }): Promise<CapsuleSessionRecord> {
-  const deadline = Date.now() + input.timeoutMs;
   let delivered = 0;
-  while (Date.now() < deadline) {
+  for (;;) {
     delivered = deliverProgress(input.progress, await readCapsuleProgress(input), delivered);
     const record = await readCapsuleRecord(input);
     if (['running', 'start-failed', 'manager-failed'].includes(record.state)) {
       return record;
     }
-    if (input.manager.exitCode !== null) {
-      const failed = {
-        ...record,
-        state: 'manager-failed',
-        revision: record.revision + 1,
-        updatedAt: new Date().toISOString(),
-        error: {
-          name: 'CapsuleManagerExit',
-          message: `Capsule manager exited with code ${input.manager.exitCode}`,
-        },
-      } satisfies CapsuleSessionRecord;
-      await writeCapsuleRecord({ projectDirectory: input.projectDirectory, record: failed });
+    const termination = managerTermination(input.manager);
+    if (termination.kind === 'manager-terminated') {
+      const reconciliation = await reconcileDeadCapsuleManager(input);
+      const failed =
+        reconciliation.kind === 'capsule-manager-reconciled'
+          ? reconciliation.record
+          : ({
+              ...record,
+              state: 'manager-failed',
+              revision: record.revision + 1,
+              updatedAt: new Date().toISOString(),
+              failure: { kind: 'recorded', error: termination.error },
+            } satisfies CapsuleSessionRecord);
+      if (reconciliation.kind !== 'capsule-manager-reconciled') {
+        await writeCapsuleRecord({ projectDirectory: input.projectDirectory, record: failed });
+      }
       await appendCapsuleProgress({
         ...input,
         event: {
           kind: 'capsule-start-failed',
           sessionId: input.sessionId,
           stage: 'manager-handshake',
-          cause: failed.error,
+          cause: failed.failure.kind === 'recorded' ? failed.failure.error : termination.error,
         },
       });
       return failed;
     }
     await new Promise((resolve) => setTimeout(resolve, 100));
   }
-  throw new Error(`Capsule manager did not finish startup within ${input.timeoutMs}ms`);
 }
 
 async function launchManager(bootstrap: CapsuleManagerBootstrap): Promise<ChildProcess> {
@@ -114,20 +117,20 @@ function candidateRecord(input: {
     revision: 0,
     admittedAt,
     updatedAt: admittedAt,
-    managerPid: undefined,
+    manager: { kind: 'not-started' },
     socketPath: capsuleSocketPath({
       projectDirectory: input.projectDirectory,
       sessionId: input.identity.sessionId,
     }),
-    entrypoint: undefined,
+    entrypoint: { kind: 'unavailable' },
     containers: [],
     cleanup: { kind: 'not-attempted' },
-    error: undefined,
-    composeProject: undefined,
+    failure: { kind: 'none' },
+    composeProject: { kind: 'unavailable' },
     artifactRoot,
     networks: [],
     volumes: [],
-    readiness: undefined,
+    readiness: { kind: 'unavailable' },
   };
 }
 
@@ -188,6 +191,7 @@ async function admitAndLaunch(
     executionId: record.executionId,
     systemId: input.systemId,
     environment: { ...input.environment },
+    runtimeActivationAdapters: input.runtimeActivationAdapters,
   });
   await appendCapsuleProgress({
     projectDirectory,
@@ -206,38 +210,37 @@ export async function startCapsule(input: CapsuleStartInput): Promise<CapsuleSta
     const started = await waitForStartup({
       projectDirectory,
       sessionId,
-      timeoutMs: 240_000,
       manager: admitted.manager,
       progress: input.progress,
     });
     if (
       started.state !== 'running' ||
-      started.entrypoint === undefined ||
-      started.composeProject === undefined ||
-      started.readiness === undefined
+      started.entrypoint.kind !== 'available' ||
+      started.composeProject.kind !== 'available' ||
+      started.readiness.kind !== 'available'
     ) {
       return {
         kind: 'capsule-operation-failed',
         operation: 'start',
         sessionId,
-        error: started.error ?? {
-          name: 'Error',
-          message: `Capsule startup ended in ${started.state}`,
-        },
+        error:
+          started.failure.kind === 'recorded'
+            ? started.failure.error
+            : { name: 'Error', message: `Capsule startup ended in ${started.state}` },
       };
     }
     return {
       kind: 'capsule-started',
       sessionId,
       system: started.system,
-      title: started.title ?? started.system,
-      composeProject: started.composeProject,
+      title: started.title,
+      composeProject: started.composeProject.value,
       artifactRoot: started.artifactRoot,
-      entrypoint: started.entrypoint,
+      entrypoint: started.entrypoint.value,
       containers: started.containers,
       networks: started.networks,
       volumes: started.volumes,
-      readiness: started.readiness,
+      readiness: started.readiness.value,
     };
   } catch (error) {
     return capsuleFailure({ operation: 'start', sessionId, error });

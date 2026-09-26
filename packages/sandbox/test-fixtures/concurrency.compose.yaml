@@ -9,8 +9,6 @@ services:
       - >-
         printf '%s\n' "$SANDBOX_ID" > /usr/share/nginx/html/index.html &&
         exec nginx -g 'daemon off;'
-    ports:
-      - '80'
     volumes:
       - proof-state:/var/cache/blackbox-proof
 

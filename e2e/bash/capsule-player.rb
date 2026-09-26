@@ -13,6 +13,7 @@ require 'uri'
 root = File.expand_path('../..', __dir__)
 project_directory = File.join(root, 'e2e')
 story_path = File.join(__dir__, 'capsule-demo.yaml')
+blackbox_bin = ENV.fetch('BLACKBOX_BIN')
 options = ARGV.each_with_object({}) { |arg, result| result[arg] = true }
 color = $stdout.tty? && !options['--no-color'] && ENV['NO_COLOR'].nil?
 reset = color ? "\e[0m" : ''
@@ -54,7 +55,13 @@ def display_command(argv)
 end
 
 story = Psych.safe_load(File.read(story_path), permitted_classes: [], aliases: false)
-values = { 'SESSION_ID' => '', 'ENTRYPOINT_URL' => '', 'REPORT_ROOT' => '' }
+values = {
+  'SESSION_ID' => '',
+  'ENTRYPOINT_URL' => '',
+  'REPORT_ROOT' => '',
+  'DRIVER_ACTIVITY_ID' => '',
+  'TRACE_ID' => ''
+}
 session_stopped = false
 report_server = nil
 
@@ -62,12 +69,13 @@ begin
   puts "#{blue}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━#{reset}"
   puts "#{cyan}[blackbox]#{reset} #{yellow}#{story.fetch('title')}#{reset}"
   puts "#{dim}Storyboard: #{story_path}#{reset}"
+  system('node', File.join(__dir__, 'capsule-reset.mjs')) || abort('Demo reset failed')
 
   story.fetch('steps').each_with_index do |step, index|
     kind = step.fetch('kind')
     command = interpolate(step.fetch('command'), values)
     command = "#{File.join(root, command)}" if kind == 'shell'
-    executable = kind == 'shell' ? command : "node #{File.join(root, 'packages/cli/bin/run.js')} #{command}"
+    executable = kind == 'shell' ? Shellwords.split(command) : [blackbox_bin, *Shellwords.split(command)]
     puts "\n#{blue}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━#{reset}"
     puts "#{cyan}[#{index + 1}/#{story.fetch('steps').length}]#{reset} #{yellow}#{step.fetch('explanation')}#{reset}"
     puts "#{dim}$ #{display_command(kind == 'shell' ? Shellwords.split(command) : ['blackbox', *Shellwords.split(command)])}#{reset}"
@@ -79,7 +87,7 @@ begin
     if kind == 'serve'
       stop_report_viewer(report_server)
       report_server = nil
-      input, output, wait_thread = Open3.popen2e(*Shellwords.split(executable), chdir: project_directory)
+      input, output, wait_thread = Open3.popen2e(*executable, chdir: project_directory)
       report_server = [output, wait_thread, true]
       input.close
       server_url = nil
@@ -103,7 +111,7 @@ begin
       next
     end
 
-    input, output, wait_thread = Open3.popen2(*Shellwords.split(executable), chdir: project_directory, err: STDERR)
+    input, output, wait_thread = Open3.popen2(*executable, chdir: project_directory, err: STDERR)
     input.close
     stdout = output.read
     output.close
@@ -118,6 +126,15 @@ begin
       values['REPORT_ROOT'] = File.join(root, 'e2e', '.blackbox', 'reports', "capsule-#{values['SESSION_ID']}")
       FileUtils.mkdir_p(values['REPORT_ROOT'])
       puts "#{green}Session retained: #{values['SESSION_ID']}#{reset}"
+    elsif step.fetch('id') == 'http-driver'
+      execution = JSON.parse(stdout)
+      unless execution.fetch('kind') == 'capsule-exec-completed'
+        raise 'The HTTP driver execution did not complete'
+      end
+      values['DRIVER_ACTIVITY_ID'] = execution.fetch('activityId')
+    elsif step.fetch('id') == 'observations-activity'
+      observation = JSON.parse(stdout)
+      values['TRACE_ID'] = observation.fetch('traceIds').fetch(0)
     elsif step.fetch('id') == 'stop'
       session_stopped = true
     end
@@ -134,6 +151,6 @@ ensure
     warn error.message
   end
   if values['SESSION_ID'] != '' && !session_stopped
-    system("node", File.join(root, 'packages/cli/bin/run.js'), 'capsule', 'stop', '--session', values['SESSION_ID'], '--json', chdir: project_directory)
+    system(blackbox_bin, 'capsule', 'stop', '--session', values['SESSION_ID'], '--json', chdir: project_directory)
   end
 end

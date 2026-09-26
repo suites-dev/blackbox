@@ -1,0 +1,41 @@
+{
+  "name": "@suites/blackbox-otel-collector-internal",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Capsule-scoped OTLP/HTTP JSON trace receiver and retained trace reader.",
+  "files": [
+    "dist",
+    "schema"
+  ],
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "blackbox-source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./schema/collector-fragment-v1.json": "./schema/collector-fragment-v1.json",
+    "./schema/collector-activation-v1.json": "./schema/collector-activation-v1.json",
+    "./schema/collector-lifecycle-v1.json": "./schema/collector-lifecycle-v1.json"
+  },
+  "bin": {
+    "blackbox-otel-collector": "./dist/main.js"
+  },
+  "scripts": {
+    "prebuild": "rimraf dist",
+    "build": "tsc --project tsconfig.build.json",
+    "prepack": "pnpm build",
+    "lint": "eslint .",
+    "test": "vitest run --config vitest.config.ts",
+    "test:coverage": "vitest run --coverage --config vitest.config.ts"
+  },
+  "devDependencies": {
+    "rimraf": "catalog:",
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "license": "Apache-2.0"
+}

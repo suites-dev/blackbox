@@ -10,7 +10,10 @@ interface SandboxProgressEventBase {
 
 export type SandboxProgressEvent =
   | (SandboxProgressEventBase & { readonly kind: 'acquisition-started' })
-  | (SandboxProgressEventBase & { readonly kind: 'acquisition-observation'; readonly observation: ComposeAcquisitionObservation })
+  | (SandboxProgressEventBase & {
+      readonly kind: 'acquisition-observation';
+      readonly observation: ComposeAcquisitionObservation;
+    })
   | (SandboxProgressEventBase & {
       readonly kind: 'containers-acquired';
       readonly containers: readonly SandboxContainer[];

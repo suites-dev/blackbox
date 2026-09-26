@@ -7,30 +7,58 @@
   "author": "Suites",
   "description": "Monorepo for Suites Blackbox.",
   "scripts": {
-    "build": "pnpm --recursive --if-present run build",
-    "test": "pnpm run build && pnpm --recursive --if-present run test",
-    "lint": "eslint packages --cache",
+    "build": "pnpm --recursive --sort run build",
+    "test": "pnpm run build && pnpm --recursive run test",
+    "test:e2e:capsule": "bash e2e/bash/capsule-assets.sh && bash e2e/bash/capsule-test.sh",
+    "lint": "node scripts/check-source-layout.mjs && eslint packages --cache && pnpm check:runtime-deps",
     "lint:fix": "eslint packages --cache --fix",
-    "typecheck": "pnpm run build",
+    "check:runtime-deps": "dependency-cruiser packages --config .dependency-cruiser.cjs --focus '^packages/instrumentation-runtime-' --focus-depth 1 --exclude '(^|/)(dist/|coverage/|vitest(?:\\.integration)?\\.config\\.ts$)' --output-type err-long",
+    "typecheck": "tsc --project tsconfig.json --noEmit",
     "format": "prettier --write \"packages/**/*.{ts,tsx,js,jsx,json,md,yaml,yml}\" package.json pnpm-workspace.yaml",
     "prepare": "husky"
   },
   "engines": {
     "node": ">=22.15"
   },
+  "dependencies": {
+    "@suites/blackbox-driver": "workspace:*"
+  },
   "packageManager": "pnpm@9.15.4",
+  "pnpm": {
+    "overrides": {
+      "@grpc/grpc-js": "1.14.4",
+      "@protobufjs/utf8": "1.1.1",
+      "axios": "1.18.0",
+      "baseline-browser-mapping": "2.11.0",
+      "brace-expansion@1": "1.1.18",
+      "brace-expansion@2": "2.1.4",
+      "brace-expansion@5": "5.0.9",
+      "browserslist": "4.28.7",
+      "fast-uri": "3.1.6",
+      "js-yaml": "4.3.2",
+      "nanoid@3": "3.3.18",
+      "pacote": "21.5.1",
+      "protobufjs": "7.6.5",
+      "smol-toml": "1.7.1",
+      "tmp": "0.2.7",
+      "undici": "6.28.0",
+      "uuid": "11.1.1"
+    }
+  },
   "devDependencies": {
     "@commitlint/cli": "catalog:",
     "@commitlint/config-conventional": "catalog:",
     "@eslint/js": "catalog:",
     "@types/node": "catalog:",
-    "@vitest/coverage-v8": "3.2.6",
+    "@vitest/coverage-v8": "5.0.1",
+    "dependency-cruiser": "18.4.0",
     "eslint": "catalog:",
     "eslint-config-prettier": "catalog:",
     "eslint-plugin-import-x": "catalog:",
     "eslint-plugin-unicorn": "catalog:",
     "globals": "catalog:",
     "husky": "catalog:",
+    "lerna": "10.0.1",
     "lint-staged": "catalog:",
     "prettier": "catalog:",
     "typescript": "catalog:",
@@ -41,5 +69,18 @@
     "*.ts": [
       "eslint --fix --no-warn-ignored"
     ]
-  }
+  },
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/suites-dev/blackbox.git"
+  },
+  "keywords": [],
+  "bugs": {
+    "url": "https://github.com/suites-dev/blackbox/issues"
+  },
+  "homepage": "https://github.com/suites-dev/blackbox#readme"
 }

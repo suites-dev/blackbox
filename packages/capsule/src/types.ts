@@ -1,13 +1,38 @@
+import type { RuntimeActivationAdapter } from '@suites/blackbox-instrumentation-internal';
+
 import type { CapsuleAcquisitionObservation } from './progress/acquisition.js';
 
 export interface CapsuleStartInput {
   readonly projectDirectory: string;
   readonly systemId: string;
   readonly title: string;
-  readonly description: string | undefined;
+  readonly description: CapsuleDescription;
   readonly environment: Readonly<Record<string, string>>;
+  readonly runtimeActivationAdapters: readonly RuntimeActivationAdapter[];
   readonly progress: CapsuleProgressMode;
 }
+
+export type CapsuleDescription =
+  | { readonly kind: 'provided'; readonly value: string }
+  | { readonly kind: 'omitted' };
+
+export type CapsuleAvailability<Value> =
+  | { readonly kind: 'available'; readonly value: Value }
+  | { readonly kind: 'unavailable' };
+
+export type CapsuleManagerOwnership =
+  | { readonly kind: 'not-started' }
+  | {
+      readonly kind: 'started';
+      readonly pid: number;
+      readonly identity:
+        | { readonly kind: 'legacy-pid-only' }
+        | { readonly kind: 'socket-instance'; readonly instanceId: string };
+    };
+
+export type CapsuleFailureRecord =
+  | { readonly kind: 'none' }
+  | { readonly kind: 'recorded'; readonly error: CapsuleRecordedError };
 
 export type CapsuleProgressMode =
   | { readonly kind: 'silent' }
@@ -67,7 +92,10 @@ export type CapsuleProgressEvent =
     })
   | (CapsuleProgressBase & { readonly kind: 'compose-configured'; readonly projectName: string })
   | (CapsuleProgressBase & { readonly kind: 'acquisition-started'; readonly projectName: string })
-  | (CapsuleProgressBase & { readonly kind: 'acquisition-observation'; readonly observation: CapsuleAcquisitionObservation })
+  | (CapsuleProgressBase & {
+      readonly kind: 'acquisition-observation';
+      readonly observation: CapsuleAcquisitionObservation;
+    })
   | (CapsuleProgressBase & {
       readonly kind: 'container-acquired';
       readonly participant: string;
@@ -141,40 +169,6 @@ export type CapsuleStartResult =
     }
   | CapsuleOperationFailure;
 
-export type CapsuleExecTarget =
-  | { readonly kind: 'host'; readonly argv: readonly [string, ...string[]] }
-  | {
-      readonly kind: 'participant';
-      readonly participant: string;
-      readonly argv: readonly [string, ...string[]];
-    };
-
-export interface CapsuleExecInput {
-  readonly projectDirectory: string;
-  readonly sessionId: string;
-  readonly target: CapsuleExecTarget;
-}
-
-export type CapsuleProcessOutcome =
-  | {
-      readonly kind: 'exited';
-      readonly argv: readonly string[];
-      readonly exitCode: number;
-      readonly stdout: string;
-      readonly stderr: string;
-    }
-  | {
-      readonly kind: 'signaled';
-      readonly argv: readonly string[];
-      readonly signal: NodeJS.Signals;
-      readonly stdout: string;
-      readonly stderr: string;
-    };
-
-export type CapsuleExecResult =
-  | { readonly kind: 'capsule-exec-completed'; readonly outcome: CapsuleProcessOutcome }
-  | CapsuleOperationFailure;
-
 export interface CapsuleStopInput {
   readonly projectDirectory: string;
   readonly sessionId: string;
@@ -195,15 +189,30 @@ export interface CapsuleReportInput {
   readonly sessionId: string;
 }
 
-export interface CapsuleActivityReport {
-  readonly sequence: number;
-  readonly target: 'host' | 'participant';
-  readonly participant: string | undefined;
-  readonly argv: readonly string[];
-  readonly outcome: CapsuleProcessOutcome;
-  readonly startedAt: string;
-  readonly completedAt: string;
-}
+export type {
+  CapsuleActivityReport,
+  CapsuleActivityName,
+  CapsuleActivityPurpose,
+  CapsuleDriverDetails,
+  CapsuleDriverOutcome,
+  CapsuleExecInput,
+  CapsuleInteractiveControl,
+  CapsuleInteractiveControlResult,
+  CapsuleInteractiveEvent,
+  CapsuleInteractiveExecInput,
+  CapsuleExecResult,
+  CapsuleExecTarget,
+  CapsuleExecutionControl,
+  CapsuleExecutionInteraction,
+  CapsuleExecutionOutcome,
+  CapsuleExecutionLocation,
+  CapsuleObservationsInput,
+  CapsuleObservationsResult,
+  CapsuleOutputRetention,
+  CapsuleProcessOutcome,
+  CapsuleRawCommandOutcome,
+  CapsuleTerminalSize,
+} from './execution/types.js';
 
 export type CapsuleCleanupReport =
   | { readonly kind: 'not-attempted' }
@@ -229,7 +238,7 @@ export type CapsuleOperationFailure =
     }
   | {
       readonly kind: 'capsule-operation-failed';
-      readonly operation: 'start' | 'exec' | 'stop' | 'report';
+      readonly operation: 'start' | 'exec' | 'stop' | 'report' | 'observations';
       readonly sessionId: string;
       readonly error: CapsuleRecordedError;
     };

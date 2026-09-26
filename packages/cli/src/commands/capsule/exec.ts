@@ -1,26 +1,157 @@
 import { Command, Flags } from '@oclif/core';
-import { execCapsule } from '@suites/blackbox-capsule-internal';
-import { capsuleFailure } from '../../capsule-output.js';
+import {
+  execCapsule,
+  normalizeCapsuleActivityName,
+  type CapsuleActivityName,
+  type CapsuleExecutionOutcome,
+  type CapsuleProcessOutcome,
+} from '@suites/blackbox-capsule-internal';
+
+import { capsuleFailure } from '../../capsule/capsule-output.js';
+import { runProcessInteractiveCapsuleExec } from '../../capsule/execution/interactive-execution.js';
+
+function activityName(command: Command, input: CapsuleActivityName): CapsuleActivityName {
+  try {
+    return normalizeCapsuleActivityName(input);
+  } catch (error) {
+    command.error(error instanceof Error ? error.message : String(error), { exit: 2 });
+  }
+}
+
+function processOutcome(outcome: CapsuleExecutionOutcome): CapsuleProcessOutcome | null {
+  return outcome.kind === 'driver-completed'
+    ? outcome.process
+    : outcome.kind === 'exited' ||
+          outcome.kind === 'signaled' ||
+          outcome.kind === 'executable-not-found'
+    ? outcome
+    : null;
+}
+
+function writeProcessOutput(outcome: CapsuleProcessOutcome): void {
+  if (outcome.kind === 'executable-not-found') {
+    return;
+  }
+  if (outcome.stdout.length > 0) {
+    process.stdout.write(outcome.stdout);
+  }
+  if (outcome.stderr.length > 0) {
+    process.stderr.write(outcome.stderr);
+  }
+}
+
+function finishProcess(
+  command: Command,
+  outcome: CapsuleExecutionOutcome,
+  output: { readonly kind: 'captured' } | { readonly kind: 'streamed' },
+): void {
+  const processResult = processOutcome(outcome);
+  if (processResult === null) {
+    if (outcome.kind === 'driver-prepare-failed') {
+      command.error(
+        `Driver ${JSON.stringify(outcome.driverId)} could not prepare the command: ${outcome.error.message}`,
+        { exit: 1 },
+      );
+    }
+    if (outcome.kind === 'driver-propagation-refused') {
+      command.error(
+        `Driver ${JSON.stringify(outcome.driverId)} did not satisfy ${outcome.propagation.expectation.kind}. Use --allow-untraced to run while retaining this limitation.`,
+        { exit: 1 },
+      );
+    }
+    throw new Error(`Unhandled Capsule execution outcome: ${JSON.stringify(outcome)}`);
+  }
+  if (output.kind === 'captured') {
+    writeProcessOutput(processResult);
+  }
+  if (processResult.kind === 'executable-not-found') {
+    command.error(processResult.remediation, { exit: 127 });
+  }
+  if (processResult.kind === 'signaled') {
+    command.error(`command terminated by ${processResult.signal}`, { exit: 1 });
+  }
+  if (processResult.exitCode !== 0) {
+    command.error(`command exited with ${String(processResult.exitCode)}`, {
+      exit: processResult.exitCode,
+    });
+  }
+}
 
 export default class CapsuleExec extends Command {
   static override strict = false;
-  static override description = 'Run a host command, or explicitly inside a participant container.';
-  static override flags = { session: Flags.string({ required: true }), participant: Flags.string(), json: Flags.boolean({ default: false }) };
+  static override description = 'Run a host command or use a catalog driver.';
+  static override flags = {
+    session: Flags.string({ required: true }),
+    name: Flags.string({ description: 'Human-readable name retained with the activity.' }),
+    driver: Flags.string(),
+    purpose: Flags.string({
+      default: 'stimulus',
+      options: ['setup', 'stimulus', 'inspection'],
+    }),
+    'allow-untraced': Flags.boolean({ default: false }),
+    json: Flags.boolean({ default: false }),
+  };
+
   public async run(): Promise<void> {
-    const separator = this.argv.indexOf('--'); const argv = (separator < 0 ? [] : this.argv.slice(separator + 1)) as [string, ...string[]];
-    if (argv.length === 0) {this.error('capsule exec requires a command after --', { exit: 2 });}
-    const { flags } = await this.parse(CapsuleExec); const target = flags.participant === undefined ? { kind: 'host' as const, argv } : { kind: 'participant' as const, participant: flags.participant, argv };
-    const result = await execCapsule({ projectDirectory: process.cwd(), sessionId: flags.session, target });
-    if (result.kind !== 'capsule-exec-completed') { if (flags.json) {this.log(capsuleFailure({ result, json: true }));} this.error(capsuleFailure({ result, json: false }), { exit: 1 }); }
+    const separator = this.argv.indexOf('--');
+    const argv = (separator < 0 ? [] : this.argv.slice(separator + 1)) as [string, ...string[]];
+    const { flags } = await this.parse(CapsuleExec);
+    if (argv.length === 0) {
+      this.error('capsule exec requires a command after --', { exit: 2 });
+    }
+    if (flags.driver === undefined && flags['allow-untraced']) {
+      this.error('--allow-untraced requires --driver', { exit: 2 });
+    }
+    const target =
+      flags.driver === undefined
+        ? { kind: 'host' as const, argv }
+        : {
+            kind: 'driver' as const,
+            driverId: flags.driver,
+            argv,
+            untraced: flags['allow-untraced']
+              ? ({ kind: 'allow' } as const)
+              : ({ kind: 'refuse' } as const),
+          };
+    const name = activityName(
+      this,
+      flags.name === undefined
+        ? { kind: 'omitted' }
+        : { kind: 'provided', value: flags.name },
+    );
+    const execInput = {
+      projectDirectory: process.cwd(),
+      sessionId: flags.session,
+      name,
+      purpose: flags.purpose as 'setup' | 'stimulus' | 'inspection',
+      target,
+    };
+    const interactive = !flags.json && process.stdin.isTTY && process.stdout.isTTY;
+    const result = interactive
+      ? await runProcessInteractiveCapsuleExec(execInput)
+      : await execCapsule(execInput);
+    if (result.kind !== 'capsule-exec-completed') {
+      if (flags.json) {
+        process.stdout.write(`${capsuleFailure({ result, json: true })}\n`);
+        this.exit(1);
+      }
+      this.error(capsuleFailure({ result, json: false }), { exit: 1 });
+    }
     if (flags.json) {
-      if (result.outcome.stderr) {process.stderr.write(result.outcome.stderr);}
-      process.stdout.write(`${JSON.stringify(result.outcome)}\n`);
-      if (result.outcome.kind === 'signaled') {this.error(`command terminated by ${result.outcome.signal}`, { exit: 1 });}
-      if (result.outcome.exitCode !== 0) {this.error(`command exited with ${String(result.outcome.exitCode)}`, { exit: result.outcome.exitCode });}
+      process.stdout.write(`${JSON.stringify(result)}\n`);
+      const captured = processOutcome(result.outcome);
+      if (captured === null) {
+        this.exit(1);
+      }
+      if (captured.kind === 'exited' && captured.exitCode !== 0) {
+        this.exit(captured.exitCode);
+      }
+      if (captured.kind !== 'exited') {
+        this.exit(captured.kind === 'executable-not-found' ? 127 : 1);
+      }
       return;
     }
-    if (result.outcome.stdout) {process.stdout.write(result.outcome.stdout);} if (result.outcome.stderr) {process.stderr.write(result.outcome.stderr);}
-    if (result.outcome.kind === 'signaled') {this.error(`command terminated by ${result.outcome.signal}`, { exit: 1 });}
-    if (result.outcome.exitCode !== 0) {this.error(`command exited with ${String(result.outcome.exitCode)}`, { exit: result.outcome.exitCode });}
+    process.stderr.write(`[blackbox] Activity retained: ${result.activityId}\n`);
+    finishProcess(this, result.outcome, interactive ? { kind: 'streamed' } : { kind: 'captured' });
   }
 }

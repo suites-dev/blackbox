@@ -1,128 +1,152 @@
+import type { DriverArgvRedaction } from '@suites/blackbox-driver';
+import type {
+  CompletedTelemetryExecutionScopeRecord,
+  TelemetryPropagationRecord,
+} from '@suites/blackbox-telemetry-internal';
+
 import type {
   CapsuleActivityReport,
+  CapsuleExecutionOutcome,
   CapsuleProcessOutcome,
+  CapsuleRawCommandOutcome,
   CapsuleRecordedError,
 } from '../types.js';
-import type { CapsuleReportActivity, CapsuleReportRedaction } from './types.js';
+import type { CapsuleReportActivity } from './types.js';
 
-const MASK = '[REDACTED]';
-const sensitiveName = /(?:authorization|proxy-authorization|cookie|set-cookie|token|secret|password|passwd|api[-_]?key)/iu;
-const header = /^(authorization|proxy-authorization|cookie|set-cookie|x-api-key|api-key)\s*:/iu;
-const assignment = /^([A-Za-z_][A-Za-z0-9_]*)=(.*)$/u;
-const socketPath = /(?:\/[^\s"']+)?\.blackbox\/s\/[^\s"']+\.sock/gu;
+import {
+  createRedactionContext,
+  redactArgv,
+  redactText,
+  type RedactionContext,
+} from './redaction/text.js';
 
-interface RedactionContext {
-  readonly entries: CapsuleReportRedaction[];
-}
+export { createRedactionContext, redactText } from './redaction/text.js';
 
-function note(context: RedactionContext, kind: CapsuleReportRedaction['kind'], location: string): void {
-  context.entries.push({ kind, location });
-}
+const noExplicitRedaction = { kind: 'none' } as const;
 
-export function redactText(input: string, location: string, context: RedactionContext): string {
-  let value = input.replace(/\b(Bearer|Basic)\s+[^\s,"'}]+/giu, (_match, scheme: string) => {
-    note(context, 'authorization-credential', location);
-    return `${scheme} ${MASK}`;
-  });
-  value = value.replace(socketPath, () => {
-    note(context, 'private-ipc-path', location);
-    return MASK;
-  });
-  value = value.replace(
-    /\b(authorization|proxy-authorization|cookie|set-cookie|x-api-key|api-key)\s*:\s*[^\r\n,;}]+/giu,
-    (match: string) => {
-      note(context, 'sensitive-header', location);
-      return `${match.slice(0, match.indexOf(':') + 1)} ${MASK}`;
-    },
-  );
-  value = value.replace(
-    /("(?:authorization|token|secret|password|passwd|apiKey|api_key|cookie)"\s*:\s*")[^"]*(")/giu,
-    (_match, prefix: string, suffix: string) => {
-      note(context, 'sensitive-output', location);
-      return `${prefix}${MASK}${suffix}`;
-    },
-  );
-  value = value.replace(
-    /([?&](?:token|secret|password|passwd|api[-_]?key|authorization)=)[^&#\s]+/giu,
-    (_match, prefix: string) => {
-      note(context, 'sensitive-output', location);
-      return `${prefix}${MASK}`;
-    },
-  );
-  value = value.replace(
-    /\b([A-Za-z_][A-Za-z0-9_]*=)[^\s,;]+/gu,
-    (_match, prefix: string) => {
-      note(context, 'environment-value', location);
-      return `${prefix}${MASK}`;
-    },
-  );
-  return value;
-}
-
-function redactArgument(
-  argument: string,
-  location: string,
-  context: RedactionContext,
-): string {
-  const env = assignment.exec(argument);
-  if (env !== null) {
-    note(context, 'environment-value', location);
-    return `${env[1]}=${MASK}`;
-  }
-  if (header.test(argument)) {
-    note(context, 'sensitive-header', location);
-    return `${argument.slice(0, argument.indexOf(':') + 1)} ${MASK}`;
-  }
-  const equals = argument.indexOf('=');
-  if (equals > 0 && sensitiveName.test(argument.slice(0, equals))) {
-    note(context, 'sensitive-argument', location);
-    return `${argument.slice(0, equals + 1)}${MASK}`;
-  }
-  return redactText(argument, location, context);
-}
-
-function redactArgv(
-  argv: readonly string[],
-  location: string,
-  context: RedactionContext,
-): readonly string[] {
-  let redactNext = false;
-  return argv.map((argument, index) => {
-    const itemLocation = `${location}[${String(index)}]`;
-    if (redactNext) {
-      redactNext = false;
-      note(context, 'sensitive-argument', itemLocation);
-      return MASK;
-    }
-    if (
-      (argument === '--env' || argument === '--environment' || argument === '-e') &&
-      !argument.includes('=')
-    ) {
-      redactNext = true;
-      return argument;
-    }
-    if (argument.startsWith('--') && sensitiveName.test(argument) && !argument.includes('=')) {
-      redactNext = true;
-      return argument;
-    }
-    return redactArgument(argument, itemLocation, context);
-  });
-}
-
-function redactOutcome(
+function redactProcess(
   outcome: CapsuleProcessOutcome,
   location: string,
   context: RedactionContext,
+  explicit: DriverArgvRedaction,
 ): CapsuleProcessOutcome {
-  const common = {
-    argv: redactArgv(outcome.argv, `${location}.argv`, context),
+  const argv = redactArgv({ argv: outcome.argv, location: `${location}.argv`, context, explicit });
+  if (outcome.kind === 'executable-not-found') {
+    return {
+      ...outcome,
+      argv,
+      remediation: redactText(outcome.remediation, `${location}.remediation`, context),
+    };
+  }
+  const output = {
+    ...outcome,
+    argv,
     stdout: redactText(outcome.stdout, `${location}.stdout`, context),
     stderr: redactText(outcome.stderr, `${location}.stderr`, context),
   };
-  if (outcome.kind === 'exited') {
-    return { kind: 'exited', exitCode: outcome.exitCode, ...common };
+  return output;
+}
+
+function redactPropagation(
+  propagation: TelemetryPropagationRecord,
+  location: string,
+  context: RedactionContext,
+): TelemetryPropagationRecord {
+  const outcome = propagation.outcome;
+  if (outcome.kind !== 'context-injection-failed') {
+    return propagation;
   }
-  return { kind: 'signaled', signal: outcome.signal, ...common };
+  return {
+    ...propagation,
+    outcome: {
+      ...outcome,
+      message: redactText(outcome.message, `${location}.outcome.message`, context),
+    },
+  };
+}
+
+function redactOutcome(
+  outcome: CapsuleExecutionOutcome,
+  location: string,
+  context: RedactionContext,
+): CapsuleExecutionOutcome {
+  switch (outcome.kind) {
+    case 'driver-completed':
+      return {
+        ...outcome,
+        propagation: redactPropagation(
+          outcome.propagation,
+          `${location}.propagation`,
+          context,
+        ),
+        process: redactProcess(
+          outcome.process,
+          `${location}.process`,
+          context,
+          outcome.redaction.preparedArgv,
+        ),
+      };
+    case 'driver-prepare-failed':
+      return {
+        ...outcome,
+        propagation: redactPropagation(
+          outcome.propagation,
+          `${location}.propagation`,
+          context,
+        ),
+        error: redactError({ error: outcome.error, location: `${location}.error`, context }),
+      };
+    case 'driver-propagation-refused':
+      return {
+        ...outcome,
+        propagation: redactPropagation(
+          outcome.propagation,
+          `${location}.propagation`,
+          context,
+        ),
+      };
+    case 'executable-not-found':
+    case 'exited':
+    case 'signaled':
+      return 'propagation' in outcome
+        ? ({
+            ...redactProcess(outcome, location, context, noExplicitRedaction),
+            propagation: outcome.propagation,
+          } satisfies CapsuleRawCommandOutcome)
+        : redactProcess(outcome, location, context, noExplicitRedaction);
+  }
+}
+
+function redactionForActivity(activity: CapsuleActivityReport): DriverArgvRedaction {
+  return activity.kind === 'completed' && activity.outcome.kind === 'driver-completed'
+    ? activity.outcome.redaction.requestArgv
+    : noExplicitRedaction;
+}
+
+function redactCompletedTelemetry(
+  telemetry: CompletedTelemetryExecutionScopeRecord,
+  location: string,
+  context: RedactionContext,
+): CompletedTelemetryExecutionScopeRecord {
+  if (telemetry.result.kind === 'telemetry-scope-failed') {
+    return {
+      ...telemetry,
+      result: {
+        ...telemetry.result,
+        message: redactText(telemetry.result.message, `${location}.result.message`, context),
+      },
+    };
+  }
+  if (telemetry.result.kind === 'telemetry-scope-interrupted') {
+    return {
+      ...telemetry,
+      result: {
+        ...telemetry.result,
+        reason: redactText(telemetry.result.reason, `${location}.result.reason`, context),
+      },
+    };
+  }
+  return telemetry;
 }
 
 export function redactActivities(input: {
@@ -131,11 +155,43 @@ export function redactActivities(input: {
 }): readonly CapsuleReportActivity[] {
   return input.activities.map((activity, index) => {
     const location = `activities[${String(index)}]`;
-    return {
-      ...activity,
-      argv: redactArgv(activity.argv, `${location}.argv`, input.context),
-      outcome: redactOutcome(activity.outcome, `${location}.outcome`, input.context),
-    };
+    const argv = redactArgv({
+      argv: activity.argv,
+      location: `${location}.argv`,
+      context: input.context,
+      explicit: redactionForActivity(activity),
+    });
+    switch (activity.kind) {
+      case 'running':
+        return { ...activity, argv };
+      case 'completed':
+        return {
+          ...activity,
+          argv,
+          telemetry: redactCompletedTelemetry(
+            activity.telemetry,
+            `${location}.telemetry`,
+            input.context,
+          ),
+          outcome: redactOutcome(activity.outcome, `${location}.outcome`, input.context),
+        };
+      case 'interrupted':
+      case 'failed':
+        return {
+          ...activity,
+          argv,
+          telemetry: redactCompletedTelemetry(
+            activity.telemetry,
+            `${location}.telemetry`,
+            input.context,
+          ),
+          error: redactError({
+            error: activity.error,
+            location: `${location}.error`,
+            context: input.context,
+          }),
+        };
+    }
   });
 }
 
@@ -150,13 +206,14 @@ export function redactError(input: {
   };
 }
 
-export function createRedactionContext(): RedactionContext {
-  return { entries: [] };
-}
-
 export function redactStandaloneError(error: unknown): CapsuleRecordedError {
-  const recorded = error instanceof Error
-    ? { name: error.name, message: error.message }
-    : { name: 'Error', message: String(error) };
-  return redactError({ error: recorded, location: 'artifact.error', context: createRedactionContext() });
+  const recorded =
+    error instanceof Error
+      ? { name: error.name, message: error.message }
+      : { name: 'Error', message: String(error) };
+  return redactError({
+    error: recorded,
+    location: 'artifact.error',
+    context: createRedactionContext(),
+  });
 }

@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://blackbox.suites.dev/schemas/node-instrumentation-package-v1.json",
+  "title": "Blackbox Node instrumentation npm package manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["name", "version", "private", "type", "description", "engines", "dependencies"],
+  "properties": {
+    "name": { "const": "blackbox-node-instrumentation" },
+    "version": { "const": "1.0.0" },
+    "private": { "const": true },
+    "type": { "const": "commonjs" },
+    "description": { "type": "string", "minLength": 1 },
+    "engines": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["node"],
+      "properties": { "node": { "const": "^18.19.0 || >=20.6.0" } }
+    },
+    "dependencies": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "@opentelemetry/api",
+        "@opentelemetry/auto-instrumentations-node",
+        "@opentelemetry/core",
+        "@opentelemetry/exporter-trace-otlp-http",
+        "@opentelemetry/propagator-env-carrier",
+        "@opentelemetry/sdk-node"
+      ],
+      "properties": {
+        "@opentelemetry/api": { "const": "1.9.1" },
+        "@opentelemetry/auto-instrumentations-node": { "const": "0.79.0" },
+        "@opentelemetry/core": { "const": "2.10.0" },
+        "@opentelemetry/exporter-trace-otlp-http": { "const": "0.221.0" },
+        "@opentelemetry/propagator-env-carrier": { "const": "0.221.0" },
+        "@opentelemetry/sdk-node": { "const": "0.221.0" }
+      }
+    }
+  }
+}

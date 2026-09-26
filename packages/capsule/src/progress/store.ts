@@ -44,11 +44,18 @@ export async function readCapsuleProgress(input: {
   readonly projectDirectory: string;
   readonly sessionId: string;
 }): Promise<readonly CapsuleProgressEvent[]> {
+  return decodeCapsuleProgress({
+    document: JSON.parse(await readFile(capsuleProgressPath(input), 'utf8')) as unknown,
+    sessionId: input.sessionId,
+  });
+}
+
+async function readProgressForAppend(input: {
+  readonly projectDirectory: string;
+  readonly sessionId: string;
+}): Promise<readonly CapsuleProgressEvent[]> {
   try {
-    return decodeCapsuleProgress({
-      document: JSON.parse(await readFile(capsuleProgressPath(input), 'utf8')) as unknown,
-      sessionId: input.sessionId,
-    });
+    return await readCapsuleProgress(input);
   } catch (error) {
     if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
       return [];
@@ -62,7 +69,7 @@ export async function appendCapsuleProgress(input: {
   readonly sessionId: string;
   readonly event: CapsuleProgressEmission;
 }): Promise<CapsuleProgressEvent> {
-  const events = await readCapsuleProgress(input);
+  const events = await readProgressForAppend(input);
   const event = {
     ...input.event,
     sequence: events.length + 1,
@@ -72,7 +79,11 @@ export async function appendCapsuleProgress(input: {
         ? input.event.stage
         : progressStage(input.event.kind),
   } as CapsuleProgressEvent;
-  const document = { schemaVersion: 1, kind: 'capsule-progress', events: [...events, event] } satisfies CapsuleProgressDocument;
+  const document = {
+    schemaVersion: 1,
+    kind: 'capsule-progress',
+    events: [...events, event],
+  } satisfies CapsuleProgressDocument;
   decodeCapsuleProgress({ document, sessionId: input.sessionId });
   await writeJsonArtifact({
     target: capsuleProgressPath(input),

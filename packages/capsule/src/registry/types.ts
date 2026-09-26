@@ -1,4 +1,9 @@
-import type { CapsuleCleanupReport, CapsuleRecordedError, CapsuleSessionState } from '../types.js';
+import type {
+  CapsuleCleanupReport,
+  CapsuleDescription,
+  CapsuleRecordedError,
+  CapsuleSessionState,
+} from '../types.js';
 
 export interface CapsuleRegistryInput {
   readonly projectDirectory: string;
@@ -8,7 +13,7 @@ export interface CapsuleSessionSummary {
   readonly sessionId: string;
   readonly system: string;
   readonly title: string;
-  readonly description: string | undefined;
+  readonly description: CapsuleDescription;
   readonly state: CapsuleSessionState;
   readonly admittedAt: string;
   readonly updatedAt: string;

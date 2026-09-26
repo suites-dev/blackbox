@@ -4,13 +4,19 @@ import { join, resolve } from 'node:path';
 
 import type {
   CapsuleActivityReport,
+  CapsuleAvailability,
   CapsuleCleanupReport,
   CapsuleContainerDetails,
+  CapsuleDescription,
   CapsuleEntrypoint,
+  CapsuleFailureRecord,
+  CapsuleManagerOwnership,
   CapsuleReadinessDetails,
   CapsuleRecordedError,
   CapsuleSessionState,
 } from './types.js';
+import { decodeCapsuleActivities } from './persistence/activity-decoder.js';
+import { decodeCapsuleSessionRecord } from './persistence/decoder.js';
 
 export interface CapsuleSessionRecord {
   readonly schemaVersion: 1;
@@ -18,23 +24,23 @@ export interface CapsuleSessionRecord {
   /** Internal resource identity. It is retained but omitted from public results. */
   readonly executionId: string;
   readonly system: string;
-  readonly title: string | undefined;
-  readonly description: string | undefined;
+  readonly title: string;
+  readonly description: CapsuleDescription;
   readonly state: CapsuleSessionState;
   readonly revision: number;
   readonly admittedAt: string;
   readonly updatedAt: string;
-  readonly managerPid: number | undefined;
+  readonly manager: CapsuleManagerOwnership;
   readonly socketPath: string;
-  readonly entrypoint: CapsuleEntrypoint | undefined;
+  readonly entrypoint: CapsuleAvailability<CapsuleEntrypoint>;
   readonly containers: readonly CapsuleContainerDetails[];
   readonly cleanup: CapsuleCleanupReport;
-  readonly error: CapsuleRecordedError | undefined;
-  readonly composeProject: string | undefined;
+  readonly failure: CapsuleFailureRecord;
+  readonly composeProject: CapsuleAvailability<string>;
   readonly artifactRoot: string;
   readonly networks: readonly string[];
   readonly volumes: readonly string[];
-  readonly readiness: CapsuleReadinessDetails | undefined;
+  readonly readiness: CapsuleAvailability<CapsuleReadinessDetails>;
 }
 
 export interface CapsuleSessionSelector {
@@ -67,7 +73,7 @@ export function capsuleRecordPath(input: CapsuleSessionSelector): string {
 
 export function capsuleSocketPath(input: CapsuleSessionSelector): string {
   const digest = createHash('sha256').update(input.sessionId).digest('hex').slice(0, 16);
-  return join(resolve(input.projectDirectory, '.blackbox', 's'), `bb-${digest}.sock`);
+  return join(resolve(input.projectDirectory, '.blackbox', 'tmp'), `bb-${digest}.sock`);
 }
 
 export function capsuleActivityPath(input: CapsuleSessionSelector): string {
@@ -121,6 +127,16 @@ export async function admitCapsuleRecord(input: CapsuleRecordWriteInput): Promis
   } finally {
     await unlink(temporary);
   }
+  await writeCapsuleActivities({
+    projectDirectory: input.projectDirectory,
+    sessionId: input.record.sessionId,
+    activities: [],
+  });
+  await writeJsonArtifact({
+    target: join(directory, 'progress.json'),
+    revision: 0,
+    value: { schemaVersion: 1, kind: 'capsule-progress', events: [] },
+  });
 }
 
 export async function writeCapsuleRecord(input: CapsuleRecordWriteInput): Promise<void> {
@@ -137,22 +153,13 @@ export async function writeCapsuleRecord(input: CapsuleRecordWriteInput): Promis
 export async function readCapsuleRecord(
   input: CapsuleSessionSelector,
 ): Promise<CapsuleSessionRecord> {
-  return JSON.parse(await readFile(capsuleRecordPath(input), 'utf8')) as CapsuleSessionRecord;
+  return decodeCapsuleSessionRecord({ bytes: await readFile(capsuleRecordPath(input), 'utf8') });
 }
 
 export async function readCapsuleActivities(
   input: CapsuleSessionSelector,
 ): Promise<readonly CapsuleActivityReport[]> {
-  try {
-    return JSON.parse(
-      await readFile(capsuleActivityPath(input), 'utf8'),
-    ) as CapsuleActivityReport[];
-  } catch (error) {
-    if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
-      return [];
-    }
-    throw error;
-  }
+  return decodeCapsuleActivities({ bytes: await readFile(capsuleActivityPath(input), 'utf8') });
 }
 
 export async function writeCapsuleActivities(input: {

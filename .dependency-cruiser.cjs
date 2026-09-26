@@ -209,6 +209,17 @@ const crossPackageRelativeImportRules = [
 /** @type {import('dependency-cruiser').IConfiguration} */
 module.exports = {
   forbidden: [
+    {
+      name: 'runtime-adapters-are-composition-only',
+      severity: 'error',
+      comment:
+        'Runtime instrumentation adapters are optional leaf packages. Only the CLI composition root may select them; core packages consume the language-neutral activation descriptor.',
+      from: {
+        path: '^packages/[^/]+/',
+        pathNot: '^packages/(cli|instrumentation-runtime-[^/]+)/',
+      },
+      to: { path: '^packages/instrumentation-runtime-[^/]+/' },
+    },
     ...layerRules,
     ...evidenceIncomingRules,
     ...evidenceInternalRules,

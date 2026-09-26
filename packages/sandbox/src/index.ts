@@ -27,6 +27,19 @@ export {
   type StartFailedSandboxRecord,
   type StopFailedSandboxRecord,
 } from './ownership/records.js';
+export {
+  decodeSandboxRecord,
+  SandboxRecordValidationError,
+} from './ownership/record-decoder.js';
+export { recoverSandbox } from './recovery/recover.js';
+export type {
+  RecoverSandboxInput,
+  SandboxRecoveryResult,
+} from './recovery/types.js';
+export {
+  sandboxRecordSchema,
+  sandboxRecordSchemaUrl,
+} from './schema/sandbox-record-schema.js';
 export { TestcontainersComposeDriver } from './acquisition/testcontainers-driver.js';
 export {
   type SandboxProgressEvent,
@@ -44,6 +57,10 @@ export type {
   SandboxVolumeResource,
 } from './inspection/resources.js';
 export { SandboxInputError, validateSandboxInput } from './validation/input.js';
+export {
+  sandboxGeneratedComposeDirectory,
+  sandboxTelemetryStorageDirectory,
+} from './telemetry/storage.js';
 export type {
   ComposeContainer,
   ComposeSandboxDriver,
@@ -70,6 +87,32 @@ export type {
   SandboxStopResult,
   SandboxTestcontainerInspection,
   StartedComposeSandbox,
+  SandboxCollectorInput,
+  SandboxCollectorRuntime,
+  SandboxTelemetryEnabledInput,
+  SandboxTelemetryEndpoints,
+  SandboxTelemetryInput,
+  SandboxTelemetryMount,
+  SandboxTelemetryParticipant,
+  SandboxTelemetryStatus,
 } from './types.js';
+export type {
+  SandboxContainerControlResult,
+  SandboxContainerExecution,
+  SandboxContainerExecutionError,
+  SandboxContainerExecutionFailure,
+  SandboxContainerExecutionInput,
+  SandboxContainerExecutionOutcome,
+  SandboxContainerExecutionStartResult,
+  SandboxContainerOutputEvent,
+  SandboxContainerResizeInput,
+  SandboxContainerSignalInput,
+  SandboxContainerStdinChunk,
+  SandboxContainerTerminal,
+} from './execution/streaming/types.js';
 
-export type { ComposeAcquisitionObservation, ComposeServiceObservation, ComposeObservationMode } from './acquisition/observation.js';
+export type {
+  ComposeAcquisitionObservation,
+  ComposeServiceObservation,
+  ComposeObservationMode,
+} from './acquisition/observation.js';

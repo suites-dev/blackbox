@@ -1,0 +1,57 @@
+{
+  "total": {
+    "lines": { "total": 339, "covered": 323, "skipped": 0, "pct": 95.28 },
+    "statements": { "total": 339, "covered": 323, "skipped": 0, "pct": 95.28 },
+    "functions": { "total": 21, "covered": 21, "skipped": 0, "pct": 100 },
+    "branches": { "total": 86, "covered": 75, "skipped": 0, "pct": 87.2 },
+    "branchesTrue": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 }
+  },
+  "/Users/omer/projects/suites/blackbox/packages/instrumentation/src/index.ts": {
+    "lines": { "total": 3, "covered": 3, "skipped": 0, "pct": 100 },
+    "functions": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "statements": { "total": 3, "covered": 3, "skipped": 0, "pct": 100 },
+    "branches": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 }
+  },
+  "/Users/omer/projects/suites/blackbox/packages/instrumentation/src/installation/dependency-installer.ts": {
+    "lines": { "total": 53, "covered": 53, "skipped": 0, "pct": 100 },
+    "functions": { "total": 2, "covered": 2, "skipped": 0, "pct": 100 },
+    "statements": { "total": 53, "covered": 53, "skipped": 0, "pct": 100 },
+    "branches": { "total": 12, "covered": 11, "skipped": 0, "pct": 91.66 }
+  },
+  "/Users/omer/projects/suites/blackbox/packages/instrumentation/src/installation/dependency-state.ts": {
+    "lines": { "total": 77, "covered": 73, "skipped": 0, "pct": 94.8 },
+    "functions": { "total": 5, "covered": 5, "skipped": 0, "pct": 100 },
+    "statements": { "total": 77, "covered": 73, "skipped": 0, "pct": 94.8 },
+    "branches": { "total": 23, "covered": 20, "skipped": 0, "pct": 86.95 }
+  },
+  "/Users/omer/projects/suites/blackbox/packages/instrumentation/src/installation/install.ts": {
+    "lines": { "total": 132, "covered": 126, "skipped": 0, "pct": 95.45 },
+    "functions": { "total": 9, "covered": 9, "skipped": 0, "pct": 100 },
+    "statements": { "total": 132, "covered": 126, "skipped": 0, "pct": 95.45 },
+    "branches": { "total": 29, "covered": 25, "skipped": 0, "pct": 86.2 }
+  },
+  "/Users/omer/projects/suites/blackbox/packages/instrumentation/src/installation/managed-files.ts": {
+    "lines": { "total": 46, "covered": 40, "skipped": 0, "pct": 86.95 },
+    "functions": { "total": 4, "covered": 4, "skipped": 0, "pct": 100 },
+    "statements": { "total": 46, "covered": 40, "skipped": 0, "pct": 86.95 },
+    "branches": { "total": 21, "covered": 18, "skipped": 0, "pct": 85.71 }
+  },
+  "/Users/omer/projects/suites/blackbox/packages/instrumentation/src/installation/model.ts": {
+    "lines": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "functions": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 },
+    "statements": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "branches": { "total": 1, "covered": 1, "skipped": 0, "pct": 100 }
+  },
+  "/Users/omer/projects/suites/blackbox/packages/instrumentation/src/node/bundle.ts": {
+    "lines": { "total": 23, "covered": 23, "skipped": 0, "pct": 100 },
+    "functions": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "statements": { "total": 23, "covered": 23, "skipped": 0, "pct": 100 },
+    "branches": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 }
+  },
+  "/Users/omer/projects/suites/blackbox/packages/instrumentation/src/node/schema.ts": {
+    "lines": { "total": 5, "covered": 5, "skipped": 0, "pct": 100 },
+    "functions": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 },
+    "statements": { "total": 5, "covered": 5, "skipped": 0, "pct": 100 },
+    "branches": { "total": 0, "covered": 0, "skipped": 0, "pct": 100 }
+  }
+}
