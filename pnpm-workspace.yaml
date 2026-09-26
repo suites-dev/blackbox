@@ -31,4 +31,4 @@ catalog:
   vitest: 3.2.6
 
   # Sandbox runtime
-  testcontainers: ^10.18.0
+  testcontainers: ^12.1.0
