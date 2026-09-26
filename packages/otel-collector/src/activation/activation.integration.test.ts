@@ -70,6 +70,30 @@ it('durably records exact-identity activation and remains idempotent per service
   });
 });
 
+it('rejects invalid activation fields without poisoning the collector', async () => {
+  await withCollector(async ({ input, collector }) => {
+    const invalid = await fetch(collector.endpoint.activationUrl, {
+      method: 'POST',
+      headers: collectorHeaders({ 'content-type': 'application/json' }),
+      body: JSON.stringify({ ...activation(input), serviceName: '' }),
+    });
+    expect(invalid.status).toBe(400);
+    expect(await invalid.json()).toEqual({
+      message: 'serviceName must be a non-empty string.',
+    });
+
+    const readiness = await fetch(collector.endpoint.readinessUrl);
+    expect(readiness.status).toBe(200);
+    const valid = await fetch(collector.endpoint.activationUrl, {
+      method: 'POST',
+      headers: collectorHeaders({ 'content-type': 'application/json' }),
+      body: JSON.stringify(activation(input)),
+    });
+    expect(valid.status).toBe(200);
+    expect((await postJson(collector, traceRequest())).status).toBe(200);
+  });
+});
+
 it('bounds unique activation records with the configured retention quota', async () => {
   await withCollector(async ({ input, collector }) => {
     const activate = (serviceName: string) =>

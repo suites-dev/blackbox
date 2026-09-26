@@ -1,5 +1,3 @@
-import { resolve } from 'node:path';
-
 import {
   prepareNodeProjectDriver,
   type DriverPreparation,
@@ -12,6 +10,7 @@ import {
 } from '@suites/blackbox-telemetry-internal';
 
 import type { CapsuleDriverOutcome, CapsuleRecordedError } from '../../types.js';
+import { canonicalDriverModule } from './module-path.js';
 import { failedPropagation } from './propagation.js';
 import { redactPreparationError, selectedArgvValues } from './secrets.js';
 import { redactValues } from '../output/value-redaction.js';
@@ -43,8 +42,12 @@ export async function prepareCapsuleDriver(input: {
 }): Promise<CapsuleDriverPreparation> {
   let response;
   try {
+    const driverModulePath = await canonicalDriverModule({
+      projectDirectory: input.projectDirectory,
+      reference: input.driver.ref,
+    });
     response = await prepareNodeProjectDriver({
-      driverModulePath: resolve(input.projectDirectory, input.driver.ref),
+      driverModulePath,
       projectDirectory: input.projectDirectory,
       request: input.request,
     });
