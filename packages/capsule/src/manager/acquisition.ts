@@ -122,8 +122,9 @@ export async function startPlannedSandbox(input: PlannedSandboxInput): Promise<{
     projectName,
   });
   const progress = sandboxProgressBridge({ bootstrap: input.bootstrap, entry: input.entry });
-  const operation = runStartStage('acquisition', () =>
-    input.ports.sandbox.start({
+  const operation = runStartStage('acquisition', async () => {
+    const telemetry = await capsuleSandboxTelemetry(input);
+    return input.ports.sandbox.start({
       sandbox: {
         sandboxId: input.bootstrap.executionId,
         projectDirectory: input.plan.projectDirectory,
@@ -141,11 +142,11 @@ export async function startPlannedSandbox(input: PlannedSandboxInput): Promise<{
           120_000,
         ),
         stopTimeoutMs: 60_000,
-        telemetry: capsuleSandboxTelemetry(input),
+        telemetry,
       },
       progress: progress.mode,
-    }),
-  );
+    });
+  });
   let sandbox: SandboxHandle;
   try {
     sandbox = await operation;

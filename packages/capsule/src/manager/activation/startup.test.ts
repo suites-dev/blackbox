@@ -6,7 +6,7 @@ import { readCapsuleRecord } from '../../records.js';
 import { catalogFixture, readyCollectorRuntime } from '../testing/acquisition.fixture.js';
 import { requestFixture } from '../testing/request.fixture.js';
 import { activationStartupSandbox } from './startup.fixture.js';
-import { activationPlan } from './verification.fixture.js';
+import { activationPlan, installActivationFixture } from './verification.fixture.js';
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -18,6 +18,7 @@ it('records startup failure before application readiness when activation is miss
     stopped.push(input.reason);
     return Promise.resolve();
   });
+  await installActivationFixture(fixture.projectDirectory);
   await new Promise<void>((resolve) =>
     fixture.manager.server.close(() => {
       resolve();
@@ -43,7 +44,10 @@ it('records startup failure before application readiness when activation is miss
       collectorRuntime: readyCollectorRuntime,
       catalog: {
         load: () => Promise.resolve(catalogFixture(fixture.projectDirectory)),
-        resolve: () => activationPlan(true),
+        resolve: () => activationPlan({
+          configured: true,
+          projectDirectory: fixture.projectDirectory,
+        }),
       },
       sandbox: {
         projectName: () => 'project',

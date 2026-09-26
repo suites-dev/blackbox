@@ -135,14 +135,17 @@ function forwardInput(
   }
   let start = 0;
   for (const [index, byte] of chunk.entries()) {
-    const signal = byte === 0x03 ? 'SIGINT' : byte === 0x1c ? 'SIGQUIT' : undefined;
-    if (signal === undefined) {
+    if (byte !== 0x03 && byte !== 0x04 && byte !== 0x1c) {
       continue;
     }
     if (index > start) {
       send({ kind: 'stdin-chunk', chunk: chunk.subarray(start, index) });
     }
-    send({ kind: 'signal', signal });
+    if (byte === 0x04) {
+      send({ kind: 'stdin-end' });
+      return;
+    }
+    send({ kind: 'signal', signal: byte === 0x03 ? 'SIGINT' : 'SIGQUIT' });
     start = index + 1;
   }
   if (start < chunk.length) {

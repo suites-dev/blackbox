@@ -6,9 +6,9 @@ import type {
 } from '@suites/blackbox-sandbox-internal';
 
 import type {
+  CapsuleExecutionControl,
   CapsuleExecutionInteraction,
   CapsuleExecutionLocation,
-  CapsuleInteractiveControl,
   CapsuleProcessOutcome,
 } from './types.js';
 import {
@@ -93,7 +93,7 @@ type Interactive = Extract<CapsuleExecutionInteraction, { readonly kind: 'intera
 
 async function participantControl(
   execution: SandboxContainerExecution,
-  control: CapsuleInteractiveControl,
+  control: CapsuleExecutionControl,
 ): Promise<SandboxContainerControlResult> {
   switch (control.kind) {
     case 'stdin-chunk':
@@ -104,6 +104,8 @@ async function participantControl(
       return execution.resize(control.size);
     case 'signal':
       return execution.signal({ signal: control.signal });
+    case 'force-terminate':
+      return execution.forceTerminate();
   }
 }
 

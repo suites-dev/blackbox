@@ -69,3 +69,32 @@ it('durably records exact-identity activation and remains idempotent per service
     expect((await postJson(collector, traceRequest())).status).toBe(200);
   });
 });
+
+it('bounds unique activation records with the configured retention quota', async () => {
+  await withCollector(async ({ input, collector }) => {
+    const activate = (serviceName: string) =>
+      fetch(collector.endpoint.activationUrl, {
+        method: 'POST',
+        headers: collectorHeaders({ 'content-type': 'application/json' }),
+        body: JSON.stringify({ ...activation(input), serviceName }),
+      });
+    for (let index = 0; index < input.limits.maxRetainedFragments; index += 1) {
+      expect((await activate(`service-${String(index)}`)).status).toBe(200);
+    }
+    const refused = await activate('one-service-too-many');
+    expect(refused.status).toBe(507);
+    expect(await refused.json()).toMatchObject({
+      message: expect.stringContaining('activation was not retained'),
+    });
+    expect(collector.status().instrumentation).toMatchObject({
+      kind: 'activated',
+      activations: expect.arrayContaining([
+        expect.objectContaining({ serviceName: 'service-15' }),
+      ]),
+    });
+    const status = collector.status();
+    expect(status.instrumentation.kind === 'activated'
+      ? status.instrumentation.activations
+      : []).toHaveLength(input.limits.maxRetainedFragments);
+  });
+});

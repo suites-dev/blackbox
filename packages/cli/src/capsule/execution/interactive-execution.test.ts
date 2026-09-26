@@ -186,6 +186,52 @@ void test('translates raw host control bytes into signals without forwarding the
   );
 });
 
+void test('translates raw host Ctrl-D into stdin EOF', async () => {
+  const fixture = terminalFixture();
+  const controls: CapsuleInteractiveControl[] = [];
+  const execute = async (input: CapsuleInteractiveExecInput) => {
+    const iterator = input.controls[Symbol.asyncIterator]();
+    for (let index = 0; index < 2; index += 1) {
+      const next = await iterator.next();
+      if (!next.done) {
+        controls.push(next.value);
+      }
+    }
+    return {
+      kind: 'capsule-exec-completed' as const,
+      activityId: '00000000-0000-4000-8000-000000000044',
+      outcome: {
+        kind: 'exited' as const,
+        argv: ['cat'],
+        location: { kind: 'host' as const },
+        exitCode: 0,
+        stdout: '',
+        stderr: '',
+        retention: retainedEmpty(),
+      },
+    };
+  };
+  const running = runInteractiveCapsuleExec({
+    projectDirectory: process.cwd(),
+    sessionId: 'quiet-river-ada',
+    name: { kind: 'omitted' },
+    purpose: 'stimulus',
+    target: { kind: 'host', argv: ['cat'] },
+    ports: fixture.ports,
+    execute,
+  });
+  fixture.stdin.write(Buffer.from([0x61, 0x04, 0x62]));
+  await running;
+  assert.deepEqual(
+    controls.map((control) =>
+      control.kind === 'stdin-chunk'
+        ? { kind: control.kind, value: Buffer.from(control.chunk).toString() }
+        : { kind: control.kind },
+    ),
+    [{ kind: 'stdin-chunk', value: 'a' }, { kind: 'stdin-end' }],
+  );
+});
+
 void test('restores the prior terminal mode when execution fails', async () => {
   const fixture = terminalFixture(true);
   await assert.rejects(

@@ -29,7 +29,28 @@ it('projects every report view from one retained collector snapshot', async () =
     });
     expect(projectCollectorTraces(snapshot)).toMatchObject({
       kind: 'collector-traces-found',
-      traces: [{ traceId: traceA }, { traceId: traceB }],
+      traces: [
+        {
+          traceId: traceA,
+          fragments: [
+            {
+              request: {
+                resourceSpans: [{ scopeSpans: [{ spans: [{ traceId: traceA }] }] }],
+              },
+            },
+          ],
+        },
+        {
+          traceId: traceB,
+          fragments: [
+            {
+              request: {
+                resourceSpans: [{ scopeSpans: [{ spans: [{ traceId: traceB }] }] }],
+              },
+            },
+          ],
+        },
+      ],
     });
     expect(projectCollectorTrace({ snapshot, traceId: traceA })).toMatchObject({
       kind: 'collector-trace-found',

@@ -59,6 +59,7 @@ export interface SandboxContainerExecution {
   endStdin(): Promise<SandboxContainerControlResult>;
   resize(input: SandboxContainerResizeInput): Promise<SandboxContainerControlResult>;
   signal(input: SandboxContainerSignalInput): Promise<SandboxContainerControlResult>;
+  forceTerminate(): Promise<SandboxContainerControlResult>;
 }
 
 export interface SandboxContainerStdinChunk {
@@ -79,7 +80,11 @@ export type SandboxContainerControlResult =
   | {
       readonly kind: 'delivered';
       readonly action: 'stdin-chunk' | 'stdin-end' | 'resize' | 'signal';
-      readonly mechanism: 'docker-stream' | 'docker-exec-resize' | 'tty-control-character';
+      readonly mechanism:
+        | 'docker-stream'
+        | 'docker-stream-abort'
+        | 'docker-exec-resize'
+        | 'tty-control-character';
     }
   | {
       readonly kind: 'unsupported';

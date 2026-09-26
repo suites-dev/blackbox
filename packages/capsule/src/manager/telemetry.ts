@@ -11,12 +11,12 @@ export interface CapsuleTelemetryAuthorization {
   readonly controlToken: string;
 }
 
-export function capsuleSandboxTelemetry(input: {
+export async function capsuleSandboxTelemetry(input: {
   readonly bootstrap: CapsuleManagerBootstrap;
   readonly plan: CatalogSandboxInput;
   readonly authorization: CapsuleTelemetryAuthorization;
   readonly collectorRuntime: CapsuleCollectorRuntime;
-}): SandboxTelemetryEnabledInput {
+}): Promise<SandboxTelemetryEnabledInput> {
   return {
     kind: 'enabled',
     sessionId: input.bootstrap.sessionId,
@@ -41,6 +41,9 @@ export function capsuleSandboxTelemetry(input: {
       },
       drain: { kind: 'signal', signal: 'SIGTERM' },
     },
-    participants: participantTelemetry({ plan: input.plan, bootstrap: input.bootstrap }),
+    participants: await participantTelemetry({
+      plan: input.plan,
+      bootstrap: input.bootstrap,
+    }),
   };
 }

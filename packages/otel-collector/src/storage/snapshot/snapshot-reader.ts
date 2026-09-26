@@ -7,7 +7,7 @@ import type {
   TraceFragment,
 } from '../../model/types.js';
 import { recordedFailure, validateIdentity } from '../../model/validation.js';
-import { filterTraceRequest, traceIdsInRequest } from '../../otlp/json.js';
+import { partitionTraceRequest } from '../../otlp/json.js';
 import { assertInventory, identity, isMissing, readFragments, readLifecycle } from '../reader.js';
 
 function fragmentSummary(fragment: RetainedFragment): RetainedFragmentSummary {
@@ -19,22 +19,26 @@ function fragmentSummary(fragment: RetainedFragment): RetainedFragmentSummary {
 }
 
 function traces(retained: readonly RetainedFragment[]) {
-  const requests = retained.map((fragment) => ({
-    fragment,
-    request: JSON.parse(fragment.rawJson) as unknown,
-  }));
-  const traceIds = [
-    ...new Set(requests.flatMap(({ request }) => traceIdsInRequest(request))),
-  ].sort();
-  return traceIds.map((traceId) => ({
-    traceId,
-    fragments: requests.flatMap(({ fragment, request }): TraceFragment[] => {
-      const filtered = filterTraceRequest({ request, traceId });
-      return filtered === null
-        ? []
-        : [{ sequence: fragment.sequence, receivedAt: fragment.receivedAt, request: filtered }];
-    }),
-  }));
+  const indexed = new Map<string, TraceFragment[]>();
+  for (const fragment of retained) {
+    const request = JSON.parse(fragment.rawJson) as unknown;
+    for (const [traceId, filtered] of partitionTraceRequest(request)) {
+      const traceFragment = {
+        sequence: fragment.sequence,
+        receivedAt: fragment.receivedAt,
+        request: filtered,
+      } satisfies TraceFragment;
+      const fragments = indexed.get(traceId);
+      if (fragments === undefined) {
+        indexed.set(traceId, [traceFragment]);
+      } else {
+        fragments.push(traceFragment);
+      }
+    }
+  }
+  return [...indexed]
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([traceId, fragments]) => ({ traceId, fragments }));
 }
 
 export async function readCollectorSnapshot(

@@ -16,7 +16,8 @@ it.each(malformedCollectorStatuses)('rejects $name and cannot verify readiness',
     })).rejects.toThrow(error);
     await expect(verifyRequiredInstrumentationActivations({
       kind: 'verify-required-instrumentation-activations', ...identity,
-      plan: activationPlan(true), authorizationToken: 'token', timeoutMs: 20,
+      plan: activationPlan({ configured: true, projectDirectory: '/tmp/project' }),
+      authorizationToken: 'token', timeoutMs: 20,
       sandbox: { ...activationSandbox(), telemetry: receiver.telemetry,
         inspectTelemetry: () => Promise.resolve(receiver.telemetry) },
     })).rejects.toThrow('Required instrumentation did not activate before Capsule readiness');

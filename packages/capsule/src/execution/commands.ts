@@ -2,6 +2,7 @@ import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process';
 
 import type {
   CapsuleEntrypoint,
+  CapsuleExecutionControl,
   CapsuleExecutionInteraction,
   CapsuleInteractiveControl,
   CapsuleInteractiveControlResult,
@@ -52,10 +53,10 @@ interface HostControlState {
 }
 
 function rejectedControl(
-  control: CapsuleInteractiveControl,
+  action: CapsuleInteractiveControlResult['action'],
   reason: 'execution-completed' | 'stdin-ended',
 ): CapsuleInteractiveControlResult {
-  return { kind: 'rejected', action: control.kind, reason };
+  return { kind: 'rejected', action, reason };
 }
 
 function writeHostStdin(input: {
@@ -90,17 +91,25 @@ function endHostStdin(
 async function hostControl(input: {
   readonly child: ChildProcessWithoutNullStreams;
   readonly state: HostControlState;
-  readonly control: CapsuleInteractiveControl;
+  readonly control: CapsuleExecutionControl;
 }): Promise<CapsuleInteractiveControlResult> {
   const { control } = input;
   if (input.state.completed) {
-    return rejectedControl(control, 'execution-completed');
+    return rejectedControl(
+      control.kind === 'force-terminate' ? 'signal' : control.kind,
+      'execution-completed',
+    );
+  }
+  if (control.kind === 'force-terminate') {
+    return input.child.kill('SIGKILL')
+      ? { kind: 'delivered', action: 'signal', mechanism: 'host-process-signal' }
+      : rejectedControl('signal', 'execution-completed');
   }
   if (
     input.state.stdinEnded &&
     (control.kind === 'stdin-chunk' || control.kind === 'stdin-end')
   ) {
-    return rejectedControl(control, 'stdin-ended');
+    return rejectedControl(control.kind, 'stdin-ended');
   }
   if (control.kind === 'stdin-chunk') {
     return await writeHostStdin({ child: input.child, control });
@@ -115,7 +124,7 @@ async function hostControl(input: {
   try {
     return input.child.kill(control.signal)
       ? { kind: 'delivered', action: 'signal', mechanism: 'host-process-signal' }
-      : rejectedControl(control, 'execution-completed');
+      : rejectedControl('signal', 'execution-completed');
   } catch (error) {
     const failure = asError(error);
     return {

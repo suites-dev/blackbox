@@ -151,6 +151,68 @@ export function traceIdsInRequest(request: unknown): readonly string[] {
   return [...ids].sort();
 }
 
+function appendGrouped<T>(grouped: Map<string, T[]>, traceId: string, value: T): void {
+  const values = grouped.get(traceId);
+  if (values === undefined) {
+    grouped.set(traceId, [value]);
+  } else {
+    values.push(value);
+  }
+}
+
+function groupedSpans(scope: unknown): ReadonlyMap<string, readonly unknown[]> {
+  if (!isRecord(scope)) {
+    throw new Error('Retained scopeSpans entry is not an object.');
+  }
+  const grouped = new Map<string, unknown[]>();
+  for (const span of spansFor(scope)) {
+    const traceId = spanTraceHex(span);
+    appendGrouped(grouped, traceId, span);
+  }
+  return grouped;
+}
+
+function groupedScopes(resource: unknown): ReadonlyMap<string, readonly unknown[]> {
+  if (!isRecord(resource)) {
+    throw new Error('Retained resourceSpans entry is not an object.');
+  }
+  const grouped = new Map<string, unknown[]>();
+  for (const scope of scopeSpansFor(resource)) {
+    if (!isRecord(scope)) {
+      throw new Error('Retained scopeSpans entry is not an object.');
+    }
+    for (const [traceId, spans] of groupedSpans(scope)) {
+      const filtered = { ...scope, spans };
+      appendGrouped(grouped, traceId, filtered);
+    }
+  }
+  return grouped;
+}
+
+export function partitionTraceRequest(
+  request: unknown,
+): ReadonlyMap<string, Record<string, unknown>> {
+  if (!isRecord(request)) {
+    throw new Error('Retained OTLP request is not an object.');
+  }
+  const grouped = new Map<string, Record<string, unknown>[]>();
+  for (const resource of fieldArray({ record: request, field: 'resourceSpans' })) {
+    if (!isRecord(resource)) {
+      throw new Error('Retained resourceSpans entry is not an object.');
+    }
+    for (const [traceId, scopeSpans] of groupedScopes(resource)) {
+      const filtered = { ...resource, scopeSpans };
+      appendGrouped(grouped, traceId, filtered);
+    }
+  }
+  return new Map(
+    [...grouped].map(([traceId, resourceSpans]) => [
+      traceId,
+      { ...request, resourceSpans },
+    ]),
+  );
+}
+
 function spanActivityId(span: unknown): string | null {
   if (!isRecord(span)) {
     throw new Error('Retained span is not an object.');

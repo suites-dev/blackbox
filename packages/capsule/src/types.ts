@@ -193,6 +193,7 @@ export type {
   CapsuleInteractiveExecInput,
   CapsuleExecResult,
   CapsuleExecTarget,
+  CapsuleExecutionControl,
   CapsuleExecutionInteraction,
   CapsuleExecutionOutcome,
   CapsuleExecutionLocation,

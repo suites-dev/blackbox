@@ -10,6 +10,7 @@ import type {
 } from '../protocol.js';
 import { recordedError } from '../records.js';
 import type {
+  CapsuleExecutionControl,
   CapsuleExecutionInteraction,
   CapsuleInteractiveControl,
   CapsuleInteractiveEvent,
@@ -44,10 +45,17 @@ function decodeControl(frame: CapsuleManagerControlFrame): CapsuleInteractiveCon
   }
 }
 
+function disconnectGracePeriod(): Promise<void> {
+  return new Promise((resolve) => {
+    const timer = setTimeout(resolve, 250);
+    timer.unref();
+  });
+}
+
 async function* interactiveControls(input: {
   readonly frames: AsyncGenerator<CapsuleManagerClientFrame>;
   readonly requestId: string;
-}): AsyncGenerator<CapsuleInteractiveControl> {
+}): AsyncGenerator<CapsuleExecutionControl> {
   try {
     for await (const frame of input.frames) {
       if (!isControl(frame)) {
@@ -67,6 +75,11 @@ async function* interactiveControls(input: {
     yield {
       kind: 'stdin-end',
       controlId: `${input.requestId}-transport-close-stdin`,
+    };
+    await disconnectGracePeriod();
+    yield {
+      kind: 'force-terminate',
+      controlId: `${input.requestId}-transport-close-kill`,
     };
   }
 }

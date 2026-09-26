@@ -43,6 +43,10 @@ export type CapsuleInteractiveControl =
       readonly signal: 'SIGINT' | 'SIGQUIT';
     };
 
+export type CapsuleExecutionControl =
+  | CapsuleInteractiveControl
+  | { readonly kind: 'force-terminate'; readonly controlId: string };
+
 export type CapsuleInteractiveControlResult =
   | {
       readonly kind: 'delivered';
@@ -51,6 +55,7 @@ export type CapsuleInteractiveControlResult =
         | 'host-process-stdin'
         | 'host-process-signal'
         | 'docker-stream'
+        | 'docker-stream-abort'
         | 'docker-exec-resize'
         | 'tty-control-character';
     }
@@ -113,7 +118,7 @@ export type CapsuleExecutionInteraction =
   | {
       readonly kind: 'interactive';
       readonly terminal: CapsuleTerminalSize;
-      readonly controls: AsyncIterable<CapsuleInteractiveControl>;
+      readonly controls: AsyncIterable<CapsuleExecutionControl>;
       readonly onEvent: (event: CapsuleInteractiveEvent) => void;
     };
 

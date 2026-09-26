@@ -1,12 +1,18 @@
+import { mkdir, writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
+
 import { resolveCatalogEntry, type LoadedCatalog } from '@suites/blackbox-catalog-internal';
 import type { SandboxHandle } from '@suites/blackbox-sandbox-internal';
 
 import { catalogFixture } from '../testing/acquisition.fixture.js';
 
-export function activationPlan(configured: boolean) {
-  const base = catalogFixture('/tmp/project');
+export function activationPlan(input: {
+  readonly configured: boolean;
+  readonly projectDirectory: string;
+}) {
+  const base = catalogFixture(input.projectDirectory);
   const entry = base.config.catalog.entries.orders;
-  const activation = configured
+  const activation = input.configured
     ? { kind: 'configured' as const, activationId: 'node' }
     : { kind: 'unconfigured' as const };
   const catalog = {
@@ -37,6 +43,12 @@ export function activationPlan(configured: boolean) {
     catalog,
     selection: { kind: 'explicit-entry', entryId: 'orders' },
   });
+}
+
+export async function installActivationFixture(projectDirectory: string): Promise<void> {
+  const directory = join(projectDirectory, '.blackbox', 'instrumentation');
+  await mkdir(directory, { recursive: true });
+  await writeFile(join(directory, 'instrumentation.js'), 'export {};\n');
 }
 
 export function activationSandbox(): SandboxHandle {

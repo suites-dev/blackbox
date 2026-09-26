@@ -35,14 +35,14 @@ it('selects a writable collector identity for POSIX and non-POSIX hosts', () => 
   expect(collectorContainerUser({ kind: 'non-posix' })).toBe('node');
 });
 
-it('keeps a local image override explicit at the manager composition boundary', () => {
+it('keeps a local image override explicit at the manager composition boundary', async () => {
   const catalog = catalogFixture('/tmp/blackbox-project');
   const plan = resolveCatalogEntry({
     catalog,
     selection: { kind: 'explicit-entry', entryId: 'orders' },
   });
   const collectorRuntime = { kind: 'image-default', image: 'collector:e2e' } as const;
-  const telemetry = capsuleSandboxTelemetry({
+  const telemetry = await capsuleSandboxTelemetry({
     bootstrap: {
       projectDirectory: catalog.projectDirectory,
       sessionId: 'session-1',

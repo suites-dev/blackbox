@@ -125,6 +125,15 @@ export class RunningCollectorStore implements CollectorStore {
         ),
         activation,
       ];
+      const retainedBytes = Buffer.byteLength(JSON.stringify(activations), 'utf8');
+      if (
+        activations.length > this.#limits.maxRetainedFragments ||
+        retainedBytes > this.#limits.maxRetainedBytes
+      ) {
+        throw new CollectorRetentionLimitError(
+          'Collector retention limit reached; instrumentation activation was not retained.',
+        );
+      }
       return {
         ...run,
         instrumentation: { kind: 'activated', activations },

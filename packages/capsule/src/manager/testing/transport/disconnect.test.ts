@@ -71,9 +71,16 @@ it('retains the terminal activity after an exec client disconnects and continues
   }
 });
 
-it('cancels an abandoned interactive execution before serving stop', async () => {
+it('force-cancels an abandoned interactive execution before serving stop', async () => {
   const fixture = await requestFixture(() => Promise.resolve());
   const socket = connect(fixture.socketPath);
+  const childReady = new Promise<void>((resolve) => {
+    socket.on('data', (chunk: Buffer) => {
+      if (chunk.toString().includes('exec-output')) {
+        resolve();
+      }
+    });
+  });
   try {
     await once(socket, 'connect');
     socket.write(`${JSON.stringify({
@@ -84,7 +91,12 @@ it('cancels an abandoned interactive execution before serving stop', async () =>
       terminal: { columns: 80, rows: 24 },
       target: {
         kind: 'host',
-        argv: [process.execPath, '-e', 'setInterval(() => undefined, 1000)'],
+        argv: [
+          process.execPath,
+          '-e',
+          'process.on("SIGINT", () => undefined); process.stdout.write("ready"); ' +
+            'setInterval(() => undefined, 1000)',
+        ],
       },
     })}\n`);
     await vi.waitFor(async () => {
@@ -92,6 +104,7 @@ it('cancels an abandoned interactive execution before serving stop', async () =>
         { kind: 'running' },
       ]);
     }, { timeout: 1_000, interval: 10 });
+    await childReady;
     socket.destroy();
     await once(socket, 'close');
     await expect(managerRequest({
@@ -106,7 +119,7 @@ it('cancels an abandoned interactive execution before serving stop', async () =>
       cleanup: 'complete',
     });
     expect(await readCapsuleActivities(fixture)).toMatchObject([
-      { kind: 'completed', outcome: { kind: 'signaled', signal: 'SIGINT' } },
+      { kind: 'completed', outcome: { kind: 'signaled', signal: 'SIGKILL' } },
     ]);
   } finally {
     socket.destroy();

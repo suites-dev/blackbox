@@ -15,7 +15,7 @@ function collectorStatus(instrumentation: object): Response {
 function verify(configured: boolean, timeoutMs = 25) {
   return verifyRequiredInstrumentationActivations({
     kind: 'verify-required-instrumentation-activations',
-    plan: activationPlan(configured),
+    plan: activationPlan({ configured, projectDirectory: '/tmp/project' }),
     sandbox: activationSandbox(),
     authorizationToken: 'secret',
     sessionId: 'quiet-river-ada',

@@ -59,6 +59,7 @@ function participantSandbox(observed: {
           endStdin: () => delivered('stdin-end'),
           resize: () => delivered('resize'),
           signal: () => delivered('signal'),
+          forceTerminate: () => delivered('signal'),
         },
       });
     },

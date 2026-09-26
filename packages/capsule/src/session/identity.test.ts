@@ -8,12 +8,13 @@ import { reserveCapsuleRecord } from './start.js';
 
 describe('Capsule identity', () => {
   it('generates memorable selectors while retaining an internal UUID', () => {
-    const identities = Array.from({ length: 32 }, () => generateCapsuleIdentity());
+    const identities = Array.from({ length: 1_024 }, () => generateCapsuleIdentity());
     for (const identity of identities) {
-      expect(identity.sessionId).toMatch(/^[a-z]+-[a-z]+-[a-z]+$/u);
+      expect(identity.sessionId).toMatch(/^[a-z]+-[a-z]+-[a-z]+-[0-9]{12}$/u);
       expect(identity.executionId).toMatch(/^[0-9a-f-]{36}$/u);
     }
-    expect(new Set(identities.map(({ executionId }) => executionId)).size).toBe(32);
+    expect(new Set(identities.map(({ sessionId }) => sessionId)).size).toBe(1_024);
+    expect(new Set(identities.map(({ executionId }) => executionId)).size).toBe(1_024);
   });
 });
 

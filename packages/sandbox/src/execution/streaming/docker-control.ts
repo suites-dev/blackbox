@@ -32,7 +32,20 @@ export function dockerExecutionControl(input: {
     endStdin: () => endStdin(input),
     resize: (request) => resize({ ...input, request }),
     signal: (request) => signal({ ...input, request }),
+    forceTerminate: () => forceTerminate(input),
   };
+}
+
+function forceTerminate(input: {
+  readonly stream: Duplex;
+  readonly state: ExecutionState;
+}): Promise<SandboxContainerControlResult> {
+  if (input.state.completed) {
+    return Promise.resolve(rejected('signal', 'execution-completed'));
+  }
+  input.state.completed = true;
+  input.stream.destroy();
+  return Promise.resolve(delivered('signal', 'docker-stream-abort'));
 }
 
 async function writeStdin(input: {
@@ -155,7 +168,11 @@ function validSize(input: SandboxContainerResizeInput): boolean {
 
 function delivered(
   action: 'stdin-chunk' | 'stdin-end' | 'resize' | 'signal',
-  mechanism: 'docker-stream' | 'docker-exec-resize' | 'tty-control-character',
+  mechanism:
+    | 'docker-stream'
+    | 'docker-stream-abort'
+    | 'docker-exec-resize'
+    | 'tty-control-character',
 ): SandboxContainerControlResult {
   return { kind: 'delivered', action, mechanism };
 }

@@ -6,7 +6,7 @@ import { verifyRequiredInstrumentationActivations } from './verification.js';
 function verify(sandbox = activationSandbox()) {
   return verifyRequiredInstrumentationActivations({
     kind: 'verify-required-instrumentation-activations',
-    plan: activationPlan(true),
+    plan: activationPlan({ configured: true, projectDirectory: '/tmp/project' }),
     sandbox,
     authorizationToken: 'secret',
     sessionId: 'quiet-river-ada',

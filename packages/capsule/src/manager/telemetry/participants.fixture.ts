@@ -7,8 +7,9 @@ export function participantPlan(input: {
   readonly adapter: string;
   readonly runtime: string;
   readonly configured: boolean;
+  readonly projectDirectory: string;
 }) {
-  const base = catalogFixture('/tmp/project');
+  const base = catalogFixture(input.projectDirectory);
   const entry = base.config.catalog.entries.orders;
   const activation = input.configured
     ? { kind: 'configured' as const, activationId: 'node' }

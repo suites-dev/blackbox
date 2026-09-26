@@ -98,6 +98,27 @@ it('delivers only the signals supported by a Docker tty stream', async () => {
   expect(Buffer.concat(chunks)).toEqual(Buffer.of(3, 28));
 });
 
+it('aborts the Docker stream when forced termination is required', async () => {
+  const stream = new PassThrough();
+  const destroyed = vi.spyOn(stream, 'destroy');
+  const state = { completed: false, stdinEnded: false };
+  const execution = dockerExecutionControl({
+    exec: { resize: () => Promise.resolve() },
+    stream,
+    terminal: { kind: 'tty', columns: 80, rows: 24 },
+    state,
+    completion: pendingCompletion(),
+  });
+
+  await expect(execution.forceTerminate()).resolves.toEqual({
+    kind: 'delivered',
+    action: 'signal',
+    mechanism: 'docker-stream-abort',
+  });
+  expect(destroyed).toHaveBeenCalledOnce();
+  expect(state.completed).toBe(true);
+});
+
 it('rejects control after completion and invalid resize dimensions', async () => {
   const resize = vi.fn(() => Promise.resolve());
   const state = { completed: false, stdinEnded: false };

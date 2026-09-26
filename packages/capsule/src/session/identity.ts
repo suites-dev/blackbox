@@ -26,6 +26,10 @@ function choose<const Values extends readonly string[]>(values: Values): Values[
   return values[randomInt(values.length)];
 }
 
+function collisionResistantSuffix(): string {
+  return randomInt(1_000_000_000_000).toString().padStart(12, '0');
+}
+
 export interface CapsuleIdentity {
   readonly sessionId: string;
   readonly executionId: string;
@@ -33,7 +37,9 @@ export interface CapsuleIdentity {
 
 export function generateCapsuleIdentity(): CapsuleIdentity {
   return {
-    sessionId: `${choose(ADJECTIVES)}-${choose(NOUNS)}-${choose(NAMES)}`,
+    sessionId:
+      `${choose(ADJECTIVES)}-${choose(NOUNS)}-${choose(NAMES)}-` +
+      collisionResistantSuffix(),
     executionId: randomUUID(),
   };
 }
