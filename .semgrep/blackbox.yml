@@ -1,0 +1,41 @@
+rules:
+  - id: blackbox-no-public-listen
+    languages: [typescript, javascript]
+    severity: ERROR
+    message: Host-facing listeners must bind explicitly to loopback; review container-only exceptions.
+    pattern-either:
+      - pattern: $SERVER.listen($PORT, "0.0.0.0", ...)
+      - pattern: $SERVER.listen($PORT, "::", ...)
+      - pattern: '$SERVER.listen({..., host: "0.0.0.0", ...}, ...)'
+      - pattern: '$SERVER.listen({..., host: "::", ...}, ...)'
+
+  - id: blackbox-no-shell-execution
+    languages: [typescript, javascript]
+    severity: ERROR
+    message: Use a fixed executable and an argument array with shell false.
+    pattern-either:
+      - pattern: 'spawn(..., { ..., shell: true, ... }, ...)'
+      - pattern: 'spawnSync(..., { ..., shell: true, ... }, ...)'
+      - pattern: 'execFile(..., { ..., shell: true, ... }, ...)'
+      - pattern: 'execFileSync(..., { ..., shell: true, ... }, ...)'
+      - pattern: 'import { exec } from "node:child_process"'
+      - pattern: 'import { execSync } from "node:child_process"'
+      - pattern: 'import { exec } from "child_process"'
+      - pattern: 'import { execSync } from "child_process"'
+
+  - id: blackbox-no-disabled-tls
+    languages: [typescript, javascript]
+    severity: ERROR
+    message: Never disable TLS certificate verification.
+    pattern-either:
+      - pattern: '{ ..., rejectUnauthorized: false, ... }'
+      - pattern: process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"
+      - pattern: $OPTIONS.rejectUnauthorized = false
+
+  - id: blackbox-no-dynamic-eval
+    languages: [typescript, javascript]
+    severity: ERROR
+    message: Do not execute dynamically constructed source code.
+    pattern-either:
+      - pattern: eval(...)
+      - pattern: new Function(...)
