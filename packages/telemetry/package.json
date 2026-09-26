@@ -28,7 +28,7 @@
   },
   "devDependencies": {
     "@types/node": "catalog:",
-    "ajv": "8.18.0",
+    "ajv": "8.20.0",
     "rimraf": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
