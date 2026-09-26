@@ -17,6 +17,7 @@ function blockSocketWrites(socket: Socket): {
   socket.on('error', () => undefined);
   Object.defineProperty(socket, 'write', {
     configurable: true,
+    writable: true,
     value: (chunk: string, callback: (error?: Error | null) => void) => {
       writes += 1;
       if (socket.destroyed) {

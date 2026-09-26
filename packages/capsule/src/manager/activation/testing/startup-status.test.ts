@@ -1,4 +1,4 @@
-import { expect, it } from 'vitest';
+import { expect, it, vi } from 'vitest';
 
 import { managerRequest } from '../../../ipc/client.js';
 import { runCapsuleManager } from '../../../manager.js';
@@ -8,7 +8,6 @@ import { catalogFixture, readyCollectorRuntime } from '../../testing/acquisition
 import { requestFixture } from '../../testing/request.fixture.js';
 import { activationStartupSandbox } from '../startup.fixture.js';
 import { activationPlan, installActivationFixture } from '../verification.fixture.js';
-import { collectorStatusServer } from './http-status.fixture.js';
 import { validActivation, validCollectorStatus } from './status-cases.fixture.js';
 
 it.each(['runtime', 'serviceName'] as const)(
@@ -22,13 +21,20 @@ it.each(['runtime', 'serviceName'] as const)(
         manager: { kind: 'not-started' }, entrypoint: { kind: 'unavailable' },
         readiness: { kind: 'unavailable' } },
     });
-    const receiver = await collectorStatusServer({ status: 200, body: JSON.stringify({
+    const requests: string[] = [];
+    const body = JSON.stringify({
       ...validCollectorStatus(fixture), instrumentation: { kind: 'activated', activations: [
         validActivation, { ...validActivation, [field]: ' \t\n' },
       ] },
-    }) });
+    });
+    vi.stubGlobal('fetch', vi.fn<typeof fetch>((request) => {
+      requests.push(request instanceof Request ? request.url : request.toString());
+      return Promise.resolve(new Response(body, {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      }));
+    }));
     const sandbox = activationStartupSandbox(fixture.manager.sandbox);
-    const endpoint = new URL(receiver.telemetry.endpoints.baseUrl);
     try {
       await runCapsuleManager(fixture, { collectorRuntime: readyCollectorRuntime,
         catalog: { load: () => Promise.resolve(catalogFixture(fixture.projectDirectory)),
@@ -37,18 +43,15 @@ it.each(['runtime', 'serviceName'] as const)(
             projectDirectory: fixture.projectDirectory,
           }) },
         sandbox: { projectName: () => 'project', start: () => Promise.resolve({
-          ...sandbox, telemetry: receiver.telemetry,
-          inspectTelemetry: () => Promise.resolve(receiver.telemetry),
-          endpoints: new Map([['entrypoint', { name: 'entrypoint', service: 'api',
-            containerPort: 3000, host: endpoint.hostname, port: Number(endpoint.port) }]]),
+          ...sandbox,
         }) }, now: () => new Date(),
       });
       expect(await readCapsuleRecord(fixture)).toMatchObject({ state: 'start-failed',
         cleanup: { kind: 'complete' }, readiness: { kind: 'unavailable' },
         failure: { error: { message: expect.stringContaining('is invalid') } } });
       expect(stopped).toEqual(['failed']);
-      expect(receiver.requests.length).toBeGreaterThan(0);
-      expect(receiver.requests.every((url) => url === '/status')).toBe(true);
+      expect(requests.length).toBeGreaterThan(0);
+      expect(requests.every((url) => url === 'http://collector.test/status')).toBe(true);
       const progress = await readCapsuleProgress(fixture);
       for (const kind of ['readiness-started', 'readiness-succeeded', 'capsule-ready']) {
         expect(progress.map((event) => event.kind)).not.toContain(kind);
@@ -60,7 +63,7 @@ it.each(['runtime', 'serviceName'] as const)(
           request: { kind: 'stop-request', requestId: 'cleanup-invalid-status', reason: 'failed' } });
       }
       await fixture.close();
-      await receiver.close();
+      vi.unstubAllGlobals();
     }
   },
 );
