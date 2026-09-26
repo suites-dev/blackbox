@@ -126,13 +126,16 @@ async function handleStop(input: {
     input.bootstrap.projectDirectory,
     transition(input.manager.record, 'stopped', { cleanup: { kind: 'complete' } }),
   );
-  await sendResponse(input.socket, {
-    kind: 'stop-response',
-    requestId: input.request.requestId,
-    cleanup: 'complete',
-  });
-  input.manager.server.close();
-  await unlink(input.manager.record.socketPath).catch(() => undefined);
+  try {
+    await sendResponse(input.socket, {
+      kind: 'stop-response',
+      requestId: input.request.requestId,
+      cleanup: 'complete',
+    });
+  } finally {
+    input.manager.server.close();
+    await unlink(input.manager.record.socketPath).catch(() => undefined);
+  }
 }
 
 async function handleConnection(

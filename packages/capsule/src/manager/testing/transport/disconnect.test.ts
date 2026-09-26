@@ -1,5 +1,5 @@
 import { once } from 'node:events';
-import { connect } from 'node:net';
+import { connect, type Socket } from 'node:net';
 
 import { expect, it, vi } from 'vitest';
 
@@ -13,11 +13,22 @@ it('finishes stop and closes the listener when the requesting client disconnects
   const admitted = new Promise<void>((resolve) => { entered = resolve; });
   const blocked = new Promise<void>((resolve) => { release = resolve; });
   const fixture = await requestFixture(() => { entered(); return blocked; });
+  const accepted = new Promise<Socket>((resolve) => {
+    fixture.manager.server.once('connection', resolve);
+  });
   const socket = connect(fixture.socketPath);
+  const managerSocket = await accepted;
   try {
     await once(socket, 'connect');
     socket.write(`${JSON.stringify({ kind: 'stop-request', requestId: 'disconnected-stop', reason: 'completed' })}\n`);
     await admitted;
+    Object.defineProperty(managerSocket, 'end', {
+      configurable: true,
+      value: () => {
+        managerSocket.emit('error', new Error('stop response transport failed'));
+        return managerSocket;
+      },
+    });
     socket.destroy();
     await once(socket, 'close');
     release();
