@@ -1,7 +1,8 @@
-import { link, mkdir, readFile, readdir, rename, unlink, writeFile } from 'node:fs/promises';
+import { link, mkdir, readFile, readdir, unlink, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { SandboxLifecycleState, SandboxStopReason } from '../types.js';
 import { decodeSandboxRecord } from './record-decoder.js';
+import { replaceFile } from './replace-file.js';
 
 export interface RecordedError {
   readonly name: string;
@@ -86,7 +87,7 @@ export async function writeSandboxRecord(input: SandboxRecordWriteInput): Promis
     encoding: 'utf8',
     flag: 'wx',
   });
-  await rename(temporary, target);
+  await replaceFile(temporary, target);
 }
 
 /** Atomically claims a sandbox identity without replacing an earlier execution. */

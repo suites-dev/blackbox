@@ -27,6 +27,7 @@ export {
   nodeInstrumentationPackageSchema,
   nodeInstrumentationPackageSchemaUrl,
 } from './runtime/schema.js';
+export { npmCommand } from './runtime/dependencies/dependency-installer.js';
 export type {
   NodeDependencyInstaller,
   NodeDependencyInstallRequest,

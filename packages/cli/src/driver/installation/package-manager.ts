@@ -1,4 +1,5 @@
 import { spawn } from 'node:child_process';
+import { npmCommand } from '@suites/blackbox-inst-runtime-node';
 
 import type {
   PackageManagerInstaller,
@@ -21,9 +22,16 @@ function completion(
 export const installDriverDependencies: PackageManagerInstaller = async ({ directory }) =>
   await new Promise<PackageManagerInstallResult>((resolve) => {
     const complete = completion(resolve);
+    const npm = npmCommand([
+      'install',
+      '--ignore-scripts',
+      '--no-audit',
+      '--no-fund',
+      '--package-lock=false',
+    ]);
     const child = spawn(
-      'npm',
-      ['install', '--ignore-scripts', '--no-audit', '--no-fund', '--package-lock=false'],
+      npm.command,
+      npm.args,
       {
         cwd: directory,
         env: process.env,

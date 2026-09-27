@@ -36,19 +36,36 @@ export function firstDependencyInstallCompletion(
   };
 }
 
+/**
+ * Resolves how to run npm without a shell. On Windows npm is a `npm.cmd` batch
+ * shim, which Node refuses to spawn directly with `shell: false`, so it runs
+ * through a fixed `cmd.exe /d /s /c` instead; the command never comes from the
+ * environment (such as `ComSpec`). Callers must pass only fixed arguments:
+ * cmd.exe interprets metacharacters in them.
+ */
+export function npmCommand(
+  args: readonly string[],
+  platform: NodeJS.Platform = process.platform,
+): { readonly command: string; readonly args: readonly string[] } {
+  return platform === 'win32'
+    ? { command: 'cmd.exe', args: ['/d', '/s', '/c', 'npm', ...args] }
+    : { command: 'npm', args };
+}
+
 export const installNodeDependencies: NodeDependencyInstaller = async ({ directory }) =>
   await new Promise<NodeDependencyInstallResult>((resolve) => {
     const complete = firstDependencyInstallCompletion(resolve);
+    const npm = npmCommand([
+      'install',
+      '--ignore-scripts',
+      '--no-audit',
+      '--no-fund',
+      '--no-package-lock',
+      '--save=false',
+    ]);
     const child = spawn(
-      'npm',
-      [
-        'install',
-        '--ignore-scripts',
-        '--no-audit',
-        '--no-fund',
-        '--no-package-lock',
-        '--save=false',
-      ],
+      npm.command,
+      npm.args,
       {
         cwd: directory,
         env: process.env,

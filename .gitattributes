@@ -1,0 +1,3 @@
+# Keep LF in every checkout: shell scripts, fixtures, and integrity-checked
+# instrumentation files must be byte-identical on Windows.
+* text=auto eol=lf
