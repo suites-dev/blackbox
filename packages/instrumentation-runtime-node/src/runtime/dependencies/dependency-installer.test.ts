@@ -25,21 +25,22 @@ describe('dependency process completion', () => {
 
 describe('npm command resolution', () => {
   it('runs npm directly on POSIX platforms', () => {
-    expect(
-      npmCommand(['install', '--ignore-scripts'], 'linux', { ComSpec: 'ignored' }),
-    ).toEqual({
+    expect(npmCommand(['install', '--ignore-scripts'], 'linux')).toEqual({
       command: 'npm',
       args: ['install', '--ignore-scripts'],
     });
   });
 
-  it('runs the npm.cmd shim through cmd.exe on Windows', () => {
-    const comSpec = 'C:\\Windows\\System32\\cmd.exe';
-    expect(npmCommand(['install'], 'win32', { ComSpec: comSpec })).toEqual({
-      command: comSpec,
-      args: ['/d', '/s', '/c', 'npm', 'install'],
-    });
-    expect(npmCommand(['install'], 'win32', {}).command).toBe('cmd.exe');
+  it('runs the npm.cmd shim through a fixed cmd.exe on Windows, ignoring ComSpec', () => {
+    vi.stubEnv('ComSpec', 'C:\\attacker\\evil.exe');
+    try {
+      expect(npmCommand(['install'], 'win32')).toEqual({
+        command: 'cmd.exe',
+        args: ['/d', '/s', '/c', 'npm', 'install'],
+      });
+    } finally {
+      vi.unstubAllEnvs();
+    }
   });
 
   it('starts the host npm without a shell', () => {
