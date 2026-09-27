@@ -3,14 +3,7 @@
 import { createHash } from 'node:crypto';
 import { spawn, spawnSync } from 'node:child_process';
 import { once } from 'node:events';
-import {
-  createWriteStream,
-  existsSync,
-  lstatSync,
-  readFileSync,
-  readdirSync,
-  realpathSync,
-} from 'node:fs';
+import { createWriteStream, lstatSync, readFileSync, readdirSync, realpathSync } from 'node:fs';
 import * as fs from 'node:fs/promises';
 import path from 'node:path';
 import { Transform } from 'node:stream';
@@ -18,6 +11,7 @@ import { fileURLToPath } from 'node:url';
 
 export const RETENTION_DAYS = 14;
 const DEFAULT_TEARDOWN_TIMEOUT_MS = 2_000;
+const MAX_TEARDOWN_TIMEOUT_MS = 30_000;
 const STREAM_FLUSH_TIMEOUT_MS = 1_000;
 
 function currentTime() {
@@ -55,25 +49,7 @@ function commandText(command) {
   return command.map((part) => shellQuote(part)).join(' ');
 }
 
-function parseEventPayload(environment) {
-  const payloadPath = environment.GITHUB_EVENT_PATH;
-  if (!payloadPath || !existsSync(payloadPath)) {
-    return {};
-  }
-
-  try {
-    return JSON.parse(readFileSync(payloadPath, 'utf8'));
-  } catch {
-    return {};
-  }
-}
-
 function githubContext(environment, rootDir) {
-  const event = parseEventPayload(environment);
-  const pullRequest = event.pull_request;
-  const base = pullRequest && pullRequest.base ? pullRequest.base : {};
-  const head = pullRequest && pullRequest.head ? pullRequest.head : {};
-
   return {
     repository: environment.GITHUB_REPOSITORY || null,
     workflow: environment.GITHUB_WORKFLOW || null,
@@ -83,12 +59,12 @@ function githubContext(environment, rootDir) {
     eventName: environment.GITHUB_EVENT_NAME || 'local',
     ref: environment.GITHUB_REF || null,
     base: {
-      ref: environment.GITHUB_BASE_REF || base.ref || null,
-      sha: base.sha || null,
+      ref: environment.GITHUB_BASE_REF || null,
+      sha: environment.BLACKBOX_CI_BASE_SHA || null,
     },
     head: {
-      ref: environment.GITHUB_HEAD_REF || head.ref || null,
-      sha: head.sha || null,
+      ref: environment.GITHUB_HEAD_REF || null,
+      sha: environment.BLACKBOX_CI_HEAD_SHA || null,
     },
     checkedOutSha: checkedOutRevision(rootDir),
   };
@@ -697,6 +673,13 @@ export async function runCommand(input, dependencies = {}) {
   if (command.length === 0) {
     throw new Error('ci-evidence run requires a command after --');
   }
+  const executable = allowedExecutable(command[0]);
+  const teardownTimeoutMs = positiveInteger(
+    input.teardownTimeoutMs,
+    DEFAULT_TEARDOWN_TIMEOUT_MS,
+    'teardown timeout',
+    MAX_TEARDOWN_TIMEOUT_MS,
+  );
   const clock = dependencies.now || currentTime;
   const environment = dependencies.environment || process.env;
   const startedAt = clock();
@@ -707,17 +690,12 @@ export async function runCommand(input, dependencies = {}) {
     ? pathWithin(rootDir, input.cwd, 'cwd', { allowRoot: true })
     : rootDir;
   const safeCommandText = redactSecrets(commandText(command), environment);
-  const teardownTimeoutMs = positiveInteger(
-    input.teardownTimeoutMs,
-    DEFAULT_TEARDOWN_TIMEOUT_MS,
-    'teardown timeout',
-  );
   logStream.write(
     `[ci-evidence] started=${startedAt} cwd=${JSON.stringify(
       normalizedRelative(path.relative(rootDir, workingDirectory)) || '.',
     )} command=${JSON.stringify(safeCommandText)}\n`,
   );
-  const child = spawn(command[0], command.slice(1), {
+  const child = spawn(executable, command.slice(1), {
     cwd: workingDirectory,
     env: {
       ...environment,
@@ -880,11 +858,18 @@ export async function runCommand(input, dependencies = {}) {
   }
 }
 
-function positiveInteger(value, fallback, label) {
+function allowedExecutable(value) {
+  if (value === 'node') return 'node';
+  if (value === 'pnpm') return 'pnpm';
+  if (value === process.execPath) return process.execPath;
+  throw new Error('ci-evidence only runs the repository node and pnpm toolchain');
+}
+
+function positiveInteger(value, fallback, label, maximum) {
   if (value === undefined || value === null || value === '') return fallback;
   const parsed = Number(value);
-  if (!Number.isSafeInteger(parsed) || parsed <= 0) {
-    throw new Error(`${label} must be a positive integer`);
+  if (!Number.isSafeInteger(parsed) || parsed <= 0 || parsed > maximum) {
+    throw new Error(`${label} must be a positive integer no greater than ${String(maximum)}`);
   }
   return parsed;
 }
@@ -1000,7 +985,7 @@ async function teardownOwnedProcessGroup(pid, timeoutMs) {
 }
 
 function parseCli(argv) {
-  const options = { expected: [], 'expected-projects': [] };
+  const options = { expected: [], expectedProjects: [] };
   let index = 0;
   while (index < argv.length) {
     const current = argv[index];
@@ -1015,14 +1000,82 @@ function parseCli(argv) {
     if (value === undefined || value === '--') {
       throw new Error(`Missing value for --${key}`);
     }
-    if (key === 'expected' || key === 'expected-projects') {
-      options[key].push(value);
-    } else {
-      options[key] = value;
+    switch (key) {
+      case 'command':
+        options.command = value;
+        break;
+      case 'cwd':
+        options.cwd = value;
+        break;
+      case 'evidence-dir':
+        options.evidenceDir = value;
+        break;
+      case 'input-root':
+        options.inputRoot = value;
+        break;
+      case 'lane':
+        options.lane = value;
+        break;
+      case 'project':
+        options.project = value;
+        break;
+      case 'result':
+        options.result = value;
+        break;
+      case 'setup-result':
+        options.setupResult = value;
+        break;
+      case 'teardown-timeout-ms':
+        options.teardownTimeoutMs = value;
+        break;
+      case 'test-case-identifiers':
+        options.testCaseIdentifiers = value;
+        break;
+      case 'upload-result':
+        options.uploadResult = value;
+        break;
+      case 'working-directory':
+        options.workingDirectory = value;
+        break;
+      case 'expected':
+        options.expected.push(value);
+        break;
+      case 'expected-projects':
+        options.expectedProjects.push(value);
+        break;
+      default:
+        throw new Error(`Unknown option --${key}`);
     }
     index += 2;
   }
   return { options, command: [] };
+}
+
+function approvedCliCommand(command) {
+  const signature = command.join('\0');
+  switch (signature) {
+    case 'node\0--test\0.github/scripts/e2e-evidence.test.mjs\0.github/scripts/capsule-evidence.test.mjs':
+      return [
+        'node',
+        '--test',
+        '.github/scripts/e2e-evidence.test.mjs',
+        '.github/scripts/capsule-evidence.test.mjs',
+      ];
+    case 'pnpm\0install\0--frozen-lockfile':
+      return ['pnpm', 'install', '--frozen-lockfile'];
+    case 'pnpm\0build':
+      return ['pnpm', 'build'];
+    case 'pnpm\0lint':
+      return ['pnpm', 'lint'];
+    case 'pnpm\0test':
+      return ['pnpm', 'test'];
+    case 'pnpm\0test:e2e:capsule':
+      return ['pnpm', 'test:e2e:capsule'];
+    case 'pnpm\0typecheck':
+      return ['pnpm', 'typecheck'];
+    default:
+      throw new Error('ci-evidence CLI command is not an approved repository check');
+  }
 }
 
 async function main() {
@@ -1035,11 +1088,11 @@ async function main() {
     const result = await runCommand({
       lane: parsed.options.lane,
       project: parsed.options.project,
-      evidenceDir: parsed.options['evidence-dir'],
+      evidenceDir: parsed.options.evidenceDir,
       cwd: parsed.options.cwd,
-      testCaseIdentifiers: parsed.options['test-case-identifiers'],
-      teardownTimeoutMs: parsed.options['teardown-timeout-ms'],
-      command: parsed.command,
+      testCaseIdentifiers: parsed.options.testCaseIdentifiers,
+      teardownTimeoutMs: parsed.options.teardownTimeoutMs,
+      command: approvedCliCommand(parsed.command),
     });
     process.exitCode = result.exit_code;
     return;
@@ -1048,16 +1101,16 @@ async function main() {
   const result = await collectEvidence({
     lane: parsed.options.lane,
     project: parsed.options.project,
-    evidenceDir: parsed.options['evidence-dir'],
+    evidenceDir: parsed.options.evidenceDir,
     expected: parsed.options.expected,
-    expectedProjects: parsed.options['expected-projects'],
-    inputRoot: parsed.options['input-root'],
+    expectedProjects: parsed.options.expectedProjects,
+    inputRoot: parsed.options.inputRoot,
     command: parsed.options.command,
     result: parsed.options.result,
-    setupResult: parsed.options['setup-result'],
-    uploadResult: parsed.options['upload-result'],
-    workingDirectory: parsed.options['working-directory'],
-    testCaseIdentifiers: parsed.options['test-case-identifiers'],
+    setupResult: parsed.options.setupResult,
+    uploadResult: parsed.options.uploadResult,
+    workingDirectory: parsed.options.workingDirectory,
+    testCaseIdentifiers: parsed.options.testCaseIdentifiers,
   });
   process.stdout.write(`${JSON.stringify(result.receipt)}\n`);
 }

@@ -91,9 +91,15 @@ export function requiredText(body: Readonly<Record<string, unknown>>, field: str
 }
 
 export async function fetchJson(
-  url: string,
+  service: 'fraud-check' | 'order-service' | 'payment-mock',
+  requestPath: string,
   options: RequestInit = {},
 ): Promise<Record<string, unknown>> {
+  if (!requestPath.startsWith('/') || requestPath.startsWith('//') || requestPath.includes('\\')) {
+    throw new Error('downstream request path must be an absolute HTTP path');
+  }
+  const origin = serviceOrigin(service);
+  const url = `${origin}${requestPath}`;
   const response = await fetch(url, options);
   const value: unknown = await response.json();
   if (!response.ok) {
@@ -103,6 +109,17 @@ export async function fetchJson(
     throw new Error(`${url} returned a non-object JSON response`);
   }
   return value as Record<string, unknown>;
+}
+
+function serviceOrigin(service: 'fraud-check' | 'order-service' | 'payment-mock'): string {
+  switch (service) {
+    case 'fraud-check':
+      return 'http://fraud-check:3000';
+    case 'order-service':
+      return 'http://order-service:3000';
+    case 'payment-mock':
+      return 'http://payment-mock:8080';
+  }
 }
 
 export async function closeServer(server: Server): Promise<void> {

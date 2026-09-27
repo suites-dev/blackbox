@@ -5,6 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { Writable } from 'node:stream';
 import test from 'node:test';
+import { fileURLToPath } from 'node:url';
 import { collectEvidence, runCommand } from './ci-evidence.mjs';
 import { retainE2eEvidence } from './e2e-evidence.mjs';
 
@@ -168,6 +169,106 @@ test('generic collection retains a failed command and the portable archive toget
   await assert.rejects(collectEvidence(collectionInput), /Required CI evidence is incomplete/);
   await fs.unlink(logPath);
   await assert.rejects(collectEvidence(collectionInput), /Required CI evidence is incomplete/);
+});
+
+test('command evidence rejects executables outside the repository toolchain', async (t) => {
+  const root = await workspace(t);
+  const marker = path.join(root, 'must-not-exist');
+  await assert.rejects(
+    runCommand({
+      rootDir: root,
+      lane: 'test',
+      project: 'security-boundary',
+      evidenceDir: 'ci-evidence/test/security-boundary',
+      command: ['touch', marker],
+    }),
+    /only runs the repository node and pnpm toolchain/,
+  );
+  await assert.rejects(fs.stat(marker), { code: 'ENOENT' });
+});
+
+test('command evidence rejects unbounded teardown deadlines before execution', async (t) => {
+  const root = await workspace(t);
+  const marker = path.join(root, 'must-not-exist');
+  await assert.rejects(
+    runCommand({
+      rootDir: root,
+      lane: 'test',
+      project: 'security-boundary',
+      evidenceDir: 'ci-evidence/test/security-boundary',
+      command: [
+        process.execPath,
+        '-e',
+        `require('node:fs').writeFileSync(${JSON.stringify(marker)}, '')`,
+      ],
+      teardownTimeoutMs: 30_001,
+    }),
+    /no greater than 30000/,
+  );
+  await assert.rejects(fs.stat(marker), { code: 'ENOENT' });
+});
+
+test('collection does not read an environment-selected event payload path', async (t) => {
+  const root = await workspace(t);
+  const eventPath = path.join(root, 'hostile-event.json');
+  await fs.writeFile(
+    eventPath,
+    JSON.stringify({ pull_request: { base: { sha: 'forged' }, head: { sha: 'forged' } } }),
+  );
+  const result = await collectEvidence(
+    {
+      rootDir: root,
+      lane: 'test',
+      project: 'security-boundary',
+      evidenceDir: 'ci-evidence/test/security-boundary',
+      expected: ['optional-log=missing.log'],
+    },
+    {
+      environment: {
+        GITHUB_EVENT_PATH: eventPath,
+        BLACKBOX_CI_BASE_SHA: 'base-sha',
+        BLACKBOX_CI_HEAD_SHA: 'head-sha',
+      },
+    },
+  );
+  assert.equal(result.receipt.base_sha, 'base-sha');
+  assert.equal(result.receipt.head_sha, 'head-sha');
+});
+
+test('the CLI rejects unknown option names instead of assigning object properties', () => {
+  const script = fileURLToPath(new URL('./ci-evidence.mjs', import.meta.url));
+  const result = spawnSync(process.execPath, [script, 'collect', '--__proto__', 'polluted'], {
+    encoding: 'utf8',
+  });
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /Unknown option --__proto__/);
+});
+
+test('the CLI rejects unapproved node programs before they execute', async (t) => {
+  const root = await workspace(t);
+  const marker = path.join(root, 'must-not-exist');
+  const script = fileURLToPath(new URL('./ci-evidence.mjs', import.meta.url));
+  const result = spawnSync(
+    process.execPath,
+    [
+      script,
+      'run',
+      '--lane',
+      'test',
+      '--project',
+      'security-boundary',
+      '--evidence-dir',
+      'ci-evidence/test/security-boundary',
+      '--',
+      'node',
+      '-e',
+      `require('node:fs').writeFileSync(${JSON.stringify(marker)}, '')`,
+    ],
+    { cwd: root, encoding: 'utf8' },
+  );
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /not an approved repository check/);
+  await assert.rejects(fs.stat(marker), { code: 'ENOENT' });
 });
 
 test('files modified during archiving cannot produce a successful transport receipt', async (t) => {

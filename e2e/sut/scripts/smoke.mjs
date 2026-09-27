@@ -5,8 +5,8 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { DriverFence } from './driver-fence.mjs';
 
 const compose = ['compose', '--project-name', 'current-dev-compose-smoke', '--file', 'compose.yml'];
-const origin = `http://127.0.0.1:${process.env.PUBLIC_API_PORT ?? '43180'}`;
-const paymentOrigin = `http://127.0.0.1:${process.env.PAYMENT_MOCK_PORT ?? '43183'}`;
+const publicApiOrigin = 'http://127.0.0.1:43180';
+const paymentMockOrigin = 'http://127.0.0.1:43183';
 const fixtureToken = process.env.FIXTURE_CONTROL_TOKEN ?? 'local-fixture-control-token';
 const fence = new DriverFence();
 
@@ -28,28 +28,42 @@ async function command(arguments_) {
 }
 
 async function request(path, options = {}) {
-  return requestAt(origin, path, options);
+  return requestAt('public-api', path, options);
 }
 
 async function fixtureRequest(path, options = {}) {
-  return fixtureRequestAt(origin, path, options);
+  return fixtureRequestAt('public-api', path, options);
 }
 
-async function fixtureRequestAt(base, path, options = {}) {
+async function fixtureRequestAt(participant, path, options = {}) {
   fence.assertFixtureControlAllowed();
-  return requestAt(base, path, {
+  return requestAt(participant, path, {
     ...options,
     headers: { authorization: `Bearer ${fixtureToken}`, ...options.headers },
   });
 }
 
-async function requestAt(base, path, options = {}) {
-  const response = await fetch(`${base}${path}`, {
+async function requestAt(participant, path, options = {}) {
+  if (!path.startsWith('/') || path.startsWith('//') || path.includes('\\')) {
+    throw new Error('smoke request path must be an absolute HTTP path');
+  }
+  const response = await fetch(`${participantOrigin(participant)}${path}`, {
     ...options,
     headers: { 'content-type': 'application/json', ...options.headers },
   });
   const body = await response.json();
   return { body, status: response.status };
+}
+
+function participantOrigin(participant) {
+  switch (participant) {
+    case 'public-api':
+      return publicApiOrigin;
+    case 'payment-mock':
+      return paymentMockOrigin;
+    default:
+      throw new Error(`unknown smoke participant: ${String(participant)}`);
+  }
 }
 
 async function postProduct(path, body = {}) {
@@ -142,13 +156,13 @@ async function verifyAlice() {
 }
 
 async function verifyPaymentMock() {
-  let response = await fixtureRequestAt(paymentOrigin, '/fixture/reset', {
+  let response = await fixtureRequestAt('payment-mock', '/fixture/reset', {
     method: 'POST',
     body: '{}',
   });
   assert.equal(response.status, 200);
   response = await fence.measure(() =>
-    requestAt(paymentOrigin, '/v1/refunds', {
+    requestAt('payment-mock', '/v1/refunds', {
       method: 'POST',
       body: JSON.stringify({ paymentIntentId: 'pi_missing1' }),
     }),
@@ -156,7 +170,7 @@ async function verifyPaymentMock() {
   assert.equal(response.status, 404);
   assert.equal(response.body.code, 'payment-intent-not-found');
   response = await fence.measure(() =>
-    requestAt(paymentOrigin, '/v1/payment_intents', {
+    requestAt('payment-mock', '/v1/payment_intents', {
       method: 'POST',
       body: JSON.stringify({ userId: 'alice', paymentMethodId: 'pm_card_visa' }),
     }),
@@ -164,7 +178,7 @@ async function verifyPaymentMock() {
   assert.equal(response.status, 201);
   assert.equal(response.body.id, 'pi_alice1');
   response = await fence.measure(() =>
-    requestAt(paymentOrigin, '/v1/refunds', {
+    requestAt('payment-mock', '/v1/refunds', {
       method: 'POST',
       body: JSON.stringify({ paymentIntentId: 'pi_alice1' }),
     }),
@@ -172,14 +186,14 @@ async function verifyPaymentMock() {
   assert.equal(response.status, 201);
   assert.equal(response.body.id, 'refund_1');
   response = await fence.measure(() =>
-    requestAt(paymentOrigin, '/v1/refunds', {
+    requestAt('payment-mock', '/v1/refunds', {
       method: 'POST',
       body: JSON.stringify({ paymentIntentId: 'pi_alice1' }),
     }),
   );
   assert.equal(response.status, 409);
   assert.equal(response.body.code, 'refund-already-exists');
-  response = await fixtureRequestAt(paymentOrigin, '/fixture/state');
+  response = await fixtureRequestAt('payment-mock', '/fixture/state');
   assert.equal(response.body.paymentIntents.length, 1);
   assert.equal(response.body.refunds.length, 1);
 }
@@ -261,11 +275,11 @@ async function verifyComparison() {
 
 async function verifyFixtureAuthorization() {
   fence.assertFixtureControlAllowed();
-  for (const base of [origin, paymentOrigin]) {
-    let response = await requestAt(base, '/fixture/state');
+  for (const participant of ['public-api', 'payment-mock']) {
+    let response = await requestAt(participant, '/fixture/state');
     assert.equal(response.status, 401);
     assert.equal(response.body.code, 'fixture-control-unauthorized');
-    response = await requestAt(base, '/fixture/state', {
+    response = await requestAt(participant, '/fixture/state', {
       headers: { authorization: 'Bearer wrong-fixture-token' },
     });
     assert.equal(response.status, 401);

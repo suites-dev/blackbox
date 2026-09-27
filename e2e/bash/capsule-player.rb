@@ -58,6 +58,7 @@ story = Psych.safe_load(File.read(story_path), permitted_classes: [], aliases: f
 values = {
   'SESSION_ID' => '',
   'ENTRYPOINT_URL' => '',
+  'FIXTURE_CONTROL_TOKEN' => ENV.fetch('FIXTURE_CONTROL_TOKEN', 'capsule-e2e-token'),
   'REPORT_ROOT' => '',
   'DRIVER_ACTIVITY_ID' => '',
   'TRACE_ID' => ''

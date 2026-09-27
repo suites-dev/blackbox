@@ -45,7 +45,7 @@ steps:
       --purpose setup
       -- curl --fail --silent --show-error
       --request POST
-      --header "Authorization: Bearer capsule-e2e-token"
+      --header "Authorization: Bearer ${FIXTURE_CONTROL_TOKEN}"
       --header "Content-Type: application/json"
       --data '{"profile":"fresh"}'
       ${ENTRYPOINT_URL}/fixture/reset

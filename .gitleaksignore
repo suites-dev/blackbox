@@ -1,2 +1,6 @@
+# Historical false positives introduced by the PR #1 squash. The demo bearer
+# value is not a credential, and the package-topology prose contains no key.
 31970117abbec51d0e9673c1bee9fcaf1afdd347:e2e/bash/capsule-demo.yaml:curl-auth-header:45
 31970117abbec51d0e9673c1bee9fcaf1afdd347:new-plan.md:generic-api-key:74
+aeff10ae84ea49bda2d9adbe477096426efecf65:e2e/bash/capsule-demo.yaml:curl-auth-header:46
+aeff10ae84ea49bda2d9adbe477096426efecf65:new-plan.md:generic-api-key:74
