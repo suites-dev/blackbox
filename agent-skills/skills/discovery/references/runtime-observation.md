@@ -6,17 +6,15 @@ Use this reference when a catalog is valid but an application effect may not be 
 
 Write the requested fact narrowly and identify the application participant expected to produce its witness. An HTTP request accepted by a caller, an HTTP request received by another service, a database statement, a committed row, and a queue consumer completing work are different claims. Select an observation boundary that can support the one being asked.
 
-Record each relevant participant's runtime and startup path, client library, instrumentation owner, collector route, and required correlation path. Distinguish “package installed,” “bootstrap referenced,” “bootstrap loaded in the correct process,” “telemetry delivered,” “effect correlated to this execution,” and “claim qualified.” These are separate facts.
+Record each relevant participant's runtime and startup path, client library, instrumentation owner, collector route, and available association paths. Distinguish “package installed,” “bootstrap referenced,” “bootstrap loaded in the correct process,” “telemetry delivered,” “effect correlated to this execution,” and “claim qualified.” These are separate facts.
 
 A service declaration and readiness success are setup facts, not capture evidence. A library dependency or configuration path suggests support but does not prove the actual operation flowed through an instrumented client.
 
 ## Respect ownership
 
-Alex owns application instrumentation, bootstrap modules, runtime SDK dependencies, and the Node instrumentation factory. Keep those resources in the application’s tracked `.blackbox/instrumentation/` area and inside the application dependency or image graph. Blackbox does not ship application-library instrumentation such as HTTP frameworks, Kafka, databases, or clients.
+The application owns its instrumentation bootstrap and dependencies. The Node installer creates the supported bootstrap under `.blackbox/instrumentation/`; activation adapters load it in the configured participants. Inspect current exported contracts and examples before changing the factory signature or adapter fields.
 
-Blackbox owns the generic OTLP intake, execution-scoped endpoints and routing, activation coordination, correlation validation, retained evidence, qualification, deterministic evaluation, and report projection. A Blackbox-owned activation adapter starts the Alex-owned Node factory before application imports and supplies only the execution-scoped context and endpoint described by the accepted runtime contract.
-
-The versioned activation lifecycle and exact Node factory signature are still provisional in the activation contract. Inspect the installed, versioned public contract before authoring a factory export, lifecycle methods, or catalog adapter fields. Do not copy a speculative function signature from an issue draft, propose your own ABI in a bootstrap, or import an OpenTelemetry SDK into Blackbox to make an example work.
+Blackbox owns execution-scoped OTLP intake and routing, activation coordination, retained evidence, queries, and reports. General normalized-effect qualification and deterministic evaluation are in development. Installation, activation, and telemetry receipt establish different facts; none proves complete coverage.
 
 Alpha runtime support is Node. Keep the catalog plan and evidence model language-neutral. Java, Python, other Playwright clients, and non-Compose acquisition remain future adapter work. Do not imply that they can be activated by copying the Node setup.
 
@@ -26,7 +24,7 @@ Check the instrumentation references and startup ordering for the relevant servi
 
 Confirm that the application participant can reach the execution's OTLP endpoint, that the generic receiver accepts the transport, and that the captured resource and correlation context bind observations to the correct execution and participant. Preserve existing process startup options; a bootstrap should add the supported activation without replacing unrelated options. Let the product adapter report startup, flush, shutdown, and connection failures distinctly.
 
-Follow correlation across the actual path. HTTP headers, async context, and queue metadata can each lose correlation. A producer send is not proof of consumer completion. Do not attach work to an execution merely because it happened nearby in time, used the same user ID, or came from a service in the same Compose project.
+Follow correlation across the actual path, without making it a prerequisite for evidence admission. HTTP headers, async context, and queue metadata can each lose correlation. A producer send is not proof of consumer completion. Use the recorded execution binding to establish evidence scope. A missing trace link does not remove an observation from that scope. Controlled setup and visible domain identifiers may support a behavioral claim across traces; temporal proximity or a shared service name alone does not establish direct causality.
 
 Separate setup traffic from product traffic. A fixture insert or readiness request must not satisfy an assertion about the application action. Do not relabel effects to fit a desired interpretation. Use the producer’s recorded origin and binding semantics.
 
@@ -38,6 +36,6 @@ If an expected effect is absent, classify what is known: unsupported runtime or 
 
 Use stable producer-provided IDs. Do not repair correlation by matching timestamps across machines; clock order is not causal evidence. Do not claim full coverage from zero reported drops, a stable projection, a successful HTTP response, or one successful probe.
 
-## ODC boundary
+## Product boundary
 
-ODC is optional Post-Alpha diagnostic work. Do not activate it, add an ODC reference, or require a decision producer as part of Alpha discovery. Disabled, unavailable, or unrequested ODC is non-failing. A future explicit ODC mode will need its own adapter and retained capture receipt; its diagnostic result cannot approve a behavior contract.
+ODC and decision coverage are outside the current product direction. Do not add their configuration or treat them as future setup prerequisites.

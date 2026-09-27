@@ -26,6 +26,8 @@ Already have an application to investigate? Start with [configuration](configura
 | Observation    | A measured response, runtime operation, command result, or state.                          |
 | Report         | A view or snapshot of the retained execution record.                                       |
 
+Follow the [roadmap](roadmap.md) for the next seven work items and [agent skill setup](agent-skills.md) for Codex, Claude Code, and Cursor.
+
 ## Guides and reference
 
 | Guide                                               | Use it to…                                                              |

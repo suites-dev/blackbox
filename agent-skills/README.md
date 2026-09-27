@@ -1,5 +1,10 @@
 # Blackbox agent skills
 
+Blackbox is unpublished. Check the [current implementation status](../docs/alpha-status.md)
+and [CLI reference](../docs/cli.md) before executing a workflow from these references.
+Playwright and effect-evaluation references are labeled design guidance for later stages.
+See [agent skill setup](../docs/agent-skills.md) for platform-specific manual installation. Start with the [local quickstart](../docs/getting-started.md) to try the current implementation.
+
 ## Installable Alpha skill
 
 [`skills/discovery`](skills/discovery/) is the portable Alpha onboarding entrypoint. Copy the complete directory to a skill location supported by the agent host. Its `SKILL.md` and all supporting references stay together, so the installed copy has no links back to this repository or the historical source bundle.

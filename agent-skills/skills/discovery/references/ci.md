@@ -1,15 +1,21 @@
-# Use native Playwright in CI
+# Run Capsule investigations in CI
 
-Use this reference when the requested task includes a Blackbox Alpha CI journey or diagnosis of a pipeline run.
+Use this reference when automating the current Capsule workflow or diagnosing its CI result. Native Playwright
+integration is planned; it is not the alpha's working product test entrypoint.
 
-Inspect the existing CI provider, repository lockfile, current Node/Playwright versions, selected tests and projects, local dependencies, Docker or Compose access, state reset strategy, secret policy, and existing artifact retention conventions. Keep the runner native to the repository. Alpha's test entrypoint is the project's `npx playwright test` path; do not add a Blackbox suite wrapper.
+Use the same root catalog, ordinary Compose files, Node instrumentation, and project drivers as local execution.
+Provide Docker access, a job-owned workspace, known fixture data, and the installed CLI. Validate configuration,
+start the selected system, retain the returned session identity, perform the setup and stimulus, inspect the required
+evidence, export the report, and stop that exact Capsule even if the stimulus or a check fails.
 
-Keep the CI topology equivalent to the local catalog: one root `blackbox.config.yaml`, ordinary referenced Compose files, Alex-owned Node bootstrap, and the same catalog-resolved plan. Use a job-specific workspace and test data. A hosted runner without the acquisition driver's required container capability cannot establish the live journey; record that limitation rather than treating a skipped integration as a pass.
+Keep command exit, application response/state, received observations, report export, artifact upload, and cleanup
+outcomes separate. Retain JSON command results and the HTML/JSON report with the job's revision and exact commands.
+A successful artifact upload or command exit does not establish every business claim. An early empty query does not
+establish absence; bound waits around the particular completion signal and required evidence.
 
-Retain exact run, execution, attempt, and artifact-root identities for every job or shard. Preserve the original planned scope, retries, and per-attempt evidence so a passing retry does not hide an earlier failure. Keep native runner status, runtime evaluation, capture limitations, report generation, and cleanup results separate.
+Clean up only resources owned by the job. Do not globally prune containers or reuse another job's evidence.
+Change workflow gates, credentials, publication, or branch protections only within the requested task.
 
-Run report projection and artifact upload through the CI provider's failure-safe mechanism so a failing test does not erase its evidence. Record native test status, report generation, required-evidence generation, upload, and cleanup separately. For Alpha acceptance lanes, retain JUnit, coverage, and a reproducible receipt with exact run/execution IDs, artifact roots, versions, commands, and results. If any required artifact is missing, invalid, or unuploaded, fail the evidence gate even when native tests return zero. Gate HTML report creation too when the lane requires it. A generated HTML report is useful for reading; it is not behavioral acceptance. Optional, disabled, or unavailable ODC does not fail the Alpha gate.
-
-Clean up only resources created by the current job, after retaining evidence. Record cleanup failures and fail the job when required cleanup or evidence-retention gates are not satisfied. Never globally prune a shared runner's containers, volumes, or artifacts.
-
-Do not change workflows, branch protections, required checks, artifact-sharing policy, or publication behavior unless the user requested that CI change. Report workflow files edited, exact invocation and selected scope, retained artifacts, separate outcomes, and any steps that remain unexecuted. A proposed YAML example is not a validated pipeline.
+For planned Playwright work, preserve native scheduling and every physical attempt's identity and evidence, including
+retries, skips, interruptions, and missing shards. Fresh state belongs to each attempt. Effects qualification and
+baseline evaluation are a separate later layer. ODC and generated feature/spec workflows are outside product scope.

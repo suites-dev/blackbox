@@ -10,15 +10,14 @@ and keep a report after stopping the application.
 
 The Capsule supplies the environment. The protocol below defines the investigation you carry out in it:
 
-| Part                                             | This experiment                                                                                 |        |
-| ------------------------------------------------ | ----------------------------------------------------------------------------------------------- | ------ |
-| Question                                         | Does creating a subscription return success and leave Alice with an active subscription?        |        |
-| Initial conditions                               | The example reset profile, a known Alice user, and no competing requests from another operator. |        |
-| Stimulus                                         | One subscription request with the example payment method.                                       |        |
-| Measurements                                     | The response, service observations, and a PostgreSQL state query.                               |        |
-| Completion                                       | The request finishes; query the resulting state and allow telemetry delivery.                   |        |
-| Criteria                                         | Check the successful response and `alice                                                        | active |
-| state. Inspect service participation separately. |
+| Part               | This experiment                                                                                        |
+| ------------------ | ------------------------------------------------------------------------------------------------------ |
+| Question           | Does creating a subscription return success and leave Alice with an active subscription?               |
+| Initial conditions | The example reset profile, a known Alice user, and no competing requests from another operator.        |
+| Stimulus           | One subscription request with the example payment method.                                              |
+| Measurements       | The response, service observations, and a PostgreSQL state query.                                      |
+| Completion         | The request finishes; query the resulting state and allow telemetry delivery.                          |
+| Criteria           | Check the successful response and the `alice\|active` state. Inspect service participation separately. |
 
 A single run of this procedure is a trial. The commands retain evidence for you to inspect; they do not invoke an
 automated claim evaluator. The procedure does not establish absence of every error or exactly one downstream request.
@@ -61,11 +60,12 @@ is created. The viewer and application have separate lifecycles.
 ## Start the Capsule
 
 ```sh
+FIXTURE_CONTROL_TOKEN=capsule-e2e-token
 capsule_start=$(blackbox capsule start \
   --system subscription-system \
   --title "Subscription investigation" \
   --description "Follow a subscription from request to saved state" \
-  --env FIXTURE_CONTROL_TOKEN=capsule-e2e-token \
+  --env "FIXTURE_CONTROL_TOKEN=$FIXTURE_CONTROL_TOKEN" \
   --json)
 
 SESSION_ID=$(printf '%s' "$capsule_start" | jq -er '.sessionId')
@@ -151,6 +151,10 @@ Once it returns a trace ID:
 TRACE_ID=$(printf '%s' "$activity_observations" | jq -er '.traceIds[0]')
 blackbox observations --session "$SESSION_ID" --trace "$TRACE_ID" --json
 ```
+
+A trace ID can appear before its downstream spans arrive. If the first trace query contains only the activity root,
+repeat the trace query while the Capsule runs until the observations needed for your question arrive. For automation,
+use a bounded wait for those specific observations; the presence of a trace ID alone does not establish completion.
 
 These scopes answer different questions:
 

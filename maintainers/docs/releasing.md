@@ -1,7 +1,7 @@
 # Branches and releases
 
-Blackbox uses a release-branch flow with pnpm workspaces. Lerna fixed versioning is
-the planned release mechanism; this policy commit does not install or configure it.
+Blackbox uses a release-branch flow with pnpm workspaces. Lerna is installed and configured for
+fixed versioning in `lerna.json`, currently at `0.0.0`, with pnpm as its package manager.
 `main` integrates development; only reviewed commits on `release/**` are release
 candidates. There is no separate `develop` branch.
 
@@ -22,9 +22,8 @@ changing the GitHub default; this setup does not reset or replace either history
 1. Cut `release/<version-or-line>` from a green, reviewed `main` commit. For the
    current alpha, use the existing release branch. Freeze features on that branch.
 2. Branch `prepare-release/<version>` from it. Install with
-   `pnpm install --frozen-lockfile`. Before the first version preparation, land a
-   separate reviewed PR installing a compatible, vulnerability-checked Lerna version
-   and configuring fixed versions in `lerna.json` with `npmClient: "pnpm"`.
+   `pnpm install --frozen-lockfile`. Before preparing versions, resolve the public package set
+   and runtime dependency closure, and review the installed Lerna configuration.
    pnpm remains responsible for installing dependencies and running builds.
 3. Update the fixed version with Lerna, leaving the changes uncommitted and untagged
    for review. For the first alpha:
@@ -45,15 +44,14 @@ changing the GitHub default; this setup does not reset or replace either history
    and verify the commit's CodeQL and security results. Review release notes and
    outstanding advisories. Do not release with unresolved confirmed vulnerabilities.
 
-The future Lerna configuration must allow version preparation only on `release/**`
-and `prepare-release/**`, with automatic pushing disabled. PRs, not release tooling,
-change protected branches. These Lerna restrictions are policy until that setup PR
-lands; the GitHub branch protections are enforced independently.
+The current Lerna configuration allows version preparation on `release/**` and
+`prepare-release/**`, with automatic pushing disabled. PRs change protected branches;
+GitHub branch protections are enforced independently of Lerna.
 
 ## Tag and publish
 
 All workspace packages are currently `private: true`. No npm publishing workflow is
-enabled. This is an intentional release-readiness gate; adding Lerna must not expose
+enabled. This is an intentional release-readiness gate; release preparation must not expose
 internal packages accidentally.
 
 Before enabling package publication, a reviewed PR must define the public package
@@ -82,3 +80,14 @@ release tag or overwrite a published version; ship a new patch instead.
 
 See [CONTRIBUTING.md](../../CONTRIBUTING.md) for validation and
 [security operations](security.md) for branch protection and scanner maintenance.
+
+## Release-readiness work
+
+The [roadmap](../../docs/roadmap.md) separates the package/public-export decision from publishing automation.
+The existing configuration is not evidence that registry publication works. Complete a clean-consumer tarball check
+and a non-publishing workflow rehearsal before the first release action.
+
+Implementation should follow current [Lerna version/publish guidance](https://lerna.js.org/docs/features/version-and-publish),
+[pnpm integration](https://lerna.js.org/docs/recipes/using-pnpm-with-lerna), and
+[npm trusted publishing](https://docs.npmjs.com/trusted-publishers/), including the supported tool versions and
+first-publication prerequisites. Record external npm/environment setup separately from repository workflow changes.

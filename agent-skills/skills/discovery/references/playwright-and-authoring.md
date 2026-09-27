@@ -1,6 +1,6 @@
-# Author native Playwright journeys
+# Plan native Playwright journeys
 
-Use this reference when the task asks for a repeatable test or a native Playwright journey. Playwright remains the test runner. Alpha supports Node applications and JavaScript/TypeScript Playwright projects; it does not require or add a Blackbox test-runner wrapper.
+This is design guidance for the upcoming native Playwright integration. It is not available in the current alpha. Use Capsule for working execution today. The planned integration keeps Playwright as the runner; automated effects evaluation is a later assurance stage.
 
 ## Turn a request into test obligations
 
@@ -19,7 +19,7 @@ Choose the full system when the behavior crosses all of its participants. Choose
 
 For each expectation, choose an appropriate source. An HTTP response is a native assertion. A supported client observation may witness a request or statement. Persisted values generally require an application-state assertion or another source that can establish the values. A producer send does not prove consumer completion. Avoid broad statements such as “everything worked” when the evidence covers only dispatch.
 
-## Use the supported public integration
+## Keep the future integration native
 
 Inspect the installed Alpha package exports, the project's Playwright version, existing configuration and fixtures, and current public documentation before importing helpers or adding Blackbox-specific hooks. Historical examples may name APIs that are not in the installed release. Keep the system selection in the catalog and use the actual integration’s public SUT-selection API; do not introduce a second SUT ID authority in test metadata.
 
@@ -31,7 +31,7 @@ Keep runtime checks alongside ordinary assertions. A response assertion and an e
 
 ## Make data independent
 
-Arrange unique, deterministic inputs for each test or physical attempt. Do not depend on an earlier Capsule, another test's cart, ordering between workers, or a row left by a previous run. Document the reset, transaction, namespace, or cleanup strategy. Worker reuse changes resource lifetime; it does not make shared state independent.
+Arrange unique, deterministic inputs for each test or physical attempt. Do not depend on an earlier Capsule, another test's cart, ordering between workers, or a row left by a previous run. Document the reset, transaction, namespace, or cleanup strategy. The planned first integration provides a fresh sandbox per physical attempt, including retries and serial tests. Worker-shared sandbox lifetimes are deferred.
 
 Use fixtures for setup and cleanup, and keep setup requests distinct from product behavior. Do not silently classify harness traffic as a product effect. Browser network calls may follow a different instrumentation path than Node's direct API client; verify the path before relying on it.
 
@@ -49,7 +49,7 @@ Keep the original test selection, projects, retry count, shard/repeat settings, 
 
 Effects baselines are separate acceptance references. Read [effects and baselines](effects-and-baselines.md) before creating or updating one. A baseline does not replace targeted response, state, or runtime assertions.
 
-ODC is optional Post-Alpha diagnostic work. Do not add decision capture configuration or ODC as an Alpha acceptance prerequisite. An absent or unavailable diagnostic must not fail the ordinary Playwright journey.
+ODC and generated feature files are outside the current product direction.
 
 ## Report the result
 

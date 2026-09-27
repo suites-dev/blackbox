@@ -3,6 +3,11 @@
 Start with a focused issue and a pull request. Report vulnerabilities through
 [SECURITY.md](SECURITY.md), never a public bug report.
 
+Blackbox is being built in public and has not been published. The current default
+branch is `release/v0.0.1-alpha`. Start with the [current status](docs/alpha-status.md)
+and [Capsule source workflow](docs/getting-started.md); Playwright integration is
+still in progress.
+
 ## Set up and validate
 
 Use Node.js 22.15 or newer in the Node 22 line and pnpm 9.15.4 (the pinned
@@ -13,21 +18,26 @@ pnpm install --frozen-lockfile
 pnpm lint
 pnpm typecheck
 pnpm test
-pnpm test:e2e:capsule
 ```
 
-`pnpm test` builds the packages first. GitHub CodeQL is active; the additional
-automatic PR security workflows must land from the CI setup branch before they
-can run. Contributors will not need scanner accounts or local audit commands.
-These development commands require the application workspace, which is not part
-of the policy-only bootstrap on `main`.
-See [security operations](maintainers/docs/security.md) for provider setup status.
+`pnpm test` builds the packages first. For the Docker-backed acceptance journey,
+use a disposable checkout and run `pnpm test:e2e:capsule </dev/null`. Preparation
+resets generated `e2e/.blackbox/` state and stops previous E2E sessions. Read the
+[acceptance guide](maintainers/docs/capsule-bash-e2e.md) before running it in an existing checkout.
+
+The checked-in [CI](.github/workflows/ci.yml), [E2E](.github/workflows/e2e.yml), and
+[security](.github/workflows/security.yml) workflows define the repository lanes.
+See [security operations](maintainers/docs/security.md) for provider setup details;
+an external provider's status must be verified separately from its configuration.
+
+For package responsibilities and workspace checks, see the [package map](maintainers/docs/packages.md).
 
 ## Branch and review
 
-Normal development targets `main`; stabilization and fixes for an active release
-target its `release/**` branch. Existing alpha phases 0–6 continue to target
-`release/v0.0.1-alpha`. Keep the owning Project item consistent with this choice.
+Current alpha work targets `release/v0.0.1-alpha`, including phases 0–6.
+`main` remains the development integration branch in the broader release flow;
+follow the owning issue and intended PR base when working outside the active alpha.
+Keep the owning Project item consistent with this choice.
 Use a short-lived `feat/...`, `fix/...`, `chore/...`, or the established
 `agent/<stream>/<issue>-<slug>` branch. See [the release flow](maintainers/docs/releasing.md).
 

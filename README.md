@@ -4,15 +4,19 @@
 
 <h1 align="center">Suites - Blackbox</h1>
 
-**A system testing and runtime verification framework for developers and coding agents.**
+**A system verification framework for developers and coding agents.**
 
-A request can return the expected response while the system makes an unexpected downstream call or writes the wrong
-state. Blackbox helps you investigate that behavior by running your application in an isolated environment and
-keeping the actions you performed alongside observations from the running system.
+Blackbox helps developers and coding agents construct a **verification machine**: an isolated, controlled environment
+that makes system behavior easier to observe, check, and reason about.
 
-Use it to reproduce a bug, explore an unfamiliar service, test a behavioral claim, or give a coding agent evidence
-to work with. Define the question and conditions, exercise the application, and assess what the execution establishes.
-Blackbox helps you construct a **verification machine**: an environment that makes system behavior easier to check.
+It gives coding agents the verification infrastructure they are missing today. Instead of relying on test output, logs,
+or inference alone, an agent can execute or investigate a real system, inspect runtime evidence, receive deterministic
+findings, repair the implementation or its verification setup, and rerun against the same accepted behavior.
+
+Blackbox runs a full application or subsystem in an isolated test environment through native Playwright system tests or
+an interactive CLI sandbox called a Capsule. It uses OpenTelemetry at test-time to observe runtime activity such as HTTP
+calls, database operations, and cache access, then turns those observations into structured effects and evidence that
+developers and agents can use to evaluate claims about the system.
 
 > **Alpha preview:** Blackbox is being developed in public and has not been published to npm. Install from source.
 > APIs and formats may change. Playwright integration is in progress. See [alpha availability](docs/alpha-status.md).
@@ -23,7 +27,8 @@ Blackbox works with an application or subsystem you define in a YAML catalog. Th
 dependencies, entrypoint, and instrumentation; Docker Compose provides the environment.
 
 A **Capsule is the laboratory**: the controlled environment, execution tools, observation infrastructure, and retained
-record. An **experiment** is the procedure you carry out there: known initial state, a deliberate stimulus, measurements,
+record. An **experiment** is the procedure you carry out there: known initial state, a deliberate stimulus,
+measurements,
 and criteria for answering a question. One execution of that procedure is a **trial**.
 
 You can send HTTP requests, prepare data, inspect a database, or trigger a worker using tools such as `curl`, `psql`,
@@ -32,13 +37,13 @@ OpenTelemetry. The [verification model](docs/verification-machine.md) explains h
 
 ```mermaid
 flowchart LR
-  Question["Question + claim"] --> Protocol["Plan state, stimulus, measurements"]
-  Protocol --> Trial["Run a trial"]
-  Capsule["Capsule: controlled environment"] --> Trial
-  Trial --> Evidence["Evidence: response, state, telemetry"]
-  Evidence --> Finding["Assess the claim within its scope"]
-  Finding --> Next["Investigate, repair, or rerun"]
-  Next --> Protocol
+    Question["Question + claim"] --> Protocol["Plan state, stimulus, measurements"]
+    Protocol --> Trial["Run a trial"]
+    Capsule["Capsule: controlled environment"] --> Trial
+    Trial --> Evidence["Evidence: response, state, telemetry"]
+    Evidence --> Finding["Assess the claim within its scope"]
+    Finding --> Next["Investigate, repair, or rerun"]
+    Next --> Protocol
 ```
 
 This supports a **feedback loop**, like flight control: act, measure, compare with the intended behavior, and adjust.
@@ -49,14 +54,15 @@ use [drivers to seed data or run migrations](docs/drivers.md#seed-data-and-run-m
 For example, investigating subscription creation can involve three distinct pieces of evidence:
 
 | Question                     | What to inspect                                                               |
-| ---------------------------- | ----------------------------------------------------------------------------- |
+|------------------------------|-------------------------------------------------------------------------------|
 | What did the caller receive? | The HTTP client's response and exit result.                                   |
 | Which services participated? | The instrumented application's traces.                                        |
 | What state was saved?        | A database query or application state endpoint, recorded as another activity. |
 
 Each piece answers a different question. Blackbox keeps their identities and results available so you can follow
 a finding back to its evidence. A response or state read can be useful evidence even without a connected trace.
-An asynchronous handoff can also break trace continuity while the work continues. The [Redis walkthrough](docs/async-workflows.md)
+An asynchronous handoff can also break trace continuity while the work continues.
+The [Redis walkthrough](docs/async-workflows.md)
 shows Blackbox retaining both the command execution and a consumer's separate downstream trace in one session.
 
 Execution identity defines the evidence scope. Known state and isolation reduce alternative explanations; trace
@@ -102,7 +108,7 @@ The tutorial uses an included subscription application with Node services, Postg
 A guided demo also walks through HTTP and database drivers, observations, and reports.
 
 | Guide                                                    | What you'll learn                                                                 |
-| -------------------------------------------------------- | --------------------------------------------------------------------------------- |
+|----------------------------------------------------------|-----------------------------------------------------------------------------------|
 | [The verification machine](docs/verification-machine.md) | Understand Capsules, experiments, trials, evidence, and claim assessment.         |
 | [Getting started](docs/getting-started.md)               | Run an application, send a request, inspect the result, and stop the Capsule.     |
 | [Configuration](docs/configuration.md)                   | Define your system, participants, drivers, and Node instrumentation.              |
@@ -113,6 +119,9 @@ A guided demo also walks through HTTP and database drivers, observations, and re
 | [Async holes and Redis](docs/async-workflows.md)         | Follow worker behavior when trace context does not cross a shared-state boundary. |
 | [Reports](docs/reports.md)                               | Browse a live experiment and export snapshots.                                    |
 | [CLI reference](docs/cli.md)                             | Find commands and options.                                                        |
+
+Follow the [roadmap](docs/roadmap.md) for the next seven work items and [agent skill setup](docs/agent-skills.md) for
+Codex, Claude Code, and Cursor.
 
 ## Community
 
