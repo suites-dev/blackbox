@@ -1,45 +1,54 @@
 # Run a bounded Capsule experiment
 
-Use this reference when the user asks to explore one behavior interactively. A Capsule is a retained experiment with an ephemeral application environment. The environment is stopped when the experiment ends; its record remains.
+A Capsule supplies the controlled environment, execution tools, observation, and retained record. An experiment is
+the procedure performed there; a trial is one execution of that procedure. Stopping the Capsule releases its owned
+environment while preserving its recorded activities and observations.
 
-## Define a question the experiment can answer
+## Define the question and procedure
 
-Before starting, identify the selected catalog system or subsystem, the concrete question, required participants, safe initial state, operation, relevant observation boundary, and cleanup expectation. A useful question is “Does this checkout request produce a correlated order request from checkout-api?” “Verify all of checkout” is too broad unless the user names the expected claims and evidence.
+Identify the selected catalog system or subsystem, known initial state, stimulus, measurements, completion conditions,
+accepted claims, and cleanup expectation. Select the smallest boundary that contains the behavior. A useful question
+is “Under this setup, does submitting this job result in the expected downstream request?” Add direct trace causality
+as a requirement only when the claim actually needs it.
 
-An intent or title describes the experiment. It is not an assertion or a product expectation. Keep each expected claim tied to an accepted user or test requirement. An experiment can reveal candidate behavior without deciding whether that behavior is correct.
+A title or description is not an assertion. Discovery can suggest expectations; confirmation requires independently
+accepted expectations and fresh evidence. Do not accept whatever happened merely because it was recorded.
 
-Reuse the root catalog. Do not define a separate experimental Compose topology or start a second acquisition path for Capsule. Check whether the installed public CLI and package provide the required operation before invoking it. The Alpha concept surface is Capsule `start`, `curl`, `exec`, `effects`, `checkpoint`, `stop`, and `report`; the exact arguments and some outputs remain implementation-specific. Do not infer arguments from superseded commands or proposed CLI examples.
+Reuse the root catalog and supported acquisition path. Current commands are `capsule start --system <system>`,
+`capsule exec --session <id>`, `observations --session <id>`, `capsule stop --session <id>`, and
+`capsule report serve|export --session <id>`. Inspect installed help for other flags. There are no current
+`capsule curl`, `capsule effects`, or `capsule checkpoint` operations.
 
-## Preserve identity and activity boundaries
+## Preserve command and evidence identities
 
-Capture the actual Capsule ID returned by the installed start operation and use that ID for later operations. Retain each Activity ID, action, delegated process or HTTP result, and supported observation. Do not infer an ID from a title, filename, timestamp, or the newest retained run.
+Capture the actual `sessionId` from startup and `activityId` from command results. Do not infer identity from a title,
+timestamp, or the newest retained run. Use `--purpose setup|stimulus|inspection` to describe actions; these labels do
+not restrict side effects. Drivers can prepare HTTP requests, database seeding or migrations, and Redis stimuli by
+selecting targets, execution locations, connection settings, and supported context propagation.
 
-Keep setup, stimulus, and diagnostic work separately understandable. Seeding data can be necessary, but seed success is only a command result unless a supported observation says more. A role label describes purpose; it is not a read-only guarantee or permission to rewrite where an effect came from. A failed child command does not erase other Activities or permit the experiment to be rewritten as a success.
+Keep distinct the CLI status, delegated process output and exit, propagation outcome, received telemetry, state reads,
+and your interpretation. A successful command does not establish every downstream consequence. Failed commands do not
+erase other evidence.
 
-For each operation, keep distinct:
+## Inspect the whole execution when correlation has gaps
 
-- the CLI's own status and payload;
-- the child process exit or HTTP response;
-- runtime capture state;
-- any evaluator result that the installed product actually recorded;
-- your interpretation of what those facts support.
+Session queries expose execution-scoped telemetry. Activity queries select correlated observations; trace queries select
+an exact trace identity. An async handoff can leave relevant downstream work on another trace. Inspect the session as
+well, preserving that limitation instead of inventing parentage or dropping the evidence.
 
-A successful CLI or HTTP response does not establish a business outcome. An observed HTTP dispatch does not prove remote receipt or settlement. A database statement does not prove the expected values were committed. A queue send does not prove that a worker completed.
+Known initial state, isolation, a unique visible business identifier, and appropriate completion conditions may support
+a behavioral claim across traces. Shared session membership alone does not attribute every span to a specific action.
+An occurrence witness may be sufficient before all telemetry arrives; absence and exact counts need adequate coverage
+and completion. Return insufficient evidence when the claim cannot be answered.
 
-## Read effects carefully
+Current views expose raw observations and command results. Do not describe your own assessment as a product-generated
+claim verdict or invent a normalized-effects API. Read the async reference for bounded waiting and competing work.
 
-Use the installed, versioned public effect view for the exact Activity and Capsule. Confirm the service, operation, target, origin, execution binding, and any qualification the producer exposes. Retain capture limitations. An empty list can mean no matching effects, unavailable projection, incomplete observation, or an unsupported reader; determine which from the producer instead of choosing the interpretation that best fits the task.
+## Retain the result and close the loop
 
-For async work, record the input action separately from downstream observations. Attribute downstream work only through supported correlation or explicit producer links, never just by a close timestamp or a matching user identifier.
+Report the question, conditions, exact identities, commands, evidence, limitations, and supported finding. A report is a
+projection of retained records, not automatic acceptance of observed behavior. If repair is authorized, change the
+implementation, restore the initial conditions, and rerun the same procedure against the accepted expectations.
 
-If the installed surface cannot filter by the requested Activity or expose the evidence needed to answer the question, report that limit. Do not add an undocumented flag or build an agent-side verdict.
-
-## Interpret and stop
-
-A Checkpoint is human or agent commentary attached to a real Capsule identity. It can summarize a bounded interpretation and cite actual retained IDs, but it is not evidence, a check result, or a way to change earlier Activities. Do not invent a Checkpoint command shape or retrofit a finalized report.
-
-Stop the known Capsule using its installed public operation after the experiment. Confirm the cleanup outcome and any remaining owned resource. Do not globally prune containers or remove unrelated state. The retained Capsule and Activity records should remain inspectable after teardown.
-
-Reports are read-only projections. For a Capsule report, use the exact Capsule ID where the installed implementation supports it. Keep report-generation success separate from application or capture success. Return the question, selected boundary, exact IDs, actions and outcomes, supported observations, capture gaps, cleanup status, and what remains unknown.
-
-Do not change code or baselines unless the user requested that work. When a useful experiment becomes a native test, author a separate test with independent fixtures and state; do not rely on the stopped Capsule's residual state.
+Stop the known Capsule and inspect its cleanup result. Preserve unrelated containers and state. Keep the retained
+record available after teardown. Do not modify code or accepted expectations beyond the user's requested work.

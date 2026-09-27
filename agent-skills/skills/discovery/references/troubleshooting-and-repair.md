@@ -8,17 +8,17 @@ Collect the exact repository, installed Blackbox and Playwright versions, select
 
 Classify the earliest supported failure:
 
-| Stage              | Inspect                                                                                                            |
-| ------------------ | ------------------------------------------------------------------------------------------------------------------ |
-| Capability lookup  | Installed package, public exports, local binary, version, and public help                                          |
-| Catalog resolution | Root YAML schema/version, path references, ordered Compose files, service IDs, readiness and activation references |
-| Acquisition        | Selected catalog entry, Compose closure, network, image/build, and owned resource state                            |
-| Readiness          | Declared participant, container-side port/path, startup logs, and required dependencies                            |
-| Runtime activation | Alex-owned tracked bootstrap path, supported version, process startup order, and reported lifecycle outcome        |
-| Telemetry delivery | Execution-scoped OTLP route, participant reachability, generic intake, and shutdown/flush results                  |
-| Correlation        | Participant and exact execution/activity/attempt binding across the observed path                                  |
-| Evaluation         | Selected scope, actual evidence availability, baseline identity, installed schema, and evaluator result            |
-| Report projection  | Exact source ID, supported version, unresolved references, and output location                                     |
+| Stage                | Inspect                                                                                                            |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| Capability lookup    | Installed package, public exports, local binary, version, and public help                                          |
+| Catalog resolution   | Root YAML schema/version, path references, ordered Compose files, service IDs, readiness and activation references |
+| Acquisition          | Selected catalog entry, Compose closure, network, image/build, and owned resource state                            |
+| Readiness            | Declared participant, container-side port/path, startup logs, and required dependencies                            |
+| Runtime activation   | Application-owned tracked bootstrap path, supported version, process startup order, and reported lifecycle outcome |
+| Telemetry delivery   | Execution-scoped OTLP route, participant reachability, generic intake, and shutdown/flush results                  |
+| Correlation          | Participant and exact execution/activity/attempt binding across the observed path                                  |
+| Evaluation (planned) | Selected scope, actual evidence availability, baseline identity, installed schema, and evaluator result            |
+| Report projection    | Exact source ID, supported version, unresolved references, and output location                                     |
 
 A service registration or command parser does not prove the workflow worked. A report that now renders may still show an application violation. Keep setup error, capture gap, runner outcome, and behavioral counterexample distinct.
 

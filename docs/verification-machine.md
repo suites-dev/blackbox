@@ -137,7 +137,7 @@ Explore → inspect evidence → explicitly choose accepted expectations
 
 Keep the accepted expectations independent of the result being judged. Updating an expectation changes the reference;
 it does not repair the application or turn the earlier execution into a success. This is a workflow principle,
-not a claim that contract promotion or baseline acceptance is implemented in the alpha CLI.
+not an implemented alpha baseline-acceptance command. Legacy contract-promotion product surfaces are outside scope.
 
 A report of an exploratory run is an **observed flow**. Describe a flow as verified only when named, previously
 established claims were checked against sufficient evidence from that execution. State the conditions and scope:

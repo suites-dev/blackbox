@@ -18,9 +18,9 @@ A fixed sleep is not an observation that distributed work is settled. Repeating 
 
 Use unique test data and an owned queue or namespace where the acquisition driver supports it. Understand visibility timeouts, redelivery, deduplication, retries, delayed jobs, and fixture reset. Preserve application retry behavior instead of disabling it to make a test stable.
 
-Follow one producer-recorded identity or supported propagation link through the path. Do not join independent events by timestamp, user ID, or queue name. Under concurrency, those fields are not enough to identify one physical attempt.
+Preserve execution identity, visible domain identifiers, and supported propagation links as separate facts. An async hole can leave the initiating activity and a consumer's work on separate traces within one execution. Retain both: session-scoped evidence is not excluded merely because activity correlation is absent. Known state, an exclusive stimulus, and a trustworthy unique marker may support a system-level behavioral claim. Under concurrency, timestamps, user IDs, or queue names alone do not establish one physical attempt or direct span causality.
 
-For Playwright, bind each terminal witness to the exact physical attempt. A consumer action from a prior retry cannot complete the current retry. Keep all retry artifacts and identify which attempt supplied the displayed result.
+For future Playwright integration, bind each terminal witness to the exact physical attempt. A consumer action from a prior retry cannot complete the current retry. Keep all retry artifacts and identify which attempt supplied the displayed result.
 
 ## Interpret absence and counts
 

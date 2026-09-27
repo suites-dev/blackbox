@@ -32,6 +32,11 @@ Silencing terminal progress does not suppress retained progress records.
 intent; it does not make a command read-only. A driver determines host or participant execution and reports its
 propagation result. `--allow-untraced` requires a driver and explicitly permits an unmet propagation expectation.
 
+When stdin and stdout are both terminals and `--json` is absent, `capsule exec` uses interactive execution:
+terminal input and command output are streamed, with the result retained as an activity. This is selected automatically;
+there is no `capsule exec --interactive` flag. A redirected or piped command uses captured execution. Use `--json` for
+automation that needs the result envelope. The `capsule start` presentation flags above are a separate choice.
+
 In exec JSON mode, delegated stdout/stderr belong inside the result envelope. A nonzero child exit remains nonzero;
 a missing executable exits `127`. Observation queries return discriminated results: inspect `kind` and telemetry
 status, not only the CLI exit code.

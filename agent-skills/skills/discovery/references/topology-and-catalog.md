@@ -16,11 +16,11 @@ Propose a full-system boundary and, when useful, the smallest subsystem that ans
 
 Create or update only root `blackbox.config.yaml`. It is the sole project-authored catalog and product-configuration source for systems, subsystems, participants, acquisition, readiness, isolation, observation, and activation. Do not revive `blackbox.config.ts`, hidden manifest scanning, Compose extension metadata, or another service graph.
 
-Put tracked ordinary Compose files under `.blackbox/compose/`. Reference them from the catalog as an explicitly ordered list. Preserve useful existing Compose services and deployment conventions where possible. Compose files contain no Blackbox metadata or `x-blackbox` extension; Blackbox-specific topology and activation references belong in the catalog.
+Use project-owned ordinary Compose files, such as `.blackbox/catalog/` in the example. Reference them from the catalog as an explicitly ordered list. Preserve useful existing Compose services and deployment conventions where possible. Compose files contain no Blackbox metadata or `x-blackbox` extension; Blackbox-specific topology and activation references belong in the catalog.
 
-Track Alex-owned bootstraps under `.blackbox/instrumentation/` and accepted effects baselines under `.blackbox/baselines/`. Generated runs, reports, cache, and temporary files belong in their runtime-output locations and are not configuration authority. Do not commit generated evidence as a second catalog or planning system.
+Track application-owned bootstraps under `.blackbox/instrumentation/`. Effect baseline workflows are in development. Generated runs, reports, cache, and temporary files belong in their runtime-output locations and are not configuration authority. Do not commit generated evidence as a second catalog or planning system.
 
-The catalog resolver produces one immutable, language-neutral plan used by both Capsule and native Playwright. Keep topology declarations and references independent of the current Compose implementation so other acquisition drivers can be added without changing the plan contract. Alpha's Compose/Testcontainers driver supports the product journeys; Dev Containers are the development and cloud-agent harness, not a second application acquisition path.
+The catalog resolver produces the plan used by Capsule; native Playwright integration is in development. Keep topology declarations and references independent of the current Compose implementation so other acquisition drivers can be added without changing the plan contract. Alpha's Compose/Testcontainers driver supports the product journeys; Dev Containers are the development and cloud-agent harness, not a second application acquisition path.
 
 When migrating an existing setup, check real imports, public exports, package installation, and its actual Capsule or Playwright use before retiring a legacy file. The canonical YAML contract is authoritative, but a filename alone does not prove that an old path is unused; record the evidence for a removal in the requested migration.
 
@@ -41,14 +41,14 @@ Use the public machine-readable catalog commands where the local CLI implements 
 
 Confirm the exact installed spelling and selected catalog IDs against public help or package docs first. A CLI registration or a successful parse is only static validation. It does not prove Compose acquisition, readiness, instrumentation startup, OTLP delivery, correlation, or application behavior.
 
-When the task authorizes a live setup check, make it narrow: start the selected system, wait through the supported readiness path, perform one distinctive safe action, then inspect whether the intended participant produced a correlated observation. Keep health checks and fixture seeding separate from the product action. Use a local test endpoint and project-owned fixture data. Do not call paid or production services as an implicit part of onboarding.
+When the task authorizes a live setup check, make it narrow: start the selected system, wait through the supported readiness path, perform one distinctive safe action, then inspect whether the intended participant produced relevant evidence bound to that execution. Assess activity/trace correlation separately. Keep health checks and fixture seeding separate from the product action. Use a local test endpoint and project-owned fixture data. Do not call paid or production services as an implicit part of onboarding.
 
 Distinguish each result explicitly:
 
 - **Catalog authored:** files and references were written.
 - **Catalog validated:** the installed validator accepted the selected catalog.
 - **Runtime exercised:** the selected environment started and the intended action ran.
-- **Observation established:** the relevant correlated evidence was actually retained.
+- **Observation established:** relevant evidence bound to the execution was actually retained; record trace continuity separately.
 - **Setup complete:** only claim the stages the user requested and that the evidence supports.
 
 A configuration diff, a Compose health response, or an empty effects list does not establish that all expected runtime operations are observable. For remaining gaps, link the missing participant, boundary, or capability and state which claim is still unanswerable.

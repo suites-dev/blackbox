@@ -19,22 +19,29 @@ See the [CLI reference](cli.md) for command options.
 
 ## Preview limitations
 
-| Capability                                                                              | Current status                                                    |
-| --------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
-| Playwright integration                                                                  | In progress. Use Capsule for now.                                 |
-| Effect matchers and snapshots                                                           | Not available yet. Raw observation queries are available.         |
-| Capsule checkpoints                                                                     | Not available yet.                                                |
-| Automatic project setup and skill installation                                          | Not available yet; the CLI reports a not-implemented error.       |
-| General test reports, history, and baseline updates                                     | Not available yet. Capsule reports work through `capsule report`. |
-| Python and Java instrumentation installers                                              | Not supported yet. The current installer supports Node.           |
-| Decision coverage, generated feature files, and automated verification/repair workflows | Future work.                                                      |
+| Capability                                          | Current status                                                    |
+| --------------------------------------------------- | ----------------------------------------------------------------- |
+| Playwright integration                              | In progress. Use Capsule for now.                                 |
+| Effect matchers and snapshots                       | Not available yet. Raw observation queries are available.         |
+| Capsule checkpoints                                 | Not available yet.                                                |
+| Automatic project setup and skill installation      | Not available yet; the CLI reports a not-implemented error.       |
+| General test reports, history, and baseline updates | Not available yet. Capsule reports work through `capsule report`. |
+| Python and Java instrumentation installers          | Not supported yet. The current installer supports Node.           |
+
+The next delivery adds native Playwright execution on the shared sandbox. A separate assurance stage will add
+normalized effects, claim qualification, matchers, and accepted-baseline comparisons. Playwright support alone will
+not imply that an assurance evaluator is available. See the [roadmap](roadmap.md).
+
+ODC/decision coverage, generated Gherkin or feature files, suite generation, and legacy contract-promotion workflows
+are outside the current product direction. Automated repair is not a committed product capability; developers and
+agents can already use execution feedback in their own repair loops.
 
 Commands, configuration, and report formats may change as the first alpha takes shape.
 
 ## Use Blackbox with a coding agent
 
-The repository includes a portable [discovery skill](../agent-skills/README.md). Copy its complete directory,
-including references, to a skill location supported by your agent. CLI-based skill installation is not available yet.
+The repository includes a portable discovery skill. Follow [agent skill setup](agent-skills.md) for
+Codex, Claude Code, or Cursor, copying the complete directory and its references. CLI-based skill installation is not available yet.
 Some skill references discuss capabilities still in development; use the status above to choose a working path.
 
 Try asking your agent:
