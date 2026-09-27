@@ -69,6 +69,8 @@ runs:
         BLACKBOX_CI_UPLOAD_RESULT: ${{ inputs.upload-result }}
         BLACKBOX_CI_WORKING_DIRECTORY: ${{ inputs.working-directory }}
         BLACKBOX_CI_TEST_CASE_IDENTIFIERS: ${{ inputs.test-case-identifiers }}
+        BLACKBOX_CI_BASE_SHA: ${{ github.event.pull_request.base.sha || '' }}
+        BLACKBOX_CI_HEAD_SHA: ${{ github.event.pull_request.head.sha || '' }}
       run: |
         args=(
           collect
@@ -91,7 +93,7 @@ runs:
       id: upload
       if: always()
       continue-on-error: true
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
       with:
         name: ci-evidence-${{ github.run_id }}-${{ github.run_attempt }}-${{ inputs.lane }}-${{ inputs.project }}
         path: ${{ inputs.evidence-dir }}

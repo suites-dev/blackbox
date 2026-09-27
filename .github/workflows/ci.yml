@@ -33,7 +33,7 @@ jobs:
     timeout-minutes: 30
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Setup toolchain
         uses: ./.github/actions/setup
@@ -57,7 +57,7 @@ jobs:
     timeout-minutes: 20
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Setup toolchain
         uses: ./.github/actions/setup
@@ -75,7 +75,7 @@ jobs:
     timeout-minutes: 30
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Setup toolchain
         uses: ./.github/actions/setup
@@ -87,6 +87,13 @@ jobs:
       - name: Run every package test suite
         timeout-minutes: 25
         run: pnpm run test
+
+      - name: Run repository boundary tests
+        timeout-minutes: 10
+        run: |
+          npm ci --prefix e2e/sut --ignore-scripts
+          npm test --prefix e2e/sut
+          node --test .github/scripts/e2e-evidence.test.mjs .github/scripts/capsule-evidence.test.mjs
 
   # One stable aggregate over the required lanes. Each lane keeps its own
   # diagnosable result; this job only folds them into a single verdict.

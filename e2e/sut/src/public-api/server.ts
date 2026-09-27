@@ -1,4 +1,4 @@
-import { requiredEnvironment, servicePort } from '../lib/config.js';
+import { requireExactEnvironment, requiredEnvironment, servicePort } from '../lib/config.js';
 import { createDatabasePool } from '../lib/database.js';
 import { closeServer, startJsonServer } from '../lib/http.js';
 import { writeError } from '../lib/log.js';
@@ -14,6 +14,10 @@ import { SubscriptionService } from './subscriptions.js';
 
 async function main(): Promise<void> {
   const fixtureToken = requiredEnvironment('FIXTURE_CONTROL_TOKEN');
+  requireExactEnvironment('FRAUD_CHECK_URL', 'http://fraud-check:3000');
+  requireExactEnvironment('ORDER_SERVICE_URL', 'http://order-service:3000');
+  requireExactEnvironment('PAYMENT_MOCK_URL', 'http://payment-mock:8080');
+  const port = servicePort();
   const pool = createDatabasePool();
   const database = new DatabaseRepository(pool);
   const redisConnection = await retry('redis', createRedisConnection);
@@ -22,9 +26,6 @@ async function main(): Promise<void> {
   const queueUrl = await retry('subscription queue', () => ensureQueue(queue));
   const downstream = createDownstreamClients({
     fixtureToken,
-    fraudUrl: requiredEnvironment('FRAUD_CHECK_URL'),
-    orderUrl: requiredEnvironment('ORDER_SERVICE_URL'),
-    paymentUrl: requiredEnvironment('PAYMENT_MOCK_URL'),
   });
   await retry('postgres', () => database.ready());
   await retry('downstream services', () => downstream.ready());
@@ -42,7 +43,7 @@ async function main(): Promise<void> {
     insertSubscription: (input) => database.insertSubscription(input),
   });
   const server = await startJsonServer(
-    servicePort(),
+    port,
     createPublicApi({
       fixture,
       fixtureToken,

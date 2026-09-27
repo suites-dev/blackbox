@@ -11,38 +11,35 @@ export interface DownstreamClients {
 
 export function createDownstreamClients(input: {
   readonly fixtureToken: string;
-  readonly fraudUrl: string;
-  readonly orderUrl: string;
-  readonly paymentUrl: string;
 }): DownstreamClients {
   return {
     async ready() {
       await Promise.all([
-        fetchJson(`${input.fraudUrl}/health`),
-        fetchJson(`${input.orderUrl}/health`),
-        fetchJson(`${input.paymentUrl}/health`),
+        fetchJson('fraud-check', '/health'),
+        fetchJson('order-service', '/health'),
+        fetchJson('payment-mock', '/health'),
       ]);
     },
     async assessFraud(userId) {
-      const result = await postJson(`${input.fraudUrl}/assess`, { userId });
+      const result = await postJson('fraud-check', '/assess', { userId });
       return { hintProfile: requiredText(result, 'hintProfile') };
     },
     async createPayment(userId, paymentMethodId) {
-      const result = await postJson(`${input.paymentUrl}/v1/payment_intents`, {
+      const result = await postJson('payment-mock', '/v1/payment_intents', {
         paymentMethodId,
         userId,
       });
       return { id: requiredText(result, 'id') };
     },
     async createOrder(userId, subscriptionId) {
-      const result = await postJson(`${input.orderUrl}/orders`, { subscriptionId, userId });
+      const result = await postJson('order-service', '/orders', { subscriptionId, userId });
       return { orderId: requiredText(result, 'orderId') };
     },
     async resetPayment() {
-      await postJson(`${input.paymentUrl}/fixture/reset`, {}, input.fixtureToken);
+      await postJson('payment-mock', '/fixture/reset', {}, input.fixtureToken);
     },
     inspectPayment() {
-      return fetchJson(`${input.paymentUrl}/fixture/state`, {
+      return fetchJson('payment-mock', '/fixture/state', {
         headers: { authorization: `Bearer ${input.fixtureToken}` },
       });
     },
@@ -50,11 +47,12 @@ export function createDownstreamClients(input: {
 }
 
 async function postJson(
-  url: string,
+  service: 'fraud-check' | 'order-service' | 'payment-mock',
+  path: string,
   body: Record<string, unknown>,
   fixtureToken?: string,
 ): Promise<Record<string, unknown>> {
-  return fetchJson(url, {
+  return fetchJson(service, path, {
     body: JSON.stringify(body),
     headers: {
       'content-type': 'application/json',

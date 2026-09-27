@@ -71,7 +71,7 @@ The implementation has separate workspace packages. Their directory boundaries a
 | `packages/capsule` | Phase 1 interactive application layer: Capsule sessions and activities, subprocess ownership, checkpoints, observational views and Capsule report inputs. It consumes Sandbox and Telemetry. |
 | `packages/cli` | The CLI composition root: discovery installation, scaffolding, catalog commands, Capsule commands, observation queries and reports. It guides delivery without owning sandbox or telemetry mechanics. |
 | `packages/report-server` | Shared local report projection: provider registry, exact report/artifact selection, localhost HTTP serving, and the read-only registry viewer. It owns no Capsule or Playwright filesystem access; adapters are supplied by the CLI or later phase packages. |
-| `packages/playwright` | Phase 2 native Playwright adapter: the preserved authoring facade, fixtures, physical-attempt execution scopes, browser/API boundary adapters, scheduling/retry/shard integration and run finalization. |
+| `packages/playwright` | Phase 2 native Playwright adapter: the preserved authoring facade, fixtures, physical-attempt execution scopes, browser and HTTP boundary adapters, scheduling/retry/shard integration and run finalization. |
 | `packages/telemetry-analyzer` | Phase 3 effects normalization, qualification, matchers, baseline comparison/acceptance and assurance result production. It reads retained telemetry through explicit sandbox evidence interfaces. |
 
 `packages/client` is transitional and is replaced by `packages/driver` without a compatibility facade. Its authored business-callback model is not the target abstraction. Project-specific actions such as `create-subscription` do not belong in a shared product package.

@@ -4,6 +4,7 @@ import { mkdir, mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs/promis
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
+import { fileURLToPath } from 'node:url';
 import { retainE2eEvidence } from './e2e-evidence.mjs';
 
 const sessionId = 'bright-river-ada-123456789012';
@@ -111,4 +112,12 @@ test('allowlisted receipt names cannot smuggle directories or symlink targets in
     assert.equal(receipt.status, 'failed');
     assert.match(receipt.error, /regular file|symlink/u);
   }
+});
+
+test('the Capsule player propagates but never displays a configured fixture token', () => {
+  const testFile = fileURLToPath(new URL('../../e2e/bash/capsule-player.test.rb', import.meta.url));
+  const result = spawnSync('ruby', [testFile], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr || result.stdout);
+  assert.match(result.stdout, /1 runs, \d+ assertions/u);
+  assert.match(result.stdout, /0 failures, 0 errors/u);
 });

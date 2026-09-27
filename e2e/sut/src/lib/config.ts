@@ -6,6 +6,13 @@ export function requiredEnvironment(name: string): string {
   return value;
 }
 
+export function requireExactEnvironment(name: string, expected: string): void {
+  const value = requiredEnvironment(name);
+  if (value !== expected) {
+    throw new Error(`${name} must be ${expected}`);
+  }
+}
+
 export function servicePort(defaultPort = 3000): number {
   const value = Number(process.env.PORT ?? defaultPort);
   if (!Number.isInteger(value) || value < 1 || value > 65_535) {
