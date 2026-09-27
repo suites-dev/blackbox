@@ -88,6 +88,13 @@ jobs:
         timeout-minutes: 25
         run: pnpm run test
 
+      - name: Run repository boundary tests
+        timeout-minutes: 10
+        run: |
+          npm ci --prefix e2e/sut --ignore-scripts
+          npm test --prefix e2e/sut
+          node --test .github/scripts/e2e-evidence.test.mjs .github/scripts/capsule-evidence.test.mjs
+
   # One stable aggregate over the required lanes. Each lane keeps its own
   # diagnosable result; this job only folds them into a single verdict.
   gate:

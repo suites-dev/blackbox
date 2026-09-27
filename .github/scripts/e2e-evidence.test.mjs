@@ -285,6 +285,18 @@ test('the evidence action does not substitute the workflow dispatch SHA', async 
   assert.doesNotMatch(headSha, /github\.sha/u);
 });
 
+test('required CI runs the repository boundary test suites', async () => {
+  const workflow = await fs.readFile(new URL('../workflows/ci.yml', import.meta.url), 'utf8');
+  const expectedStep = `      - name: Run repository boundary tests
+        timeout-minutes: 10
+        run: |
+          npm ci --prefix e2e/sut --ignore-scripts
+          npm test --prefix e2e/sut
+          node --test .github/scripts/e2e-evidence.test.mjs .github/scripts/capsule-evidence.test.mjs
+`;
+  assert.ok(workflow.includes(expectedStep));
+});
+
 test('the CLI rejects unknown option names instead of assigning object properties', () => {
   const script = fileURLToPath(new URL('./ci-evidence.mjs', import.meta.url));
   const result = spawnSync(process.execPath, [script, 'collect', '--__proto__', 'polluted'], {
