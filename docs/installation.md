@@ -15,6 +15,15 @@ Build the Blackbox CLI from source, then use it from the directory of the applic
 Start Docker and check that `docker info` succeeds before running a Capsule.
 The first application startup may take several minutes while images download and build.
 
+On Windows, use Docker Desktop and Git Bash, and keep two host limits in mind:
+
+- Clone to a shallow directory such as `C:\src\blackbox`. Docker Desktop returns `EIO` to non-root containers
+  for bind mounts whose Windows source path has 17 or more components, and Capsule telemetry storage sits about
+  six levels below the project directory.
+- Git Bash rewrites arguments that start with `/`, such as the driver examples' `/subscriptions`, into Windows
+  paths. Run `export MSYS_NO_PATHCONV=1` and define the shortcut below with `blackbox_checkout="$(pwd -W)"` so
+  the checkout path is already in Windows form.
+
 ## Build the CLI
 
 ```sh
