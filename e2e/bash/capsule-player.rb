@@ -9,6 +9,7 @@ require 'fileutils'
 require 'psych'
 require 'shellwords'
 require 'uri'
+require_relative 'capsule-player-support'
 
 root = File.expand_path('../..', __dir__)
 project_directory = File.join(root, 'e2e')
@@ -23,10 +24,6 @@ green = color ? "\e[32m" : ''
 yellow = color ? "\e[33m" : ''
 dim = color ? "\e[2m" : ''
 
-def interpolate(command, values)
-  command.gsub(/\$\{([A-Z_]+)\}/) { values.fetch(Regexp.last_match(1), "") }
-end
-
 def stop_report_viewer(server)
   return unless server
   output, wait_thread, owned = server
@@ -40,29 +37,8 @@ def stop_report_viewer(server)
   raise 'Report server did not stop cleanly' unless wait_thread.value.success?
 end
 
-def display_command(argv)
-  lines = []
-  argv.each do |arg|
-    if arg.start_with?('--') && !lines.empty?
-      lines << "        #{Shellwords.escape(arg)}"
-    elsif lines.empty?
-      lines << Shellwords.escape(arg)
-    else
-      lines[-1] += " #{Shellwords.escape(arg)}"
-    end
-  end
-  lines.join(" \\\n")
-end
-
 story = Psych.safe_load(File.read(story_path), permitted_classes: [], aliases: false)
-values = {
-  'SESSION_ID' => '',
-  'ENTRYPOINT_URL' => '',
-  'FIXTURE_CONTROL_TOKEN' => ENV.fetch('FIXTURE_CONTROL_TOKEN', 'capsule-e2e-token'),
-  'REPORT_ROOT' => '',
-  'DRIVER_ACTIVITY_ID' => '',
-  'TRACE_ID' => ''
-}
+values = CapsulePlayerSupport.initial_values(ENV)
 session_stopped = false
 report_server = nil
 
@@ -74,12 +50,25 @@ begin
 
   story.fetch('steps').each_with_index do |step, index|
     kind = step.fetch('kind')
-    command = interpolate(step.fetch('command'), values)
+    command = CapsulePlayerSupport.interpolate(step.fetch('command'), values)
     command = "#{File.join(root, command)}" if kind == 'shell'
-    executable = kind == 'shell' ? Shellwords.split(command) : [blackbox_bin, *Shellwords.split(command)]
+    executable = if kind == 'shell'
+                   Shellwords.split(command)
+                 else
+                   [blackbox_bin, *Shellwords.split(command)]
+                 end
     puts "\n#{blue}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━#{reset}"
     puts "#{cyan}[#{index + 1}/#{story.fetch('steps').length}]#{reset} #{yellow}#{step.fetch('explanation')}#{reset}"
-    puts "#{dim}$ #{display_command(kind == 'shell' ? Shellwords.split(command) : ['blackbox', *Shellwords.split(command)])}#{reset}"
+    displayed_argv = if kind == 'shell'
+                       Shellwords.split(command)
+                     else
+                       ['blackbox', *Shellwords.split(command)]
+                     end
+    displayed_command = CapsulePlayerSupport.display_command(
+      displayed_argv,
+      sensitive_values: [values.fetch('FIXTURE_CONTROL_TOKEN')]
+    )
+    puts "#{dim}$ #{displayed_command}#{reset}"
     unless options['--no-pause']
       $stdout.write('Press Enter to run it... ')
       STDIN.gets

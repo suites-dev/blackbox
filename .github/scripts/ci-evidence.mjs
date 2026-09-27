@@ -50,6 +50,7 @@ function commandText(command) {
 }
 
 function githubContext(environment, rootDir) {
+  const checkedOutSha = checkedOutRevision(rootDir);
   return {
     repository: environment.GITHUB_REPOSITORY || null,
     workflow: environment.GITHUB_WORKFLOW || null,
@@ -64,9 +65,9 @@ function githubContext(environment, rootDir) {
     },
     head: {
       ref: environment.GITHUB_HEAD_REF || null,
-      sha: environment.BLACKBOX_CI_HEAD_SHA || null,
+      sha: environment.BLACKBOX_CI_HEAD_SHA || checkedOutSha,
     },
-    checkedOutSha: checkedOutRevision(rootDir),
+    checkedOutSha,
   };
 }
 

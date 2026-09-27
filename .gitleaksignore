@@ -1,5 +1,12 @@
-# Historical false positives introduced by the PR #1 squash. The demo bearer
-# value is not a credential, and the package-topology prose contains no key.
+# Audit record: GL-FP-2026-09-27-01
+# Evidence: capsule-e2e-token is a public synthetic fixture value used only by
+# the local demo. new-plan.md:74 is package-topology prose and contains no key.
+# Affected versions: unreleased 0.0.1-alpha history at 31970117 and aeff10ae.
+# Owner: @omermorad
+# Review date: 2026-09-27
+# Independent approval: @qballer approval on the final head of PR #23, enforced
+# by branch rules and retained in the PR audit log. These suppressions may not
+# merge before that independent maintainer approval is present.
 31970117abbec51d0e9673c1bee9fcaf1afdd347:e2e/bash/capsule-demo.yaml:curl-auth-header:45
 31970117abbec51d0e9673c1bee9fcaf1afdd347:new-plan.md:generic-api-key:74
 aeff10ae84ea49bda2d9adbe477096426efecf65:e2e/bash/capsule-demo.yaml:curl-auth-header:46

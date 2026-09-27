@@ -70,7 +70,7 @@ runs:
         BLACKBOX_CI_WORKING_DIRECTORY: ${{ inputs.working-directory }}
         BLACKBOX_CI_TEST_CASE_IDENTIFIERS: ${{ inputs.test-case-identifiers }}
         BLACKBOX_CI_BASE_SHA: ${{ github.event.pull_request.base.sha || '' }}
-        BLACKBOX_CI_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        BLACKBOX_CI_HEAD_SHA: ${{ github.event.pull_request.head.sha || '' }}
       run: |
         args=(
           collect

@@ -235,6 +235,56 @@ test('collection does not read an environment-selected event payload path', asyn
   assert.equal(result.receipt.head_sha, 'head-sha');
 });
 
+test('workflow dispatch receipts use the checked-out revision as their head', async (t) => {
+  const root = await workspace(t);
+  await write(root, 'tracked.txt', 'checked-out tree');
+  for (const arguments_ of [
+    ['init'],
+    ['config', 'user.name', 'CI Evidence Test'],
+    ['config', 'user.email', 'ci-evidence@example.invalid'],
+    ['add', 'tracked.txt'],
+    ['commit', '-m', 'test: establish checked-out revision'],
+  ]) {
+    const result = spawnSync('git', arguments_, { cwd: root, encoding: 'utf8' });
+    assert.equal(result.status, 0, result.stderr);
+  }
+  const revision = spawnSync('git', ['rev-parse', 'HEAD'], {
+    cwd: root,
+    encoding: 'utf8',
+  }).stdout.trim();
+  const result = await collectEvidence(
+    {
+      rootDir: root,
+      lane: 'test',
+      project: 'dispatch-identity',
+      evidenceDir: 'ci-evidence/test/dispatch-identity',
+      expected: ['optional-log=missing.log'],
+    },
+    {
+      environment: {
+        GITHUB_EVENT_NAME: 'workflow_dispatch',
+        GITHUB_SHA: 'f'.repeat(40),
+      },
+    },
+  );
+  assert.equal(result.receipt.checked_out_sha, revision);
+  assert.equal(result.receipt.head_sha, revision);
+  assert.notEqual(result.receipt.head_sha, 'f'.repeat(40));
+});
+
+test('the evidence action does not substitute the workflow dispatch SHA', async () => {
+  const action = await fs.readFile(
+    new URL('../actions/ci-evidence/action.yml', import.meta.url),
+    'utf8',
+  );
+  const headSha = action.split('\n').find((line) => line.includes('BLACKBOX_CI_HEAD_SHA:'));
+  assert.equal(
+    headSha?.trim(),
+    "BLACKBOX_CI_HEAD_SHA: ${{ github.event.pull_request.head.sha || '' }}",
+  );
+  assert.doesNotMatch(headSha, /github\.sha/u);
+});
+
 test('the CLI rejects unknown option names instead of assigning object properties', () => {
   const script = fileURLToPath(new URL('./ci-evidence.mjs', import.meta.url));
   const result = spawnSync(process.execPath, [script, 'collect', '--__proto__', 'polluted'], {

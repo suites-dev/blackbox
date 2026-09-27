@@ -4,6 +4,7 @@ import { mkdir, mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs/promis
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
+import { fileURLToPath } from 'node:url';
 import { retainE2eEvidence } from './e2e-evidence.mjs';
 
 const sessionId = 'bright-river-ada-123456789012';
@@ -113,15 +114,10 @@ test('allowlisted receipt names cannot smuggle directories or symlink targets in
   }
 });
 
-test('the demo passes a configured fixture token into Capsule startup', async () => {
-  const story = await readFile(
-    new URL('../../e2e/bash/capsule-demo.yaml', import.meta.url),
-    'utf8',
-  );
-  const startStep = story.match(/- id: start[\s\S]*?\n\s+command: ([^\n]+)/u);
-  assert.notEqual(startStep, null, 'start step was not found');
-  const customToken = 'non-default-fixture-token';
-  const rendered = startStep[1].replaceAll('${FIXTURE_CONTROL_TOKEN}', customToken);
-  assert.match(rendered, new RegExp(`--env FIXTURE_CONTROL_TOKEN=${customToken}`, 'u'));
-  assert.doesNotMatch(rendered, /FIXTURE_CONTROL_TOKEN=capsule-e2e-token/u);
+test('the Capsule player propagates but never displays a configured fixture token', () => {
+  const testFile = fileURLToPath(new URL('../../e2e/bash/capsule-player.test.rb', import.meta.url));
+  const result = spawnSync('ruby', [testFile], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr || result.stdout);
+  assert.match(result.stdout, /1 runs, \d+ assertions/u);
+  assert.match(result.stdout, /0 failures, 0 errors/u);
 });
