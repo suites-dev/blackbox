@@ -19,11 +19,18 @@ module CapsulePlayerSupport
     }
   end
 
-  def self.interpolate(command, values)
-    command.gsub(/\$\{([A-Z_]+)\}/) do
+  def self.command_arguments(command_template, values)
+    Shellwords.split(command_template).map do |argument|
+      interpolate_argument(argument, values)
+    end
+  end
+
+  def self.interpolate_argument(argument, values)
+    argument.gsub(/\$\{([A-Z_]+)\}/) do
       values.fetch(Regexp.last_match(1), '')
     end
   end
+  private_class_method :interpolate_argument
 
   def self.display_command(argv, sensitive_values: [])
     secrets = sensitive_values.reject(&:empty?)

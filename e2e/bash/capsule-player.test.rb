@@ -2,7 +2,6 @@
 
 require 'minitest/autorun'
 require 'psych'
-require 'shellwords'
 require_relative 'capsule-player-support'
 
 class CapsulePlayerTest < Minitest::Test
@@ -13,7 +12,29 @@ class CapsulePlayerTest < Minitest::Test
       permitted_classes: [],
       aliases: false
     )
-    token = 'non-default-fixture-token'
+    tokens = [
+      'non-default-fixture-token',
+      "secret with spaces 'double\" slash\\segment\\\\tail"
+    ]
+    tokens.each do |token|
+      assert_token_round_trip(story, token)
+    end
+  end
+
+  private
+
+  def command_argv(story, step_id, values)
+    step = story.fetch('steps').find do |candidate|
+      candidate.fetch('id') == step_id
+    end
+    arguments = CapsulePlayerSupport.command_arguments(
+      step.fetch('command'),
+      values
+    )
+    ['blackbox', *arguments]
+  end
+
+  def assert_token_round_trip(story, token)
     values = CapsulePlayerSupport.initial_values(
       'FIXTURE_CONTROL_TOKEN' => token
     )
@@ -22,6 +43,8 @@ class CapsulePlayerTest < Minitest::Test
 
     start_argv = command_argv(story, 'start', values)
     reset_argv = command_argv(story, 'fixture-reset', values)
+    assert_equal 12, start_argv.length
+    assert_equal 23, reset_argv.length
     assert_includes start_argv, "FIXTURE_CONTROL_TOKEN=#{token}"
     assert_includes reset_argv, "Authorization: Bearer #{token}"
 
@@ -35,15 +58,5 @@ class CapsulePlayerTest < Minitest::Test
       refute_includes displayed, token
       assert_includes displayed, CapsulePlayerSupport::REDACTED
     end
-  end
-
-  private
-
-  def command_argv(story, step_id, values)
-    step = story.fetch('steps').find do |candidate|
-      candidate.fetch('id') == step_id
-    end
-    command = CapsulePlayerSupport.interpolate(step.fetch('command'), values)
-    ['blackbox', *Shellwords.split(command)]
   end
 end

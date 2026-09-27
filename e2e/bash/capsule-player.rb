@@ -7,7 +7,6 @@ require 'open3'
 require 'json'
 require 'fileutils'
 require 'psych'
-require 'shellwords'
 require 'uri'
 require_relative 'capsule-player-support'
 
@@ -50,19 +49,21 @@ begin
 
   story.fetch('steps').each_with_index do |step, index|
     kind = step.fetch('kind')
-    command = CapsulePlayerSupport.interpolate(step.fetch('command'), values)
-    command = "#{File.join(root, command)}" if kind == 'shell'
+    arguments = CapsulePlayerSupport.command_arguments(
+      step.fetch('command'),
+      values
+    )
     executable = if kind == 'shell'
-                   Shellwords.split(command)
+                   [File.join(root, arguments.fetch(0)), *arguments.drop(1)]
                  else
-                   [blackbox_bin, *Shellwords.split(command)]
+                   [blackbox_bin, *arguments]
                  end
     puts "\n#{blue}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━#{reset}"
     puts "#{cyan}[#{index + 1}/#{story.fetch('steps').length}]#{reset} #{yellow}#{step.fetch('explanation')}#{reset}"
     displayed_argv = if kind == 'shell'
-                       Shellwords.split(command)
+                       executable
                      else
-                       ['blackbox', *Shellwords.split(command)]
+                       ['blackbox', *arguments]
                      end
     displayed_command = CapsulePlayerSupport.display_command(
       displayed_argv,
