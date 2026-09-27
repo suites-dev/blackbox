@@ -19,6 +19,7 @@ async function exerciseBackpressure(terminal: SandboxContainerTerminal): Promise
     stream,
     request: {
       kind: 'container-stream-exec',
+      stdin: 'attached',
       service: 'api',
       argv: ['noisy'],
       environment: {},

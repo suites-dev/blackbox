@@ -27,6 +27,7 @@ export {
   type StartFailedSandboxRecord,
   type StopFailedSandboxRecord,
 } from './ownership/records.js';
+export { replaceFile } from './ownership/replace-file.js';
 export {
   decodeSandboxRecord,
   SandboxRecordValidationError,

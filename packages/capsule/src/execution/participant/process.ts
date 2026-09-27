@@ -47,6 +47,8 @@ export async function runParticipantCaptured(input: {
     argv: input.argv,
     environment: input.environment,
     terminal: { kind: 'captured' },
+    // Captured runs never forward stdin; the process reads EOF immediately.
+    stdin: 'closed',
     onOutput: (event) => {
       const chunk = Buffer.from(event.chunk);
       if (event.kind === 'stdout') {
@@ -68,7 +70,6 @@ export async function runParticipantCaptured(input: {
     execution: started.execution,
     interaction: input.interaction,
   }).catch(() => undefined);
-  await started.execution.endStdin();
   const completed = await started.execution.completion;
   if (completed.kind === 'execution-failed') {
     return failedExecution({
@@ -132,6 +133,7 @@ export async function runParticipantInteractive(input: {
     argv: input.argv,
     environment: input.environment,
     terminal: { kind: 'tty', ...input.interaction.terminal },
+    stdin: 'attached',
     onOutput: async (event) => {
       const chunk = Buffer.from(event.chunk);
       const stream = event.kind === 'stderr' ? 'stderr' : 'terminal';

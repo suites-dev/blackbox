@@ -8,6 +8,7 @@ import type { CatalogSandboxInput } from '@suites/blackbox-catalog-internal';
 
 import type { CapsuleManagerBootstrap } from '../protocol.js';
 import {
+  isWindowsPipePath,
   readCapsuleActivities,
   readCapsuleRecord,
   recordedError,
@@ -58,12 +59,14 @@ export async function persist(
 }
 
 async function openServer(socketPath: string): Promise<Server> {
-  await mkdir(dirname(socketPath), { recursive: true, mode: 0o700 });
-  await unlink(socketPath).catch((error: unknown) => {
-    if (!(error instanceof Error && 'code' in error && error.code === 'ENOENT')) {
-      throw error;
-    }
-  });
+  if (!isWindowsPipePath(socketPath)) {
+    await mkdir(dirname(socketPath), { recursive: true, mode: 0o700 });
+    await unlink(socketPath).catch((error: unknown) => {
+      if (!(error instanceof Error && 'code' in error && error.code === 'ENOENT')) {
+        throw error;
+      }
+    });
+  }
   const server = createServer();
   await new Promise<void>((resolve, reject) => {
     server.once('error', reject);

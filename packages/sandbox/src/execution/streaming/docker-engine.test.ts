@@ -16,6 +16,7 @@ function request(
 ): SandboxContainerExecutionInput {
   return {
     kind: 'container-stream-exec',
+    stdin: 'attached',
     service: 'postgres',
     argv: ['psql', '--no-psqlrc'],
     environment: { PGDATABASE: 'subscriptions' },
@@ -89,6 +90,27 @@ it('streams tty output and passes the declared console dimensions', async () => 
   });
   expect(output).toEqual(['terminal-output:interactive output']);
   expect(exec).toHaveBeenCalledWith(expect.objectContaining({ Tty: true, ConsoleSize: [40, 120] }));
+});
+
+it('starts a closed-stdin execution without attaching or half-closing stdin', async () => {
+  const stream = new PassThrough();
+  const port = executionPort(stream, 3);
+  const start = vi.spyOn(port, 'start');
+  const exec = vi.fn(() => Promise.resolve(port));
+  const result = await startDockerContainerExecutionWithClient({
+    containerId: 'postgres-id',
+    request: { ...request(() => Promise.resolve()), stdin: 'closed' },
+    client: client(exec, (input) => input.stream.pipe(input.stdout)),
+  });
+  const execution = started(result);
+  expect(exec).toHaveBeenCalledWith(expect.objectContaining({ AttachStdin: false }));
+  expect(start).toHaveBeenCalledWith(expect.objectContaining({ stdin: false }));
+  const chunk = { kind: 'stdin-chunk', chunk: Buffer.from('x') } as const;
+  const controls = await Promise.all([execution.endStdin(), execution.writeStdin(chunk)]);
+  expect(controls).toMatchObject([{ reason: 'stdin-ended' }, { reason: 'stdin-ended' }]);
+  expect(stream.writableEnded).toBe(false);
+  stream.end();
+  await expect(execution.completion).resolves.toMatchObject({ kind: 'exited', exitCode: 3 });
 });
 
 it('classifies missing executables reported through the Docker stream', async () => {

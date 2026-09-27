@@ -21,6 +21,7 @@ function request(
 ): SandboxContainerExecutionInput {
   return {
     kind: 'container-stream-exec',
+    stdin: 'attached',
     service: 'postgres',
     argv: ['psql', '--no-psqlrc'],
     environment: {},

@@ -8,6 +8,11 @@ export interface SandboxContainerExecutionInput {
   readonly argv: readonly [string, ...string[]];
   readonly environment: Readonly<Record<string, string>>;
   readonly terminal: SandboxContainerTerminal;
+  /**
+   * `closed` starts the process with no stdin attached, so it reads EOF at once
+   * and stdin controls are rejected.
+   */
+  readonly stdin: 'attached' | 'closed';
   readonly onOutput: (event: SandboxContainerOutputEvent) => Promise<void>;
 }
 

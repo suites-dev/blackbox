@@ -10,6 +10,7 @@ import {
   admitCapsuleRecord,
   capsuleSessionDirectory,
   capsuleSocketPath,
+  isWindowsPipePath,
   readCapsuleRecord,
   type CapsuleSessionRecord,
 } from '../../records.js';
@@ -56,12 +57,12 @@ describe('Capsule manager startup failure', () => {
     };
     const record = managerRecord(projectDirectory, sessionId);
     try {
-      expect(record.socketPath).toContain(
-        `${join('.blackbox', 'tmp')}${process.platform === 'win32' ? '\\' : '/'}`,
-      );
-      expect(record.socketPath).not.toContain(
-        `${join('.blackbox', 's')}${process.platform === 'win32' ? '\\' : '/'}`,
-      );
+      if (process.platform === 'win32') {
+        expect(isWindowsPipePath(record.socketPath)).toBe(true);
+      } else {
+        expect(record.socketPath).toContain(`${join('.blackbox', 'tmp')}/`);
+        expect(record.socketPath).not.toContain(`${join('.blackbox', 's')}/`);
+      }
       await admitCapsuleRecord({ projectDirectory, record });
       await runCapsuleManager(bootstrap, {
         collectorRuntime: readyCollectorRuntime,

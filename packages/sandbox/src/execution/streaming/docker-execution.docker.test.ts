@@ -29,6 +29,7 @@ describe.skipIf(process.env.BLACKBOX_SANDBOX_DOCKER_TEST !== '1')(
       const output: SandboxContainerOutputEvent[] = [];
       const started = await active.startContainerExecution({
         kind: 'container-stream-exec',
+        stdin: 'attached',
         service: 'echo',
         argv: ['/bin/cat'],
         environment: { PGDATABASE: 'subscriptions' },
@@ -55,6 +56,7 @@ describe.skipIf(process.env.BLACKBOX_SANDBOX_DOCKER_TEST !== '1')(
       active = await acquireSandbox();
       const result = await active.startContainerExecution({
         kind: 'container-stream-exec',
+        stdin: 'attached',
         service: 'echo',
         argv: ['blackbox-missing-psql'],
         environment: {},

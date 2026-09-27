@@ -36,11 +36,12 @@ export async function startDockerContainerExecutionWithClient(input: {
   } catch (cause) {
     return { kind: 'execution-failed', failure: runtimeFailure('create', cause) };
   }
+  const stdinAttached = input.request.stdin === 'attached';
   let stream: Duplex;
   try {
     stream = await exec.start({
       hijack: true,
-      stdin: true,
+      stdin: stdinAttached,
       Detach: false,
       Tty: input.request.terminal.kind === 'tty',
     });
@@ -54,7 +55,7 @@ export async function startDockerContainerExecutionWithClient(input: {
       client.demux(request);
     },
   });
-  const state = { completed: false, stdinEnded: false };
+  const state = { completed: false, stdinEnded: !stdinAttached };
   const completion = observeCompletion({
     exec,
     stream,
@@ -78,7 +79,9 @@ export async function startDockerContainerExecutionWithClient(input: {
 function createOptions(input: SandboxContainerExecutionInput) {
   const tty = input.terminal.kind === 'tty';
   return {
-    AttachStdin: true,
+    // Half-closing an attached stdin ends the whole hijacked stream on Docker
+    // Desktop's Windows named pipe, dropping later output and the exit code.
+    AttachStdin: input.stdin === 'attached',
     AttachStdout: true,
     AttachStderr: true,
     Tty: tty,
@@ -198,7 +201,7 @@ interface DockerContainerPort {
 interface DockerExecPort {
   start(input: {
     readonly hijack: true;
-    readonly stdin: true;
+    readonly stdin: boolean;
     readonly Detach: false;
     readonly Tty: boolean;
   }): Promise<Duplex>;

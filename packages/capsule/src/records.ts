@@ -1,6 +1,7 @@
-import { link, mkdir, readFile, rename, unlink, writeFile } from 'node:fs/promises';
+import { link, mkdir, readFile, unlink, writeFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { join, resolve } from 'node:path';
+import { replaceFile } from '@suites/blackbox-sandbox-internal';
 
 import type {
   CapsuleActivityReport,
@@ -71,9 +72,29 @@ export function capsuleRecordPath(input: CapsuleSessionSelector): string {
   return join(capsuleSessionDirectory(input), 'session.json');
 }
 
-export function capsuleSocketPath(input: CapsuleSessionSelector): string {
+const WINDOWS_PIPE_PREFIX = '\\\\.\\pipe\\';
+
+/** True for a Windows named-pipe endpoint, which has no filesystem entry to create or unlink. */
+export function isWindowsPipePath(path: string): boolean {
+  return path.startsWith(WINDOWS_PIPE_PREFIX);
+}
+
+export function capsuleSocketPath(
+  input: CapsuleSessionSelector,
+  platform: NodeJS.Platform = process.platform,
+): string {
+  const projectDirectory = resolve(input.projectDirectory);
+  if (platform === 'win32') {
+    // Windows has no Unix-domain socket files usable by Node; named pipes share
+    // one machine-wide namespace, so the name binds project and session.
+    const digest = createHash('sha256')
+      .update(`${projectDirectory}\0${input.sessionId}`)
+      .digest('hex')
+      .slice(0, 32);
+    return `${WINDOWS_PIPE_PREFIX}bb-${digest}`;
+  }
   const digest = createHash('sha256').update(input.sessionId).digest('hex').slice(0, 16);
-  return join(resolve(input.projectDirectory, '.blackbox', 'tmp'), `bb-${digest}.sock`);
+  return join(projectDirectory, '.blackbox', 'tmp', `bb-${digest}.sock`);
 }
 
 export function capsuleActivityPath(input: CapsuleSessionSelector): string {
@@ -91,7 +112,7 @@ async function atomicWrite(input: {
 }): Promise<void> {
   const temporary = `${input.target}.${process.pid}.${input.revision}.tmp`;
   await writeFile(temporary, input.bytes, { encoding: 'utf8', flag: 'wx', mode: 0o600 });
-  await rename(temporary, input.target);
+  await replaceFile(temporary, input.target);
 }
 
 export async function writeJsonArtifact(input: {
