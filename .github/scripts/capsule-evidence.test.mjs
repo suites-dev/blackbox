@@ -112,3 +112,16 @@ test('allowlisted receipt names cannot smuggle directories or symlink targets in
     assert.match(receipt.error, /regular file|symlink/u);
   }
 });
+
+test('the demo passes a configured fixture token into Capsule startup', async () => {
+  const story = await readFile(
+    new URL('../../e2e/bash/capsule-demo.yaml', import.meta.url),
+    'utf8',
+  );
+  const startStep = story.match(/- id: start[\s\S]*?\n\s+command: ([^\n]+)/u);
+  assert.notEqual(startStep, null, 'start step was not found');
+  const customToken = 'non-default-fixture-token';
+  const rendered = startStep[1].replaceAll('${FIXTURE_CONTROL_TOKEN}', customToken);
+  assert.match(rendered, new RegExp(`--env FIXTURE_CONTROL_TOKEN=${customToken}`, 'u'));
+  assert.doesNotMatch(rendered, /FIXTURE_CONTROL_TOKEN=capsule-e2e-token/u);
+});

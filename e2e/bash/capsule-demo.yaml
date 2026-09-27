@@ -30,7 +30,7 @@ steps:
   - id: start
     explanation: Acquire one named Capsule and retain its exact session identity.
     kind: cli
-    command: capsule start --system subscription-system --title "Recorded Capsule demo" --description "Explore subscription activation" --env FIXTURE_CONTROL_TOKEN=capsule-e2e-token --json
+    command: capsule start --system subscription-system --title "Recorded Capsule demo" --description "Explore subscription activation" --env FIXTURE_CONTROL_TOKEN=${FIXTURE_CONTROL_TOKEN} --json
   - id: health
     explanation: Run user-owned curl directly on the host and record it as inspection.
     kind: cli

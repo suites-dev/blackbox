@@ -14,15 +14,16 @@ import { SubscriptionService } from './subscriptions.js';
 
 async function main(): Promise<void> {
   const fixtureToken = requiredEnvironment('FIXTURE_CONTROL_TOKEN');
+  requireExactEnvironment('FRAUD_CHECK_URL', 'http://fraud-check:3000');
+  requireExactEnvironment('ORDER_SERVICE_URL', 'http://order-service:3000');
+  requireExactEnvironment('PAYMENT_MOCK_URL', 'http://payment-mock:8080');
+  const port = servicePort();
   const pool = createDatabasePool();
   const database = new DatabaseRepository(pool);
   const redisConnection = await retry('redis', createRedisConnection);
   const redis = new RedisRepository(redisConnection);
   const queue = createQueueClient();
   const queueUrl = await retry('subscription queue', () => ensureQueue(queue));
-  requireExactEnvironment('FRAUD_CHECK_URL', 'http://fraud-check:3000');
-  requireExactEnvironment('ORDER_SERVICE_URL', 'http://order-service:3000');
-  requireExactEnvironment('PAYMENT_MOCK_URL', 'http://payment-mock:8080');
   const downstream = createDownstreamClients({
     fixtureToken,
   });
@@ -42,7 +43,7 @@ async function main(): Promise<void> {
     insertSubscription: (input) => database.insertSubscription(input),
   });
   const server = await startJsonServer(
-    servicePort(),
+    port,
     createPublicApi({
       fixture,
       fixtureToken,
