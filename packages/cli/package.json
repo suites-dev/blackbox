@@ -33,7 +33,7 @@
     "@suites/blackbox-inst-runtime-node": "workspace:*",
     "@suites/blackbox-instrumentation-internal": "workspace:*",
     "@suites/blackbox-report-server-internal": "workspace:*",
-    "string-width": "4.2.3"
+    "string-width": "8.3.0"
   },
   "devDependencies": {
     "@types/node": "catalog:",
