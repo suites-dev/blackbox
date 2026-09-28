@@ -2,8 +2,8 @@ import { reportCapsule, type CapsuleReportDocument } from '@suites/blackbox-caps
 
 import { BlackboxCommand } from '../../cli/base-command.js';
 import { EXIT_CODES } from '../../cli/exit-codes.js';
-import { PackageFailure, cliFailure } from '../../cli/failure.js';
-import { capsuleFailure } from '../../capsule/capsule-output.js';
+import { cliFailure } from '../../cli/failure.js';
+import { capsulePackageFailure } from '../../capsule/capsule-output.js';
 import { InvocationContext } from '../../context/invocation.js';
 import { resolveId } from '../../context/resolver.js';
 import { exportReport } from '../../reporting/export.js';
@@ -25,7 +25,7 @@ export abstract class ReportCommand extends BlackboxCommand {
     const capsule = await this.target(request);
     const result = await reportCapsule({ projectDirectory: process.cwd(), sessionId: capsule });
     if (result.kind !== 'capsule-report') {
-      throw new PackageFailure({ document: result, text: capsuleFailure({ result, json: false }) });
+      throw capsulePackageFailure(result, capsule);
     }
     if (request.output === '-') {
       const exported = await this.write(capsule, result.document, 'json', { kind: 'stdout' });
@@ -76,7 +76,7 @@ export abstract class ReportCommand extends BlackboxCommand {
   private async target(request: ReportRequest): Promise<string> {
     const context = new InvocationContext(process.cwd());
     if (request.positional === null) {
-      return (await context.capsule(request.capsuleFlag)).capsule;
+      return (await context.capsule(request.capsuleFlag, 'report')).capsule;
     }
     const resolved = await resolveId(await context.index(), request.positional, {
       kind: 'project',
@@ -103,15 +103,15 @@ export abstract class ReportCommand extends BlackboxCommand {
         error instanceof Error
           ? { name: error.name, message: error.message }
           : { name: 'Error', message: String(error) };
-      throw new PackageFailure({
-        document: {
+      throw capsulePackageFailure(
+        {
           kind: 'capsule-operation-failed',
           operation: 'report',
           sessionId: capsule,
           error: recorded,
         },
-        text: `${recorded.name}: ${recorded.message}`,
-      });
+        capsule,
+      );
     }
   }
 }

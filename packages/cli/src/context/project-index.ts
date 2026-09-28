@@ -6,7 +6,17 @@ import {
   type CapsuleSessionState,
 } from '@suites/blackbox-capsule-internal';
 
-import { cliFailure } from '../cli/failure.js';
+import { PackageFailure, cliFailure } from '../cli/failure.js';
+import { capsuleFailure } from '../capsule/capsule-output.js';
+import { isCapsuleIdShape } from './identifiers.js';
+
+/** The Capsule package operation a missing explicit capsule is reported for. */
+export type CapsuleOperation = 'exec' | 'stop' | 'report' | 'observations';
+
+interface RecordedError {
+  readonly name: string;
+  readonly message: string;
+}
 
 export interface CapsuleSummary {
   readonly capsule: string;
@@ -33,12 +43,18 @@ export function activityName(activity: CapsuleActivityReport): string | null {
 export class ProjectIndex {
   readonly projectDirectory: string;
   readonly #capsules: readonly CapsuleSummary[];
+  readonly #corrupt: ReadonlyMap<string, RecordedError>;
   readonly #activities = new Map<string, Promise<readonly CapsuleActivityReport[] | null>>();
   readonly #traces = new Map<string, Promise<readonly string[]>>();
 
-  private constructor(projectDirectory: string, capsules: readonly CapsuleSummary[]) {
+  private constructor(
+    projectDirectory: string,
+    capsules: readonly CapsuleSummary[],
+    corrupt: ReadonlyMap<string, RecordedError>,
+  ) {
     this.projectDirectory = projectDirectory;
     this.#capsules = capsules;
+    this.#corrupt = corrupt;
   }
 
   static async load(projectDirectory: string): Promise<ProjectIndex> {
@@ -60,7 +76,49 @@ export class ProjectIndex {
           ]
         : [],
     );
-    return new ProjectIndex(result.projectDirectory, capsules);
+    const corrupt = new Map<string, RecordedError>();
+    for (const entry of result.entries) {
+      if (entry.kind === 'capsule-session-corrupt' && entry.directoryName.startsWith('capsule-')) {
+        corrupt.set(
+          entry.directoryName.slice('capsule-'.length),
+          entry.failure.kind === 'identity-mismatch'
+            ? {
+                name: 'CapsuleIdentityMismatch',
+                message: `Capsule directory ${entry.directoryName} holds session ${entry.failure.recordSessionId}`,
+              }
+            : entry.failure.error,
+        );
+      }
+    }
+    return new ProjectIndex(result.projectDirectory, capsules, corrupt);
+  }
+
+  /**
+   * The failure for an explicit capsule ID (flag or BLACKBOX_CAPSULE) that the
+   * registry does not list. It reproduces the Capsule package's own document for
+   * that input without passing the raw value to any file-system operation.
+   */
+  missingCapsule(id: string, operation: CapsuleOperation): PackageFailure {
+    const recorded = isCapsuleIdShape(id)
+      ? (this.#corrupt.get(id) ?? null)
+      : { name: 'Error', message: 'sessionId must be an exact Capsule-generated identity' };
+    const result =
+      recorded === null
+        ? {
+            kind: 'capsule-not-found' as const,
+            sessionId: id,
+            message: `Capsule session ${id} does not exist`,
+          }
+        : {
+            kind: 'capsule-operation-failed' as const,
+            operation,
+            sessionId: id,
+            error: recorded,
+          };
+    return new PackageFailure({
+      document: { ...result, capsule: id, next: ['blackbox ls --all'] },
+      text: capsuleFailure({ result, json: false }),
+    });
   }
 
   /** Newest first, as the registry orders them. */

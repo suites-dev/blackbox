@@ -87,10 +87,15 @@ export abstract class OpenCommand extends BlackboxCommand {
   protected async target(id: string | null): Promise<ViewerTarget> {
     const context = new InvocationContext(process.cwd());
     if (id !== null) {
-      const resolved = await resolveId(await context.index(), id, context.scope(null));
+      const index = await context.index();
+      const exact = index.capsule(id);
+      if (exact !== null) {
+        return { kind: 'capsule', capsule: exact.capsule };
+      }
+      const resolved = await resolveId(index, id, await context.scope(null, 'report'));
       return { kind: 'capsule', capsule: resolved.capsule.capsule };
     }
-    const explicit = context.explicit(null);
+    const explicit = await context.explicit(null, 'report');
     if (explicit !== null) {
       return { kind: 'capsule', capsule: explicit.capsule };
     }

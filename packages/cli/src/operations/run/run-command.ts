@@ -10,9 +10,9 @@ import {
 
 import { BlackboxCommand } from '../../cli/base-command.js';
 import { EXIT_CODES, type UsageExit } from '../../cli/exit-codes.js';
-import { PackageFailure, cliFailure } from '../../cli/failure.js';
+import { cliFailure } from '../../cli/failure.js';
 import { nextSteps } from '../../cli/next-steps.js';
-import { capsuleFailure } from '../../capsule/capsule-output.js';
+import { capsulePackageFailure } from '../../capsule/capsule-output.js';
 import { runProcessInteractiveCapsuleExec } from '../../capsule/execution/interactive-execution.js';
 import { ActivityDisplay } from '../../context/display.js';
 import { InvocationContext } from '../../context/invocation.js';
@@ -58,7 +58,7 @@ export abstract class RunCommand extends BlackboxCommand {
     }
     const name = this.activityName(request.name);
     const context = new InvocationContext(process.cwd());
-    const { capsule } = await context.capsule(request.capsuleFlag);
+    const { capsule } = await context.capsule(request.capsuleFlag, 'exec');
     const summary = (await context.index()).capsule(capsule);
     if (summary !== null && summary.state !== 'running') {
       throw cliFailure(
@@ -92,7 +92,7 @@ export abstract class RunCommand extends BlackboxCommand {
       : await execCapsule(execInput);
     const durationMs = Date.now() - started;
     if (result.kind !== 'capsule-exec-completed') {
-      throw new PackageFailure({ document: result, text: capsuleFailure({ result, json: false }) });
+      throw capsulePackageFailure(result, capsule);
     }
     await this.report({ request, capsule, result, durationMs, interactive, tracker });
   }

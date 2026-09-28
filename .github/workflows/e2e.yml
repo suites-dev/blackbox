@@ -127,13 +127,12 @@ jobs:
         if: always() && steps.build.outcome == 'success'
         timeout-minutes: 25
         env:
-          ARTIFACT_ROOT: ci-evidence/e2e/journeys
-        # ci-evidence.mjs only wraps its approved checks; the journey log is
-        # teed into this step's own evidence directory instead.
-        run: |
-          set -o pipefail
-          mkdir -p ci-evidence/e2e/journeys/logs
-          pnpm test:e2e:journeys 2>&1 | tee ci-evidence/e2e/journeys/logs/command.log
+          # Journey artifacts are staged outside the evidence output tree; the
+          # collector copies them in (it refuses sources inside that tree).
+          ARTIFACT_ROOT: .blackbox/tmp/ci-e2e-journeys
+        run: >-
+          node .github/scripts/ci-evidence.mjs run --lane e2e --project journeys
+          --evidence-dir ci-evidence/e2e/journeys -- pnpm test:e2e:journeys
 
       - name: Retain journey evidence
         id: journey_evidence
@@ -148,7 +147,7 @@ jobs:
           command: pnpm test:e2e:journeys
           expected: |
             log=ci-evidence/e2e/journeys/logs/command.log
-            logs?=ci-evidence/e2e/journeys/journeys
+            logs?=.blackbox/tmp/ci-e2e-journeys
 
       - name: Enforce test and retention outcomes
         if: always()

@@ -2,9 +2,9 @@ import { stopCapsule } from '@suites/blackbox-capsule-internal';
 
 import { BlackboxCommand } from '../../cli/base-command.js';
 import { EXIT_CODES } from '../../cli/exit-codes.js';
-import { PackageFailure, cliFailure } from '../../cli/failure.js';
+import { cliFailure } from '../../cli/failure.js';
 import { nextSteps } from '../../cli/next-steps.js';
-import { capsuleFailure } from '../../capsule/capsule-output.js';
+import { capsulePackageFailure } from '../../capsule/capsule-output.js';
 import { clearCurrentCapsuleIf, type ClearResult } from '../../context/current-capsule.js';
 import { InvocationContext } from '../../context/invocation.js';
 import { resolveId } from '../../context/resolver.js';
@@ -26,7 +26,7 @@ export abstract class DownCommand extends BlackboxCommand {
       reason: 'completed',
     });
     if (result.kind !== 'capsule-stopped') {
-      throw new PackageFailure({ document: result, text: capsuleFailure({ result, json: false }) });
+      throw capsulePackageFailure(result, capsule);
     }
     const cleared: ClearResult = await clearCurrentCapsuleIf(process.cwd(), capsule).catch(
       () => 'not-current' as const,
@@ -49,7 +49,7 @@ export abstract class DownCommand extends BlackboxCommand {
   /** A positional must be a capsule ID; without one, the resolved capsule. */
   private async target(context: InvocationContext, request: DownRequest): Promise<string> {
     if (request.positional === null) {
-      return (await context.capsule(request.capsuleFlag)).capsule;
+      return (await context.capsule(request.capsuleFlag, 'stop')).capsule;
     }
     const resolved = await resolveId(await context.index(), request.positional, {
       kind: 'project',

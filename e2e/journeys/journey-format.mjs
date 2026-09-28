@@ -30,8 +30,10 @@ export function parseGolden(text) {
 }
 
 function parseDirective(line) {
-  const capture = /^#! capture ([A-Za-z_][A-Za-z0-9_]*) \/(.*)\/$/u.exec(line);
+  const capture = /^#! capture ([A-Za-z_][A-Za-z0-9_]*) \/(.{1,200})\/$/u.exec(line);
   if (capture !== null) {
+    // The pattern is repository content: golden files are read only from
+    // e2e/journeys and reviewed like code. The length bound keeps it a capture.
     return { kind: 'capture', line, variable: capture[1], pattern: new RegExp(capture[2], 'mu') };
   }
   const timeout = /^#! timeout (\d+)$/u.exec(line);

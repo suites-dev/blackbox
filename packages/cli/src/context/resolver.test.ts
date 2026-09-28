@@ -164,14 +164,18 @@ void test('BLACKBOX_CAPSULE narrows ID search; the current-capsule file never do
     const fromFile = new InvocationContext(fixture.directory, {});
     const index = await fromFile.index();
     assert.equal(
-      described(await resolveId(index, '3f9a2c41-7b', fromFile.scope(null))),
+      described(await resolveId(index, '3f9a2c41-7b', await fromFile.scope(null, 'observations'))),
       `activity:${CAPSULE_A}:${ACTIVITY_A}`,
     );
     const fromEnvironment = new InvocationContext(fixture.directory, {
       BLACKBOX_CAPSULE: CAPSULE_B,
     });
     const failure = await failureOf(
-      resolveId(await fromEnvironment.index(), '3f9a2c41-7b', fromEnvironment.scope(null)),
+      resolveId(
+        await fromEnvironment.index(),
+        '3f9a2c41-7b',
+        await fromEnvironment.scope(null, 'observations'),
+      ),
     );
     assert.equal(failure.detail.code, 'id-capsule-mismatch');
   } finally {

@@ -7,8 +7,7 @@ import {
 
 import { BlackboxCommand } from '../../cli/base-command.js';
 import { EXIT_CODES } from '../../cli/exit-codes.js';
-import { PackageFailure } from '../../cli/failure.js';
-import { capsuleFailure } from '../../capsule/capsule-output.js';
+import { capsulePackageFailure } from '../../capsule/capsule-output.js';
 import { ActivityDisplay } from '../../context/display.js';
 import { InvocationContext } from '../../context/invocation.js';
 import type { ProjectIndex } from '../../context/project-index.js';
@@ -44,8 +43,7 @@ export abstract class ShowCommand extends BlackboxCommand {
   protected async executeShow(request: ShowRequest): Promise<void> {
     const context = new InvocationContext(process.cwd());
     const index = await context.index();
-    await this.requireExplicitCapsule(context, index, request.capsuleFlag);
-    const resolved = await resolveId(index, request.id, context.scope(request.capsuleFlag));
+    const resolved = await this.resolve(context, index, request);
     const capsule = resolved.capsule.capsule;
     const result = await readCapsuleObservations({
       projectDirectory: process.cwd(),
@@ -57,7 +55,7 @@ export abstract class ShowCommand extends BlackboxCommand {
       result.kind === 'capsule-invalid-state' ||
       result.kind === 'capsule-operation-failed'
     ) {
-      throw new PackageFailure({ document: result, text: capsuleFailure({ result, json: false }) });
+      throw capsulePackageFailure(result, capsule);
     }
     const view = await this.view(index, resolved, result);
     if (request.json) {
@@ -69,30 +67,20 @@ export abstract class ShowCommand extends BlackboxCommand {
   }
 
   /**
-   * An explicit capsule context that the registry does not list is reported by
-   * the Capsule package itself (capsule-not-found), as run and down do.
+   * A positional capsule ID is the highest-precedence context, so it resolves
+   * before any explicit context is checked. Otherwise an explicit context
+   * (flag or BLACKBOX_CAPSULE) must name a listed capsule, and narrows the search.
    */
-  private async requireExplicitCapsule(
+  private async resolve(
     context: InvocationContext,
     index: ProjectIndex,
-    flag: string | null,
-  ): Promise<void> {
-    const explicit = context.explicit(flag);
-    if (explicit === null || index.capsule(explicit.capsule) !== null) {
-      return;
+    request: ShowRequest,
+  ): Promise<Resolved> {
+    const exact = index.capsule(request.id);
+    if (exact !== null) {
+      return { kind: 'capsule', capsule: exact };
     }
-    const result = await readCapsuleObservations({
-      projectDirectory: process.cwd(),
-      sessionId: explicit.capsule,
-      selection: { kind: 'session' },
-    });
-    if (
-      result.kind === 'capsule-not-found' ||
-      result.kind === 'capsule-invalid-state' ||
-      result.kind === 'capsule-operation-failed'
-    ) {
-      throw new PackageFailure({ document: result, text: capsuleFailure({ result, json: false }) });
-    }
+    return resolveId(index, request.id, await context.scope(request.capsuleFlag, 'observations'));
   }
 
   private async view(index: ProjectIndex, resolved: Resolved, result: CapsuleObservationsResult) {

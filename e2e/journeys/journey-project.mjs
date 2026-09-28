@@ -4,7 +4,7 @@
 // created by that journey.
 import { execFile } from 'node:child_process';
 import { copyFile, mkdir, mkdtemp, readFile, readdir, realpath, writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { join, resolve, sep } from 'node:path';
 import { promisify } from 'node:util';
 
 const execute = promisify(execFile);
@@ -16,7 +16,13 @@ const execute = promisify(execFile);
 async function packedDriverManifest({ e2eRoot, assetRoot }) {
   const text = await readFile(join(e2eRoot, '.blackbox', 'drivers', 'package.json'), 'utf8');
   const specs = Object.values(JSON.parse(text).dependencies ?? {});
-  if (specs.length === 0 || !specs.every((spec) => spec.startsWith(`file:${assetRoot}`))) {
+  // capsule-assets.sh may write `${TMPDIR}/…` with a doubled slash; compare
+  // normalized absolute paths, never raw strings.
+  const inAssetRoot = (spec) =>
+    typeof spec === 'string' &&
+    spec.startsWith('file:') &&
+    resolve(spec.slice('file:'.length)).startsWith(`${resolve(assetRoot)}${sep}`);
+  if (specs.length === 0 || !specs.every(inAssetRoot)) {
     throw new Error('journeys: drivers package.json is not from the current capsule-assets.sh run');
   }
   return text;

@@ -47,7 +47,9 @@ Every suggested next command names its capsule explicitly.
 
 `126` is reserved and not produced. A child can itself exit `125`, `126` or `127`, so the exit code alone
 never proves where a failure came from: with `--json`, stdout carries exactly one JSON document for success
-and for every failure, and that document is authoritative. `catalog validate`, `driver install` and
+and for every failure, and that document is authoritative. A capsule failure keeps the Capsule package's
+document (`capsule-not-found`, `capsule-invalid-state`, `capsule-operation-failed`) and adds the same
+`capsule` and `next` fields as the matching success document. `catalog validate`, `driver install` and
 `inst install` keep exiting `1` on failure.
 
 In human mode, Blackbox writes its own lines to stderr only. `run` passes the child's stdout to stdout and

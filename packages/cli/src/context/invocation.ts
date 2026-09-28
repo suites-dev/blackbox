@@ -1,7 +1,7 @@
 import { cliFailure } from '../cli/failure.js';
 import { writeHuman } from '../cli/output.js';
 import { readCurrentCapsule } from './current-capsule.js';
-import { ProjectIndex } from './project-index.js';
+import { ProjectIndex, type CapsuleOperation } from './project-index.js';
 import type { SearchScope } from './resolver.js';
 
 export type CapsuleSource = 'flag' | 'environment' | 'current';
@@ -34,8 +34,8 @@ export class InvocationContext {
     return this.#index;
   }
 
-  /** `--capsule`/`--session` first, then BLACKBOX_CAPSULE. */
-  explicit(flag: string | null): ResolvedCapsule | null {
+  /** The raw explicit context: `--capsule`/`--session` first, then BLACKBOX_CAPSULE. */
+  #rawExplicit(flag: string | null): ResolvedCapsule | null {
     if (flag !== null) {
       return { capsule: flag, source: 'flag' };
     }
@@ -44,8 +44,30 @@ export class InvocationContext {
       : { capsule: this.#environment, source: 'environment' };
   }
 
-  scope(flag: string | null): SearchScope {
-    const explicit = this.explicit(flag);
+  /**
+   * The explicit capsule, resolved against the registry. The returned ID is the
+   * registry's own value, never the raw flag or environment string, so user input
+   * never reaches a file-system path. An unlisted ID fails as the Capsule package
+   * would (capsule-not-found or capsule-operation-failed).
+   */
+  async explicit(
+    flag: string | null,
+    operation: CapsuleOperation,
+  ): Promise<ResolvedCapsule | null> {
+    const raw = this.#rawExplicit(flag);
+    if (raw === null) {
+      return null;
+    }
+    const index = await this.index();
+    const summary = index.capsule(raw.capsule);
+    if (summary === null) {
+      throw index.missingCapsule(raw.capsule, operation);
+    }
+    return { capsule: summary.capsule, source: raw.source };
+  }
+
+  async scope(flag: string | null, operation: CapsuleOperation): Promise<SearchScope> {
+    const explicit = await this.explicit(flag, operation);
     return explicit === null ? { kind: 'project' } : { kind: 'capsule', capsule: explicit.capsule };
   }
 
@@ -56,8 +78,8 @@ export class InvocationContext {
   }
 
   /** Explicit context, else the current capsule, else capsule-unresolved. */
-  async capsule(flag: string | null): Promise<ResolvedCapsule> {
-    const explicit = this.explicit(flag);
+  async capsule(flag: string | null, operation: CapsuleOperation): Promise<ResolvedCapsule> {
+    const explicit = await this.explicit(flag, operation);
     if (explicit !== null) {
       return explicit;
     }
@@ -78,11 +100,12 @@ export class InvocationContext {
       return null;
     }
     const index = await this.index();
-    if (index.capsule(read.capsule) === null) {
+    const summary = index.capsule(read.capsule);
+    if (summary === null) {
       warn(`unknown capsule ${read.capsule}`);
       return null;
     }
-    return read.capsule;
+    return summary.capsule;
   }
 }
 

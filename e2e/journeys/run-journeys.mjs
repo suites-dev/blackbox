@@ -10,7 +10,8 @@
 //   BLACKBOX_GOLDEN_UPDATE=1 rewrites golden files locally (refused when CI=true).
 import { execFile } from 'node:child_process';
 import { mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
-import { dirname, join } from 'node:path';
+import { tmpdir } from 'node:os';
+import { basename, dirname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 
@@ -32,8 +33,17 @@ import {
 const execute = promisify(execFile);
 const JOURNEY_ROOT = dirname(fileURLToPath(import.meta.url));
 const E2E_ROOT = dirname(JOURNEY_ROOT);
+const WORKSPACE_ROOT = dirname(E2E_ROOT);
 const STATE_FILE = join(E2E_ROOT, '.blackbox', 'capsule-assets.json');
 
+const ASSET_ROOT_NAME = /^blackbox-capsule-assets\.[A-Za-z0-9]+$/u;
+
+/**
+ * The packed CLI of the current capsule-assets.sh run. As in
+ * e2e/bash/capsule-asset-boundary.mjs, every path is rebuilt from the fixed
+ * asset layout under the OS temp directory; the state file only names which
+ * asset directory, and nothing it contains is executed or used as a path as-is.
+ */
 async function packedAssets() {
   let state;
   try {
@@ -43,8 +53,30 @@ async function packedAssets() {
       'journeys: packed CLI assets are missing; run e2e/bash/capsule-assets.sh first',
     );
   }
-  await execute(state.blackboxBin, ['--help']);
-  return { blackbox: state.blackboxBin, assetRoot: state.assetRoot };
+  const name = typeof state?.assetRoot === 'string' ? basename(state.assetRoot) : '';
+  if (!ASSET_ROOT_NAME.test(name)) {
+    throw new Error(`journeys: invalid packed asset root in ${STATE_FILE}`);
+  }
+  const assetRoot = join(tmpdir(), name);
+  const blackbox = join(assetRoot, 'consumer', 'node_modules', '.bin', 'blackbox');
+  if (resolve(state.assetRoot) !== resolve(assetRoot) || resolve(state.blackboxBin) !== blackbox) {
+    throw new Error('journeys: packed asset state does not match the fixed E2E asset layout');
+  }
+  await execute(blackbox, ['--help']);
+  return { blackbox, assetRoot };
+}
+
+/**
+ * An environment-supplied directory must resolve inside one of the directories
+ * this run owns; anything else is refused rather than written to.
+ */
+function ownedDirectory(value, roots, label) {
+  const candidate = resolve(value);
+  const owned = roots.some((root) => candidate === root || candidate.startsWith(`${root}${sep}`));
+  if (!owned) {
+    throw new Error(`journeys: ${label} must be inside ${roots.join(' or ')}: ${candidate}`);
+  }
+  return candidate;
 }
 
 async function runJourney({
@@ -140,10 +172,19 @@ async function main() {
 
 async function runSelected({ update, blackbox, assetRoot }) {
   const artifactRoot =
-    process.env.ARTIFACT_ROOT ?? (await mkdtemp(join(E2E_ROOT, '.blackbox', 'tmp', 'journeys-')));
+    process.env.ARTIFACT_ROOT === undefined
+      ? await mkdtemp(join(E2E_ROOT, '.blackbox', 'tmp', 'journeys-'))
+      : ownedDirectory(process.env.ARTIFACT_ROOT, [WORKSPACE_ROOT], 'ARTIFACT_ROOT');
   // A short root keeps <project>/.blackbox/tmp/bb-<hash>.sock under the Unix
-  // socket path limit (104 bytes on macOS, 108 on Linux).
-  const projectParent = process.env.BLACKBOX_JOURNEY_PROJECT_ROOT ?? '/tmp';
+  // socket path limit (104 bytes on macOS, 108 on Linux). This works around a
+  // Capsule package bug (long project paths truncate the manager socket path);
+  // see the PR for the tracking issue.
+  const temporaryRoots = [resolve('/tmp'), resolve(tmpdir())];
+  const projectParent = ownedDirectory(
+    process.env.BLACKBOX_JOURNEY_PROJECT_ROOT ?? '/tmp',
+    temporaryRoots,
+    'BLACKBOX_JOURNEY_PROJECT_ROOT',
+  );
   const argv = process.argv.slice(2);
   const repeatAt = argv.indexOf('--repeat');
   const repeat = repeatAt < 0 ? 1 : Number(argv[repeatAt + 1]);
