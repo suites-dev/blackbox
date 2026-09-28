@@ -31,8 +31,8 @@ catalogs:
       specifier: ^57.0.0
       version: 57.0.0
     globals:
-      specifier: ^15.14.0
-      version: 15.15.0
+      specifier: ^17.12.0
+      version: 17.12.0
     husky:
       specifier: ^9.1.7
       version: 9.1.7
@@ -117,7 +117,7 @@ importers:
         version: 57.0.0(eslint@9.39.4(jiti@2.6.1))
       globals:
         specifier: 'catalog:'
-        version: 15.15.0
+        version: 17.12.0
       husky:
         specifier: 'catalog:'
         version: 9.1.7
@@ -2437,6 +2437,10 @@ packages:
 
   globals@15.15.0:
     resolution: {integrity: sha512-7ACyT3wmyp3I61S4fG682L0VA2RGD9otkqGJIwNUMF1SWUombIIk+af1unuDYgMm082aHYwD+mzJvv9Iu8dsgg==}
+    engines: {node: '>=18'}
+
+  globals@17.12.0:
+    resolution: {integrity: sha512-cezEd/DTyyht9cvSSURyygXPfy04GtWO/5e6ZPvH7fCtjKz9PYOmuawphw1Ctd1f6C+5JypXfGD7ahNMXvevBA==}
     engines: {node: '>=18'}
 
   gopd@1.2.0:
@@ -6023,6 +6027,8 @@ snapshots:
   globals@14.0.0: {}
 
   globals@15.15.0: {}
+
+  globals@17.12.0: {}
 
   gopd@1.2.0: {}
 
