@@ -7,7 +7,7 @@ catalog:
   typescript: ~5.7.3
 
   # Node types
-  '@types/node': ^22.13.0
+  '@types/node': ^26.6.2
 
   # ESLint (Flat Config)
   eslint: ^9.19.0
@@ -16,7 +16,7 @@ catalog:
   eslint-config-prettier: ^10.0.1
   eslint-plugin-import-x: ^4.6.1
   eslint-plugin-unicorn: ^57.0.0
-  globals: ^15.14.0
+  globals: ^17.12.0
 
   # Code quality
   prettier: ^3.9.9
@@ -32,4 +32,4 @@ catalog:
   vitest: 5.0.1
 
   # Sandbox runtime
-  testcontainers: 12.0.4
+  testcontainers: 12.1.0

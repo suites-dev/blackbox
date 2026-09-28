@@ -26,14 +26,14 @@
     "test": "node scripts/run-tests.mjs"
   },
   "dependencies": {
-    "@oclif/core": "^4.14.0",
+    "@oclif/core": "^5.1.0",
     "@suites/blackbox-catalog-internal": "workspace:*",
     "@suites/blackbox-capsule-internal": "workspace:*",
     "@suites/blackbox-driver": "workspace:*",
     "@suites/blackbox-inst-runtime-node": "workspace:*",
     "@suites/blackbox-instrumentation-internal": "workspace:*",
     "@suites/blackbox-report-server-internal": "workspace:*",
-    "string-width": "4.2.3"
+    "string-width": "8.3.0"
   },
   "devDependencies": {
     "@types/node": "catalog:",
