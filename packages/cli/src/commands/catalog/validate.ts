@@ -1,6 +1,7 @@
 import { Command, Flags } from '@oclif/core';
 import { runCatalogValidate } from '@suites/blackbox-catalog-internal';
 import { renderCatalogOutput } from '../../catalog/catalog-output.js';
+import { EXIT_CODES } from '../../cli/exit-codes.js';
 
 export default class CatalogValidate extends Command {
   static override description = 'Validate the catalog and Compose inputs.';
@@ -12,7 +13,7 @@ export default class CatalogValidate extends Command {
       result: await runCatalogValidate({ projectDirectory: process.cwd() }),
     });
     if (output.failed) {
-      this.error(output.text, { exit: 1 });
+      this.error(output.text, { exit: EXIT_CODES.unchangedCommandFailure });
     }
     this.log(output.text);
   }

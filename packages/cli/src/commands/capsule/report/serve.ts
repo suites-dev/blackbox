@@ -1,10 +1,15 @@
-import { Command, Flags } from '@oclif/core';
+import { Flags } from '@oclif/core';
 import { DEFAULT_REPORT_PORT } from '@suites/blackbox-report-server-internal';
-import { capsuleReportProvider } from '../../../reporting/capsule-provider.js';
-import { openBrowser } from '../../../reporting/browser.js';
-import { serveReport } from '../../../reporting/serve.js';
 
-export default class CapsuleReportServe extends Command {
+import { OpenCommand } from '../../../operations/viewing/open-command.js';
+
+/**
+ * Hidden alias: `capsule report serve` → `open`. Without --session it shows the
+ * registry, and the browser opens only with --open. Its three lines keep
+ * today's exact text because the E2E harness parses them.
+ */
+export default class CapsuleReportServe extends OpenCommand {
+  static override hidden = true;
   static override description =
     'Start or reuse the local Capsule report viewer; the owner stays until Ctrl-C.';
   static override examples = [
@@ -25,33 +30,27 @@ export default class CapsuleReportServe extends Command {
     }),
   };
 
-  public async run(): Promise<void> {
-    const { flags } = await this.parse(CapsuleReportServe);
-    await serveReport({
-      kind: 'serve-report',
-      projectDirectory: process.cwd(),
-      provider: capsuleReportProvider({ projectDirectory: process.cwd() }),
-      port: flags.port,
-      selection:
+  protected async execute(): Promise<void> {
+    const { flags } = await this.parseInput(() => this.parse(CapsuleReportServe));
+    await this.serve({
+      target:
         flags.session === undefined
           ? { kind: 'registry' }
-          : { kind: 'report', type: 'capsule', id: flags.session },
-      announce: ({ kind, url }) => {
-        this.log(`Blackbox reports: ${url}`);
-        this.log(`Viewer ownership: ${kind === 'report-server-reused' ? 'reused' : 'started'}`);
-        if (kind === 'report-server-started') {
-          this.log('Press Ctrl-C to stop the viewer. Capsules keep running.');
-        }
+          : { kind: 'capsule', capsule: flags.session },
+      port: flags.port,
+      browser: flags.open,
+      presentation: {
+        announce: ({ kind, url }) => {
+          this.human([
+            `Blackbox reports: ${url}`,
+            `Viewer ownership: ${kind === 'report-server-reused' ? 'reused' : 'started'}`,
+            ...(kind === 'report-server-started'
+              ? ['Press Ctrl-C to stop the viewer. Capsules keep running.']
+              : []),
+          ]);
+        },
+        browserResult: () => undefined,
       },
-      browser: flags.open
-        ? {
-            kind: 'open',
-            launch: openBrowser,
-            warn: ({ message }) => {
-              this.warn(message);
-            },
-          }
-        : { kind: 'none' },
     });
   }
 }

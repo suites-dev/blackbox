@@ -118,6 +118,38 @@ jobs:
             log?=.blackbox/tmp/ci-e2e-transport/archive.log
             logs?=.blackbox/tmp/ci-e2e-commands
 
+      # Golden CLI journeys run after the capsule journey's evidence is archived:
+      # their asset preparation resets the e2e project's retained experiments.
+      # The capsule step cleans up its packed assets, so this step rebuilds its
+      # own prerequisites.
+      - name: Run CLI journeys
+        id: journeys
+        if: always() && steps.build.outcome == 'success'
+        timeout-minutes: 25
+        env:
+          ARTIFACT_ROOT: ci-evidence/e2e/journeys
+        # ci-evidence.mjs only wraps its approved checks; the journey log is
+        # teed into this step's own evidence directory instead.
+        run: |
+          set -o pipefail
+          mkdir -p ci-evidence/e2e/journeys/logs
+          pnpm test:e2e:journeys 2>&1 | tee ci-evidence/e2e/journeys/logs/command.log
+
+      - name: Retain journey evidence
+        id: journey_evidence
+        if: always()
+        uses: ./.github/actions/ci-evidence
+        with:
+          lane: e2e
+          project: journeys
+          evidence-dir: ci-evidence/e2e/journeys
+          setup-result: ${{ steps.install.outcome }}
+          result: ${{ steps.journeys.outcome }}
+          command: pnpm test:e2e:journeys
+          expected: |
+            log=ci-evidence/e2e/journeys/logs/command.log
+            logs?=ci-evidence/e2e/journeys/journeys
+
       - name: Enforce test and retention outcomes
         if: always()
         env:
@@ -128,8 +160,11 @@ jobs:
           TEST_OUTCOME: ${{ steps.tests.outcome }}
           ARCHIVE_OUTCOME: ${{ steps.archive.outcome }}
           EVIDENCE_OUTCOME: ${{ steps.evidence.outcome }}
+          JOURNEYS_OUTCOME: ${{ steps.journeys.outcome }}
+          JOURNEY_EVIDENCE_OUTCOME: ${{ steps.journey_evidence.outcome }}
         run: |
           for outcome in "$TRANSPORT_TEST_OUTCOME" "$INSTALL_OUTCOME" "$BUILD_OUTCOME" "$TYPECHECK_OUTCOME" \
-            "$TEST_OUTCOME" "$ARCHIVE_OUTCOME" "$EVIDENCE_OUTCOME"; do
+            "$TEST_OUTCOME" "$ARCHIVE_OUTCOME" "$EVIDENCE_OUTCOME" "$JOURNEYS_OUTCOME" \
+            "$JOURNEY_EVIDENCE_OUTCOME"; do
             [[ "$outcome" == success ]] || exit 1
           done

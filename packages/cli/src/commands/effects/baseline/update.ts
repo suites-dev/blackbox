@@ -1,6 +1,9 @@
 import { Command, Flags } from '@oclif/core';
 
+import { EXIT_CODES } from '../../../cli/exit-codes.js';
+
 export default class EffectsBaselineUpdate extends Command {
+  static override hidden = true;
   static override description = 'Explicitly accept an eligible exact-run baseline.';
   static override flags = {
     run: Flags.string({ required: true }),
@@ -10,7 +13,7 @@ export default class EffectsBaselineUpdate extends Command {
     await this.parse(EffectsBaselineUpdate);
     this.error(
       'effects baseline update: not implemented yet. Effects baseline acceptance has no backend yet.',
-      { exit: 3 },
+      { exit: EXIT_CODES.reserved },
     );
   }
 }

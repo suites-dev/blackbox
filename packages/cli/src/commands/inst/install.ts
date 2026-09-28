@@ -5,6 +5,8 @@ import {
   instrumentationDirectoryRelativePath,
 } from '@suites/blackbox-instrumentation-internal';
 
+import { EXIT_CODES } from '../../cli/exit-codes.js';
+
 export default class InstInstall extends Command {
   static override description = 'Install project-local OpenTelemetry runtime instrumentation.';
   static override flags = {
@@ -23,7 +25,7 @@ export default class InstInstall extends Command {
       providers: [nodeRuntimeProvider],
     });
     if (!result.ok) {
-      this.error(result.message, { exit: 1 });
+      this.error(result.message, { exit: EXIT_CODES.unchangedCommandFailure });
     }
     const state =
       result.fileAction === 'unchanged' && result.dependencyAction === 'unchanged'

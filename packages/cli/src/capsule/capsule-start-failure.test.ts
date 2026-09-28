@@ -23,7 +23,7 @@ for (const mode of ['--silent', '--non-interactive', '--interactive']) {
           '--json',
         ],
       });
-      assert.equal(result.status, 1, result.stderr);
+      assert.equal(result.status, 125, result.stderr);
       const failure = JSON.parse(result.stdout);
       assert.equal(failure.kind, 'capsule-operation-failed');
       assert.equal(failure.operation, 'start');
@@ -33,6 +33,8 @@ for (const mode of ['--silent', '--non-interactive', '--interactive']) {
         throw new Error('Expected session ID');
       }
       assert.match(sessionId, /^[a-z]+-[a-z]+-[a-z]+-[0-9]{12}$/u);
+      assert.equal(failure.capsule, sessionId);
+      assert.deepEqual(failure.next, []);
       assert.doesNotMatch(result.stdout + result.stderr, /private-test-value/u);
       assert.equal(result.stdout.includes('\u001b'), false);
       if (mode === '--interactive') {
