@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 
 import { BashSession, JourneySessionTimeout, STATUS_SENTINEL } from './journey-session.mjs';
-import { createNormalizer, normalizeWhitespace, parseGolden } from './journey-format.mjs';
+import { CAPTURES, createNormalizer, normalizeWhitespace, parseGolden } from './journey-format.mjs';
 import { cleanupJourneyProject } from './journey-project.mjs';
 import { runItems } from './journey-steps.mjs';
 
@@ -69,7 +69,7 @@ void test('capture reads the raw output of the previous command and never re-run
   await withSession(async (session, cwd) => {
     const items = parseGolden(
       '$ echo ran >> runs.txt; echo capsule calm-comet-ada-000000000001 is up\n' +
-        '#! capture CAPSULE_1 /^capsule (\\S+) is up/\n' +
+        '#! capture CAPSULE_1 capsule-up\n' +
         '$ echo $CAPSULE_1\n',
     );
     const executed = await runItems({ items, session, raw: [] });
@@ -80,9 +80,15 @@ void test('capture reads the raw output of the previous command and never re-run
 
 void test('a capture that does not match fails the journey', async () => {
   await withSession(async (session) => {
-    const items = parseGolden('$ echo nothing here\n#! capture X /^capsule (\\S+)/\n');
+    const items = parseGolden('$ echo nothing here\n#! capture X capsule-up\n');
     await assert.rejects(runItems({ items, session, raw: [] }), /capture X did not match/u);
   });
+});
+
+void test('a capture names a fixed extractor; free-form patterns are refused', () => {
+  assert.equal(parseGolden('#! capture X activity\n')[0].pattern, CAPTURES.activity);
+  assert.throws(() => parseGolden('#! capture X nope\n'), /Unknown capture nope/u);
+  assert.throws(() => parseGolden('#! capture X /^(.*)$/\n'), /Unknown directive/u);
 });
 
 void test('#! timeout applies to the next command', async () => {

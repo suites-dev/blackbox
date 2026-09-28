@@ -1,9 +1,20 @@
 // Golden journey format, normalization and comparison.
 //
-//   $ <cmd>                     compared command (stdout and stderr combined)
-//   #! capture <VAR> /<regex>/  set VAR from the previous command's RAW output
-//   #! timeout <seconds>        timeout for the next command
-//   anything else               expected output of the preceding command
+//   $ <cmd>                       compared command (stdout and stderr combined)
+//   #! capture <VAR> <extractor>  set VAR from the previous command's RAW output
+//   #! timeout <seconds>          timeout for the next command
+//   anything else                 expected output of the preceding command
+
+/**
+ * The only captures a golden can name. Patterns are fixed here, never built
+ * from golden text, and each takes its first group from the first matching line.
+ */
+export const CAPTURES = Object.freeze({
+  'capsule-up': /^capsule (\S+) is up/mu,
+  activity: /^activity ([0-9a-f-]+) · /mu,
+  'current-row': /^\* (\S+) /mu,
+  'single-token': /^(\S+)$/mu,
+});
 
 export const DEFAULT_TIMEOUT_MS = 120_000;
 export const UP_TIMEOUT_MS = 300_000;
@@ -30,11 +41,15 @@ export function parseGolden(text) {
 }
 
 function parseDirective(line) {
-  const capture = /^#! capture ([A-Za-z_][A-Za-z0-9_]*) \/(.{1,200})\/$/u.exec(line);
+  const capture = /^#! capture ([A-Za-z_][A-Za-z0-9_]*) ([a-z-]+)$/u.exec(line);
   if (capture !== null) {
-    // The pattern is repository content: golden files are read only from
-    // e2e/journeys and reviewed like code. The length bound keeps it a capture.
-    return { kind: 'capture', line, variable: capture[1], pattern: new RegExp(capture[2], 'mu') };
+    const pattern = CAPTURES[capture[2]];
+    if (pattern === undefined) {
+      throw new Error(
+        `Unknown capture ${capture[2]}; expected one of ${Object.keys(CAPTURES).join(', ')}`,
+      );
+    }
+    return { kind: 'capture', line, variable: capture[1], pattern };
   }
   const timeout = /^#! timeout (\d+)$/u.exec(line);
   if (timeout !== null) {

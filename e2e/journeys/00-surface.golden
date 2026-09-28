@@ -8,7 +8,7 @@ capsule <CAPSULE_1> is up · subscription-system · 8 services · <DUR>
 current capsule: <CAPSULE_1>
 entrypoint: <URL>
 → blackbox run --capsule <CAPSULE_1> --via public-api -- curl /health
-#! capture CAPSULE_1 /^capsule (\S+) is up/
+#! capture CAPSULE_1 capsule-up
 $ blackbox ls
   CAPSULE  SYSTEM  STATE  STARTED  ACTIVITIES  TITLE
 * <CAPSULE_1>  subscription-system  running  <TIME>  0  subscription-system
@@ -16,7 +16,7 @@ $ blackbox run --via public-api -- curl -fsS /health
 {"status":"ready"}
 activity <ACT_1> · capsule <CAPSULE_1> · stimulus · via public-api · host · exit 0 · <DUR>
 → blackbox show <ACT_1> --capsule <CAPSULE_1>
-#! capture ACT_1 /^activity ([0-9a-f-]+) · /
+#! capture ACT_1 activity
 $ blackbox show $ACT_1
 activity <ACT_1>
   capsule  <CAPSULE_1> (subscription-system, running)
@@ -33,7 +33,7 @@ capsule <CAPSULE_2> is up · payment-mock · 1 services · <DUR>
 current capsule: <CAPSULE_2>
 entrypoint: <URL>
 → blackbox run --capsule <CAPSULE_2> -- curl <URL>
-#! capture CAPSULE_2 /^capsule (\S+) is up/
+#! capture CAPSULE_2 capsule-up
 $ blackbox ls
   CAPSULE  SYSTEM  STATE  STARTED  ACTIVITIES  TITLE
 * <CAPSULE_2>  payment-mock  running  <TIME>  0  payment-mock

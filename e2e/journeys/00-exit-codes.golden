@@ -4,14 +4,14 @@ $ jq -c '{kind, current, warnings, next: (.next | length), sameId: (.capsule == 
 {"kind":"capsule-started","current":"set","warnings":[],"next":1,"sameId":true}
 $ jq -r .capsule up.json
 <CAPSULE_1>
-#! capture CAPSULE_1 /^(\S+)$/
+#! capture CAPSULE_1 single-token
 $ blackbox capsule start --system payment-mock --silent --json | jq -c 'keys - ["kind","capsule","current","warnings","next"]'
 ["artifactRoot","composeProject","containers","entrypoint","networks","readiness","sessionId","system","title","volumes"]
 $ blackbox ls
   CAPSULE  SYSTEM  STATE  STARTED  ACTIVITIES  TITLE
 * <CAPSULE_2>  payment-mock  running  <TIME>  0  payment-mock
   <CAPSULE_1>  payment-mock  running  <TIME>  0  payment-mock
-#! capture CAPSULE_2 /^\* (\S+) /
+#! capture CAPSULE_2 current-row
 $ blackbox use $CAPSULE_1
 current capsule: <CAPSULE_1> (payment-mock, running)
 $ blackbox run -- sh -c 'exit 1'
