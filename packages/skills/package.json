@@ -47,5 +47,13 @@
   },
   "license": "Apache-2.0",
   "engines": { "node": ">=22.15" },
-  "publishConfig": { "access": "public", "provenance": true }
+  "publishConfig": { "access": "public", "provenance": true },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/suites-dev/blackbox.git",
+    "directory": "packages/skills"
+  },
+  "homepage": "https://github.com/suites-dev/blackbox/tree/main/packages/skills#readme",
+  "bugs": { "url": "https://github.com/suites-dev/blackbox/issues" },
+  "author": "Suites"
 }

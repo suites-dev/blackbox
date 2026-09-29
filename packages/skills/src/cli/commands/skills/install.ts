@@ -28,6 +28,9 @@ export default class SkillsInstall extends Command {
       ...(flags.claude ? ['claude' as const] : []),
       ...(flags.cursor ? ['cursor' as const] : []),
     ])] as SkillAgent[];
+    if (agents.includes('codex') && agents.includes('cursor')) {
+      agents.splice(agents.indexOf('cursor'), 1);
+    }
     if (agents.length === 0 && flags.yes) {
       agents.push(...AGENTS);
     }

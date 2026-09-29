@@ -87,7 +87,12 @@ async function publishSkill(
       await rename(stagedTarget, target);
       return 'installed';
     } catch (error) {
-      if (typeof error === 'object' && error !== null && 'code' in error && error.code === 'EEXIST') {
+      if (
+        typeof error === 'object' &&
+        error !== null &&
+        'code' in error &&
+        (error.code === 'EEXIST' || error.code === 'ENOTEMPTY')
+      ) {
         return 'occupied';
       }
       throw error;
