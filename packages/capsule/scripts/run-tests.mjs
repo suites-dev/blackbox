@@ -71,6 +71,7 @@ try {
   if (vitest !== 0) process.exitCode = vitest;
   else {
     await symlink(join(packageDirectory, 'node_modules'), join(output, 'node_modules'), 'dir');
+    await symlink(join(packageDirectory, 'dist'), join(output, 'dist'), 'dir');
     const packageManifest = await readFile(join(packageDirectory, 'package.json'), 'utf8');
     await writeFile(join(output, 'package.json'), packageManifest);
     const compile = await run('pnpm', [
