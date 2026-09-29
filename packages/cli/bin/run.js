@@ -8,9 +8,6 @@ try {
     process.cwd(),
     fileURLToPath(new URL('..', import.meta.url)),
   );
-  if (plugins !== null) {
-    process.env.NODE_ENV ??= 'development';
-  }
   await run(process.argv.slice(2), {
     root: fileURLToPath(new URL('..', import.meta.url)),
     pluginAdditions:
