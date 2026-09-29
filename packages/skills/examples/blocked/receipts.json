@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "kind": "receipt-bundle",
+  "provenance": {
+    "kind": "example",
+    "description": "No live execution."
+  },
+  "receipts": []
+}

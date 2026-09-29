@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "kind": "skill-bundle",
+  "name": "blackbox-discovery",
+  "version": "0.1.0",
+  "entrypoint": "SKILL.md",
+  "skills": [
+    "skills/async/SKILL.md",
+    "skills/audit/SKILL.md",
+    "skills/boundary/SKILL.md",
+    "skills/capsule/SKILL.md",
+    "skills/catalog/SKILL.md",
+    "skills/ci/SKILL.md",
+    "skills/dependencies/SKILL.md",
+    "skills/infrastructure/SKILL.md",
+    "skills/initial-setup/SKILL.md",
+    "skills/io-environment/SKILL.md",
+    "skills/preflight/SKILL.md",
+    "skills/reconcile/SKILL.md",
+    "skills/repair/SKILL.md",
+    "skills/repository/SKILL.md"
+  ],
+  "schemas": [
+    "schemas/discovery-audit.v1.json",
+    "schemas/inspector-result.v1.json",
+    "schemas/receipt-bundle.v1.json"
+  ],
+  "diagrams": [
+    "diagrams/audit-pipeline.mmd",
+    "diagrams/capsule-sequence.mmd",
+    "diagrams/discovery-state.mmd",
+    "diagrams/evidence-model.mmd",
+    "diagrams/permission-boundaries.mmd",
+    "diagrams/queue-flow.mmd",
+    "diagrams/skill-router.mmd",
+    "diagrams/sut-reduction.mmd"
+  ]
+}

@@ -1,0 +1,21 @@
+flowchart TD
+  R["Discovery router"] --> D{"Existing or partial setup"}
+  D -->|No| I["Initial setup"]
+  D -->|Yes| C["Reconcile existing setup"]
+  I --> E["Repository inventory"]
+  C --> E
+  E --> L["Dependency inspector router"]
+  E --> CI["CI inspection and attachment"]
+  E --> IA["Infrastructure router"]
+  E --> IO["I/O and environment"]
+  L --> B["Behavioral boundary"]
+  CI --> B
+  IA --> B
+  IO --> B
+  B --> K["Catalog authoring"]
+  K --> P["Static preflight"]
+  P --> V["Authorized Capsule validation"]
+  V --> A["Async completion when required"]
+  P --> Q["Structured audit"]
+  A --> Q
+  Q --> X["Repair the failed stage"]

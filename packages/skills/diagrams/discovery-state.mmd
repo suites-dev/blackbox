@@ -1,0 +1,20 @@
+stateDiagram-v2
+  [*] --> Detect
+  Detect --> Initial: No existing assets
+  Detect --> Reconcile: Existing or partial assets
+  Initial --> Inspect
+  Reconcile --> Inspect
+  Inspect --> Blocked: Missing access or prerequisites
+  Inspect --> SelectBoundary
+  SelectBoundary --> AuthorCatalog: Scoped edit authorized
+  SelectBoundary --> Audit: Inventory only
+  AuthorCatalog --> Preflight
+  Preflight --> Blocked: Unsupported or invalid setup
+  Preflight --> Audit: Static task complete
+  Preflight --> Acquire: Live scope authorized
+  Acquire --> Exercise: Readiness and setup established
+  Acquire --> Cleanup: Partial startup failure
+  Exercise --> Cleanup: Terminal check or timeout
+  Cleanup --> Audit: Retain all outcomes
+  Blocked --> Audit
+  Audit --> [*]

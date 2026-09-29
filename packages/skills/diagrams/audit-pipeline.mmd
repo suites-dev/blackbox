@@ -1,0 +1,12 @@
+flowchart LR
+  A["Agent-proposed audit"] --> S["Closed JSON schema"]
+  S --> G["Graph, boundary and outcome consistency"]
+  R["Runner-owned sanitized raw records"] --> N["Version-specific receipt normalization"]
+  N --> L["Scope, activity and witness linkage"]
+  G --> L
+  L --> O["Accepted structural and record consistency"]
+  L --> F["Rejected with diagnostics"]
+  O --> H["Caller authenticates provenance and evaluates accepted predicate"]
+  E["Illustrative records"] --> N
+  E -.-> MARK["Example provenance remains explicit"]
+  MARK --> O

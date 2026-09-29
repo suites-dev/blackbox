@@ -1,0 +1,19 @@
+flowchart TD
+  Q["Fix accepted behavior and initial state"] --> S["Forward input reachability intersects backward terminal reachability"]
+  S --> C["Expand startup, state, observation and cleanup prerequisites"]
+  C --> U{"Unresolved required dependency"}
+  U -->|Yes| R["Retain dependency and report uncertainty"]
+  R --> P["Source-backed candidate boundary"]
+  U -->|No| P
+  P --> A{"Execution authorized"}
+  A -->|No| AUD["Return unexercised audit"]
+  A -->|Yes| BASE["Fresh positive baseline"]
+  BASE --> TRY["Propose one admissible removal group"]
+  TRY --> TEST["Fresh state and unchanged terminal predicates"]
+  TEST --> GOOD{"Behavior, observation and cleanup supported"}
+  GOOD -->|Yes| KEEP["Retain scoped reduction and receipts"]
+  GOOD -->|No or inconclusive| RESTORE["Restore group and record limitation"]
+  KEEP --> BUDGET{"Budget remaining"}
+  RESTORE --> BUDGET
+  BUDGET -->|Yes| TRY
+  BUDGET -->|No| DONE["Selected boundary, not a universal minimum"]

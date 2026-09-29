@@ -1,0 +1,236 @@
+{
+  "schemaVersion": 1,
+  "kind": "discovery-audit",
+  "mode": "initial",
+  "task": {
+    "kind": "exercise",
+    "claim": {
+      "id": "claim-http",
+      "question": "Does the illustrative stimulus produce its accepted terminal result?",
+      "acceptedBy": "Illustrative fixture only",
+      "predicate": "A matching terminal record exists for the unique business identifier.",
+      "entryIds": [
+        "api"
+      ],
+      "terminalIds": [
+        "postgres"
+      ],
+      "requiredObservationIds": [
+        "api",
+        "billing",
+        "postgres"
+      ],
+      "businessId": "http-attempt-1",
+      "timeoutMs": 10000
+    }
+  },
+  "project": {
+    "repository": "example/application",
+    "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  "catalog": {
+    "kind": "selected",
+    "entryId": "http-example",
+    "schemaId": "https://schemas.suites.dev/blackbox/config/v1",
+    "digest": "b5319d1ef6b80e077af0578e305a6146e8783ac8eec10bc0030b5fcd1485fe06"
+  },
+  "approvals": [],
+  "evidence": [
+    {
+      "kind": "source",
+      "id": "src-1",
+      "repository": "example/application",
+      "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "path": "compose.yaml",
+      "locator": "services",
+      "assertion": "Illustrative application topology, not a live repository inspection."
+    }
+  ],
+  "graph": {
+    "nodes": [
+      {
+        "id": "api",
+        "label": "api",
+        "ownership": "project",
+        "lifecycle": "capsule-owned",
+        "relevance": "required",
+        "evidenceIds": [
+          "src-1"
+        ],
+        "kind": "participant",
+        "runtime": "node",
+        "service": {
+          "kind": "resolved",
+          "value": "api"
+        }
+      },
+      {
+        "id": "billing",
+        "label": "billing",
+        "ownership": "project",
+        "lifecycle": "capsule-owned",
+        "relevance": "required",
+        "evidenceIds": [
+          "src-1"
+        ],
+        "kind": "participant",
+        "runtime": "node",
+        "service": {
+          "kind": "resolved",
+          "value": "billing"
+        }
+      },
+      {
+        "id": "postgres",
+        "label": "postgres",
+        "ownership": "project",
+        "lifecycle": "capsule-owned",
+        "relevance": "required",
+        "evidenceIds": [
+          "src-1"
+        ],
+        "kind": "resource",
+        "resourceType": "database",
+        "protocol": "postgresql"
+      }
+    ],
+    "edges": [
+      {
+        "id": "flow-0",
+        "from": "api",
+        "to": "billing",
+        "evidenceIds": [
+          "src-1"
+        ],
+        "kind": "behavioral",
+        "protocol": "application",
+        "operation": "illustrative flow"
+      },
+      {
+        "id": "flow-1",
+        "from": "billing",
+        "to": "postgres",
+        "evidenceIds": [
+          "src-1"
+        ],
+        "kind": "behavioral",
+        "protocol": "application",
+        "operation": "illustrative flow"
+      },
+      {
+        "id": "requires-0",
+        "from": "api",
+        "to": "billing",
+        "evidenceIds": [
+          "src-1"
+        ],
+        "kind": "requires",
+        "phase": "execution",
+        "necessity": "mandatory",
+        "condition": "Always required for this example."
+      },
+      {
+        "id": "requires-1",
+        "from": "billing",
+        "to": "postgres",
+        "evidenceIds": [
+          "src-1"
+        ],
+        "kind": "requires",
+        "phase": "execution",
+        "necessity": "mandatory",
+        "condition": "Always required for this example."
+      }
+    ]
+  },
+  "boundary": {
+    "kind": "selected",
+    "nodeIds": [
+      "api",
+      "billing",
+      "postgres"
+    ],
+    "excluded": [],
+    "substitutions": [],
+    "unresolvedRequiredIds": [],
+    "rationale": "Illustrative input-to-terminal slice with required state.",
+    "confidence": {
+      "kind": "medium",
+      "reasons": [
+        "Source-shaped fixture; no actual application was run."
+      ],
+      "evidenceIds": [
+        "src-1"
+      ]
+    }
+  },
+  "environment": [],
+  "execution": {
+    "kind": "capsule",
+    "capsuleId": "example-http",
+    "attemptId": "example-attempt-1",
+    "activityIds": [
+      "activity-stimulus",
+      "activity-terminal"
+    ]
+  },
+  "stages": {
+    "catalog": {
+      "kind": "passed",
+      "receiptIds": [
+        "r-catalog"
+      ]
+    },
+    "acquisition": {
+      "kind": "passed",
+      "receiptIds": [
+        "r-acquisition"
+      ]
+    },
+    "readiness": {
+      "kind": "passed",
+      "receiptIds": [
+        "r-readiness"
+      ]
+    },
+    "setup": {
+      "kind": "not-required",
+      "reason": "The illustrative fixture starts with fresh state."
+    },
+    "stimulus": {
+      "kind": "passed",
+      "receiptIds": [
+        "r-stimulus"
+      ]
+    },
+    "terminal": {
+      "kind": "passed",
+      "receiptIds": [
+        "r-terminal"
+      ]
+    },
+    "observation": {
+      "kind": "passed",
+      "receiptIds": [
+        "r-observation"
+      ]
+    },
+    "cleanup": {
+      "kind": "passed",
+      "receiptIds": [
+        "r-cleanup"
+      ]
+    }
+  },
+  "operability": {
+    "kind": "operable",
+    "claimId": "claim-http"
+  },
+  "outcome": {
+    "kind": "complete"
+  },
+  "limitations": [
+    "This is an illustrative contract vector. It is not a real Capsule run."
+  ],
+  "nextActions": []
+}

@@ -1,0 +1,13 @@
+flowchart LR
+  F["Fresh namespace and unique business ID"] --> I["Input queue"]
+  I -->|One message| W["Worker participant"]
+  W --> DB["Required durable state"]
+  W --> O["Output queue"]
+  O -->|Matching payload and business ID| T["Bounded terminal inspection"]
+  P["Recorded stimulus activity"] --> I
+  W -.-> TR["Possibly separate downstream trace"]
+  TR --> C["Same Capsule evidence scope"]
+  P --> C
+  T --> C
+  C --> A["Audit preserves causality and coverage limits"]
+  T --> R["Owned-state cleanup"]
