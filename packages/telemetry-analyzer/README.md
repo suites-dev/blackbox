@@ -82,6 +82,14 @@ normalizes every case twice from a deep-frozen input, compares the bytes with th
 golden, validates the result against the schema, and checks every occurrence against
 an independent walk of the input spans.
 
+[`src/testing/subscription.test.ts`](src/testing/subscription.test.ts) adds hand-written
+expectations for the real capture: the total span count, the SQS send and its HTTP
+transport child as distinct occurrences, and a re-delivered fragment that merges without
+changing counts. [`src/testing/property.test.ts`](src/testing/property.test.ts) checks
+seeded properties with an in-house PRNG: output independent of fragment, resource,
+scope, and span order; repeated delivery never changing counts; and traces split across
+fragments.
+
 Expected files are regenerated only on explicit request, and every regenerated line
 is reviewed:
 

@@ -102,3 +102,45 @@ describe('occurrence identity and duplicate delivery', () => {
     expect(result.limitations).toEqual([]);
   });
 });
+
+describe('OTLP int64 encodings', () => {
+  it('reads an int64 encoded as a JSON number, as the JavaScript exporter sends it', () => {
+    const rawJson = (value: string) =>
+      JSON.stringify(request('api', [get])).replace(
+        '"attributes":[]',
+        `"attributes":[{"key":"net.peer.port","value":{"intValue":${value}}}]`,
+      );
+    const decode = (value: string) =>
+      extractRows([
+        { kind: 'otlp-json-fragments', fragments: [{ sequence: 1, rawJson: rawJson(value) }] },
+      ]).rows[0].attributes;
+    expect(rawJson('50910')).toContain('{"intValue":50910}');
+    expect(decode('50910')).toEqual([
+      { key: 'net.peer.port', value: { kind: 'int', value: '50910' } },
+    ]);
+    expect(decode('"50910"')).toEqual(decode('50910'));
+  });
+});
+
+describe('conflict ordering', () => {
+  it('orders several conflicting-duplicate limitations by (service, trace, span), not by arrival', () => {
+    const changed = (spanId: string) => ({
+      ...get,
+      spanId,
+      attributes: [status({ intValue: 500 })],
+    });
+    const late = { ...get, spanId: 'ffffffffffffffff' };
+    const early = { ...get, spanId: '1111111111111111' };
+    const result = occurrencesOf([
+      { sequence: 1, request: request('api', [late, early]) },
+      {
+        sequence: 2,
+        request: request('api', [changed('ffffffffffffffff'), changed('1111111111111111')]),
+      },
+    ]);
+    expect(result.limitations.map(({ spanId }) => spanId)).toEqual([
+      '1111111111111111',
+      'ffffffffffffffff',
+    ]);
+  });
+});
