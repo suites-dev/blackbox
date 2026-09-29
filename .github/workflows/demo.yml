@@ -1,0 +1,72 @@
+name: Demo
+
+# Plays the maintainer demo storyboard (e2e/bash/capsule-demo.yaml) end to end,
+# without pauses or a browser, so it stays in step with the CLI. It uses the same
+# packed CLI and Docker-backed system as the Capsule E2E, in its own workflow.
+on:
+  pull_request:
+    branches:
+      - main
+      - 'release/**'
+      - 'agent/**'
+  workflow_dispatch:
+    inputs:
+      target_branch:
+        description: 'Branch to run the demo from'
+        required: true
+        type: string
+        default: 'release/v0.0.1-alpha'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: demo-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CI: true
+  NO_COLOR: 1
+  PNPM_VERSION: 9.15.4
+  NODE_VERSION: 22.x
+
+jobs:
+  demo:
+    name: Capsule demo
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.target_branch || github.ref }}
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        timeout-minutes: 15
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        timeout-minutes: 15
+        run: pnpm build
+
+      - name: Prepare packed CLI assets
+        timeout-minutes: 15
+        run: bash e2e/bash/capsule-assets.sh
+
+      # The player stops the demo Capsule and removes the packed assets on exit,
+      # whether the storyboard passes or fails.
+      - name: Play the demo storyboard
+        timeout-minutes: 20
+        run: bash e2e/bash/capsule-player.sh --no-pause --no-color --no-browser
