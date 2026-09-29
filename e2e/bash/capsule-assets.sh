@@ -83,6 +83,7 @@ printf '{"name":"blackbox-capsule-packed-consumer","private":true,"type":"module
 PACKED_PACKAGE_NAMES=()
 DRIVER_TARBALL=""
 TELEMETRY_TARBALL=""
+CLI_CONTRACT_TARBALL=""
 for package in "${PHASE_ONE_PACKAGES[@]}"; do
   package_directory="$REPO_ROOT/packages/$package"
   package_name="$(jq -er '.name' "$package_directory/package.json")"
@@ -104,6 +105,7 @@ for package in "${PHASE_ONE_PACKAGES[@]}"; do
   PACKED_PACKAGE_NAMES+=("$package_name")
   if [[ "$package" == driver ]]; then DRIVER_TARBALL="$archive"; fi
   if [[ "$package" == telemetry ]]; then TELEMETRY_TARBALL="$archive"; fi
+  if [[ "$package" == cli-contract ]]; then CLI_CONTRACT_TARBALL="$archive"; fi
 done
 
 printf '%s[blackbox]%s Install only packed package artifacts into an external consumer.\n' \
@@ -143,7 +145,8 @@ cat >"$DRIVER_DIRECTORY/package.json" <<EOF
   "type": "module",
   "dependencies": {
     "@suites/blackbox-driver": "file:$DRIVER_TARBALL",
-    "@suites/blackbox-telemetry": "file:$TELEMETRY_TARBALL"
+    "@suites/blackbox-telemetry": "file:$TELEMETRY_TARBALL",
+    "@suites/blackbox-cli-contract": "file:$CLI_CONTRACT_TARBALL"
   }
 }
 EOF
@@ -152,6 +155,11 @@ EOF
   "$BLACKBOX_BIN" driver install --runtime node --json \
     >"$ARTIFACT_ROOT/driver-install.json"
 )
+if ! jq -e '.kind == "driver-runtime-installation-succeeded" and .ok == true' \
+  "$ARTIFACT_ROOT/driver-install.json" >/dev/null; then
+  cat "$ARTIFACT_ROOT/driver-install.json" >&2
+  exit 1
+fi
 jq -e --arg spec "file:$DRIVER_TARBALL" '
   .kind == "driver-runtime-installation-succeeded" and
   .dependency.kind == "driver-sdk-installed" and
