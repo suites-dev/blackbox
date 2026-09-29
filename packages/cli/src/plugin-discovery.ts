@@ -69,6 +69,30 @@ async function pluginsFromManifest(
   return plugins;
 }
 
+async function discoverFromAncestors(
+  startDirectory: string,
+): Promise<{ readonly path: string; readonly names: readonly string[] } | null> {
+  let current = startDirectory;
+  for (;;) {
+    try {
+      const manifestPath = join(current, 'package.json');
+      const manifest = JSON.parse(await readFile(manifestPath, 'utf8')) as Record<string, unknown>;
+      const plugins = await pluginsFromManifest(current, {
+        dependencies: dependencyMap(manifest.dependencies),
+        devDependencies: dependencyMap(manifest.devDependencies),
+      });
+      if (plugins.length > 0) {
+        return { path: current, names: plugins };
+      }
+    } catch {
+      // An ancestor without a readable manifest is not a composition root.
+    }
+    const parent = dirname(current);
+    if (parent === current) {return null;}
+    current = parent;
+  }
+}
+
 export async function discoverProjectCliPlugins(
   startDirectory = process.cwd(),
   installationDirectory = startDirectory,
@@ -85,6 +109,14 @@ export async function discoverProjectCliPlugins(
     if (plugins.length > 0) {
       return { path: projectPath, names: plugins };
     }
+  }
+
+  // A packed CLI is installed below the consumer's node_modules directory.
+  // The consumer manifest, rather than the CLI package manifest, owns the
+  // feature dependencies that compose its command surface.
+  const installed = await discoverFromAncestors(installationDirectory);
+  if (installed !== null) {
+    return installed;
   }
 
   // A source checkout is a deliberate composition root. It supplies the
