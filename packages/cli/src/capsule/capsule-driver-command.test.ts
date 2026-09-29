@@ -59,7 +59,7 @@ function completedDriverOutcome() {
   } as const;
 }
 
-void test('exec sends a driver target and renders the delegated process result', async () => {
+void test('run sends a driver target and renders the delegated process result', async () => {
   const fixture = await commandFixture('running');
   const outcome = completedDriverOutcome();
   const manager = await fakeManager({ socketPath: fixture.socketPath, outcome });

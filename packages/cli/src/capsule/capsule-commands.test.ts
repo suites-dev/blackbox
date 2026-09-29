@@ -14,7 +14,7 @@ function durationOf(stderr: string): string {
   return match === null ? 'no duration' : match[1];
 }
 
-void test('exec forwards literal host argv and purpose through real CLI-to-manager IPC', async () => {
+void test('run forwards literal host argv and purpose through real CLI-to-manager IPC', async () => {
   const fixture = await commandFixture('running');
   const outcome = {
     kind: 'exited',
@@ -64,7 +64,7 @@ void test('exec forwards literal host argv and purpose through real CLI-to-manag
   }
 });
 
-void test('JSON exec stdout is one parseable document even when the delegated command prints', async () => {
+void test('JSON run stdout is one parseable document even when the delegated command prints', async () => {
   const fixture = await commandFixture('running');
   const outcome = {
     kind: 'exited',
@@ -128,7 +128,7 @@ void test('signaled host commands remain failures and preserve diagnostic output
   }
 });
 
-void test('stop is idempotent for an exact already-stopped session', async () => {
+void test('down is idempotent for an exact already-stopped session', async () => {
   const fixture = await commandFixture('stopped');
   try {
     const result = await runCli({
@@ -174,7 +174,7 @@ void test('usage errors are rejected before any Capsule acquisition', async () =
       assert.equal(result.status, 2, result.stderr);
       assert.equal(result.stdout, '');
     }
-    // run (capsule exec) keeps 1..124 for the child: its usage errors exit 125.
+    // run keeps 1..124 for the child: its own usage errors exit 125.
     for (const argv of [
       ['capsule', 'run', '--session', fixture.sessionId],
       ['capsule', 'run', '--session', fixture.sessionId, '--name', '   ', '--', 'true'],

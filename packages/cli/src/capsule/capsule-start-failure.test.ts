@@ -6,7 +6,7 @@ import test from 'node:test';
 import { commandFixture, removeFixture, runCli } from './reporting/capsule-command.fixture.js';
 
 for (const mode of ['--silent', '--non-interactive', '--interactive']) {
-  void test(`start ${mode} retains a failed manager session while keeping JSON stdout parseable`, async () => {
+  void test(`up ${mode} retains a failed manager session while keeping JSON stdout parseable`, async () => {
     const fixture = await commandFixture('stopped');
     try {
       const result = await runCli({
