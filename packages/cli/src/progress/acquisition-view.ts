@@ -1,7 +1,7 @@
 import type {
   CapsuleAcquisitionObservation,
   CapsuleProgressEvent,
-} from '@suites/blackbox-capsule-internal';
+} from '@suites/blackbox-capsule';
 import { observationDetail, progressDetail } from '../capsule/capsule-progress-details.js';
 import type { TerminalLine } from './terminal-block.js';
 

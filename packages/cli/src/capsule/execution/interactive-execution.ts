@@ -8,7 +8,7 @@ import {
   type CapsuleInteractiveEvent,
   type CapsuleInteractiveExecInput,
   type CapsuleTerminalSize,
-} from '@suites/blackbox-capsule-internal';
+} from '@suites/blackbox-capsule';
 
 import { type OutputTracker, trackedWritable } from '../../operations/run/output-tracker.js';
 import { ControlQueue } from './control-queue.js';

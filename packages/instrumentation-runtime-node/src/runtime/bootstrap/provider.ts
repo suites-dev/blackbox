@@ -1,7 +1,7 @@
 import type {
   RuntimeInstrumentationProvider,
   RuntimeInstrumentationFile,
-} from '@suites/blackbox-instrumentation-internal';
+} from '@suites/blackbox-instrumentation';
 
 import {
   installNodeDependencies,

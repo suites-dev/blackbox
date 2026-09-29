@@ -3,8 +3,8 @@ import { mkdir, unlink } from 'node:fs/promises';
 import { createServer, type Server } from 'node:net';
 import { dirname, join } from 'node:path';
 
-import type { SandboxHandle } from '@suites/blackbox-sandbox-internal';
-import type { CatalogSandboxInput } from '@suites/blackbox-catalog-internal';
+import type { SandboxHandle } from '@suites/blackbox-sandbox';
+import type { CatalogSandboxInput } from '@suites/blackbox-catalog';
 
 import type { CapsuleManagerBootstrap } from '../protocol.js';
 import {

@@ -10,8 +10,8 @@ import {
   type CollectorIdentity,
   type CollectorSessionReadResult,
   type CollectorTracesReadResult,
-} from '@suites/blackbox-otel-collector-internal';
-import { sandboxTelemetryStorageDirectory } from '@suites/blackbox-sandbox-internal';
+} from '@suites/blackbox-otel-collector';
+import { sandboxTelemetryStorageDirectory } from '@suites/blackbox-sandbox';
 
 import {
   capsuleSandboxRecordDirectory,

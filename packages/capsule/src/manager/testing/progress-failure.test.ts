@@ -1,5 +1,5 @@
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
-import { resolveCatalogEntry } from '@suites/blackbox-catalog-internal';
+import { resolveCatalogEntry } from '@suites/blackbox-catalog';
 import { expect, it } from 'vitest';
 import { runCapsuleManager } from '../../manager.js';
 import { capsuleProgressPath, readCapsuleProgress } from '../../progress/store.js';

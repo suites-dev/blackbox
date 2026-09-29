@@ -1,4 +1,4 @@
-import type { SandboxContainerExecutionInput } from '@suites/blackbox-sandbox-internal';
+import type { SandboxContainerExecutionInput } from '@suites/blackbox-sandbox';
 import { expect, it } from 'vitest';
 
 import { driverSandbox } from '../driver/testing/execution.fixture.js';

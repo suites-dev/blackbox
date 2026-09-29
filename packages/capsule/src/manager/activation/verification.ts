@@ -1,7 +1,7 @@
 import { setTimeout as delay } from 'node:timers/promises';
 
-import type { CatalogSandboxInput } from '@suites/blackbox-catalog-internal';
-import type { SandboxHandle } from '@suites/blackbox-sandbox-internal';
+import type { CatalogSandboxInput } from '@suites/blackbox-catalog';
+import type { SandboxHandle } from '@suites/blackbox-sandbox';
 
 import {
   missingActivations,

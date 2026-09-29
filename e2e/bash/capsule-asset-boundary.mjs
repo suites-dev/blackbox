@@ -10,16 +10,16 @@ const e2eRoot = resolve(scriptDirectory, '..');
 const workspacePath = resolve(e2eRoot, '..');
 const statePath = join(e2eRoot, '.blackbox', 'capsule-assets.json');
 const packedPackages = [
-  '@suites/blackbox-capsule-internal',
-  '@suites/blackbox-catalog-internal',
+  '@suites/blackbox-capsule',
+  '@suites/blackbox-catalog',
   '@suites/blackbox-cli',
   '@suites/blackbox-driver',
   '@suites/blackbox-inst-runtime-node',
-  '@suites/blackbox-instrumentation-internal',
-  '@suites/blackbox-otel-collector-internal',
-  '@suites/blackbox-report-server-internal',
-  '@suites/blackbox-sandbox-internal',
-  '@suites/blackbox-telemetry-internal',
+  '@suites/blackbox-instrumentation',
+  '@suites/blackbox-otel-collector',
+  '@suites/blackbox-report-server',
+  '@suites/blackbox-sandbox',
+  '@suites/blackbox-telemetry',
 ];
 
 function isWithin(path, root) {

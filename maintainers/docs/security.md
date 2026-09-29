@@ -31,8 +31,9 @@ unexpectedly skipped. CodeQL has a separate native ruleset gate; a successful
 analysis job does not mean there are no findings. Do not put secrets in PR workflows,
 run untrusted PR code with `pull_request_target`, or grant scanners write access
 without a concrete need. The title-only `pull_request_target` workflow never checks
-out or executes PR code. External Actions use immutable commit pins; Dependabot
-proposes updates.
+out or executes PR code. External Actions use maintained major-version tags by
+owner policy. Their mutability is an accepted risk; review and dismiss the resulting
+CodeQL findings explicitly rather than suppressing them.
 
 ## Connect Snyk's free OSS program
 

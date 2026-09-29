@@ -1,7 +1,7 @@
 import type {
   CapsuleAcquisitionObservation,
   CapsuleProgressEvent,
-} from '@suites/blackbox-capsule-internal';
+} from '@suites/blackbox-capsule';
 
 export function observationDetail(observation: CapsuleAcquisitionObservation): string {
   switch (observation.kind) {

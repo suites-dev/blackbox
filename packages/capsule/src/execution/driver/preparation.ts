@@ -3,11 +3,11 @@ import {
   type DriverPreparation,
   type DriverPrepareRequest,
 } from '@suites/blackbox-driver';
-import type { ResolvedCatalogDriver } from '@suites/blackbox-catalog-internal';
+import type { ResolvedCatalogDriver } from '@suites/blackbox-catalog';
 import {
   createTelemetryPropagationRecord,
   type TelemetryPropagationRecord,
-} from '@suites/blackbox-telemetry-internal';
+} from '@suites/blackbox-telemetry';
 
 import type { CapsuleDriverOutcome, CapsuleRecordedError } from '../../types.js';
 import { canonicalDriverModule } from './module-path.js';

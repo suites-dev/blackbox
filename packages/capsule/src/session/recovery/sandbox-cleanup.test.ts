@@ -3,7 +3,7 @@ import { expect, it, vi } from 'vitest';
 import type {
   CompletedSandboxRecord,
   StopFailedSandboxRecord,
-} from '@suites/blackbox-sandbox-internal';
+} from '@suites/blackbox-sandbox';
 
 import type { CapsuleSessionRecord } from '../../records.js';
 import {

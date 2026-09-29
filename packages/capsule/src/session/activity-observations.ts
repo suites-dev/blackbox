@@ -1,4 +1,4 @@
-import type { CollectorActivityReadResult } from '@suites/blackbox-otel-collector-internal';
+import type { CollectorActivityReadResult } from '@suites/blackbox-otel-collector';
 
 import { readCapsuleObservations } from './observations.js';
 

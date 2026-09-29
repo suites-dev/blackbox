@@ -1,7 +1,7 @@
 import type {
   CollectorActivityReadResult,
   TraceFragment,
-} from '@suites/blackbox-otel-collector-internal';
+} from '@suites/blackbox-otel-collector';
 import type { CapsuleActivityTelemetry, CapsuleReportSpan } from './telemetry-types.js';
 import { array, object, string, attribute, type Context } from './telemetry/fields.js';
 import { spanProjection } from './telemetry/span.js';

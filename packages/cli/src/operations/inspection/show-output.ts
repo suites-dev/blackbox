@@ -1,7 +1,7 @@
 import type {
   CapsuleActivityReport,
   CapsuleObservationsResult,
-} from '@suites/blackbox-capsule-internal';
+} from '@suites/blackbox-capsule';
 
 import { nextSteps } from '../../cli/next-steps.js';
 import type { CapsuleSummary } from '../../context/project-index.js';

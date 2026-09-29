@@ -1,5 +1,5 @@
-import type { CatalogSandboxInput } from '@suites/blackbox-catalog-internal';
-import type { SandboxTelemetryEnabledInput } from '@suites/blackbox-sandbox-internal';
+import type { CatalogSandboxInput } from '@suites/blackbox-catalog';
+import type { SandboxTelemetryEnabledInput } from '@suites/blackbox-sandbox';
 
 import type { CapsuleManagerBootstrap } from '../protocol.js';
 import type { CapsuleCollectorRuntime } from './collector-runtime.js';

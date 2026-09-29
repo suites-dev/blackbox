@@ -1,4 +1,4 @@
-import type { SandboxHandle } from '@suites/blackbox-sandbox-internal';
+import type { SandboxHandle } from '@suites/blackbox-sandbox';
 
 import { activationSandbox } from './verification.fixture.js';
 

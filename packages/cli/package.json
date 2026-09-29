@@ -1,7 +1,6 @@
 {
   "name": "@suites/blackbox-cli",
-  "version": "0.0.0",
-  "private": true,
+  "version": "0.0.1-alpha.0",
   "type": "module",
   "description": "Blackbox command-line facade for Sandboxes, Testing, and Assurance.",
   "bin": {
@@ -16,7 +15,10 @@
   },
   "files": [
     "dist",
-    "bin"
+    "bin",
+    "README.md",
+    "LICENSE",
+    "NOTICE"
   ],
   "scripts": {
     "prebuild": "rimraf dist",
@@ -27,12 +29,12 @@
   },
   "dependencies": {
     "@oclif/core": "^5.1.0",
-    "@suites/blackbox-catalog-internal": "workspace:*",
-    "@suites/blackbox-capsule-internal": "workspace:*",
+    "@suites/blackbox-catalog": "workspace:*",
+    "@suites/blackbox-capsule": "workspace:*",
     "@suites/blackbox-driver": "workspace:*",
     "@suites/blackbox-inst-runtime-node": "workspace:*",
-    "@suites/blackbox-instrumentation-internal": "workspace:*",
-    "@suites/blackbox-report-server-internal": "workspace:*",
+    "@suites/blackbox-instrumentation": "workspace:*",
+    "@suites/blackbox-report-server": "workspace:*",
     "string-width": "8.3.0"
   },
   "devDependencies": {
@@ -51,5 +53,22 @@
     "helpClass": "./dist/help.js",
     "topicSeparator": " "
   },
-  "license": "Apache-2.0"
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=22.15"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/suites-dev/blackbox.git",
+    "directory": "packages/cli"
+  },
+  "homepage": "https://github.com/suites-dev/blackbox/tree/main/packages/cli#readme",
+  "bugs": {
+    "url": "https://github.com/suites-dev/blackbox/issues"
+  },
+  "author": "Suites"
 }

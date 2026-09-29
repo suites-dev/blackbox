@@ -41,7 +41,7 @@ collect final results against the final relevant tree.
 | `pnpm lint`                                                                | Source-layout rules and package ESLint checks | Type safety, behavior, Bash correctness          |
 | `pnpm typecheck`                                                           | Root TypeScript source/test compilation       | Runtime behavior or Docker fixture correctness   |
 | `pnpm test`                                                                | Build, then workspace package test scripts    | Separate integration scripts or Capsule Bash E2E |
-| `pnpm --filter @suites/blackbox-instrumentation-internal test:integration` | Instrumentation integration lane              | Other packages' integration coverage             |
+| `pnpm --filter @suites/blackbox-instrumentation test:integration` | Instrumentation integration lane              | Other packages' integration coverage             |
 | `pnpm --filter @suites/blackbox-inst-runtime-node test:integration`        | Node runtime instrumentation integration lane | Full packed consumer acceptance                  |
 | `pnpm test:e2e:capsule </dev/null`                                         | Packed CLI and Docker-backed Capsule journey  | Independent review or all unit-test branches     |
 

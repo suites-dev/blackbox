@@ -1,11 +1,11 @@
 # Catalog
 
-`@suites/blackbox-catalog-internal` owns the language-neutral Blackbox catalog
+`@suites/blackbox-catalog` owns the language-neutral Blackbox catalog
 contract and the code that loads, validates, selects, and resolves
 `blackbox.config.yaml` into data that runtime packages can consume.
 
-This is a private, unpublished workspace package. Its package name and export
-surface are internal and may change.
+This is a public alpha package. Its export surface may change between alpha
+releases.
 
 ## Where Catalog Fits
 
@@ -60,7 +60,7 @@ Docker Compose lifecycle.
   resolves a requested system ID. Capsule then maps the returned plan into
   Sandbox startup, readiness, activation, driver, and telemetry work.
 - **Schema consumers:** the canonical schema is exported as
-  `@suites/blackbox-catalog-internal/schema/blackbox-config-v1.json`; the package
+  `@suites/blackbox-catalog/schema/blackbox-config-v1.json`; the package
   root also exports the schema object, catalog operations, result types, and
   model types from [`src/index.ts`](src/index.ts).
 
@@ -75,11 +75,7 @@ Playwright fixture, adapter, or public Playwright API is implemented here today.
 ## Example Internal Use
 
 ```ts
-import {
-  listCatalogEntries,
-  loadCatalogFile,
-  resolveCatalogEntry,
-} from '@suites/blackbox-catalog-internal';
+import { listCatalogEntries, loadCatalogFile, resolveCatalogEntry } from '@suites/blackbox-catalog';
 
 const catalog = await loadCatalogFile({ configFile: 'blackbox.config.yaml' });
 console.log(listCatalogEntries({ config: catalog.config }));
@@ -111,9 +107,9 @@ not acquire or verify any runtime resource.
 Run package checks from the repository root:
 
 ```bash
-pnpm --filter @suites/blackbox-catalog-internal lint
-pnpm --filter @suites/blackbox-catalog-internal build
-pnpm --filter @suites/blackbox-catalog-internal test
+pnpm --filter @suites/blackbox-catalog lint
+pnpm --filter @suites/blackbox-catalog build
+pnpm --filter @suites/blackbox-catalog test
 ```
 
 Tests cover YAML loading, schema and semantic failures, referenced-file

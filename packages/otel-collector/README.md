@@ -1,12 +1,12 @@
 # Capsule OTLP Collector
 
-`@suites/blackbox-otel-collector-internal` receives trace telemetry for one exact
+`@suites/blackbox-otel-collector` receives trace telemetry for one exact
 Capsule session and execution, retains accepted requests as durable fragments, and
 serves exact retained reads for Capsule status and reports.
 
-This is a private, unpublished workspace package. It is runtime infrastructure for
-[Capsule](../capsule/README.md) and [Sandbox](../sandbox/README.md), not a standalone
-collector distribution or a public SDK.
+This is a public alpha runtime package for [Capsule](../capsule/README.md) and
+[Sandbox](../sandbox/README.md). It is not a standalone general-purpose collector
+or an application SDK.
 
 ## Where The Collector Fits
 
@@ -142,9 +142,9 @@ require checking both Sandbox telemetry wiring and Capsule activation/status use
 From the repository root after `pnpm install --frozen-lockfile`:
 
 ```sh
-pnpm --filter @suites/blackbox-otel-collector-internal lint
-pnpm --filter @suites/blackbox-otel-collector-internal build
-pnpm --filter @suites/blackbox-otel-collector-internal test
+pnpm --filter @suites/blackbox-otel-collector lint
+pnpm --filter @suites/blackbox-otel-collector build
+pnpm --filter @suites/blackbox-otel-collector test
 pnpm exec prettier --check packages/otel-collector/README.md
 ```
 

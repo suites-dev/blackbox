@@ -1,12 +1,21 @@
 {
-  "name": "@suites/blackbox-sandbox-internal",
-  "version": "0.0.0",
-  "private": true,
+  "name": "@suites/blackbox-sandbox",
+  "version": "0.0.1-alpha.0",
   "type": "module",
-  "description": "Internal catalog-independent Docker Compose sandbox engine.",
+  "description": "Catalog-independent Docker Compose sandbox engine.",
   "files": [
     "dist",
-    "schema"
+    "schema",
+    "README.md",
+    "LICENSE",
+    "NOTICE",
+    "src",
+    "!src/**/*.test.*",
+    "!src/**/*.spec.*",
+    "!src/**/*.fixture.*",
+    "!src/**/testing/**",
+    "!src/**/test-fixtures/**",
+    "!src/**/__tests__/**"
   ],
   "types": "./dist/index.d.ts",
   "exports": {
@@ -29,7 +38,7 @@
   "dependencies": {
     "ajv": "8.20.0",
     "docker-compose": "1.5.0",
-    "testcontainers": "catalog:"
+    "testcontainers": "12.1.0"
   },
   "devDependencies": {
     "rimraf": "catalog:",
@@ -37,5 +46,22 @@
     "typescript": "catalog:",
     "vitest": "catalog:"
   },
-  "license": "Apache-2.0"
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=22.15"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/suites-dev/blackbox.git",
+    "directory": "packages/sandbox"
+  },
+  "homepage": "https://github.com/suites-dev/blackbox/tree/main/packages/sandbox#readme",
+  "bugs": {
+    "url": "https://github.com/suites-dev/blackbox/issues"
+  },
+  "author": "Suites"
 }

@@ -1,5 +1,4 @@
 export const driverSdkPackageName = '@suites/blackbox-driver';
-export const defaultDriverSdkSpec = '0.0.0';
 
 export interface PackageManagerInstallInput {
   readonly directory: string;

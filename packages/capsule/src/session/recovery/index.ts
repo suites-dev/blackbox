@@ -1,4 +1,4 @@
-import { recoverSandbox } from '@suites/blackbox-sandbox-internal';
+import { recoverSandbox } from '@suites/blackbox-sandbox';
 
 import type { CapsuleActivityReport, CapsuleRecordedError } from '../../types.js';
 import {

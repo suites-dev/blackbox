@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import type { CapsuleAcquisitionObservation } from '@suites/blackbox-capsule-internal';
+import type { CapsuleAcquisitionObservation } from '@suites/blackbox-capsule';
 import { createCapsuleProgressRenderer } from './capsule-progress.js';
 
 const base = {

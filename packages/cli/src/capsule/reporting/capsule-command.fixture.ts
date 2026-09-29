@@ -4,7 +4,7 @@ import { once } from 'node:events';
 import { createServer, type Socket } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { capsuleSessionDirectory } from '@suites/blackbox-capsule-internal';
+import { capsuleSessionDirectory } from '@suites/blackbox-capsule';
 import { cliExecutable } from '../../testing/cli-path.fixture.js';
 
 const cli = cliExecutable();

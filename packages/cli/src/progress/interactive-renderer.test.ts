@@ -3,7 +3,7 @@ import test from 'node:test';
 import type {
   CapsuleProgressEvent,
   CapsuleAcquisitionObservation,
-} from '@suites/blackbox-capsule-internal';
+} from '@suites/blackbox-capsule';
 import { InteractiveProgressRenderer } from './interactive-renderer.js';
 import { TerminalScreen } from './terminal-screen.fixture.js';
 

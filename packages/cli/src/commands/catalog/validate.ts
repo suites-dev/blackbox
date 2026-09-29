@@ -1,5 +1,5 @@
 import { Command, Flags } from '@oclif/core';
-import { runCatalogValidate } from '@suites/blackbox-catalog-internal';
+import { runCatalogValidate } from '@suites/blackbox-catalog';
 import { renderCatalogOutput } from '../../catalog/catalog-output.js';
 import { EXIT_CODES } from '../../cli/exit-codes.js';
 

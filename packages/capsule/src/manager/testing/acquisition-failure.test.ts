@@ -1,8 +1,8 @@
 import { once } from 'node:events';
 import { createServer } from 'node:http';
 
-import { resolveCatalogEntry } from '@suites/blackbox-catalog-internal';
-import type { SandboxHandle, SandboxStartInput } from '@suites/blackbox-sandbox-internal';
+import { resolveCatalogEntry } from '@suites/blackbox-catalog';
+import type { SandboxHandle, SandboxStartInput } from '@suites/blackbox-sandbox';
 import { expect, it } from 'vitest';
 
 import { runCapsuleManager } from '../../manager.js';

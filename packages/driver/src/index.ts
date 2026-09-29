@@ -50,4 +50,4 @@ export type {
   PropagationExpectation,
   PropagationOutcome,
   TelemetryPropagationRecord,
-} from '@suites/blackbox-telemetry-internal';
+} from '@suites/blackbox-telemetry';

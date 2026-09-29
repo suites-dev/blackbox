@@ -1,4 +1,4 @@
-import type { CapsuleProgressEvent } from '@suites/blackbox-capsule-internal';
+import type { CapsuleProgressEvent } from '@suites/blackbox-capsule';
 import { AcquisitionView } from './acquisition-view.js';
 import { TerminalBlock, type TerminalViewport } from './terminal-block.js';
 

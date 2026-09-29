@@ -1,5 +1,5 @@
-import { resolveCatalogEntry, type LoadedCatalog } from '@suites/blackbox-catalog-internal';
-import type { RuntimeActivationAdapter } from '@suites/blackbox-instrumentation-internal';
+import { resolveCatalogEntry, type LoadedCatalog } from '@suites/blackbox-catalog';
+import type { RuntimeActivationAdapter } from '@suites/blackbox-instrumentation';
 
 import type { CapsuleManagerBootstrap } from '../../protocol.js';
 import { catalogFixture } from '../testing/acquisition.fixture.js';

@@ -1,4 +1,4 @@
-import { resolveCatalogEntry } from '@suites/blackbox-catalog-internal';
+import { resolveCatalogEntry } from '@suites/blackbox-catalog';
 import { expect, it } from 'vitest';
 
 import { runCapsuleManager } from '../../manager.js';

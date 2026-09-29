@@ -7,6 +7,7 @@ import { join } from 'node:path';
 import { decodeDriverRuntimeArtifact } from '@suites/blackbox-driver';
 
 import { installDriverRuntime } from './install-driver-runtime.js';
+import { defaultDriverSdkSpec } from './sdk-version.js';
 import type { PackageManagerInstaller } from './types.js';
 
 const succeeded = {
@@ -30,6 +31,13 @@ const successfulInstaller: PackageManagerInstaller = async ({ directory }) => {
   await materializeSdk(directory);
   return succeeded;
 };
+
+void test('uses the CLI release version for the default driver SDK', async () => {
+  const manifest = JSON.parse(
+    await readFile(new URL('../../package.json', import.meta.url), 'utf8'),
+  );
+  assert.equal(defaultDriverSdkSpec, manifest.version);
+});
 
 void test('preserves authored package fields and installs only declared dependencies', async () => {
   const projectDirectory = await mkdtemp(join(tmpdir(), 'driver-install-domain-'));
@@ -57,7 +65,7 @@ void test('preserves authored package fields and installs only declared dependen
     assert.deepEqual(manifest.scripts, { inspect: 'node inspect.js' });
     assert.deepEqual(manifest.dependencies, {
       pg: '8.16.3',
-      '@suites/blackbox-driver': '0.0.0',
+      '@suites/blackbox-driver': defaultDriverSdkSpec,
     });
     assert.equal('curl' in manifest.dependencies, false);
     assert.equal('psql' in manifest.dependencies, false);

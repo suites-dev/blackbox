@@ -1,4 +1,4 @@
-import type { CollectorActivityReadResult } from '@suites/blackbox-otel-collector-internal';
+import type { CollectorActivityReadResult } from '@suites/blackbox-otel-collector';
 import { describe, expect, it } from 'vitest';
 import { createRedactionContext } from '../redaction.js';
 import { projectActivityTelemetry } from '../telemetry.js';

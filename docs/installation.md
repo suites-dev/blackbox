@@ -1,9 +1,11 @@
 # Install Blackbox
 
-Build the Blackbox CLI from source, then use it from the directory of the application you want to investigate.
+Build the Blackbox CLI from source, then use it from the directory of the
+application you want to investigate.
 
-> **Alpha distribution:** Blackbox has not been published to npm. The source installation below is the available
-> installation method. The repository's default branch is `release/v0.0.1-alpha`.
+> **Alpha distribution:** The release infrastructure is prepared, but this change
+> does not publish packages to npm. Use the source installation until an alpha is
+> explicitly released.
 
 ## Prerequisites
 
@@ -35,7 +37,7 @@ pnpm build
 
 Use the same branch as the documentation you are following.
 
-## Make the CLI available in your terminal
+Make the source build available in your current terminal:
 
 From the Blackbox checkout, define a shell shortcut:
 
@@ -46,20 +48,22 @@ blackbox --help
 ```
 
 You should see the CLI help, including `capsule`, `catalog`, and `observations`.
+Blackbox uses the current directory as the project root: it reads
+`blackbox.config.yaml` there and retains experiment data under `.blackbox/`.
+
 The shortcut uses an absolute path to your build, so you can change into another project directory and run `blackbox` there.
 It is defined only for this terminal session. In a new terminal, return to the checkout and define it again.
-
-Blackbox uses the current directory as the project root: it reads `blackbox.config.yaml` there and retains
-experiment data under `.blackbox/`.
 
 Continue with [your first Capsule](getting-started.md) or [configure an application](configuration.md).
 
 ## Install the SDK for project drivers
 
-Skip this section if you only use host commands without `--driver`. To use or author project drivers, install their
-SDK alongside the project's driver modules. The guided demo handles this step automatically for its own run.
+Skip this section if you only use host commands without `--driver`. To use or author
+project drivers, install their SDK alongside the project's driver modules. The
+guided demo handles this step automatically for its own run.
 
-For a source installation, first package the SDK and its telemetry dependency from your completed build:
+For a source installation, first package the SDK and its telemetry dependency from
+your completed build:
 
 ```sh
 mkdir -p "$blackbox_checkout/.blackbox/driver-packages"
@@ -79,15 +83,15 @@ For your own application, use its project directory instead. Then install both l
 
 ```sh
 npm install --prefix .blackbox/drivers --ignore-scripts --no-audit --no-fund \
-  "$blackbox_checkout/.blackbox/driver-packages/suites-blackbox-telemetry-internal-0.0.0.tgz" \
-  "$blackbox_checkout/.blackbox/driver-packages/suites-blackbox-driver-0.0.0.tgz"
+  "$blackbox_checkout/.blackbox/driver-packages/suites-blackbox-telemetry-0.0.1-alpha.0.tgz" \
+  "$blackbox_checkout/.blackbox/driver-packages/suites-blackbox-driver-0.0.1-alpha.0.tgz"
 npm pkg set --prefix .blackbox/drivers \
-  'overrides.@suites/blackbox-telemetry-internal=$@suites/blackbox-telemetry-internal'
+  'overrides.@suites/blackbox-telemetry=$@suites/blackbox-telemetry'
 blackbox driver install --runtime node --json
 ```
 
-The filenames above match the source package version `0.0.0`. Use the filenames printed by `pack` if your checkout
-has a different version. Keep the tarballs available for subsequent dependency installs.
+The filenames above match the first alpha. Use the filenames printed by `pack` if
+your checkout has a different version. Keep the tarballs available for subsequent dependency installs.
 The override keeps the SDK's telemetry dependency pointed at the local package during later installs.
 
 For the included application, the project directory is `$blackbox_checkout/e2e`; its driver modules are already

@@ -1,5 +1,5 @@
+import { DEFAULT_REPORT_PORT } from '@suites/blackbox-report-server';
 import { Flags } from '@oclif/core';
-import { DEFAULT_REPORT_PORT } from '@suites/blackbox-report-server-internal';
 
 import { InvocationContext } from '../../../context/invocation.js';
 import { OpenCommand } from '../../../operations/viewing/open-command.js';

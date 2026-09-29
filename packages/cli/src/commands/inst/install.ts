@@ -3,7 +3,7 @@ import { nodeRuntimeProvider } from '@suites/blackbox-inst-runtime-node';
 import {
   installInstrumentation,
   instrumentationDirectoryRelativePath,
-} from '@suites/blackbox-instrumentation-internal';
+} from '@suites/blackbox-instrumentation';
 
 import { EXIT_CODES } from '../../cli/exit-codes.js';
 
