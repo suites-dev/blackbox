@@ -35,7 +35,7 @@
     "build": "tsc --project tsconfig.build.json",
     "prepack": "pnpm build",
     "lint": "eslint .",
-    "test": "vitest run --config vitest.config.ts"
+    "test": "node scripts/run-tests.mjs"
   },
   "blackbox": {
     "cli": {
