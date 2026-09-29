@@ -1,4 +1,4 @@
-import { cp, lstat, mkdir, mkdtemp, readFile, readdir, rename, rm } from 'node:fs/promises';
+import { cp, lstat, mkdir, mkdtemp, open, readdir, rename, rm } from 'node:fs/promises';
 import { basename, dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -40,7 +40,12 @@ async function sameTree(source: string, target: string): Promise<boolean> {
     }
     return true;
   }
-  return (await readFile(source)).equals(await readFile(target));
+  const [sourceHandle, targetHandle] = await Promise.all([open(source, 'r'), open(target, 'r')]);
+  try {
+    return (await sourceHandle.readFile()).equals(await targetHandle.readFile());
+  } finally {
+    await Promise.all([sourceHandle.close(), targetHandle.close()]);
+  }
 }
 
 async function assertSafeParents(projectDirectory: string, target: string): Promise<void> {
