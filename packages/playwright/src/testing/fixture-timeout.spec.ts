@@ -47,11 +47,31 @@ const runtime = {
 
 const test = createBlackboxTest(runtime);
 
+const veryLateRuntime = {
+  async start() {
+    await delay(500);
+    throw new Error('very late acquisition failure');
+  },
+} satisfies BlackboxAttemptRuntime;
+
+const boundedTest = createBlackboxTest(veryLateRuntime, {
+  acquisitionCleanupTimeoutMs: 30,
+});
+
 test.describe('fixture acquisition timeout', () => {
   test.use({ catalogEntry: { kind: 'system', id: 'orders' } });
   test.setTimeout(20);
 
   test('times out before a slow acquisition reaches the test body', () => {
+    playwrightExpect(true).toBe(true);
+  });
+});
+
+boundedTest.describe('bounded fixture acquisition cleanup', () => {
+  boundedTest.use({ catalogEntry: { kind: 'system', id: 'orders' } });
+  boundedTest.setTimeout(20);
+
+  boundedTest('reports when late acquisition cleanup does not settle', () => {
     playwrightExpect(true).toBe(true);
   });
 });
