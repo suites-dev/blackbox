@@ -10,7 +10,10 @@ try {
   );
   await run(process.argv.slice(2), {
     root: fileURLToPath(new URL('..', import.meta.url)),
-    pluginAdditions: plugins === null ? undefined : { core: [...plugins.names], path: plugins.path },
+    pluginAdditions:
+      plugins === null
+        ? undefined
+        : { core: [...plugins.names], dev: [...plugins.names], path: plugins.path },
   });
   await flush();
 } catch (error) {
