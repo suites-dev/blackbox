@@ -32,9 +32,9 @@ const successfulInstaller: PackageManagerInstaller = async ({ directory }) => {
   return succeeded;
 };
 
-void test('uses the CLI release version for the default driver SDK', async () => {
+void test('uses the Driver release version for the default driver SDK', async () => {
   const manifest = JSON.parse(
-    await readFile(new URL('../../package.json', import.meta.url), 'utf8'),
+    await readFile(new URL('../../../../package.json', import.meta.url), 'utf8'),
   );
   assert.equal(defaultDriverSdkSpec, manifest.version);
 });

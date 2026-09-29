@@ -2,9 +2,9 @@ import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join, parse } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const cliPackageName = '@suites/blackbox-cli';
+const driverPackageName = '@suites/blackbox-driver';
 
-function currentCliVersion(): string {
+function currentDriverVersion(): string {
   let directory = dirname(fileURLToPath(import.meta.url));
   const filesystemRoot = parse(directory).root;
   while (directory !== filesystemRoot) {
@@ -15,17 +15,17 @@ function currentCliVersion(): string {
         typeof manifest === 'object' &&
         manifest !== null &&
         'name' in manifest &&
-        manifest.name === cliPackageName
+        manifest.name === driverPackageName
       ) {
         if (!('version' in manifest) || typeof manifest.version !== 'string') {
-          throw new Error('Blackbox CLI package version is unavailable');
+          throw new Error('Blackbox Driver package version is unavailable');
         }
         return manifest.version;
       }
     }
     directory = dirname(directory);
   }
-  throw new Error('Blackbox CLI package manifest is unavailable');
+  throw new Error('Blackbox Driver package manifest is unavailable');
 }
 
-export const defaultDriverSdkSpec = currentCliVersion();
+export const defaultDriverSdkSpec = currentDriverVersion();
