@@ -52,16 +52,16 @@ The example catalog already offers both boundaries:
 After the quickstart's project setup, select the smaller entry with the same Capsule workflow:
 
 ```sh
-payment_start=$(blackbox capsule start --system payment-mock \
+payment_start=$(blackbox capsule up payment-mock \
   --title 'Payment subsystem investigation' --json)
 PAYMENT_SESSION_ID=$(printf '%s' "$payment_start" | jq -er '.sessionId')
 PAYMENT_URL=$(printf '%s' "$payment_start" | jq -er '.entrypoint.url')
 
-blackbox capsule exec --session "$PAYMENT_SESSION_ID" \
+blackbox capsule run --session "$PAYMENT_SESSION_ID" \
   --name 'Inspect payment readiness' --purpose inspection -- \
   curl --fail --silent --show-error "$PAYMENT_URL/health"
 
-blackbox capsule stop --session "$PAYMENT_SESSION_ID" --json
+blackbox capsule down --session "$PAYMENT_SESSION_ID" --json
 ```
 
 This checks readiness of the selected subsystem; add the stimulus and checks for the behavior you want to investigate.
@@ -102,7 +102,7 @@ With the built CLI selected and the current directory set to the configured proj
 
 ```sh
 blackbox catalog validate --json
-blackbox catalog list --json
+blackbox catalog ls --json
 ```
 
 A successful validation returns `ok: true`. Listing returns catalog entries without acquiring Docker resources.

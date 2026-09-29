@@ -37,7 +37,7 @@ For isolation, identify databases, queues, local files, and external services th
 Use the public machine-readable catalog commands where the local CLI implements them:
 
 - `blackbox catalog validate` checks catalog validity without starting application services.
-- `blackbox catalog list --json` inspects the available catalog entries.
+- `blackbox catalog ls --json` inspects the available catalog entries.
 
 Confirm the exact installed spelling and selected catalog IDs against public help or package docs first. A CLI registration or a successful parse is only static validation. It does not prove Compose acquisition, readiness, instrumentation startup, OTLP delivery, correlation, or application behavior.
 

@@ -14,8 +14,8 @@ runtime provider ──> installInstrumentation ──> .blackbox/instrumentatio
        │                                                │
        │                                                │ read-only mount
        v                                                v
-CLI: inst install       CLI: capsule start ──> Capsule activation
-                         injects adapters      from catalog runtime + adapter + ref
+CLI: inst install       CLI: capsule up ──> Capsule activation
+                         injects adapters   from catalog runtime + adapter + ref
 ```
 
 The package is neutral about the instrumented application runtime. It defines the
@@ -87,7 +87,7 @@ The current Node runtime package exports two adapters:
 | `node-preload` | Appends `--require=<mounted activation asset>` to `NODE_OPTIONS`.                                           |
 | `node-esm`     | Appends the mounted OpenTelemetry loader and then `--require=<mounted activation asset>` to `NODE_OPTIONS`. |
 
-[`capsule start`](../cli/src/commands/capsule/start.ts) is currently the composition
+[`capsule up`](../cli/src/commands/capsule/up.ts) is currently the composition
 root: it passes `nodeRuntimeActivationAdapters` into Capsule. Capsule remains
 runtime-agnostic and resolves an adapter by the catalog participant's `runtime`
 plus the activation's `adapter` name.

@@ -12,19 +12,19 @@ Your command + selected driver
   → activity result + separately collected runtime observations
 ```
 
-Use plain `capsule exec` for a host command that already has everything it needs. Add `--driver <name>` when a
+Use plain `capsule run` for a host command that already has everything it needs. Add `--via <name>` when a
 configured driver should prepare it.
 
 ## Choose where the command runs
 
 The subscription example illustrates these choices:
 
-| Execution             | Tool runs in               | What Blackbox or the driver supplies                                                           |
-| --------------------- | -------------------------- | ---------------------------------------------------------------------------------------------- |
-| No driver             | Your host                  | Activity recording; you provide a complete command and address.                                |
-| `--driver public-api` | Your host                  | The HTTP endpoint and a W3C `traceparent` header for `curl`.                                   |
-| `--driver postgres`   | The PostgreSQL participant | Connection environment for `psql`, including a password marked for redaction.                  |
-| `--driver redis`      | The Redis participant      | Execution in the selected Redis container and an explicit shared-state propagation limitation. |
+| Execution          | Tool runs in               | What Blackbox or the driver supplies                                                           |
+| ------------------ | -------------------------- | ---------------------------------------------------------------------------------------------- |
+| No driver          | Your host                  | Activity recording; you provide a complete command and address.                                |
+| `--via public-api` | Your host                  | The HTTP endpoint and a W3C `traceparent` header for `curl`.                                   |
+| `--via postgres`   | The PostgreSQL participant | Connection environment for `psql`, including a password marked for redaction.                  |
+| `--via redis`      | The Redis participant      | Execution in the selected Redis container and an explicit shared-state propagation limitation. |
 
 The driver names come from the project's catalog. They are example modules, not globally installed protocol commands.
 The tool must exist where it runs: host execution needs host `curl`; participant execution needs `psql` or `redis-cli`
@@ -88,10 +88,10 @@ This is part of a driver declaration, not a complete configuration. See the
 With the example drivers prepared and a Capsule running:
 
 ```sh
-blackbox capsule exec \
+blackbox capsule run \
   --session "$SESSION_ID" \
   --name 'Create Alice subscription' \
-  --driver public-api \
+  --via public-api \
   --purpose stimulus \
   --json -- \
   curl --fail --silent --show-error \
@@ -117,8 +117,8 @@ call an application setup endpoint; a Redis command can put work onto a queue.
 For example, with the subscription Capsule running, seed a new example user before sending a request for that user:
 
 ```sh
-blackbox capsule exec --session "$SESSION_ID" \
-  --name 'Seed a subscription customer' --driver postgres --purpose setup -- \
+blackbox capsule run --session "$SESSION_ID" \
+  --name 'Seed a subscription customer' --via postgres --purpose setup -- \
   psql --username fixture --dbname subscriptions --set ON_ERROR_STOP=1 \
   --command "INSERT INTO users (user_id, tier, execution_path) VALUES ('docs-customer', 'pro', 'full') ON CONFLICT (user_id) DO NOTHING;"
 ```
@@ -132,8 +132,8 @@ mounted your migration at `/migrations/001-init.sql` **inside the PostgreSQL par
 configured database:
 
 ```sh
-blackbox capsule exec --session "$SESSION_ID" \
-  --name 'Apply database migration' --driver postgres --purpose setup -- \
+blackbox capsule run --session "$SESSION_ID" \
+  --name 'Apply database migration' --via postgres --purpose setup -- \
   psql --username fixture --dbname subscriptions --set ON_ERROR_STOP=1 \
   --file /migrations/001-init.sql
 ```
@@ -150,10 +150,10 @@ command semantics or provide rollback. See [async holes](async-workflows.md) for
 ## Inspect database state
 
 ```sh
-blackbox capsule exec \
+blackbox capsule run \
   --session "$SESSION_ID" \
   --name 'Inspect Alice subscription' \
-  --driver postgres \
+  --via postgres \
   --purpose inspection -- \
   psql --username fixture --dbname subscriptions \
   --tuples-only --no-align \

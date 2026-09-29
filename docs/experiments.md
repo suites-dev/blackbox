@@ -36,7 +36,7 @@ cd "$blackbox_checkout/e2e"
 blackbox driver install --runtime node --json
 blackbox inst install --runtime node
 blackbox catalog validate --json
-blackbox catalog list --json
+blackbox catalog ls --json
 ```
 
 The two installers serve different purposes: the driver SDK prepares operator commands; instrumentation runs inside
@@ -61,8 +61,7 @@ is created. The viewer and application have separate lifecycles.
 
 ```sh
 FIXTURE_CONTROL_TOKEN=capsule-e2e-token
-capsule_start=$(blackbox capsule start \
-  --system subscription-system \
+capsule_start=$(blackbox capsule up subscription-system \
   --title "Subscription investigation" \
   --description "Follow a subscription from request to saved state" \
   --env "FIXTURE_CONTROL_TOKEN=$FIXTURE_CONTROL_TOKEN" \
@@ -80,7 +79,7 @@ or port. The token in this example protects the sample application's control end
 First, check readiness with a plain host command:
 
 ```sh
-blackbox capsule exec --session "$SESSION_ID" \
+blackbox capsule run --session "$SESSION_ID" \
   --name 'Check readiness' --purpose inspection -- \
   curl --fail --silent --show-error "$ENTRYPOINT_URL/health"
 ```
@@ -88,7 +87,7 @@ blackbox capsule exec --session "$SESSION_ID" \
 Then establish the example's starting state:
 
 ```sh
-blackbox capsule exec --session "$SESSION_ID" \
+blackbox capsule run --session "$SESSION_ID" \
   --name 'Reset example state' --purpose setup -- \
   curl --fail --silent --show-error \
   --request POST \
@@ -106,10 +105,10 @@ Each action retains its own command result.
 ## Create a subscription through the HTTP driver
 
 ```sh
-subscription_result=$(blackbox capsule exec \
+subscription_result=$(blackbox capsule run \
   --session "$SESSION_ID" \
   --name 'Create Alice subscription' \
-  --driver public-api \
+  --via public-api \
   --purpose stimulus \
   --json -- \
   curl --fail --silent --show-error \
@@ -173,8 +172,8 @@ activity query does not return it.
 ## Inspect saved state with PostgreSQL
 
 ```sh
-blackbox capsule exec --session "$SESSION_ID" \
-  --name 'Inspect Alice subscription' --driver postgres --purpose inspection -- \
+blackbox capsule run --session "$SESSION_ID" \
+  --name 'Inspect Alice subscription' --via postgres --purpose inspection -- \
   psql --username fixture --dbname subscriptions \
   --tuples-only --no-align \
   --command "SELECT user_id || '|' || status FROM subscriptions WHERE user_id = 'alice';"
@@ -204,7 +203,7 @@ The live viewer refreshes as records arrive. The HTML file is a snapshot and kee
 When finished:
 
 ```sh
-blackbox capsule stop --session "$SESSION_ID" --json
+blackbox capsule down --session "$SESSION_ID" --json
 blackbox capsule report export --session "$SESSION_ID" --format html
 blackbox capsule report serve --session "$SESSION_ID" --open
 ```

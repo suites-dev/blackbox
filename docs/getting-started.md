@@ -21,7 +21,7 @@ Install the Node instrumentation and validate the included catalog:
 ```sh
 blackbox inst install --runtime node
 blackbox catalog validate --json
-blackbox catalog list --json
+blackbox catalog ls --json
 ```
 
 Validation should return `ok: true`, and the catalog list should include `subscription-system`.
@@ -31,8 +31,7 @@ Instrumentation files and dependencies are installed under `e2e/.blackbox/instru
 ## 3. Start a Capsule
 
 ```sh
-capsule_start=$(blackbox capsule start \
-  --system subscription-system \
+capsule_start=$(blackbox capsule up subscription-system \
   --title "My first Capsule" \
   --description "Explore subscription creation" \
   --json)
@@ -50,7 +49,7 @@ activates instrumentation, and checks readiness. The returned URL uses the dynam
 The sample database includes a user named Alice. Create her subscription:
 
 ```sh
-blackbox capsule exec \
+blackbox capsule run \
   --session "$SESSION_ID" \
   --name 'Create Alice subscription' \
   --purpose stimulus -- \
@@ -91,7 +90,7 @@ Press Ctrl-C when you finish viewing. This stops a viewer started by this comman
 ## 6. Stop the application
 
 ```sh
-blackbox capsule stop --session "$SESSION_ID" --json
+blackbox capsule down --session "$SESSION_ID" --json
 blackbox capsule report export --session "$SESSION_ID" --format html
 ```
 
