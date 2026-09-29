@@ -4,6 +4,11 @@
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "customConditions": ["blackbox-source"],
+    "baseUrl": "..",
+    "paths": {
+      "@playwright/test": ["packages/playwright/node_modules/@playwright/test/index.d.ts"],
+      "@suites/blackbox-playwright": ["packages/playwright/src/index.ts"]
+    },
     "strict": true,
     "noEmit": true,
     "esModuleInterop": true,
@@ -12,17 +17,6 @@
     "allowArbitraryExtensions": true,
     "types": ["node"]
   },
-  "include": [
-    "playwright.config.ts",
-    "playwright.per-worker-control.config.ts",
-    "../packages/**/*.ts",
-    "gates/**/*.ts",
-    "tests/**/*.ts"
-  ],
-  "exclude": [
-    "node_modules",
-    "sut",
-    "../packages/**/node_modules",
-    "tests/examples/gherkin"
-  ]
+  "include": ["playwright.config.ts", "tests/playwright/**/*.ts"],
+  "exclude": ["node_modules"]
 }
