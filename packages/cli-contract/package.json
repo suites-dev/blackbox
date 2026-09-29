@@ -1,0 +1,30 @@
+{
+  "name": "@suites/blackbox-cli-contract",
+  "version": "0.0.1-alpha.0",
+  "type": "module",
+  "description": "Dependency-free ports for Blackbox CLI feature packages.",
+  "exports": {
+    ".": {
+      "blackbox-source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": ["dist", "README.md", "LICENSE", "NOTICE"],
+  "scripts": {
+    "prebuild": "rimraf dist",
+    "build": "tsc --project tsconfig.build.json",
+    "prepack": "pnpm build",
+    "lint": "eslint .",
+    "test": "node --test"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "rimraf": "catalog:",
+    "typescript": "catalog:"
+  },
+  "license": "Apache-2.0",
+  "engines": { "node": ">=22.15" },
+  "publishConfig": { "access": "public", "provenance": true }
+}

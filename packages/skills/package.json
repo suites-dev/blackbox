@@ -1,0 +1,51 @@
+{
+  "name": "@suites/blackbox-skills",
+  "version": "0.0.1-alpha.0",
+  "type": "module",
+  "description": "Blackbox workflow Skills for coding agents.",
+  "files": ["dist", "assets", "README.md", "LICENSE", "NOTICE"],
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "blackbox-source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "prebuild": "rimraf dist",
+    "build": "tsc --project tsconfig.build.json",
+    "prepack": "pnpm build",
+    "lint": "eslint .",
+    "test": "vitest run --config vitest.config.ts"
+  },
+  "blackbox": {
+    "cli": {
+      "apiVersion": 1,
+      "pluginId": "skills",
+      "topic": "skills"
+    }
+  },
+  "oclif": {
+    "commands": {
+      "strategy": "explicit",
+      "target": "./dist/cli/command-registry.js",
+      "identifier": "COMMANDS"
+    },
+    "topicSeparator": " "
+  },
+  "dependencies": {
+    "@oclif/core": "^5.1.0",
+    "@suites/blackbox-cli-contract": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "rimraf": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "license": "Apache-2.0",
+  "engines": { "node": ">=22.15" },
+  "publishConfig": { "access": "public", "provenance": true }
+}
