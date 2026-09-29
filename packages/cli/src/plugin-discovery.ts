@@ -71,6 +71,7 @@ async function pluginsFromManifest(
 
 export async function discoverProjectCliPlugins(
   startDirectory = process.cwd(),
+  installationDirectory = startDirectory,
 ): Promise<{ readonly path: string; readonly names: readonly string[] } | null> {
   const projectPath = await nearestPackageDirectory(startDirectory);
   if (projectPath !== null) {
@@ -89,7 +90,7 @@ export async function discoverProjectCliPlugins(
   // A source checkout is a deliberate composition root. It supplies the
   // feature packages through the workspace manifest while consumer projects
   // remain opt-in through their own dependencies.
-  const root = await workspaceRoot(startDirectory);
+  const root = await workspaceRoot(installationDirectory);
   if (root === null) {return null;}
   const rootManifest = JSON.parse(
     await readFile(join(root, 'package.json'), 'utf8'),

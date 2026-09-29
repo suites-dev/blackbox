@@ -4,7 +4,10 @@ import { run, Errors, flush } from '@oclif/core';
 import { discoverProjectCliPlugins } from '../dist/plugin-discovery.js';
 
 try {
-  const plugins = await discoverProjectCliPlugins();
+  const plugins = await discoverProjectCliPlugins(
+    process.cwd(),
+    fileURLToPath(new URL('..', import.meta.url)),
+  );
   await run(process.argv.slice(2), {
     root: fileURLToPath(new URL('..', import.meta.url)),
     pluginAdditions: plugins === null ? undefined : { core: [...plugins.names], path: plugins.path },
