@@ -9,6 +9,18 @@ interface ProjectManifest {
   readonly devDependencies: Record<string, string>;
 }
 
+export type CliPluginDiscovery =
+  | {
+      readonly kind: 'source-checkout';
+      readonly path: string;
+      readonly names: readonly string[];
+    }
+  | {
+      readonly kind: 'installed-consumer';
+      readonly path: string;
+      readonly names: readonly string[];
+    };
+
 function dependencyMap(value: unknown): Record<string, string> {
   if (typeof value !== 'object' || value === null) {
     return {};
@@ -71,7 +83,7 @@ async function pluginsFromManifest(
 
 async function discoverFromAncestors(
   startDirectory: string,
-): Promise<{ readonly path: string; readonly names: readonly string[] } | null> {
+): Promise<CliPluginDiscovery | null> {
   let current = startDirectory;
   for (;;) {
     try {
@@ -82,7 +94,7 @@ async function discoverFromAncestors(
         devDependencies: dependencyMap(manifest.devDependencies),
       });
       if (plugins.length > 0) {
-        return { path: current, names: plugins };
+        return { kind: 'installed-consumer', path: current, names: plugins };
       }
     } catch {
       // An ancestor without a readable manifest is not a composition root.
@@ -96,7 +108,7 @@ async function discoverFromAncestors(
 export async function discoverProjectCliPlugins(
   startDirectory = process.cwd(),
   installationDirectory = startDirectory,
-): Promise<{ readonly path: string; readonly names: readonly string[] } | null> {
+): Promise<CliPluginDiscovery | null> {
   // A source checkout is a deliberate composition root. Its workspace
   // manifest owns the feature packages even when a nested harness manifest
   // still lists only a subset of the current command surface.
@@ -110,12 +122,12 @@ export async function discoverProjectCliPlugins(
       devDependencies: dependencyMap(rootManifest.devDependencies),
     });
     if (plugins.length > 0) {
-      return { path: sourceRoot, names: plugins };
+      return { kind: 'source-checkout', path: sourceRoot, names: plugins };
     }
   }
 
   const projectPath = await nearestPackageDirectory(startDirectory);
-  let projectResult: { readonly path: string; readonly names: readonly string[] } | null = null;
+  let projectResult: CliPluginDiscovery | null = null;
   if (projectPath !== null) {
     const projectManifest = JSON.parse(
       await readFile(join(projectPath, 'package.json'), 'utf8'),
@@ -125,7 +137,7 @@ export async function discoverProjectCliPlugins(
       devDependencies: dependencyMap(projectManifest.devDependencies),
     });
     if (plugins.length > 0) {
-      projectResult = { path: projectPath, names: plugins };
+      projectResult = { kind: 'installed-consumer', path: projectPath, names: plugins };
     }
   }
 
@@ -150,5 +162,5 @@ export async function discoverProjectCliPlugins(
     dependencies: dependencyMap(rootManifest.dependencies),
     devDependencies: dependencyMap(rootManifest.devDependencies),
   });
-  return plugins.length === 0 ? null : { path: root, names: plugins };
+  return plugins.length === 0 ? null : { kind: 'source-checkout', path: root, names: plugins };
 }
