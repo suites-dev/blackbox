@@ -195,7 +195,7 @@ async function fakeBlackbox(root) {
     bin,
     `#!/bin/sh
 echo "$PWD $*" >> ${JSON.stringify(log)}
-if [ "$1" = ls ]; then cat "$PWD/capsules.json"; fi
+if [ "$1" = capsule ] && [ "$2" = ls ]; then cat "$PWD/capsules.json"; fi
 `,
   );
   await chmod(bin, 0o755);
@@ -203,8 +203,8 @@ if [ "$1" = ls ]; then cat "$PWD/capsules.json"; fi
 }
 
 function assertOnlyOwnCapsulesStopped(calls, own) {
-  const downs = calls.filter((line) => / down /u.test(line));
-  assert.deepEqual(downs, [`${own} down running-capsule-own-000000000001 --json`]);
+  const downs = calls.filter((line) => / capsule down /u.test(line));
+  assert.deepEqual(downs, [`${own} capsule down running-capsule-own-000000000001 --json`]);
 }
 
 void test('cleanup downs only unstopped capsules of its own isolated project', async () => {
@@ -239,7 +239,7 @@ void test('cleanup downs only unstopped capsules of its own isolated project', a
     // Negative control: a cleanup that also stopped another project's capsule fails.
     assert.throws(() => {
       assertOnlyOwnCapsulesStopped(
-        [...calls, `${other} down running-capsule-other-000000000003 --json`],
+        [...calls, `${other} capsule down running-capsule-other-000000000003 --json`],
         own,
       );
     });

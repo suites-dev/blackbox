@@ -5,7 +5,7 @@ $ jq -c '{kind, current, warnings, next: (.next | length), sameId: (.capsule == 
 $ jq -r .capsule up.json
 <CAPSULE_1>
 #! capture CAPSULE_1 single-token
-$ blackbox capsule start --system payment-mock --silent --json | jq -c 'keys - ["kind","capsule","current","warnings","next"]'
+$ blackbox capsule up payment-mock --silent --json | jq -c 'keys - ["kind","capsule","current","warnings","next"]'
 ["artifactRoot","composeProject","containers","entrypoint","networks","readiness","sessionId","system","title","volumes"]
 $ blackbox capsule ls
   CAPSULE  SYSTEM  STATE  STARTED  ACTIVITIES  TITLE
@@ -42,5 +42,5 @@ $ blackbox capsule down $CAPSULE_1
 capsule <CAPSULE_1> stopped · evidence kept
 current capsule: none
 → blackbox capsule report <CAPSULE_1>
-$ blackbox capsule stop --session $CAPSULE_2 --json | jq -c '{kind, sameId: (.capsule == .sessionId), next}'
+$ blackbox capsule down --session $CAPSULE_2 --json | jq -c '{kind, sameId: (.capsule == .sessionId), next}'
 {"kind":"capsule-stopped","sameId":true,"next":["blackbox capsule report <CAPSULE_2>"]}

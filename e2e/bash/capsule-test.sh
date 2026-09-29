@@ -45,7 +45,7 @@ run_captured_step \
   'List the actual systems and subsystems available for acquisition.' \
   'blackbox catalog ls --json' \
   "$ARTIFACT_ROOT/systems.json" \
-  systems --json
+  catalog ls --json
 jq -e --arg system "$SYSTEM_ID" '.entries | any(.id == $system)' \
   "$ARTIFACT_ROOT/systems.json" >/dev/null
 
@@ -70,7 +70,7 @@ run_captured_step \
         --env FIXTURE_CONTROL_TOKEN=<redacted> \
         --json' \
   "$ARTIFACT_ROOT/capsule-start.json" \
-  up \
+  capsule up \
   "$SYSTEM_ID" \
   --title "Subscription system demo" \
   --description "Subscription system Capsule E2E" \
@@ -90,7 +90,7 @@ run_captured_step \
   'List running capsules; the new one is the current capsule.' \
   'blackbox capsule ls --json' \
   "$ARTIFACT_ROOT/ls-running.json" \
-  ls --json
+  capsule ls --json
 jq -e --arg session "$SESSION_ID" \
   '.kind == "capsule-list" and .current == $session and
    (.capsules | any(.capsule == $session and .state == "running"))' \
@@ -112,7 +112,7 @@ run_captured_step \
         --purpose inspection \\
         -- curl --fail --silent --show-error $ENTRYPOINT_URL/health" \
   "$ARTIFACT_ROOT/health.json" \
-  run --name 'Check readiness' --purpose inspection -- \
+  capsule run --name 'Check readiness' --purpose inspection -- \
   curl --fail --silent --show-error "$ENTRYPOINT_URL/health"
 
 jq -e '.status == "ready"' "$ARTIFACT_ROOT/health.json" >/dev/null
@@ -128,7 +128,7 @@ run_captured_step \
         --json \\
         -- node -e \"process.stdout.write('capsule-json-ok\\\\n')\"" \
   "$ARTIFACT_ROOT/exec-json.json" \
-  run --session "$SESSION_ID" --name 'Check CLI JSON mode' --purpose inspection --json -- \
+  capsule run --session "$SESSION_ID" --name 'Check CLI JSON mode' --purpose inspection --json -- \
   node -e "process.stdout.write('capsule-json-ok\\n')"
 jq -e \
   '.kind == "capsule-exec-completed" and .outcome.kind == "exited" and
@@ -150,7 +150,7 @@ run_captured_step \
         --data '{\"profile\":\"fresh\"}' \\
         $ENTRYPOINT_URL/fixture/reset" \
   "$ARTIFACT_ROOT/reset.json" \
-  run --session "$SESSION_ID" --name 'Reset fixture state' --purpose setup -- \
+  capsule run --session "$SESSION_ID" --name 'Reset fixture state' --purpose setup -- \
   curl --fail --silent --show-error \
   --request POST \
   --header "Authorization: Bearer $FIXTURE_TOKEN" \
@@ -174,7 +174,7 @@ run_captured_step \
         --data '{\"userId\":\"alice\",\"paymentMethodId\":\"pm_capsule_alice\"}' \\
         /subscriptions" \
   "$ARTIFACT_ROOT/driver-execution.json" \
-  run \
+  capsule run \
   --session "$SESSION_ID" \
   --name 'Create Alice subscription' \
   --via public-api \
@@ -202,7 +202,7 @@ run_json_until \
   "blackbox capsule show $SESSION_ID --json" \
   "$ARTIFACT_ROOT/observations-session.json" \
   '.kind == "collector-session-found" and (.traceIds | length > 0)' \
-  show "$SESSION_ID" --json
+  capsule show "$SESSION_ID" --json
 jq -e '.kind == "collector-session-found" and (.traceIds | length > 0)' \
   "$ARTIFACT_ROOT/observations-session.json" >/dev/null
 jq -e '
@@ -219,7 +219,7 @@ run_json_until \
         --json" \
   "$ARTIFACT_ROOT/observations-activity.json" \
   '.kind == "collector-activity-found" and (.fragments | length > 0)' \
-  show "$DRIVER_ACTIVITY_ID" --session "$SESSION_ID" --json
+  capsule show "$DRIVER_ACTIVITY_ID" --session "$SESSION_ID" --json
 jq -e --arg activity "$DRIVER_ACTIVITY_ID" \
   '.kind == "collector-activity-found" and .activityId == $activity and (.fragments | length > 0)' \
   "$ARTIFACT_ROOT/observations-activity.json" >/dev/null
@@ -261,7 +261,7 @@ run_captured_step \
         --json \\
         -- redis-cli RPUSH blackbox:proof:stimuli $PROOF_ID" \
   "$ARTIFACT_ROOT/redis-execution.json" \
-  run \
+  capsule run \
   --session "$SESSION_ID" \
   --name 'Queue shared-state proof' \
   --via redis \
@@ -277,7 +277,7 @@ run_json_until \
   "blackbox capsule show $REDIS_ACTIVITY_ID --session $SESSION_ID --json" \
   "$ARTIFACT_ROOT/observations-redis-activity.json" \
   '.kind == "collector-activity-found" and (.traceIds | length == 1)' \
-  show "$REDIS_ACTIVITY_ID" --session "$SESSION_ID" --json
+  capsule show "$REDIS_ACTIVITY_ID" --session "$SESSION_ID" --json
 
 wait_for_shared_state_proof \
   "$ARTIFACT_ROOT/redis-execution.json" \
@@ -304,7 +304,7 @@ run_captured_step \
         --tuples-only --no-align \\
         --command \"SELECT user_id || '|' || status FROM subscriptions WHERE user_id = 'alice';\"" \
   "$ARTIFACT_ROOT/postgres.json" \
-  run \
+  capsule run \
   --session "$SESSION_ID" \
   --name 'Inspect Alice subscription' \
   --via postgres \
@@ -341,7 +341,7 @@ run_expected_status_step \
         --json \\
         -- blackbox-missing-client" \
   "$ARTIFACT_ROOT/missing-executable.json" \
-  run \
+  capsule run \
   --session "$SESSION_ID" \
   --name 'Probe missing participant tool' \
   --via postgres \
@@ -372,7 +372,7 @@ run_captured_step \
         --header \"Authorization: Bearer <redacted>\" \\
         $ENTRYPOINT_URL/fixture/state" \
   "$ARTIFACT_ROOT/fixture-state.json" \
-  run --session "$SESSION_ID" --name 'Inspect fixture state' --purpose inspection -- \
+  capsule run --session "$SESSION_ID" --name 'Inspect fixture state' --purpose inspection -- \
   curl --fail --silent --show-error \
   --header "Authorization: Bearer $FIXTURE_TOKEN" \
   "$ENTRYPOINT_URL/fixture/state"
@@ -388,7 +388,7 @@ run_captured_step \
         --format json \\
         --output -" \
   "$ARTIFACT_ROOT/running-report.json" \
-  report "$SESSION_ID" --format json --output -
+  capsule report "$SESSION_ID" --format json --output -
 assert_report "$ARTIFACT_ROOT/running-report.json" running
 jq -e '.activities | length >= 6' "$ARTIFACT_ROOT/running-report.json" >/dev/null
 jq -e '
@@ -413,7 +413,7 @@ run_captured_step \
   "blackbox capsule report $SESSION_ID \\
         --format json" \
   "$ARTIFACT_ROOT/json-report-path.txt" \
-  report "$SESSION_ID" --format json
+  capsule report "$SESSION_ID" --format json
 assert_report "$REPORT_ROOT/capsule-report.json" running
 jq -e --arg session "$SESSION_ID" \
   '.session.sessionId == $session and .lifecycle.kind == "running" and (.activities | length >= 6) and .observations.kind == "collector-session-found"' \
@@ -425,7 +425,7 @@ run_captured_step \
         --format html \\
         --output .blackbox/reports/capsule-$SESSION_ID/running.html" \
   "$ARTIFACT_ROOT/running-html-path.txt" \
-  report "$SESSION_ID" --format html \
+  capsule report "$SESSION_ID" --format html \
   --output ".blackbox/reports/capsule-$SESSION_ID/running.html"
 assert_html "$REPORT_ROOT/running.html"
 RUNNING_HTML_CHECKSUM="$(cksum <"$REPORT_ROOT/running.html")"
@@ -436,7 +436,7 @@ run_captured_step \
   'Stop the exact capsule and release only its owned resources.' \
   "blackbox capsule down $SESSION_ID --json" \
   "$ARTIFACT_ROOT/capsule-stop.json" \
-  down "$SESSION_ID" --json
+  capsule down "$SESSION_ID" --json
 jq -e --arg session "$SESSION_ID" '
   .kind == "capsule-stopped" and .sessionId == $session and .capsule == $session and
   .cleanup == "complete" and .alreadyStopped == false and .warnings == []
@@ -456,7 +456,7 @@ run_captured_step \
         --format json \\
         --output -" \
   "$ARTIFACT_ROOT/capsule-report.json" \
-  report "$SESSION_ID" --format json --output -
+  capsule report "$SESSION_ID" --format json --output -
 jq -e --arg session "$SESSION_ID" --arg system "$SYSTEM_ID" \
   '.session.sessionId == $session and .session.system == $system and .lifecycle.kind == "stopped" and .cleanup.kind == "complete"' \
   "$ARTIFACT_ROOT/capsule-report.json" >/dev/null
@@ -470,7 +470,7 @@ run_captured_step \
   "blackbox capsule report $SESSION_ID \\
         --format html" \
   "$ARTIFACT_ROOT/capsule-report-html-path.txt" \
-  report "$SESSION_ID" --format html
+  capsule report "$SESSION_ID" --format html
 assert_html "$REPORT_ROOT/capsule-report.html"
 grep -F 'session-only observed traces' "$REPORT_ROOT/capsule-report.html" >/dev/null
 grep -F "$SHARED_DOWNSTREAM_TRACE_ID" "$REPORT_ROOT/capsule-report.html" >/dev/null
