@@ -24,9 +24,10 @@ void test('repeated and concurrent CLI serve requests reuse the owner and exit s
     );
     for (const result of results) {
       assert.equal(result.status, 0, result.stderr);
-      assert.match(result.stdout, /^Viewer ownership: reused$/mu);
-      assert.doesNotMatch(result.stdout, /Ctrl-C/u);
-      const match = /^Blackbox reports: (.+)$/mu.exec(result.stdout);
+      assert.equal(result.stdout, '');
+      assert.match(result.stderr, /^Viewer ownership: reused$/mu);
+      assert.doesNotMatch(result.stderr, /Ctrl-C/u);
+      const match = /^Blackbox reports: (.+)$/mu.exec(result.stderr);
       assert.ok(match);
       const url = match[1];
       assert.equal(new URL(url).port, port);
@@ -51,7 +52,8 @@ void test('another project cannot reuse or stop a viewer bound to the requested 
     });
     assert.notEqual(result.status, 0);
     assert.match(result.stderr, /occupied by an incompatible viewer/u);
-    assert.doesNotMatch(result.stdout, /Blackbox reports:/u);
+    assert.equal(result.status, 125);
+    assert.doesNotMatch(result.stdout + result.stderr, /Blackbox reports:/u);
     assert.equal((await fetch(owner.url)).status, 200);
     assert.equal(owner.child.exitCode, null);
   } finally {

@@ -1,0 +1,46 @@
+$ set -o pipefail
+$ blackbox up payment-mock --silent --json > up.json
+$ jq -c '{kind, current, warnings, next: (.next | length), sameId: (.capsule == .sessionId)}' up.json
+{"kind":"capsule-started","current":"set","warnings":[],"next":1,"sameId":true}
+$ jq -r .capsule up.json
+<CAPSULE_1>
+#! capture CAPSULE_1 single-token
+$ blackbox capsule start --system payment-mock --silent --json | jq -c 'keys - ["kind","capsule","current","warnings","next"]'
+["artifactRoot","composeProject","containers","entrypoint","networks","readiness","sessionId","system","title","volumes"]
+$ blackbox ls
+  CAPSULE  SYSTEM  STATE  STARTED  ACTIVITIES  TITLE
+* <CAPSULE_2>  payment-mock  running  <TIME>  0  payment-mock
+  <CAPSULE_1>  payment-mock  running  <TIME>  0  payment-mock
+#! capture CAPSULE_2 current-row
+$ blackbox use $CAPSULE_1
+current capsule: <CAPSULE_1> (payment-mock, running)
+$ blackbox run -- sh -c 'exit 1'
+activity <ACT_1> · capsule <CAPSULE_1> · stimulus · host · host · exit 1 · <DUR>
+→ blackbox show <ACT_1> --capsule <CAPSULE_1>
+$ echo $?
+1
+$ blackbox run -- sh -c 'exit 3'
+activity <ACT_2> · capsule <CAPSULE_1> · stimulus · host · host · exit 3 · <DUR>
+→ blackbox show <ACT_2> --capsule <CAPSULE_1>
+$ echo $?
+3
+$ blackbox run --json -- sh -c 'echo out; echo err >&2; exit 2' | jq -c '{kind, capsule, exit: .outcome.exitCode, stdout: .outcome.stdout, stderr: .outcome.stderr}'
+{"kind":"capsule-exec-completed","capsule":"<CAPSULE_1>","exit":2,"stdout":"out\n","stderr":"err\n"}
+$ echo $?
+2
+$ blackbox run -- sh -c 'kill -TERM $$'
+activity <ACT_3> · capsule <CAPSULE_1> · stimulus · host · host · signal SIGTERM · <DUR>
+→ blackbox show <ACT_3> --capsule <CAPSULE_1>
+$ echo $?
+143
+$ blackbox run -- sh -c 'kill -KILL $$'
+activity <ACT_4> · capsule <CAPSULE_1> · stimulus · host · host · signal SIGKILL · <DUR>
+→ blackbox show <ACT_4> --capsule <CAPSULE_1>
+$ echo $?
+137
+$ blackbox down $CAPSULE_1
+capsule <CAPSULE_1> stopped · evidence kept
+current capsule: none
+→ blackbox report <CAPSULE_1>
+$ blackbox capsule stop --session $CAPSULE_2 --json | jq -c '{kind, sameId: (.capsule == .sessionId), next}'
+{"kind":"capsule-stopped","sameId":true,"next":["blackbox report <CAPSULE_2>"]}

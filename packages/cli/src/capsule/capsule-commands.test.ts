@@ -9,6 +9,11 @@ import {
   runCli,
 } from './reporting/capsule-command.fixture.js';
 
+function durationOf(stderr: string): string {
+  const match = /· (\d+(?:\.\d)?m?s)\n/u.exec(stderr);
+  return match === null ? 'no duration' : match[1];
+}
+
 void test('exec forwards literal host argv and purpose through real CLI-to-manager IPC', async () => {
   const fixture = await commandFixture('running');
   const outcome = {
@@ -40,9 +45,12 @@ void test('exec forwards literal host argv and purpose through real CLI-to-manag
     });
     assert.equal(result.status, 7, result.stderr);
     assert.equal(result.stdout, outcome.stdout);
-    assert.match(result.stderr, new RegExp(fixtureActivityId, 'u'));
-    assert.match(result.stderr, /visible-error/u);
-    assert.match(result.stderr, /command exited with 7/u);
+    assert.equal(
+      result.stderr,
+      'visible-error\n' +
+        `activity 00000000 · capsule ${fixture.sessionId} · setup · host · host · exit 7 · ${durationOf(result.stderr)}\n` +
+        `→ blackbox show 00000000 --capsule ${fixture.sessionId}\n`,
+    );
     assert.equal(manager.requests.length, 1);
     assert.deepEqual((manager.requests[0] as { name: unknown }).name, { kind: 'omitted' });
     assert.equal((manager.requests[0] as { purpose: unknown }).purpose, 'setup');
@@ -81,6 +89,8 @@ void test('JSON exec stdout is one parseable document even when the delegated co
       kind: 'capsule-exec-completed',
       activityId: fixtureActivityId,
       outcome,
+      capsule: fixture.sessionId,
+      next: [`blackbox show 00000000 --capsule ${fixture.sessionId}`],
     });
   } finally {
     await manager.close();
@@ -108,11 +118,10 @@ void test('signaled host commands remain failures and preserve diagnostic output
       directory: fixture.directory,
       argv: ['capsule', 'exec', '--session', fixture.sessionId, '--', 'worker'],
     });
-    assert.equal(result.status, 1);
+    assert.equal(result.status, 128 + 15);
     assert.equal(result.stdout, '');
-    assert.match(result.stderr, new RegExp(fixtureActivityId, 'u'));
-    assert.match(result.stderr, /interrupted/u);
-    assert.match(result.stderr, /SIGTERM/u);
+    assert.match(result.stderr, /^interrupted\n/u);
+    assert.match(result.stderr, /activity 00000000 · .* · signal SIGTERM · /u);
   } finally {
     await manager.close();
     await removeFixture(fixture.directory);
@@ -132,6 +141,9 @@ void test('stop is idempotent for an exact already-stopped session', async () =>
       sessionId: fixture.sessionId,
       cleanup: 'complete',
       alreadyStopped: true,
+      capsule: fixture.sessionId,
+      warnings: [],
+      next: [`blackbox report ${fixture.sessionId}`],
     });
   } finally {
     await removeFixture(fixture.directory);
@@ -144,37 +156,6 @@ void test('usage errors are rejected before any Capsule acquisition', async () =
     for (const argv of [
       ['capsule', 'start', '--system', 'orders', '--silent', '--interactive'],
       ['capsule', 'start', '--system', 'orders', '--env', 'NOT_AN_ASSIGNMENT'],
-      ['capsule', 'exec', '--session', fixture.sessionId],
-      [
-        'capsule',
-        'exec',
-        '--session',
-        fixture.sessionId,
-        '--name',
-        '   ',
-        '--',
-        'true',
-      ],
-      [
-        'capsule',
-        'exec',
-        '--session',
-        fixture.sessionId,
-        '--name',
-        'a'.repeat(121),
-        '--',
-        'true',
-      ],
-      [
-        'capsule',
-        'exec',
-        '--session',
-        fixture.sessionId,
-        '--purpose',
-        'destructive',
-        '--',
-        'true',
-      ],
       [
         'capsule',
         'report',
@@ -193,6 +174,17 @@ void test('usage errors are rejected before any Capsule acquisition', async () =
       assert.equal(result.status, 2, result.stderr);
       assert.equal(result.stdout, '');
     }
+    // run (capsule exec) keeps 1..124 for the child: its usage errors exit 125.
+    for (const argv of [
+      ['capsule', 'exec', '--session', fixture.sessionId],
+      ['capsule', 'exec', '--session', fixture.sessionId, '--name', '   ', '--', 'true'],
+      ['capsule', 'exec', '--session', fixture.sessionId, '--name', 'a'.repeat(121), '--', 'true'],
+      ['capsule', 'exec', '--session', fixture.sessionId, '--purpose', 'destructive', '--', 'true'],
+    ]) {
+      const result = await runCli({ directory: fixture.directory, argv });
+      assert.equal(result.status, 125, result.stderr);
+      assert.equal(result.stdout, '');
+    }
   } finally {
     await removeFixture(fixture.directory);
   }
@@ -203,18 +195,15 @@ void test('JSON operation failures emit one parseable document without human dia
   try {
     const result = await runCli({
       directory: fixture.directory,
-      argv: [
-        'capsule',
-        'exec',
-        '--session',
-        fixture.sessionId,
-        '--json',
-        '--',
-        'true',
-      ],
+      argv: ['capsule', 'exec', '--session', fixture.sessionId, '--json', '--', 'true'],
     });
-    assert.equal(result.status, 1);
-    assert.equal(JSON.parse(result.stdout).kind, 'capsule-invalid-state');
+    assert.equal(result.status, 125);
+    assert.deepEqual(JSON.parse(result.stdout), {
+      kind: 'cli-error',
+      code: 'capsule-not-running',
+      message: `capsule ${fixture.sessionId} is stopped; run needs a running capsule`,
+      next: ['blackbox up'],
+    });
     assert.equal(result.stderr, '');
   } finally {
     await removeFixture(fixture.directory);

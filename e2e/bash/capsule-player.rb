@@ -32,8 +32,12 @@ def stop_report_viewer(server)
   rescue Errno::ESRCH
     # It already exited; the exit status still determines success.
   end
+  # Drain the viewer's output until it exits, then close the pipe. Closing the
+  # pipe first makes the exiting viewer fail (Node exits 13 on the broken pipe).
+  output.read
+  status = wait_thread.value
   output.close
-  raise 'Report server did not stop cleanly' unless wait_thread.value.success?
+  raise "Report server did not stop cleanly (#{status})" unless status.success?
 end
 
 story = Psych.safe_load(File.read(story_path), permitted_classes: [], aliases: false)
@@ -45,7 +49,9 @@ begin
   puts "#{blue}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━#{reset}"
   puts "#{cyan}[blackbox]#{reset} #{yellow}#{story.fetch('title')}#{reset}"
   puts "#{dim}Storyboard: #{story_path}#{reset}"
-  system('node', File.join(__dir__, 'capsule-reset.mjs')) || abort('Demo reset failed')
+  # No reset here: capsule-assets.sh, which must run right before the player,
+  # already resets demo outputs and then prepares the packed drivers. A second
+  # reset would delete that driver preparation.
 
   story.fetch('steps').each_with_index do |step, index|
     kind = step.fetch('kind')
@@ -53,6 +59,8 @@ begin
       step.fetch('command'),
       values
     )
+    # CI has no browser: --no-browser keeps `open` from trying to launch one.
+    arguments += ['--no-browser'] if kind == 'serve' && options['--no-browser']
     executable = if kind == 'shell'
                    [File.join(root, arguments.fetch(0)), *arguments.drop(1)]
                  else
@@ -83,10 +91,12 @@ begin
       input.close
       server_url = nil
       ownership = nil
+      # `open` announces `flight control: <url>`, then `viewer: started, …` or
+      # `viewer: reused` (on stderr, merged here).
       while (line = output.gets)
         print line
-        server_url = line.sub(/^Blackbox reports: /, '').strip if line.start_with?('Blackbox reports: ')
-        ownership = line.sub(/^Viewer ownership: /, '').strip if line.start_with?('Viewer ownership: ')
+        server_url = line.sub(/^flight control: /, '').strip if line.start_with?('flight control: ')
+        ownership = line.sub(/^viewer: /, '').split(',').first.strip if line.start_with?('viewer: ')
         break if server_url && ownership
       end
       abort 'Report server did not announce a URL' unless server_url
@@ -142,6 +152,6 @@ ensure
     warn error.message
   end
   if values['SESSION_ID'] != '' && !session_stopped
-    system(blackbox_bin, 'capsule', 'stop', '--session', values['SESSION_ID'], '--json', chdir: project_directory)
+    system(blackbox_bin, 'down', values['SESSION_ID'], '--json', chdir: project_directory)
   end
 end

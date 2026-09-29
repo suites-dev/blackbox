@@ -139,9 +139,9 @@ void test('an occupied report port fails without announcing a server or taking o
       directory: fixture.directory,
       argv: ['capsule', 'report', 'serve', '--port', String(address.port)],
     });
-    assert.notEqual(result.status, 0);
-    assert.match(result.stderr, /occupied by an incompatible viewer/u);
-    assert.doesNotMatch(result.stdout, /Blackbox reports:/u);
+    assert.equal(result.status, 125);
+    assert.match(result.stderr, /^blackbox: .*occupied by an incompatible viewer/u);
+    assert.doesNotMatch(result.stdout + result.stderr, /Blackbox reports:/u);
     assert.equal(occupied.listening, true);
   } finally {
     occupied.closeAllConnections();

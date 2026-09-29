@@ -1,5 +1,6 @@
 import { Command, Flags } from '@oclif/core';
 
+import { EXIT_CODES } from '../../cli/exit-codes.js';
 import { installDriverRuntime } from '../../driver/installation/install-driver-runtime.js';
 import { installDriverDependencies } from '../../driver/installation/package-manager.js';
 
@@ -19,12 +20,12 @@ export default class DriverInstall extends Command {
     if (flags.json) {
       process.stdout.write(`${JSON.stringify(result)}\n`);
       if (!result.ok) {
-        this.exit(1);
+        this.exit(EXIT_CODES.unchangedCommandFailure);
       }
       return;
     }
     if (!result.ok) {
-      this.error(result.message, { exit: 1 });
+      this.error(result.message, { exit: EXIT_CODES.unchangedCommandFailure });
     }
     this.log(
       `Node driver runtime installed: .blackbox/drivers (${result.files.package}, ${result.files.runtime})`,

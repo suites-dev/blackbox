@@ -43,8 +43,8 @@ class CapsulePlayerTest < Minitest::Test
 
     start_argv = command_argv(story, 'start', values)
     reset_argv = command_argv(story, 'fixture-reset', values)
-    assert_equal 12, start_argv.length
-    assert_equal 23, reset_argv.length
+    assert_equal 10, start_argv.length
+    assert_equal 20, reset_argv.length
     assert_includes start_argv, "FIXTURE_CONTROL_TOKEN=#{token}"
     assert_includes reset_argv, "Authorization: Bearer #{token}"
 

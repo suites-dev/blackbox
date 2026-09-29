@@ -43,7 +43,12 @@
   "oclif": {
     "bin": "blackbox",
     "dirname": "blackbox",
-    "commands": "./dist/commands",
+    "commands": {
+      "strategy": "explicit",
+      "target": "./dist/command-registry.js",
+      "identifier": "COMMANDS"
+    },
+    "helpClass": "./dist/help.js",
     "topicSeparator": " "
   },
   "license": "Apache-2.0"

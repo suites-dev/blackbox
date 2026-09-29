@@ -10,6 +10,7 @@ import {
   type CapsuleTerminalSize,
 } from '@suites/blackbox-capsule-internal';
 
+import { type OutputTracker, trackedWritable } from '../../operations/run/output-tracker.js';
 import { ControlQueue } from './control-queue.js';
 
 type ExecuteInteractive = (input: CapsuleInteractiveExecInput) => Promise<CapsuleExecResult>;
@@ -242,10 +243,16 @@ export async function runInteractiveCapsuleExec(
 
 export function runProcessInteractiveCapsuleExec(
   input: CapsuleExecInput,
+  tracker: OutputTracker,
 ): Promise<CapsuleExecResult> {
+  const ports = processTerminalPorts();
   return runInteractiveCapsuleExec({
     ...input,
-    ports: processTerminalPorts(),
+    ports: {
+      ...ports,
+      stdout: trackedWritable(ports.stdout, tracker),
+      stderr: trackedWritable(ports.stderr, tracker),
+    },
     execute: execCapsuleInteractive,
   });
 }

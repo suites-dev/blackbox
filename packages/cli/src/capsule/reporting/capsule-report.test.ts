@@ -101,9 +101,9 @@ void test('corrupt artifacts fail without writing a misleading JSON export', asy
         '-',
       ],
     });
-    assert.equal(result.status, 1);
+    assert.equal(result.status, 125);
     assert.equal(result.stdout, '');
-    assert.match(result.stderr, /activities artifact/u);
+    assert.match(result.stderr, /^blackbox: activities artifact/u);
   } finally {
     await removeFixture(fixture.directory);
   }
@@ -125,7 +125,8 @@ void test('HTML mode creates its default directory and prints the generated snap
       argv: ['capsule', 'report', 'export', '--session', fixture.sessionId, '--format', 'html'],
     });
     assert.equal(result.status, 0, result.stderr);
-    assert.equal(result.stdout.trim(), path);
+    assert.equal(result.stdout, '');
+    assert.equal(result.stderr, `report for capsule ${fixture.sessionId}\n✔ ${path}\n`);
     assert.match(await readFile(path, 'utf8'), /quiet-river-ada/u);
     assert.equal(await readFile(join(fixture.artifactRoot, 'session.json'), 'utf8'), before);
   } finally {
@@ -162,7 +163,8 @@ void test('JSON exports to default or nested custom paths match stdout without a
         fixture.directory,
         output ?? `.blackbox/reports/capsule-${fixture.sessionId}/capsule-report.json`,
       );
-      assert.equal(result.stdout.trim(), path);
+      assert.equal(result.stdout, '');
+      assert.equal(result.stderr, `report for capsule ${fixture.sessionId}\n✔ ${path}\n`);
       assert.equal(await readFile(path, 'utf8'), stdout.stdout);
     }
     assert.equal(await readFile(join(fixture.artifactRoot, 'session.json'), 'utf8'), before);
@@ -193,8 +195,9 @@ void test('report topic discovers both actions and export write failures are non
         'blocked/report.html',
       ],
     });
-    assert.equal(result.status, 4);
+    assert.equal(result.status, 125);
     assert.equal(result.stdout, '');
+    assert.match(result.stderr, /^blackbox: Error: /u);
   } finally {
     await removeFixture(fixture.directory);
   }

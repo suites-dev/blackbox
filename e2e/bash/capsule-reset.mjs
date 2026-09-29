@@ -78,7 +78,7 @@ async function main() {
   }
   await resetCapsuleDemo({ projectDirectory, stopSession: async ({ sessionId }) => {
     process.stdout.write(`[blackbox] Stopping previous demo Capsule ${sessionId}\n`);
-    const args = ['capsule', 'stop', '--session', sessionId, '--json'];
+    const args = ['down', sessionId, '--json'];
     const result = await execute(process.execPath, [cliEntrypoint, ...args], {
       cwd: projectDirectory,
     });

@@ -1072,6 +1072,8 @@ function approvedCliCommand(command) {
       return ['pnpm', 'test'];
     case 'pnpm\0test:e2e:capsule':
       return ['pnpm', 'test:e2e:capsule'];
+    case 'pnpm\0test:e2e:journeys':
+      return ['pnpm', 'test:e2e:journeys'];
     case 'pnpm\0typecheck':
       return ['pnpm', 'typecheck'];
     default:
