@@ -1,6 +1,6 @@
 import { Args, Flags } from '@oclif/core';
 
-import { ReportCommand } from '../../operations/viewing/report-command.js';
+import { ReportCommand } from '../operations/viewing/report-command.js';
 
 export default class Report extends ReportCommand {
   static override summary = 'Write a capsule report (HTML and JSON by default).';
