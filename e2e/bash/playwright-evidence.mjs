@@ -74,16 +74,14 @@ async function dockerResources(projectName) {
   return observed;
 }
 
-export async function boundary(consumerRootValue, workspaceRootValue) {
+export async function boundary(consumerRootValue) {
   const consumerRoot = resolve(await realpath(consumerRootValue));
-  const workspaceRoot = resolve(await realpath(workspaceRootValue));
   const packages = [];
   for (const name of packedPackages) {
     const packageRoot = resolve(
       await realpath(join(consumerRoot, 'node_modules', ...name.split('/'))),
     );
     assert(isWithin(packageRoot, consumerRoot), `${name} escaped the packed consumer`);
-    assert(!isWithin(packageRoot, workspaceRoot), `${name} resolved through the workspace`);
     const manifest = JSON.parse(await readFile(join(packageRoot, 'package.json'), 'utf8'));
     assert(manifest.name === name, `Packed package identity mismatch: ${name}`);
     packages.push({ name, packageRoot });

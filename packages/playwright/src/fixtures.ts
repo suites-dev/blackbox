@@ -59,7 +59,7 @@ export function createBlackboxTest(runtime: BlackboxAttemptRuntime) {
         await use(attempt);
         await attempt.stop(stopReason(testInfo.status));
       },
-      { auto: true, timeout: 180_000 },
+      { auto: true },
     ],
     sandbox: async ({ _blackboxAttempt }, use) => {
       await use(_blackboxAttempt.sandbox);

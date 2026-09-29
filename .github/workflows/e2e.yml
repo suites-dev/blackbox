@@ -160,9 +160,7 @@ jobs:
         if: always()
         env:
           E2E_TEST_OUTCOME: ${{ steps.playwright_tests.outcome }}
-          E2E_PROJECT: playwright
-          E2E_EVIDENCE_OUTPUT_DIR: .blackbox/tmp/ci-playwright-e2e-transport
-        run: node .github/scripts/e2e-evidence.mjs
+        run: node .github/scripts/playwright-e2e-evidence.mjs
 
       - name: Retain Playwright evidence
         id: playwright_evidence

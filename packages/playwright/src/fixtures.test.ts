@@ -13,11 +13,16 @@ afterEach(async () => {
 });
 
 async function runPlaywright(input: {
+  readonly configFile: string;
   readonly outputDirectory: string;
 }): Promise<{ readonly exitCode: number; readonly output: string }> {
   const require = createRequire(import.meta.url);
   const cli = require.resolve('@playwright/test/cli');
-  const config = join(import.meta.dirname, 'testing', 'playwright.config.ts');
+  const config = join(
+    import.meta.dirname,
+    'testing',
+    input.configFile,
+  );
   const child = spawn(process.execPath, [cli, 'test', '--config', config], {
     cwd: join(import.meta.dirname, '..'),
     env: {
@@ -49,7 +54,10 @@ async function runPlaywright(input: {
 it('owns one sandbox lifecycle per Playwright physical attempt, including a retry', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'blackbox-playwright-fixture-'));
   directories.push(directory);
-  const result = await runPlaywright({ outputDirectory: join(directory, 'output') });
+  const result = await runPlaywright({
+    configFile: 'playwright.config.ts',
+    outputDirectory: join(directory, 'output'),
+  });
   expect(result.exitCode, result.output).toBe(0);
   const marker = 'BLACKBOX_PLAYWRIGHT_EVENT ';
   const events = result.output
@@ -68,4 +76,17 @@ it('owns one sandbox lifecycle per Playwright physical attempt, including a retr
     'failed',
     'completed',
   ]);
+});
+
+it('lets the Playwright test timeout govern sandbox acquisition', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'blackbox-playwright-timeout-'));
+  directories.push(directory);
+  const result = await runPlaywright({
+    configFile: 'fixture-timeout.config.ts',
+    outputDirectory: join(directory, 'output'),
+  });
+  expect(result.exitCode, result.output).toBe(1);
+  expect(result.output).toContain(
+    'Test timeout of 20ms exceeded while setting up "_blackboxAttempt"',
+  );
 });
