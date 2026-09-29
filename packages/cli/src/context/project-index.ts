@@ -60,7 +60,7 @@ export class ProjectIndex {
   static async load(projectDirectory: string): Promise<ProjectIndex> {
     const result = await listCapsuleSessions({ projectDirectory });
     if (result.kind === 'capsule-registry-failed') {
-      // ls, use and open report every failure as a cli-error (table D).
+      // ls, use and open report every failure as a cli-error document.
       throw cliFailure('operation-failed', `${result.error.name}: ${result.error.message}`);
     }
     const capsules = result.entries.flatMap((entry) =>
@@ -149,6 +149,16 @@ export class ProjectIndex {
       ),
     );
     return lists.flat();
+  }
+
+  /** Capsules whose activity record could not be read (their activities are unknown). */
+  async unreadableActivities(): Promise<readonly string[]> {
+    const states = await Promise.all(
+      this.#capsules.map(async ({ capsule }) =>
+        (await this.activities(capsule)) === null ? capsule : null,
+      ),
+    );
+    return states.filter((capsule): capsule is string => capsule !== null);
   }
 
   /** Trace IDs retained for a capsule: collector traces plus each activity's own trace. */

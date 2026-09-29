@@ -1,8 +1,10 @@
 import { randomBytes } from 'node:crypto';
+import { constants } from 'node:fs';
 import {
   link,
   lstat,
   mkdir,
+  open,
   readFile,
   realpath,
   rename,
@@ -40,10 +42,6 @@ const NO_HOOKS = {
 
 export function stateDirectory(projectDirectory: string): string {
   return join(projectDirectory, '.blackbox', 'state');
-}
-
-function currentFile(projectDirectory: string): string {
-  return join(stateDirectory(projectDirectory), 'current-capsule');
 }
 
 function token(): string {
@@ -112,14 +110,55 @@ function parseContent(content: string): string | null {
   return isCapsuleIdShape(value) ? value : null;
 }
 
-export async function readCurrentCapsule(projectDirectory: string): Promise<CurrentCapsuleRead> {
-  let content: string;
+/** A capsule ID plus newline is far shorter; anything longer is malformed. */
+const MAX_CURRENT_BYTES = 256;
+
+/**
+ * Reads the file only when it is a regular file, never a symlink, FIFO or
+ * device, and reads at most MAX_CURRENT_BYTES + 1 bytes. null = unreadable.
+ */
+async function readBounded(file: string): Promise<string | null> {
+  const info = await lstat(file);
+  if (!info.isFile()) {
+    return null;
+  }
+  // O_NOFOLLOW and O_NONBLOCK close the lstat/open race: a file swapped for a
+  // symlink fails to open, and one swapped for a FIFO opens without blocking and
+  // fails the fstat check below. Windows has neither flag; there the constants
+  // are undefined and the bitwise OR treats them as 0.
+  const handle = await open(file, constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK);
   try {
-    content = await readFile(currentFile(projectDirectory), 'utf8');
+    if (!(await handle.stat()).isFile()) {
+      return null;
+    }
+    const buffer = Buffer.alloc(MAX_CURRENT_BYTES + 1);
+    const { bytesRead } = await handle.read(buffer, 0, buffer.length, 0);
+    return bytesRead > MAX_CURRENT_BYTES ? '' : buffer.subarray(0, bytesRead).toString('utf8');
+  } finally {
+    await handle.close();
+  }
+}
+
+/**
+ * The current capsule, read only through a safe state directory (see
+ * safeStateDirectory) and a bounded read of a regular file. An unsafe
+ * directory or file reads as `unreadable`; a missing one as `none`.
+ */
+export async function readCurrentCapsule(projectDirectory: string): Promise<CurrentCapsuleRead> {
+  let content: string | null;
+  try {
+    const directory = await safeStateDirectory(projectDirectory, false);
+    if (directory === null) {
+      return { kind: 'none' };
+    }
+    content = await readBounded(join(directory, 'current-capsule'));
   } catch (error) {
     return errorCode(error) === 'ENOENT'
       ? { kind: 'none' }
       : { kind: 'invalid', reason: 'unreadable' };
+  }
+  if (content === null) {
+    return { kind: 'invalid', reason: 'unreadable' };
   }
   const capsule = parseContent(content);
   return capsule === null ? { kind: 'invalid', reason: 'malformed' } : { kind: 'set', capsule };

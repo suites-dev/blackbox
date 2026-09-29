@@ -81,3 +81,31 @@ void test('show <capsule> renders an unreadable activity record as unavailable, 
     await fixture.remove();
   }
 });
+
+void test('an activity lookup that could not read every activity record says so instead of id-unknown', async () => {
+  const fixture = await stoppedCapsule();
+  try {
+    const plain = await run(fixture.directory, 'show', '3f9a2c41', '--json');
+    assert.equal(plain.status, 2);
+    assert.equal(onlyDocument(plain).message, 'no capsule, activity or trace matches 3f9a2c41');
+    await writeFile(
+      join(
+        fixture.directory,
+        '.blackbox',
+        'experiments',
+        `capsule-${CAPSULE_A}`,
+        'activities.json',
+      ),
+      '{not json',
+    );
+    const json = await run(fixture.directory, 'show', '3f9a2c41', '--json');
+    assert.equal(json.status, 2);
+    const document = onlyDocument(json);
+    assert.equal(document.code, 'id-unknown');
+    assert.match(String(document.message), /the activity records of 1 capsule could not be read$/u);
+    const human = await run(fixture.directory, 'show', '3f9a2c41');
+    assert.match(human.stderr, new RegExp(`^ {2}unreadable: ${CAPSULE_A}$`, 'mu'));
+  } finally {
+    await fixture.remove();
+  }
+});

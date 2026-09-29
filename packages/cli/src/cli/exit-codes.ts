@@ -12,7 +12,7 @@ export const EXIT_CODES = {
   usage: 2,
   reserved: 3,
   blackboxFailure: 125,
-  /** Reserved for "not executable"; phase 1 never produces it. */
+  /** Reserved for "not executable"; not produced yet. */
   notExecutable: 126,
   executableNotFound: 127,
   signalBase: 128,

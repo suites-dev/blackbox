@@ -19,7 +19,7 @@ export function currentWriteFailure(capsule: string, message: string): CliErrorD
   };
 }
 
-/** The document `capsule start --json` printed before phase 1 (field order kept). */
+/** The document `capsule start --json` printed before the `up` command existed (field order kept). */
 function startDocument(result: StartedCapsule) {
   return {
     sessionId: result.sessionId,

@@ -123,7 +123,8 @@ function choose(input: string, matches: readonly Match[], scope: SearchScope): R
 }
 
 /**
- * Resolves a capsule, activity or trace ID (table B). The search always covers
+ * Resolves a capsule ID (exact), a trace ID (32 hex) or an activity ID (full
+ * UUID or a 6+ hex prefix, hyphens optional). The search always covers
  * the whole project so a mismatch can name the capsule that owns the ID; only
  * an explicit capsule context narrows which match is accepted.
  */
@@ -140,7 +141,30 @@ export async function resolveId(
     return { kind: 'capsule', capsule };
   }
   if (isFullActivityId(input) || isActivityPrefix(input)) {
-    return choose(input, await activityMatches(index, input), scope);
+    const matches = await activityMatches(index, input);
+    if (matches.length === 0) {
+      throw await unknownActivity(index, input);
+    }
+    return choose(input, matches, scope);
   }
   throw unknown(input);
+}
+
+/**
+ * No retained activity matched. When some capsules' activity records could not
+ * be read, the search was incomplete: say so and name them, instead of
+ * asserting that nothing matches.
+ */
+async function unknownActivity(index: ProjectIndex, input: string): Promise<CliFailure> {
+  const unreadable = await index.unreadableActivities();
+  if (unreadable.length === 0) {
+    return unknown(input);
+  }
+  return new CliFailure({
+    code: 'id-unknown',
+    message: `no readable activity matches ${input}; the activity records of ${String(unreadable.length)} ${unreadable.length === 1 ? 'capsule' : 'capsules'} could not be read`,
+    details: unreadable.map((capsule) => `unreadable: ${capsule}`),
+    candidates: [],
+    next: ['blackbox ls --all'],
+  });
 }

@@ -83,7 +83,13 @@ export abstract class OpenCommand extends BlackboxCommand {
     this.finish(EXIT_CODES.success);
   }
 
-  /** An ID selects its capsule; else BLACKBOX_CAPSULE, else the current capsule; else the registry. */
+  /**
+   * A capsule ID selects that capsule, ahead of any explicit context. An
+   * activity or trace ID selects its owning capsule, searched within the
+   * explicit context (BLACKBOX_CAPSULE) when one is set, exactly as `show`
+   * does (only an explicit context narrows ID search). Without an ID:
+   * BLACKBOX_CAPSULE, else the current capsule, else the registry.
+   */
   protected async target(id: string | null): Promise<ViewerTarget> {
     const context = new InvocationContext(process.cwd());
     if (id !== null) {

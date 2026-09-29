@@ -15,7 +15,7 @@ const MALFORMED = [
 void test('an unlisted explicit capsule fails as capsule-not-found, with capsule and next, on every command', async () => {
   const fixture = await twoCapsuleProject();
   try {
-    // report has no --capsule flag (table A); BLACKBOX_CAPSULE is its explicit context.
+    // report has no --capsule flag; BLACKBOX_CAPSULE is its explicit context.
     for (const [argv, capsuleEnvironment] of [
       [['run', '--capsule', UNLISTED, '--json', '--', 'x'], null],
       [['down', '--capsule', UNLISTED, '--json'], null],
