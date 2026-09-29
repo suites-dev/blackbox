@@ -58,7 +58,7 @@ Continue with [your first Capsule](getting-started.md) or [configure an applicat
 
 ## Install the SDK for project drivers
 
-Skip this section if you only use host commands without `--driver`. To use or author
+Skip this section if you only use host commands without `--via`. To use or author
 project drivers, install their SDK alongside the project's driver modules. The
 guided demo handles this step automatically for its own run.
 

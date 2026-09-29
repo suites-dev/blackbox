@@ -58,7 +58,7 @@ The current CLI provides execution and feedback; your scripts, tests, or evidenc
 
 An activity is one command within the procedure. A protocol can involve several activities, and a Capsule can host
 several investigations. “Trial” describes an execution of your protocol; it is not an additional CLI object or a
-synonym for every `capsule exec` call.
+synonym for every `capsule run` call.
 
 ```mermaid
 flowchart TD

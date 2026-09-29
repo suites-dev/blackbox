@@ -61,7 +61,7 @@ export async function createJourneyProject({ e2eRoot, parent, name, blackbox, as
 }
 
 export async function listCapsules({ directory, blackbox }) {
-  const { stdout } = await execute(blackbox, ['ls', '--all', '--json'], { cwd: directory });
+  const { stdout } = await execute(blackbox, ['capsule', 'ls', '--all', '--json'], { cwd: directory });
   const document = JSON.parse(stdout);
   if (document.kind !== 'capsule-list') {
     throw new Error(`Unexpected ls document: ${stdout}`);
@@ -110,7 +110,7 @@ export async function cleanupJourneyProject({ directory, blackbox }) {
   for (const capsule of await listCapsules({ directory, blackbox })) {
     if (capsule.state === 'stopped') continue;
     try {
-      await execute(blackbox, ['down', capsule.capsule, '--json'], { cwd: directory });
+      await execute(blackbox, ['capsule', 'down', capsule.capsule, '--json'], { cwd: directory });
     } catch (error) {
       problems.push(`down ${capsule.capsule} failed: ${error.stdout ?? error.message}`);
     }

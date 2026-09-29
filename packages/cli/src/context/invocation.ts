@@ -12,7 +12,7 @@ export interface ResolvedCapsule {
 }
 
 /**
- * Per-invocation capsule context. Explicit context is `--capsule`/`--session`,
+ * Per-invocation capsule context. Explicit context is `--session`,
  * then BLACKBOX_CAPSULE; the current-capsule file is implicit and never
  * narrows ID search. A bad current-capsule file is reported once and ignored,
  * never deleted or rewritten.
@@ -34,7 +34,7 @@ export class InvocationContext {
     return this.#index;
   }
 
-  /** The raw explicit context: `--capsule`/`--session` first, then BLACKBOX_CAPSULE. */
+  /** The raw explicit context: `--session` first, then BLACKBOX_CAPSULE. */
   #rawExplicit(flag: string | null): ResolvedCapsule | null {
     if (flag !== null) {
       return { capsule: flag, source: 'flag' };
@@ -85,7 +85,7 @@ export class InvocationContext {
     }
     const current = await this.current();
     if (current === null) {
-      throw cliFailure('capsule-unresolved', 'no capsule selected', ['blackbox ls']);
+      throw cliFailure('capsule-unresolved', 'no capsule selected', ['blackbox capsule ls']);
     }
     return { capsule: current, source: 'current' };
   }
@@ -111,6 +111,6 @@ export class InvocationContext {
 
 function warn(reason: string): void {
   writeHuman([
-    `blackbox: ignoring .blackbox/state/current-capsule (${reason}); pass --capsule or run blackbox use`,
+    `blackbox: ignoring .blackbox/state/current-capsule (${reason}); pass --session or run blackbox capsule use`,
   ]);
 }

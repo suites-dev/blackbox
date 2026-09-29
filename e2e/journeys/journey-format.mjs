@@ -59,7 +59,7 @@ function parseDirective(line) {
 }
 
 export function defaultTimeout(command) {
-  return /^blackbox up\b/u.test(command) ? UP_TIMEOUT_MS : DEFAULT_TIMEOUT_MS;
+  return /^blackbox capsule up\b/u.test(command) ? UP_TIMEOUT_MS : DEFAULT_TIMEOUT_MS;
 }
 
 /** Collapses every run of 2+ spaces to exactly two and drops trailing spaces. */

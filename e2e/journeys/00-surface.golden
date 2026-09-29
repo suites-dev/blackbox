@@ -1,94 +1,94 @@
-$ blackbox systems
+$ blackbox catalog ls
 NAME  KIND  SERVICES  ENTRYPOINT
 payment-mock  subsystem  1  payment-mock (http)
 payment-mock-dist  subsystem  1  payment-mock (http)
 subscription-system  system  8  public-api (http)  default
-$ blackbox up --silent --no-color
+$ blackbox capsule up --silent --no-color
 capsule <CAPSULE_1> is up · subscription-system · 8 services · <DUR>
 current capsule: <CAPSULE_1>
 entrypoint: <URL>
-→ blackbox run --capsule <CAPSULE_1> --via public-api -- curl /health
+→ blackbox capsule run --session <CAPSULE_1> --via public-api -- curl /health
 #! capture CAPSULE_1 capsule-up
-$ blackbox ls
+$ blackbox capsule ls
   CAPSULE  SYSTEM  STATE  STARTED  ACTIVITIES  TITLE
 * <CAPSULE_1>  subscription-system  running  <TIME>  0  subscription-system
-$ blackbox run --via public-api -- curl -fsS /health
+$ blackbox capsule run --via public-api -- curl -fsS /health
 {"status":"ready"}
 activity <ACT_1> · capsule <CAPSULE_1> · stimulus · via public-api · host · exit 0 · <DUR>
-→ blackbox show <ACT_1> --capsule <CAPSULE_1>
+→ blackbox capsule show <ACT_1> --session <CAPSULE_1>
 #! capture ACT_1 activity
-$ blackbox show $ACT_1
+$ blackbox capsule show $ACT_1
 activity <ACT_1>
   capsule  <CAPSULE_1> (subscription-system, running)
   purpose  stimulus
   process  exited 0 on host
   observed  collector-activity-found · 1 traces
-→ blackbox show <TRACE_1> --capsule <CAPSULE_1>
-$ blackbox show $CAPSULE_1
+→ blackbox capsule show <TRACE_1> --session <CAPSULE_1>
+$ blackbox capsule show $CAPSULE_1
 capsule <CAPSULE_1>  subscription-system  running
   activities 1 · traces <N>
-→ blackbox show <ACT_1> --capsule <CAPSULE_1>
-$ blackbox up payment-mock --silent --no-color
+→ blackbox capsule show <ACT_1> --session <CAPSULE_1>
+$ blackbox capsule up payment-mock --silent --no-color
 capsule <CAPSULE_2> is up · payment-mock · 1 services · <DUR>
 current capsule: <CAPSULE_2>
 entrypoint: <URL>
-→ blackbox run --capsule <CAPSULE_2> -- curl <URL>
+→ blackbox capsule run --session <CAPSULE_2> -- curl <URL>
 #! capture CAPSULE_2 capsule-up
-$ blackbox ls
+$ blackbox capsule ls
   CAPSULE  SYSTEM  STATE  STARTED  ACTIVITIES  TITLE
 * <CAPSULE_2>  payment-mock  running  <TIME>  0  payment-mock
   <CAPSULE_1>  subscription-system  running  <TIME>  1  subscription-system
-$ blackbox use $CAPSULE_1
+$ blackbox capsule use $CAPSULE_1
 current capsule: <CAPSULE_1> (subscription-system, running)
-$ blackbox run --via public-api -- curl -fsS /missing
+$ blackbox capsule run --via public-api -- curl -fsS /missing
 curl: (22) The requested URL returned error: 404
 activity <ACT_2> · capsule <CAPSULE_1> · stimulus · via public-api · host · exit 22 · <DUR>
-→ blackbox show <ACT_2> --capsule <CAPSULE_1>
+→ blackbox capsule show <ACT_2> --session <CAPSULE_1>
 $ echo $?
 22
-$ blackbox run -- definitely-not-a-command
+$ blackbox capsule run -- definitely-not-a-command
 activity <ACT_3> · capsule <CAPSULE_1> · stimulus · host · host · not found · <DUR>
-→ blackbox show <ACT_3> --capsule <CAPSULE_1>
+→ blackbox capsule show <ACT_3> --session <CAPSULE_1>
 $ echo $?
 127
-$ blackbox run --no-such-flag -- true
+$ blackbox capsule run --no-such-flag -- true
 blackbox: Nonexistent flag: --no-such-flag
 See more help with --help
-→ blackbox run --help
+→ blackbox capsule run --help
 $ echo $?
 125
-$ blackbox run -- sh -c 'exit 2'
+$ blackbox capsule run -- sh -c 'exit 2'
 activity <ACT_4> · capsule <CAPSULE_1> · stimulus · host · host · exit 2 · <DUR>
-→ blackbox show <ACT_4> --capsule <CAPSULE_1>
+→ blackbox capsule show <ACT_4> --session <CAPSULE_1>
 $ echo $?
 2
-$ blackbox show deadbeef
+$ blackbox capsule show deadbeef
 blackbox: no capsule, activity or trace matches deadbeef
-→ blackbox ls --all
+→ blackbox capsule ls --all
 $ echo $?
 2
-$ blackbox down $ACT_1
+$ blackbox capsule down $ACT_1
 blackbox: down takes a capsule ID; <ACT_1> is an activity in capsule <CAPSULE_1>
-→ blackbox down <CAPSULE_1>
+→ blackbox capsule down <CAPSULE_1>
 $ echo $?
 2
-$ blackbox down
+$ blackbox capsule down
 capsule <CAPSULE_1> stopped · evidence kept
 current capsule: none
-→ blackbox report <CAPSULE_1>
-$ blackbox run --capsule $CAPSULE_1 -- true
+→ blackbox capsule report <CAPSULE_1>
+$ blackbox capsule run --session $CAPSULE_1 -- true
 blackbox: capsule <CAPSULE_1> is stopped; run needs a running capsule
-→ blackbox up
+→ blackbox capsule up
 $ echo $?
 125
-$ blackbox report $CAPSULE_1
+$ blackbox capsule report $CAPSULE_1
 report for capsule <CAPSULE_1>
 ✔ <PROJECT>/.blackbox/reports/capsule-<CAPSULE_1>/capsule-report.html
 ✔ <PROJECT>/.blackbox/reports/capsule-<CAPSULE_1>/capsule-report.json
-$ blackbox ls --all
+$ blackbox capsule ls --all
   CAPSULE  SYSTEM  STATE  STARTED  ACTIVITIES  TITLE
   <CAPSULE_2>  payment-mock  running  <TIME>  0  payment-mock
   <CAPSULE_1>  subscription-system  stopped  <TIME>  4  subscription-system
-$ blackbox down $CAPSULE_2
+$ blackbox capsule down $CAPSULE_2
 capsule <CAPSULE_2> stopped · evidence kept
-→ blackbox report <CAPSULE_2>
+→ blackbox capsule report <CAPSULE_2>

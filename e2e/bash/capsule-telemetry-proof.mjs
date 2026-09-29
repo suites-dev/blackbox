@@ -152,7 +152,7 @@ async function pollHttpTrace(input) {
     try {
       const result = await execute(
         process.execPath,
-        [input.blackboxEntrypoint, 'show', input.traceId, '--capsule', input.sessionId, '--json'],
+        [input.blackboxEntrypoint, 'capsule', 'show', input.traceId, '--session', input.sessionId, '--json'],
         { maxBuffer: 16 * 1024 * 1024 },
       );
       await writeFile(input.traceFile, result.stdout);

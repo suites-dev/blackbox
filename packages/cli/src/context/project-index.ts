@@ -116,7 +116,7 @@ export class ProjectIndex {
             error: recorded,
           };
     return new PackageFailure({
-      document: { ...result, capsule: id, next: ['blackbox ls --all'] },
+      document: { ...result, capsule: id, next: ['blackbox capsule ls --all'] },
       text: capsuleFailure({ result, json: false }),
     });
   }

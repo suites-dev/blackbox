@@ -15,12 +15,12 @@ const MALFORMED = [
 void test('an unlisted explicit capsule fails as capsule-not-found, with capsule and next, on every command', async () => {
   const fixture = await twoCapsuleProject();
   try {
-    // report has no --capsule flag; BLACKBOX_CAPSULE is its explicit context.
+    // report has no --session flag; BLACKBOX_CAPSULE is its explicit context.
     for (const [argv, capsuleEnvironment] of [
-      [['run', '--capsule', UNLISTED, '--json', '--', 'x'], null],
-      [['down', '--capsule', UNLISTED, '--json'], null],
-      [['report', '--json'], UNLISTED],
-      [['show', ACTIVITY_A, '--capsule', UNLISTED, '--json'], null],
+      [['capsule', 'run', '--session', UNLISTED, '--json', '--', 'x'], null],
+      [['capsule', 'down', '--session', UNLISTED, '--json'], null],
+      [['capsule', 'report', '--json'], UNLISTED],
+      [['capsule', 'show', ACTIVITY_A, '--session', UNLISTED, '--json'], null],
     ] as const) {
       const result = await cli({ directory: fixture.directory, argv, capsuleEnvironment });
       assert.equal(result.status, 125, argv.join(' '));
@@ -29,7 +29,7 @@ void test('an unlisted explicit capsule fails as capsule-not-found, with capsule
         sessionId: UNLISTED,
         message: `Capsule session ${UNLISTED} does not exist`,
         capsule: UNLISTED,
-        next: ['blackbox ls --all'],
+        next: ['blackbox capsule ls --all'],
       });
     }
   } finally {
@@ -41,10 +41,19 @@ void test('a malformed explicit capsule from a flag or BLACKBOX_CAPSULE is refus
   const fixture = await twoCapsuleProject();
   try {
     for (const value of MALFORMED) {
-      const fromFlag = await run(fixture.directory, 'run', '--capsule', value, '--json', '--', 'x');
+      const fromFlag = await run(
+        fixture.directory,
+        'capsule',
+        'run',
+        '--session',
+        value,
+        '--json',
+        '--',
+        'x',
+      );
       const fromEnvironment = await cli({
         directory: fixture.directory,
-        argv: ['down', '--json'],
+        argv: ['capsule', 'down', '--json'],
         capsuleEnvironment: value,
       });
       for (const [result, operation] of [
@@ -61,7 +70,7 @@ void test('a malformed explicit capsule from a flag or BLACKBOX_CAPSULE is refus
             message: 'sessionId must be an exact Capsule-generated identity',
           },
           capsule: value,
-          next: ['blackbox ls --all'],
+          next: ['blackbox capsule ls --all'],
         });
       }
     }
@@ -75,16 +84,17 @@ void test('a positional capsule ID wins over stale explicit context; other IDs s
   try {
     const fromEnvironment = await cli({
       directory: fixture.directory,
-      argv: ['show', CAPSULE_A, '--json'],
+      argv: ['capsule', 'show', CAPSULE_A, '--json'],
       capsuleEnvironment: UNLISTED,
     });
     assert.equal(fromEnvironment.status, 0, fromEnvironment.stderr);
     assert.equal(onlyDocument(fromEnvironment).capsule, CAPSULE_A);
     const fromFlag = await run(
       fixture.directory,
+      'capsule',
       'show',
       CAPSULE_A,
-      '--capsule',
+      '--session',
       UNLISTED,
       '--json',
     );
@@ -92,7 +102,7 @@ void test('a positional capsule ID wins over stale explicit context; other IDs s
     assert.equal(onlyDocument(fromFlag).capsule, CAPSULE_A);
     const activity = await cli({
       directory: fixture.directory,
-      argv: ['show', ACTIVITY_A, '--json'],
+      argv: ['capsule', 'show', ACTIVITY_A, '--json'],
       capsuleEnvironment: UNLISTED,
     });
     assert.equal(activity.status, 125);
@@ -106,7 +116,16 @@ void test('a Capsule package failure keeps its document and adds capsule and nex
   const fixture = await twoCapsuleProject();
   try {
     // CAPSULE_A is listed as running, but no manager is listening on its socket.
-    const result = await run(fixture.directory, 'run', '--capsule', CAPSULE_A, '--json', '--', 'x');
+    const result = await run(
+      fixture.directory,
+      'capsule',
+      'run',
+      '--session',
+      CAPSULE_A,
+      '--json',
+      '--',
+      'x',
+    );
     assert.equal(result.status, 125);
     const document = onlyDocument(result);
     assert.equal(document.kind, 'capsule-operation-failed');

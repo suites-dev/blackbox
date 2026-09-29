@@ -51,7 +51,24 @@
       "identifier": "COMMANDS"
     },
     "helpClass": "./dist/help.js",
-    "topicSeparator": " "
+    "topicSeparator": " ",
+    "topics": {
+      "capsule": {
+        "description": "Start, drive, inspect and report on capsules."
+      },
+      "capsule:report": {
+        "description": "Write, serve or export a capsule report."
+      },
+      "catalog": {
+        "description": "Inspect and validate the project catalog."
+      },
+      "driver": {
+        "description": "Install the project-owned driver runtime."
+      },
+      "inst": {
+        "description": "Install project-local runtime instrumentation."
+      }
+    }
   },
   "license": "Apache-2.0",
   "engines": {

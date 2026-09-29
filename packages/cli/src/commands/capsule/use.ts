@@ -19,7 +19,7 @@ export default class Use extends BlackboxCommand {
     const summary = (await context.index()).capsule(args.capsule);
     if (summary === null) {
       throw cliFailure('id-unknown', `no capsule, activity or trace matches ${args.capsule}`, [
-        'blackbox ls --all',
+        'blackbox capsule ls --all',
       ]);
     }
     const previous = await context.current();

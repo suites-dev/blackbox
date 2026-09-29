@@ -16,7 +16,7 @@ blackbox inst install --runtime node
 |- instrumentation.js    CommonJS preload bootstrap
 `- node_modules/         installed with npm and lifecycle scripts disabled
 
-blackbox capsule start
+blackbox capsule up
         `-> CLI adapter -> read-only Capsule mount -> NODE_OPTIONS -> collector
 ```
 
@@ -65,7 +65,7 @@ Activation is separate from installation:
 | `node-preload` | `--require=<mounted instrumentation.js>`                 | CommonJS            |
 | `node-esm`     | OpenTelemetry experimental loader, then the same preload | ESM                 |
 
-For Capsule, the [CLI start command](../cli/src/commands/capsule/start.ts) injects
+For Capsule, the [CLI up command](../cli/src/commands/capsule/up.ts) injects
 the exported adapter descriptors. Capsule resolves the catalog activation, validates
 that its asset stays inside `.blackbox/instrumentation`, and creates a read-only
 `/blackbox/instrumentation` mount. Sandbox preserves an existing `NODE_OPTIONS`

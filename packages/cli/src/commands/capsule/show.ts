@@ -11,12 +11,12 @@ export default class Show extends ShowCommand {
     }),
   };
   static override flags = {
-    capsule: Flags.string({ description: 'Search only this capsule' }),
+    session: Flags.string({ description: 'Search only this capsule' }),
     json: Flags.boolean({ default: false }),
   };
 
   protected async execute(): Promise<void> {
     const { args, flags } = await this.parseInput(() => this.parse(Show));
-    await this.executeShow({ id: args.id, capsuleFlag: flags.capsule ?? null, json: flags.json });
+    await this.executeShow({ id: args.id, capsuleFlag: flags.session ?? null, json: flags.json });
   }
 }

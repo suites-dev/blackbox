@@ -1,18 +1,18 @@
 $ set -o pipefail
 $ chmod a-w .blackbox/state
-$ blackbox up payment-mock --silent --no-color
+$ blackbox capsule up payment-mock --silent --no-color
 capsule <CAPSULE_1> is up · payment-mock · 1 services · <DUR>
 blackbox: capsule <CAPSULE_1> is up but could not be made current (EACCES writing .blackbox/state/current-capsule)
-→ blackbox down <CAPSULE_1>
+→ blackbox capsule down <CAPSULE_1>
 entrypoint: <URL>
-→ blackbox run --capsule <CAPSULE_1> -- curl <URL>
+→ blackbox capsule run --session <CAPSULE_1> -- curl <URL>
 $ echo $?
 125
-$ blackbox up payment-mock --silent --json | jq -c '{kind, capsule, current, warnings: [.warnings[] | .code], next}'
-{"kind":"capsule-started","capsule":"<CAPSULE_2>","current":"not-set","warnings":["current-capsule-write-failed"],"next":["blackbox run --capsule <CAPSULE_2> -- curl <URL>"]}
+$ blackbox capsule up payment-mock --silent --json | jq -c '{kind, capsule, current, warnings: [.warnings[] | .code], next}'
+{"kind":"capsule-started","capsule":"<CAPSULE_2>","current":"not-set","warnings":["current-capsule-write-failed"],"next":["blackbox capsule run --session <CAPSULE_2> -- curl <URL>"]}
 $ echo $?
 125
-$ blackbox ls
+$ blackbox capsule ls
   CAPSULE  SYSTEM  STATE  STARTED  ACTIVITIES  TITLE
   <CAPSULE_2>  payment-mock  running  <TIME>  0  payment-mock
   <CAPSULE_1>  payment-mock  running  <TIME>  0  payment-mock

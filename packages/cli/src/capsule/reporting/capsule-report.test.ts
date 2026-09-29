@@ -173,10 +173,13 @@ void test('JSON exports to default or nested custom paths match stdout without a
   }
 });
 
-void test('report topic discovers both actions and export write failures are nonzero', async () => {
+void test('report help lists both actions and export write failures are nonzero', async () => {
   const fixture = await commandFixture('stopped');
   try {
-    const help = await runCli({ directory: fixture.directory, argv: ['capsule', 'report'] });
+    const help = await runCli({
+      directory: fixture.directory,
+      argv: ['capsule', 'report', '--help'],
+    });
     assert.equal(help.status, 0, help.stderr);
     assert.match(help.stdout, /capsule report export/u);
     assert.match(help.stdout, /capsule report serve/u);

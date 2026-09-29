@@ -6,8 +6,8 @@
   "description": "Live YAML catalog consumer: Compose acquisition, harness-owned Node instrumentation, Playwright effects and retained evidence.",
   "scripts": {
     "blackbox": "blackbox",
-    "odc-report": "blackbox report --json",
-    "odc-report:html": "blackbox report --open",
+    "odc-report": "blackbox capsule report --json",
+    "odc-report:html": "blackbox capsule report serve --open",
     "trace-collector": "NODE_OPTIONS=\"${NODE_OPTIONS:+$NODE_OPTIONS }--conditions=blackbox-source\" tsx ../packages/collection-http/src/server.ts",
     "test": "playwright test",
     "generate:meta:s3": "playwright test --config gates/s3/playwright.config.ts",

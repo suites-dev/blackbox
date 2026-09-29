@@ -26,7 +26,7 @@ void test('down reports a current-capsule file it could not clear instead of tre
   try {
     await setCurrentCapsule(fixture.directory, CAPSULE_A);
     await chmod(state, 0o555);
-    const json = await run(fixture.directory, 'down', CAPSULE_A, '--json');
+    const json = await run(fixture.directory, 'capsule', 'down', CAPSULE_A, '--json');
     assert.equal(json.status, 125);
     const document = onlyDocument(json);
     assert.equal(document.kind, 'capsule-stopped');
@@ -35,7 +35,7 @@ void test('down reports a current-capsule file it could not clear instead of tre
     assert.equal(warnings.length, 1);
     assert.equal(warnings[0].code, 'current-capsule-write-failed');
     assert.match(String(warnings[0].message), /is stopped but is still the current capsule/u);
-    const human = await run(fixture.directory, 'down', CAPSULE_A);
+    const human = await run(fixture.directory, 'capsule', 'down', CAPSULE_A);
     assert.equal(human.status, 125);
     assert.match(
       human.stderr,
@@ -52,7 +52,7 @@ void test('down clears the current capsule and reports no warning when it can', 
   const fixture = await stoppedCapsule();
   try {
     await setCurrentCapsule(fixture.directory, CAPSULE_A);
-    const json = await run(fixture.directory, 'down', CAPSULE_A, '--json');
+    const json = await run(fixture.directory, 'capsule', 'down', CAPSULE_A, '--json');
     assert.equal(json.status, 0, json.stderr);
     assert.deepEqual(onlyDocument(json).warnings, []);
     assert.deepEqual(await readCurrentCapsule(fixture.directory), { kind: 'none' });
@@ -74,10 +74,11 @@ void test('show <capsule> renders an unreadable activity record as unavailable, 
       ),
       '{not json',
     );
-    const result = await run(fixture.directory, 'show', CAPSULE_A);
+    const result = await run(fixture.directory, 'capsule', 'show', CAPSULE_A);
     assert.match(result.stderr, /^ {2}activities \? · traces \d+$/mu);
     assert.doesNotMatch(result.stderr, /activities 0/u);
-    assert.doesNotMatch(result.stderr, /→ blackbox show/u);
+    // No activity resolved, so no next step may be suggested at all.
+    assert.doesNotMatch(result.stderr, /^→ /mu);
   } finally {
     await fixture.remove();
   }
@@ -86,7 +87,7 @@ void test('show <capsule> renders an unreadable activity record as unavailable, 
 void test('an activity lookup that could not read every activity record says so instead of id-unknown', async () => {
   const fixture = await stoppedCapsule();
   try {
-    const plain = await run(fixture.directory, 'show', '3f9a2c41', '--json');
+    const plain = await run(fixture.directory, 'capsule', 'show', '3f9a2c41', '--json');
     assert.equal(plain.status, 2);
     assert.equal(onlyDocument(plain).message, 'no capsule, activity or trace matches 3f9a2c41');
     await writeFile(
@@ -99,12 +100,12 @@ void test('an activity lookup that could not read every activity record says so 
       ),
       '{not json',
     );
-    const json = await run(fixture.directory, 'show', '3f9a2c41', '--json');
+    const json = await run(fixture.directory, 'capsule', 'show', '3f9a2c41', '--json');
     assert.equal(json.status, 2);
     const document = onlyDocument(json);
     assert.equal(document.code, 'id-unknown');
     assert.match(String(document.message), /the activity records of 1 capsule could not be read$/u);
-    const human = await run(fixture.directory, 'show', '3f9a2c41');
+    const human = await run(fixture.directory, 'capsule', 'show', '3f9a2c41');
     assert.match(human.stderr, new RegExp(`^ {2}unreadable: ${CAPSULE_A}$`, 'mu'));
   } finally {
     await fixture.remove();
@@ -121,7 +122,15 @@ void test('run prints the child output and exit code even if the registry breaks
     beforeRespond: () => chmod(experiments, 0o000),
   });
   try {
-    const result = await run(fixture.directory, 'run', '--capsule', CAPSULE_A, '--', 'x');
+    const result = await run(
+      fixture.directory,
+      'capsule',
+      'run',
+      '--session',
+      CAPSULE_A,
+      '--',
+      'x',
+    );
     assert.equal(result.status, 7, result.stderr);
     assert.equal(result.stdout, 'child-out\n');
     assert.match(result.stderr, /^child-err$/mu);

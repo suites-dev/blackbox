@@ -41,8 +41,8 @@ Use its `SESSION_ID`. In the following example, run the stimulus once; choose a 
 
 ```sh
 PROOF_ID="shared-state-$SESSION_ID"
-redis_result=$(blackbox capsule exec --session "$SESSION_ID" \
-  --name 'Queue shared-state proof' --driver redis --purpose stimulus --json -- \
+redis_result=$(blackbox capsule run --session "$SESSION_ID" \
+  --name 'Queue shared-state proof' --via redis --purpose stimulus --json -- \
   redis-cli RPUSH blackbox:proof:stimuli "$PROOF_ID")
 
 printf '%s' "$redis_result" | jq .
