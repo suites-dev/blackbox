@@ -1,0 +1,178 @@
+{
+  "scope": {
+    "kind": "capsule-session",
+    "sessionId": "synthetic-duplicate-delivery"
+  },
+  "sources": [
+    {
+      "kind": "otlp-json-fragments",
+      "fragments": [
+        {
+          "sequence": 1,
+          "request": {
+            "resourceSpans": [
+              {
+                "resource": {
+                  "attributes": [
+                    {
+                      "key": "service.name",
+                      "value": {
+                        "stringValue": "public-api"
+                      }
+                    }
+                  ]
+                },
+                "scopeSpans": [
+                  {
+                    "scope": {
+                      "name": "@opentelemetry/instrumentation-http",
+                      "version": "0.221.0"
+                    },
+                    "spans": [
+                      {
+                        "traceId": "5b8aa5a2d2c872e8321cf37308d69df2",
+                        "spanId": "051581bf3cb55c13",
+                        "name": "POST",
+                        "kind": 2,
+                        "startTimeUnixNano": "1750000000000000000",
+                        "endTimeUnixNano": "1750000000001000000",
+                        "attributes": [
+                          {
+                            "key": "http.request.method",
+                            "value": {
+                              "stringValue": "POST"
+                            }
+                          },
+                          {
+                            "key": "url.path",
+                            "value": {
+                              "stringValue": "/subscriptions"
+                            }
+                          },
+                          {
+                            "key": "http.response.status_code",
+                            "value": {
+                              "intValue": 201
+                            }
+                          }
+                        ],
+                        "status": {
+                          "code": 0
+                        }
+                      },
+                      {
+                        "traceId": "5b8aa5a2d2c872e8321cf37308d69df2",
+                        "spanId": "5fb397be34d26b51",
+                        "parentSpanId": "051581bf3cb55c13",
+                        "name": "POST",
+                        "kind": 3,
+                        "startTimeUnixNano": "1750000000000000000",
+                        "endTimeUnixNano": "1750000000001000000",
+                        "attributes": [
+                          {
+                            "key": "http.request.method",
+                            "value": {
+                              "stringValue": "POST"
+                            }
+                          },
+                          {
+                            "key": "server.address",
+                            "value": {
+                              "stringValue": "order-service"
+                            }
+                          },
+                          {
+                            "key": "url.path",
+                            "value": {
+                              "stringValue": "/orders"
+                            }
+                          },
+                          {
+                            "key": "http.response.status_code",
+                            "value": {
+                              "intValue": 201
+                            }
+                          }
+                        ],
+                        "status": {
+                          "code": 0
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "sequence": 2,
+          "request": {
+            "resourceSpans": [
+              {
+                "resource": {
+                  "attributes": [
+                    {
+                      "key": "service.name",
+                      "value": {
+                        "stringValue": "public-api"
+                      }
+                    }
+                  ]
+                },
+                "scopeSpans": [
+                  {
+                    "scope": {
+                      "name": "@opentelemetry/instrumentation-http",
+                      "version": "0.221.0"
+                    },
+                    "spans": [
+                      {
+                        "traceId": "5b8aa5a2d2c872e8321cf37308d69df2",
+                        "spanId": "5fb397be34d26b51",
+                        "parentSpanId": "051581bf3cb55c13",
+                        "name": "POST",
+                        "kind": 3,
+                        "startTimeUnixNano": "1750000000000000000",
+                        "endTimeUnixNano": "1750000000001000000",
+                        "attributes": [
+                          {
+                            "key": "http.request.method",
+                            "value": {
+                              "stringValue": "POST"
+                            }
+                          },
+                          {
+                            "key": "server.address",
+                            "value": {
+                              "stringValue": "order-service"
+                            }
+                          },
+                          {
+                            "key": "url.path",
+                            "value": {
+                              "stringValue": "/orders"
+                            }
+                          },
+                          {
+                            "key": "http.response.status_code",
+                            "value": {
+                              "intValue": 201
+                            }
+                          }
+                        ],
+                        "status": {
+                          "code": 0
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

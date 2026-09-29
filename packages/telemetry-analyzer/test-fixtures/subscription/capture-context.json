@@ -1,0 +1,83 @@
+{
+  "note": "Retained facts of the captured run, kept for later linkage and capture-status fixtures. Allow-listed fields only.",
+  "session": {
+    "state": "stopped"
+  },
+  "activities": [
+    {
+      "activityId": "0a83a750-b296-40e3-99be-463f66af6838",
+      "sequence": 1,
+      "name": "setup",
+      "purpose": "setup",
+      "target": "driver:public-api",
+      "kind": "completed",
+      "traceId": "8d11d7c2139a258e26c2843563dc2b3f",
+      "propagation": "context-injected"
+    },
+    {
+      "activityId": "5797b7a1-2668-454a-a23b-ef2f697fc086",
+      "sequence": 2,
+      "name": "alice",
+      "purpose": "stimulus",
+      "target": "driver:public-api",
+      "kind": "completed",
+      "traceId": "cf2458fb9f77b319a1d6cb086de9b3b7",
+      "propagation": "context-injected"
+    },
+    {
+      "activityId": "1ca60b5c-286f-49d4-8c67-0eba4a947431",
+      "sequence": 3,
+      "name": "redis",
+      "purpose": "stimulus",
+      "target": "driver:redis",
+      "kind": "completed",
+      "traceId": "f27215dcaca7eb8c4075485776ec681e",
+      "propagation": "context-not-supported"
+    },
+    {
+      "activityId": "14d9eb6e-3e0e-4fea-9270-0103a942435d",
+      "sequence": 4,
+      "name": "psql",
+      "purpose": "inspection",
+      "target": "driver:postgres",
+      "kind": "completed",
+      "traceId": "5b52098fab6b8fc595332e235be66474",
+      "propagation": "context-not-supported"
+    }
+  ],
+  "collector": {
+    "runs": [
+      {
+        "receiver": "draining",
+        "shutdown": "draining",
+        "failure": null,
+        "activations": [
+          {
+            "serviceName": "payment-mock",
+            "runtime": "node"
+          },
+          {
+            "serviceName": "fraud-check",
+            "runtime": "node"
+          },
+          {
+            "serviceName": "order-service",
+            "runtime": "node"
+          },
+          {
+            "serviceName": "public-api",
+            "runtime": "node"
+          },
+          {
+            "serviceName": "redis-proof-consumer",
+            "runtime": "node"
+          }
+        ]
+      }
+    ],
+    "telemetry": {
+      "acceptedRequests": 18,
+      "acceptedSpans": 144
+    }
+  }
+}

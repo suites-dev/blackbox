@@ -1,0 +1,133 @@
+{
+  "scope": {
+    "kind": "capsule-session",
+    "sessionId": "synthetic-two-real-occurrences"
+  },
+  "sources": [
+    {
+      "kind": "otlp-json-fragments",
+      "fragments": [
+        {
+          "sequence": 1,
+          "request": {
+            "resourceSpans": [
+              {
+                "resource": {
+                  "attributes": [
+                    {
+                      "key": "service.name",
+                      "value": {
+                        "stringValue": "public-api"
+                      }
+                    }
+                  ]
+                },
+                "scopeSpans": [
+                  {
+                    "scope": {
+                      "name": "@opentelemetry/instrumentation-http",
+                      "version": "0.221.0"
+                    },
+                    "spans": [
+                      {
+                        "traceId": "5b8aa5a2d2c872e8321cf37308d69df2",
+                        "spanId": "051581bf3cb55c13",
+                        "name": "POST",
+                        "kind": 2,
+                        "startTimeUnixNano": "1750000000000000000",
+                        "endTimeUnixNano": "1750000000001000000",
+                        "attributes": [
+                          {
+                            "key": "http.request.method",
+                            "value": {
+                              "stringValue": "POST"
+                            }
+                          },
+                          {
+                            "key": "url.path",
+                            "value": {
+                              "stringValue": "/subscriptions"
+                            }
+                          },
+                          {
+                            "key": "http.response.status_code",
+                            "value": {
+                              "intValue": 201
+                            }
+                          }
+                        ],
+                        "status": {
+                          "code": 0
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "sequence": 2,
+          "request": {
+            "resourceSpans": [
+              {
+                "resource": {
+                  "attributes": [
+                    {
+                      "key": "service.name",
+                      "value": {
+                        "stringValue": "public-api"
+                      }
+                    }
+                  ]
+                },
+                "scopeSpans": [
+                  {
+                    "scope": {
+                      "name": "@opentelemetry/instrumentation-http",
+                      "version": "0.221.0"
+                    },
+                    "spans": [
+                      {
+                        "traceId": "7c9e6679742540de944be07fc1f90ae7",
+                        "spanId": "a3ce929d0e0e4736",
+                        "name": "POST",
+                        "kind": 2,
+                        "startTimeUnixNano": "1750000000002000000",
+                        "endTimeUnixNano": "1750000000003000000",
+                        "attributes": [
+                          {
+                            "key": "http.request.method",
+                            "value": {
+                              "stringValue": "POST"
+                            }
+                          },
+                          {
+                            "key": "url.path",
+                            "value": {
+                              "stringValue": "/subscriptions"
+                            }
+                          },
+                          {
+                            "key": "http.response.status_code",
+                            "value": {
+                              "intValue": 201
+                            }
+                          }
+                        ],
+                        "status": {
+                          "code": 0
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

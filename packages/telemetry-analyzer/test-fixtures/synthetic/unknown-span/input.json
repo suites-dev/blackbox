@@ -1,0 +1,61 @@
+{
+  "scope": {
+    "kind": "capsule-session",
+    "sessionId": "synthetic-unknown-span"
+  },
+  "sources": [
+    {
+      "kind": "otlp-json-fragments",
+      "fragments": [
+        {
+          "sequence": 1,
+          "request": {
+            "resourceSpans": [
+              {
+                "resource": {
+                  "attributes": [
+                    {
+                      "key": "service.name",
+                      "value": {
+                        "stringValue": "billing-worker"
+                      }
+                    }
+                  ]
+                },
+                "scopeSpans": [
+                  {
+                    "scope": {
+                      "name": "acme-custom",
+                      "version": "2.4.0"
+                    },
+                    "spans": [
+                      {
+                        "traceId": "5b8aa5a2d2c872e8321cf37308d69df2",
+                        "spanId": "00f067aa0ba902b7",
+                        "name": "reconcile ledger",
+                        "kind": 1,
+                        "startTimeUnixNano": "1750000000000000000",
+                        "endTimeUnixNano": "1750000000001000000",
+                        "attributes": [
+                          {
+                            "key": "acme.batch.size",
+                            "value": {
+                              "intValue": 3
+                            }
+                          }
+                        ],
+                        "status": {
+                          "code": 0
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

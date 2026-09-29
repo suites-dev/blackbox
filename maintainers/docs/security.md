@@ -48,7 +48,7 @@ proposes updates.
 3. Enable **Snyk Code** and **Snyk Open Source**. Import the root pnpm workspace and
    the standalone `e2e/sut/package.json` with its npm lockfile. Include development
    dependencies. Verify that pnpm's workspace and catalog dependencies are resolved
-   and all ten packages appear in the dependency coverage, rather than accepting
+   and all eleven packages appear in the dependency coverage, rather than accepting
    a successful scan of only the root manifest. Track both `main` and each supported
    `release/**` branch; do not assume an import follows the GitHub default forever.
 4. Enable PR checks for both products on every new PR and update. Set the lowest

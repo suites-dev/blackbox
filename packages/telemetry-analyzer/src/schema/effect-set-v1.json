@@ -1,0 +1,232 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://blackbox.suites.dev/schemas/effect-set-v1.json",
+  "title": "Blackbox normalized effect set",
+  "description": "Deterministic effects derived from retained telemetry. Provisional: normalizer 0.1.0 classifies every span as unclassified; later normalizer versions extend the effect kinds, linkage, exclusions, and capture status.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "kind",
+    "normalizer",
+    "conventions",
+    "policy",
+    "scope",
+    "completeness",
+    "inputs",
+    "limitations",
+    "exclusions",
+    "effects",
+    "captureStatus"
+  ],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "kind": { "const": "effect-set" },
+    "normalizer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "rulesetDigest"],
+      "properties": {
+        "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+        "rulesetDigest": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "conventions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind"],
+      "properties": { "kind": { "const": "no-alias-table" } }
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind"],
+      "properties": { "kind": { "const": "unavailable" } }
+    },
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "sessionId", "activities"],
+      "properties": {
+        "kind": { "const": "capsule-session" },
+        "sessionId": { "type": "string", "minLength": 1 },
+        "activities": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["activityId", "purpose", "traceId"],
+            "properties": {
+              "activityId": { "type": "string", "minLength": 1 },
+              "purpose": { "type": "string", "minLength": 1 },
+              "traceId": { "$ref": "#/$defs/traceId" }
+            }
+          }
+        }
+      }
+    },
+    "completeness": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind"],
+          "properties": { "kind": { "const": "complete" } }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "reasons"],
+          "properties": {
+            "kind": { "const": "provisional" },
+            "reasons": {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": { "type": "string", "minLength": 1 }
+            }
+          }
+        }
+      ]
+    },
+    "inputs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["kind", "sequence", "sha256"],
+        "properties": {
+          "kind": { "const": "otlp-json-fragment" },
+          "sequence": { "$ref": "#/$defs/sequence" },
+          "sha256": { "$ref": "#/$defs/sha256" }
+        }
+      }
+    },
+    "limitations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["kind", "service", "traceId", "spanId", "deliveries", "retained"],
+        "properties": {
+          "kind": { "const": "conflicting-duplicate-delivery" },
+          "service": { "type": "string" },
+          "traceId": { "$ref": "#/$defs/traceId" },
+          "spanId": { "$ref": "#/$defs/spanId" },
+          "deliveries": { "type": "array", "$ref": "#/$defs/deliveries", "minItems": 2 },
+          "retained": { "$ref": "#/$defs/sequence" }
+        }
+      }
+    },
+    "exclusions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["ruleId", "occurrences"],
+        "properties": {
+          "ruleId": { "type": "string", "minLength": 1 },
+          "occurrences": { "type": "array", "items": { "$ref": "#/$defs/occurrence" } }
+        }
+      }
+    },
+    "effects": { "type": "array", "items": { "$ref": "#/$defs/effect" } },
+    "captureStatus": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["service", "boundary", "status"],
+        "properties": {
+          "service": { "type": "string" },
+          "boundary": { "enum": ["http.server", "http.client", "db", "cache", "messaging"] },
+          "status": { "enum": ["observed", "not-observed-with-activation-evidence", "unknown"] }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+    "traceId": { "type": "string", "pattern": "^[0-9a-f]{32}$" },
+    "spanId": { "type": "string", "pattern": "^[0-9a-f]{16}$" },
+    "sequence": { "type": "integer", "minimum": 1 },
+    "deliveries": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/sequence" }
+    },
+    "occurrence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["service", "traceId", "spanId", "deliveries", "matched"],
+      "properties": {
+        "service": { "type": "string" },
+        "traceId": { "$ref": "#/$defs/traceId" },
+        "spanId": { "$ref": "#/$defs/spanId" },
+        "deliveries": { "$ref": "#/$defs/deliveries" },
+        "matched": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["classification", "aliases", "scrubbers"],
+          "properties": {
+            "classification": { "type": "string", "minLength": 1 },
+            "aliases": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["attribute", "matched"],
+                "properties": {
+                  "attribute": { "type": "string", "minLength": 1 },
+                  "matched": { "type": "string", "minLength": 1 }
+                }
+              }
+            },
+            "scrubbers": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+          }
+        }
+      }
+    },
+    "effect": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind", "identity", "linkage", "suppression", "count", "occurrences"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^e_[0-9a-f]{16}$" },
+        "kind": { "const": "unclassified" },
+        "identity": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["service", "spanKind", "name", "scope"],
+          "properties": {
+            "service": { "type": "string" },
+            "spanKind": {
+              "enum": ["unspecified", "internal", "server", "client", "producer", "consumer"]
+            },
+            "name": { "type": "string" },
+            "scope": { "type": "string" }
+          }
+        },
+        "linkage": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind"],
+          "properties": { "kind": { "const": "unlinked" } }
+        },
+        "suppression": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind"],
+          "properties": { "kind": { "const": "none" } }
+        },
+        "count": { "type": "integer", "minimum": 1 },
+        "occurrences": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/occurrence" }
+        }
+      }
+    }
+  }
+}

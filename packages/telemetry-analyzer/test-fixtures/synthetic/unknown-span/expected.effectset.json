@@ -1,0 +1,70 @@
+{
+  "captureStatus": [],
+  "completeness": {
+    "kind": "provisional",
+    "reasons": [
+      "capture-facts-unavailable",
+      "policy-unavailable"
+    ]
+  },
+  "conventions": {
+    "kind": "no-alias-table"
+  },
+  "effects": [
+    {
+      "count": 1,
+      "id": "e_0d504ecf0822c7e9",
+      "identity": {
+        "name": "reconcile ledger",
+        "scope": "acme-custom",
+        "service": "billing-worker",
+        "spanKind": "internal"
+      },
+      "kind": "unclassified",
+      "linkage": {
+        "kind": "unlinked"
+      },
+      "occurrences": [
+        {
+          "deliveries": [
+            1
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "billing-worker",
+          "spanId": "00f067aa0ba902b7",
+          "traceId": "5b8aa5a2d2c872e8321cf37308d69df2"
+        }
+      ],
+      "suppression": {
+        "kind": "none"
+      }
+    }
+  ],
+  "exclusions": [],
+  "inputs": [
+    {
+      "kind": "otlp-json-fragment",
+      "sequence": 1,
+      "sha256": "sha256:4e5d02256f3a280909bfc35bb942877e795e61bdd6b632febd798fdeb2ebd254"
+    }
+  ],
+  "kind": "effect-set",
+  "limitations": [],
+  "normalizer": {
+    "rulesetDigest": "sha256:dc51982f1985d3c0ce8c9fdeb0b329f7d2dec81b313e2f1bb01ac4fef62c954d",
+    "version": "0.1.0"
+  },
+  "policy": {
+    "kind": "unavailable"
+  },
+  "schemaVersion": 1,
+  "scope": {
+    "activities": [],
+    "kind": "capsule-session",
+    "sessionId": "synthetic-unknown-span"
+  }
+}

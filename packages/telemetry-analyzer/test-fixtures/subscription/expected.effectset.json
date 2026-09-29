@@ -1,0 +1,2888 @@
+{
+  "captureStatus": [],
+  "completeness": {
+    "kind": "provisional",
+    "reasons": [
+      "capture-facts-unavailable",
+      "policy-unavailable"
+    ]
+  },
+  "conventions": {
+    "kind": "no-alias-table"
+  },
+  "effects": [
+    {
+      "count": 1,
+      "id": "e_13ee00299c96e263",
+      "identity": {
+        "name": "pg.query:BEGIN subscriptions",
+        "scope": "@opentelemetry/instrumentation-pg",
+        "service": "public-api",
+        "spanKind": "client"
+      },
+      "kind": "unclassified",
+      "linkage": {
+        "kind": "unlinked"
+      },
+      "occurrences": [
+        {
+          "deliveries": [
+            13
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "c0b17625e06e790b",
+          "traceId": "8d11d7c2139a258e26c2843563dc2b3f"
+        }
+      ],
+      "suppression": {
+        "kind": "none"
+      }
+    },
+    {
+      "count": 1,
+      "id": "e_15e6497aaa19eae9",
+      "identity": {
+        "name": "redis-FLUSHDB",
+        "scope": "@opentelemetry/instrumentation-redis",
+        "service": "public-api",
+        "spanKind": "client"
+      },
+      "kind": "unclassified",
+      "linkage": {
+        "kind": "unlinked"
+      },
+      "occurrences": [
+        {
+          "deliveries": [
+            13
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "62e3dd04a7cbb1c5",
+          "traceId": "8d11d7c2139a258e26c2843563dc2b3f"
+        }
+      ],
+      "suppression": {
+        "kind": "none"
+      }
+    },
+    {
+      "count": 1,
+      "id": "e_1f64537c56de0260",
+      "identity": {
+        "name": "redis-connect",
+        "scope": "@opentelemetry/instrumentation-redis",
+        "service": "public-api",
+        "spanKind": "client"
+      },
+      "kind": "unclassified",
+      "linkage": {
+        "kind": "unlinked"
+      },
+      "occurrences": [
+        {
+          "deliveries": [
+            4
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "0518ccf4d89bf571",
+          "traceId": "ef772c651a03e85ba665b2a65a3d2dcc"
+        }
+      ],
+      "suppression": {
+        "kind": "none"
+      }
+    },
+    {
+      "count": 3,
+      "id": "e_2e05e79181cf0215",
+      "identity": {
+        "name": "pg-pool.connect",
+        "scope": "@opentelemetry/instrumentation-pg",
+        "service": "fraud-check",
+        "spanKind": "client"
+      },
+      "kind": "unclassified",
+      "linkage": {
+        "kind": "unlinked"
+      },
+      "occurrences": [
+        {
+          "deliveries": [
+            2
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "fraud-check",
+          "spanId": "d51ce7561e8fdf6a",
+          "traceId": "938424b0e4c1a0d3f9e0d11d19044e08"
+        },
+        {
+          "deliveries": [
+            5
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "fraud-check",
+          "spanId": "f7d16cdafebff057",
+          "traceId": "c1b81a00730e5fa70fbb3d7a0cfca0e0"
+        },
+        {
+          "deliveries": [
+            15
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "fraud-check",
+          "spanId": "93246c271c04341f",
+          "traceId": "cf2458fb9f77b319a1d6cb086de9b3b7"
+        }
+      ],
+      "suppression": {
+        "kind": "none"
+      }
+    },
+    {
+      "count": 4,
+      "id": "e_2f05662c70031d14",
+      "identity": {
+        "name": "capsule.driver",
+        "scope": "@suites/blackbox-capsule",
+        "service": "blackbox-capsule",
+        "spanKind": "internal"
+      },
+      "kind": "unclassified",
+      "linkage": {
+        "kind": "unlinked"
+      },
+      "occurrences": [
+        {
+          "deliveries": [
+            18
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "blackbox-capsule",
+          "spanId": "4d42437d4f4a7d75",
+          "traceId": "5b52098fab6b8fc595332e235be66474"
+        },
+        {
+          "deliveries": [
+            10
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "blackbox-capsule",
+          "spanId": "d2c3fce967988f33",
+          "traceId": "8d11d7c2139a258e26c2843563dc2b3f"
+        },
+        {
+          "deliveries": [
+            11
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "blackbox-capsule",
+          "spanId": "f301eb6bde85a1c0",
+          "traceId": "cf2458fb9f77b319a1d6cb086de9b3b7"
+        },
+        {
+          "deliveries": [
+            12
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "blackbox-capsule",
+          "spanId": "088c47d64b82f877",
+          "traceId": "f27215dcaca7eb8c4075485776ec681e"
+        }
+      ],
+      "suppression": {
+        "kind": "none"
+      }
+    },
+    {
+      "count": 1,
+      "id": "e_337a750fc4f1a169",
+      "identity": {
+        "name": "POST",
+        "scope": "@opentelemetry/instrumentation-http",
+        "service": "fraud-check",
+        "spanKind": "server"
+      },
+      "kind": "unclassified",
+      "linkage": {
+        "kind": "unlinked"
+      },
+      "occurrences": [
+        {
+          "deliveries": [
+            15
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "fraud-check",
+          "spanId": "00465aa680d3051a",
+          "traceId": "cf2458fb9f77b319a1d6cb086de9b3b7"
+        }
+      ],
+      "suppression": {
+        "kind": "none"
+      }
+    },
+    {
+      "count": 2,
+      "id": "e_3b24434312072492",
+      "identity": {
+        "name": "SQS.GetQueueUrl",
+        "scope": "@opentelemetry/instrumentation-aws-sdk",
+        "service": "order-service",
+        "spanKind": "client"
+      },
+      "kind": "unclassified",
+      "linkage": {
+        "kind": "unlinked"
+      },
+      "occurrences": [
+        {
+          "deliveries": [
+            7
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "order-service",
+          "spanId": "4c867c1311a21a66",
+          "traceId": "2227d7b657186d9106e474e77f01d25d"
+        },
+        {
+          "deliveries": [
+            3
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "order-service",
+          "spanId": "4f00b05d51c2a4a3",
+          "traceId": "5b04088b359d4e7ede350161f720b239"
+        }
+      ],
+      "suppression": {
+        "kind": "none"
+      }
+    },
+    {
+      "count": 3,
+      "id": "e_3b261ef681bb96e1",
+      "identity": {
+        "name": "POST",
+        "scope": "@opentelemetry/instrumentation-http",
+        "service": "order-service",
+        "spanKind": "client"
+      },
+      "kind": "unclassified",
+      "linkage": {
+        "kind": "unlinked"
+      },
+      "occurrences": [
+        {
+          "deliveries": [
+            7
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "order-service",
+          "spanId": "0d858ca1bb29e34e",
+          "traceId": "2227d7b657186d9106e474e77f01d25d"
+        },
+        {
+          "deliveries": [
+            3
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "order-service",
+          "spanId": "1f01b26c04a68fd9",
+          "traceId": "5b04088b359d4e7ede350161f720b239"
+        },
+        {
+          "deliveries": [
+            16
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "order-service",
+          "spanId": "711e2994c0843bf5",
+          "traceId": "cf2458fb9f77b319a1d6cb086de9b3b7"
+        }
+      ],
+      "suppression": {
+        "kind": "none"
+      }
+    },
+    {
+      "count": 1,
+      "id": "e_48dd98e1ee05fd4a",
+      "identity": {
+        "name": "redis-KEYS",
+        "scope": "@opentelemetry/instrumentation-redis",
+        "service": "public-api",
+        "spanKind": "client"
+      },
+      "kind": "unclassified",
+      "linkage": {
+        "kind": "unlinked"
+      },
+      "occurrences": [
+        {
+          "deliveries": [
+            13
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "d780e8f621e4f5f8",
+          "traceId": "8d11d7c2139a258e26c2843563dc2b3f"
+        }
+      ],
+      "suppression": {
+        "kind": "none"
+      }
+    },
+    {
+      "count": 2,
+      "id": "e_53661cbf2115de4b",
+      "identity": {
+        "name": "redis-GET",
+        "scope": "@opentelemetry/instrumentation-redis",
+        "service": "public-api",
+        "spanKind": "client"
+      },
+      "kind": "unclassified",
+      "linkage": {
+        "kind": "unlinked"
+      },
+      "occurrences": [
+        {
+          "deliveries": [
+            13
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "87634f7c8d6f9c4c",
+          "traceId": "cf2458fb9f77b319a1d6cb086de9b3b7"
+        },
+        {
+          "deliveries": [
+            13
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "b7a8bb40a63d0888",
+          "traceId": "cf2458fb9f77b319a1d6cb086de9b3b7"
+        }
+      ],
+      "suppression": {
+        "kind": "none"
+      }
+    },
+    {
+      "count": 1,
+      "id": "e_56d1d2a22b6c0068",
+      "identity": {
+        "name": "redis-BLPOP",
+        "scope": "@opentelemetry/instrumentation-redis",
+        "service": "redis-proof-consumer",
+        "spanKind": "client"
+      },
+      "kind": "unclassified",
+      "linkage": {
+        "kind": "unlinked"
+      },
+      "occurrences": [
+        {
+          "deliveries": [
+            17
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "redis-proof-consumer",
+          "spanId": "3ca294633227e204",
+          "traceId": "4e82de80ca22456de991dada4365e4c1"
+        }
+      ],
+      "suppression": {
+        "kind": "none"
+      }
+    },
+    {
+      "count": 2,
+      "id": "e_5dd201b37c9f7079",
+      "identity": {
+        "name": "POST",
+        "scope": "@opentelemetry/instrumentation-http",
+        "service": "payment-mock",
+        "spanKind": "server"
+      },
+      "kind": "unclassified",
+      "linkage": {
+        "kind": "unlinked"
+      },
+      "occurrences": [
+        {
+          "deliveries": [
+            14
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "payment-mock",
+          "spanId": "bff8386db725231b",
+          "traceId": "8d11d7c2139a258e26c2843563dc2b3f"
+        },
+        {
+          "deliveries": [
+            14
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "payment-mock",
+          "spanId": "f6e40bc5e106fce4",
+          "traceId": "cf2458fb9f77b319a1d6cb086de9b3b7"
+        }
+      ],
+      "suppression": {
+        "kind": "none"
+      }
+    },
+    {
+      "count": 5,
+      "id": "e_62e4a385a35478a3",
+      "identity": {
+        "name": "pg.query:SELECT subscriptions",
+        "scope": "@opentelemetry/instrumentation-pg",
+        "service": "public-api",
+        "spanKind": "client"
+      },
+      "kind": "unclassified",
+      "linkage": {
+        "kind": "unlinked"
+      },
+      "occurrences": [
+        {
+          "deliveries": [
+            9
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "440ff6b645023f80",
+          "traceId": "5e404b415e07ca949d1e953a96ccb4ab"
+        },
+        {
+          "deliveries": [
+            13
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "53fdfb6e27d36f2d",
+          "traceId": "8d11d7c2139a258e26c2843563dc2b3f"
+        },
+        {
+          "deliveries": [
+            13
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "8510367800ecc47e",
+          "traceId": "8d11d7c2139a258e26c2843563dc2b3f"
+        },
+        {
+          "deliveries": [
+            13
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "e91c5f8ab8a5a7c3",
+          "traceId": "cf2458fb9f77b319a1d6cb086de9b3b7"
+        },
+        {
+          "deliveries": [
+            4
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "8e448fc38a5f89fb",
+          "traceId": "e89f226be16dc534e03f55d39a7b7336"
+        }
+      ],
+      "suppression": {
+        "kind": "none"
+      }
+    },
+    {
+      "count": 1,
+      "id": "e_66c136fcaddd6492",
+      "identity": {
+        "name": "GET",
+        "scope": "@opentelemetry/instrumentation-http",
+        "service": "order-service",
+        "spanKind": "server"
+      },
+      "kind": "unclassified",
+      "linkage": {
+        "kind": "unlinked"
+      },
+      "occurrences": [
+        {
+          "deliveries": [
+            7
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "order-service",
+          "spanId": "2b2e16616e15cc83",
+          "traceId": "2227d7b657186d9106e474e77f01d25d"
+        }
+      ],
+      "suppression": {
+        "kind": "none"
+      }
+    },
+    {
+      "count": 1,
+      "id": "e_670c423fce922523",
+      "identity": {
+        "name": "GET",
+        "scope": "@opentelemetry/instrumentation-http",
+        "service": "public-api",
+        "spanKind": "server"
+      },
+      "kind": "unclassified",
+      "linkage": {
+        "kind": "unlinked"
+      },
+      "occurrences": [
+        {
+          "deliveries": [
+            9
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "b4b52a2b4a22c649",
+          "traceId": "5e404b415e07ca949d1e953a96ccb4ab"
+        }
+      ],
+      "suppression": {
+        "kind": "none"
+      }
+    },
+    {
+      "count": 1,
+      "id": "e_70ec5498c4694bb6",
+      "identity": {
+        "name": "redis-connect",
+        "scope": "@opentelemetry/instrumentation-redis",
+        "service": "redis-proof-consumer",
+        "spanKind": "client"
+      },
+      "kind": "unclassified",
+      "linkage": {
+        "kind": "unlinked"
+      },
+      "occurrences": [
+        {
+          "deliveries": [
+            8
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "redis-proof-consumer",
+          "spanId": "7f956630f0ffd3f4",
+          "traceId": "bd2dde64c9f0db0862bd742c5f61c9e8"
+        }
+      ],
+      "suppression": {
+        "kind": "none"
+      }
+    },
+    {
+      "count": 1,
+      "id": "e_77e93973c0bdb025",
+      "identity": {
+        "name": "GET",
+        "scope": "@opentelemetry/instrumentation-http",
+        "service": "fraud-check",
+        "spanKind": "server"
+      },
+      "kind": "unclassified",
+      "linkage": {
+        "kind": "unlinked"
+      },
+      "occurrences": [
+        {
+          "deliveries": [
+            5
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "fraud-check",
+          "spanId": "b86dfc4d22f36646",
+          "traceId": "c1b81a00730e5fa70fbb3d7a0cfca0e0"
+        }
+      ],
+      "suppression": {
+        "kind": "none"
+      }
+    },
+    {
+      "count": 1,
+      "id": "e_7aa4b9b0d6959acc",
+      "identity": {
+        "name": "pg.query:TRUNCATE subscriptions",
+        "scope": "@opentelemetry/instrumentation-pg",
+        "service": "public-api",
+        "spanKind": "client"
+      },
+      "kind": "unclassified",
+      "linkage": {
+        "kind": "unlinked"
+      },
+      "occurrences": [
+        {
+          "deliveries": [
+            13
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "0fd2845edadcb46a",
+          "traceId": "8d11d7c2139a258e26c2843563dc2b3f"
+        }
+      ],
+      "suppression": {
+        "kind": "none"
+      }
+    },
+    {
+      "count": 3,
+      "id": "e_8129af10de8e7976",
+      "identity": {
+        "name": "POST",
+        "scope": "@opentelemetry/instrumentation-http",
+        "service": "public-api",
+        "spanKind": "server"
+      },
+      "kind": "unclassified",
+      "linkage": {
+        "kind": "unlinked"
+      },
+      "occurrences": [
+        {
+          "deliveries": [
+            13
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "ac80bdeb94ef0d08",
+          "traceId": "8d11d7c2139a258e26c2843563dc2b3f"
+        },
+        {
+          "deliveries": [
+            13
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "420c8b8f55cfdc2e",
+          "traceId": "cf2458fb9f77b319a1d6cb086de9b3b7"
+        },
+        {
+          "deliveries": [
+            13
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "e5df4ac7946e6627",
+          "traceId": "da18443fb0cbac6a3e0282a97baf9fea"
+        }
+      ],
+      "suppression": {
+        "kind": "none"
+      }
+    },
+    {
+      "count": 8,
+      "id": "e_82a103e94a0df55c",
+      "identity": {
+        "name": "SQS.GetQueueAttributes",
+        "scope": "@opentelemetry/instrumentation-aws-sdk",
+        "service": "public-api",
+        "spanKind": "client"
+      },
+      "kind": "unclassified",
+      "linkage": {
+        "kind": "unlinked"
+      },
+      "occurrences": [
+        {
+          "deliveries": [
+            13
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "48a6cd73ed732b46",
+          "traceId": "8d11d7c2139a258e26c2843563dc2b3f"
+        },
+        {
+          "deliveries": [
+            13
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "4c3e4940f0979c93",
+          "traceId": "8d11d7c2139a258e26c2843563dc2b3f"
+        },
+        {
+          "deliveries": [
+            13
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "5db16ac65fb09b5c",
+          "traceId": "8d11d7c2139a258e26c2843563dc2b3f"
+        },
+        {
+          "deliveries": [
+            13
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "66e1eb903d0b2583",
+          "traceId": "8d11d7c2139a258e26c2843563dc2b3f"
+        },
+        {
+          "deliveries": [
+            13
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "6b5e6c3a4dc469c5",
+          "traceId": "8d11d7c2139a258e26c2843563dc2b3f"
+        },
+        {
+          "deliveries": [
+            13
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "c410810a36bfac68",
+          "traceId": "8d11d7c2139a258e26c2843563dc2b3f"
+        },
+        {
+          "deliveries": [
+            13
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "c624d8b14ba22069",
+          "traceId": "8d11d7c2139a258e26c2843563dc2b3f"
+        },
+        {
+          "deliveries": [
+            13
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "fb2d1f1a4cd33272",
+          "traceId": "8d11d7c2139a258e26c2843563dc2b3f"
+        }
+      ],
+      "suppression": {
+        "kind": "none"
+      }
+    },
+    {
+      "count": 2,
+      "id": "e_83b2d599f7a57ae9",
+      "identity": {
+        "name": "pg.query:SELECT subscriptions",
+        "scope": "@opentelemetry/instrumentation-pg",
+        "service": "fraud-check",
+        "spanKind": "client"
+      },
+      "kind": "unclassified",
+      "linkage": {
+        "kind": "unlinked"
+      },
+      "occurrences": [
+        {
+          "deliveries": [
+            2
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "fraud-check",
+          "spanId": "bf256835f238c938",
+          "traceId": "938424b0e4c1a0d3f9e0d11d19044e08"
+        },
+        {
+          "deliveries": [
+            5
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "fraud-check",
+          "spanId": "5ef68caf0deccb5b",
+          "traceId": "c1b81a00730e5fa70fbb3d7a0cfca0e0"
+        }
+      ],
+      "suppression": {
+        "kind": "none"
+      }
+    },
+    {
+      "count": 1,
+      "id": "e_87267f06bd932776",
+      "identity": {
+        "name": "POST",
+        "scope": "@opentelemetry/instrumentation-undici",
+        "service": "order-service",
+        "spanKind": "client"
+      },
+      "kind": "unclassified",
+      "linkage": {
+        "kind": "unlinked"
+      },
+      "occurrences": [
+        {
+          "deliveries": [
+            3
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "order-service",
+          "spanId": "2d786f136be6ae75",
+          "traceId": "97d389a23db0c1832e9df1094f0bf6b8"
+        }
+      ],
+      "suppression": {
+        "kind": "none"
+      }
+    },
+    {
+      "count": 5,
+      "id": "e_8d4397402bb42d14",
+      "identity": {
+        "name": "POST",
+        "scope": "@opentelemetry/instrumentation-undici",
+        "service": "public-api",
+        "spanKind": "client"
+      },
+      "kind": "unclassified",
+      "linkage": {
+        "kind": "unlinked"
+      },
+      "occurrences": [
+        {
+          "deliveries": [
+            4
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "d84706afeada7df2",
+          "traceId": "7eb5e2989da96c131a5723f265434bc5"
+        },
+        {
+          "deliveries": [
+            13
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "2eb11af969103d8c",
+          "traceId": "8d11d7c2139a258e26c2843563dc2b3f"
+        },
+        {
+          "deliveries": [
+            13
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "286b638bdaf9d87c",
+          "traceId": "cf2458fb9f77b319a1d6cb086de9b3b7"
+        },
+        {
+          "deliveries": [
+            13
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "37fb2a3fb2596611",
+          "traceId": "cf2458fb9f77b319a1d6cb086de9b3b7"
+        },
+        {
+          "deliveries": [
+            13
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "7ac4b3fecb493807",
+          "traceId": "cf2458fb9f77b319a1d6cb086de9b3b7"
+        }
+      ],
+      "suppression": {
+        "kind": "none"
+      }
+    },
+    {
+      "count": 1,
+      "id": "e_95a1cb188505f5f8",
+      "identity": {
+        "name": "POST",
+        "scope": "@opentelemetry/instrumentation-undici",
+        "service": "fraud-check",
+        "spanKind": "client"
+      },
+      "kind": "unclassified",
+      "linkage": {
+        "kind": "unlinked"
+      },
+      "occurrences": [
+        {
+          "deliveries": [
+            2
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "fraud-check",
+          "spanId": "ba05f6b52afeb202",
+          "traceId": "175fcb0fc563eff100ddcba57e8f5376"
+        }
+      ],
+      "suppression": {
+        "kind": "none"
+      }
+    },
+    {
+      "count": 3,
+      "id": "e_9cbbab2631570d0d",
+      "identity": {
+        "name": "tcp.connect",
+        "scope": "@opentelemetry/instrumentation-net",
+        "service": "redis-proof-consumer",
+        "spanKind": "internal"
+      },
+      "kind": "unclassified",
+      "linkage": {
+        "kind": "unlinked"
+      },
+      "occurrences": [
+        {
+          "deliveries": [
+            8
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "redis-proof-consumer",
+          "spanId": "a8c1ed2a044c91e7",
+          "traceId": "bd2dde64c9f0db0862bd742c5f61c9e8"
+        },
+        {
+          "deliveries": [
+            8
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "redis-proof-consumer",
+          "spanId": "df299ae7d39a4a11",
+          "traceId": "ebb065ce7d82dc8b01b5e52f0cbbace1"
+        },
+        {
+          "deliveries": [
+            17
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "redis-proof-consumer",
+          "spanId": "e01b074b7622ebdb",
+          "traceId": "ec2258f46c10f1ec1199012376288a17"
+        }
+      ],
+      "suppression": {
+        "kind": "none"
+      }
+    },
+    {
+      "count": 2,
+      "id": "e_9e172ef9196cb8df",
+      "identity": {
+        "name": "SQS.GetQueueUrl",
+        "scope": "@opentelemetry/instrumentation-aws-sdk",
+        "service": "public-api",
+        "spanKind": "client"
+      },
+      "kind": "unclassified",
+      "linkage": {
+        "kind": "unlinked"
+      },
+      "occurrences": [
+        {
+          "deliveries": [
+            9
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "48ab904b57bd8e3b",
+          "traceId": "5e404b415e07ca949d1e953a96ccb4ab"
+        },
+        {
+          "deliveries": [
+            4
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "6664dbff54236a74",
+          "traceId": "7362f682d4df41e761d0ff8c6c2b53b2"
+        }
+      ],
+      "suppression": {
+        "kind": "none"
+      }
+    },
+    {
+      "count": 2,
+      "id": "e_a26f3dbe73c0915d",
+      "identity": {
+        "name": "POST",
+        "scope": "@opentelemetry/instrumentation-undici",
+        "service": "redis-proof-consumer",
+        "spanKind": "client"
+      },
+      "kind": "unclassified",
+      "linkage": {
+        "kind": "unlinked"
+      },
+      "occurrences": [
+        {
+          "deliveries": [
+            8
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "redis-proof-consumer",
+          "spanId": "412efbb2656d3265",
+          "traceId": "024ad84c32602eaa12fa6045753302ab"
+        },
+        {
+          "deliveries": [
+            17
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "redis-proof-consumer",
+          "spanId": "9a4fa2615fbc390d",
+          "traceId": "da18443fb0cbac6a3e0282a97baf9fea"
+        }
+      ],
+      "suppression": {
+        "kind": "none"
+      }
+    },
+    {
+      "count": 17,
+      "id": "e_a72fba0613248891",
+      "identity": {
+        "name": "POST",
+        "scope": "@opentelemetry/instrumentation-http",
+        "service": "public-api",
+        "spanKind": "client"
+      },
+      "kind": "unclassified",
+      "linkage": {
+        "kind": "unlinked"
+      },
+      "occurrences": [
+        {
+          "deliveries": [
+            9
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "e571b04ebc4f7638",
+          "traceId": "5e404b415e07ca949d1e953a96ccb4ab"
+        },
+        {
+          "deliveries": [
+            4
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "71455af9fd8313c1",
+          "traceId": "7362f682d4df41e761d0ff8c6c2b53b2"
+        },
+        {
+          "deliveries": [
+            13
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "06220be9e28957a4",
+          "traceId": "8d11d7c2139a258e26c2843563dc2b3f"
+        },
+        {
+          "deliveries": [
+            13
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "27c67335b9675636",
+          "traceId": "8d11d7c2139a258e26c2843563dc2b3f"
+        },
+        {
+          "deliveries": [
+            13
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "34b4d08c9a66993d",
+          "traceId": "8d11d7c2139a258e26c2843563dc2b3f"
+        },
+        {
+          "deliveries": [
+            13
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "35fd4c0632e0f3ef",
+          "traceId": "8d11d7c2139a258e26c2843563dc2b3f"
+        },
+        {
+          "deliveries": [
+            13
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "4329bcabaf3bf61b",
+          "traceId": "8d11d7c2139a258e26c2843563dc2b3f"
+        },
+        {
+          "deliveries": [
+            13
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "54cc04ad6c37a2ce",
+          "traceId": "8d11d7c2139a258e26c2843563dc2b3f"
+        },
+        {
+          "deliveries": [
+            13
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "5feedff418d55554",
+          "traceId": "8d11d7c2139a258e26c2843563dc2b3f"
+        },
+        {
+          "deliveries": [
+            13
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "74288ea5ca42c5e7",
+          "traceId": "8d11d7c2139a258e26c2843563dc2b3f"
+        },
+        {
+          "deliveries": [
+            13
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "797e5be9b0b1a104",
+          "traceId": "8d11d7c2139a258e26c2843563dc2b3f"
+        },
+        {
+          "deliveries": [
+            13
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "92e278eeac5a53cd",
+          "traceId": "8d11d7c2139a258e26c2843563dc2b3f"
+        },
+        {
+          "deliveries": [
+            13
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "b2387801c438473f",
+          "traceId": "8d11d7c2139a258e26c2843563dc2b3f"
+        },
+        {
+          "deliveries": [
+            13
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "bcb9c61654aed949",
+          "traceId": "8d11d7c2139a258e26c2843563dc2b3f"
+        },
+        {
+          "deliveries": [
+            13
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "d3e1a11081ba98de",
+          "traceId": "8d11d7c2139a258e26c2843563dc2b3f"
+        },
+        {
+          "deliveries": [
+            13
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "f7fa03a606c07399",
+          "traceId": "8d11d7c2139a258e26c2843563dc2b3f"
+        },
+        {
+          "deliveries": [
+            13
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "f8e4044f8e80d561",
+          "traceId": "8d11d7c2139a258e26c2843563dc2b3f"
+        }
+      ],
+      "suppression": {
+        "kind": "none"
+      }
+    },
+    {
+      "count": 12,
+      "id": "e_aefe1bface53fe47",
+      "identity": {
+        "name": "dns.lookup",
+        "scope": "@opentelemetry/instrumentation-dns",
+        "service": "public-api",
+        "spanKind": "client"
+      },
+      "kind": "unclassified",
+      "linkage": {
+        "kind": "unlinked"
+      },
+      "occurrences": [
+        {
+          "deliveries": [
+            4
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "07ffa294862f4d18",
+          "traceId": "186a6533230f357ae4148fbe8b350498"
+        },
+        {
+          "deliveries": [
+            4
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "2b8626895ad6e1f4",
+          "traceId": "33c39a85b5b0b7b97b306ffada2b8c29"
+        },
+        {
+          "deliveries": [
+            4
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "43473f96b4eb71ca",
+          "traceId": "7362f682d4df41e761d0ff8c6c2b53b2"
+        },
+        {
+          "deliveries": [
+            13
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "87dce9e2c6a3e959",
+          "traceId": "8d11d7c2139a258e26c2843563dc2b3f"
+        },
+        {
+          "deliveries": [
+            13
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "9e863397ec5d1a18",
+          "traceId": "8d11d7c2139a258e26c2843563dc2b3f"
+        },
+        {
+          "deliveries": [
+            4
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "2f4ea59350fc4f70",
+          "traceId": "b8ac738e7e0fed2cc787b802ab04e825"
+        },
+        {
+          "deliveries": [
+            13
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "7bf2dd37a25920df",
+          "traceId": "cf2458fb9f77b319a1d6cb086de9b3b7"
+        },
+        {
+          "deliveries": [
+            13
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "884e7232f36a85ac",
+          "traceId": "cf2458fb9f77b319a1d6cb086de9b3b7"
+        },
+        {
+          "deliveries": [
+            4
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "31a3304da4cfd0f9",
+          "traceId": "e7635ce4b397a5e091a90d8a0823da54"
+        },
+        {
+          "deliveries": [
+            4
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "963b484ff9d79edb",
+          "traceId": "e89f226be16dc534e03f55d39a7b7336"
+        },
+        {
+          "deliveries": [
+            4
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "96ceb6c5ea91a114",
+          "traceId": "ef772c651a03e85ba665b2a65a3d2dcc"
+        },
+        {
+          "deliveries": [
+            4
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "81534df0be5040b7",
+          "traceId": "f2a6b99b3f0edee7604dd95bc7a90b31"
+        }
+      ],
+      "suppression": {
+        "kind": "none"
+      }
+    },
+    {
+      "count": 6,
+      "id": "e_b77ba7f53bd1344c",
+      "identity": {
+        "name": "pg.query:INSERT subscriptions",
+        "scope": "@opentelemetry/instrumentation-pg",
+        "service": "public-api",
+        "spanKind": "client"
+      },
+      "kind": "unclassified",
+      "linkage": {
+        "kind": "unlinked"
+      },
+      "occurrences": [
+        {
+          "deliveries": [
+            13
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "01adbf4653dec423",
+          "traceId": "8d11d7c2139a258e26c2843563dc2b3f"
+        },
+        {
+          "deliveries": [
+            13
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "7a590a508fc8f94c",
+          "traceId": "8d11d7c2139a258e26c2843563dc2b3f"
+        },
+        {
+          "deliveries": [
+            13
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "981350dbdac6259a",
+          "traceId": "8d11d7c2139a258e26c2843563dc2b3f"
+        },
+        {
+          "deliveries": [
+            13
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "c405490de38421fa",
+          "traceId": "8d11d7c2139a258e26c2843563dc2b3f"
+        },
+        {
+          "deliveries": [
+            13
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "e15f26c1439c6b71",
+          "traceId": "8d11d7c2139a258e26c2843563dc2b3f"
+        },
+        {
+          "deliveries": [
+            13
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "e41a835c62347f84",
+          "traceId": "cf2458fb9f77b319a1d6cb086de9b3b7"
+        }
+      ],
+      "suppression": {
+        "kind": "none"
+      }
+    },
+    {
+      "count": 1,
+      "id": "e_b7bb962ba5baf249",
+      "identity": {
+        "name": "POST",
+        "scope": "@opentelemetry/instrumentation-undici",
+        "service": "payment-mock",
+        "spanKind": "client"
+      },
+      "kind": "unclassified",
+      "linkage": {
+        "kind": "unlinked"
+      },
+      "occurrences": [
+        {
+          "deliveries": [
+            1
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "payment-mock",
+          "spanId": "5e8c3fab610e1e3b",
+          "traceId": "e1d391bca6b18e4cbabdb9fbb1bb2d5b"
+        }
+      ],
+      "suppression": {
+        "kind": "none"
+      }
+    },
+    {
+      "count": 4,
+      "id": "e_bb29612d40e8a7c1",
+      "identity": {
+        "name": "dns.lookup",
+        "scope": "@opentelemetry/instrumentation-dns",
+        "service": "fraud-check",
+        "spanKind": "client"
+      },
+      "kind": "unclassified",
+      "linkage": {
+        "kind": "unlinked"
+      },
+      "occurrences": [
+        {
+          "deliveries": [
+            2
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "fraud-check",
+          "spanId": "b2ea0dfff8b50b70",
+          "traceId": "388b80e5ce9f761d270eeda2b9ca10a0"
+        },
+        {
+          "deliveries": [
+            2
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "fraud-check",
+          "spanId": "c3278216010ab61b",
+          "traceId": "938424b0e4c1a0d3f9e0d11d19044e08"
+        },
+        {
+          "deliveries": [
+            2
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "fraud-check",
+          "spanId": "1a32449cccca0f9d",
+          "traceId": "a09234ecf8d33d2974b95059d12792ba"
+        },
+        {
+          "deliveries": [
+            15
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "fraud-check",
+          "spanId": "a9a5562440fc5877",
+          "traceId": "cf2458fb9f77b319a1d6cb086de9b3b7"
+        }
+      ],
+      "suppression": {
+        "kind": "none"
+      }
+    },
+    {
+      "count": 2,
+      "id": "e_bbabfec86d8db562",
+      "identity": {
+        "name": "GET",
+        "scope": "@opentelemetry/instrumentation-http",
+        "service": "payment-mock",
+        "spanKind": "server"
+      },
+      "kind": "unclassified",
+      "linkage": {
+        "kind": "unlinked"
+      },
+      "occurrences": [
+        {
+          "deliveries": [
+            6
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "payment-mock",
+          "spanId": "0c40660e856e5071",
+          "traceId": "25b89a4edfe885d4d1247c56a7187d53"
+        },
+        {
+          "deliveries": [
+            14
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "payment-mock",
+          "spanId": "7196eaf26590ff46",
+          "traceId": "8d11d7c2139a258e26c2843563dc2b3f"
+        }
+      ],
+      "suppression": {
+        "kind": "none"
+      }
+    },
+    {
+      "count": 1,
+      "id": "e_bc0729e9933e6398",
+      "identity": {
+        "name": "pg.query:COMMIT subscriptions",
+        "scope": "@opentelemetry/instrumentation-pg",
+        "service": "public-api",
+        "spanKind": "client"
+      },
+      "kind": "unclassified",
+      "linkage": {
+        "kind": "unlinked"
+      },
+      "occurrences": [
+        {
+          "deliveries": [
+            13
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "c746a3c127af4406",
+          "traceId": "8d11d7c2139a258e26c2843563dc2b3f"
+        }
+      ],
+      "suppression": {
+        "kind": "none"
+      }
+    },
+    {
+      "count": 3,
+      "id": "e_bd7180dad43c46dc",
+      "identity": {
+        "name": "tcp.connect",
+        "scope": "@opentelemetry/instrumentation-net",
+        "service": "fraud-check",
+        "spanKind": "internal"
+      },
+      "kind": "unclassified",
+      "linkage": {
+        "kind": "unlinked"
+      },
+      "occurrences": [
+        {
+          "deliveries": [
+            2
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "fraud-check",
+          "spanId": "07d57cb6cf9cd188",
+          "traceId": "938424b0e4c1a0d3f9e0d11d19044e08"
+        },
+        {
+          "deliveries": [
+            2
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "fraud-check",
+          "spanId": "2f266dda921d2d78",
+          "traceId": "ba41240eca077fc44c3f22781850753c"
+        },
+        {
+          "deliveries": [
+            15
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "fraud-check",
+          "spanId": "690d21f4d2e89c8d",
+          "traceId": "cf2458fb9f77b319a1d6cb086de9b3b7"
+        }
+      ],
+      "suppression": {
+        "kind": "none"
+      }
+    },
+    {
+      "count": 2,
+      "id": "e_be2f78d5a80a23ee",
+      "identity": {
+        "name": "pg.connect",
+        "scope": "@opentelemetry/instrumentation-pg",
+        "service": "fraud-check",
+        "spanKind": "client"
+      },
+      "kind": "unclassified",
+      "linkage": {
+        "kind": "unlinked"
+      },
+      "occurrences": [
+        {
+          "deliveries": [
+            2
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "fraud-check",
+          "spanId": "509ea1600c32cc8b",
+          "traceId": "938424b0e4c1a0d3f9e0d11d19044e08"
+        },
+        {
+          "deliveries": [
+            15
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "fraud-check",
+          "spanId": "6e07d5c2fd358d1e",
+          "traceId": "cf2458fb9f77b319a1d6cb086de9b3b7"
+        }
+      ],
+      "suppression": {
+        "kind": "none"
+      }
+    },
+    {
+      "count": 2,
+      "id": "e_c83dd06a92a525e2",
+      "identity": {
+        "name": "redis-SET",
+        "scope": "@opentelemetry/instrumentation-redis",
+        "service": "public-api",
+        "spanKind": "client"
+      },
+      "kind": "unclassified",
+      "linkage": {
+        "kind": "unlinked"
+      },
+      "occurrences": [
+        {
+          "deliveries": [
+            13
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "2178bee1cc858caa",
+          "traceId": "cf2458fb9f77b319a1d6cb086de9b3b7"
+        },
+        {
+          "deliveries": [
+            13
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "3b52308002437f94",
+          "traceId": "cf2458fb9f77b319a1d6cb086de9b3b7"
+        }
+      ],
+      "suppression": {
+        "kind": "none"
+      }
+    },
+    {
+      "count": 1,
+      "id": "e_c9f4c8adf0fb459e",
+      "identity": {
+        "name": "pg.query:INSERT subscriptions",
+        "scope": "@opentelemetry/instrumentation-pg",
+        "service": "fraud-check",
+        "spanKind": "client"
+      },
+      "kind": "unclassified",
+      "linkage": {
+        "kind": "unlinked"
+      },
+      "occurrences": [
+        {
+          "deliveries": [
+            15
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "fraud-check",
+          "spanId": "1177d3f03d6a8ed9",
+          "traceId": "cf2458fb9f77b319a1d6cb086de9b3b7"
+        }
+      ],
+      "suppression": {
+        "kind": "none"
+      }
+    },
+    {
+      "count": 11,
+      "id": "e_ccf6e7197828fd21",
+      "identity": {
+        "name": "tcp.connect",
+        "scope": "@opentelemetry/instrumentation-net",
+        "service": "public-api",
+        "spanKind": "internal"
+      },
+      "kind": "unclassified",
+      "linkage": {
+        "kind": "unlinked"
+      },
+      "occurrences": [
+        {
+          "deliveries": [
+            4
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "9aea902c12ffb6eb",
+          "traceId": "7362f682d4df41e761d0ff8c6c2b53b2"
+        },
+        {
+          "deliveries": [
+            13
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "2b828ed87ee46478",
+          "traceId": "8d11d7c2139a258e26c2843563dc2b3f"
+        },
+        {
+          "deliveries": [
+            13
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "9b133666ed8d8f1d",
+          "traceId": "8d11d7c2139a258e26c2843563dc2b3f"
+        },
+        {
+          "deliveries": [
+            4
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "a06e9b468ad4744c",
+          "traceId": "8d9f774e2907e794211bec88c7d6ad9f"
+        },
+        {
+          "deliveries": [
+            4
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "4127646e1a6417f8",
+          "traceId": "c1e4f335a9a048e4400a9c500d9ffdc8"
+        },
+        {
+          "deliveries": [
+            4
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "50f2a252586790ef",
+          "traceId": "c20a739529a38d671d9217ec64f418a1"
+        },
+        {
+          "deliveries": [
+            13
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "3c3db99dad527897",
+          "traceId": "cf2458fb9f77b319a1d6cb086de9b3b7"
+        },
+        {
+          "deliveries": [
+            13
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "566243cfb6673656",
+          "traceId": "cf2458fb9f77b319a1d6cb086de9b3b7"
+        },
+        {
+          "deliveries": [
+            4
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "b3a6864d022d3c61",
+          "traceId": "e89f226be16dc534e03f55d39a7b7336"
+        },
+        {
+          "deliveries": [
+            4
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "46b832750197e15b",
+          "traceId": "ec8bdd57aa7a568efee07170e993e57a"
+        },
+        {
+          "deliveries": [
+            4
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "025e75fcf66fc75c",
+          "traceId": "ef772c651a03e85ba665b2a65a3d2dcc"
+        }
+      ],
+      "suppression": {
+        "kind": "none"
+      }
+    },
+    {
+      "count": 1,
+      "id": "e_ceafc0907450f2be",
+      "identity": {
+        "name": "pg.connect",
+        "scope": "@opentelemetry/instrumentation-pg",
+        "service": "public-api",
+        "spanKind": "client"
+      },
+      "kind": "unclassified",
+      "linkage": {
+        "kind": "unlinked"
+      },
+      "occurrences": [
+        {
+          "deliveries": [
+            4
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "1419d8dc8103001e",
+          "traceId": "e89f226be16dc534e03f55d39a7b7336"
+        }
+      ],
+      "suppression": {
+        "kind": "none"
+      }
+    },
+    {
+      "count": 4,
+      "id": "e_cfab604b91af4be8",
+      "identity": {
+        "name": "GET",
+        "scope": "@opentelemetry/instrumentation-undici",
+        "service": "public-api",
+        "spanKind": "client"
+      },
+      "kind": "unclassified",
+      "linkage": {
+        "kind": "unlinked"
+      },
+      "occurrences": [
+        {
+          "deliveries": [
+            4
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "44f78c50bdb80ea4",
+          "traceId": "2227d7b657186d9106e474e77f01d25d"
+        },
+        {
+          "deliveries": [
+            4
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "12e2f16a105b238a",
+          "traceId": "25b89a4edfe885d4d1247c56a7187d53"
+        },
+        {
+          "deliveries": [
+            13
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "505db34cf8773913",
+          "traceId": "8d11d7c2139a258e26c2843563dc2b3f"
+        },
+        {
+          "deliveries": [
+            4
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "a0be7d496104ce97",
+          "traceId": "c1b81a00730e5fa70fbb3d7a0cfca0e0"
+        }
+      ],
+      "suppression": {
+        "kind": "none"
+      }
+    },
+    {
+      "count": 1,
+      "id": "e_def417d6478b48a0",
+      "identity": {
+        "name": "POST",
+        "scope": "@opentelemetry/instrumentation-http",
+        "service": "order-service",
+        "spanKind": "server"
+      },
+      "kind": "unclassified",
+      "linkage": {
+        "kind": "unlinked"
+      },
+      "occurrences": [
+        {
+          "deliveries": [
+            16
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "order-service",
+          "spanId": "d5a0d2c6e7d23f12",
+          "traceId": "cf2458fb9f77b319a1d6cb086de9b3b7"
+        }
+      ],
+      "suppression": {
+        "kind": "none"
+      }
+    },
+    {
+      "count": 1,
+      "id": "e_e3a2fc1c576ceaeb",
+      "identity": {
+        "name": "subscription-orders send",
+        "scope": "@opentelemetry/instrumentation-aws-sdk",
+        "service": "order-service",
+        "spanKind": "producer"
+      },
+      "kind": "unclassified",
+      "linkage": {
+        "kind": "unlinked"
+      },
+      "occurrences": [
+        {
+          "deliveries": [
+            16
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "order-service",
+          "spanId": "f00519844b7c4ab9",
+          "traceId": "cf2458fb9f77b319a1d6cb086de9b3b7"
+        }
+      ],
+      "suppression": {
+        "kind": "none"
+      }
+    },
+    {
+      "count": 7,
+      "id": "e_f5d5071e0fad4943",
+      "identity": {
+        "name": "subscription-orders receive",
+        "scope": "@opentelemetry/instrumentation-aws-sdk",
+        "service": "public-api",
+        "spanKind": "consumer"
+      },
+      "kind": "unclassified",
+      "linkage": {
+        "kind": "unlinked"
+      },
+      "occurrences": [
+        {
+          "deliveries": [
+            13
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "194767b83dd94906",
+          "traceId": "8d11d7c2139a258e26c2843563dc2b3f"
+        },
+        {
+          "deliveries": [
+            13
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "19c485a0c6c9bedf",
+          "traceId": "8d11d7c2139a258e26c2843563dc2b3f"
+        },
+        {
+          "deliveries": [
+            13
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "38addeff85f6894b",
+          "traceId": "8d11d7c2139a258e26c2843563dc2b3f"
+        },
+        {
+          "deliveries": [
+            13
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "3dc6c5abd86c1d62",
+          "traceId": "8d11d7c2139a258e26c2843563dc2b3f"
+        },
+        {
+          "deliveries": [
+            13
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "42c37bf93023d771",
+          "traceId": "8d11d7c2139a258e26c2843563dc2b3f"
+        },
+        {
+          "deliveries": [
+            13
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "5b6e90b8e9f7c900",
+          "traceId": "8d11d7c2139a258e26c2843563dc2b3f"
+        },
+        {
+          "deliveries": [
+            13
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "f725439fe1f57cf5",
+          "traceId": "8d11d7c2139a258e26c2843563dc2b3f"
+        }
+      ],
+      "suppression": {
+        "kind": "none"
+      }
+    },
+    {
+      "count": 7,
+      "id": "e_fc617ae22960daa8",
+      "identity": {
+        "name": "pg-pool.connect",
+        "scope": "@opentelemetry/instrumentation-pg",
+        "service": "public-api",
+        "spanKind": "client"
+      },
+      "kind": "unclassified",
+      "linkage": {
+        "kind": "unlinked"
+      },
+      "occurrences": [
+        {
+          "deliveries": [
+            9
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "e27dfbd3cfb15976",
+          "traceId": "5e404b415e07ca949d1e953a96ccb4ab"
+        },
+        {
+          "deliveries": [
+            13
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "03851aefbab7d13d",
+          "traceId": "8d11d7c2139a258e26c2843563dc2b3f"
+        },
+        {
+          "deliveries": [
+            13
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "7771289ea5536a8d",
+          "traceId": "8d11d7c2139a258e26c2843563dc2b3f"
+        },
+        {
+          "deliveries": [
+            13
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "a6f34ba80a384881",
+          "traceId": "8d11d7c2139a258e26c2843563dc2b3f"
+        },
+        {
+          "deliveries": [
+            13
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "0e7085af440e83d0",
+          "traceId": "cf2458fb9f77b319a1d6cb086de9b3b7"
+        },
+        {
+          "deliveries": [
+            13
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "9c56a91bb0640514",
+          "traceId": "cf2458fb9f77b319a1d6cb086de9b3b7"
+        },
+        {
+          "deliveries": [
+            4
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "4ecdff7293a838d3",
+          "traceId": "e89f226be16dc534e03f55d39a7b7336"
+        }
+      ],
+      "suppression": {
+        "kind": "none"
+      }
+    },
+    {
+      "count": 1,
+      "id": "e_fc7f49918f39ae1a",
+      "identity": {
+        "name": "redis-PING",
+        "scope": "@opentelemetry/instrumentation-redis",
+        "service": "public-api",
+        "spanKind": "client"
+      },
+      "kind": "unclassified",
+      "linkage": {
+        "kind": "unlinked"
+      },
+      "occurrences": [
+        {
+          "deliveries": [
+            9
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "6ff23084028fa545",
+          "traceId": "5e404b415e07ca949d1e953a96ccb4ab"
+        }
+      ],
+      "suppression": {
+        "kind": "none"
+      }
+    },
+    {
+      "count": 1,
+      "id": "e_fcf17acb19ca1176",
+      "identity": {
+        "name": "pg.query:DELETE subscriptions",
+        "scope": "@opentelemetry/instrumentation-pg",
+        "service": "public-api",
+        "spanKind": "client"
+      },
+      "kind": "unclassified",
+      "linkage": {
+        "kind": "unlinked"
+      },
+      "occurrences": [
+        {
+          "deliveries": [
+            13
+          ],
+          "matched": {
+            "aliases": [],
+            "classification": "fallback.unclassified",
+            "scrubbers": []
+          },
+          "service": "public-api",
+          "spanId": "9bc7c89d1a049eb6",
+          "traceId": "8d11d7c2139a258e26c2843563dc2b3f"
+        }
+      ],
+      "suppression": {
+        "kind": "none"
+      }
+    }
+  ],
+  "exclusions": [],
+  "inputs": [
+    {
+      "kind": "otlp-json-fragment",
+      "sequence": 1,
+      "sha256": "sha256:0c5763f2fab690680fff47e69cf6eee4b5e44ddf3bfacbb8835869493f486958"
+    },
+    {
+      "kind": "otlp-json-fragment",
+      "sequence": 2,
+      "sha256": "sha256:a6d1696eed469e8b053b77579b0c55246d7c33ad7878a9baa2b6145259ebaeb1"
+    },
+    {
+      "kind": "otlp-json-fragment",
+      "sequence": 3,
+      "sha256": "sha256:18fec51b44fbb2d24438987df220b3ff26e45009f7e2dc47a518724365cf71d1"
+    },
+    {
+      "kind": "otlp-json-fragment",
+      "sequence": 4,
+      "sha256": "sha256:f7fa617b7d5bce7136a6dd222c80b222c97560e6c39173b003549a0039f2766e"
+    },
+    {
+      "kind": "otlp-json-fragment",
+      "sequence": 5,
+      "sha256": "sha256:09f6a76837feb6efcc79ec0a01ade228b3cbe453f847bcfe1f9a7f77a902865b"
+    },
+    {
+      "kind": "otlp-json-fragment",
+      "sequence": 6,
+      "sha256": "sha256:15dfdef4fc82401325fe47b29e9b2d1c0850aace077f3bb7407e73ed09d8fc52"
+    },
+    {
+      "kind": "otlp-json-fragment",
+      "sequence": 7,
+      "sha256": "sha256:c979aec3c233aa86d210108e429825b4c3134dc1eb899b5702460ab75a1f6b1e"
+    },
+    {
+      "kind": "otlp-json-fragment",
+      "sequence": 8,
+      "sha256": "sha256:10949831e1bb610030ffa7441f619d332f7f068bf2487a8be4de7551ae03eb88"
+    },
+    {
+      "kind": "otlp-json-fragment",
+      "sequence": 9,
+      "sha256": "sha256:c22962ec9aac08f6f81f53e0341750b908afe1d44d5f6a353d04ebbf3644c202"
+    },
+    {
+      "kind": "otlp-json-fragment",
+      "sequence": 10,
+      "sha256": "sha256:9d16d0fa5fa056e8aef952420a2c68d17da51205e8ee37e1d160b9597691e7cc"
+    },
+    {
+      "kind": "otlp-json-fragment",
+      "sequence": 11,
+      "sha256": "sha256:876ddc7c3f8c79a9705b4db02794df70f718d82e5f448d66d65e136b3649c535"
+    },
+    {
+      "kind": "otlp-json-fragment",
+      "sequence": 12,
+      "sha256": "sha256:ac9076fd1b5cf984220b476a605d3a34a3315b10f6faecfbf176ff5142e66592"
+    },
+    {
+      "kind": "otlp-json-fragment",
+      "sequence": 13,
+      "sha256": "sha256:3c0650786ca33fea30997e09d71c63a8979b00499eac7e5a54c1c4bc02208524"
+    },
+    {
+      "kind": "otlp-json-fragment",
+      "sequence": 14,
+      "sha256": "sha256:4b103d27a9aa9493b319a6007ee1db32c16ddc10e338bb5fbb9b7848f1239750"
+    },
+    {
+      "kind": "otlp-json-fragment",
+      "sequence": 15,
+      "sha256": "sha256:e9782c03e2eacbd4090ddd13d3872982dd828673346eb27db211da82b5ef878d"
+    },
+    {
+      "kind": "otlp-json-fragment",
+      "sequence": 16,
+      "sha256": "sha256:ec98f0fb08559ad4914715c8351ce2dc798c8a52b387fbf05f45520dacf5e4f1"
+    },
+    {
+      "kind": "otlp-json-fragment",
+      "sequence": 17,
+      "sha256": "sha256:cccd7a2c06dd10318125e9f6930a1b1e827dfcd5a34a6d65ae2377d2e9d1a183"
+    },
+    {
+      "kind": "otlp-json-fragment",
+      "sequence": 18,
+      "sha256": "sha256:e2d9f8ab4e08233acca2afef96e9e5a4abc30639d3d605e7ed5574ac576cbeda"
+    }
+  ],
+  "kind": "effect-set",
+  "limitations": [],
+  "normalizer": {
+    "rulesetDigest": "sha256:dc51982f1985d3c0ce8c9fdeb0b329f7d2dec81b313e2f1bb01ac4fef62c954d",
+    "version": "0.1.0"
+  },
+  "policy": {
+    "kind": "unavailable"
+  },
+  "schemaVersion": 1,
+  "scope": {
+    "activities": [],
+    "kind": "capsule-session",
+    "sessionId": "calm-workshop-jacob-046994408175"
+  }
+}

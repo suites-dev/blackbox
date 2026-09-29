@@ -12,6 +12,7 @@
       "@suites/blackbox-report-server-internal": ["packages/report-server/src/index.ts"],
       "@suites/blackbox-sandbox-internal": ["packages/sandbox/src/index.ts"],
       "@suites/blackbox-telemetry-internal": ["packages/telemetry/src/index.ts"],
+      "@suites/blackbox-telemetry-analyzer-internal": ["packages/telemetry-analyzer/src/index.ts"],
       "@suites/blackbox-analyzer": ["packages/analyzer/src/index.ts"],
       "@suites/blackbox-analyzer/ledger": ["packages/analyzer/src/ledger.ts"],
       "@suites/blackbox-analyzer/contract": ["packages/analyzer/src/contract.ts"],

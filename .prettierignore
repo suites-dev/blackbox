@@ -1,2 +1,5 @@
 # Generated deterministically by docs:graph and checked by docs:graph:check.
 docs/link-graph.json
+
+# Golden fixtures are exact bytes: formatting them would change the oracle.
+packages/telemetry-analyzer/test-fixtures/
