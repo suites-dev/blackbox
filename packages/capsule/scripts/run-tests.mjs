@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 
 const packageDirectory = await realpath(fileURLToPath(new URL('../', import.meta.url)));
+const cliPackageDirectory = join(packageDirectory, '..', 'cli');
 const output = await mkdtemp(join(tmpdir(), `blackbox-capsule-tests-${process.pid}-`));
 const signals = { SIGINT: 130, SIGTERM: 143 };
 let interrupted = 0;
@@ -35,7 +36,7 @@ function run(command, args) {
       cwd: packageDirectory,
       stdio: 'inherit',
       detached: process.platform !== 'win32',
-      env: { ...process.env, BLACKBOX_CLI_TEST_PACKAGE_DIRECTORY: packageDirectory },
+      env: { ...process.env, BLACKBOX_CLI_TEST_PACKAGE_DIRECTORY: cliPackageDirectory },
     });
     currentChild = child;
     child.once('error', reject);
