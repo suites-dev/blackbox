@@ -2,8 +2,6 @@ import type { ReportSelection } from '@suites/blackbox-report-server';
 
 import { BlackboxCommand } from '../../cli/base-command.js';
 import { EXIT_CODES } from '../../cli/exit-codes.js';
-import { InvocationContext } from '../../context/invocation.js';
-import { resolveId } from '../../context/resolver.js';
 import { openBrowser, type OpenBrowserInput } from '../../reporting/browser.js';
 import { capsuleReportProvider } from '../../reporting/capsule-provider.js';
 import { serveReport } from '../../reporting/serve.js';
@@ -16,7 +14,7 @@ export interface ViewerAnnouncement {
   readonly url: string;
 }
 
-export interface OpenPresentation {
+export interface ServePresentation {
   readonly announce: (input: ViewerAnnouncement) => void;
   readonly browserResult: (
     input: ViewerAnnouncement & { readonly browser: 'opened' | 'not-opened' },
@@ -35,15 +33,15 @@ function selection(target: ViewerTarget): ReportSelection {
 }
 
 /**
- * `open` and its `capsule report serve` alias. If this process started the
- * viewer it stays in the foreground until Ctrl-C; a reused viewer returns.
+ * `capsule report serve`. If this process started the viewer it stays in the
+ * foreground until Ctrl-C; a reused viewer returns.
  */
-export abstract class OpenCommand extends BlackboxCommand {
+export abstract class ReportServeCommand extends BlackboxCommand {
   protected async serve(input: {
     readonly target: ViewerTarget;
     readonly port: number;
     readonly browser: boolean;
-    readonly presentation: OpenPresentation;
+    readonly presentation: ServePresentation;
   }): Promise<void> {
     let announced: ViewerAnnouncement | null = null;
     const { presentation } = input;
@@ -81,31 +79,5 @@ export abstract class OpenCommand extends BlackboxCommand {
         : { kind: 'none' },
     });
     this.finish(EXIT_CODES.success);
-  }
-
-  /**
-   * A capsule ID selects that capsule, ahead of any explicit context. An
-   * activity or trace ID selects its owning capsule, searched within the
-   * explicit context (BLACKBOX_CAPSULE) when one is set, exactly as `show`
-   * does (only an explicit context narrows ID search). Without an ID:
-   * BLACKBOX_CAPSULE, else the current capsule, else the registry.
-   */
-  protected async target(id: string | null): Promise<ViewerTarget> {
-    const context = new InvocationContext(process.cwd());
-    if (id !== null) {
-      const index = await context.index();
-      const exact = index.capsule(id);
-      if (exact !== null) {
-        return { kind: 'capsule', capsule: exact.capsule };
-      }
-      const resolved = await resolveId(index, id, await context.scope(null, 'report'));
-      return { kind: 'capsule', capsule: resolved.capsule.capsule };
-    }
-    const explicit = await context.explicit(null, 'report');
-    if (explicit !== null) {
-      return { kind: 'capsule', capsule: explicit.capsule };
-    }
-    const current = await context.current();
-    return current === null ? { kind: 'registry' } : { kind: 'capsule', capsule: current };
   }
 }

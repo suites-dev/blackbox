@@ -47,6 +47,11 @@ export function run(directory: string, ...argv: string[]): Promise<CliResult> {
   return cli({ directory, argv, capsuleEnvironment: null });
 }
 
+/** `run` for the `capsule` topic: `capsuleRun(dir, 'show', id)` runs `capsule show id`. */
+export function capsule(directory: string, ...argv: string[]): Promise<CliResult> {
+  return run(directory, 'capsule', ...argv);
+}
+
 /** Asserts stdout is exactly one JSON document (one line) and returns it. */
 export function onlyDocument(result: CliResult): Record<string, unknown> {
   const lines = result.stdout.split('\n');

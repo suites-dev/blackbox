@@ -1,10 +1,7 @@
 import { spawn } from 'node:child_process';
 import { npmCommand } from '@suites/blackbox-inst-runtime-node';
 
-import type {
-  PackageManagerInstaller,
-  PackageManagerInstallResult,
-} from './types.js';
+import type { PackageManagerInstaller, PackageManagerInstallResult } from './types.js';
 
 function completion(
   resolve: (result: PackageManagerInstallResult) => void,
@@ -29,16 +26,12 @@ export const installDriverDependencies: PackageManagerInstaller = async ({ direc
       '--no-fund',
       '--package-lock=false',
     ]);
-    const child = spawn(
-      npm.command,
-      npm.args,
-      {
-        cwd: directory,
-        env: process.env,
-        shell: false,
-        stdio: ['ignore', 'ignore', 'pipe'],
-      },
-    );
+    const child = spawn(npm.command, npm.args, {
+      cwd: directory,
+      env: process.env,
+      shell: false,
+      stdio: ['ignore', 'ignore', 'pipe'],
+    });
     let stderr = '';
     child.stderr.setEncoding('utf8');
     child.stderr.on('data', (chunk: string) => {

@@ -128,12 +128,7 @@ export async function installDriverRuntime(
     lockDirectory = join(directory, '.install.lock');
     await rejectUnsafeDriverEntries({
       directory,
-      names: [
-        'package.json',
-        'blackbox-driver-runtime.json',
-        'node_modules',
-        'package-lock.json',
-      ],
+      names: ['package.json', 'blackbox-driver-runtime.json', 'node_modules', 'package-lock.json'],
     });
     const lockFailure = await acquireLock(directory, lockDirectory);
     if (lockFailure !== null) {

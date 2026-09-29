@@ -15,8 +15,7 @@ export interface ExportReportInput {
 }
 
 export type ExportReportResult =
-  | { kind: 'file'; path: string }
-  | { kind: 'stdout'; content: string };
+  { kind: 'file'; path: string } | { kind: 'stdout'; content: string };
 
 export async function exportReport(input: ExportReportInput): Promise<ExportReportResult> {
   const content =

@@ -1,12 +1,28 @@
-import { Command, loadHelpClass } from '@oclif/core';
+import { Args, Flags } from '@oclif/core';
 
-export default class CapsuleReport extends Command {
-  static override hidden = true;
-  static override description = 'Serve live Capsule reports or export a portable snapshot.';
+import { ReportCommand } from '../../operations/viewing/report-command.js';
 
-  public async run(): Promise<void> {
-    await this.parse(CapsuleReport);
-    const BlackboxHelp = await loadHelpClass(this.config);
-    await new BlackboxHelp(this.config).showHelp(['capsule', 'report']);
+export default class Report extends ReportCommand {
+  static override summary = 'Write a capsule report (HTML and JSON by default).';
+  static override args = {
+    capsule: Args.string({ description: 'Capsule ID (defaults to the resolved capsule)' }),
+  };
+  static override flags = {
+    format: Flags.string({ options: ['html', 'json'], description: 'Write only this format' }),
+    output: Flags.string({
+      description: 'Destination path (requires --format); - writes JSON to stdout',
+    }),
+    json: Flags.boolean({ default: false }),
+  };
+
+  protected async execute(): Promise<void> {
+    const { args, flags } = await this.parseInput(() => this.parse(Report));
+    await this.executeReport({
+      positional: args.capsule ?? null,
+      capsuleFlag: null,
+      format: flags.format === undefined ? null : flags.format === 'html' ? 'html' : 'json',
+      output: flags.output ?? null,
+      json: flags.json,
+    });
   }
 }

@@ -13,11 +13,11 @@ void test('the run suggestion uses the probed readiness URL, never raw path conc
   const readinessUrl = new URL('health', 'http://127.0.0.1:5000/').toString();
   assert.equal(
     nextSteps.run({ capsule: CAPSULE, driver: null, readinessUrl }),
-    `blackbox run --capsule ${CAPSULE} -- curl http://127.0.0.1:5000/health`,
+    `blackbox capsule run --session ${CAPSULE} -- curl http://127.0.0.1:5000/health`,
   );
   assert.equal(
     nextSteps.run({ capsule: CAPSULE, driver: 'public-api', readinessUrl }),
-    `blackbox run --capsule ${CAPSULE} --via public-api -- curl /health`,
+    `blackbox capsule run --session ${CAPSULE} --via public-api -- curl /health`,
   );
 });
 
@@ -25,11 +25,11 @@ void test('a readiness URL with shell metacharacters is single-quoted in both fo
   const readinessUrl = 'http://127.0.0.1:5000/ready?a=1&b=2';
   assert.equal(
     nextSteps.run({ capsule: CAPSULE, driver: null, readinessUrl }),
-    `blackbox run --capsule ${CAPSULE} -- curl 'http://127.0.0.1:5000/ready?a=1&b=2'`,
+    `blackbox capsule run --session ${CAPSULE} -- curl 'http://127.0.0.1:5000/ready?a=1&b=2'`,
   );
   assert.equal(
     nextSteps.run({ capsule: CAPSULE, driver: 'public-api', readinessUrl }),
-    `blackbox run --capsule ${CAPSULE} --via public-api -- curl '/ready?a=1&b=2'`,
+    `blackbox capsule run --session ${CAPSULE} --via public-api -- curl '/ready?a=1&b=2'`,
   );
 });
 

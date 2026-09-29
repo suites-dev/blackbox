@@ -13,8 +13,7 @@ for (const mode of ['--silent', '--non-interactive', '--interactive']) {
         directory: fixture.directory,
         argv: [
           'capsule',
-          'start',
-          '--system',
+          'up',
           'orders',
           '--env',
           'API_TOKEN=private-test-value',

@@ -50,7 +50,7 @@ void test('observations resolves IDs like show: an ID that is not retained is id
       kind: 'cli-error',
       code: 'id-unknown',
       message: 'no capsule, activity or trace matches activity-1',
-      next: ['blackbox ls --all'],
+      next: ['blackbox capsule ls --all'],
     });
   } finally {
     await fixture.remove();

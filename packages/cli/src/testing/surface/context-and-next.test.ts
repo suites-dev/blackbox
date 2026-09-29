@@ -12,7 +12,7 @@ import {
   fixtureActivity,
   projectFixture,
 } from './project.fixture.js';
-import { cli, onlyDocument, processOutcome, run } from './run-cli.fixture.js';
+import { capsule, cli, onlyDocument, processOutcome } from './run-cli.fixture.js';
 
 const CAPSULE_C = 'steady-harbor-maya-000000000003';
 
@@ -62,15 +62,15 @@ void test('every suggestion names its capsule and still targets it under another
     const suggestions = [
       ...nextOf(
         onlyDocument(
-          await run(fixture.directory, 'run', '--capsule', CAPSULE_A, '--json', '--', 'x'),
+          await capsule(fixture.directory, 'run', '--session', CAPSULE_A, '--json', '--', 'x'),
         ),
       ),
-      ...nextOf(onlyDocument(await run(fixture.directory, 'show', CAPSULE_A, '--json'))),
-      ...nextOf(onlyDocument(await run(fixture.directory, 'show', TRACE_A, '--json'))),
-      ...nextOf(onlyDocument(await run(fixture.directory, 'down', ACTIVITY_A, '--json'))),
+      ...nextOf(onlyDocument(await capsule(fixture.directory, 'show', CAPSULE_A, '--json'))),
+      ...nextOf(onlyDocument(await capsule(fixture.directory, 'show', TRACE_A, '--json'))),
+      ...nextOf(onlyDocument(await capsule(fixture.directory, 'down', ACTIVITY_A, '--json'))),
       ...nextOf(
         onlyDocument(
-          await run(fixture.directory, 'show', TRACE_A, '--capsule', CAPSULE_B, '--json'),
+          await capsule(fixture.directory, 'show', TRACE_A, '--session', CAPSULE_B, '--json'),
         ),
       ),
     ];
@@ -78,11 +78,11 @@ void test('every suggestion names its capsule and still targets it under another
     for (const suggestion of suggestions) {
       assert.match(
         suggestion,
-        new RegExp(`(--capsule|down|report) ${CAPSULE_A}\\b`, 'u'),
+        new RegExp(`(--session|down|report) ${CAPSULE_A}\\b`, 'u'),
         suggestion,
       );
       const argv = suggestion.replace(/^blackbox /u, '').split(' ');
-      if (argv[0] === 'down') {
+      if (argv[1] === 'down') {
         continue; // Verified by name above; running it would stop a fixture without a manager.
       }
       const result = await cli({
@@ -96,15 +96,15 @@ void test('every suggestion names its capsule and still targets it under another
     // Negative control: the same suggestion without its capsule is steered by the environment.
     const bare = await cli({
       directory: fixture.directory,
-      argv: ['show', ACTIVITY_A.slice(0, 11), '--json'],
+      argv: ['capsule', 'show', ACTIVITY_A.slice(0, 11), '--json'],
       capsuleEnvironment: CAPSULE_B,
     });
     assert.equal(onlyDocument(bare).code, 'id-capsule-mismatch');
-    const report = onlyDocument(await run(fixture.directory, 'down', CAPSULE_C, '--json'));
-    assert.deepEqual(nextOf(report), [`blackbox report ${CAPSULE_C}`]);
+    const report = onlyDocument(await capsule(fixture.directory, 'down', CAPSULE_C, '--json'));
+    assert.deepEqual(nextOf(report), [`blackbox capsule report ${CAPSULE_C}`]);
     const reported = await cli({
       directory: fixture.directory,
-      argv: ['report', CAPSULE_C, '--json'],
+      argv: ['capsule', 'report', CAPSULE_C, '--json'],
       capsuleEnvironment: CAPSULE_B,
     });
     assert.equal(onlyDocument(reported).capsule, CAPSULE_C);
@@ -121,20 +121,23 @@ void test('human output names the capsule acted on, including one taken from the
     outcome: processOutcome({ kind: 'exited', exitCode: 0, signal: '' }),
   });
   try {
-    const used = await run(fixture.directory, 'use', CAPSULE_A);
+    const used = await capsule(fixture.directory, 'use', CAPSULE_A);
     assert.equal(used.stderr, `current capsule: ${CAPSULE_A} (orders, running)\n`);
-    const ran = await run(fixture.directory, 'run', '--', 'x');
+    const ran = await capsule(fixture.directory, 'run', '--', 'x');
     assert.equal(ran.stdout, 'child-out\n');
     assert.match(
       ran.stderr,
       new RegExp(`^child-err\\nactivity 00000000 · capsule ${CAPSULE_A} · `, 'u'),
     );
-    const ranJson = onlyDocument(await run(fixture.directory, 'run', '--json', '--', 'x'));
+    const ranJson = onlyDocument(await capsule(fixture.directory, 'run', '--json', '--', 'x'));
     assert.equal(ranJson.capsule, CAPSULE_A);
-    const reported = await run(fixture.directory, 'report', '--format', 'json');
+    const reported = await capsule(fixture.directory, 'report', '--format', 'json');
     assert.match(reported.stderr, new RegExp(`^report for capsule ${CAPSULE_A}\\n✔ `, 'u'));
-    assert.equal(onlyDocument(await run(fixture.directory, 'report', '--json')).capsule, CAPSULE_A);
-    const shown = await run(fixture.directory, 'show', ACTIVITY_A);
+    assert.equal(
+      onlyDocument(await capsule(fixture.directory, 'report', '--json')).capsule,
+      CAPSULE_A,
+    );
+    const shown = await capsule(fixture.directory, 'show', ACTIVITY_A);
     assert.equal(
       shown.stderr,
       [
@@ -147,12 +150,12 @@ void test('human output names the capsule acted on, including one taken from the
       ].join('\n'),
     );
     assert.equal(
-      (await run(fixture.directory, 'show', CAPSULE_A)).stderr,
-      `capsule ${CAPSULE_A}  orders  running\n  activities 2 · traces 0\n→ blackbox show 00000000 --capsule ${CAPSULE_A}\n`,
+      (await capsule(fixture.directory, 'show', CAPSULE_A)).stderr,
+      `capsule ${CAPSULE_A}  orders  running\n  activities 2 · traces 0\n→ blackbox capsule show 00000000 --session ${CAPSULE_A}\n`,
     );
     assert.equal(
-      (await run(fixture.directory, 'show', TRACE_A)).stderr,
-      `trace ${TRACE_A} · capsule ${CAPSULE_A} · 0 spans\n→ blackbox show 3f9a2c41 --capsule ${CAPSULE_A}\n`,
+      (await capsule(fixture.directory, 'show', TRACE_A)).stderr,
+      `trace ${TRACE_A} · capsule ${CAPSULE_A} · 0 spans\n→ blackbox capsule show 3f9a2c41 --session ${CAPSULE_A}\n`,
     );
   } finally {
     await manager.close();
@@ -163,17 +166,17 @@ void test('human output names the capsule acted on, including one taken from the
 void test('down clears the current capsule only when it is the one stopped', async () => {
   const fixture = await threeCapsules();
   try {
-    await run(fixture.directory, 'use', CAPSULE_A);
-    const other = await run(fixture.directory, 'down', CAPSULE_C);
+    await capsule(fixture.directory, 'use', CAPSULE_A);
+    const other = await capsule(fixture.directory, 'down', CAPSULE_C);
     assert.doesNotMatch(other.stderr, /current capsule: none/u);
-    assert.equal(onlyDocument(await run(fixture.directory, 'ls', '--json')).current, CAPSULE_A);
-    await run(fixture.directory, 'use', CAPSULE_C);
-    const own = await run(fixture.directory, 'down');
+    assert.equal(onlyDocument(await capsule(fixture.directory, 'ls', '--json')).current, CAPSULE_A);
+    await capsule(fixture.directory, 'use', CAPSULE_C);
+    const own = await capsule(fixture.directory, 'down');
     assert.equal(
       own.stderr,
-      `capsule ${CAPSULE_C} was already stopped · evidence kept\ncurrent capsule: none\n→ blackbox report ${CAPSULE_C}\n`,
+      `capsule ${CAPSULE_C} was already stopped · evidence kept\ncurrent capsule: none\n→ blackbox capsule report ${CAPSULE_C}\n`,
     );
-    assert.equal(onlyDocument(await run(fixture.directory, 'ls', '--json')).current, null);
+    assert.equal(onlyDocument(await capsule(fixture.directory, 'ls', '--json')).current, null);
   } finally {
     await fixture.remove();
   }
@@ -189,14 +192,14 @@ void test('a malformed or unknown current-capsule file is ignored with one warni
       ['rapid-river-noah-000000000009\n', 'unknown capsule rapid-river-noah-000000000009'],
     ] as const) {
       await writeFile(file, content);
-      const result = await run(fixture.directory, 'run', '--', 'x');
+      const result = await capsule(fixture.directory, 'run', '--', 'x');
       assert.equal(result.status, 125);
       assert.equal(
         result.stderr,
-        `blackbox: ignoring .blackbox/state/current-capsule (${reason}); pass --capsule or run blackbox use\n` +
-          'blackbox: no capsule selected\n→ blackbox ls\n',
+        `blackbox: ignoring .blackbox/state/current-capsule (${reason}); pass --session or run blackbox capsule use\n` +
+          'blackbox: no capsule selected\n→ blackbox capsule ls\n',
       );
-      const listed = await run(fixture.directory, 'ls');
+      const listed = await capsule(fixture.directory, 'ls');
       assert.doesNotMatch(listed.stderr, /^\* /mu);
     }
   } finally {

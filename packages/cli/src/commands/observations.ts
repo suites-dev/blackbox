@@ -3,8 +3,9 @@ import { Flags } from '@oclif/core';
 import { ShowCommand } from '../operations/inspection/show-command.js';
 
 /**
- * Hidden alias: `observations --session X` → `show X`;
- * `--activity A` → `show A --capsule X`; `--trace T` → `show T --capsule X`.
+ * Hidden alias: `observations --session X` → `capsule show X`;
+ * `--activity A` → `capsule show A --session X`; `--trace T` →
+ * `capsule show T --session X`.
  */
 export default class Observations extends ShowCommand {
   static override hidden = true;

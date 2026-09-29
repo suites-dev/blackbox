@@ -56,7 +56,14 @@ void test('driver install runs npm offline and resolves the locally installed SD
     assert.equal(dependency.spec, `file:${sdk}`);
     assert.equal(
       dependency.installationPath,
-      join(await realpath(project), '.blackbox', 'drivers', 'node_modules', '@suites', 'blackbox-driver'),
+      join(
+        await realpath(project),
+        '.blackbox',
+        'drivers',
+        'node_modules',
+        '@suites',
+        'blackbox-driver',
+      ),
     );
     const entrypoint = dependency.entrypoint;
     assert.equal(typeof entrypoint, 'string');
@@ -72,10 +79,7 @@ void test('driver install runs npm offline and resolves the locally installed SD
         ),
       ) as unknown,
     );
-    assert.equal(
-      installedPackage.name,
-      '@suites/blackbox-driver',
-    );
+    assert.equal(installedPackage.name, '@suites/blackbox-driver');
 
     const repeated = await runCli({
       directory: project,

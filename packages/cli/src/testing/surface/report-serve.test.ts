@@ -90,41 +90,28 @@ void test('capsule report serve without --session shows the registry, keeps its 
   }
 });
 
-void test('open --json prints one viewer-open line; open opens the browser unless --no-browser', async () => {
+void test('capsule report serve --session selects that capsule and --open launches the browser', async () => {
   const fixture = await twoCapsuleProject();
   try {
     const browser = await recordingBrowser(fixture.directory);
-    const quiet = await viewer({
+    const served = await viewer({
       directory: fixture.directory,
-      argv: ['open', CAPSULE_A, '--no-browser', '--json'],
+      argv: ['capsule', 'report', 'serve', '--session', CAPSULE_A, '--open'],
       path: browser.path,
-      ready: /\n$/u,
+      ready: /Capsules keep running\.\n/u,
     });
-    assert.equal(quiet.status, 0, quiet.stderr);
-    const lines = quiet.stdout.split('\n');
-    assert.equal(lines.length, 2);
-    const document: unknown = JSON.parse(lines[0]);
-    assert.deepEqual(
-      { ...(document as Record<string, unknown>), url: 'url' },
-      {
-        kind: 'viewer-open',
-        capsule: CAPSULE_A,
-        url: 'url',
-        ownership: 'started',
-        browser: 'not-opened',
-      },
+    assert.equal(served.status, 0, served.stderr);
+    assert.equal(served.stdout, '');
+    const selected = /^Blackbox reports: (http:\/\/127\.0\.0\.1:\d+\/\S*)\n/u.exec(served.stderr);
+    assert.ok(selected !== null, served.stderr);
+    assert.equal(
+      new URL(selected[1]).searchParams.get('id'),
+      CAPSULE_A,
+      'the served URL selects the requested capsule',
     );
-    assert.deepEqual(await browser.launches(), []);
-    const human = await viewer({
-      directory: fixture.directory,
-      argv: ['open'],
-      path: browser.path,
-      ready: /capsules keep running\n/u,
-    });
-    assert.equal(human.stdout, '');
-    assert.match(
-      human.stderr,
-      /^flight control: http:\/\/127\.0\.0\.1:\d+\/\nshowing: all capsules\nviewer: started, press Ctrl-C to stop; capsules keep running\n$/u,
+    assert.equal(
+      served.stderr,
+      `Blackbox reports: ${selected[1]}\nViewer ownership: started\nPress Ctrl-C to stop the viewer. Capsules keep running.\n`,
     );
     assert.equal((await browser.launches()).length, 1);
   } finally {
@@ -132,18 +119,14 @@ void test('open --json prints one viewer-open line; open opens the browser unles
   }
 });
 
-void test('history is ls --all and catalog list is systems', async () => {
+void test('history is capsule ls --all', async () => {
   const fixture = await twoCapsuleProject();
   try {
     const history = await run(fixture.directory, 'history', '--json');
-    const all = await run(fixture.directory, 'ls', '--all', '--json');
+    const all = await run(fixture.directory, 'capsule', 'ls', '--all', '--json');
     assert.equal(history.status, 0, history.stderr);
     assert.equal(history.stdout, all.stdout);
     assert.equal(JSON.parse(history.stdout).scope, 'all');
-    const catalogList = await run(fixture.directory, 'catalog', 'list');
-    const systems = await run(fixture.directory, 'systems');
-    assert.equal(catalogList.status, systems.status);
-    assert.equal(catalogList.stdout + catalogList.stderr, systems.stdout + systems.stderr);
   } finally {
     await fixture.remove();
   }

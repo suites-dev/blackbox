@@ -8,10 +8,10 @@ export default class Run extends RunCommand {
   static override description =
     'Runs on the host, or through a catalog driver with --via. The child exit code is passed through; Blackbox failures exit 125.';
   static override usage =
-    'run [--via <driver>] [--capsule <id>] [--name <name>] [--json] -- <command...>';
+    'capsule run [--via <driver>] [--session <id>] [--name <name>] [--json] -- <command...>';
   static override flags = {
     via: Flags.string({ description: 'Catalog driver to run the command through' }),
-    capsule: Flags.string({
+    session: Flags.string({
       description: 'Capsule ID (defaults to BLACKBOX_CAPSULE, then the current capsule)',
     }),
     name: Flags.string({ description: 'Human-readable name retained with the activity.' }),
@@ -26,9 +26,8 @@ export default class Run extends RunCommand {
   protected async execute(): Promise<void> {
     const { flags } = await this.parseInput(() => this.parse(Run));
     await this.executeRun({
-      capsuleFlag: flags.capsule ?? null,
+      capsuleFlag: flags.session ?? null,
       driver: flags.via ?? null,
-      driverFlag: '--via',
       name: flags.name ?? null,
       purpose: flags.purpose as 'setup' | 'stimulus' | 'inspection',
       allowUntraced: flags['allow-untraced'],
