@@ -10,6 +10,16 @@ export const STATUS_SENTINEL =
 
 export class JourneySessionTimeout extends Error {}
 
+/** The real shell. Tests inject a fake through `spawnShell` to force races. */
+function spawnBash({ cwd, env }) {
+  return spawn('bash', ['--noprofile', '--norc'], {
+    cwd,
+    env,
+    detached: true,
+    stdio: ['pipe', 'pipe', 'pipe', 'pipe'],
+  });
+}
+
 export class BashSession {
   #child;
   #stdout = '';
@@ -18,16 +28,12 @@ export class BashSession {
   #sentinel;
   #waiters = new Set();
   #exited = false;
+  #killed = false;
 
-  constructor({ cwd, env, sentinel = STATUS_SENTINEL }) {
+  constructor({ cwd, env, sentinel = STATUS_SENTINEL, spawnShell = spawnBash }) {
     this.#fence = `__BB_FENCE_${randomBytes(8).toString('hex')}__`;
     this.#sentinel = sentinel;
-    this.#child = spawn('bash', ['--noprofile', '--norc'], {
-      cwd,
-      env,
-      detached: true,
-      stdio: ['pipe', 'pipe', 'pipe', 'pipe'],
-    });
+    this.#child = spawnShell({ cwd, env });
     this.#child.stdout.setEncoding('utf8').on('data', (chunk) => {
       this.#stdout += chunk;
       this.#wake();
@@ -46,6 +52,10 @@ export class BashSession {
       this.#exited = true;
       this.#wake();
     });
+    // A killed or exiting shell closes its stdin; a late write then fails with
+    // EPIPE. That is never the journey's result (the timeout or exit is), so
+    // stdin errors are absorbed here instead of crashing the runner.
+    this.#child.stdin.on('error', () => {});
     this.#child.stdin.write(`set +e\nexec 2>&1\n__bb_fence='${this.#fence}'\n`);
   }
 
@@ -90,6 +100,7 @@ export class BashSession {
 
   kill() {
     if (this.#exited) return;
+    this.#killed = true;
     try {
       process.kill(-this.#child.pid, 'SIGKILL');
     } catch (error) {
@@ -100,7 +111,11 @@ export class BashSession {
   async close() {
     if (this.#exited) return;
     const exited = new Promise((resolve) => this.#child.once('exit', resolve));
-    this.#child.stdin.end('exit 0\n');
+    // After a timeout the shell was already killed: wait for its exit, never
+    // write to its closed stdin.
+    if (!this.#killed && this.#child.stdin.writable) {
+      this.#child.stdin.end('exit 0\n');
+    }
     const timer = setTimeout(() => this.kill(), 5000);
     await exited;
     clearTimeout(timer);

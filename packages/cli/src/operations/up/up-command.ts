@@ -104,9 +104,7 @@ export abstract class UpCommand extends BlackboxCommand {
     const runSuggestion = nextSteps.run({
       capsule,
       driver: entry === null ? null : entrypointHttpDriver(entry),
-      entrypointUrl: result.entrypoint.url,
-      readinessPath:
-        entry === null ? new URL(result.readiness.url).pathname : entry.entrypoint.readiness.path,
+      readinessUrl: result.readiness.url,
     });
     if (request.json) {
       this.json(upDocument({ result, current, runSuggestion }));

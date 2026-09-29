@@ -9,15 +9,23 @@ export const nextSteps = {
   showTrace: (trace: string, capsule: string) => `blackbox show ${trace} --capsule ${capsule}`,
   report: (capsule: string) => `blackbox report ${capsule}`,
   down: (capsule: string) => `blackbox down ${capsule}`,
+  /**
+   * The readiness probe as a run suggestion. `readinessUrl` is the URL the
+   * capsule actually probed (already resolved against the entrypoint), so a
+   * catalog path such as `health` never yields `…:PORThealth`. A driver takes
+   * the path; a host curl takes the whole URL.
+   */
   run: (input: {
     readonly capsule: string;
     readonly driver: string | null;
-    readonly entrypointUrl: string;
-    readonly readinessPath: string;
-  }) =>
-    input.driver === null
-      ? `blackbox run --capsule ${input.capsule} -- curl ${input.entrypointUrl}${input.readinessPath}`
-      : `blackbox run --capsule ${input.capsule} --via ${input.driver} -- curl ${input.readinessPath}`,
+    readonly readinessUrl: string;
+  }) => {
+    if (input.driver === null) {
+      return `blackbox run --capsule ${input.capsule} -- curl ${input.readinessUrl}`;
+    }
+    const url = new URL(input.readinessUrl);
+    return `blackbox run --capsule ${input.capsule} --via ${input.driver} -- curl ${url.pathname}${url.search}`;
+  },
 } as const;
 
 export function arrowLines(next: readonly string[]): readonly string[] {

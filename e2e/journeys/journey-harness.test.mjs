@@ -1,9 +1,11 @@
 // Harness tests for the golden journey runner. They need bash, not Docker.
 import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
+import { EventEmitter } from 'node:events';
 import { chmod, mkdir, mkdtemp, readFile, realpath, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
+import { PassThrough, Writable } from 'node:stream';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
@@ -83,6 +85,38 @@ void test('a capture that does not match fails the journey', async () => {
     const items = parseGolden('$ echo nothing here\n#! capture X capsule-up\n');
     await assert.rejects(runItems({ items, session, raw: [] }), /capture X did not match/u);
   });
+});
+
+/**
+ * A shell that behaves like one killed by SIGKILL whose exit event has not
+ * arrived yet: every stdin write after the command fails with EPIPE, and the
+ * exit event comes later. This makes the timeout/close race deterministic.
+ */
+function killedShellBeforeExit() {
+  const child = new EventEmitter();
+  let writes = 0;
+  child.stdin = new Writable({
+    write(_chunk, _encoding, callback) {
+      writes += 1;
+      callback(writes > 2 ? Object.assign(new Error('write EPIPE'), { code: 'EPIPE' }) : null);
+    },
+  });
+  child.stdout = new PassThrough();
+  child.stderr = new PassThrough();
+  child.stdio = [child.stdin, child.stdout, child.stderr, new PassThrough()];
+  child.pid = 4_194_303; // no such process group: kill() sees ESRCH
+  setTimeout(() => child.emit('exit', null, 'SIGKILL'), 200);
+  return child;
+}
+
+void test('closing a session killed by a timeout never writes to its stdin', async () => {
+  const session = new BashSession({
+    cwd: tmpdir(),
+    env: process.env,
+    spawnShell: killedShellBeforeExit,
+  });
+  await assert.rejects(session.run('sleep 5', 20), JourneySessionTimeout);
+  await session.close();
 });
 
 void test('a capture names a fixed extractor; free-form patterns are refused', () => {
