@@ -6,12 +6,12 @@ import {
   type CapsuleReportDocument,
   type CapsuleReportResult,
   type CapsuleRegistryEntry,
-} from '@suites/blackbox-capsule-internal';
+} from '@suites/blackbox-capsule';
 import type {
   ReportFailure,
   ReportProvider,
   ReportSummary,
-} from '@suites/blackbox-report-server-internal';
+} from '@suites/blackbox-report-server';
 
 function reportFailure(input: {
   result: Exclude<CapsuleReportResult, { kind: 'capsule-report' }>;

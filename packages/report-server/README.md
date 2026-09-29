@@ -1,7 +1,7 @@
 # Report server
 
-`@suites/blackbox-report-server-internal` is the private, unpublished workspace
-package that serves Blackbox's read-only local report registry and viewer.
+`@suites/blackbox-report-server` is the public alpha package that serves Blackbox's
+read-only local report registry and viewer.
 
 It is transport and presentation infrastructure, not a report implementation. The
 server knows how to aggregate providers, route exact IDs, poll for updates, and own
@@ -129,9 +129,9 @@ tracked envelope schemas. Build copies the schemas into `dist/schema/`.
 From the repository root, maintainers can run:
 
 ```bash
-pnpm --filter @suites/blackbox-report-server-internal lint
-pnpm --filter @suites/blackbox-report-server-internal build
-pnpm --filter @suites/blackbox-report-server-internal test
+pnpm --filter @suites/blackbox-report-server lint
+pnpm --filter @suites/blackbox-report-server build
+pnpm --filter @suites/blackbox-report-server test
 ```
 
 HTTP tests bind loopback sockets, so the test command needs permission to create a

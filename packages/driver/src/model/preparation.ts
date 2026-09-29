@@ -1,4 +1,4 @@
-import type { PropagationOutcome } from '@suites/blackbox-telemetry-internal';
+import type { PropagationOutcome } from '@suites/blackbox-telemetry';
 
 export type DriverArgvRedaction =
   | { readonly kind: 'none' }

@@ -2,7 +2,7 @@ import type { DriverArgvRedaction } from '@suites/blackbox-driver';
 import type {
   CompletedTelemetryExecutionScopeRecord,
   TelemetryPropagationRecord,
-} from '@suites/blackbox-telemetry-internal';
+} from '@suites/blackbox-telemetry';
 
 import type {
   CapsuleActivityReport,

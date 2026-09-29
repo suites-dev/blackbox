@@ -1,12 +1,12 @@
 import { realpath } from 'node:fs/promises';
 import { isAbsolute, posix, relative, resolve, sep } from 'node:path';
 
-import type { CatalogSandboxInput } from '@suites/blackbox-catalog-internal';
+import type { CatalogSandboxInput } from '@suites/blackbox-catalog';
 import type {
   RuntimeActivationAdapter,
   RuntimeActivationValuePart,
-} from '@suites/blackbox-instrumentation-internal';
-import type { SandboxTelemetryParticipant } from '@suites/blackbox-sandbox-internal';
+} from '@suites/blackbox-instrumentation';
+import type { SandboxTelemetryParticipant } from '@suites/blackbox-sandbox';
 
 import type { CapsuleManagerBootstrap } from '../../protocol.js';
 

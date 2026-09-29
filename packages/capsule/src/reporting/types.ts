@@ -19,7 +19,7 @@ import type {
   CollectorInstrumentationStatus,
   CollectorSessionReadResult,
   CollectorTracesReadResult,
-} from '@suites/blackbox-otel-collector-internal';
+} from '@suites/blackbox-otel-collector';
 
 export type CapsuleReportLifecycle =
   | { readonly kind: 'running'; readonly retainedState: 'running' }

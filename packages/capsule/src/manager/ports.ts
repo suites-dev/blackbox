@@ -3,13 +3,13 @@ import {
   resolveCatalogEntry,
   type CatalogSandboxInput,
   type LoadedCatalog,
-} from '@suites/blackbox-catalog-internal';
+} from '@suites/blackbox-catalog';
 import {
   composeProjectName,
   startSandbox,
   type SandboxHandle,
   type SandboxStartInput,
-} from '@suites/blackbox-sandbox-internal';
+} from '@suites/blackbox-sandbox';
 import {
   nodeCapsuleCollectorRuntime,
   type CapsuleCollectorRuntimePort,

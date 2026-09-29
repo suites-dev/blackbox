@@ -1,4 +1,4 @@
-import type { ReportSelection } from '@suites/blackbox-report-server-internal';
+import type { ReportSelection } from '@suites/blackbox-report-server';
 
 import { BlackboxCommand } from '../../cli/base-command.js';
 import { EXIT_CODES } from '../../cli/exit-codes.js';

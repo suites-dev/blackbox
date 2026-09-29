@@ -4,7 +4,7 @@ import {
   ensureReportServer,
   type ReportProvider,
   type ReportSelection,
-} from '@suites/blackbox-report-server-internal';
+} from '@suites/blackbox-report-server';
 
 import type { OpenBrowserInput } from './browser.js';
 

@@ -1,4 +1,4 @@
-import type { CatalogListResult, CatalogValidateResult } from '@suites/blackbox-catalog-internal';
+import type { CatalogListResult, CatalogValidateResult } from '@suites/blackbox-catalog';
 
 export interface CatalogOutput {
   readonly mode: 'json' | 'human';

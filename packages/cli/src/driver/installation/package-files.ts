@@ -6,11 +6,8 @@ import {
   nodeDriverRuntimeArtifact,
 } from '@suites/blackbox-driver';
 
-import {
-  defaultDriverSdkSpec,
-  driverSdkPackageName,
-  type DriverRuntimeFileAction,
-} from './types.js';
+import { driverSdkPackageName, type DriverRuntimeFileAction } from './types.js';
+import { defaultDriverSdkSpec } from './sdk-version.js';
 
 export class DriverPackageFileError extends Error {
   constructor(

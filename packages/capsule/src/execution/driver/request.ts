@@ -1,7 +1,7 @@
 import type { DriverPrepareRequest } from '@suites/blackbox-driver';
-import type { ResolvedCatalogDriver } from '@suites/blackbox-catalog-internal';
-import type { SandboxHandle } from '@suites/blackbox-sandbox-internal';
-import type { TelemetryExecutionScope } from '@suites/blackbox-telemetry-internal';
+import type { ResolvedCatalogDriver } from '@suites/blackbox-catalog';
+import type { SandboxHandle } from '@suites/blackbox-sandbox';
+import type { TelemetryExecutionScope } from '@suites/blackbox-telemetry';
 
 function driverEndpointName(driverId: string): string {
   return `driver-${driverId}`;

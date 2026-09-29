@@ -1,5 +1,5 @@
 import { Args, Flags } from '@oclif/core';
-import { DEFAULT_REPORT_PORT } from '@suites/blackbox-report-server-internal';
+import { DEFAULT_REPORT_PORT } from '@suites/blackbox-report-server';
 
 import { OpenCommand } from '../../operations/viewing/open-command.js';
 

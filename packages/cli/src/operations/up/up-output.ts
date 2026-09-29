@@ -1,4 +1,4 @@
-import type { CapsuleStartResult } from '@suites/blackbox-capsule-internal';
+import type { CapsuleStartResult } from '@suites/blackbox-capsule';
 
 import { cliErrorDocument, type CliErrorDetail } from '../../cli/failure.js';
 import { formatDuration } from '../../cli/output.js';

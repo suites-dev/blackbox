@@ -1,7 +1,7 @@
 import { mkdir, mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import type { CatalogEntry } from '@suites/blackbox-catalog-internal';
+import type { CatalogEntry } from '@suites/blackbox-catalog';
 import { expect, it } from 'vitest';
 import { capsuleSessionDirectory } from '../../records.js';
 import { capsuleProgressPath, readCapsuleProgress } from '../../progress/store.js';

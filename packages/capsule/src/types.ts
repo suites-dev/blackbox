@@ -1,4 +1,4 @@
-import type { RuntimeActivationAdapter } from '@suites/blackbox-instrumentation-internal';
+import type { RuntimeActivationAdapter } from '@suites/blackbox-instrumentation';
 
 import type { CapsuleAcquisitionObservation } from './progress/acquisition.js';
 

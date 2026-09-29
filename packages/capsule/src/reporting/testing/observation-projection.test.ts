@@ -1,7 +1,7 @@
 import type {
   CollectorSessionReadResult,
   CollectorTracesReadResult,
-} from '@suites/blackbox-otel-collector-internal';
+} from '@suites/blackbox-otel-collector';
 import { expect, it } from 'vitest';
 
 import type { CapsuleSessionRecord } from '../../records.js';

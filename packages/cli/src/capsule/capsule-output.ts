@@ -1,7 +1,7 @@
 import type {
   CapsuleOperationFailure,
   CapsuleReportResult,
-} from '@suites/blackbox-capsule-internal';
+} from '@suites/blackbox-capsule';
 
 import { PackageFailure } from '../cli/failure.js';
 

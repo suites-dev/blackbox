@@ -1,4 +1,4 @@
-import { mkdtemp, readdir, realpath, rm, symlink, writeFile } from 'node:fs/promises';
+import { mkdtemp, readFile, readdir, realpath, rm, symlink, writeFile } from 'node:fs/promises';
 import { spawn } from 'node:child_process';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
@@ -15,8 +15,11 @@ function interrupt(signal) {
   if (currentChild === undefined || currentChild.pid === undefined) return;
   if (process.platform === 'win32') currentChild.kill(signal);
   else {
-    try { process.kill(-currentChild.pid, signal); }
-    catch (error) { if (error.code !== 'ESRCH') throw error; }
+    try {
+      process.kill(-currentChild.pid, signal);
+    } catch (error) {
+      if (error.code !== 'ESRCH') throw error;
+    }
   }
 }
 
@@ -47,7 +50,7 @@ async function testsIn(directory) {
   const paths = [];
   for (const entry of await readdir(directory, { withFileTypes: true })) {
     const target = join(directory, entry.name);
-    if (entry.isDirectory()) paths.push(...await testsIn(target));
+    if (entry.isDirectory()) paths.push(...(await testsIn(target)));
     else if (entry.name.endsWith('.test.js')) paths.push(target);
   }
   return paths.sort();
@@ -55,8 +58,16 @@ async function testsIn(directory) {
 
 try {
   await symlink(join(packageDirectory, 'node_modules'), join(output, 'node_modules'), 'dir');
-  await writeFile(join(output, 'package.json'), '{"type":"module"}\n');
-  const compile = await run('pnpm', ['exec', 'tsc', '--project', 'tsconfig.test.json', '--outDir', output]);
+  const packageManifest = await readFile(join(packageDirectory, 'package.json'), 'utf8');
+  await writeFile(join(output, 'package.json'), packageManifest);
+  const compile = await run('pnpm', [
+    'exec',
+    'tsc',
+    '--project',
+    'tsconfig.test.json',
+    '--outDir',
+    output,
+  ]);
   if (compile !== 0) process.exitCode = compile;
   else {
     const tests = await testsIn(output);

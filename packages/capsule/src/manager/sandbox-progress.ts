@@ -1,5 +1,5 @@
-import type { CatalogEntry } from '@suites/blackbox-catalog-internal';
-import type { SandboxProgressEvent, SandboxProgressMode } from '@suites/blackbox-sandbox-internal';
+import type { CatalogEntry } from '@suites/blackbox-catalog';
+import type { SandboxProgressEvent, SandboxProgressMode } from '@suites/blackbox-sandbox';
 
 import type { CapsuleManagerBootstrap } from '../protocol.js';
 import { emitProgress } from './progress.js';

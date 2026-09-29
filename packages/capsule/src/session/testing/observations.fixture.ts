@@ -2,8 +2,8 @@ import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { startCollector, type CollectorHandle } from '@suites/blackbox-otel-collector-internal';
-import { sandboxTelemetryStorageDirectory } from '@suites/blackbox-sandbox-internal';
+import { startCollector, type CollectorHandle } from '@suites/blackbox-otel-collector';
+import { sandboxTelemetryStorageDirectory } from '@suites/blackbox-sandbox';
 
 import { admitCapsuleRecord, capsuleSandboxRecordDirectory, capsuleSessionDirectory,
   writeCapsuleActivities, type CapsuleSessionRecord } from '../../records.js';

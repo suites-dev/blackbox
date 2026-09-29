@@ -1,4 +1,4 @@
-import type { PropagationExpectation } from '@suites/blackbox-telemetry-internal';
+import type { PropagationExpectation } from '@suites/blackbox-telemetry';
 
 export type CatalogDriverPropagation = Exclude<
   PropagationExpectation,

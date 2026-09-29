@@ -1,7 +1,7 @@
 import type {
   ComposeAcquisitionObservation,
   ComposeServiceObservation,
-} from '@suites/blackbox-sandbox-internal';
+} from '@suites/blackbox-sandbox';
 
 export type CapsuleAcquisitionObservation =
   | Exclude<ComposeAcquisitionObservation, { readonly kind: 'service-state' }>

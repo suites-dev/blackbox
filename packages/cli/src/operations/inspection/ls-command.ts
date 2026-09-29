@@ -1,4 +1,4 @@
-import type { CapsuleSessionState } from '@suites/blackbox-capsule-internal';
+import type { CapsuleSessionState } from '@suites/blackbox-capsule';
 
 import { BlackboxCommand } from '../../cli/base-command.js';
 import { EXIT_CODES } from '../../cli/exit-codes.js';

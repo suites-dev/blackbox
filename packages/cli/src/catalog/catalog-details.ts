@@ -5,7 +5,7 @@ import {
   type CatalogEntry,
   type CatalogListSuccess,
   type LoadedCatalog,
-} from '@suites/blackbox-catalog-internal';
+} from '@suites/blackbox-catalog';
 
 import { PackageFailure } from '../cli/failure.js';
 

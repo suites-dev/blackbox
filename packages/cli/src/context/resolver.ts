@@ -1,4 +1,4 @@
-import type { CapsuleActivityReport } from '@suites/blackbox-capsule-internal';
+import type { CapsuleActivityReport } from '@suites/blackbox-capsule';
 
 import { CliFailure, type CliCandidate } from '../cli/failure.js';
 import { isActivityPrefix, isFullActivityId, isTraceId, stripHyphens } from './identifiers.js';

@@ -1,7 +1,7 @@
 import {
   instrumentationDirectoryRelativePath,
   type RuntimeActivationAdapter,
-} from '@suites/blackbox-instrumentation-internal';
+} from '@suites/blackbox-instrumentation';
 
 const targetDirectory = '/blackbox/instrumentation';
 

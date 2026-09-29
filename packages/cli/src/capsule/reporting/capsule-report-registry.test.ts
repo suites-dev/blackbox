@@ -4,7 +4,7 @@ import { mkdir, rename, writeFile } from 'node:fs/promises';
 import { createServer } from 'node:http';
 import { join } from 'node:path';
 import test from 'node:test';
-import { capsuleSessionDirectory } from '@suites/blackbox-capsule-internal';
+import { capsuleSessionDirectory } from '@suites/blackbox-capsule';
 import { commandFixture, removeFixture, runCli } from './capsule-command.fixture.js';
 import { runningReportCli } from '../../reporting/serve.fixture.js';
 

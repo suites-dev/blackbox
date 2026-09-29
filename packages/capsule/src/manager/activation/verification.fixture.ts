@@ -1,9 +1,9 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
-import { resolveCatalogEntry, type LoadedCatalog } from '@suites/blackbox-catalog-internal';
-import type { RuntimeActivationAdapter } from '@suites/blackbox-instrumentation-internal';
-import type { SandboxHandle } from '@suites/blackbox-sandbox-internal';
+import { resolveCatalogEntry, type LoadedCatalog } from '@suites/blackbox-catalog';
+import type { RuntimeActivationAdapter } from '@suites/blackbox-instrumentation';
+import type { SandboxHandle } from '@suites/blackbox-sandbox';
 
 import { catalogFixture } from '../testing/acquisition.fixture.js';
 

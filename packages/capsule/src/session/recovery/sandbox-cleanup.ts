@@ -1,7 +1,7 @@
 import {
   recoverSandbox,
   type SandboxRecoveryResult,
-} from '@suites/blackbox-sandbox-internal';
+} from '@suites/blackbox-sandbox';
 
 import {
   capsuleSandboxRecordDirectory,

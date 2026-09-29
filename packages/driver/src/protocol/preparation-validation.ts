@@ -1,4 +1,4 @@
-import { createTelemetryPropagationRecord } from '@suites/blackbox-telemetry-internal';
+import { createTelemetryPropagationRecord } from '@suites/blackbox-telemetry';
 
 import type { DriverPrepareRequest } from '../model/driver-context.js';
 import type { DriverPreparation } from '../model/preparation.js';

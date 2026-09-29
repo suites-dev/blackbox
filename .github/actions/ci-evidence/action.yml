@@ -93,7 +93,7 @@ runs:
       id: upload
       if: always()
       continue-on-error: true
-      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      uses: actions/upload-artifact@v4
       with:
         name: ci-evidence-${{ github.run_id }}-${{ github.run_attempt }}-${{ inputs.lane }}-${{ inputs.project }}
         path: ${{ inputs.evidence-dir }}

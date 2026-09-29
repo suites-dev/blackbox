@@ -1,7 +1,7 @@
 import type {
   SandboxContainerExecutionFailure,
   SandboxHandle,
-} from '@suites/blackbox-sandbox-internal';
+} from '@suites/blackbox-sandbox';
 
 import type {
   CapsuleExecutionInteraction,

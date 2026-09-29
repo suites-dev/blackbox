@@ -4,7 +4,7 @@ import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { expect, it } from 'vitest';
-import { installInstrumentation } from '@suites/blackbox-instrumentation-internal';
+import { installInstrumentation } from '@suites/blackbox-instrumentation';
 
 import { nodeRuntimeProvider } from '../bootstrap/provider.js';
 

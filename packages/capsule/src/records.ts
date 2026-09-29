@@ -1,7 +1,7 @@
 import { link, mkdir, readFile, unlink, writeFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { join, resolve } from 'node:path';
-import { replaceFile } from '@suites/blackbox-sandbox-internal';
+import { replaceFile } from '@suites/blackbox-sandbox';
 
 import type {
   CapsuleActivityReport,

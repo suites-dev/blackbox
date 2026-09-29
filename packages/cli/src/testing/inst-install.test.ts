@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 
 import { nodeInstrumentationDependencies } from '@suites/blackbox-inst-runtime-node';
-import { instrumentationDirectoryRelativePath } from '@suites/blackbox-instrumentation-internal';
+import { instrumentationDirectoryRelativePath } from '@suites/blackbox-instrumentation';
 
 import { runCli } from '../capsule/reporting/capsule-command.fixture.js';
 

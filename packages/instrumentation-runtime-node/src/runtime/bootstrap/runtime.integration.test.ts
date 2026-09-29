@@ -9,7 +9,7 @@ import { expect, it } from 'vitest';
 import {
   installInstrumentation,
   instrumentationDirectoryRelativePath,
-} from '@suites/blackbox-instrumentation-internal';
+} from '@suites/blackbox-instrumentation';
 
 import { createNodeRuntimeActivation, type NodeRuntimeActivationAdapter } from './activation.js';
 import { nodeRuntimeProvider } from './provider.js';

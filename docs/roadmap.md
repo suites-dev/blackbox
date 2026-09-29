@@ -14,7 +14,7 @@ it does not promise release dates.
 | [Playwright assurance research #26](https://github.com/suites-dev/blackbox/issues/26)  | Specify claims, admissible evidence, qualification, and supported/refuted/insufficient findings before implementing an evaluator. |
 | [CLI vocabulary and experience #24](https://github.com/suites-dev/blackbox/issues/24)  | Align commands with the lab, experiment, trial, activity, evidence, and claim concepts through concrete user journeys.            |
 | [Public packages and names #25](https://github.com/suites-dev/blackbox/issues/25)      | Choose the public installation/export surface and make its complete dependency closure installable.                               |
-| [Lerna and publishing workflows #29](https://github.com/suites-dev/blackbox/issues/29) | Prepare and rehearse versioning and trusted publication from an exact reviewed release commit.                                    |
+| [Lerna and publishing workflows #29](https://github.com/suites-dev/blackbox/issues/29) | Prepare versioning and trusted publication from an exact reviewed release commit.                                                 |
 | [Capsule HTML report #30](https://github.com/suites-dev/blackbox/issues/30)            | Combine an experiment narrative with an investigation workspace for commands, traces, state-check output, and evidence gaps.      |
 
 CLI design, package design, and assurance research can start independently. The skill installer follows the CLI

@@ -1,93 +1,162 @@
-# Branches and releases
+# Releases
 
-Blackbox uses a release-branch flow with pnpm workspaces. Lerna is installed and configured for
-fixed versioning in `lerna.json`, currently at `0.0.0`, with pnpm as its package manager.
-`main` integrates development; only reviewed commits on `release/**` are release
-candidates. There is no separate `develop` branch.
+Blackbox uses fixed Lerna versions across every workspace package. `main` is the
+published-history branch. A `release/**` branch is a temporary stabilization line,
+and a `prepare-release/**` branch contains the reviewable version and changelog
+change for one release.
 
-| Branch                                                        | Purpose                                       | PR target                                          |
-| ------------------------------------------------------------- | --------------------------------------------- | -------------------------------------------------- |
-| `feat/*`, `fix/*`, `chore/*`, `agent/<stream>/<issue>-<slug>` | Focused development                           | `main`                                             |
-| `release/<version-or-line>`                                   | Stabilization and supported fixes             | Release PRs target this branch                     |
-| `prepare-release/<version>`                                   | Lerna version/changelog changes               | The matching `release/**` branch                   |
-| `hotfix/<issue>`                                              | Urgent fix branched from the affected release | Affected `release/**`, then forward-port to `main` |
+GitHub accepts squash merges only. A pull request title must use Conventional
+Commits syntax, and GitHub writes that title unchanged as the squash commit subject.
+The title check runs when a pull request is opened, synchronized, reopened, or
+edited, so changing the title always produces a new verdict.
 
-The existing alpha delivery phases 0–6 continue targeting
-`release/v0.0.1-alpha`, currently the GitHub default branch. New development uses
-`main`. Reconcile the alpha branch into `main` through a reviewed merge PR before
-changing the GitHub default; this setup does not reset or replace either history.
+```mermaid
+flowchart LR
+  M0["main<br/>last published tag"] --> R["release/version<br/>stabilize with reviewed PRs"]
+  R --> P["prepare-release/version<br/>fixed versions and changelogs"]
+  P -->|"squash PR"| R1["release/version<br/>validated candidate"]
+  R1 -->|"final squash PR<br/>chore(release): version"| M1["main<br/>exact publish commit"]
+  M1 --> T["signed annotated vX.Y.Z tag"]
+  T --> S["verify tag, source, build, and tests"]
+  S --> E["protected npm environment"]
+  E --> N["Lerna publish from-package<br/>OIDC + provenance"]
+  N --> G["GitHub Release"]
+```
+
+This squash-only shape is deliberate. The final release PR creates the commit that
+will be tagged on `main`; a release tag is never placed on the temporary release
+branch. Every later release branch starts from tagged `main`, so Lerna can find the
+previous version without preserving a merge commit.
+
+The repository is transitioning from its first alpha line. Until the first final
+release PR lands, `release/v0.0.1-alpha` remains the default branch. After that PR is
+merged, make `main` the default before starting another release line.
+
+## Public package set
+
+All directories discovered by `pnpm exec lerna list --all` are public packages.
+Lerna resolves their dependency order and publishes the complete fixed-version set.
+All packages:
+
+- use the same version as `lerna.json`;
+- publish with public access;
+- include README, Apache-2.0 license, and NOTICE files;
+- identify this repository and their package directory; and
+- set `publishConfig.provenance` to `true`.
 
 ## Prepare a release
 
-1. Cut `release/<version-or-line>` from a green, reviewed `main` commit. For the
-   current alpha, use the existing release branch. Freeze features on that branch.
-2. Branch `prepare-release/<version>` from it. Install with
-   `pnpm install --frozen-lockfile`. Before preparing versions, resolve the public package set
-   and runtime dependency closure, and review the installed Lerna configuration.
-   pnpm remains responsible for installing dependencies and running builds.
-3. Update the fixed version with Lerna, leaving the changes uncommitted and untagged
-   for review. For the first alpha:
+1. Start `release/<version>` from the current tagged `main`. For the first alpha,
+   continue using `release/v0.0.1-alpha`.
+2. Merge only reviewed pull requests into that line. Use a Conventional Commit PR
+   title because the title becomes the squash commit subject and is the input Lerna
+   reads when it recommends versions and generates changelogs.
+3. Select the release branch in GitHub's workflow picker and run **Release Preview**
+   for a read-only version proposal. The workflow checks out that dispatch's exact
+   commit and runs Lerna locally without tagging, committing, or pushing.
+4. Create `prepare-release/<version>` from the release branch. Apply the fixed version
+   and changelog updates with Lerna, then refresh the lockfile. The first alpha uses:
 
    ```sh
-   pnpm exec lerna version 0.0.1-alpha.0 --force-publish --no-git-tag-version --no-push --yes
+   pnpm exec lerna version 0.0.1-alpha.0 \
+     --force-publish \
+     --no-git-tag-version \
+     --no-push \
+     --yes
    pnpm install --lockfile-only --ignore-scripts
    ```
 
-   Later versions can use Lerna's conventional version recommendation or an explicit
-   reviewed SemVer. Use `--preid alpha` with `prerelease` for subsequent alphas.
-   Never version on each feature PR. A version/changelog change is its own release PR.
+5. Run the normal local checks:
 
-4. Review all package versions, workspace references, lockfile changes, and generated
-   changelogs. Commit with a verified signature and open a PR to the release branch.
-   All required checks and independent owner review apply to this PR too.
-5. After merge, use a clean checkout of the exact release commit. Re-run validation
-   and verify the commit's CodeQL and security results. Review release notes and
-   outstanding advisories. Do not release with unresolved confirmed vulnerabilities.
+   ```sh
+   pnpm install --frozen-lockfile
+   pnpm lint
+   pnpm typecheck
+   pnpm test
+   ```
 
-The current Lerna configuration allows version preparation on `release/**` and
-`prepare-release/**`, with automatic pushing disabled. PRs change protected branches;
-GitHub branch protections are enforced independently of Lerna.
+6. Open the preparation PR against the release branch. After it is green and merged,
+   open the final PR from the release branch to `main`. Use
+   `chore(release): <version>` as its title. The final PR must preserve the reviewed
+   release tree; do not add fixes while merging it.
 
 ## Tag and publish
 
-All workspace packages are currently `private: true`. No npm publishing workflow is
-enabled. This is an intentional release-readiness gate; release preparation must not expose
-internal packages accidentally.
+After the final release PR is squash-merged, create a signed, annotated tag on that
+exact `main` commit and push it:
 
-Before enabling package publication, a reviewed PR must define the public package
-set and resolve its complete runtime dependency closure. Check packed tarballs for
-Apache license/NOTICE files, needed runtime assets, and absence of secrets, fixtures,
-workspace/catalog protocols, or unpublished internal dependencies. Test installation
-of those tarballs in a clean consumer project.
+```sh
+git switch main
+git pull --ff-only
+git tag --sign --annotate v0.0.1-alpha.0 --message "Blackbox v0.0.1-alpha.0"
+git push origin v0.0.1-alpha.0
+```
 
-For an approved source release, a maintainer creates a signed, annotated `v<version>`
-tag on the validated release commit, then creates the GitHub release from that tag.
-Mark alpha/beta/rc versions as prereleases. The `v*` tag ruleset prevents tag updates
-and deletion. Tag creation is still a maintainer operation; tag rules do not prove
-that a tag points to an approved release branch.
+The immutable `v*` tag starts **Publish Release**. The workflow fails unless the tag:
 
-Future npm publication must run in a dedicated workflow with a reviewer-protected
-`npm` environment, no self-approval, exact release-commit verification, and npm
-trusted publishing (OIDC) plus provenance. Do not add a long-lived npm token or
-publish from a PR. Restrict deployment to the release source and use `next` for
-prereleases, `latest` for stable releases. Configure trusted publishing separately
-for each public package before enabling this workflow.
+- is annotated and has a signature GitHub reports as verified;
+- resolves to the checked-out commit;
+- matches every package version and `lerna.json`;
+- is an ancestor of `origin/main`; and
+- starts from a clean checkout.
 
-Merge the release history back into `main` through a PR after publication. Squash
-feature/fix PRs; retain a merge commit when reconciling branches so Lerna can see
-release ancestry and tags. Forward-port hotfixes promptly. Never move an existing
-release tag or overwrite a published version; ship a new patch instead.
+The verification job runs lint, typecheck, and tests against the exact tag.
 
-See [CONTRIBUTING.md](../../CONTRIBUTING.md) for validation and
-[security operations](security.md) for branch protection and scanner maintenance.
+The publish job uses the reviewer-protected `npm` environment and GitHub OIDC. It has
+`id-token: write` and runs `lerna publish from-package` with provenance enabled. No
+long-lived npm token is used. Prereleases receive the `next` distribution tag;
+stable releases receive `latest`. The workflow then creates the GitHub Release from
+the immutable tag.
 
-## Release-readiness work
+If a publish job is interrupted after some packages reach npm, manually dispatch the
+same workflow with the existing tag. Lerna's `from-package` mode skips versions that
+already exist and continues with unpublished packages. Never move a release tag or
+overwrite a published version.
 
-The [roadmap](../../docs/roadmap.md) separates the package/public-export decision from publishing automation.
-The existing configuration is not evidence that registry publication works. Complete a clean-consumer tarball check
-and a non-publishing workflow rehearsal before the first release action.
+## External setup before the first publication
 
-Implementation should follow current [Lerna version/publish guidance](https://lerna.js.org/docs/features/version-and-publish),
-[pnpm integration](https://lerna.js.org/docs/recipes/using-pnpm-with-lerna), and
-[npm trusted publishing](https://docs.npmjs.com/trusted-publishers/), including the supported tool versions and
-first-publication prerequisites. Record external npm/environment setup separately from repository workflow changes.
+Repository code cannot establish npm ownership or trusted-publisher relationships.
+Before pushing the first release tag:
+
+1. Confirm the release owner can publish public packages under the `@suites` scope.
+2. Configure npm trusted publishing for each package, using repository
+   `suites-dev/blackbox`, workflow filename `publish-release.yml`, and environment
+   `npm`. Explicitly allow direct `npm publish`; new publisher configurations
+   otherwise default to staged-only publication.
+3. Configure the GitHub `npm` environment with required reviewers and prevent the
+   person who initiated a deployment from approving it.
+4. Confirm the branch and tag rulesets still cover `main`, `release/**`, and `v*`,
+   and that the required checks include CI, Capsule E2E, PR title, and security.
+
+The first three items are release gates. All package names are new, and npm's trusted
+publisher controls live in an existing package's settings. Confirm the available
+first-publication bootstrap path before tagging. If npm cannot configure the OIDC
+relationship before a package exists, stop and obtain separate owner authorization
+for a one-time bootstrap; this workflow does not fall back to a token. A green source
+PR does not prove registry authorization or allow publication without provenance.
+
+## Repository enforcement
+
+The following live GitHub settings were verified on 2026-09-28:
+
+- only squash merging is enabled, with the PR title as the commit subject and no
+  generated commit body;
+- the protected-branch ruleset covers `main`, `release/**`, and the default branch,
+  requires the CI, Capsule E2E, PR title, and security gates, and requires review and
+  resolved conversations;
+- the immutable-tag ruleset prevents updating or deleting `v*` tags; and
+- the `npm` environment accepts only `v*` tags, requires approval from `qballer`,
+  prevents self-review, and disables administrator bypass.
+
+The PR title workflow includes the `edited` event. Correcting a title therefore
+reruns the required Conventional Commit check before a squash merge can proceed.
+
+## Hotfixes
+
+Cut `release/<patch>` from the affected tag, merge the focused fix and a preparation
+PR, then use the same final PR into `main`, tag, and publish sequence. If `main` has
+advanced incompatibly, resolve that in the final PR and rerun every gate before
+tagging. Ship a new version for every correction.
+
+See [workspace packages](packages.md), [contributing](../../CONTRIBUTING.md), and
+[security operations](security.md) for the surrounding maintenance contracts.

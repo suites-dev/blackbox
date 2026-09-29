@@ -2,7 +2,10 @@
 
 `@suites/blackbox-driver` defines the command-driver contract and the current Node authoring runtime. A project driver turns a caller-supplied command plus resolved Capsule context into arguments, environment variables, telemetry propagation, and redaction declarations.
 
-This is a private workspace package. It is not currently published as a supported npm dependency. For the end-user workflow, read [Drivers and command execution](../../docs/drivers.md); this page describes the maintainer boundary.
+This is a public alpha authoring package. Its contract may change between alpha
+releases. For the end-user workflow, read
+[Drivers and command execution](../../docs/drivers.md); this page describes the
+maintainer boundary.
 
 ```text
 CLI + catalog + Capsule context

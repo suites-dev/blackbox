@@ -1,7 +1,8 @@
 # `@suites/blackbox-cli`
 
-This is a private, unpublished workspace package. Use the [source-checkout journey](../../docs/getting-started.md)
-to try it and the [current CLI reference](../../docs/cli.md) for implemented commands.
+This is the public alpha command-line package. Use the
+[current CLI reference](../../docs/cli.md) for implemented commands and the
+[source-checkout journey](../../docs/getting-started.md) when developing the repository.
 
 The CLI is Blackbox's command-line composition root. It turns oclif commands into
 calls to the catalog, Capsule, driver, instrumentation, and report packages, then

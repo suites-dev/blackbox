@@ -1,11 +1,20 @@
 {
   "name": "@suites/blackbox-inst-runtime-node",
-  "version": "0.0.0",
-  "private": true,
+  "version": "0.0.1-alpha.0",
   "type": "module",
   "description": "Node.js OpenTelemetry runtime provider for Blackbox instrumentation installation.",
   "files": [
-    "dist"
+    "dist",
+    "README.md",
+    "LICENSE",
+    "NOTICE",
+    "src",
+    "!src/**/*.test.*",
+    "!src/**/*.spec.*",
+    "!src/**/*.fixture.*",
+    "!src/**/testing/**",
+    "!src/**/test-fixtures/**",
+    "!src/**/__tests__/**"
   ],
   "types": "./dist/index.d.ts",
   "exports": {
@@ -26,7 +35,7 @@
     "test:integration": "vitest run --config vitest.integration.config.ts"
   },
   "dependencies": {
-    "@suites/blackbox-instrumentation-internal": "workspace:*"
+    "@suites/blackbox-instrumentation": "workspace:*"
   },
   "devDependencies": {
     "rimraf": "catalog:",
@@ -34,5 +43,22 @@
     "typescript": "catalog:",
     "vitest": "catalog:"
   },
-  "license": "Apache-2.0"
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=22.15"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/suites-dev/blackbox.git",
+    "directory": "packages/instrumentation-runtime-node"
+  },
+  "homepage": "https://github.com/suites-dev/blackbox/tree/main/packages/instrumentation-runtime-node#readme",
+  "bugs": {
+    "url": "https://github.com/suites-dev/blackbox/issues"
+  },
+  "author": "Suites"
 }
