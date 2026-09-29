@@ -82,15 +82,17 @@ export function activityView(input: {
 
 export function capsuleView(input: {
   readonly capsule: CapsuleSummary;
-  readonly activities: readonly CapsuleActivityReport[];
+  /** null when the capsule's activity record could not be read (shown as `?`, like `ls`). */
+  readonly activities: readonly CapsuleActivityReport[] | null;
   readonly latest: string | null;
   readonly result: CapsuleObservationsResult;
 }) {
   const { capsule } = input;
   const next = input.latest === null ? [] : [nextSteps.showActivity(input.latest, capsule.capsule)];
+  const activities = input.activities === null ? '?' : String(input.activities.length);
   const lines = [
     `capsule ${capsule.capsule}  ${capsule.system}  ${capsule.state}`,
-    `  activities ${String(input.activities.length)} · traces ${String(observedTraceIds(input.result).length)}`,
+    `  activities ${activities} · traces ${String(observedTraceIds(input.result).length)}`,
   ];
   return { lines, next };
 }

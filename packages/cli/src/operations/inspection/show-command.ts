@@ -87,7 +87,7 @@ export abstract class ShowCommand extends BlackboxCommand {
     const display = new ActivityDisplay(
       (await index.allActivities()).map(({ activity }) => activity.activityId),
     );
-    const activities = (await index.activities(resolved.capsule.capsule)) ?? [];
+    const activities = await index.activities(resolved.capsule.capsule);
     switch (resolved.kind) {
       case 'activity':
         return activityView({
@@ -97,7 +97,7 @@ export abstract class ShowCommand extends BlackboxCommand {
           result,
         });
       case 'capsule': {
-        const last = latest(activities);
+        const last = activities === null ? null : latest(activities);
         return capsuleView({
           capsule: resolved.capsule,
           activities,
@@ -106,7 +106,7 @@ export abstract class ShowCommand extends BlackboxCommand {
         });
       }
       case 'trace': {
-        const owner = activities.find(
+        const owner = (activities ?? []).find(
           (activity) => activity.telemetry.context.traceId === resolved.traceId,
         );
         return traceView({

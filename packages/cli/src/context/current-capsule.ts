@@ -106,6 +106,21 @@ export async function clearCurrentCapsuleIf(
   capsule: string,
   hooks: ClearHooks = NO_HOOKS,
 ): Promise<ClearResult> {
+  try {
+    return await clearIf(projectDirectory, capsule, hooks);
+  } catch (error) {
+    const code = errorCode(error);
+    throw new Error(`${code === '' ? 'error' : code} clearing ${CURRENT_CAPSULE_RELATIVE_PATH}`, {
+      cause: error,
+    });
+  }
+}
+
+async function clearIf(
+  projectDirectory: string,
+  capsule: string,
+  hooks: ClearHooks,
+): Promise<ClearResult> {
   const file = currentFile(projectDirectory);
   const before = await readIfPresent(file);
   if (before === null || parseContent(before) !== capsule) {

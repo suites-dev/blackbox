@@ -2,7 +2,7 @@ import { stopCapsule } from '@suites/blackbox-capsule-internal';
 
 import { BlackboxCommand } from '../../cli/base-command.js';
 import { EXIT_CODES } from '../../cli/exit-codes.js';
-import { cliFailure } from '../../cli/failure.js';
+import { cliErrorDocument, cliFailure, type CliErrorDetail } from '../../cli/failure.js';
 import { nextSteps } from '../../cli/next-steps.js';
 import { capsulePackageFailure } from '../../capsule/capsule-output.js';
 import { clearCurrentCapsuleIf, type ClearResult } from '../../context/current-capsule.js';
@@ -13,6 +13,16 @@ export interface DownRequest {
   readonly positional: string | null;
   readonly capsuleFlag: string | null;
   readonly json: boolean;
+}
+
+function currentClearFailure(capsule: string, message: string): CliErrorDetail {
+  return {
+    code: 'current-capsule-write-failed',
+    message: `capsule ${capsule} is stopped but is still the current capsule (${message})`,
+    details: [],
+    candidates: [],
+    next: [],
+  };
 }
 
 /** `down` and its `capsule stop` alias. */
@@ -28,22 +38,39 @@ export abstract class DownCommand extends BlackboxCommand {
     if (result.kind !== 'capsule-stopped') {
       throw capsulePackageFailure(result, capsule);
     }
-    const cleared: ClearResult = await clearCurrentCapsuleIf(process.cwd(), capsule).catch(
-      () => 'not-current' as const,
+    const cleared = await clearCurrentCapsuleIf(process.cwd(), capsule).then(
+      (outcome: ClearResult) => ({ kind: 'ok' as const, outcome }),
+      (error: unknown) => ({
+        kind: 'failed' as const,
+        warning: currentClearFailure(
+          capsule,
+          error instanceof Error ? error.message : String(error),
+        ),
+      }),
     );
     const next = [nextSteps.report(capsule)];
     if (request.json) {
-      this.json({ ...result, capsule, next });
+      this.json({
+        ...result,
+        capsule,
+        warnings: cleared.kind === 'failed' ? [cliErrorDocument(cleared.warning)] : [],
+        next,
+      });
     } else {
       this.human([
         result.alreadyStopped
           ? `capsule ${capsule} was already stopped · evidence kept`
           : `capsule ${capsule} stopped · evidence kept`,
-        ...(cleared === 'cleared' ? ['current capsule: none'] : []),
+        ...(cleared.kind === 'ok' && cleared.outcome === 'cleared'
+          ? ['current capsule: none']
+          : []),
+        ...(cleared.kind === 'failed' ? [`blackbox: ${cleared.warning.message}`] : []),
         ...next.map((command) => `→ ${command}`),
       ]);
     }
-    this.finish(EXIT_CODES.success);
+    // The capsule is stopped either way; a current-capsule file that still names
+    // it is a Blackbox failure the caller must see, as with `up`.
+    this.finish(cleared.kind === 'failed' ? EXIT_CODES.blackboxFailure : EXIT_CODES.success);
   }
 
   /** A positional must be a capsule ID; without one, the resolved capsule. */

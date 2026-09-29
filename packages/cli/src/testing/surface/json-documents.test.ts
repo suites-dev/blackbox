@@ -222,6 +222,7 @@ void test('down --json on a stopped capsule is capsule-stopped plus capsule and 
       cleanup: 'complete',
       alreadyStopped: true,
       capsule: CAPSULE_A,
+      warnings: [],
       next: [`blackbox report ${CAPSULE_A}`],
     });
     const human = await run(fixture.directory, 'down', CAPSULE_A);

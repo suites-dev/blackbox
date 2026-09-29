@@ -52,6 +52,10 @@ document (`capsule-not-found`, `capsule-invalid-state`, `capsule-operation-faile
 `capsule` and `next` fields as the matching success document. `catalog validate`, `driver install` and
 `inst install` keep exiting `1` on failure.
 
+`up` and `down` never undo a capsule that started or stopped because the current-capsule file could not be
+written or cleared. They report it instead: a `blackbox:` line in human mode, a `current-capsule-write-failed`
+entry in the JSON document's `warnings`, and exit `125`.
+
 In human mode, Blackbox writes its own lines to stderr only. `run` passes the child's stdout to stdout and
 its stderr to stderr. A captured (non-terminal) run prints the retained output, which is redacted and, above
 1 MiB per stream, truncated to its first and last 512 KiB; the JSON envelope records the retention.

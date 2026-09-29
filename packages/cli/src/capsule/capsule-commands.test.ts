@@ -142,6 +142,7 @@ void test('stop is idempotent for an exact already-stopped session', async () =>
       cleanup: 'complete',
       alreadyStopped: true,
       capsule: fixture.sessionId,
+      warnings: [],
       next: [`blackbox report ${fixture.sessionId}`],
     });
   } finally {

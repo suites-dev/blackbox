@@ -1,4 +1,12 @@
 /**
+ * A suggestion is meant to be pasted into a shell. Plain URLs and paths stay as
+ * they are; anything else (`&`, `;`, spaces, quotes…) is single-quoted.
+ */
+export function shellArgument(value: string): string {
+  return /^[A-Za-z0-9_./:=@%+,-]+$/u.test(value) ? value : `'${value.replaceAll("'", `'\\''`)}'`;
+}
+
+/**
  * Suggested next commands. Every suggestion that targets a capsule, activity
  * or trace names its capsule explicitly (positional or --capsule), so none of
  * them depends on the current-capsule file or BLACKBOX_CAPSULE.
@@ -21,10 +29,10 @@ export const nextSteps = {
     readonly readinessUrl: string;
   }) => {
     if (input.driver === null) {
-      return `blackbox run --capsule ${input.capsule} -- curl ${input.readinessUrl}`;
+      return `blackbox run --capsule ${input.capsule} -- curl ${shellArgument(input.readinessUrl)}`;
     }
     const url = new URL(input.readinessUrl);
-    return `blackbox run --capsule ${input.capsule} --via ${input.driver} -- curl ${url.pathname}${url.search}`;
+    return `blackbox run --capsule ${input.capsule} --via ${input.driver} -- curl ${shellArgument(`${url.pathname}${url.search}`)}`;
   },
 } as const;
 
