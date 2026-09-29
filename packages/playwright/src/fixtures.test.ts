@@ -87,6 +87,7 @@ it('lets the Playwright test timeout govern sandbox acquisition', async () => {
   });
   expect(result.exitCode, result.output).toBe(1);
   expect(result.output).toContain(
-    'Test timeout of 20ms exceeded while setting up "_blackboxAttempt"',
+    'Blackbox sandbox acquisition exceeded the Playwright test timeout of 20ms',
   );
+  expect(result.output).toContain('BLACKBOX_PLAYWRIGHT_TIMEOUT_STOP failed');
 });

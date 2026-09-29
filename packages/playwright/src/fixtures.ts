@@ -43,6 +43,53 @@ function stopReason(status: TestInfo['status']): SandboxStopReason {
   }
 }
 
+const acquisitionTimedOut = Symbol('acquisitionTimedOut');
+
+async function acquireWithinTestTimeout(input: {
+  readonly runtime: BlackboxAttemptRuntime;
+  readonly request: Parameters<BlackboxAttemptRuntime['start']>[0];
+  readonly testInfo: TestInfo;
+}): Promise<RunningBlackboxAttempt> {
+  const acquisition = input.runtime.start(input.request);
+  if (input.testInfo.timeout === 0) {
+    return acquisition;
+  }
+
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const deadline = new Promise<typeof acquisitionTimedOut>((resolveTimeout) => {
+    timer = setTimeout(() => {
+      resolveTimeout(acquisitionTimedOut);
+    }, input.testInfo.timeout);
+  });
+  const outcome = await Promise.race([acquisition, deadline]).finally(() => {
+    if (timer !== undefined) {
+      clearTimeout(timer);
+    }
+  });
+  if (outcome !== acquisitionTimedOut) {
+    return outcome;
+  }
+
+  const timeoutError = new Error(
+    `Blackbox sandbox acquisition exceeded the Playwright test timeout of ${input.testInfo.timeout}ms`,
+  );
+  let lateAttempt: RunningBlackboxAttempt;
+  try {
+    lateAttempt = await acquisition;
+  } catch (cause) {
+    throw new Error(timeoutError.message, { cause });
+  }
+  try {
+    await lateAttempt.stop('failed');
+  } catch (cleanupError) {
+    throw new AggregateError(
+      [timeoutError, cleanupError],
+      'Blackbox sandbox acquisition timed out and cleanup failed',
+    );
+  }
+  throw timeoutError;
+}
+
 export function createBlackboxTest(runtime: BlackboxAttemptRuntime) {
   return playwrightTest.extend<BlackboxFixtures>({
     catalogEntry: [{ kind: 'unselected' }, { option: true }],
@@ -50,16 +97,31 @@ export function createBlackboxTest(runtime: BlackboxAttemptRuntime) {
     blackboxEnvironment: [Object.freeze({}), { option: true }],
     _blackboxAttempt: [
       async ({ catalogEntry, blackboxConfigFile, blackboxEnvironment }, use, testInfo) => {
-        const attempt = await runtime.start({
-          selection: catalogEntry,
-          configFile: configFilePath(blackboxConfigFile, testInfo),
-          environment: blackboxEnvironment,
-          artifactDirectory: testInfo.outputPath('blackbox'),
+        const configuredTimeout = testInfo.timeout;
+        const acquisitionStartedAt = Date.now();
+        const attempt = await acquireWithinTestTimeout({
+          runtime,
+          testInfo,
+          request: {
+            selection: catalogEntry,
+            configFile: configFilePath(blackboxConfigFile, testInfo),
+            environment: blackboxEnvironment,
+            artifactDirectory: testInfo.outputPath('blackbox'),
+          },
         });
-        await use(attempt);
-        await attempt.stop(stopReason(testInfo.status));
+        if (configuredTimeout > 0) {
+          testInfo.setTimeout(
+            Math.max(1, configuredTimeout - (Date.now() - acquisitionStartedAt)),
+          );
+        }
+        try {
+          await use(attempt);
+        } finally {
+          await attempt.stop(stopReason(testInfo.status));
+        }
       },
-      { auto: true },
+      // The helper enforces the test deadline and awaits cleanup if acquisition finishes late.
+      { auto: true, timeout: 0 },
     ],
     sandbox: async ({ _blackboxAttempt }, use) => {
       await use(_blackboxAttempt.sandbox);

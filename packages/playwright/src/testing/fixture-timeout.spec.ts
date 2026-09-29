@@ -37,7 +37,10 @@ const runtime = {
         read: () => Promise.reject(new Error('not used by this fixture')),
         readTrace: () => Promise.reject(new Error('not used by this fixture')),
       },
-      stop: () => Promise.resolve(),
+      stop: (reason) => {
+        process.stdout.write(`BLACKBOX_PLAYWRIGHT_TIMEOUT_STOP ${reason}\n`);
+        return Promise.resolve();
+      },
     };
   },
 } satisfies BlackboxAttemptRuntime;
