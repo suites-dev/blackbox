@@ -77,7 +77,8 @@ void test('show <capsule> renders an unreadable activity record as unavailable, 
     const result = await run(fixture.directory, 'capsule', 'show', CAPSULE_A);
     assert.match(result.stderr, /^ {2}activities \? · traces \d+$/mu);
     assert.doesNotMatch(result.stderr, /activities 0/u);
-    assert.doesNotMatch(result.stderr, /→ blackbox show/u);
+    // No activity resolved, so no next step may be suggested at all.
+    assert.doesNotMatch(result.stderr, /^→ /mu);
   } finally {
     await fixture.remove();
   }
