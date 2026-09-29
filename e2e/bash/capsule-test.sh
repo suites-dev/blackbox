@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
 # Phase 1: real catalog -> Capsule -> user-owned tools -> live reports -> exports,
-# through the public CLI (up, run, show, report, down, open). A final section
-# checks that the earlier command names still work as aliases.
+# through the public CLI (capsule up, run, show, report, down, report serve). A
+# final section checks the hidden commands.
 # First run: bash e2e/bash/capsule-assets.sh
 # Then run:  bash e2e/bash/capsule-test.sh
 # A terminal gets explanations, colors, browser opening, and Enter pauses.
@@ -43,7 +43,7 @@ jq -e '.ok == true' "$ARTIFACT_ROOT/catalog-validate.json" >/dev/null
 
 run_captured_step \
   'List the actual systems and subsystems available for acquisition.' \
-  'blackbox systems --json' \
+  'blackbox catalog ls --json' \
   "$ARTIFACT_ROOT/systems.json" \
   systems --json
 jq -e --arg system "$SYSTEM_ID" '.entries | any(.id == $system)' \
@@ -57,14 +57,14 @@ PROOF_IMAGE_RESULT="$E2E_ROOT/.blackbox/tmp/proof-consumer-image-cleanup.json"
 node "$SCRIPT_DIR/capsule-proof-image-baseline.mjs"
 
 # Start the registry before acquisition so admission/startup can appear live.
-# In a terminal this executes: blackbox open (default port; opens the browser)
+# In a terminal this executes: blackbox capsule report serve --open (default port)
 start_report_server
 
 # Start one real Capsule. The JSON response is the source of the exact session
 # identity and mapped public API URL; `up` also makes it the current capsule.
 run_captured_step \
   'Acquire the subscription system and retain its exact session and endpoint.' \
-  'blackbox up subscription-system \
+  'blackbox capsule up subscription-system \
         --title "Subscription system demo" \
         --description "Subscription system Capsule E2E" \
         --env FIXTURE_CONTROL_TOKEN=<redacted> \
@@ -88,7 +88,7 @@ jq -e --arg session "$SESSION_ID" --arg system "$SYSTEM_ID" \
 
 run_captured_step \
   'List running capsules; the new one is the current capsule.' \
-  'blackbox ls --json' \
+  'blackbox capsule ls --json' \
   "$ARTIFACT_ROOT/ls-running.json" \
   ls --json
 jq -e --arg session "$SESSION_ID" \
@@ -104,10 +104,10 @@ inspect_in_browser "Select '$SESSION_ID' in the registry. Watch its startup reco
 
 # The user owns the wire. Blackbox passes curl through unchanged and records the
 # activity; it does not proxy, rewrite, or synthesize this HTTP exchange. No
-# --capsule: `run` uses the current capsule that `up` selected.
+# No --session: `capsule run` uses the current capsule that `capsule up` selected.
 run_captured_step \
   'Ask the user-owned curl client to verify the public API readiness endpoint.' \
-  "blackbox run \\
+  "blackbox capsule run \\
         --name 'Check readiness' \\
         --purpose inspection \\
         -- curl --fail --silent --show-error $ENTRYPOINT_URL/health" \
@@ -121,14 +121,14 @@ jq -e '.status == "ready"' "$ARTIFACT_ROOT/health.json" >/dev/null
 # This proves the CLI can be composed by another process without corrupting JSON.
 run_captured_step \
   'Run a host command through Capsule JSON mode and retain one parseable outcome.' \
-  "blackbox run \\
-        --capsule $SESSION_ID \\
+  "blackbox capsule run \\
+        --session $SESSION_ID \\
         --name 'Check CLI JSON mode' \\
         --purpose inspection \\
         --json \\
         -- node -e \"process.stdout.write('capsule-json-ok\\\\n')\"" \
   "$ARTIFACT_ROOT/exec-json.json" \
-  run --capsule "$SESSION_ID" --name 'Check CLI JSON mode' --purpose inspection --json -- \
+  run --session "$SESSION_ID" --name 'Check CLI JSON mode' --purpose inspection --json -- \
   node -e "process.stdout.write('capsule-json-ok\\n')"
 jq -e \
   '.kind == "capsule-exec-completed" and .outcome.kind == "exited" and
@@ -139,8 +139,8 @@ jq -e \
 # state is deterministic before exercising the full subscription path.
 run_captured_step \
   'Reset the real fixture through its authenticated control endpoint.' \
-  "blackbox run \\
-        --capsule $SESSION_ID \\
+  "blackbox capsule run \\
+        --session $SESSION_ID \\
         --name 'Reset fixture state' \\
         --purpose setup \\
         -- curl --fail --silent --show-error \\
@@ -150,7 +150,7 @@ run_captured_step \
         --data '{\"profile\":\"fresh\"}' \\
         $ENTRYPOINT_URL/fixture/reset" \
   "$ARTIFACT_ROOT/reset.json" \
-  run --capsule "$SESSION_ID" --name 'Reset fixture state' --purpose setup -- \
+  run --session "$SESSION_ID" --name 'Reset fixture state' --purpose setup -- \
   curl --fail --silent --show-error \
   --request POST \
   --header "Authorization: Bearer $FIXTURE_TOKEN" \
@@ -162,8 +162,8 @@ run_captured_step \
 # supplies the mapped endpoint and W3C header without owning the business action.
 run_captured_step \
   'Run curl through the HTTP driver with automatic W3C trace propagation.' \
-  "blackbox run \\
-        --capsule $SESSION_ID \\
+  "blackbox capsule run \\
+        --session $SESSION_ID \\
         --name 'Create Alice subscription' \\
         --via public-api \\
         --purpose stimulus \\
@@ -175,7 +175,7 @@ run_captured_step \
         /subscriptions" \
   "$ARTIFACT_ROOT/driver-execution.json" \
   run \
-  --capsule "$SESSION_ID" \
+  --session "$SESSION_ID" \
   --name 'Create Alice subscription' \
   --via public-api \
   --purpose stimulus \
@@ -199,7 +199,7 @@ DRIVER_ACTIVITY_ID="$(jq -er '.activityId' "$ARTIFACT_ROOT/driver-execution.json
 
 run_json_until \
   'Read the collector summary retained for this exact Capsule execution.' \
-  "blackbox show $SESSION_ID --json" \
+  "blackbox capsule show $SESSION_ID --json" \
   "$ARTIFACT_ROOT/observations-session.json" \
   '.kind == "collector-session-found" and (.traceIds | length > 0)' \
   show "$SESSION_ID" --json
@@ -214,12 +214,12 @@ jq -e '
 
 run_json_until \
   'Read only the spans correlated to the traced HTTP driver activity.' \
-  "blackbox show $DRIVER_ACTIVITY_ID \\
-        --capsule $SESSION_ID \\
+  "blackbox capsule show $DRIVER_ACTIVITY_ID \\
+        --session $SESSION_ID \\
         --json" \
   "$ARTIFACT_ROOT/observations-activity.json" \
   '.kind == "collector-activity-found" and (.fragments | length > 0)' \
-  show "$DRIVER_ACTIVITY_ID" --capsule "$SESSION_ID" --json
+  show "$DRIVER_ACTIVITY_ID" --session "$SESSION_ID" --json
 jq -e --arg activity "$DRIVER_ACTIVITY_ID" \
   '.kind == "collector-activity-found" and .activityId == $activity and (.fragments | length > 0)' \
   "$ARTIFACT_ROOT/observations-activity.json" >/dev/null
@@ -227,8 +227,8 @@ jq -e --arg activity "$DRIVER_ACTIVITY_ID" \
 TRACE_ID="$(jq -er '.traceIds[0]' "$ARTIFACT_ROOT/observations-activity.json")"
 explain_step \
   'Pull the exact W3C trace until every expected instrumented service has arrived.' \
-  "blackbox show $TRACE_ID \\
-        --capsule $SESSION_ID \\
+  "blackbox capsule show $TRACE_ID \\
+        --session $SESSION_ID \\
         --json"
 node "$SCRIPT_DIR/capsule-telemetry-proof.mjs" http-until \
   "$BLACKBOX_ENTRYPOINT" \
@@ -247,14 +247,14 @@ sed 's/^/        /' "$ARTIFACT_ROOT/http-telemetry-proof.json"
 # is unchanged inside the Redis participant; no trace context can ride in this
 # list item. A blocking SUT consumer reacts and calls public-api on another trace.
 PROOF_ID="shared-state-$SESSION_ID"
-blackbox show "$SESSION_ID" --json \
+blackbox capsule show "$SESSION_ID" --json \
   >"$ARTIFACT_ROOT/observations-session-before-shared-state.json"
 jq -e '.kind == "collector-session-found"' \
   "$ARTIFACT_ROOT/observations-session-before-shared-state.json" >/dev/null
 run_captured_step \
   'Push one proof stimulus through the Redis shared-state driver.' \
-  "blackbox run \\
-        --capsule $SESSION_ID \\
+  "blackbox capsule run \\
+        --session $SESSION_ID \\
         --name 'Queue shared-state proof' \\
         --via redis \\
         --purpose stimulus \\
@@ -262,7 +262,7 @@ run_captured_step \
         -- redis-cli RPUSH blackbox:proof:stimuli $PROOF_ID" \
   "$ARTIFACT_ROOT/redis-execution.json" \
   run \
-  --capsule "$SESSION_ID" \
+  --session "$SESSION_ID" \
   --name 'Queue shared-state proof' \
   --via redis \
   --purpose stimulus \
@@ -274,10 +274,10 @@ REDIS_ACTIVITY_ID="$(jq -er '.activityId' "$ARTIFACT_ROOT/redis-execution.json")
 
 run_json_until \
   'Read the exact trace owned by the Redis stimulus activity.' \
-  "blackbox show $REDIS_ACTIVITY_ID --capsule $SESSION_ID --json" \
+  "blackbox capsule show $REDIS_ACTIVITY_ID --session $SESSION_ID --json" \
   "$ARTIFACT_ROOT/observations-redis-activity.json" \
   '.kind == "collector-activity-found" and (.traceIds | length == 1)' \
-  show "$REDIS_ACTIVITY_ID" --capsule "$SESSION_ID" --json
+  show "$REDIS_ACTIVITY_ID" --session "$SESSION_ID" --json
 
 wait_for_shared_state_proof \
   "$ARTIFACT_ROOT/redis-execution.json" \
@@ -294,8 +294,8 @@ SHARED_DOWNSTREAM_TRACE_ID="$(jq -er '.downstreamTraceId' \
 # unchanged user-owned psql command inside the selected Compose container.
 run_captured_step \
   'Read the resulting subscription from the PostgreSQL participant container.' \
-  "blackbox run \\
-        --capsule $SESSION_ID \\
+  "blackbox capsule run \\
+        --session $SESSION_ID \\
         --name 'Inspect Alice subscription' \\
         --via postgres \\
         --purpose inspection \\
@@ -305,7 +305,7 @@ run_captured_step \
         --command \"SELECT user_id || '|' || status FROM subscriptions WHERE user_id = 'alice';\"" \
   "$ARTIFACT_ROOT/postgres.json" \
   run \
-  --capsule "$SESSION_ID" \
+  --session "$SESSION_ID" \
   --name 'Inspect Alice subscription' \
   --via postgres \
   --purpose inspection \
@@ -333,8 +333,8 @@ jq -e '
 run_expected_status_step \
   127 \
   'Retain an actionable failure when a driver-selected participant lacks a tool.' \
-  "blackbox run \\
-        --capsule $SESSION_ID \\
+  "blackbox capsule run \\
+        --session $SESSION_ID \\
         --name 'Probe missing participant tool' \\
         --via postgres \\
         --purpose inspection \\
@@ -342,7 +342,7 @@ run_expected_status_step \
         -- blackbox-missing-client" \
   "$ARTIFACT_ROOT/missing-executable.json" \
   run \
-  --capsule "$SESSION_ID" \
+  --session "$SESSION_ID" \
   --name 'Probe missing participant tool' \
   --via postgres \
   --purpose inspection \
@@ -364,15 +364,15 @@ jq -e \
 # independent check that the expected subscription is visible.
 run_captured_step \
   'Inspect the application fixture state through the user-owned HTTP wire.' \
-  "blackbox run \\
-        --capsule $SESSION_ID \\
+  "blackbox capsule run \\
+        --session $SESSION_ID \\
         --name 'Inspect fixture state' \\
         --purpose inspection \\
         -- curl --fail --silent --show-error \\
         --header \"Authorization: Bearer <redacted>\" \\
         $ENTRYPOINT_URL/fixture/state" \
   "$ARTIFACT_ROOT/fixture-state.json" \
-  run --capsule "$SESSION_ID" --name 'Inspect fixture state' --purpose inspection -- \
+  run --session "$SESSION_ID" --name 'Inspect fixture state' --purpose inspection -- \
   curl --fail --silent --show-error \
   --header "Authorization: Bearer $FIXTURE_TOKEN" \
   "$ENTRYPOINT_URL/fixture/state"
@@ -384,7 +384,7 @@ jq -e \
 # document; --output - sends it to stdout for pipes and agents.
 run_captured_step \
   'Export the running experiment as JSON on stdout. This does not stop it.' \
-  "blackbox report $SESSION_ID \\
+  "blackbox capsule report $SESSION_ID \\
         --format json \\
         --output -" \
   "$ARTIFACT_ROOT/running-report.json" \
@@ -410,7 +410,7 @@ inspect_in_browser 'The completed commands are now retained activities. Current 
 
 run_captured_step \
   'Write JSON to its automatic report location. The command prints the generated path.' \
-  "blackbox report $SESSION_ID \\
+  "blackbox capsule report $SESSION_ID \\
         --format json" \
   "$ARTIFACT_ROOT/json-report-path.txt" \
   report "$SESSION_ID" --format json
@@ -421,7 +421,7 @@ jq -e --arg session "$SESSION_ID" \
 
 run_captured_step \
   'Save a portable HTML snapshot at a custom path while the environment is still running.' \
-  "blackbox report $SESSION_ID \\
+  "blackbox capsule report $SESSION_ID \\
         --format html \\
         --output .blackbox/reports/capsule-$SESSION_ID/running.html" \
   "$ARTIFACT_ROOT/running-html-path.txt" \
@@ -434,7 +434,7 @@ RUNNING_HTML_CHECKSUM="$(cksum <"$REPORT_ROOT/running.html")"
 # gone and must describe this session rather than an implicit latest result.
 run_captured_step \
   'Stop the exact capsule and release only its owned resources.' \
-  "blackbox down $SESSION_ID --json" \
+  "blackbox capsule down $SESSION_ID --json" \
   "$ARTIFACT_ROOT/capsule-stop.json" \
   down "$SESSION_ID" --json
 jq -e --arg session "$SESSION_ID" '
@@ -443,7 +443,7 @@ jq -e --arg session "$SESSION_ID" '
 ' "$ARTIFACT_ROOT/capsule-stop.json" >/dev/null
 SESSION_STOPPED=1
 # Stopping the current capsule clears the selection.
-blackbox ls --all --json >"$ARTIFACT_ROOT/ls-stopped.json"
+blackbox capsule ls --all --json >"$ARTIFACT_ROOT/ls-stopped.json"
 jq -e --arg session "$SESSION_ID" \
   '.current == null and (.capsules | any(.capsule == $session and .state == "stopped"))' \
   "$ARTIFACT_ROOT/ls-stopped.json" >/dev/null
@@ -452,7 +452,7 @@ test "$(cksum <"$REPORT_ROOT/running.html")" = "$RUNNING_HTML_CHECKSUM"
 
 run_captured_step \
   'Read the retained report by exact session ID after teardown.' \
-  "blackbox report $SESSION_ID \\
+  "blackbox capsule report $SESSION_ID \\
         --format json \\
         --output -" \
   "$ARTIFACT_ROOT/capsule-report.json" \
@@ -467,7 +467,7 @@ assert_shared_state_report \
 # It must remain readable after Docker teardown and must not expose the token.
 run_captured_step \
   'Render the retained Capsule report as standalone HTML after teardown.' \
-  "blackbox report $SESSION_ID \\
+  "blackbox capsule report $SESSION_ID \\
         --format html" \
   "$ARTIFACT_ROOT/capsule-report-html-path.txt" \
   report "$SESSION_ID" --format html
@@ -485,10 +485,9 @@ assert_served_report stopped "$ARTIFACT_ROOT/served-reopened.json"
 inspect_in_browser 'This viewer opened directly on the stopped experiment. No containers were restarted. Press Enter when finished; the script then closes only its viewer.'
 stop_report_server
 
-# The earlier command names stay as hidden aliases. One check per name keeps
-# them honest without a second acquisition (capsule start is covered by the CLI
-# package tests, which run the built CLI).
-check_earlier_names
+# The hidden commands keep working. One check per name, without a second
+# acquisition (capsule up is covered by the CLI package tests).
+check_hidden_commands
 
 # Keep the retained record inventory visible in the receipt for independent
 # validators: session, activities, progress, JSON report and HTML projection.

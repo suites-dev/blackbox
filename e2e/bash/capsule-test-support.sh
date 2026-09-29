@@ -159,14 +159,14 @@ wait_for_shared_state_proof() {
 
   explain_step \
     'Prove Redis shared-state work stayed session-observed and was never attached to its activity.' \
-    'blackbox show <capsule> --json; blackbox show <trace> --capsule <capsule> --json'
+    'blackbox capsule show <capsule> --json; blackbox capsule show <trace> --session <capsule> --json'
   local timeout_seconds=30
   local started_at="$SECONDS"
   local last_progress_second=-1
   local attempt
   for attempt in {1..120}; do
     local condition='waiting for session observations'
-    if blackbox show "$SESSION_ID" --json >"$session_file" &&
+    if blackbox capsule show "$SESSION_ID" --json >"$session_file" &&
       jq -e '.kind == "collector-session-found"' "$session_file" >/dev/null; then
       rm -rf "$trace_directory"
       mkdir -p "$trace_directory"
@@ -179,7 +179,7 @@ wait_for_shared_state_proof() {
       local traces_complete=1
       while IFS= read -r trace_id; do
         if [[ ! "$trace_id" =~ ^[0-9a-f]{32}$ ]] ||
-          ! blackbox show "$trace_id" --capsule "$SESSION_ID" --json \
+          ! blackbox capsule show "$trace_id" --session "$SESSION_ID" --json \
             >"$trace_directory/$trace_id.json"; then
           traces_complete=0
           break
@@ -228,7 +228,7 @@ cleanup() {
   # A failure after startup must not strand resources. Stop only the exact
   # session acquired by this script; never select an implicit latest session.
   if [[ -n "$SESSION_ID" && "$SESSION_STOPPED" -eq 0 ]]; then
-    if ! blackbox down "$SESSION_ID" --json \
+    if ! blackbox capsule down "$SESSION_ID" --json \
       >"$ARTIFACT_ROOT/cleanup-stop.json"; then
       echo "capsule-test: cleanup failed for session $SESSION_ID" >&2
       final_status=1
@@ -271,18 +271,18 @@ fi
 # The stored PID always belongs to the actual node/blackbox process, not a shell function.
 start_report_server() {
   local selected="${1:-}"
-  local args=(open)
-  local display='blackbox open'
+  local args=(capsule report serve)
+  local display='blackbox capsule report serve'
   local label=registry
   if [[ -n "$selected" ]]; then
-    args+=("$selected")
-    display+=" $selected"
+    args+=(--session "$selected")
+    display+=" --session $selected"
     label=selected
   fi
-  # A terminal opens the browser (the default); a noninteractive run does not.
-  if [[ "$INTERACTIVE" -ne 1 ]]; then
-    args+=(--no-browser)
-    display+=' --no-browser'
+  # A terminal opens the browser; a noninteractive run leaves it closed.
+  if [[ "$INTERACTIVE" -eq 1 ]]; then
+    args+=(--open)
+    display+=' --open'
   fi
   explain_step 'Serve flight control. This viewer has an independent lifetime from the Capsule.' "$display"
   local log="$ARTIFACT_ROOT/report-server-$label.log"
@@ -291,11 +291,11 @@ start_report_server() {
   REPORT_SERVER_URL=""
   local attempt ownership
   ownership=""
-  # `open` announces `flight control: <url>`, then `viewer: started, …` or
-  # `viewer: reused`.
+  # `capsule report serve` announces `Blackbox reports: <url>`, then
+  # `Viewer ownership: started` or `Viewer ownership: reused`.
   for attempt in {1..100}; do
-    REPORT_SERVER_URL="$(sed -n 's/^flight control: //p' "$log" | head -n 1)"
-    ownership="$(sed -n 's/^viewer: \([a-z]*\).*/\1/p' "$log" | head -n 1)"
+    REPORT_SERVER_URL="$(sed -n 's/^Blackbox reports: //p' "$log" | head -n 1)"
+    ownership="$(sed -n 's/^Viewer ownership: \([a-z]*\).*/\1/p' "$log" | head -n 1)"
     if [[ -n "$REPORT_SERVER_URL" && -n "$ownership" ]]; then break; fi
     if ! kill -0 "$REPORT_SERVER_PID" 2>/dev/null; then break; fi
     sleep 0.1
@@ -390,71 +390,23 @@ assert_html() {
   fi
 }
 
-# One check per earlier command name, run after the capsule is stopped. The
-# aliases keep today's argument shapes and documents; `capsule exec` on a
-# stopped capsule follows `run` (capsule-not-running, 125).
-check_earlier_names() {
-  explain_step 'Check that the earlier command names still work as hidden aliases.' \
-    'blackbox catalog list | observations | capsule report export | history | capsule stop | capsule exec | capsule report serve'
+# The hidden commands are not part of the documented surface, so one check per
+# name keeps them honest after the capsule is stopped.
+check_hidden_commands() {
+  explain_step 'Check the hidden commands: observations, history, capsule report export.' \
+    'blackbox observations | history | capsule report export'
 
-  blackbox catalog list --json >"$ARTIFACT_ROOT/alias-catalog-list.json"
-  jq -e --arg system "$SYSTEM_ID" '.entries | any(.id == $system)' \
-    "$ARTIFACT_ROOT/alias-catalog-list.json" >/dev/null
-
-  blackbox observations --session "$SESSION_ID" --json >"$ARTIFACT_ROOT/alias-observations.json"
+  blackbox observations --session "$SESSION_ID" --json >"$ARTIFACT_ROOT/hidden-observations.json"
   jq -e --arg session "$SESSION_ID" '.kind == "collector-session-found" and .capsule == $session' \
-    "$ARTIFACT_ROOT/alias-observations.json" >/dev/null
+    "$ARTIFACT_ROOT/hidden-observations.json" >/dev/null
+
+  blackbox history --json >"$ARTIFACT_ROOT/hidden-history.json"
+  jq -e --arg session "$SESSION_ID" '.kind == "capsule-list" and (.capsules | any(.capsule == $session))' \
+    "$ARTIFACT_ROOT/hidden-history.json" >/dev/null
 
   blackbox capsule report export --session "$SESSION_ID" --format json --output - \
-    >"$ARTIFACT_ROOT/alias-report.json"
-  assert_report "$ARTIFACT_ROOT/alias-report.json" stopped
+    >"$ARTIFACT_ROOT/hidden-report.json"
+  assert_report "$ARTIFACT_ROOT/hidden-report.json" stopped
 
-  blackbox history --json >"$ARTIFACT_ROOT/alias-history.json"
-  jq -e --arg session "$SESSION_ID" '.kind == "capsule-list" and (.capsules | any(.capsule == $session))' \
-    "$ARTIFACT_ROOT/alias-history.json" >/dev/null
-
-  blackbox capsule stop --session "$SESSION_ID" --json >"$ARTIFACT_ROOT/alias-stop.json"
-  jq -e --arg session "$SESSION_ID" \
-    '.kind == "capsule-stopped" and .sessionId == $session and .alreadyStopped == true' \
-    "$ARTIFACT_ROOT/alias-stop.json" >/dev/null
-
-  local status=0
-  blackbox capsule exec --session "$SESSION_ID" --json -- true \
-    >"$ARTIFACT_ROOT/alias-exec-stopped.json" 2>/dev/null || status=$?
-  if [[ "$status" -ne 125 ]]; then
-    echo "capsule-test: capsule exec on a stopped capsule exited $status, expected 125" >&2
-    return 1
-  fi
-  jq -e '.kind == "cli-error" and .code == "capsule-not-running"' \
-    "$ARTIFACT_ROOT/alias-exec-stopped.json" >/dev/null
-
-  # The serve alias keeps its three announcement lines and opens no browser
-  # without --open.
-  local log="$ARTIFACT_ROOT/alias-report-server.log"
-  "${BLACKBOX_COMMAND[@]}" capsule report serve --session "$SESSION_ID" >"$log" 2>&1 &
-  local pid=$!
-  local attempt
-  for attempt in {1..100}; do
-    if grep -q '^Viewer ownership: ' "$log"; then break; fi
-    if ! kill -0 "$pid" 2>/dev/null; then break; fi
-    sleep 0.1
-  done
-  grep -q '^Blackbox reports: http' "$log" && grep -q '^Viewer ownership: ' "$log" || {
-    cat "$log" >&2
-    echo 'capsule-test: capsule report serve did not announce its viewer' >&2
-    return 1
-  }
-  # A started viewer stays in the foreground until Ctrl-C; a reused one has
-  # already exited. Either way it must end successfully.
-  if kill -0 "$pid" 2>/dev/null; then
-    kill -INT "$pid"
-  fi
-  local viewer_status=0
-  wait "$pid" || viewer_status=$?
-  if [[ "$viewer_status" -ne 0 ]]; then
-    cat "$log" >&2
-    echo "capsule-test: capsule report serve exited with $viewer_status" >&2
-    return 1
-  fi
-  printf '%s[blackbox]%s %s✓ earlier command names still work%s\n' "$C_CYAN" "$C_RESET" "$C_GREEN" "$C_RESET"
+  printf '%s[blackbox]%s %s✓ hidden commands still work%s\n' "$C_CYAN" "$C_RESET" "$C_GREEN" "$C_RESET"
 }
