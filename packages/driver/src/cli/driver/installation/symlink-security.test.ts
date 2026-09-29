@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import test from 'node:test';
+import { test } from 'vitest';
 import { mkdir, mkdtemp, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -10,7 +10,7 @@ const packageManager = () => {
   assert.fail('package manager must not run for an unsafe installation path');
 };
 
-void test('rejects a symlinked driver installation directory', async () => {
+test('rejects a symlinked driver installation directory', async () => {
   const project = await mkdtemp(join(tmpdir(), 'driver-symlink-project-'));
   const outside = await mkdtemp(join(tmpdir(), 'driver-symlink-outside-'));
   try {
@@ -27,7 +27,7 @@ void test('rejects a symlinked driver installation directory', async () => {
   }
 });
 
-void test('rejects a symlinked managed driver manifest', async () => {
+test('rejects a symlinked managed driver manifest', async () => {
   const project = await mkdtemp(join(tmpdir(), 'driver-file-symlink-project-'));
   const outside = join(await mkdtemp(join(tmpdir(), 'driver-file-symlink-outside-')), 'owned.json');
   try {

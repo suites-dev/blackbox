@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import test from 'node:test';
+import { test } from 'vitest';
 import { mkdir, mkdtemp, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -32,14 +32,14 @@ const successfulInstaller: PackageManagerInstaller = async ({ directory }) => {
   return succeeded;
 };
 
-void test('uses the Driver release version for the default driver SDK', async () => {
+test('uses the Driver release version for the default driver SDK', async () => {
   const manifest = JSON.parse(
     await readFile(new URL('../../../../package.json', import.meta.url), 'utf8'),
   );
   assert.equal(defaultDriverSdkSpec, manifest.version);
 });
 
-void test('preserves authored package fields and installs only declared dependencies', async () => {
+test('preserves authored package fields and installs only declared dependencies', async () => {
   const projectDirectory = await mkdtemp(join(tmpdir(), 'driver-install-domain-'));
   try {
     const drivers = join(projectDirectory, '.blackbox', 'drivers');
@@ -90,7 +90,7 @@ void test('preserves authored package fields and installs only declared dependen
   }
 });
 
-void test('classifies failed installs and successful installs without a resolvable SDK', async () => {
+test('classifies failed installs and successful installs without a resolvable SDK', async () => {
   const failedProject = await mkdtemp(join(tmpdir(), 'driver-install-failed-'));
   const unresolvedProject = await mkdtemp(join(tmpdir(), 'driver-install-unresolved-'));
   try {
@@ -119,7 +119,7 @@ void test('classifies failed installs and successful installs without a resolvab
   }
 });
 
-void test('refuses a concurrent installation without deleting the active lock', async () => {
+test('refuses a concurrent installation without deleting the active lock', async () => {
   const projectDirectory = await mkdtemp(join(tmpdir(), 'driver-install-lock-'));
   let admit: () => void = () => undefined;
   let release: () => void = () => undefined;

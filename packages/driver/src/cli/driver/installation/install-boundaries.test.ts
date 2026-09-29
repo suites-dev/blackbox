@@ -3,7 +3,7 @@ import { mkdir, mkdtemp, readFile, realpath, rm, stat, writeFile } from 'node:fs
 import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import test from 'node:test';
+import { test } from 'vitest';
 
 import { installDriverRuntime } from './install-driver-runtime.js';
 
@@ -22,7 +22,7 @@ async function materializeSdk(directory: string): Promise<string> {
 }
 
 for (const spec of ['^1.2.3', 'file:../../vendor/blackbox-driver.tgz']) {
-  void test(`preserves the exact authored SDK spec ${spec} and manifest bytes`, async () => {
+  test(`preserves the exact authored SDK spec ${spec} and manifest bytes`, async () => {
     const projectDirectory = await mkdtemp(join(tmpdir(), 'driver-authored-spec-'));
     try {
       const directory = join(projectDirectory, '.blackbox', 'drivers');
@@ -48,7 +48,7 @@ for (const spec of ['^1.2.3', 'file:../../vendor/blackbox-driver.tgz']) {
 }
 
 for (const source of ['{not-json', '{"schemaVersion":999,"runtime":"node"}\n']) {
-  void test(`rejects and retains a corrupt runtime artifact: ${source}`, async () => {
+  test(`rejects and retains a corrupt runtime artifact: ${source}`, async () => {
     const projectDirectory = await mkdtemp(join(tmpdir(), 'driver-corrupt-runtime-'));
     try {
       const directory = join(projectDirectory, '.blackbox', 'drivers');
@@ -73,7 +73,7 @@ for (const source of ['{not-json', '{"schemaVersion":999,"runtime":"node"}\n']) 
   });
 }
 
-void test('cannot verify installation using a resolvable parent workspace SDK without a local SDK', async () => {
+test('cannot verify installation using a resolvable parent workspace SDK without a local SDK', async () => {
   const workspace = await mkdtemp(join(tmpdir(), 'driver-parent-workspace-'));
   try {
     const parentEntrypoint = await materializeSdk(workspace);
