@@ -65,8 +65,8 @@
     "ajv": "8.20.0"
   },
   "devDependencies": {
-    "rimraf": "catalog:",
     "@types/node": "catalog:",
+    "rimraf": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
   },
