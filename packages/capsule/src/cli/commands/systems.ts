@@ -1,6 +1,6 @@
 import { Flags } from '@oclif/core';
 
-import { SystemsCommand } from '../../operations/viewing/systems-command.js';
+import { SystemsCommand } from '../operations/viewing/systems-command.js';
 
 export default class Systems extends SystemsCommand {
   static override summary = 'List the catalog systems that up can start.';

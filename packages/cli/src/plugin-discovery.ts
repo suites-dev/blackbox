@@ -30,24 +30,27 @@ async function nearestPackageDirectory(start: string): Promise<string | null> {
   }
 }
 
-export async function discoverProjectCliPlugins(
-  startDirectory = process.cwd(),
-): Promise<{ readonly path: string; readonly names: readonly string[] } | null> {
-  const projectPath = await nearestPackageDirectory(startDirectory);
-  if (projectPath === null) {return null;}
-  const projectManifestPath = join(projectPath, 'package.json');
-  const parsedManifest = JSON.parse(
-    await readFile(projectManifestPath, 'utf8'),
-  ) as Record<string, unknown>;
-  const projectManifest = {
-    dependencies: dependencyMap(parsedManifest.dependencies),
-    devDependencies: dependencyMap(parsedManifest.devDependencies),
-  } satisfies ProjectManifest;
-  const names = Object.keys({
-    ...projectManifest.dependencies,
-    ...projectManifest.devDependencies,
-  }).sort();
-  const requireFromProject = createRequire(projectManifestPath);
+
+async function workspaceRoot(start: string): Promise<string | null> {
+  let current = start;
+  for (;;) {
+    try {
+      await access(join(current, 'pnpm-workspace.yaml'));
+      return current;
+    } catch {
+      const parent = dirname(current);
+      if (parent === current) {return null;}
+      current = parent;
+    }
+  }
+}
+
+async function pluginsFromManifest(
+  projectPath: string,
+  manifest: ProjectManifest,
+): Promise<readonly string[]> {
+  const names = Object.keys({ ...manifest.dependencies, ...manifest.devDependencies }).sort();
+  const requireFromProject = createRequire(join(projectPath, 'package.json'));
   const plugins: string[] = [];
   for (const name of names) {
     if (!name.startsWith('@suites/blackbox-')) {continue;}
@@ -55,13 +58,45 @@ export async function discoverProjectCliPlugins(
       const entry = requireFromProject.resolve(name);
       const packageDirectory = await nearestPackageDirectory(dirname(entry));
       if (packageDirectory === null) {continue;}
-      const manifest = JSON.parse(
+      const packageManifest = JSON.parse(
         await readFile(join(packageDirectory, 'package.json'), 'utf8'),
       ) as unknown;
-      if (isBlackboxCliPluginPackage(manifest)) {plugins.push(name);}
+      if (isBlackboxCliPluginPackage(packageManifest)) {plugins.push(name);}
     } catch {
       // An unresolved optional package is absent, not a host failure.
     }
   }
-  return { path: projectPath, names: plugins };
+  return plugins;
+}
+
+export async function discoverProjectCliPlugins(
+  startDirectory = process.cwd(),
+): Promise<{ readonly path: string; readonly names: readonly string[] } | null> {
+  const projectPath = await nearestPackageDirectory(startDirectory);
+  if (projectPath !== null) {
+    const projectManifest = JSON.parse(
+      await readFile(join(projectPath, 'package.json'), 'utf8'),
+    ) as Record<string, unknown>;
+    const plugins = await pluginsFromManifest(projectPath, {
+      dependencies: dependencyMap(projectManifest.dependencies),
+      devDependencies: dependencyMap(projectManifest.devDependencies),
+    });
+    if (plugins.length > 0) {
+      return { path: projectPath, names: plugins };
+    }
+  }
+
+  // A source checkout is a deliberate composition root. It supplies the
+  // feature packages through the workspace manifest while consumer projects
+  // remain opt-in through their own dependencies.
+  const root = await workspaceRoot(startDirectory);
+  if (root === null) {return null;}
+  const rootManifest = JSON.parse(
+    await readFile(join(root, 'package.json'), 'utf8'),
+  ) as Record<string, unknown>;
+  const plugins = await pluginsFromManifest(root, {
+    dependencies: dependencyMap(rootManifest.dependencies),
+    devDependencies: dependencyMap(rootManifest.devDependencies),
+  });
+  return plugins.length === 0 ? null : { path: root, names: plugins };
 }

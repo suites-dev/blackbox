@@ -1,7 +1,7 @@
 import { Args, Flags } from '@oclif/core';
 import { DEFAULT_REPORT_PORT } from '@suites/blackbox-report-server';
 
-import { OpenCommand } from '../../operations/viewing/open-command.js';
+import { OpenCommand } from '../operations/viewing/open-command.js';
 
 export default class Open extends OpenCommand {
   static override summary = 'Open flight control for a capsule, or for all capsules.';

@@ -1,5 +1,5 @@
-import { cp, mkdir, readFile, readdir, stat } from 'node:fs/promises';
-import { dirname, join } from 'node:path';
+import { cp, lstat, mkdir, mkdtemp, readFile, readdir, rename, rm } from 'node:fs/promises';
+import { basename, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 export type SkillAgent = 'codex' | 'claude' | 'cursor';
@@ -18,18 +18,51 @@ const AGENT_DIRECTORIES = {
 const skillSource = fileURLToPath(new URL('../../assets/discovery', import.meta.url));
 
 async function sameTree(source: string, target: string): Promise<boolean> {
-  const sourceStat = await stat(source);
-  const targetStat = await stat(target).catch(() => null);
-  if (targetStat === null || sourceStat.isDirectory() !== targetStat.isDirectory()) {return false;}
+  const sourceStat = await lstat(source);
+  const targetStat = await lstat(target).catch(() => null);
+  if (
+    targetStat === null ||
+    sourceStat.isSymbolicLink() ||
+    targetStat.isSymbolicLink() ||
+    sourceStat.isDirectory() !== targetStat.isDirectory()
+  ) {
+    return false;
+  }
   if (sourceStat.isDirectory()) {
     const [sourceNames, targetNames] = await Promise.all([readdir(source), readdir(target)]);
-    if (sourceNames.length !== targetNames.length) {return false;}
+    if (sourceNames.length !== targetNames.length) {
+      return false;
+    }
     for (const name of sourceNames) {
-      if (!(await sameTree(join(source, name), join(target, name)))) {return false;}
+      if (!(await sameTree(join(source, name), join(target, name)))) {
+        return false;
+      }
     }
     return true;
   }
   return (await readFile(source)).equals(await readFile(target));
+}
+
+/** Stage the complete tree and publish it with one rename, so no checked path is copied into. */
+async function publishSkill(source: string, target: string): Promise<'installed' | 'occupied'> {
+  const parent = dirname(target);
+  await mkdir(parent, { recursive: true });
+  const stagingDirectory = await mkdtemp(join(parent, `.${basename(target)}.tmp-`));
+  const stagedTarget = join(stagingDirectory, basename(target));
+  try {
+    await cp(source, stagedTarget, { recursive: true });
+    try {
+      await rename(stagedTarget, target);
+      return 'installed';
+    } catch (error) {
+      if (typeof error === 'object' && error !== null && 'code' in error && error.code === 'EEXIST') {
+        return 'occupied';
+      }
+      throw error;
+    }
+  } finally {
+    await rm(stagingDirectory, { recursive: true, force: true });
+  }
 }
 
 export async function installSkill(input: {
@@ -40,18 +73,20 @@ export async function installSkill(input: {
   const results: InstallResult[] = [];
   for (const agent of input.agents) {
     const target = join(input.projectDirectory, AGENT_DIRECTORIES[agent], input.skillName);
-    const existing = await stat(target).catch(() => null);
+    const existing = await lstat(target).catch(() => null);
     if (existing !== null) {
-      if (await sameTree(skillSource, target)) {
-        results.push({ kind: 'unchanged', agent, path: target });
-      } else {
-        results.push({ kind: 'conflict', agent, path: target });
-      }
+      results.push({
+        kind: (await sameTree(skillSource, target)) ? 'unchanged' : 'conflict',
+        agent,
+        path: target,
+      });
       continue;
     }
-    await mkdir(dirname(target), { recursive: true });
-    await cp(skillSource, target, { recursive: true });
-    results.push({ kind: 'installed', agent, path: target });
+    const publication = await publishSkill(skillSource, target);
+    const kind = publication === 'installed'
+      ? 'installed'
+      : (await sameTree(skillSource, target) ? 'unchanged' : 'conflict');
+    results.push({ kind, agent, path: target });
   }
   return results;
 }

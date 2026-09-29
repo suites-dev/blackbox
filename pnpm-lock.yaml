@@ -92,6 +92,18 @@ importers:
       '@eslint/js':
         specifier: 'catalog:'
         version: 9.39.4
+      '@suites/blackbox-capsule':
+        specifier: workspace:*
+        version: link:packages/capsule
+      '@suites/blackbox-catalog':
+        specifier: workspace:*
+        version: link:packages/catalog
+      '@suites/blackbox-inst-runtime-node':
+        specifier: workspace:*
+        version: link:packages/instrumentation-runtime-node
+      '@suites/blackbox-skills':
+        specifier: workspace:*
+        version: link:packages/skills
       '@types/node':
         specifier: 'catalog:'
         version: 26.6.3

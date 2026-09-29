@@ -16,6 +16,7 @@ PHASE_ONE_PACKAGES=(
   capsule
   catalog
   cli
+  cli-contract
   driver
   instrumentation
   instrumentation-runtime-node
