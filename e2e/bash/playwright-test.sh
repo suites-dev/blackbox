@@ -35,8 +35,8 @@ require_command() {
 }
 
 recover_sandboxes() {
-  if [[ -n "$CONSUMER_ROOT" && -f "$CONSUMER_ROOT/playwright-evidence.mjs" && -d "$RESULT_ROOT" ]]; then
-    if node "$CONSUMER_ROOT/playwright-evidence.mjs" recover "$RESULT_ROOT" \
+  if [[ -n "$CONSUMER_ROOT" && -f "$CONSUMER_ROOT/playwright-recover.mjs" && -d "$RESULT_ROOT" ]]; then
+    if node "$CONSUMER_ROOT/playwright-recover.mjs" "$RESULT_ROOT" \
       >"$RESULT_ROOT/recovery.json"; then
       RECOVERY_RECORDED=1
     else
@@ -128,9 +128,9 @@ fi
 mkdir -p "$CONSUMER_ROOT/tests/playwright"
 cp "$E2E_ROOT/playwright.config.ts" "$CONSUMER_ROOT/playwright.config.ts"
 cp "$E2E_ROOT/tests/playwright/"*.spec.ts "$CONSUMER_ROOT/tests/playwright/"
-cp "$SCRIPT_DIR/playwright-evidence.mjs" "$CONSUMER_ROOT/playwright-evidence.mjs"
+cp "$SCRIPT_DIR"/playwright-*.mjs "$CONSUMER_ROOT/"
 
-node "$CONSUMER_ROOT/playwright-evidence.mjs" boundary "$CONSUMER_ROOT" "$REPO_ROOT" \
+node "$CONSUMER_ROOT/playwright-boundary.mjs" "$CONSUMER_ROOT" "$REPO_ROOT" \
   >"$RESULT_ROOT/package-boundary.json"
 
 PLAYWRIGHT_BIN="$CONSUMER_ROOT/node_modules/.bin/playwright"
@@ -146,7 +146,7 @@ BLACKBOX_E2E_RESULTS_ROOT="$RESULT_ROOT" \
   "$PLAYWRIGHT_BIN" test --config "$CONSUMER_ROOT/playwright.config.ts"
 
 recover_sandboxes
-node "$CONSUMER_ROOT/playwright-evidence.mjs" verify "$RESULT_ROOT" \
+node "$CONSUMER_ROOT/playwright-verify.mjs" "$RESULT_ROOT" \
   >"$RESULT_ROOT/receipt.json"
 
 printf '%s\n' \

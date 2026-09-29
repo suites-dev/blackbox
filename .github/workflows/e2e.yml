@@ -34,7 +34,7 @@ jobs:
   e2e:
     name: Capsule E2E (Testcontainers)
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 70
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -147,6 +147,40 @@ jobs:
             log=ci-evidence/e2e/journeys/logs/command.log
             logs?=.blackbox/tmp/ci-e2e-journeys
 
+      - name: Run packed Playwright journey
+        id: playwright_tests
+        if: always() && steps.install.outcome == 'success'
+        timeout-minutes: 20
+        run: >-
+          node .github/scripts/ci-evidence.mjs run --lane e2e --project playwright
+          --evidence-dir ci-evidence/e2e/playwright -- pnpm test:e2e:playwright
+
+      - name: Archive exact Playwright harness output
+        id: playwright_archive
+        if: always()
+        env:
+          E2E_TEST_OUTCOME: ${{ steps.playwright_tests.outcome }}
+          E2E_PROJECT: playwright
+          E2E_EVIDENCE_OUTPUT_DIR: .blackbox/tmp/ci-playwright-e2e-transport
+        run: node .github/scripts/e2e-evidence.mjs
+
+      - name: Retain Playwright evidence
+        id: playwright_evidence
+        if: always()
+        uses: ./.github/actions/ci-evidence
+        with:
+          lane: e2e
+          project: playwright
+          evidence-dir: ci-evidence/e2e/playwright
+          setup-result: ${{ steps.install.outcome }}
+          result: ${{ steps.playwright_tests.outcome }}
+          command: pnpm test:e2e:playwright
+          expected: |
+            log=ci-evidence/e2e/playwright/logs/command.log
+            archive=.blackbox/tmp/ci-playwright-e2e-transport/evidence.tar
+            transport=.blackbox/tmp/ci-playwright-e2e-transport/transport-receipt.json
+            log?=.blackbox/tmp/ci-playwright-e2e-transport/archive.log
+
       - name: Enforce test and retention outcomes
         if: always()
         env:
@@ -159,93 +193,13 @@ jobs:
           EVIDENCE_OUTCOME: ${{ steps.evidence.outcome }}
           JOURNEYS_OUTCOME: ${{ steps.journeys.outcome }}
           JOURNEY_EVIDENCE_OUTCOME: ${{ steps.journey_evidence.outcome }}
+          PLAYWRIGHT_TEST_OUTCOME: ${{ steps.playwright_tests.outcome }}
+          PLAYWRIGHT_ARCHIVE_OUTCOME: ${{ steps.playwright_archive.outcome }}
+          PLAYWRIGHT_EVIDENCE_OUTCOME: ${{ steps.playwright_evidence.outcome }}
         run: |
           for outcome in "$TRANSPORT_TEST_OUTCOME" "$INSTALL_OUTCOME" "$BUILD_OUTCOME" "$TYPECHECK_OUTCOME" \
             "$TEST_OUTCOME" "$ARCHIVE_OUTCOME" "$EVIDENCE_OUTCOME" "$JOURNEYS_OUTCOME" \
-            "$JOURNEY_EVIDENCE_OUTCOME"; do
-            [[ "$outcome" == success ]] || exit 1
-          done
-
-  playwright_e2e:
-    name: Playwright E2E (packed consumer)
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-        with:
-          persist-credentials: false
-          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.target_branch || github.ref }}
-
-      - name: Install pnpm
-        uses: pnpm/action-setup@v6
-        with:
-          version: ${{ env.PNPM_VERSION }}
-
-      - name: Setup Node
-        uses: actions/setup-node@v6
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: pnpm
-
-      - name: Install dependencies
-        id: install
-        timeout-minutes: 15
-        run: >-
-          node .github/scripts/ci-evidence.mjs run --lane e2e --project playwright
-          --evidence-dir .blackbox/tmp/ci-playwright-e2e-commands/install
-          -- pnpm install --frozen-lockfile
-
-      - name: Typecheck source and tests
-        id: typecheck
-        timeout-minutes: 10
-        run: >-
-          node .github/scripts/ci-evidence.mjs run --lane e2e --project playwright
-          --evidence-dir .blackbox/tmp/ci-playwright-e2e-commands/typecheck
-          -- pnpm typecheck
-
-      - name: Run packed Playwright journey
-        id: tests
-        timeout-minutes: 20
-        run: >-
-          node .github/scripts/ci-evidence.mjs run --lane e2e --project playwright
-          --evidence-dir ci-evidence/e2e/playwright -- pnpm test:e2e:playwright
-
-      - name: Archive exact harness output
-        id: archive
-        if: always()
-        env:
-          E2E_TEST_OUTCOME: ${{ steps.tests.outcome }}
-          E2E_PROJECT: playwright
-        run: node .github/scripts/e2e-evidence.mjs
-
-      - name: Retain Playwright evidence
-        id: evidence
-        if: always()
-        uses: ./.github/actions/ci-evidence
-        with:
-          lane: e2e
-          project: playwright
-          evidence-dir: ci-evidence/e2e/playwright
-          setup-result: ${{ steps.install.outcome }}
-          result: ${{ steps.tests.outcome }}
-          command: pnpm test:e2e:playwright
-          expected: |
-            log=ci-evidence/e2e/playwright/logs/command.log
-            archive=.blackbox/tmp/ci-e2e-transport/evidence.tar
-            transport=.blackbox/tmp/ci-e2e-transport/transport-receipt.json
-            log?=.blackbox/tmp/ci-e2e-transport/archive.log
-
-      - name: Enforce Playwright outcomes
-        if: always()
-        env:
-          INSTALL_OUTCOME: ${{ steps.install.outcome }}
-          TYPECHECK_OUTCOME: ${{ steps.typecheck.outcome }}
-          TEST_OUTCOME: ${{ steps.tests.outcome }}
-          ARCHIVE_OUTCOME: ${{ steps.archive.outcome }}
-          EVIDENCE_OUTCOME: ${{ steps.evidence.outcome }}
-        run: |
-          for outcome in "$INSTALL_OUTCOME" "$TYPECHECK_OUTCOME" "$TEST_OUTCOME" \
-            "$ARCHIVE_OUTCOME" "$EVIDENCE_OUTCOME"; do
+            "$JOURNEY_EVIDENCE_OUTCOME" "$PLAYWRIGHT_TEST_OUTCOME" \
+            "$PLAYWRIGHT_ARCHIVE_OUTCOME" "$PLAYWRIGHT_EVIDENCE_OUTCOME"; do
             [[ "$outcome" == success ]] || exit 1
           done

@@ -1,4 +1,3 @@
-import { appendFile } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
 
 import { expect as playwrightExpect } from '@playwright/test';
@@ -6,33 +5,23 @@ import { expect as playwrightExpect } from '@playwright/test';
 import { createBlackboxTest } from '../fixtures.js';
 import type { BlackboxAttemptRuntime } from '../runtime/acquisition.js';
 
-function requiredEventLog(): string {
-  const value = process.env.BLACKBOX_PLAYWRIGHT_EVENT_LOG;
-  if (value === undefined) {
-    throw new Error('BLACKBOX_PLAYWRIGHT_EVENT_LOG is required');
-  }
-  return value;
-}
-
-const eventLog = requiredEventLog();
-
-async function record(value: object): Promise<void> {
-  await appendFile(eventLog, `${JSON.stringify(value)}\n`, 'utf8');
+function record(value: object): void {
+  process.stdout.write(`BLACKBOX_PLAYWRIGHT_EVENT ${JSON.stringify(value)}\n`);
 }
 
 const runtime = {
-  async start(input) {
+  start(input) {
     if (input.selection.kind === 'unselected') {
       throw new Error('test fixture did not select a catalog entry');
     }
     const executionId = randomUUID();
-    await record({
+    record({
       kind: 'start',
       executionId,
       artifactDirectory: input.artifactDirectory,
       selection: input.selection,
     });
-    return {
+    return Promise.resolve({
       sandbox: {
         sandboxId: executionId,
         executionId,
@@ -58,8 +47,11 @@ const runtime = {
         read: () => Promise.reject(new Error('not used by this fixture')),
         readTrace: () => Promise.reject(new Error('not used by this fixture')),
       },
-      stop: async (reason) => record({ kind: 'stop', executionId, reason }),
-    };
+      stop: (reason) => {
+        record({ kind: 'stop', executionId, reason });
+        return Promise.resolve();
+      },
+    });
   },
 } satisfies BlackboxAttemptRuntime;
 

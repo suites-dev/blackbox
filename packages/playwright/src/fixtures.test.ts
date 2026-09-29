@@ -1,4 +1,4 @@
-import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawn } from 'node:child_process';
@@ -13,7 +13,6 @@ afterEach(async () => {
 });
 
 async function runPlaywright(input: {
-  readonly eventLog: string;
   readonly outputDirectory: string;
 }): Promise<{ readonly exitCode: number; readonly output: string }> {
   const require = createRequire(import.meta.url);
@@ -23,8 +22,9 @@ async function runPlaywright(input: {
     cwd: join(import.meta.dirname, '..'),
     env: {
       ...process.env,
-      BLACKBOX_PLAYWRIGHT_EVENT_LOG: input.eventLog,
       BLACKBOX_PLAYWRIGHT_OUTPUT_DIR: input.outputDirectory,
+      FORCE_COLOR: '0',
+      NO_COLOR: undefined,
     },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
@@ -49,13 +49,13 @@ async function runPlaywright(input: {
 it('owns one sandbox lifecycle per Playwright physical attempt, including a retry', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'blackbox-playwright-fixture-'));
   directories.push(directory);
-  const eventLog = join(directory, 'events.jsonl');
-  const result = await runPlaywright({ eventLog, outputDirectory: join(directory, 'output') });
+  const result = await runPlaywright({ outputDirectory: join(directory, 'output') });
   expect(result.exitCode, result.output).toBe(0);
-  const events = (await readFile(eventLog, 'utf8'))
-    .trim()
+  const marker = 'BLACKBOX_PLAYWRIGHT_EVENT ';
+  const events = result.output
     .split('\n')
-    .map((line) => JSON.parse(line) as Record<string, unknown>);
+    .filter((line) => line.startsWith(marker))
+    .map((line) => JSON.parse(line.slice(marker.length)) as Record<string, unknown>);
   const starts = events.filter((event) => event.kind === 'start');
   const stops = events.filter((event) => event.kind === 'stop');
   expect(starts).toHaveLength(4);

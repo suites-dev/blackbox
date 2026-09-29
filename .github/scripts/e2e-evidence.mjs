@@ -97,7 +97,12 @@ export async function retainE2eEvidence({
   await fs.mkdir(output);
   const receipt = {
     schemaVersion: 1,
-    purpose: project === 'capsule' ? 'capsule-harness-evidence-transport' : 'legacy-harness-evidence-transport',
+    purpose:
+      project === 'capsule'
+        ? 'capsule-harness-evidence-transport'
+        : project === 'playwright'
+          ? 'playwright-harness-evidence-transport'
+          : 'legacy-harness-evidence-transport',
     testOutcome,
     productConformance: false,
     productExecutionIds: null,
@@ -173,6 +178,7 @@ export async function retainE2eEvidence({
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   retainE2eEvidence({
+    outputDir: process.env.E2E_EVIDENCE_OUTPUT_DIR || undefined,
     testOutcome: process.env.E2E_TEST_OUTCOME || 'not-run',
     project: process.env.E2E_PROJECT || 'legacy-harness',
   })

@@ -74,7 +74,7 @@ async function dockerResources(projectName) {
   return observed;
 }
 
-async function boundary(consumerRootValue, workspaceRootValue) {
+export async function boundary(consumerRootValue, workspaceRootValue) {
   const consumerRoot = resolve(await realpath(consumerRootValue));
   const workspaceRoot = resolve(await realpath(workspaceRootValue));
   const packages = [];
@@ -91,8 +91,7 @@ async function boundary(consumerRootValue, workspaceRootValue) {
   return { kind: 'playwright-packed-boundary', consumerRoot, packages };
 }
 
-async function recover(resultsRoot) {
-  const { recoverSandbox } = await import('@suites/blackbox-sandbox');
+export async function recover(resultsRoot, recoverSandbox) {
   const recoveries = [];
   for (const item of await sandboxRecords(resultsRoot)) {
     recoveries.push({
@@ -113,7 +112,7 @@ function collectSpecs(suite, result = []) {
   return result;
 }
 
-async function verify(resultsRoot) {
+export async function verify(resultsRoot) {
   const records = await sandboxRecords(resultsRoot);
   assert(records.length === 3, `Expected three physical Sandbox records, found ${records.length}`);
   assert(
@@ -167,18 +166,3 @@ async function verify(resultsRoot) {
     })),
   };
 }
-
-const [command, ...arguments_] = process.argv.slice(2);
-let result;
-if (command === 'boundary' && arguments_.length === 2) {
-  result = await boundary(arguments_[0], arguments_[1]);
-} else if (command === 'recover' && arguments_.length === 1) {
-  result = await recover(arguments_[0]);
-} else if (command === 'verify' && arguments_.length === 1) {
-  result = await verify(arguments_[0]);
-} else {
-  throw new Error(
-    'Usage: playwright-evidence.mjs boundary <consumer> <workspace> | recover <results> | verify <results>',
-  );
-}
-process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
