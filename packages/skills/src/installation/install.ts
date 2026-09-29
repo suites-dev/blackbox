@@ -1,3 +1,4 @@
+import { constants } from 'node:fs';
 import { cp, lstat, mkdir, mkdtemp, open, readdir, rename, rm } from 'node:fs/promises';
 import { basename, dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -18,30 +19,34 @@ const AGENT_DIRECTORIES = {
 const skillSource = fileURLToPath(new URL('../../assets/discovery', import.meta.url));
 
 async function sameTree(source: string, target: string): Promise<boolean> {
-  const sourceStat = await lstat(source);
-  const targetStat = await lstat(target).catch(() => null);
-  if (
-    targetStat === null ||
-    sourceStat.isSymbolicLink() ||
-    targetStat.isSymbolicLink() ||
-    sourceStat.isDirectory() !== targetStat.isDirectory()
-  ) {
+  const sourceHandle = await open(source, constants.O_RDONLY | constants.O_NOFOLLOW).catch(() => null);
+  const targetHandle = await open(target, constants.O_RDONLY | constants.O_NOFOLLOW).catch(() => null);
+  if (sourceHandle === null || targetHandle === null) {
+    if (sourceHandle !== null) {
+      await sourceHandle.close();
+    }
+    if (targetHandle !== null) {
+      await targetHandle.close();
+    }
     return false;
   }
-  if (sourceStat.isDirectory()) {
-    const [sourceNames, targetNames] = await Promise.all([readdir(source), readdir(target)]);
-    if (sourceNames.length !== targetNames.length) {
+  try {
+    const [sourceStat, targetStat] = await Promise.all([sourceHandle.stat(), targetHandle.stat()]);
+    if (sourceStat.isDirectory() !== targetStat.isDirectory()) {
       return false;
     }
-    for (const name of sourceNames) {
-      if (!(await sameTree(join(source, name), join(target, name)))) {
+    if (sourceStat.isDirectory()) {
+      const [sourceNames, targetNames] = await Promise.all([readdir(source), readdir(target)]);
+      if (sourceNames.length !== targetNames.length) {
         return false;
       }
+      for (const name of sourceNames) {
+        if (!(await sameTree(join(source, name), join(target, name)))) {
+          return false;
+        }
+      }
+      return true;
     }
-    return true;
-  }
-  const [sourceHandle, targetHandle] = await Promise.all([open(source, 'r'), open(target, 'r')]);
-  try {
     return (await sourceHandle.readFile()).equals(await targetHandle.readFile());
   } finally {
     await Promise.all([sourceHandle.close(), targetHandle.close()]);
