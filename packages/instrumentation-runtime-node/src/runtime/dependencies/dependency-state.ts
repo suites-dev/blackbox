@@ -2,7 +2,7 @@ import { access, readFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { join } from 'node:path';
 
-import type { RuntimePreparationResult } from '@suites/blackbox-instrumentation-internal';
+import type { RuntimePreparationResult } from '@suites/blackbox-instrumentation';
 
 import type { NodeDependencyInstaller } from './dependency-installer.js';
 import { nodeInstrumentationDependencies } from '../bootstrap/bundle.js';

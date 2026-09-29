@@ -1,8 +1,8 @@
-import type { ResolvedCatalogDriver } from '@suites/blackbox-catalog-internal';
+import type { ResolvedCatalogDriver } from '@suites/blackbox-catalog';
 import type {
   SandboxContainerExecutionInput,
   SandboxHandle,
-} from '@suites/blackbox-sandbox-internal';
+} from '@suites/blackbox-sandbox';
 import { afterEach, expect, it } from 'vitest';
 
 import { runCapsuleDriver } from '../../driver-execution.js';

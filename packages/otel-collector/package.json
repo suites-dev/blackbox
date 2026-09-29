@@ -1,12 +1,21 @@
 {
-  "name": "@suites/blackbox-otel-collector-internal",
-  "version": "0.0.0",
-  "private": true,
+  "name": "@suites/blackbox-otel-collector",
+  "version": "0.0.1-alpha.0",
   "type": "module",
   "description": "Capsule-scoped OTLP/HTTP JSON trace receiver and retained trace reader.",
   "files": [
     "dist",
-    "schema"
+    "schema",
+    "README.md",
+    "LICENSE",
+    "NOTICE",
+    "src",
+    "!src/**/*.test.*",
+    "!src/**/*.spec.*",
+    "!src/**/*.fixture.*",
+    "!src/**/testing/**",
+    "!src/**/test-fixtures/**",
+    "!src/**/__tests__/**"
   ],
   "types": "./dist/index.d.ts",
   "exports": {
@@ -37,5 +46,22 @@
     "typescript": "catalog:",
     "vitest": "catalog:"
   },
-  "license": "Apache-2.0"
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=22.15"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/suites-dev/blackbox.git",
+    "directory": "packages/otel-collector"
+  },
+  "homepage": "https://github.com/suites-dev/blackbox/tree/main/packages/otel-collector#readme",
+  "bugs": {
+    "url": "https://github.com/suites-dev/blackbox/issues"
+  },
+  "author": "Suites"
 }

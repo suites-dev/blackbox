@@ -4,7 +4,7 @@ import {
   type PropagationExpectation,
   type TelemetryExecutionScope,
   type TelemetryPropagationRecord,
-} from '@suites/blackbox-telemetry-internal';
+} from '@suites/blackbox-telemetry';
 
 export function executionEnvironment(input: {
   readonly base: Readonly<Record<string, string>>;

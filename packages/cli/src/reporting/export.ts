@@ -4,7 +4,7 @@ import {
   renderCapsuleHtml,
   serializeCapsuleReportDocument,
   type CapsuleReportDocument,
-} from '@suites/blackbox-capsule-internal';
+} from '@suites/blackbox-capsule';
 
 export interface ExportReportInput {
   kind: 'export-report';

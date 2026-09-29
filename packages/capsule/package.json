@@ -1,12 +1,21 @@
 {
-  "name": "@suites/blackbox-capsule-internal",
-  "version": "0.0.0",
-  "private": true,
+  "name": "@suites/blackbox-capsule",
+  "version": "0.0.1-alpha.0",
   "type": "module",
-  "description": "Internal persistent Capsule session manager over Catalog and Sandbox.",
+  "description": "Persistent Capsule session manager over Catalog and Sandbox.",
   "files": [
     "dist",
-    "schema"
+    "schema",
+    "README.md",
+    "LICENSE",
+    "NOTICE",
+    "src",
+    "!src/**/*.test.*",
+    "!src/**/*.spec.*",
+    "!src/**/*.fixture.*",
+    "!src/**/testing/**",
+    "!src/**/test-fixtures/**",
+    "!src/**/__tests__/**"
   ],
   "types": "./dist/index.d.ts",
   "exports": {
@@ -30,11 +39,11 @@
   },
   "dependencies": {
     "@suites/blackbox-driver": "workspace:*",
-    "@suites/blackbox-catalog-internal": "workspace:*",
-    "@suites/blackbox-instrumentation-internal": "workspace:*",
-    "@suites/blackbox-otel-collector-internal": "workspace:*",
-    "@suites/blackbox-sandbox-internal": "workspace:*",
-    "@suites/blackbox-telemetry-internal": "workspace:*",
+    "@suites/blackbox-catalog": "workspace:*",
+    "@suites/blackbox-instrumentation": "workspace:*",
+    "@suites/blackbox-otel-collector": "workspace:*",
+    "@suites/blackbox-sandbox": "workspace:*",
+    "@suites/blackbox-telemetry": "workspace:*",
     "ajv": "8.20.0"
   },
   "devDependencies": {
@@ -43,5 +52,22 @@
     "typescript": "catalog:",
     "vitest": "catalog:"
   },
-  "license": "Apache-2.0"
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=22.15"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/suites-dev/blackbox.git",
+    "directory": "packages/capsule"
+  },
+  "homepage": "https://github.com/suites-dev/blackbox/tree/main/packages/capsule#readme",
+  "bugs": {
+    "url": "https://github.com/suites-dev/blackbox/issues"
+  },
+  "author": "Suites"
 }

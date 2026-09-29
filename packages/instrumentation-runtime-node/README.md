@@ -1,12 +1,12 @@
 # Node Instrumentation Runtime
 
-`@suites/blackbox-inst-runtime-node` is the private Node-specific leaf package for
+`@suites/blackbox-inst-runtime-node` is the public Node-specific leaf package for
 Blackbox instrumentation. It supplies the project-local OpenTelemetry bundle,
 dependency preparation, activation instructions, and Capsule activation adapters.
 
-This package is not published as a supported npm dependency. The CLI is its
-composition root; runtime-neutral installation and Capsule packages consume generic
-contracts rather than depending on this Node implementation.
+The CLI is its composition root; runtime-neutral installation and Capsule packages
+consume generic contracts rather than depending on this Node implementation. Its
+API is still evolving during alpha releases.
 
 ```text
 blackbox inst install --runtime node
@@ -74,7 +74,7 @@ value before appending the adapter value; see
 [`participantEnvironment()`](../sandbox/src/telemetry/environment.ts).
 
 This dependency direction is intentional: the Node runtime depends on
-`@suites/blackbox-instrumentation-internal` for provider and adapter types. The CLI
+`@suites/blackbox-instrumentation` for provider and adapter types. The CLI
 may select the Node leaf package, but Capsule and Sandbox receive only generic
 activation descriptors.
 

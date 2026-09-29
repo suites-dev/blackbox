@@ -1,8 +1,8 @@
-import type { SandboxHandle } from '@suites/blackbox-sandbox-internal';
+import type { SandboxHandle } from '@suites/blackbox-sandbox';
 import type {
   ActiveTelemetryExecutionScopeRecord,
   TelemetryScopeResult,
-} from '@suites/blackbox-telemetry-internal';
+} from '@suites/blackbox-telemetry';
 
 import type { CapsuleActivityPurpose } from './types.js';
 

@@ -1,11 +1,11 @@
 # Instrumentation Core
 
-`@suites/blackbox-instrumentation-internal` provides the shared installation and
+`@suites/blackbox-instrumentation` provides the shared installation and
 Capsule activation contracts for project-local runtime instrumentation.
 
-This is a private workspace package (`"private": true`). It is not published or a
-supported external API. Maintainers should consume it through workspace package
-imports rather than reaching into `src/`.
+This is a public alpha infrastructure package. Consumers should use its package
+exports rather than reaching into `src/`; the export surface may change between
+alpha releases.
 
 ## Where it fits
 
@@ -112,10 +112,10 @@ The package export map points workspace development at `src/index.ts` through th
 From the repository root:
 
 ```bash
-pnpm --filter @suites/blackbox-instrumentation-internal build
-pnpm --filter @suites/blackbox-instrumentation-internal lint
-pnpm --filter @suites/blackbox-instrumentation-internal test
-pnpm --filter @suites/blackbox-instrumentation-internal test:integration
+pnpm --filter @suites/blackbox-instrumentation build
+pnpm --filter @suites/blackbox-instrumentation lint
+pnpm --filter @suites/blackbox-instrumentation test
+pnpm --filter @suites/blackbox-instrumentation test:integration
 ```
 
 `test` uses [`vitest.config.ts`](vitest.config.ts): it includes `*.test.ts` and

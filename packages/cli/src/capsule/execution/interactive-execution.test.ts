@@ -6,7 +6,7 @@ import test from 'node:test';
 import type {
   CapsuleInteractiveControl,
   CapsuleInteractiveExecInput,
-} from '@suites/blackbox-capsule-internal';
+} from '@suites/blackbox-capsule';
 
 import {
   runInteractiveCapsuleExec,

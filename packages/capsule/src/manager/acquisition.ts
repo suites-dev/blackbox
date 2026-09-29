@@ -1,5 +1,5 @@
-import type { CatalogEntry, CatalogSandboxInput } from '@suites/blackbox-catalog-internal';
-import type { SandboxHandle } from '@suites/blackbox-sandbox-internal';
+import type { CatalogEntry, CatalogSandboxInput } from '@suites/blackbox-catalog';
+import type { SandboxHandle } from '@suites/blackbox-sandbox';
 
 import { awaitReadiness } from '../execution/commands.js';
 import type { CapsuleManagerBootstrap } from '../protocol.js';

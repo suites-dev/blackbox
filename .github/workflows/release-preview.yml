@@ -1,0 +1,130 @@
+name: Release Preview
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_type:
+        description: Version transition to preview
+        required: true
+        type: choice
+        options:
+          - prerelease
+          - stable
+        default: prerelease
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-preview-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CI: true
+  NODE_VERSION: 22.x
+  PNPM_VERSION: 9.15.4
+
+jobs:
+  preview:
+    name: Preview fixed release
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout exact requested ref
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          ref: ${{ github.sha }}
+
+      - name: Attach the immutable source to its release branch
+        id: source
+        env:
+          SOURCE_BRANCH: ${{ github.ref_name }}
+          SOURCE_COMMIT: ${{ github.sha }}
+        run: |
+          case "$GITHUB_REF" in
+            refs/heads/release/* | refs/heads/prepare-release/*) ;;
+            *)
+              echo "Release preview requires an allowed release branch" >&2
+              exit 1
+              ;;
+          esac
+          test "$(git rev-parse HEAD)" = "$SOURCE_COMMIT"
+          git switch --create "$SOURCE_BRANCH" "$SOURCE_COMMIT"
+          test "$(git rev-parse --abbrev-ref HEAD)" = "$SOURCE_BRANCH"
+          echo "commit=$SOURCE_COMMIT" >>"$GITHUB_OUTPUT"
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node without a shared cache
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          package-manager-cache: false
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Configure local version author
+        run: |
+          git config user.name "Blackbox Release Preview"
+          git config user.email "release-preview@users.noreply.github.com"
+
+      - name: Preview next prerelease
+        if: inputs.release_type == 'prerelease'
+        run: >-
+          pnpm exec lerna version prerelease
+          --conventional-commits
+          --conventional-prerelease
+          --preid alpha
+          --force-publish
+          --no-git-tag-version
+          --no-push
+          --yes
+
+      - name: Preview stable graduation
+        if: inputs.release_type == 'stable'
+        run: >-
+          pnpm exec lerna version
+          --conventional-graduate
+          --force-publish
+          --no-git-tag-version
+          --no-push
+          --yes
+
+      - name: Summarize proposed release
+        env:
+          RELEASE_TYPE: ${{ inputs.release_type }}
+          SOURCE_REF: ${{ github.ref_name }}
+        run: |
+          source_sha="$(git rev-parse HEAD)"
+          version="$(node -p "require('./packages/cli/package.json').version")"
+          {
+            echo "## Release preview"
+            echo
+            echo "- Source ref: `$SOURCE_REF`"
+            echo "- Source commit: `$source_sha`"
+            echo "- Transition: `$RELEASE_TYPE`"
+            echo "- Proposed fixed version: `$version`"
+            echo
+            echo "### Changed files"
+            echo
+            git status --short
+            echo
+            echo "### Version and changelog diff"
+            echo
+            echo '~~~diff'
+            git diff -- packages lerna.json pnpm-lock.yaml
+            echo '~~~'
+          } >>"$GITHUB_STEP_SUMMARY"
+
+      - name: Prove preview stayed local
+        env:
+          SOURCE_COMMIT: ${{ steps.source.outputs.commit }}
+        run: |
+          test -n "$(git status --porcelain)"
+          test "$(git rev-parse HEAD)" = "$SOURCE_COMMIT"

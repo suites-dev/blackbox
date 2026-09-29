@@ -6,7 +6,7 @@ import {
   type CapsuleExecInput,
   type CapsuleExecResult,
   type CapsuleProcessOutcome,
-} from '@suites/blackbox-capsule-internal';
+} from '@suites/blackbox-capsule';
 
 import { BlackboxCommand } from '../../cli/base-command.js';
 import { EXIT_CODES, type UsageExit } from '../../cli/exit-codes.js';

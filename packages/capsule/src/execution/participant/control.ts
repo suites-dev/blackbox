@@ -1,7 +1,7 @@
 import type {
   SandboxContainerControlResult,
   SandboxContainerExecution,
-} from '@suites/blackbox-sandbox-internal';
+} from '@suites/blackbox-sandbox';
 
 import type { CapsuleExecutionControl, CapsuleExecutionInteraction } from '../types.js';
 

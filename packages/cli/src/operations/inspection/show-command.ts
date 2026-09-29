@@ -3,7 +3,7 @@ import {
   type CapsuleActivityReport,
   type CapsuleObservationsInput,
   type CapsuleObservationsResult,
-} from '@suites/blackbox-capsule-internal';
+} from '@suites/blackbox-capsule';
 
 import { BlackboxCommand } from '../../cli/base-command.js';
 import { EXIT_CODES } from '../../cli/exit-codes.js';

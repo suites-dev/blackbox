@@ -1,4 +1,4 @@
-import { startCapsule, type CapsuleProgressMode } from '@suites/blackbox-capsule-internal';
+import { startCapsule, type CapsuleProgressMode } from '@suites/blackbox-capsule';
 import { nodeRuntimeActivationAdapters } from '@suites/blackbox-inst-runtime-node';
 
 import { BlackboxCommand } from '../../cli/base-command.js';

@@ -1,10 +1,10 @@
-import type { ResolvedCatalogDriver } from '@suites/blackbox-catalog-internal';
+import type { ResolvedCatalogDriver } from '@suites/blackbox-catalog';
 import type { DriverPreparation } from '@suites/blackbox-driver';
-import type { SandboxHandle } from '@suites/blackbox-sandbox-internal';
+import type { SandboxHandle } from '@suites/blackbox-sandbox';
 import type {
   TelemetryExecutionScope,
   TelemetryPropagationRecord,
-} from '@suites/blackbox-telemetry-internal';
+} from '@suites/blackbox-telemetry';
 
 import { capsuleConnectionEnvironment } from '../connection-environment.js';
 import type {

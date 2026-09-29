@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import test from 'node:test';
-import { renderCapsuleHtml, reportCapsule } from '@suites/blackbox-capsule-internal';
+import { renderCapsuleHtml, reportCapsule } from '@suites/blackbox-capsule';
 import { commandFixture, removeFixture, runCli } from './capsule-command.fixture.js';
 import { runningReportCli } from '../../reporting/serve.fixture.js';
 

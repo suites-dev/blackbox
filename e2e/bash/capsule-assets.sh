@@ -142,7 +142,7 @@ cat >"$DRIVER_DIRECTORY/package.json" <<EOF
   "type": "module",
   "dependencies": {
     "@suites/blackbox-driver": "file:$DRIVER_TARBALL",
-    "@suites/blackbox-telemetry-internal": "file:$TELEMETRY_TARBALL"
+    "@suites/blackbox-telemetry": "file:$TELEMETRY_TARBALL"
   }
 }
 EOF

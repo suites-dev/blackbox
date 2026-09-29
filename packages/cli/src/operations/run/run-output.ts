@@ -2,7 +2,7 @@ import type {
   CapsuleExecutionLocation,
   CapsuleExecutionOutcome,
   CapsuleProcessOutcome,
-} from '@suites/blackbox-capsule-internal';
+} from '@suites/blackbox-capsule';
 
 import { EXIT_CODES, signalExitCode } from '../../cli/exit-codes.js';
 import { formatDuration } from '../../cli/output.js';

@@ -6,7 +6,7 @@ import type {
   CapsuleInteractiveControlResult,
   CapsuleTerminalSize,
 } from './types.js';
-import type { RuntimeActivationAdapter } from '@suites/blackbox-instrumentation-internal';
+import type { RuntimeActivationAdapter } from '@suites/blackbox-instrumentation';
 
 export type CapsuleManagerRequest =
   | {

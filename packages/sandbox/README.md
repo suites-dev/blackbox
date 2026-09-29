@@ -1,12 +1,12 @@
 # Sandbox
 
-`@suites/blackbox-sandbox-internal` owns the lifecycle of one isolated Docker
+`@suites/blackbox-sandbox` owns the lifecycle of one isolated Docker
 Compose environment. It turns already-resolved Compose inputs into a running
 sandbox with mapped endpoints, inspectable resources, optional telemetry, command
 execution, retained ownership records, and bounded cleanup.
 
-This is a private workspace package. It is infrastructure for other Blackbox
-packages, not a standalone installation or user-facing configuration layer.
+This is a public alpha infrastructure package for other Blackbox packages. It is
+not a standalone user-facing configuration layer.
 
 ## Where Sandbox Fits
 
@@ -93,16 +93,16 @@ sandbox should stop.
 Run package checks from the repository root:
 
 ```bash
-pnpm --filter @suites/blackbox-sandbox-internal lint
-pnpm --filter @suites/blackbox-sandbox-internal build
-pnpm --filter @suites/blackbox-sandbox-internal test
+pnpm --filter @suites/blackbox-sandbox lint
+pnpm --filter @suites/blackbox-sandbox build
+pnpm --filter @suites/blackbox-sandbox test
 ```
 
 The unit suite does not opt into Docker-backed proof tests. With a disposable
 local Docker environment available, run the bounded proof explicitly:
 
 ```bash
-pnpm --filter @suites/blackbox-sandbox-internal test:docker
+pnpm --filter @suites/blackbox-sandbox test:docker
 ```
 
 The Docker proof creates isolated Compose projects and requires its owned

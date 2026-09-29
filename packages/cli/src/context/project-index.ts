@@ -4,7 +4,7 @@ import {
   readCapsuleObservations,
   type CapsuleActivityReport,
   type CapsuleSessionState,
-} from '@suites/blackbox-capsule-internal';
+} from '@suites/blackbox-capsule';
 
 import { PackageFailure, cliFailure } from '../cli/failure.js';
 import { capsuleFailure } from '../capsule/capsule-output.js';

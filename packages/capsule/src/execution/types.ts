@@ -3,12 +3,12 @@ import type {
   CollectorActivityReadResult,
   CollectorSessionReadResult,
   CollectorTraceReadResult,
-} from '@suites/blackbox-otel-collector-internal';
+} from '@suites/blackbox-otel-collector';
 import type {
   ActiveTelemetryExecutionScopeRecord,
   CompletedTelemetryExecutionScopeRecord,
   TelemetryPropagationRecord,
-} from '@suites/blackbox-telemetry-internal';
+} from '@suites/blackbox-telemetry';
 
 import type { CapsuleOperationFailure, CapsuleRecordedError } from '../types.js';
 

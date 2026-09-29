@@ -1,4 +1,4 @@
-import type { CatalogEntry } from '@suites/blackbox-catalog-internal';
+import type { CatalogEntry } from '@suites/blackbox-catalog';
 
 import { BlackboxCommand } from '../../cli/base-command.js';
 import { EXIT_CODES } from '../../cli/exit-codes.js';

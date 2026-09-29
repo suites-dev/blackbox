@@ -1,13 +1,12 @@
 # Telemetry contracts
 
-`@suites/blackbox-telemetry-internal` is the private workspace package for the
+`@suites/blackbox-telemetry` is the public alpha package for the
 execution-scope and W3C propagation records shared by Blackbox packages. It creates
 one trace identity for a Capsule activity, injects that identity into supported
 carriers, and checks that a recorded propagation outcome matches its expectation.
 
-It is not published as a supported npm dependency. It also does not instrument an
-application, receive OTLP, store spans, or prove that injected context was observed
-downstream.
+It does not instrument an application, receive OTLP, store spans, or prove that
+injected context was observed downstream. Its API may change between alpha releases.
 
 ```text
 Catalog propagation policy
@@ -98,10 +97,10 @@ in their respective packages.
 Run the package checks from the repository root with the pinned workspace toolchain:
 
 ```sh
-pnpm --filter @suites/blackbox-telemetry-internal lint
-pnpm --filter @suites/blackbox-telemetry-internal build
-pnpm --filter @suites/blackbox-telemetry-internal test
-pnpm --filter @suites/blackbox-telemetry-internal test:coverage
+pnpm --filter @suites/blackbox-telemetry lint
+pnpm --filter @suites/blackbox-telemetry build
+pnpm --filter @suites/blackbox-telemetry test
+pnpm --filter @suites/blackbox-telemetry test:coverage
 pnpm exec prettier --check packages/telemetry/README.md
 ```
 

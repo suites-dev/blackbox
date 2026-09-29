@@ -8,7 +8,7 @@ import type {
   SandboxEndpoint,
   SandboxHandle,
   SandboxStopInput,
-} from '@suites/blackbox-sandbox-internal';
+} from '@suites/blackbox-sandbox';
 
 import { admitCapsuleRecord, type CapsuleSessionRecord } from '../../records.js';
 import { serveManager } from '../requests.js';

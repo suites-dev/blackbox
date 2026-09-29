@@ -1,8 +1,8 @@
 import type {
   SandboxHandle,
   SandboxTelemetryStatus,
-} from '@suites/blackbox-sandbox-internal';
-import { createTelemetryExecutionScope } from '@suites/blackbox-telemetry-internal';
+} from '@suites/blackbox-sandbox';
+import { createTelemetryExecutionScope } from '@suites/blackbox-telemetry';
 import { afterEach, expect, it, vi } from 'vitest';
 
 import { exportActivityRootSpan } from './root-span.js';

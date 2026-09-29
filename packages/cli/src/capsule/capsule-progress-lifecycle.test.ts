@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import type { CapsuleProgressEvent } from '@suites/blackbox-capsule-internal';
+import type { CapsuleProgressEvent } from '@suites/blackbox-capsule';
 
 import { createCapsuleProgressRenderer } from './capsule-progress.js';
 

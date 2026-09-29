@@ -5,7 +5,7 @@ import {
   createTelemetryPropagationRecord,
   createTelemetryExecutionScope,
   type TelemetryScopeResult,
-} from '@suites/blackbox-telemetry-internal';
+} from '@suites/blackbox-telemetry';
 import type { DriverArgvRedaction } from '@suites/blackbox-driver';
 
 import { capsuleConnectionEnvironment } from '../connection-environment.js';

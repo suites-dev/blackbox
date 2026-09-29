@@ -1,10 +1,12 @@
 # Capsule
 
-`@suites/blackbox-capsule-internal` is the private workspace package that provides
+`@suites/blackbox-capsule` is the public alpha package that provides
 the runtime environment for investigations and owns their retained execution records
 and report semantics. An experiment is the procedure carried out in a Capsule; it is
 not a separate CLI object here. The [CLI](../cli/README.md) is the user-facing
 composition layer.
+
+Its API is still evolving during alpha releases.
 
 Capsule is the implemented system-test path today. Playwright integration is future
 work; it can reuse the Sandbox layer underneath, but this package does not currently
@@ -105,9 +107,9 @@ ports without Docker.
 From the repository root after `pnpm install --frozen-lockfile`:
 
 ```sh
-pnpm --filter @suites/blackbox-capsule-internal lint
-pnpm --filter @suites/blackbox-capsule-internal build
-pnpm --filter @suites/blackbox-capsule-internal test
+pnpm --filter @suites/blackbox-capsule lint
+pnpm --filter @suites/blackbox-capsule build
+pnpm --filter @suites/blackbox-capsule test
 pnpm exec prettier --check packages/capsule/README.md
 ```
 

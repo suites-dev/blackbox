@@ -1,4 +1,4 @@
-import type { CatalogSandboxInput } from '@suites/blackbox-catalog-internal';
+import type { CatalogSandboxInput } from '@suites/blackbox-catalog';
 
 export interface RequiredActivation {
   readonly runtime: string;

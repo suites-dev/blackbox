@@ -1,7 +1,7 @@
 import { access } from 'node:fs/promises';
 import { join } from 'node:path';
 
-import { packagedCollectorRuntime } from '@suites/blackbox-otel-collector-internal';
+import { packagedCollectorRuntime } from '@suites/blackbox-otel-collector';
 
 export type CapsuleCollectorRuntime =
   | { readonly kind: 'image-default'; readonly image: string }

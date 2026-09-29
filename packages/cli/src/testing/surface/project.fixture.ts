@@ -1,7 +1,7 @@
 import { mkdir, mkdtemp, realpath, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { capsuleSessionDirectory } from '@suites/blackbox-capsule-internal';
+import { capsuleSessionDirectory } from '@suites/blackbox-capsule';
 
 export interface FixtureActivity {
   readonly activityId: string;

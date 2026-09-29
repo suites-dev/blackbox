@@ -143,22 +143,22 @@ importers:
 
   packages/capsule:
     dependencies:
-      '@suites/blackbox-catalog-internal':
+      '@suites/blackbox-catalog':
         specifier: workspace:*
         version: link:../catalog
       '@suites/blackbox-driver':
         specifier: workspace:*
         version: link:../driver
-      '@suites/blackbox-instrumentation-internal':
+      '@suites/blackbox-instrumentation':
         specifier: workspace:*
         version: link:../instrumentation
-      '@suites/blackbox-otel-collector-internal':
+      '@suites/blackbox-otel-collector':
         specifier: workspace:*
         version: link:../otel-collector
-      '@suites/blackbox-sandbox-internal':
+      '@suites/blackbox-sandbox':
         specifier: workspace:*
         version: link:../sandbox
-      '@suites/blackbox-telemetry-internal':
+      '@suites/blackbox-telemetry':
         specifier: workspace:*
         version: link:../telemetry
       ajv:
@@ -180,7 +180,7 @@ importers:
 
   packages/catalog:
     dependencies:
-      '@suites/blackbox-telemetry-internal':
+      '@suites/blackbox-telemetry':
         specifier: workspace:*
         version: link:../telemetry
       ajv:
@@ -208,10 +208,10 @@ importers:
       '@oclif/core':
         specifier: ^5.1.0
         version: 5.1.0
-      '@suites/blackbox-capsule-internal':
+      '@suites/blackbox-capsule':
         specifier: workspace:*
         version: link:../capsule
-      '@suites/blackbox-catalog-internal':
+      '@suites/blackbox-catalog':
         specifier: workspace:*
         version: link:../catalog
       '@suites/blackbox-driver':
@@ -220,10 +220,10 @@ importers:
       '@suites/blackbox-inst-runtime-node':
         specifier: workspace:*
         version: link:../instrumentation-runtime-node
-      '@suites/blackbox-instrumentation-internal':
+      '@suites/blackbox-instrumentation':
         specifier: workspace:*
         version: link:../instrumentation
-      '@suites/blackbox-report-server-internal':
+      '@suites/blackbox-report-server':
         specifier: workspace:*
         version: link:../report-server
       string-width:
@@ -242,7 +242,7 @@ importers:
 
   packages/driver:
     dependencies:
-      '@suites/blackbox-telemetry-internal':
+      '@suites/blackbox-telemetry':
         specifier: workspace:*
         version: link:../telemetry
       ajv:
@@ -279,7 +279,7 @@ importers:
 
   packages/instrumentation-runtime-node:
     dependencies:
-      '@suites/blackbox-instrumentation-internal':
+      '@suites/blackbox-instrumentation':
         specifier: workspace:*
         version: link:../instrumentation
     devDependencies:
@@ -335,7 +335,7 @@ importers:
         specifier: 1.5.0
         version: 1.5.0
       testcontainers:
-        specifier: 'catalog:'
+        specifier: 12.1.0
         version: 12.1.0
     devDependencies:
       '@types/node':

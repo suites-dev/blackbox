@@ -2,9 +2,9 @@ import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import type { ResolvedCatalogDriver } from '@suites/blackbox-catalog-internal';
-import type { SandboxHandle } from '@suites/blackbox-sandbox-internal';
-import { createTelemetryExecutionScope } from '@suites/blackbox-telemetry-internal';
+import type { ResolvedCatalogDriver } from '@suites/blackbox-catalog';
+import type { SandboxHandle } from '@suites/blackbox-sandbox';
+import { createTelemetryExecutionScope } from '@suites/blackbox-telemetry';
 import type { CapsuleExecutionControl } from '../../types.js';
 
 const roots: string[] = [];

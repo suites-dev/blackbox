@@ -1,4 +1,4 @@
-import type { CapsuleInteractiveControl } from '@suites/blackbox-capsule-internal';
+import type { CapsuleInteractiveControl } from '@suites/blackbox-capsule';
 
 type ResolveNext = (result: IteratorResult<CapsuleInteractiveControl>) => void;
 

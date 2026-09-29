@@ -1,4 +1,4 @@
-import type { CapsuleProgressEvent } from '@suites/blackbox-capsule-internal';
+import type { CapsuleProgressEvent } from '@suites/blackbox-capsule';
 import { progressDetail } from './capsule-progress-details.js';
 import { InteractiveProgressRenderer } from '../progress/interactive-renderer.js';
 import { terminalText } from '../progress/terminal-text.js';
