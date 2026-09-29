@@ -1,6 +1,15 @@
 import { randomBytes } from 'node:crypto';
-import { link, mkdir, readFile, rename, unlink, writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import {
+  link,
+  lstat,
+  mkdir,
+  readFile,
+  realpath,
+  rename,
+  unlink,
+  writeFile,
+} from 'node:fs/promises';
+import { isAbsolute, join, relative, resolve } from 'node:path';
 
 import { isCapsuleIdShape } from './identifiers.js';
 
@@ -47,6 +56,57 @@ function errorCode(error: unknown): string {
     : '';
 }
 
+function within(path: string, root: string): boolean {
+  const value = relative(root, path);
+  return value === '' || (!value.startsWith('..') && !isAbsolute(value));
+}
+
+/**
+ * The state directory, verified before any mutation: `.blackbox` and `state`
+ * must be real directories (not symlinks) whose canonical path stays inside the
+ * canonical project directory, as driver installation already requires. With
+ * `create`, missing directories are created (mode 0700); without it, a missing
+ * directory yields null. Anything unsafe throws and nothing is written.
+ */
+async function safeStateDirectory(
+  projectDirectory: string,
+  create: boolean,
+): Promise<string | null> {
+  const root = resolve(await realpath(projectDirectory));
+  let directory = root;
+  for (const name of ['.blackbox', 'state']) {
+    const path = join(directory, name);
+    if (create) {
+      await mkdir(path, { mode: 0o700 }).catch((error: unknown) => {
+        if (errorCode(error) !== 'EEXIST') {
+          throw error;
+        }
+      });
+    }
+    let info;
+    try {
+      info = await lstat(path);
+    } catch (error) {
+      if (!create && errorCode(error) === 'ENOENT') {
+        return null;
+      }
+      throw error;
+    }
+    if (info.isSymbolicLink() || !info.isDirectory()) {
+      throw Object.assign(new Error(`Refusing unsafe state directory: ${path}`), {
+        code: 'EUNSAFE',
+      });
+    }
+    directory = resolve(await realpath(path));
+    if (!within(directory, root)) {
+      throw Object.assign(new Error(`State directory escapes the project: ${path}`), {
+        code: 'EUNSAFE',
+      });
+    }
+  }
+  return directory;
+}
+
 function parseContent(content: string): string | null {
   const value = content.endsWith('\n') ? content.slice(0, -1) : content;
   return isCapsuleIdShape(value) ? value : null;
@@ -70,14 +130,19 @@ export async function readCurrentCapsule(projectDirectory: string): Promise<Curr
  * writer wins. A failure is reported without the temp file's random name.
  */
 export async function setCurrentCapsule(projectDirectory: string, capsule: string): Promise<void> {
-  const directory = stateDirectory(projectDirectory);
-  const temporary = join(directory, `current-capsule.${String(process.pid)}.${token()}.tmp`);
+  let temporary: string | null = null;
   try {
-    await mkdir(directory, { recursive: true });
+    const directory = await safeStateDirectory(projectDirectory, true);
+    if (directory === null) {
+      throw new Error('state directory missing after creation');
+    }
+    temporary = join(directory, `current-capsule.${String(process.pid)}.${token()}.tmp`);
     await writeFile(temporary, `${capsule}\n`, { flag: 'wx', mode: 0o600 });
-    await rename(temporary, currentFile(projectDirectory));
+    await rename(temporary, join(directory, 'current-capsule'));
   } catch (error) {
-    await unlink(temporary).catch(() => undefined);
+    if (temporary !== null) {
+      await unlink(temporary).catch(() => undefined);
+    }
     const code = errorCode(error);
     throw new Error(`${code === '' ? 'error' : code} writing ${CURRENT_CAPSULE_RELATIVE_PATH}`, {
       cause: error,
@@ -121,13 +186,17 @@ async function clearIf(
   capsule: string,
   hooks: ClearHooks,
 ): Promise<ClearResult> {
-  const file = currentFile(projectDirectory);
+  const directory = await safeStateDirectory(projectDirectory, false);
+  if (directory === null) {
+    return 'not-current';
+  }
+  const file = join(directory, 'current-capsule');
   const before = await readIfPresent(file);
   if (before === null || parseContent(before) !== capsule) {
     return 'not-current';
   }
   await hooks.afterRead();
-  const clearing = join(stateDirectory(projectDirectory), `current-capsule.clearing-${token()}`);
+  const clearing = join(directory, `current-capsule.clearing-${token()}`);
   try {
     await rename(file, clearing);
   } catch (error) {

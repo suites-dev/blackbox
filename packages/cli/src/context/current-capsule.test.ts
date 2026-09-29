@@ -1,7 +1,16 @@
 import assert from 'node:assert/strict';
-import { mkdir, mkdtemp, readFile, readdir, rm, unlink, writeFile } from 'node:fs/promises';
+import {
+  mkdir,
+  mkdtemp,
+  readFile,
+  readdir,
+  rm,
+  symlink,
+  unlink,
+  writeFile,
+} from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import test from 'node:test';
 
 import {
@@ -127,6 +136,42 @@ void test('negative control: an unconditional clear loses a racing set(B)', asyn
     };
     await naive();
     assert.notEqual(await holds(directory), B);
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+void test('a symlinked state or .blackbox directory is refused and nothing outside the project changes', async () => {
+  for (const linked of ['state', '.blackbox'] as const) {
+    const directory = await project();
+    const outside = await mkdtemp(join(tmpdir(), 'bb-outside-'));
+    try {
+      const target = join(outside, 'current-capsule');
+      if (linked === 'state') {
+        await mkdir(join(directory, '.blackbox'));
+        await symlink(outside, join(directory, '.blackbox', 'state'));
+      } else {
+        await mkdir(join(outside, 'state'));
+        await symlink(outside, join(directory, '.blackbox'));
+      }
+      const external = linked === 'state' ? target : join(outside, 'state', 'current-capsule');
+      await writeFile(external, `${A}\n`);
+      await assert.rejects(setCurrentCapsule(directory, B), /EUNSAFE writing/u);
+      await assert.rejects(clearCurrentCapsuleIf(directory, A), /EUNSAFE clearing/u);
+      assert.equal(await readFile(external, 'utf8'), `${A}\n`, linked);
+      assert.deepEqual(await readdir(dirname(external)), ['current-capsule'], linked);
+    } finally {
+      await rm(directory, { recursive: true, force: true });
+      await rm(outside, { recursive: true, force: true });
+    }
+  }
+});
+
+void test('clearIf without a state directory is not-current and creates nothing', async () => {
+  const directory = await project();
+  try {
+    assert.equal(await clearCurrentCapsuleIf(directory, A), 'not-current');
+    assert.deepEqual(await readdir(directory), []);
   } finally {
     await rm(directory, { recursive: true, force: true });
   }
