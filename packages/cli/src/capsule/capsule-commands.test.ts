@@ -14,7 +14,7 @@ function durationOf(stderr: string): string {
   return match === null ? 'no duration' : match[1];
 }
 
-void test('exec forwards literal host argv and purpose through real CLI-to-manager IPC', async () => {
+void test('run forwards literal host argv and purpose through real CLI-to-manager IPC', async () => {
   const fixture = await commandFixture('running');
   const outcome = {
     kind: 'exited',
@@ -34,7 +34,7 @@ void test('exec forwards literal host argv and purpose through real CLI-to-manag
       directory: fixture.directory,
       argv: [
         'capsule',
-        'exec',
+        'run',
         '--session',
         fixture.sessionId,
         '--purpose',
@@ -49,7 +49,7 @@ void test('exec forwards literal host argv and purpose through real CLI-to-manag
       result.stderr,
       'visible-error\n' +
         `activity 00000000 · capsule ${fixture.sessionId} · setup · host · host · exit 7 · ${durationOf(result.stderr)}\n` +
-        `→ blackbox show 00000000 --capsule ${fixture.sessionId}\n`,
+        `→ blackbox capsule show 00000000 --session ${fixture.sessionId}\n`,
     );
     assert.equal(manager.requests.length, 1);
     assert.deepEqual((manager.requests[0] as { name: unknown }).name, { kind: 'omitted' });
@@ -64,7 +64,7 @@ void test('exec forwards literal host argv and purpose through real CLI-to-manag
   }
 });
 
-void test('JSON exec stdout is one parseable document even when the delegated command prints', async () => {
+void test('JSON run stdout is one parseable document even when the delegated command prints', async () => {
   const fixture = await commandFixture('running');
   const outcome = {
     kind: 'exited',
@@ -82,7 +82,7 @@ void test('JSON exec stdout is one parseable document even when the delegated co
   try {
     const result = await runCli({
       directory: fixture.directory,
-      argv: ['capsule', 'exec', '--session', fixture.sessionId, '--json', '--', ...outcome.argv],
+      argv: ['capsule', 'run', '--session', fixture.sessionId, '--json', '--', ...outcome.argv],
     });
     assert.equal(result.status, 0, result.stderr);
     assert.deepEqual(JSON.parse(result.stdout), {
@@ -90,7 +90,7 @@ void test('JSON exec stdout is one parseable document even when the delegated co
       activityId: fixtureActivityId,
       outcome,
       capsule: fixture.sessionId,
-      next: [`blackbox show 00000000 --capsule ${fixture.sessionId}`],
+      next: [`blackbox capsule show 00000000 --session ${fixture.sessionId}`],
     });
   } finally {
     await manager.close();
@@ -116,7 +116,7 @@ void test('signaled host commands remain failures and preserve diagnostic output
   try {
     const result = await runCli({
       directory: fixture.directory,
-      argv: ['capsule', 'exec', '--session', fixture.sessionId, '--', 'worker'],
+      argv: ['capsule', 'run', '--session', fixture.sessionId, '--', 'worker'],
     });
     assert.equal(result.status, 128 + 15);
     assert.equal(result.stdout, '');
@@ -128,12 +128,12 @@ void test('signaled host commands remain failures and preserve diagnostic output
   }
 });
 
-void test('stop is idempotent for an exact already-stopped session', async () => {
+void test('down is idempotent for an exact already-stopped session', async () => {
   const fixture = await commandFixture('stopped');
   try {
     const result = await runCli({
       directory: fixture.directory,
-      argv: ['capsule', 'stop', '--session', fixture.sessionId, '--json'],
+      argv: ['capsule', 'down', '--session', fixture.sessionId, '--json'],
     });
     assert.equal(result.status, 0, result.stderr);
     assert.deepEqual(JSON.parse(result.stdout), {
@@ -143,7 +143,7 @@ void test('stop is idempotent for an exact already-stopped session', async () =>
       alreadyStopped: true,
       capsule: fixture.sessionId,
       warnings: [],
-      next: [`blackbox report ${fixture.sessionId}`],
+      next: [`blackbox capsule report ${fixture.sessionId}`],
     });
   } finally {
     await removeFixture(fixture.directory);
@@ -154,8 +154,8 @@ void test('usage errors are rejected before any Capsule acquisition', async () =
   const fixture = await commandFixture('stopped');
   try {
     for (const argv of [
-      ['capsule', 'start', '--system', 'orders', '--silent', '--interactive'],
-      ['capsule', 'start', '--system', 'orders', '--env', 'NOT_AN_ASSIGNMENT'],
+      ['capsule', 'up', 'orders', '--silent', '--interactive'],
+      ['capsule', 'up', 'orders', '--env', 'NOT_AN_ASSIGNMENT'],
       [
         'capsule',
         'report',
@@ -174,12 +174,12 @@ void test('usage errors are rejected before any Capsule acquisition', async () =
       assert.equal(result.status, 2, result.stderr);
       assert.equal(result.stdout, '');
     }
-    // run (capsule exec) keeps 1..124 for the child: its usage errors exit 125.
+    // run keeps 1..124 for the child: its own usage errors exit 125.
     for (const argv of [
-      ['capsule', 'exec', '--session', fixture.sessionId],
-      ['capsule', 'exec', '--session', fixture.sessionId, '--name', '   ', '--', 'true'],
-      ['capsule', 'exec', '--session', fixture.sessionId, '--name', 'a'.repeat(121), '--', 'true'],
-      ['capsule', 'exec', '--session', fixture.sessionId, '--purpose', 'destructive', '--', 'true'],
+      ['capsule', 'run', '--session', fixture.sessionId],
+      ['capsule', 'run', '--session', fixture.sessionId, '--name', '   ', '--', 'true'],
+      ['capsule', 'run', '--session', fixture.sessionId, '--name', 'a'.repeat(121), '--', 'true'],
+      ['capsule', 'run', '--session', fixture.sessionId, '--purpose', 'destructive', '--', 'true'],
     ]) {
       const result = await runCli({ directory: fixture.directory, argv });
       assert.equal(result.status, 125, result.stderr);
@@ -195,14 +195,14 @@ void test('JSON operation failures emit one parseable document without human dia
   try {
     const result = await runCli({
       directory: fixture.directory,
-      argv: ['capsule', 'exec', '--session', fixture.sessionId, '--json', '--', 'true'],
+      argv: ['capsule', 'run', '--session', fixture.sessionId, '--json', '--', 'true'],
     });
     assert.equal(result.status, 125);
     assert.deepEqual(JSON.parse(result.stdout), {
       kind: 'cli-error',
       code: 'capsule-not-running',
       message: `capsule ${fixture.sessionId} is stopped; run needs a running capsule`,
-      next: ['blackbox up'],
+      next: ['blackbox capsule up'],
     });
     assert.equal(result.stderr, '');
   } finally {

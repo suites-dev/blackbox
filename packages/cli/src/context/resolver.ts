@@ -34,7 +34,7 @@ function unknown(input: string): CliFailure {
     message: `no capsule, activity or trace matches ${input}`,
     details: [],
     candidates: [],
-    next: ['blackbox ls --all'],
+    next: ['blackbox capsule ls --all'],
   });
 }
 
@@ -57,7 +57,7 @@ function mismatch(input: string, scope: string, owners: readonly Match[]): CliFa
     message: `${input} is not in capsule ${scope}`,
     details: owner === null ? [] : [`it belongs to capsule ${owner.capsule}`],
     candidates: owner === null ? [] : [owner.candidate],
-    next: owner === null ? [] : [`blackbox show ${input} --capsule ${owner.capsule}`],
+    next: owner === null ? [] : [`blackbox capsule show ${input} --session ${owner.capsule}`],
   });
 }
 
@@ -165,6 +165,6 @@ async function unknownActivity(index: ProjectIndex, input: string): Promise<CliF
     message: `no readable activity matches ${input}; the activity records of ${String(unreadable.length)} ${unreadable.length === 1 ? 'capsule' : 'capsules'} could not be read`,
     details: unreadable.map((capsule) => `unreadable: ${capsule}`),
     candidates: [],
-    next: ['blackbox ls --all'],
+    next: ['blackbox capsule ls --all'],
   });
 }

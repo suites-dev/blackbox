@@ -2,23 +2,22 @@ import { DEFAULT_REPORT_PORT } from '@suites/blackbox-report-server';
 import { Flags } from '@oclif/core';
 
 import { InvocationContext } from '../../../context/invocation.js';
-import { OpenCommand } from '../../../operations/viewing/open-command.js';
+import { ReportServeCommand } from '../../../operations/viewing/report-serve-command.js';
 
 /**
- * Hidden alias: `capsule report serve` → `open`. Without --session it shows the
- * registry, and the browser opens only with --open. Its three lines keep
- * today's exact text because the E2E harness parses them.
+ * Without --session the viewer shows the registry, and the browser opens only
+ * with --open. Its three lines keep today's exact text because the E2E harness
+ * parses them.
  */
-export default class CapsuleReportServe extends OpenCommand {
-  static override hidden = true;
-  static override description =
-    'Start or reuse the local Capsule report viewer; the owner stays until Ctrl-C.';
+export default class CapsuleReportServe extends ReportServeCommand {
+  static override summary =
+    'Start or reuse the local capsule report viewer; the owner stays until Ctrl-C.';
   static override examples = [
     '<%= config.bin %> capsule report serve --open',
     '<%= config.bin %> capsule report serve --session quiet-river-ada --open',
   ];
   static override flags = {
-    session: Flags.string({ description: 'Initially select this exact session' }),
+    session: Flags.string({ description: 'Initially select this exact capsule' }),
     port: Flags.integer({
       min: 0,
       max: 65535,

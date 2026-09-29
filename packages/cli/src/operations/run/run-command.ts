@@ -22,7 +22,6 @@ import { processOutcome, runExitCode, runSummaryLines } from './run-output.js';
 export interface RunRequest {
   readonly capsuleFlag: string | null;
   readonly driver: string | null;
-  readonly driverFlag: '--via' | '--driver';
   readonly name: string | null;
   readonly purpose: CapsuleActivityPurpose;
   readonly allowUntraced: boolean;
@@ -53,7 +52,7 @@ export abstract class RunCommand extends BlackboxCommand {
   protected async executeRun(request: RunRequest): Promise<void> {
     const argv = this.childArgv();
     if (request.driver === null && request.allowUntraced) {
-      throw this.usageFailure(`--allow-untraced requires ${request.driverFlag}`);
+      throw this.usageFailure('--allow-untraced requires --via');
     }
     const name = this.activityName(request.name);
     const context = new InvocationContext(process.cwd());
@@ -63,7 +62,7 @@ export abstract class RunCommand extends BlackboxCommand {
       throw cliFailure(
         'capsule-not-running',
         `capsule ${capsule} is ${summary.state}; run needs a running capsule`,
-        ['blackbox up'],
+        ['blackbox capsule up'],
       );
     }
     const execInput = {

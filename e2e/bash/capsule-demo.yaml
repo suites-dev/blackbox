@@ -24,28 +24,28 @@ steps:
   - id: systems
     explanation: List the systems that can be started.
     kind: cli
-    command: systems
+    command: catalog ls
   - id: serve
     explanation: Open flight control before startup; leave it visible while the remaining commands run.
     kind: serve
-    command: open
+    command: capsule report serve
   - id: start
     explanation: Start one Capsule. It becomes the current capsule, so later commands need no ID.
     kind: cli
-    command: up subscription-system --title "Recorded Capsule demo" --description "Explore subscription activation" --env FIXTURE_CONTROL_TOKEN=${FIXTURE_CONTROL_TOKEN} --json
+    command: capsule up subscription-system --title "Recorded Capsule demo" --description "Explore subscription activation" --env FIXTURE_CONTROL_TOKEN=${FIXTURE_CONTROL_TOKEN} --json
   - id: list
     explanation: List running capsules; the star marks the current one.
     kind: cli
-    command: ls
+    command: capsule ls
   - id: health
     explanation: Run user-owned curl directly on the host, in the current capsule, and record it as inspection.
     kind: cli
-    command: run --name "Check readiness" --purpose inspection -- curl --fail --silent --show-error ${ENTRYPOINT_URL}/health
+    command: capsule run --name "Check readiness" --purpose inspection -- curl --fail --silent --show-error ${ENTRYPOINT_URL}/health
   - id: fixture-reset
     explanation: Establish the known initial fixture state before the stimulus.
     kind: cli
     command: >-
-      run
+      capsule run
       --name "Reset fixture state"
       --purpose setup
       -- curl --fail --silent --show-error
@@ -58,7 +58,7 @@ steps:
     explanation: Pass a normal curl command through the HTTP driver, which adds endpoint and W3C context.
     kind: cli
     command: >-
-      run
+      capsule run
       --name "Create Alice subscription"
       --via public-api
       --purpose stimulus
@@ -71,20 +71,20 @@ steps:
   - id: show-capsule
     explanation: Show the capsule, its activities and the traces retained so far.
     kind: cli
-    command: show ${SESSION_ID}
+    command: capsule show ${SESSION_ID}
   - id: observations-activity
     explanation: Show the traced HTTP driver activity and the trace it owns.
     kind: cli
-    command: show ${DRIVER_ACTIVITY_ID} --capsule ${SESSION_ID} --json
+    command: capsule show ${DRIVER_ACTIVITY_ID} --session ${SESSION_ID} --json
   - id: show-trace
     explanation: Show one exact W3C trace from the Capsule collector.
     kind: cli
-    command: show ${TRACE_ID} --capsule ${SESSION_ID}
+    command: capsule show ${TRACE_ID} --session ${SESSION_ID}
   - id: postgres-driver
     explanation: Run the unchanged psql command where the catalog says the client is available.
     kind: cli
     command: >-
-      run
+      capsule run
       --name "Inspect Alice subscription"
       --via postgres
       --purpose inspection
@@ -94,24 +94,24 @@ steps:
   - id: report-json
     explanation: Export the running experiment to JSON on stdout; flight control remains open.
     kind: cli
-    command: report ${SESSION_ID} --format json --output -
+    command: capsule report ${SESSION_ID} --format json --output -
   - id: report-running
     explanation: Write the HTML and JSON reports to their automatic paths while the Capsule is running.
     kind: cli
-    command: report ${SESSION_ID}
+    command: capsule report ${SESSION_ID}
   - id: stop
     explanation: Release the Capsule's resources; its history stays visible in flight control.
     kind: cli
-    command: down ${SESSION_ID}
+    command: capsule down ${SESSION_ID}
   - id: report-stopped-json
     explanation: Export the stopped Capsule to stdout and inspect the actual cleanup result.
     kind: cli
-    command: report ${SESSION_ID} --format json --output -
+    command: capsule report ${SESSION_ID} --format json --output -
   - id: report-html
     explanation: Generate the final portable HTML after teardown.
     kind: cli
-    command: report ${SESSION_ID} --format html
+    command: capsule report ${SESSION_ID} --format html
   - id: serve-exact
     explanation: Reopen flight control directly on this exact retained experiment; no containers are started.
     kind: serve
-    command: open ${SESSION_ID}
+    command: capsule report serve --session ${SESSION_ID}

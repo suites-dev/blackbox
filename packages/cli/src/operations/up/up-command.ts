@@ -118,7 +118,7 @@ export abstract class UpCommand extends BlackboxCommand {
     const { list } = await loadCatalogDetails(process.cwd());
     if (list.defaultEntry === '') {
       throw cliFailure('system-required', 'no system given and the catalog has no default', [
-        'blackbox systems',
+        'blackbox catalog ls',
       ]);
     }
     return list.defaultEntry;

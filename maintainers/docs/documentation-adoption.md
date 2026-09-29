@@ -52,18 +52,18 @@ must retain their own revision and execution evidence.
 
 ## Replace older examples
 
-| Old bundle example                       | Current branch                                                                    |
-| ---------------------------------------- | --------------------------------------------------------------------------------- |
-| `blackbox.config.ts`                     | `blackbox.config.yaml`                                                            |
-| Positional system and Capsule IDs        | `--system <id>` and `--session <id>`                                              |
-| `--intent`                               | `--description` on Capsule startup                                                |
-| `--role diagnostic`                      | `--purpose inspection` on execution                                               |
-| `capsule curl`                           | `capsule exec --session <id> -- curl ...`, optionally with a catalog driver       |
-| Positional participant on `capsule exec` | Select `--driver <name>`; its catalog declaration selects the execution location. |
-| `capsule effects`                        | No equivalent normalized-effects command. Use `observations` for raw telemetry.   |
-| `capsule checkpoint`                     | Not implemented.                                                                  |
-| `capsule report <id> --open`             | `capsule report serve --session <id> --open`                                      |
-| `capsule report --json`                  | `capsule report export --session <id> --format json --output -`                   |
+| Old bundle example                      | Current branch                                                                  |
+| --------------------------------------- | ------------------------------------------------------------------------------- |
+| `blackbox.config.ts`                    | `blackbox.config.yaml`                                                          |
+| Positional system and Capsule IDs       | `--system <id>` and `--session <id>`                                            |
+| `--intent`                              | `--description` on Capsule startup                                              |
+| `--role diagnostic`                     | `--purpose inspection` on execution                                             |
+| `capsule curl`                          | `capsule run --session <id> -- curl ...`, optionally with a catalog driver      |
+| Positional participant on `capsule run` | Select `--via <name>`; its catalog declaration selects the execution location.  |
+| `capsule effects`                       | No equivalent normalized-effects command. Use `observations` for raw telemetry. |
+| `capsule checkpoint`                    | Not implemented.                                                                |
+| `capsule report <id> --open`            | `capsule report serve --session <id> --open`                                    |
+| `capsule report --json`                 | `capsule report export --session <id> --format json --output -`                 |
 
 ## Command storyboard as documentation source
 

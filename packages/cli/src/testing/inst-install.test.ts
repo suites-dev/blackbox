@@ -49,10 +49,7 @@ void test('inst install creates the Node bootstrap and repeat installation leave
     const after = await Promise.all([modifiedAt(packageFile), modifiedAt(sourceFile)]);
     assert.equal(second.status, 0, second.stderr);
     assert.match(second.stdout, /already current/u);
-    assert.deepEqual(
-      after,
-      before,
-    );
+    assert.deepEqual(after, before);
     assert.equal(JSON.parse(await readFile(packageFile, 'utf8')).private, true);
   } finally {
     await rm(projectDirectory, { recursive: true, force: true });

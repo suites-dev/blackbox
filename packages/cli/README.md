@@ -16,15 +16,15 @@ Run commands from the project directory that contains `blackbox.config.yaml`.
 The complete option-level contract lives in the [CLI reference](../../docs/cli.md)
 and generated `--help` output.
 
-| Group             | Implemented commands                                           | Delegates to                                                                                                                                                                            |
-| ----------------- | -------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Catalog           | `catalog validate`, `catalog list`                             | [`catalog`](../catalog/README.md) parses and validates project and Compose inputs.                                                                                                      |
-| Project setup     | `driver install --runtime node`, `inst install --runtime node` | [`driver`](../driver/src), [`instrumentation`](../instrumentation/src), and [`instrumentation-runtime-node`](../instrumentation-runtime-node/src) produce project-local runtime assets. |
-| Capsule lifecycle | `capsule start`, `capsule exec`, `capsule stop`                | [`capsule`](../capsule/README.md) acquires resources, retains activities, and cleans up owned resources. The CLI supplies Node runtime activation adapters when starting a Capsule.     |
-| Evidence          | `observations --session <id>`                                  | `capsule` reads retained observations at session, activity, or trace scope.                                                                                                             |
-| Reports           | `capsule report serve`, `capsule report export`                | `capsule` projects retained records; [`report-server`](../report-server/README.md) serves the local read-only viewer.                                                                   |
+| Group             | Implemented commands                                              | Delegates to                                                                                                                                                                            |
+| ----------------- | ----------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Catalog           | `catalog validate`, `catalog ls`                                  | [`catalog`](../catalog/README.md) parses and validates project and Compose inputs.                                                                                                      |
+| Project setup     | `driver install --runtime node`, `inst install --runtime node`    | [`driver`](../driver/src), [`instrumentation`](../instrumentation/src), and [`instrumentation-runtime-node`](../instrumentation-runtime-node/src) produce project-local runtime assets. |
+| Capsule lifecycle | `capsule up`, `capsule run`, `capsule down`                       | [`capsule`](../capsule/README.md) acquires resources, retains activities, and cleans up owned resources. The CLI supplies Node runtime activation adapters when starting a Capsule.     |
+| Evidence          | `observations --session <id>`                                     | `capsule` reads retained observations at session, activity, or trace scope.                                                                                                             |
+| Reports           | `capsule report`, `capsule report serve`, `capsule report export` | `capsule` projects retained records; [`report-server`](../report-server/README.md) serves the local read-only viewer.                                                                   |
 
-The reserved `setup init`, `skill install discovery`, `history`, `report`, and
+The reserved `setup init`, `skill install discovery`, and
 `effects baseline update --run <id>` routes deliberately fail closed with exit
 code `3`. They are planned command contracts, not working integrations. The CLI
 must not report a successful artifact until a backend exists.
@@ -34,16 +34,16 @@ must not report a successful artifact until a backend exists.
 ```text
 blackbox inst install --runtime node
 blackbox catalog validate --json
-blackbox catalog list --json
-blackbox capsule start --system <system-id> --json
-blackbox capsule exec --session <session-id> -- <command>
+blackbox catalog ls --json
+blackbox capsule up <system-id> --json
+blackbox capsule run --session <session-id> -- <command>
 blackbox observations --session <session-id> --json
 blackbox capsule report export --session <session-id> --format html
-blackbox capsule stop --session <session-id> --json
+blackbox capsule down --session <session-id> --json
 ```
 
-`capsule start` delegates acquisition and returns only after startup and
-readiness work completes. `capsule exec` runs a host command unless `--driver <name>`
+`capsule up` delegates acquisition and returns only after startup and
+readiness work completes. `capsule run` runs a host command unless `--via <name>`
 selects a catalog driver; the driver's declaration decides whether execution is
 on the host or in a participant container. `--purpose` records `setup`,
 `stimulus`, or `inspection` intent but does not make a command read-only.

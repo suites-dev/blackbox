@@ -18,7 +18,16 @@ async function runOutcome(outcome: Readonly<Record<string, unknown>>, ...extra: 
   const fixture = await twoCapsuleProject();
   const manager = await fakeManager({ socketPath: fixture.socket(CAPSULE_A), outcome });
   try {
-    return await run(fixture.directory, 'run', '--capsule', CAPSULE_A, ...extra, '--', 'sh');
+    return await run(
+      fixture.directory,
+      'capsule',
+      'run',
+      '--session',
+      CAPSULE_A,
+      ...extra,
+      '--',
+      'sh',
+    );
   } finally {
     await manager.close();
     await fixture.remove();
@@ -74,7 +83,7 @@ void test('run returns 127 for a missing executable and 125 for a driver failure
     prepareFailed.stderr,
     `activity 00000000 · capsule ${CAPSULE_A} · stimulus · via public-api · not run\n` +
       'blackbox: Driver "public-api" could not prepare the command: no endpoint\n' +
-      `→ blackbox show 00000000 --capsule ${CAPSULE_A}\n`,
+      `→ blackbox capsule show 00000000 --session ${CAPSULE_A}\n`,
   );
 });
 
@@ -90,11 +99,10 @@ void test('run turns every usage and resolution error into 125', async () => {
   ]);
   try {
     const cases = [
-      [['run', '--no-such-flag', '--', 'true'], 'usage'],
-      [['run', '--capsule', CAPSULE_A], 'usage'],
-      [['run', '--', 'true'], 'capsule-unresolved'],
-      [['run', '--capsule', CAPSULE_A, '--', 'true'], 'capsule-not-running'],
-      [['capsule', 'exec', '--no-such-flag', '--session', CAPSULE_A, '--', 'true'], 'usage'],
+      [['capsule', 'run', '--no-such-flag', '--', 'true'], 'usage'],
+      [['capsule', 'run', '--session', CAPSULE_A], 'usage'],
+      [['capsule', 'run', '--', 'true'], 'capsule-unresolved'],
+      [['capsule', 'run', '--session', CAPSULE_A, '--', 'true'], 'capsule-not-running'],
     ] as const;
     for (const [argv, code] of cases) {
       const human = await run(fixture.directory, ...argv);
@@ -112,14 +120,14 @@ void test('run turns every usage and resolution error into 125', async () => {
 void test('the same flag error exits 2 on show; oclif default 2 is what run overrides', async () => {
   const fixture = await twoCapsuleProject();
   try {
-    const show = await run(fixture.directory, 'show', ACTIVITY_A, '--no-such-flag');
+    const show = await run(fixture.directory, 'capsule', 'show', ACTIVITY_A, '--no-such-flag');
     assert.equal(show.status, EXIT_CODES.usage);
     assert.match(show.stderr, /^blackbox: Nonexistent flag: --no-such-flag\n/u);
-    assert.match(show.stderr, /→ blackbox show --help\n$/u);
+    assert.match(show.stderr, /→ blackbox capsule show --help\n$/u);
     // Negative control: an unchanged plain oclif command keeps oclif's own 2.
     const plain = await run(fixture.directory, 'catalog', 'validate', '--no-such-flag');
     assert.equal(plain.status, 2);
-    const runFlag = await run(fixture.directory, 'run', '--no-such-flag', '--', 'true');
+    const runFlag = await run(fixture.directory, 'capsule', 'run', '--no-such-flag', '--', 'true');
     assert.notEqual(runFlag.status, plain.status);
   } finally {
     await fixture.remove();
@@ -130,18 +138,21 @@ void test('other commands: usage/resolution 2, Blackbox failure 125, reserved 3,
   const fixture = await twoCapsuleProject();
   try {
     const expectations = [
-      [['show', 'deadbeef'], EXIT_CODES.usage],
-      [['down', ACTIVITY_A], EXIT_CODES.usage],
-      [['down'], EXIT_CODES.usage],
-      [['report', '--output', '-', '--json'], EXIT_CODES.usage],
-      [['use', 'no-such-capsule-000000000009'], EXIT_CODES.usage],
-      [['down', '--capsule', 'quiet-river-ada-000000000009'], EXIT_CODES.blackboxFailure],
+      [['capsule', 'show', 'deadbeef'], EXIT_CODES.usage],
+      [['capsule', 'down', ACTIVITY_A], EXIT_CODES.usage],
+      [['capsule', 'down'], EXIT_CODES.usage],
+      [['capsule', 'report', '--output', '-', '--json'], EXIT_CODES.usage],
+      [['capsule', 'use', 'no-such-capsule-000000000009'], EXIT_CODES.usage],
       [
-        ['show', ACTIVITY_A, '--capsule', 'quiet-river-ada-000000000009'],
+        ['capsule', 'down', '--session', 'quiet-river-ada-000000000009'],
+        EXIT_CODES.blackboxFailure,
+      ],
+      [
+        ['capsule', 'show', ACTIVITY_A, '--session', 'quiet-river-ada-000000000009'],
         EXIT_CODES.blackboxFailure,
       ],
       [['setup', 'init'], EXIT_CODES.reserved],
-      [['ls'], EXIT_CODES.success],
+      [['capsule', 'ls'], EXIT_CODES.success],
     ] as const;
     for (const [argv, code] of expectations) {
       const result = await run(fixture.directory, ...argv);

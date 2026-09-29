@@ -59,8 +59,8 @@ begin
       step.fetch('command'),
       values
     )
-    # CI has no browser: --no-browser keeps `open` from trying to launch one.
-    arguments += ['--no-browser'] if kind == 'serve' && options['--no-browser']
+    # `capsule report serve` opens no browser unless asked; CI never asks.
+    arguments += ['--open'] if kind == 'serve' && !options['--no-browser']
     executable = if kind == 'shell'
                    [File.join(root, arguments.fetch(0)), *arguments.drop(1)]
                  else
@@ -91,12 +91,13 @@ begin
       input.close
       server_url = nil
       ownership = nil
-      # `open` announces `flight control: <url>`, then `viewer: started, …` or
-      # `viewer: reused` (on stderr, merged here).
+      # `capsule report serve` announces `Blackbox reports: <url>`, then
+      # `Viewer ownership: started` or `Viewer ownership: reused` (on stderr,
+      # merged here).
       while (line = output.gets)
         print line
-        server_url = line.sub(/^flight control: /, '').strip if line.start_with?('flight control: ')
-        ownership = line.sub(/^viewer: /, '').split(',').first.strip if line.start_with?('viewer: ')
+        server_url = line.sub(/^Blackbox reports: /, '').strip if line.start_with?('Blackbox reports: ')
+        ownership = line.sub(/^Viewer ownership: /, '').strip if line.start_with?('Viewer ownership: ')
         break if server_url && ownership
       end
       abort 'Report server did not announce a URL' unless server_url
@@ -152,6 +153,6 @@ ensure
     warn error.message
   end
   if values['SESSION_ID'] != '' && !session_stopped
-    system(blackbox_bin, 'down', values['SESSION_ID'], '--json', chdir: project_directory)
+    system(blackbox_bin, 'capsule', 'down', values['SESSION_ID'], '--json', chdir: project_directory)
   end
 end

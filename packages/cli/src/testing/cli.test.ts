@@ -41,32 +41,33 @@ activations: {}
 }
 
 const VISIBLE_COMMANDS = [
-  'up',
-  'run',
-  'down',
-  'show',
-  'ls',
-  'use',
-  'open',
-  'report',
-  'systems',
+  'capsule up',
+  'capsule run',
+  'capsule down',
+  'capsule show',
+  'capsule ls',
+  'capsule use',
+  'capsule report',
+  'capsule report serve',
+  'capsule report export',
+  'catalog ls',
   'catalog validate',
   'driver install',
   'inst install',
 ];
 
-void test('root help lists exactly the visible commands, in order, and hides aliases', async () => {
+void test('root help lists exactly the visible commands, in order, and hides the reserved ones', async () => {
   const result = await runCli({ directory: process.cwd(), argv: ['--help'] });
   assert.equal(result.status, 0, result.stderr);
   assert.match(result.stdout, /Sandboxes, Testing, and Assurance/u);
   const commands = result.stdout.slice(result.stdout.indexOf('COMMANDS\n'));
-  const listed = [...commands.matchAll(/^ {2}(\S+(?: [a-z]+)?) {2,}/gmu)].map((match) => match[1]);
+  const listed = [...commands.matchAll(/^ {2}(\S+(?: [a-z]+){0,2}?) {2,}/gmu)].map(
+    (match) => match[1],
+  );
   assert.deepEqual(listed, VISIBLE_COMMANDS);
   for (const hidden of [
-    'capsule',
     'observations',
     'history',
-    'catalog list',
     'setup init',
     'skill install',
     'effects baseline update',
@@ -75,10 +76,10 @@ void test('root help lists exactly the visible commands, in order, and hides ali
   }
 });
 
-void test('catalog list delegates to the catalog package and emits deterministic JSON', async () => {
+void test('catalog ls delegates to the catalog package and emits deterministic JSON', async () => {
   const directory = await catalogProject();
   try {
-    const result = await runCli({ directory, argv: ['catalog', 'list', '--json'] });
+    const result = await runCli({ directory, argv: ['catalog', 'ls', '--json'] });
     assert.equal(result.status, 0, result.stderr);
     assert.deepEqual(JSON.parse(result.stdout), {
       default: 'orders',

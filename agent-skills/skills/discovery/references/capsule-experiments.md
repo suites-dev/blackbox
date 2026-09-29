@@ -14,8 +14,8 @@ as a requirement only when the claim actually needs it.
 A title or description is not an assertion. Discovery can suggest expectations; confirmation requires independently
 accepted expectations and fresh evidence. Do not accept whatever happened merely because it was recorded.
 
-Reuse the root catalog and supported acquisition path. Current commands are `capsule start --system <system>`,
-`capsule exec --session <id>`, `observations --session <id>`, `capsule stop --session <id>`, and
+Reuse the root catalog and supported acquisition path. Current commands are `capsule up <system>`,
+`capsule run --session <id>`, `observations --session <id>`, `capsule down --session <id>`, and
 `capsule report serve|export --session <id>`. Inspect installed help for other flags. There are no current
 `capsule curl`, `capsule effects`, or `capsule checkpoint` operations.
 

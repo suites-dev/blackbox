@@ -8,7 +8,7 @@ export default class Down extends DownCommand {
     capsule: Args.string({ description: 'Capsule ID (defaults to the resolved capsule)' }),
   };
   static override flags = {
-    capsule: Flags.string({ description: 'Capsule ID' }),
+    session: Flags.string({ description: 'Capsule ID' }),
     json: Flags.boolean({ default: false }),
   };
 
@@ -16,7 +16,7 @@ export default class Down extends DownCommand {
     const { args, flags } = await this.parseInput(() => this.parse(Down));
     await this.executeDown({
       positional: args.capsule ?? null,
-      capsuleFlag: flags.capsule ?? null,
+      capsuleFlag: flags.session ?? null,
       json: flags.json,
     });
   }

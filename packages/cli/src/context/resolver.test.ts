@@ -51,7 +51,7 @@ void test('capsule IDs match exactly; a capsule prefix is unknown', async () => 
     assert.equal(described(await resolveId(index, CAPSULE_B, PROJECT)), `capsule:${CAPSULE_B}:`);
     const failure = await failureOf(resolveId(index, CAPSULE_B.slice(0, -1), PROJECT));
     assert.equal(failure.detail.code, 'id-unknown');
-    assert.deepEqual(failure.detail.next, ['blackbox ls --all']);
+    assert.deepEqual(failure.detail.next, ['blackbox capsule ls --all']);
   } finally {
     await fixture.remove();
   }
@@ -143,7 +143,9 @@ void test('an explicit context that does not contain the ID is a mismatch naming
       assert.equal(failure.detail.code, 'id-capsule-mismatch');
       assert.equal(failure.detail.message, `${input} is not in capsule ${CAPSULE_B}`);
       assert.deepEqual(failure.detail.details, [`it belongs to capsule ${CAPSULE_A}`]);
-      assert.deepEqual(failure.detail.next, [`blackbox show ${input} --capsule ${CAPSULE_A}`]);
+      assert.deepEqual(failure.detail.next, [
+        `blackbox capsule show ${input} --session ${CAPSULE_A}`,
+      ]);
       assert.deepEqual(
         failure.detail.candidates.map(({ capsule }) => capsule),
         [CAPSULE_A],
