@@ -235,3 +235,32 @@ void test(
     }
   },
 );
+
+void test(
+  'clearIf never follows a symlinked file and never blocks on a FIFO',
+  {
+    // mkfifo does not exist on Windows.
+    skip: process.platform === 'win32' ? 'POSIX FIFOs only' : false,
+    timeout: 10_000,
+  },
+  async () => {
+    const outside = await mkdtemp(join(tmpdir(), 'bb-outside-'));
+    const linked = await project();
+    const fifo = await project();
+    try {
+      const target = join(outside, 'current-capsule');
+      await writeFile(target, `${A}\n`);
+      await mkdir(stateDirectory(linked), { recursive: true });
+      await symlink(target, join(stateDirectory(linked), 'current-capsule'));
+      assert.equal(await clearCurrentCapsuleIf(linked, A), 'not-current');
+      assert.equal(await readFile(target, 'utf8'), `${A}\n`);
+      await mkdir(stateDirectory(fifo), { recursive: true });
+      await execute('mkfifo', [join(stateDirectory(fifo), 'current-capsule')]);
+      assert.equal(await clearCurrentCapsuleIf(fifo, A), 'not-current');
+    } finally {
+      await rm(outside, { recursive: true, force: true });
+      await rm(linked, { recursive: true, force: true });
+      await rm(fifo, { recursive: true, force: true });
+    }
+  },
+);

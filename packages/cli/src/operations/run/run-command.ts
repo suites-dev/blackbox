@@ -16,7 +16,6 @@ import { capsulePackageFailure } from '../../capsule/capsule-output.js';
 import { runProcessInteractiveCapsuleExec } from '../../capsule/execution/interactive-execution.js';
 import { ActivityDisplay } from '../../context/display.js';
 import { InvocationContext } from '../../context/invocation.js';
-import { ProjectIndex } from '../../context/project-index.js';
 import { OutputTracker } from './output-tracker.js';
 import { processOutcome, runExitCode, runSummaryLines } from './run-output.js';
 
@@ -94,11 +93,12 @@ export abstract class RunCommand extends BlackboxCommand {
     if (result.kind !== 'capsule-exec-completed') {
       throw capsulePackageFailure(result, capsule);
     }
-    await this.report({ request, capsule, result, durationMs, interactive, tracker });
+    await this.report({ request, context, capsule, result, durationMs, interactive, tracker });
   }
 
   private async report(input: {
     readonly request: RunRequest;
+    readonly context: InvocationContext;
     readonly capsule: string;
     readonly result: Extract<CapsuleExecResult, { kind: 'capsule-exec-completed' }>;
     readonly durationMs: number;
@@ -106,7 +106,10 @@ export abstract class RunCommand extends BlackboxCommand {
     readonly tracker: OutputTracker;
   }): Promise<void> {
     const { request, capsule, result } = input;
-    const index = await ProjectIndex.load(process.cwd());
+    // The index loaded before the child ran is reused: the child's output must
+    // never depend on another registry read succeeding after it has run.
+    // allActivities() never throws (unreadable records are skipped).
+    const index = await input.context.index();
     const ids = (await index.allActivities()).map(({ activity }) => activity.activityId);
     const activity = new ActivityDisplay([...ids, result.activityId]).short(result.activityId);
     const next = [nextSteps.showActivity(activity, capsule)];

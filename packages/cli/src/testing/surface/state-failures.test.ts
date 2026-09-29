@@ -4,8 +4,9 @@ import { join } from 'node:path';
 import test from 'node:test';
 
 import { readCurrentCapsule, setCurrentCapsule } from '../../context/current-capsule.js';
-import { CAPSULE_A, projectFixture } from './project.fixture.js';
-import { onlyDocument, run } from './run-cli.fixture.js';
+import { fakeManagerWith } from '../../capsule/reporting/capsule-command.fixture.js';
+import { CAPSULE_A, projectFixture, twoCapsuleProject } from './project.fixture.js';
+import { onlyDocument, processOutcome, run } from './run-cli.fixture.js';
 
 function stoppedCapsule() {
   return projectFixture([
@@ -109,3 +110,63 @@ void test('an activity lookup that could not read every activity record says so 
     await fixture.remove();
   }
 });
+
+void test('run prints the child output and exit code even if the registry breaks after the child ran', async () => {
+  const fixture = await twoCapsuleProject();
+  const experiments = join(fixture.directory, '.blackbox', 'experiments');
+  const manager = await fakeManagerWith({
+    socketPath: fixture.socket(CAPSULE_A),
+    outcome: processOutcome({ kind: 'exited', exitCode: 7, signal: '' }),
+    // The registry becomes unreadable between the child running and the reply.
+    beforeRespond: () => chmod(experiments, 0o000),
+  });
+  try {
+    const result = await run(fixture.directory, 'run', '--capsule', CAPSULE_A, '--', 'x');
+    assert.equal(result.status, 7, result.stderr);
+    assert.equal(result.stdout, 'child-out\n');
+    assert.match(result.stderr, /^child-err$/mu);
+    assert.match(result.stderr, new RegExp(`^activity \\S+ · capsule ${CAPSULE_A} · `, 'mu'));
+  } finally {
+    await chmod(experiments, 0o755);
+    await manager.close();
+    await fixture.remove();
+  }
+});
+
+void test(
+  'capsule report serve --session resolves through the registry',
+  { timeout: 20_000 },
+  async () => {
+    const fixture = await twoCapsuleProject();
+    try {
+      const unknown = await run(
+        fixture.directory,
+        'capsule',
+        'report',
+        'serve',
+        '--session',
+        'quiet-river-ada-000000000009',
+        '--port',
+        '0',
+      );
+      assert.equal(unknown.status, 125);
+      assert.equal(unknown.stdout, '');
+      assert.match(
+        unknown.stderr,
+        /^blackbox: Capsule session quiet-river-ada-000000000009 does not exist$/mu,
+      );
+      const malformed = await run(
+        fixture.directory,
+        'capsule',
+        'report',
+        'serve',
+        '--session',
+        '../x',
+      );
+      assert.equal(malformed.status, 125);
+      assert.match(malformed.stderr, /sessionId must be an exact Capsule-generated identity/u);
+    } finally {
+      await fixture.remove();
+    }
+  },
+);

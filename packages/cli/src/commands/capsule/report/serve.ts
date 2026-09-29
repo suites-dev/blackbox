@@ -1,6 +1,7 @@
 import { Flags } from '@oclif/core';
 import { DEFAULT_REPORT_PORT } from '@suites/blackbox-report-server-internal';
 
+import { InvocationContext } from '../../../context/invocation.js';
 import { OpenCommand } from '../../../operations/viewing/open-command.js';
 
 /**
@@ -32,11 +33,16 @@ export default class CapsuleReportServe extends OpenCommand {
 
   protected async execute(): Promise<void> {
     const { flags } = await this.parseInput(() => this.parse(CapsuleReportServe));
+    // --session resolves through the registry like every explicit capsule; an
+    // unlisted one fails as capsule-not-found. Without it: the registry, never
+    // BLACKBOX_CAPSULE or the current capsule.
+    const explicit =
+      flags.session === undefined
+        ? null
+        : await new InvocationContext(process.cwd()).explicit(flags.session, 'report');
     await this.serve({
       target:
-        flags.session === undefined
-          ? { kind: 'registry' }
-          : { kind: 'capsule', capsule: flags.session },
+        explicit === null ? { kind: 'registry' } : { kind: 'capsule', capsule: explicit.capsule },
       port: flags.port,
       browser: flags.open,
       presentation: {

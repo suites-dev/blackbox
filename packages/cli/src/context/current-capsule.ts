@@ -1,16 +1,6 @@
 import { randomBytes } from 'node:crypto';
 import { constants } from 'node:fs';
-import {
-  link,
-  lstat,
-  mkdir,
-  open,
-  readFile,
-  realpath,
-  rename,
-  unlink,
-  writeFile,
-} from 'node:fs/promises';
+import { link, lstat, mkdir, open, realpath, rename, unlink, writeFile } from 'node:fs/promises';
 import { isAbsolute, join, relative, resolve } from 'node:path';
 
 import { isCapsuleIdShape } from './identifiers.js';
@@ -118,17 +108,25 @@ const MAX_CURRENT_BYTES = 256;
  * device, and reads at most MAX_CURRENT_BYTES + 1 bytes. null = unreadable.
  */
 async function readBounded(file: string): Promise<string | null> {
-  const info = await lstat(file);
-  if (!info.isFile()) {
-    return null;
+  // Open first, then inspect what was opened: no check-then-use race. O_NOFOLLOW
+  // refuses a symlink (ELOOP) and O_NONBLOCK keeps a FIFO from blocking; fstat
+  // then rejects anything that is not a regular file. Windows has neither flag
+  // (the constants are undefined, which the bitwise OR treats as 0), so there a
+  // symlink is detected after opening instead.
+  let handle;
+  try {
+    handle = await open(file, constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK);
+  } catch (error) {
+    if (errorCode(error) === 'ELOOP') {
+      return null;
+    }
+    throw error;
   }
-  // O_NOFOLLOW and O_NONBLOCK close the lstat/open race: a file swapped for a
-  // symlink fails to open, and one swapped for a FIFO opens without blocking and
-  // fails the fstat check below. Windows has neither flag; there the constants
-  // are undefined and the bitwise OR treats them as 0.
-  const handle = await open(file, constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK);
   try {
     if (!(await handle.stat()).isFile()) {
+      return null;
+    }
+    if (process.platform === 'win32' && (await lstat(file)).isSymbolicLink()) {
       return null;
     }
     const buffer = Buffer.alloc(MAX_CURRENT_BYTES + 1);
@@ -189,9 +187,10 @@ export async function setCurrentCapsule(projectDirectory: string, capsule: strin
   }
 }
 
+/** readBounded, with a missing file as null. Not a regular file also reads as null. */
 async function readIfPresent(path: string): Promise<string | null> {
   try {
-    return await readFile(path, 'utf8');
+    return await readBounded(path);
   } catch (error) {
     if (errorCode(error) === 'ENOENT') {
       return null;
@@ -245,7 +244,7 @@ async function clearIf(
     throw error;
   }
   await hooks.afterRename();
-  const moved = await readFile(clearing, 'utf8');
+  const moved = (await readIfPresent(clearing)) ?? '';
   if (parseContent(moved) === capsule) {
     await unlink(clearing);
     return 'cleared';
