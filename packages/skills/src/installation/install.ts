@@ -1,5 +1,5 @@
 import { cp, lstat, mkdir, mkdtemp, readFile, readdir, rename, rm } from 'node:fs/promises';
-import { basename, dirname, join } from 'node:path';
+import { basename, dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 export type SkillAgent = 'codex' | 'claude' | 'cursor';
@@ -43,8 +43,30 @@ async function sameTree(source: string, target: string): Promise<boolean> {
   return (await readFile(source)).equals(await readFile(target));
 }
 
+async function assertSafeParents(projectDirectory: string, target: string): Promise<void> {
+  const root = resolve(projectDirectory);
+  const targetPath = resolve(target);
+  if (relative(root, targetPath).startsWith('..')) {
+    throw new Error('skill target escapes the project directory');
+  }
+  let current = dirname(targetPath);
+  while (current !== root && current !== dirname(current)) {
+    const entry = await lstat(current).catch(() => null);
+    if (entry !== null && entry.isSymbolicLink()) {
+      throw new Error(`skill target parent is a symbolic link: ${current}`);
+    }
+    current = dirname(current);
+  }
+}
+
 /** Stage the complete tree and publish it with one rename, so no checked path is copied into. */
-async function publishSkill(source: string, target: string): Promise<'installed' | 'occupied'> {
+async function publishSkill(
+  source: string,
+  target: string,
+  projectDirectory: string,
+): Promise<'installed' | 'occupied'> {
+  await assertSafeParents(projectDirectory, target);
+
   const parent = dirname(target);
   await mkdir(parent, { recursive: true });
   const stagingDirectory = await mkdtemp(join(parent, `.${basename(target)}.tmp-`));
@@ -82,7 +104,7 @@ export async function installSkill(input: {
       });
       continue;
     }
-    const publication = await publishSkill(skillSource, target);
+    const publication = await publishSkill(skillSource, target, input.projectDirectory);
     const kind = publication === 'installed'
       ? 'installed'
       : (await sameTree(skillSource, target) ? 'unchanged' : 'conflict');

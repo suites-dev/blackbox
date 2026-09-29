@@ -1,4 +1,6 @@
 import { startCapsule, type CapsuleProgressMode } from '@suites/blackbox-capsule';
+import { readRuntimeActivationAdapters } from '@suites/blackbox-cli-contract';
+import { isRuntimeActivationAdapter } from '@suites/blackbox-instrumentation';
 
 import { BlackboxCommand } from '../../cli/base-command.js';
 import { EXIT_CODES } from '../../cli/exit-codes.js';
@@ -78,7 +80,7 @@ export abstract class UpCommand extends BlackboxCommand {
           ? { kind: 'omitted' }
           : { kind: 'provided', value: request.description },
       environment,
-      runtimeActivationAdapters: [],
+      runtimeActivationAdapters: readRuntimeActivationAdapters(isRuntimeActivationAdapter),
       progress,
     });
     const durationMs = Date.now() - started;

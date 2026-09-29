@@ -35,3 +35,16 @@ export function isBlackboxCliPluginPackage(
     manifest.topic.length > 0
   );
 }
+
+let runtimeAdapters: readonly unknown[] = [];
+
+/** Plugin-owned runtime adapters shared with commands through the CLI composition root. */
+export function registerRuntimeActivationAdapters(adapters: readonly unknown[]): void {
+  runtimeAdapters = adapters;
+}
+
+export function readRuntimeActivationAdapters<T>(
+  guard: (value: unknown) => value is T,
+): readonly T[] {
+  return runtimeAdapters.filter(guard);
+}
