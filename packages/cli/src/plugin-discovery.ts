@@ -115,6 +115,7 @@ export async function discoverProjectCliPlugins(
   }
 
   const projectPath = await nearestPackageDirectory(startDirectory);
+  let projectResult: { readonly path: string; readonly names: readonly string[] } | null = null;
   if (projectPath !== null) {
     const projectManifest = JSON.parse(
       await readFile(join(projectPath, 'package.json'), 'utf8'),
@@ -124,7 +125,7 @@ export async function discoverProjectCliPlugins(
       devDependencies: dependencyMap(projectManifest.devDependencies),
     });
     if (plugins.length > 0) {
-      return { path: projectPath, names: plugins };
+      projectResult = { path: projectPath, names: plugins };
     }
   }
 
@@ -134,6 +135,10 @@ export async function discoverProjectCliPlugins(
   const installed = await discoverFromAncestors(installationDirectory);
   if (installed !== null) {
     return installed;
+  }
+
+  if (projectResult !== null) {
+    return projectResult;
   }
 
   const root = await workspaceRoot(installationDirectory);
