@@ -4,7 +4,14 @@ import { expect, it } from 'vitest';
 
 import { readCollectorFragments } from '../../index.js';
 import { fragmentDirectory, fragmentName } from '../paths.js';
-import { postJson, span, traceA, traceB, withCollector } from '../../test-fixtures/collector.js';
+import {
+  collectorHeaders,
+  postJson,
+  span,
+  traceA,
+  traceB,
+  withCollector,
+} from '../../test-fixtures/collector.js';
 
 function request(traceId: string, spanId: string): Record<string, unknown> {
   return { resourceSpans: [{ scopeSpans: [{ spans: [span(traceId, spanId)] }] }] };
@@ -12,7 +19,16 @@ function request(traceId: string, spanId: string): Record<string, unknown> {
 
 it('returns every retained fragment with its exact raw OTLP text in sequence order', async () => {
   await withCollector(async ({ input, collector }) => {
-    expect((await postJson(collector, request(traceA, 'aaaaaaaaaaaaaaaa'))).status).toBe(200);
+    // Whitespace and key order a re-serialization would not preserve.
+    const exactText = `{ "resourceSpans" : [ {"scopeSpans":[{"spans":[${JSON.stringify(
+      span(traceA, 'aaaaaaaaaaaaaaaa'),
+    )}]}]} ] }\n`;
+    const response = await fetch(collector.endpoint.tracesUrl, {
+      method: 'POST',
+      headers: collectorHeaders({ 'content-type': 'application/json' }),
+      body: exactText,
+    });
+    expect(response.status).toBe(200);
     expect((await postJson(collector, request(traceB, 'bbbbbbbbbbbbbbbb'))).status).toBe(200);
     await collector.close();
 
