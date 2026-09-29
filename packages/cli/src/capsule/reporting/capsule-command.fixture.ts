@@ -77,9 +77,20 @@ export async function runCli(input: { directory: string; argv: readonly string[]
   return { status, stdout, stderr };
 }
 
+const RESPOND_IMMEDIATELY = (): Promise<void> => Promise.resolve();
+
 export async function fakeManager(input: {
   socketPath: string;
   outcome: Readonly<Record<string, unknown>>;
+}): ReturnType<typeof fakeManagerWith> {
+  return fakeManagerWith({ ...input, beforeRespond: RESPOND_IMMEDIATELY });
+}
+
+/** fakeManager whose reply waits for `beforeRespond` (after the request arrives). */
+export async function fakeManagerWith(input: {
+  socketPath: string;
+  outcome: Readonly<Record<string, unknown>>;
+  beforeRespond: () => Promise<void>;
 }) {
   const requests: unknown[] = [];
   const sockets = new Set<Socket>();
@@ -94,14 +105,17 @@ export async function fakeManager(input: {
       }
       const request = JSON.parse(bytes.slice(0, bytes.indexOf('\n'))) as { requestId: string };
       requests.push(request);
-      socket.end(
-        `${JSON.stringify({
-          kind: 'exec-response',
-          requestId: request.requestId,
-          activityId: fixtureActivityId,
-          outcome: input.outcome,
-        })}\n`,
-      );
+      void (async () => {
+        await input.beforeRespond();
+        socket.end(
+          `${JSON.stringify({
+            kind: 'exec-response',
+            requestId: request.requestId,
+            activityId: fixtureActivityId,
+            outcome: input.outcome,
+          })}\n`,
+        );
+      })();
     });
   });
   server.listen(input.socketPath);

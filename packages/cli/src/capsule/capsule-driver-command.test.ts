@@ -82,7 +82,17 @@ void test('exec sends a driver target and renders the delegated process result',
     });
     assert.equal(result.status, 0, result.stderr);
     assert.equal(result.stdout, 'created\n');
-    assert.match(result.stderr, new RegExp(fixtureActivityId, 'u'));
+    assert.match(
+      result.stderr,
+      new RegExp(
+        `^activity 00000000 · capsule ${fixture.sessionId} · stimulus · via public-api · host · exit 0 · `,
+        'u',
+      ),
+    );
+    assert.match(
+      result.stderr,
+      new RegExp(`→ blackbox show 00000000 --capsule ${fixture.sessionId}\\n$`, 'u'),
+    );
     assert.deepEqual(manager.requests[0], {
       kind: 'exec-request',
       requestId: (manager.requests[0] as { requestId: string }).requestId,
@@ -129,6 +139,8 @@ void test('JSON driver execution emits one document and forwards explicit policy
       kind: 'capsule-exec-completed',
       activityId: fixtureActivityId,
       outcome,
+      capsule: fixture.sessionId,
+      next: [`blackbox show 00000000 --capsule ${fixture.sessionId}`],
     });
     assert.equal(result.stderr, '');
     assert.deepEqual((manager.requests[0] as { target: unknown }).target, {
@@ -181,11 +193,13 @@ void test('JSON driver refusal stays parseable and exits unsuccessfully', async 
         '/orders',
       ],
     });
-    assert.equal(result.status, 1);
+    assert.equal(result.status, 125);
     assert.deepEqual(JSON.parse(result.stdout), {
       kind: 'capsule-exec-completed',
       activityId: fixtureActivityId,
       outcome,
+      capsule: fixture.sessionId,
+      next: [`blackbox show 00000000 --capsule ${fixture.sessionId}`],
     });
     assert.equal(result.stderr, '');
   } finally {
@@ -200,18 +214,9 @@ void test('removed participant and client selectors are rejected', async () => {
     for (const selector of ['--participant', '--client']) {
       const result = await runCli({
         directory: fixture.directory,
-        argv: [
-          'capsule',
-          'exec',
-          '--session',
-          fixture.sessionId,
-          selector,
-          'legacy',
-          '--',
-          'true',
-        ],
+        argv: ['capsule', 'exec', '--session', fixture.sessionId, selector, 'legacy', '--', 'true'],
       });
-      assert.equal(result.status, 2);
+      assert.equal(result.status, 125);
       assert.equal(result.stdout, '');
     }
   } finally {
@@ -224,19 +229,11 @@ void test('allow-untraced cannot weaken a raw host activity', async () => {
   try {
     const result = await runCli({
       directory: fixture.directory,
-      argv: [
-        'capsule',
-        'exec',
-        '--session',
-        fixture.sessionId,
-        '--allow-untraced',
-        '--',
-        'true',
-      ],
+      argv: ['capsule', 'exec', '--session', fixture.sessionId, '--allow-untraced', '--', 'true'],
     });
-    assert.equal(result.status, 2);
+    assert.equal(result.status, 125);
     assert.equal(result.stdout, '');
-    assert.match(result.stderr, /--allow-untraced requires --driver/u);
+    assert.match(result.stderr, /^blackbox: --allow-untraced requires --driver\n/u);
   } finally {
     await removeFixture(fixture.directory);
   }

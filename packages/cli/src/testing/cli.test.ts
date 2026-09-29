@@ -40,12 +40,39 @@ activations: {}
   return directory;
 }
 
-void test('oclif discovers the facade and help names the phases', async () => {
+const VISIBLE_COMMANDS = [
+  'up',
+  'run',
+  'down',
+  'show',
+  'ls',
+  'use',
+  'open',
+  'report',
+  'systems',
+  'catalog validate',
+  'driver install',
+  'inst install',
+];
+
+void test('root help lists exactly the visible commands, in order, and hides aliases', async () => {
   const result = await runCli({ directory: process.cwd(), argv: ['--help'] });
   assert.equal(result.status, 0, result.stderr);
   assert.match(result.stdout, /Sandboxes, Testing, and Assurance/u);
-  assert.match(result.stdout, /capsule/u);
-  assert.match(result.stdout, /catalog/u);
+  const commands = result.stdout.slice(result.stdout.indexOf('COMMANDS\n'));
+  const listed = [...commands.matchAll(/^ {2}(\S+(?: [a-z]+)?) {2,}/gmu)].map((match) => match[1]);
+  assert.deepEqual(listed, VISIBLE_COMMANDS);
+  for (const hidden of [
+    'capsule',
+    'observations',
+    'history',
+    'catalog list',
+    'setup init',
+    'skill install',
+    'effects baseline update',
+  ]) {
+    assert.doesNotMatch(commands, new RegExp(`^  ${hidden}\\b`, 'mu'), hidden);
+  }
 });
 
 void test('catalog list delegates to the catalog package and emits deterministic JSON', async () => {
@@ -56,6 +83,7 @@ void test('catalog list delegates to the catalog package and emits deterministic
     assert.deepEqual(JSON.parse(result.stdout), {
       default: 'orders',
       entries: [{ id: 'orders', kind: 'system', isDefault: true }],
+      next: [],
     });
   } finally {
     await rm(directory, { recursive: true, force: true });

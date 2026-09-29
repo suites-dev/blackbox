@@ -1,19 +1,15 @@
-import { Command, Flags } from '@oclif/core';
-import { runCatalogList } from '@suites/blackbox-catalog-internal';
-import { renderCatalogOutput } from '../../catalog/catalog-output.js';
+import { Flags } from '@oclif/core';
 
-export default class CatalogList extends Command {
+import { SystemsCommand } from '../../operations/viewing/systems-command.js';
+
+/** Hidden alias: `catalog list` → `systems`. */
+export default class CatalogList extends SystemsCommand {
+  static override hidden = true;
   static override description = 'List catalog systems as text or JSON.';
   static override flags = { json: Flags.boolean({ default: false }) };
-  public async run(): Promise<void> {
-    const { flags } = await this.parse(CatalogList);
-    const output = renderCatalogOutput({
-      mode: flags.json ? 'json' : 'human',
-      result: await runCatalogList({ projectDirectory: process.cwd() }),
-    });
-    if (output.failed) {
-      this.error(output.text, { exit: 1 });
-    }
-    this.log(output.text);
+
+  protected async execute(): Promise<void> {
+    const { flags } = await this.parseInput(() => this.parse(CatalogList));
+    await this.executeSystems({ json: flags.json });
   }
 }

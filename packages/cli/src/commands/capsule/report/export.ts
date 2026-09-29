@@ -1,9 +1,10 @@
-import { Command, Flags } from '@oclif/core';
-import { reportCapsule } from '@suites/blackbox-capsule-internal';
-import { capsuleFailure } from '../../../capsule/capsule-output.js';
-import { exportReport } from '../../../reporting/export.js';
+import { Flags } from '@oclif/core';
 
-export default class CapsuleReportExport extends Command {
+import { ReportCommand } from '../../../operations/viewing/report-command.js';
+
+/** Hidden alias: `capsule report export --session X --format F` → `report X --format F`. */
+export default class CapsuleReportExport extends ReportCommand {
+  static override hidden = true;
   static override description =
     'Export a snapshot of an exact Capsule session, running or stopped.';
   static override examples = [
@@ -20,39 +21,14 @@ export default class CapsuleReportExport extends Command {
     output: Flags.string({ description: 'Destination path; use - for JSON on stdout' }),
   };
 
-  public async run(): Promise<void> {
-    const { flags } = await this.parse(CapsuleReportExport);
-    if (flags.output === '-' && flags.format !== 'json') {
-      this.error('--output - requires --format json.', { exit: 2 });
-    }
-    const result = await reportCapsule({
-      projectDirectory: process.cwd(),
-      sessionId: flags.session,
+  protected async execute(): Promise<void> {
+    const { flags } = await this.parseInput(() => this.parse(CapsuleReportExport));
+    await this.executeReport({
+      positional: null,
+      capsuleFlag: flags.session,
+      format: flags.format === 'html' ? 'html' : 'json',
+      output: flags.output ?? null,
+      json: false,
     });
-    if (result.kind !== 'capsule-report') {
-      this.error(capsuleFailure({ result, json: false }), { exit: 1 });
-    }
-    const destination =
-      flags.output === '-'
-        ? { kind: 'stdout' as const }
-        : flags.output === undefined
-          ? { kind: 'default' as const }
-          : { kind: 'file' as const, path: flags.output };
-    try {
-      const exported = await exportReport({
-        kind: 'export-report',
-        projectDirectory: process.cwd(),
-        format: flags.format === 'html' ? 'html' : 'json',
-        document: result.document,
-        destination,
-      });
-      if (exported.kind === 'stdout') {
-        process.stdout.write(exported.content);
-      } else {
-        this.log(exported.path);
-      }
-    } catch (error) {
-      this.error(error instanceof Error ? error.message : String(error), { exit: 4 });
-    }
   }
 }

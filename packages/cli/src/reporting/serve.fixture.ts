@@ -9,8 +9,8 @@ export async function runningReportCli(input: { directory: string; argv: readonl
   });
   let stdout = '';
   let stderr = '';
-  child.stderr.setEncoding('utf8').on('data', (chunk: string) => {
-    stderr += chunk;
+  child.stdout.setEncoding('utf8').on('data', (chunk: string) => {
+    stdout += chunk;
   });
   const closed = new Promise<number | null>((resolve) => {
     child.once('close', resolve);
@@ -20,12 +20,13 @@ export async function runningReportCli(input: { directory: string; argv: readonl
       child.kill('SIGKILL');
       reject(new Error(`Server startup timed out: ${stderr}`));
     }, 10_000);
-    child.stdout.setEncoding('utf8').on('data', (chunk: string) => {
-      stdout += chunk;
-      const match = /http:\/\/127\.0\.0\.1:\d+\/[^\s]*/u.exec(stdout);
+    // Human Blackbox lines, including the viewer announcement, go to stderr.
+    child.stderr.setEncoding('utf8').on('data', (chunk: string) => {
+      stderr += chunk;
+      const match = /^Blackbox reports: (http:\/\/127\.0\.0\.1:\d+\/[^\s]*)$/mu.exec(stderr);
       if (match !== null) {
         clearTimeout(timer);
-        resolve(match[0]);
+        resolve(match[1]);
       }
     });
     child.once('error', (error) => {
@@ -37,7 +38,12 @@ export async function runningReportCli(input: { directory: string; argv: readonl
       reject(new Error(`Server exited (${String(code)}): ${stderr}`));
     });
   });
-  return { url, child, stop: () => stopCli({ child, closed }) };
+  return {
+    url,
+    child,
+    stop: () => stopCli({ child, closed }),
+    output: () => ({ stdout, stderr }),
+  };
 }
 
 async function stopCli(input: {

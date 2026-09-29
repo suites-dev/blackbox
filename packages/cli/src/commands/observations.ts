@@ -1,7 +1,13 @@
-import { Command, Flags } from '@oclif/core';
-import { readCapsuleObservations } from '@suites/blackbox-capsule-internal';
+import { Flags } from '@oclif/core';
 
-export default class Observations extends Command {
+import { ShowCommand } from '../operations/inspection/show-command.js';
+
+/**
+ * Hidden alias: `observations --session X` → `show X`;
+ * `--activity A` → `show A --capsule X`; `--trace T` → `show T --capsule X`.
+ */
+export default class Observations extends ShowCommand {
+  static override hidden = true;
   static override description = 'Query exact retained raw observations.';
   static override flags = {
     session: Flags.string({ required: true }),
@@ -10,25 +16,15 @@ export default class Observations extends Command {
     json: Flags.boolean({ default: false }),
   };
 
-  public async run(): Promise<void> {
-    const { flags } = await this.parse(Observations);
+  protected async execute(): Promise<void> {
+    const { flags } = await this.parseInput(() => this.parse(Observations));
     if (flags.activity !== undefined && flags.trace !== undefined) {
-      this.error('--activity and --trace cannot be used together', { exit: 2 });
+      throw this.usageFailure('--activity and --trace cannot be used together');
     }
-    const selection =
-      flags.activity !== undefined
-        ? { kind: 'activity' as const, activityId: flags.activity }
-        : flags.trace !== undefined
-          ? { kind: 'trace' as const, traceId: flags.trace }
-          : { kind: 'session' as const };
-    const result = await readCapsuleObservations({
-      projectDirectory: process.cwd(),
-      sessionId: flags.session,
-      selection,
+    await this.executeShow({
+      id: flags.activity ?? flags.trace ?? flags.session,
+      capsuleFlag: flags.session,
+      json: flags.json,
     });
-    if (result.kind.startsWith('capsule-')) {
-      this.error(JSON.stringify(result), { exit: 1 });
-    }
-    this.log(JSON.stringify(result, null, flags.json ? 0 : 2));
   }
 }
