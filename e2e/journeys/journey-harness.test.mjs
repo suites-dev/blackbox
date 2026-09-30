@@ -12,8 +12,9 @@ import { promisify } from 'node:util';
 
 import { BashSession, JourneySessionTimeout, STATUS_SENTINEL } from './journey-session.mjs';
 import { CAPTURES, createNormalizer, normalizeWhitespace, parseGolden } from './journey-format.mjs';
-import { cleanupJourneyProject } from './journey-project.mjs';
+import { cleanupJourneyProject, journeyEnvironment, newFixtureToken } from './journey-project.mjs';
 import { runItems } from './journey-steps.mjs';
+import { canonicalizeTrees } from './journey-trees.mjs';
 
 const execute = promisify(execFile);
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -258,4 +259,240 @@ void test('golden updates are refused when CI=true', async () => {
   assert.notEqual(error, null);
   assert.equal(error.code, 2);
   assert.match(error.stderr, /refused when CI=true/u);
+});
+
+// A stand-in `blackbox` for wait tests: prints "pending" until its third
+// call, then a line containing the awaited text. It counts calls in a file.
+const FAKE_BLACKBOX = String.raw`blackbox() { n=$(cat calls 2>/dev/null || echo 0); n=$((n+1)); echo "$n" > calls; if [ "$n" -ge 3 ]; then echo "later in this capsule, no known cause: a.b"; else echo pending; fi; }`;
+
+void test('#! wait reruns a show command until its raw output contains the literal text', async () => {
+  await withSession(async (session, cwd) => {
+    await session.run(FAKE_BLACKBOX, 10_000);
+    const items = parseGolden('#! wait 30 "no known cause" blackbox capsule show abc\n$ echo after\n');
+    const raw = [];
+    const executed = await runItems({ items, session, raw });
+    assert.equal(await readFile(join(cwd, 'calls'), 'utf8'), '3\n');
+    assert.equal(raw.filter((entry) => entry.includes('# wait')).length, 3);
+    // The wait is kept as its directive line; its output is never compared.
+    assert.deepEqual(
+      executed.map((item) => (item.kind === 'command' ? item.output : item.line)),
+      ['#! wait 30 "no known cause" blackbox capsule show abc', 'after\n'],
+    );
+  });
+});
+
+void test('#! wait text is a plain substring: regex metacharacters match only themselves', async () => {
+  await withSession(async (session) => {
+    await session.run(String.raw`blackbox() { echo "aXb"; }`, 10_000);
+    const items = parseGolden('#! wait 1 "a.b" blackbox capsule ls\n');
+    await assert.rejects(
+      runItems({ items, session, raw: [] }),
+      /wait for "a\.b" timed out after 1000 ms/u,
+    );
+  });
+});
+
+void test('#! wait fails the journey at its timeout', async () => {
+  await withSession(async (session) => {
+    await session.run(String.raw`blackbox() { echo pending; }`, 10_000);
+    const items = parseGolden('#! wait 1 "never" blackbox capsule show abc\n$ echo unreached\n');
+    const executed = [];
+    const started = Date.now();
+    await assert.rejects(
+      runItems({ items, session, raw: [], executed }),
+      /timed out after 1000 ms/u,
+    );
+    assert.ok(Date.now() - started >= 1000);
+    assert.deepEqual(executed, []);
+  });
+});
+
+void test('#! wait only polls one blackbox capsule show or ls, refused at parse time', () => {
+  for (const command of [
+    'blackbox capsule run -- true',
+    'blackbox capsule down',
+    'rm -rf .',
+    'blackbox capsule showx',
+    'blackbox show x',
+    'sh -c blackbox capsule show',
+    // A valid prefix may not chain, pipe, redirect or substitute a second command.
+    'blackbox capsule show x; blackbox capsule down',
+    'blackbox capsule ls && rm -rf .',
+    'blackbox capsule ls | sh',
+    'blackbox capsule show x > out',
+    'blackbox capsule show $(rm -rf .)',
+    'blackbox capsule show `rm -rf .`',
+    "blackbox capsule show 'x'",
+  ]) {
+    assert.throws(
+      () => parseGolden(`#! wait 5 "x" ${command}\n`),
+      /may only poll blackbox capsule show or blackbox capsule ls/u,
+    );
+  }
+  assert.equal(parseGolden('#! wait 5 "x" blackbox capsule ls\n')[0].command, 'blackbox capsule ls');
+  assert.equal(
+    parseGolden('#! wait 5 "x" blackbox capsule show $A --session $C_1 --json\n')[0].command,
+    'blackbox capsule show $A --session $C_1 --json',
+  );
+});
+
+void test('negative control: no directive accepts a regex', () => {
+  assert.throws(
+    () => parseGolden('#! wait 5 "/no known.*/" blackbox capsule show x\n'),
+    /literal text, not a regex/u,
+  );
+  assert.throws(() => parseGolden('#! wait 5 "/x/u" blackbox capsule ls\n'), /literal text, not a regex/u);
+  assert.throws(() => parseGolden('#! capture X /^(\\S+)$/\n'), /Unknown directive/u);
+  // A slash inside plain text is still literal text.
+  assert.equal(parseGolden('#! wait 5 "a/b" blackbox capsule ls\n')[0].text, 'a/b');
+});
+
+void test('show-trace is a fixed capture of the full trace ID in a show suggestion', () => {
+  const trace = 'f'.repeat(31) + '0';
+  const pattern = CAPTURES['show-trace'];
+  assert.equal(
+    pattern.exec(`observed …\n→ blackbox capsule show ${trace} --session c --spans\n`)[1],
+    trace,
+  );
+  assert.equal(pattern.exec('→ blackbox capsule show 3f9a2c41 --session c\n'), null);
+  // A longer hex token is not cut down to its first 32 characters.
+  assert.equal(pattern.exec(`→ blackbox capsule show ${trace}ff --session c\n`), null);
+  assert.equal(pattern.exec(`  blackbox capsule show ${trace} \n`), null);
+  assert.equal(parseGolden('#! capture T show-trace\n')[0].pattern, pattern);
+});
+
+void test('tree indentation survives whitespace normalization; column gaps still collapse', () => {
+  const tree = [
+    '    root',
+    '    ├─ a    x',
+    '    │     ├─ deep',
+    '    │        └─ deeper',
+    '           └─ far',
+  ];
+  assert.deepEqual(normalizeWhitespace(tree.join('\n')).split('\n'), [
+    '  root',
+    '    ├─ a  x',
+    '    │     ├─ deep',
+    '    │        └─ deeper',
+    '           └─ far',
+  ]);
+  // Depths that differ stay different after normalization.
+  assert.notEqual(normalizeWhitespace('    │     ├─ x'), normalizeWhitespace('    │  ├─ x'));
+});
+
+void test('the startup trace count before the first activity is normalized; others stay literal', () => {
+  const normalize = createNormalizer();
+  assert.equal(
+    normalize('  +3.1s  (no activity)  ┈┈ 31 traces before the first activity'),
+    '  +<DUR>  (no activity)  ┈┈ <N> traces before the first activity',
+  );
+  assert.equal(normalize('observed  1 traces · 4 services'), 'observed  1 traces · 4 services');
+});
+
+void test('span IDs, trace short forms and the fixture secret are normalized', () => {
+  const trace = '0123456789abcdef0123456789abcdef';
+  const normalize = createNormalizer({ traceIds: [trace], secrets: ['s3cr3t-token'] });
+  assert.equal(
+    normalize(
+      `later 01234567  public-api\n→ blackbox capsule show ${trace}\nSPAN aaaabbbbccccdddd  PARENT 1111222233334444  again aaaabbbbccccdddd`,
+    ),
+    'later <TRACE_1>  public-api\n→ blackbox capsule show <TRACE_1>\nSPAN <SPAN_1>  PARENT <SPAN_2>  again <SPAN_1>',
+  );
+  assert.equal(normalize('Bearer s3cr3t-token ok'), 'Bearer <SECRET> ok');
+  // An 8-hex word that is no retained trace or activity survives.
+  assert.equal(createNormalizer({ traceIds: [trace] })('deadbeef'), 'deadbeef');
+});
+
+void test('each journey gets its own fixture token, only in its own environment', () => {
+  const first = newFixtureToken();
+  const second = newFixtureToken();
+  assert.match(first, /^[0-9a-f]{48}$/u);
+  assert.notEqual(first, second);
+  const base = { PATH: '/usr/bin', BLACKBOX_CAPSULE: 'ambient' };
+  const env = journeyEnvironment({ binDirectory: '/bin/bb', fixtureToken: first, base });
+  assert.equal(env.FIXTURE_CONTROL_TOKEN, first);
+  assert.equal(env.PATH, '/bin/bb:/usr/bin');
+  assert.equal(env.BLACKBOX_CAPSULE, undefined);
+  assert.deepEqual(base, { PATH: '/usr/bin', BLACKBOX_CAPSULE: 'ambient' });
+  assert.equal(process.env.FIXTURE_CONTROL_TOKEN, undefined);
+});
+
+const ACTIVITY_TREE = (children) =>
+  [
+    'activity abc',
+    '  observed  1 traces',
+    '  SPANS',
+    '    api POST /s 201',
+    ...children,
+    '  later in this capsule, no known cause:',
+    '    x',
+  ].join('\n');
+
+void test('span tree siblings are compared in canonical order; depth and parent still count', () => {
+  const first = ACTIVITY_TREE([
+    '    ├─ api SET',
+    '    ├─ api POST /assess 200',
+    '    │  └─ fraud POST /assess 200',
+    '    └─ api GET',
+  ]);
+  const second = ACTIVITY_TREE([
+    '    ├─ api POST /assess 200',
+    '    │  └─ fraud POST /assess 200',
+    '    ├─ api GET',
+    '    └─ api SET',
+  ]);
+  assert.equal(canonicalizeTrees(first), canonicalizeTrees(second));
+  assert.match(
+    canonicalizeTrees(first),
+    /    ├─ api GET\n    ├─ api POST \/assess 200\n    │  └─ fraud POST \/assess 200\n    └─ api SET\n  later/u,
+  );
+  // Negative control: the same spans under a different parent never compare equal.
+  const moved = ACTIVITY_TREE([
+    '    ├─ api SET',
+    '    │  └─ fraud POST /assess 200',
+    '    ├─ api POST /assess 200',
+    '    └─ api GET',
+  ]);
+  assert.notEqual(canonicalizeTrees(moved), canonicalizeTrees(first));
+  // Output without trees is untouched.
+  assert.equal(
+    canonicalizeTrees('capsule x  running\n  activities 1'),
+    'capsule x  running\n  activities 1',
+  );
+});
+
+void test('--spans rows are reordered by tree, ignoring IDs and durations; parents still count', () => {
+  const header = '  SPAN              PARENT            SERVICE  KIND    TITLE    RESULT  DURATION';
+  const row = (id, parent, title, duration) =>
+    `  ${id}  ${parent}  api      client  ${title.padEnd(7)}  200     ${duration}`;
+  const root = row('aaaaaaaaaaaaaaaa', '1111111111111111', 'POST /s', '9ms');
+  const first = [
+    'trace t · capsule c · 3 spans · complete',
+    header,
+    root,
+    row('bbbbbbbbbbbbbbbb', 'aaaaaaaaaaaaaaaa', 'SET', '1ms'),
+    row('cccccccccccccccc', 'aaaaaaaaaaaaaaaa', 'GET', '2ms'),
+    '→ next',
+  ].join('\n');
+  const second = [
+    'trace t · capsule c · 3 spans · complete',
+    header,
+    root.replace('9ms', '12ms'),
+    row('dddddddddddddddd', 'aaaaaaaaaaaaaaaa', 'GET', '3ms'),
+    row('eeeeeeeeeeeeeeee', 'aaaaaaaaaaaaaaaa', 'SET', '1ms'),
+    '→ next',
+  ].join('\n');
+  const titles = (text) =>
+    canonicalizeTrees(text)
+      .split('\n')
+      .slice(2, 5)
+      .map((line) => /client {2}(.+?) {2,}200/u.exec(line)?.[1]);
+  assert.deepEqual(titles(first), ['POST /s', 'GET', 'SET']);
+  assert.deepEqual(titles(second), ['POST /s', 'GET', 'SET']);
+  // Negative control: GET under SET instead of under the root is a different tree.
+  const nested = first.replace(
+    row('cccccccccccccccc', 'aaaaaaaaaaaaaaaa', 'GET', '2ms'),
+    row('cccccccccccccccc', 'bbbbbbbbbbbbbbbb', 'GET', '2ms'),
+  );
+  assert.deepEqual(titles(nested), ['POST /s', 'SET', 'GET']);
 });

@@ -26,6 +26,8 @@ export default class Observations extends ShowCommand {
       id: flags.activity ?? flags.trace ?? flags.session,
       capsuleFlag: flags.session,
       json: flags.json,
+      spans: false,
+      timeline: false,
     });
   }
 }

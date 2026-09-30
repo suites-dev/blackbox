@@ -13,7 +13,8 @@ export function processOutcome(outcome: CapsuleExecutionOutcome): CapsuleProcess
   }
   return outcome.kind === 'exited' ||
     outcome.kind === 'signaled' ||
-    outcome.kind === 'executable-not-found'
+    outcome.kind === 'executable-not-found' ||
+    outcome.kind === 'not-executable'
     ? outcome
     : null;
 }
@@ -31,6 +32,8 @@ export function runExitCode(outcome: CapsuleExecutionOutcome): number {
       return signalExitCode(process.signal);
     case 'executable-not-found':
       return EXIT_CODES.executableNotFound;
+    case 'not-executable':
+      return EXIT_CODES.notExecutable;
   }
 }
 
@@ -57,6 +60,8 @@ export function processResultText(process: CapsuleProcessOutcome): string {
       return `signal ${process.signal}`;
     case 'executable-not-found':
       return 'not found';
+    case 'not-executable':
+      return 'not executable';
   }
 }
 

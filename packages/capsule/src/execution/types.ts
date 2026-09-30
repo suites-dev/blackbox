@@ -163,6 +163,13 @@ export type CapsuleProcessOutcome =
       readonly argv: readonly string[];
       readonly location: CapsuleExecutionLocation;
       readonly remediation: string;
+    }
+  | {
+      /** The host refused to execute the file (EACCES or EPERM); no process ran. */
+      readonly kind: 'not-executable';
+      readonly argv: readonly string[];
+      readonly location: CapsuleExecutionLocation;
+      readonly remediation: string;
     };
 
 export interface CapsuleDriverDetails {

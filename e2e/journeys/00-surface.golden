@@ -16,15 +16,25 @@ $ blackbox capsule run --via public-api -- curl -fsS /health
 activity <ACT_1> · capsule <CAPSULE_1> · stimulus · via public-api · host · exit 0 · <DUR>
 → blackbox capsule show <ACT_1> --session <CAPSULE_1>
 #! capture ACT_1 activity
+#! wait 60 "· 6 spans ·" blackbox capsule show $ACT_1
 $ blackbox capsule show $ACT_1
 activity <ACT_1>
   capsule  <CAPSULE_1> (subscription-system, running)
   purpose  stimulus
-  process  exited 0 on host
-  observed  collector-activity-found · 1 traces
-→ blackbox capsule show <TRACE_1> --session <CAPSULE_1>
+  via  public-api → public-api (http)
+  process  exit 0 on host
+  context  sent (w3c, http-headers)
+  observed  1 traces · 1 services · <N> spans · provisional (capsule running)
+  SPANS
+  public-api  GET /health  200
+    ├─ public-api  PING
+    ├─ public-api  SQS.GetQueueUrl  200
+    │  └─ public-api  POST  200
+    ├─ public-api  pg-pool.connect
+    └─ public-api  pg.query:SELECT subscriptions
+→ blackbox capsule show <TRACE_1> --session <CAPSULE_1> --spans
 $ blackbox capsule show $CAPSULE_1
-capsule <CAPSULE_1>  subscription-system  running
+capsule <CAPSULE_1>  subscription-system  running · provisional (capsule running)
   activities 1 · traces <N>
 → blackbox capsule show <ACT_1> --session <CAPSULE_1>
 $ blackbox capsule up payment-mock --silent --no-color

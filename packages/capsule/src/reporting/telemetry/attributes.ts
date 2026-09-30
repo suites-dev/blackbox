@@ -1,6 +1,7 @@
 import type { CapsuleReportSpan } from '../telemetry-types.js';
 import { array, object, string, safeText, type Context } from './fields.js';
 
+/** The attributes the report retains. Callers may pass a different allowlist. */
 const allowedAttributes = new Set([
   'http.request.method',
   'http.method',
@@ -21,11 +22,15 @@ const allowedAttributes = new Set([
   'rpc.method',
 ]);
 
-export function attributes(value: unknown, context: Context): CapsuleReportSpan['attributes'] {
+export function attributes(
+  value: unknown,
+  context: Context,
+  allowed: ReadonlySet<string> = allowedAttributes,
+): CapsuleReportSpan['attributes'] {
   return array(value).flatMap((item) => {
     const entry = object(item);
     const key = string(entry.key);
-    if (!allowedAttributes.has(key)) {
+    if (!allowed.has(key)) {
       return [];
     }
     const raw = object(entry.value);

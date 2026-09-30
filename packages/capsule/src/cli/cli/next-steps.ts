@@ -16,6 +16,10 @@ export const nextSteps = {
     `blackbox capsule show ${activity} --session ${capsule}`,
   showTrace: (trace: string, capsule: string) =>
     `blackbox capsule show ${trace} --session ${capsule}`,
+  showTraceSpans: (trace: string, capsule: string) =>
+    `blackbox capsule show ${trace} --session ${capsule} --spans`,
+  showTimeline: (capsule: string) => `blackbox capsule show ${capsule} --timeline`,
+  showCapsule: (capsule: string) => `blackbox capsule show ${capsule}`,
   report: (capsule: string) => `blackbox capsule report ${capsule}`,
   down: (capsule: string) => `blackbox capsule down ${capsule}`,
   /**

@@ -1,0 +1,16 @@
+capsule calm-comet-ada-000000000001  subscription-system  stopped  · complete
+  +10.3s  (no activity)  ┈┈ 16 traces before the first activity
+  +25.2s  c0000001  setup  Reset fixture  ── e0000001  2 services
+  +26.5s  c0000002  stimulus  Create Alice subscription  ── e0000002  4 services
+  +27.3s  c0000003  stimulus  Queue proof stimulus  (no telemetry)
+  +27.5s  (no activity)  ┈┈ e0000023  redis-proof-consumer  POST /fixture/shared-state-proof/proof-journey  202
+  +28.8s  c0000004  stimulus  Check health  (no telemetry)
+  +28.8s  (no activity)  ┈┈ e0000025  public-api  GET /health  200
+  +29.4s  c0000005  stimulus  Check health again  (no telemetry)
+  +29.5s  (no activity)  ┈┈ e0000019  public-api  GET /health  200
+  +30.1s  c0000006  stimulus  Check health once more  (no telemetry)
+  +30.1s  (no activity)  ┈┈ e0000016  public-api  GET /health  200
+
+  ── caused by the activity (trace context)
+  ┈┈ observed in this capsule, cause unknown
+→ blackbox capsule show c0000006 --session calm-comet-ada-000000000001
