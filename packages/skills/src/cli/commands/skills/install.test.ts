@@ -97,9 +97,6 @@ it('--json prints one document and exits 0 for a fresh install, then reports unc
     { kind: 'installed', agent: 'codex', path: join(directory, '.agents/skills/discovery') },
     { kind: 'installed', agent: 'claude', path: join(directory, '.claude/skills/discovery') },
   ]);
-  expect((document.warnings as { code: string }[]).map(({ code }) => code)).toEqual([
-    'cursor-duplicate-listing',
-  ]);
   const repeat = await run(directory, 'discovery', '--agent', 'codex', '--agent', 'cursor');
   expect(repeat.exit).toBe(0);
   expect(repeat.stdout).toContain(

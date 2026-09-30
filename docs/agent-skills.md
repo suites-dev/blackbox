@@ -24,15 +24,14 @@ terminal without any agent flag the command asks before installing for all three
 | -------- | --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `codex`  | `.agents/skills/discovery/` | Scans `.agents/skills` from the working directory up to the repository root. Invoke `$discovery` or let Codex select it when relevant. Changes are picked up without a restart.          |
 | `claude` | `.claude/skills/discovery/` | Reads only `.claude/skills`, not `.agents/skills`. Invoke `/discovery` or let Claude select it. Start a new session if `.claude/skills/` did not exist when the current session started. |
-| `cursor` | `.agents/skills/discovery/` | Reads `.agents/skills` and `.cursor/skills`, plus `.claude/skills` and `.codex/skills` as compatibility locations. Skills are available to Agent through discovery.                      |
+| `cursor` | `.agents/skills/discovery/` | Reads `.agents/skills` and `.cursor/skills`, plus `.claude/skills` and `.codex/skills` as third-party locations. Invoke `/discovery` in Agent chat or let Cursor select it.              |
 
-Codex and Cursor share one `.agents/skills` copy. Cursor treats each location as a separate skill, including when one
-is a symlink, so every extra copy adds another `discovery` entry in Cursor. Choosing `claude` with either of the others
-writes two byte-identical copies, and Cursor then lists `discovery` twice; the command warns
-(`cursor-duplicate-listing`) in that case. To keep a single listing in Cursor, either turn off **Settings → Rules,
-Skills and Subagents → Include third-party Plugins, Skills, and other configs** (this hides the `.claude` copy in the
-editor, but not in `cursor-agent`), or, when your team uses only Claude Code and Cursor, install with `--claude` alone
-and let Cursor read `.claude/skills`.
+Codex and Cursor share one `.agents/skills` copy. Choosing `claude` with either of the others writes a second,
+byte-identical copy to `.claude/skills`. Cursor still lists `discovery` once: when a skill name exists in several
+locations it keeps one, preferring `.cursor/skills`, then `.claude/skills`, then `.agents/skills`. With **Settings →
+Rules, Skills and Subagents → Include third-party Plugins, Skills, and other configs** turned off, the Cursor editor
+ignores `.claude/skills` and uses the `.agents` copy. Checked with Cursor 3.22.12 and `cursor-agent` 2026.09.28;
+older Cursor versions were reported to list such duplicates separately.
 
 After installing, check that each agent lists the skill; a successful copy does not by itself show that the agent
 loaded it. Commit the installed directories when the team, fresh checkouts, cloud agents, or CI workers need them.
@@ -48,8 +47,8 @@ The skill does not install Blackbox, grant execution permissions, or make planne
 
 Every run reports each destination with one outcome: one `<agent>: <outcome> <path>` line per selected agent. With
 `--json`, stdout carries one `skill-install` document with `ok`, `skill`, `version`, `source` (package and version),
-`projectDirectory`, `results` (one per agent: `kind`, `agent`, absolute `path`), `destinations` (one per directory:
-project-relative `path`, `agents`, `outcome`, `version`, `from`, `reason`, `message`, `changes`), and `warnings`.
+`projectDirectory`, `results` (one per agent: `kind`, `agent`, absolute `path`), and `destinations` (one per directory:
+project-relative `path`, `agents`, `outcome`, `version`, `from`, `reason`, `message`, `changes`).
 
 | Destination before the run                                       | Outcome                                                            | What is written                    |
 | ---------------------------------------------------------------- | ------------------------------------------------------------------ | ---------------------------------- |
@@ -81,8 +80,8 @@ track.
 | --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Agent selection       | Explicit: `--codex`, `--claude`, `--cursor`, or repeated `--agent`; `--yes` or the terminal prompt selects all three. Blackbox does not guess agents from files in the repository.                                                                 |
 | Destinations          | Project scope only: `.agents/skills/discovery/` (Codex, Cursor) and `.claude/skills/discovery/` (Claude Code). No global or user-level installation.                                                                                               |
-| Copy versus symlink   | Independent copies. Cursor lists symlinked duplicates twice anyway, some `cursor-agent` builds skipped symlinked skills, and symlinks are unreliable on Windows checkouts. Both copies are kept byte-identical.                                    |
-| Multi-host duplicates | Only the distinct directories needed by the selected agents are written, and Cursor shares Codex's directory; a `cursor-duplicate-listing` warning explains the Cursor setting when `.claude/skills` is written as well.                           |
+| Copy versus symlink   | Independent copies. Some `cursor-agent` builds skipped symlinked skills, older Cursor versions listed symlinked duplicates separately, and symlinks are unreliable on Windows checkouts. Both copies are kept byte-identical.                      |
+| Multi-host duplicates | Only the distinct directories needed by the selected agents are written, and Cursor shares Codex's `.agents/skills` copy, which it reads natively. Current Cursor lists a skill name once even when `.claude/skills` holds a second copy.          |
 | Project root          | The current working directory. The command does not search parent directories or the Git root.                                                                                                                                                     |
 | Installed name        | `discovery`, the skill's `name` and folder name as the Agent Skills specification requires.                                                                                                                                                        |
 | Source                | The tree packed in `@suites/blackbox-skills` (`assets/discovery/`). Nothing is downloaded, and no skill script is executed.                                                                                                                        |

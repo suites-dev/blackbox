@@ -36,16 +36,14 @@ it('fresh install writes the whole tree plus a provenance record per destination
     expect(record.version).toBe('1.0.0');
     expect(Object.keys(record.files)).toEqual(['SKILL.md', 'references/ci.md']);
   }
-  // Both copies are byte-identical, so Cursor's two listings carry the same text.
+  // Both copies are byte-identical, so whichever one Cursor picks carries the same text.
   expect(store.directories.get(AGENTS_DIR)).toEqual(store.directories.get(CLAUDE_DIR));
-  expect(result.warnings.map(({ code }) => code)).toEqual(['cursor-duplicate-listing']);
 });
 
-it('a single skills directory raises no duplicate-listing warning', async () => {
+it('agents that share a skills directory get one destination', async () => {
   for (const agents of [['codex', 'cursor'], ['claude']] as const) {
     const result = await install(new MemoryStore(), { agents: [...agents] });
-    expect(result.warnings, agents.join(',')).toEqual([]);
-    expect(result.destinations).toHaveLength(1);
+    expect(result.destinations, agents.join(',')).toHaveLength(1);
   }
 });
 

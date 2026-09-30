@@ -4,7 +4,7 @@ import { installSkillBundle, installSucceeded, type SkillInstallResult } from '.
 import { nodeSkillStore } from './store/node-skill-store.js';
 
 export { SKILL_AGENTS, type SkillAgent } from './hosts.js';
-export type { SkillDestinationResult, SkillOutcome, SkillWarning } from './install-skill.js';
+export type { SkillDestinationResult, SkillOutcome } from './install-skill.js';
 
 export interface ProjectSkillInstallation extends SkillInstallResult {
   readonly ok: boolean;

@@ -66,14 +66,8 @@ export interface SkillDestinationResult {
   readonly changes: readonly SkillFileChange[];
 }
 
-export interface SkillWarning {
-  readonly code: 'cursor-duplicate-listing';
-  readonly message: string;
-}
-
 export interface SkillInstallResult {
   readonly destinations: readonly SkillDestinationResult[];
-  readonly warnings: readonly SkillWarning[];
 }
 
 type Assessment =
@@ -255,20 +249,7 @@ export async function installSkillBundle(input: {
       }),
     );
   }
-  const directories = new Set(destinations.map(({ path }) => path.split('/')[0]));
-  const warnings: SkillWarning[] =
-    directories.has('.agents') && directories.has('.claude')
-      ? [
-          {
-            code: 'cursor-duplicate-listing',
-            message:
-              `Cursor lists ${input.bundle.name} twice when both .agents/skills and .claude/skills contain it. ` +
-              'In Cursor, turn off Settings → Rules, Skills and Subagents → "Include third-party Plugins, ' +
-              'Skills, and other configs" to hide the .claude copy.',
-          },
-        ]
-      : [];
-  return { destinations, warnings };
+  return { destinations };
 }
 
 export function installSucceeded(result: SkillInstallResult): boolean {

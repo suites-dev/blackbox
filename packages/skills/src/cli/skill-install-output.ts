@@ -23,7 +23,6 @@ export interface SkillInstallDocument {
   }[];
   /** One entry per distinct project-relative directory written or inspected. */
   readonly destinations: readonly SkillDestinationResult[];
-  readonly warnings: ProjectSkillInstallation['warnings'];
 }
 
 export function skillInstallDocument(installation: ProjectSkillInstallation): SkillInstallDocument {
@@ -42,7 +41,6 @@ export function skillInstallDocument(installation: ProjectSkillInstallation): Sk
       })),
     ),
     destinations: installation.destinations,
-    warnings: installation.warnings,
   };
 }
 
@@ -74,7 +72,6 @@ export function skillInstallLines(document: SkillInstallDocument): readonly stri
       const destination = byPath.get(result.path);
       return `${result.agent}: ${result.kind} ${result.path}${destination === undefined ? '' : detail(destination)}`;
     }),
-    ...document.warnings.map(({ message }) => `warning: ${message}`),
   ];
 }
 

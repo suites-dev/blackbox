@@ -5,11 +5,9 @@ export type SkillAgent = (typeof SKILL_AGENTS)[number];
 
 /**
  * Project-relative skills directory each agent discovers. Codex and Cursor share
- * `.agents/skills`; Claude Code reads only `.claude/skills`. Cursor also reads
- * `.cursor/skills` and, as compatibility locations, `.claude/skills` and
- * `.codex/skills`, and lists a skill once per location. Sharing `.agents/skills`
- * keeps Cursor to one listing unless `.claude/skills` is also written (see the
- * cursor-duplicate-listing warning).
+ * one `.agents/skills` copy, which Cursor reads natively; Claude Code reads only
+ * `.claude/skills`. Cursor also reads `.cursor/skills` and `.claude/skills`, but
+ * lists a skill name once, preferring `.cursor`, then `.claude`, then `.agents`.
  */
 const AGENT_DIRECTORIES = {
   codex: '.agents/skills',

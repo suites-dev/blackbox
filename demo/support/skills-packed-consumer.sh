@@ -62,8 +62,7 @@ esac
 
 cd "$PROJECT"
 "$BLACKBOX" skills install discovery --codex --claude --json >"$WORK_ROOT/first.json"
-jq -e '.ok and ([.destinations[].outcome] == ["installed", "installed"])
-  and ([.warnings[].code] == ["cursor-duplicate-listing"])' "$WORK_ROOT/first.json" >/dev/null ||
+jq -e '.ok and ([.destinations[].outcome] == ["installed", "installed"])' "$WORK_ROOT/first.json" >/dev/null ||
   fail "fresh install: $(cat "$WORK_ROOT/first.json")"
 for destination in .agents/skills/discovery .claude/skills/discovery; do
   diff -r -x .blackbox-install.json "$PACKED_SKILL" "$destination" >/dev/null ||
