@@ -18,7 +18,7 @@ concurrency:
 jobs:
   dependencies:
     name: Dependency Audit
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
@@ -39,7 +39,7 @@ jobs:
   dependency-review:
     name: Dependency Review
     if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
@@ -52,7 +52,7 @@ jobs:
 
   semgrep:
     name: Security Boundary Rules
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
@@ -70,7 +70,7 @@ jobs:
 
   secrets:
     name: Secret Scan
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
@@ -92,7 +92,7 @@ jobs:
     name: Security Gate
     if: always()
     needs: [dependencies, dependency-review, semgrep, secrets]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
       - name: Require every applicable scanner to succeed
