@@ -25,6 +25,7 @@ export async function awaitReadiness(input: {
   while (probeBudgetMs > 0) {
     try {
       const response = await fetch(url, {
+        redirect: 'manual',
         signal: AbortSignal.timeout(Math.min(2_000, probeBudgetMs)),
       });
       if (response.ok) {

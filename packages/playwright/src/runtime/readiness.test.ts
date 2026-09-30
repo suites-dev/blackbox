@@ -46,6 +46,44 @@ it('allows an absolute readiness URL on the sandbox origin', async () => {
   expect(fetchRequest.mock.calls[0][0]).toEqual(new URL('http://127.0.0.1:41001/health'));
 });
 
+it('does not follow a readiness redirect outside the sandbox origin', async () => {
+  vi.useFakeTimers();
+  vi.setSystemTime(0);
+  const contactedOrigins: string[] = [];
+  const fetchRequest = vi.fn<typeof fetch>().mockImplementation((_url, init) => {
+    if (init === undefined || init.redirect !== 'manual') {
+      contactedOrigins.push('http://127.0.0.1:41002');
+      return Promise.resolve(new Response(null, { status: 204 }));
+    }
+    return Promise.resolve(
+      new Response(null, {
+        status: 302,
+        headers: { location: 'http://127.0.0.1:41002/health' },
+      }),
+    );
+  });
+  vi.stubGlobal('fetch', fetchRequest);
+
+  let outcome: unknown;
+  const readiness = awaitReadiness({ entrypoint, path: '/health', timeoutMs: 50 }).catch(
+    (error: unknown) => {
+      outcome = error;
+    },
+  );
+  await vi.advanceTimersByTimeAsync(50);
+  await readiness;
+
+  expect(contactedOrigins).toEqual([]);
+  expect(fetchRequest).toHaveBeenCalledWith(
+    new URL('http://127.0.0.1:41001/health'),
+    expect.objectContaining({ redirect: 'manual' }),
+  );
+  expect(outcome).toMatchObject({
+    message: 'Readiness did not succeed within 50ms',
+    cause: { message: 'Readiness returned HTTP 302' },
+  });
+});
+
 it('caps the probe and retry delay at the remaining readiness budget', async () => {
   vi.useFakeTimers();
   vi.setSystemTime(0);
