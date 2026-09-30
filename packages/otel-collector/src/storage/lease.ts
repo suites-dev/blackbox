@@ -23,7 +23,7 @@ export async function acquireStorageLeaseWithRuntime(input: {
   } as const;
   await mkdir(sessionDirectory(lease), { recursive: true, mode: 0o700 });
   await mkdir(fragmentDirectory(lease), { recursive: true, mode: 0o700 });
-  const ownedPath = await claimLock({
+  const claimed = await claimLock({
     legacyPath,
     directory,
     record,
@@ -31,7 +31,8 @@ export async function acquireStorageLeaseWithRuntime(input: {
     ...lease,
   });
   const heartbeat = startLeaseHeartbeat({
-    path: ownedPath,
+    path: claimed.ownedPath,
+    legacyPath: claimed.legacyPath,
     token,
     intervalMs: input.runtime.heartbeatIntervalMs,
   });
