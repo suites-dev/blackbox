@@ -19,7 +19,8 @@ calls, database operations, and cache access, then turns those observations into
 developers and agents can use to evaluate claims about the system.
 
 > **Alpha preview:** Blackbox is being developed in public and has not been published to npm. Install from source.
-> APIs and formats may change. Playwright integration is in progress. See [alpha availability](docs/alpha-status.md).
+> APIs and formats may change. Playwright Sandbox fixtures are an early preview. See
+> [alpha availability](docs/alpha-status.md).
 
 ## Investigate a real system
 

@@ -13,11 +13,12 @@
     "test:demo": "bash demo/acceptance/capsule-test.sh",
     "test:demo:storyboard": "bash demo/storyboard/capsule-player.sh --no-pause --no-color --no-browser",
     "test:e2e:journeys": "node --test e2e/journeys/journey-harness.test.mjs && node e2e/journeys/run-journeys.mjs --repeat 2",
+    "test:e2e:playwright": "pnpm run prepare:consumer && bash demo/support/playwright-test.sh",
     "lint": "node scripts/check-source-layout.mjs && pnpm check:packages && eslint packages --cache && pnpm check:runtime-deps",
     "lint:fix": "eslint packages --cache --fix",
     "check:packages": "manypkg check",
     "check:runtime-deps": "dependency-cruiser packages --config .dependency-cruiser.cjs --focus '^packages/instrumentation-runtime-' --focus-depth 1 --exclude '(^|/)(dist/|coverage/|vitest(?:\\.integration)?\\.config\\.ts$)' --output-type err-long",
-    "typecheck": "tsc --project tsconfig.json --noEmit",
+    "typecheck": "tsc --project tsconfig.json --noEmit && tsc --project e2e/tsconfig.json",
     "format": "prettier --write \"packages/**/*.{ts,tsx,js,jsx,json,md,yaml,yml}\" package.json pnpm-workspace.yaml",
     "prepare": "husky"
   },
@@ -29,7 +30,7 @@
     "overrides": {
       "@grpc/grpc-js": "1.14.4",
       "@protobufjs/utf8": "1.1.1",
-      "axios": "1.18.0",
+      "axios": "1.20.0",
       "baseline-browser-mapping": "2.11.0",
       "brace-expansion@1": "1.1.21",
       "brace-expansion@2": "2.1.7",

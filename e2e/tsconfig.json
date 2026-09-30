@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "customConditions": ["blackbox-source"],
+    "baseUrl": "..",
+    "paths": {
+      "@playwright/test": ["packages/playwright/node_modules/@playwright/test/index.d.ts"],
+      "@suites/blackbox-playwright": ["packages/playwright/src/index.ts"]
+    },
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "allowArbitraryExtensions": true,
+    "types": ["node"]
+  },
+  "include": ["playwright.config.ts", "tests/playwright/**/*.ts"],
+  "exclude": ["node_modules"]
+}

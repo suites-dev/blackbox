@@ -212,7 +212,7 @@ jobs:
     name: E2E
     needs: build
     runs-on: ubuntu-24.04
-    timeout-minutes: 45
+    timeout-minutes: 70
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -274,6 +274,40 @@ jobs:
             log=ci-evidence/e2e/journeys/logs/command.log
             logs?=.blackbox/tmp/ci-e2e-journeys
 
+      # The CLI journeys clean their consumer on exit. Playwright prepares a
+      # fresh registry-installed consumer, then materializes this project in it.
+      - name: Run the Playwright system tests
+        id: playwright_tests
+        if: always() && steps.journeys.outcome != 'skipped'
+        timeout-minutes: 30
+        run: >-
+          node .github/scripts/ci-evidence.mjs run --lane e2e --project playwright
+          --evidence-dir ci-evidence/e2e/playwright -- pnpm test:e2e:playwright
+
+      - name: Archive exact Playwright harness output
+        id: playwright_archive
+        if: always()
+        env:
+          E2E_TEST_OUTCOME: ${{ steps.playwright_tests.outcome }}
+        run: node .github/scripts/playwright-e2e-evidence.mjs
+
+      - name: Retain Playwright evidence
+        id: playwright_evidence
+        if: always()
+        uses: ./.github/actions/ci-evidence
+        with:
+          lane: e2e
+          project: playwright
+          evidence-dir: ci-evidence/e2e/playwright
+          setup-result: ${{ steps.setup.outcome }}
+          result: ${{ steps.playwright_tests.outcome }}
+          command: pnpm test:e2e:playwright
+          expected: |
+            log=ci-evidence/e2e/playwright/logs/command.log
+            archive=.blackbox/tmp/ci-playwright-e2e-transport/evidence.tar
+            transport=.blackbox/tmp/ci-playwright-e2e-transport/transport-receipt.json
+            log?=.blackbox/tmp/ci-playwright-e2e-transport/archive.log
+
       - name: Stop the registry
         if: always()
         run: docker rm --force blackbox-test-registry
@@ -284,6 +318,8 @@ jobs:
           OUTCOMES: >-
             ${{ steps.transport_tests.outcome }} ${{ steps.setup.outcome }}
             ${{ steps.journeys.outcome }} ${{ steps.journey_evidence.outcome }}
+            ${{ steps.playwright_tests.outcome }} ${{ steps.playwright_archive.outcome }}
+            ${{ steps.playwright_evidence.outcome }}
         run: |
           for outcome in $OUTCOMES; do
             [[ "$outcome" == success ]] || exit 1

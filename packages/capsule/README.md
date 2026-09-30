@@ -8,9 +8,9 @@ composition layer.
 
 Its API is still evolving during alpha releases.
 
-Capsule is the implemented system-test path today. Playwright integration is future
-work; it can reuse the Sandbox layer underneath, but this package does not currently
-provide a Playwright adapter or runner.
+Capsule is the interactive system-test path. Native Playwright fixtures separately
+reuse the Sandbox layer underneath; this package does not provide or wrap their test
+API.
 
 ## How The Pieces Fit
 

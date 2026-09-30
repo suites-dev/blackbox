@@ -5,8 +5,14 @@ import { afterEach, expect, it } from 'vitest';
 
 import { readCapsuleObservations, readCapsuleTraces } from './observations.js';
 import { readCapsuleActivityObservations } from './activity-observations.js';
-import { cleanObservationFixtures, collectorFixture, collectorStorage, postTrace,
-  sessionFixture, traceId } from './testing/observations.fixture.js';
+import {
+  cleanObservationFixtures,
+  collectorFixture,
+  collectorStorage,
+  postTrace,
+  sessionFixture,
+  traceId,
+} from './testing/observations.fixture.js';
 
 afterEach(cleanObservationFixtures);
 
@@ -93,7 +99,10 @@ it('reads every retained trace in one pass, with the same fragments as a single 
   await postTrace(collector, 'activity-3');
   const all = await readCapsuleTraces(fixture);
   expect(all).toMatchObject({ kind: 'collector-traces-found', traces: [{ traceId }] });
-  const single = await readCapsuleObservations({ ...fixture, selection: { kind: 'trace', traceId } });
+  const single = await readCapsuleObservations({
+    ...fixture,
+    selection: { kind: 'trace', traceId },
+  });
   if (all.kind !== 'collector-traces-found' || single.kind !== 'collector-trace-found') {
     throw new Error('expected both reads to find the trace');
   }
@@ -108,4 +117,3 @@ it('reads every retained trace in one pass, with the same fragments as a single 
     readCapsuleTraces({ projectDirectory: fixture.projectDirectory, sessionId: '../../x' }),
   ).resolves.toMatchObject({ kind: 'capsule-operation-failed' });
 });
-

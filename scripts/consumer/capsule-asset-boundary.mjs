@@ -20,6 +20,7 @@ const packedPackages = [
   '@suites/blackbox-inst-runtime-node',
   '@suites/blackbox-instrumentation',
   '@suites/blackbox-otel-collector',
+  '@suites/blackbox-playwright',
   '@suites/blackbox-report-server',
   '@suites/blackbox-sandbox',
   '@suites/blackbox-skills',

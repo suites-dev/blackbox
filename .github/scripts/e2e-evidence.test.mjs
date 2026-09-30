@@ -59,6 +59,32 @@ test('failure before execution records absent outputs without inventing identiti
   assert.ok(receipt.sources.every((source) => source.status === 'missing'));
 });
 
+test('Playwright evidence uses its own transport identity and output directory', async (t) => {
+  const root = await workspace(t);
+  await write(root, 'e2e/test-results/junit.xml', '<testsuites/>');
+  await write(root, 'e2e/test-results/results.json', '{"status":"passed"}');
+  const outputDir = '.blackbox/tmp/ci-playwright-e2e-transport';
+  const untrustedOutput = `../${path.basename(root)}-untrusted-output`;
+  const wrapper = fileURLToPath(new URL('./playwright-e2e-evidence.mjs', import.meta.url));
+  const result = spawnSync(process.execPath, [wrapper], {
+    cwd: root,
+    encoding: 'utf8',
+    env: {
+      ...process.env,
+      E2E_TEST_OUTCOME: 'success',
+      E2E_EVIDENCE_OUTPUT_DIR: untrustedOutput,
+    },
+  });
+  assert.equal(result.status, 0, result.stderr);
+  const receipt = JSON.parse(
+    await fs.readFile(path.join(root, outputDir, 'transport-receipt.json'), 'utf8'),
+  );
+  assert.equal(receipt.status, 'complete');
+  assert.equal(receipt.purpose, 'playwright-harness-evidence-transport');
+  assert.ok((await fs.stat(path.join(root, outputDir, 'evidence.tar'))).size > 0);
+  await assert.rejects(fs.stat(path.resolve(root, untrustedOutput)), /ENOENT/);
+});
+
 test('missing mandatory reports fail retention but preserve available evidence and receipt', async (t) => {
   const root = await workspace(t);
   await write(root, 'e2e/test-results/partial:trace.zip', 'partial');

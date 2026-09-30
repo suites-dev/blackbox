@@ -24,17 +24,17 @@ Capsule manager -----> Sandbox -----> Testcontainers / Docker Compose
 readiness, retained experiment state, and reports
 ```
 
-[Capsule](../capsule/README.md) is the current workspace consumer. It supplies a
-resolved catalog plan, asks Sandbox to acquire the Compose project, uses the
-returned handle for endpoints, inspection, telemetry, and participant execution,
-and delegates cleanup recovery back to Sandbox. See the Capsule
+[Capsule](../capsule/README.md) and the native [Playwright fixtures](../playwright/README.md)
+are the current workspace consumers. Both supply a resolved catalog plan and ask
+Sandbox to acquire the Compose project. Capsule uses the returned handle for
+endpoints, inspection, telemetry, and participant execution, and delegates cleanup
+recovery back to Sandbox. See the Capsule
 [manager ports](../capsule/src/manager/ports.ts),
 [acquisition flow](../capsule/src/manager/acquisition.ts), and
 [recovery adapter](../capsule/src/session/recovery/sandbox-cleanup.ts).
 
-A future Playwright adapter is planned to reuse this lifecycle around Playwright
-`test()` blocks. No Playwright fixture, adapter, or public test API is implemented
-in this package today.
+The Playwright package owns its test API and acquires this lifecycle around each
+physical Playwright attempt. Sandbox itself remains test-framework neutral.
 
 ## Lifecycle And Ownership
 

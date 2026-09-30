@@ -1,13 +1,8 @@
 const inPackage = (name) => `^packages/${name}/`;
 
-// The public facade owns the documented Playwright config entry point. It is
-// the only non-adapter module allowed to import Playwright directly; the
-// facade delegates runtime behavior to runner-playwright, but its type-only
-// config import is part of the public native Playwright integration boundary.
-const PLAYWRIGHT_IMPORTERS = [
-  inPackage('runner-playwright'),
-  '^packages/blackbox/playwright\\.ts$',
-];
+// Native Playwright dependencies stay inside the dedicated public integration
+// package.
+const PLAYWRIGHT_IMPORTERS = [inPackage('playwright')];
 
 // Files something OUTSIDE the import graph loads directly, so nothing inside
 // packages/ needs to import them: a test runner invoking each test file, a
@@ -213,10 +208,10 @@ module.exports = {
       name: 'runtime-adapters-are-composition-only',
       severity: 'error',
       comment:
-        'Runtime instrumentation adapters are optional leaf packages. Only the CLI composition root may select them; core packages consume the language-neutral activation descriptor.',
+        'Runtime instrumentation adapters are optional leaf packages. Only composition roots may select them; core packages consume the language-neutral activation descriptor.',
       from: {
         path: '^packages/[^/]+/',
-        pathNot: '^packages/(cli|instrumentation-runtime-[^/]+)/',
+        pathNot: '^packages/(cli|playwright|instrumentation-runtime-[^/]+)/',
       },
       to: { path: '^packages/instrumentation-runtime-[^/]+/' },
     },
@@ -393,14 +388,18 @@ module.exports = {
         'blackbox run executes through the runner PORT. The composition root must never import a test framework, directly or through the Playwright adapter.',
       from: { path: inPackage('cli') },
       to: {
-        path: [inPackage('runner-playwright'), '/node_modules/@playwright/'],
+        path: [
+          inPackage('playwright'),
+          inPackage('runner-playwright'),
+          '/node_modules/@playwright/',
+        ],
       },
     },
     {
       name: 'only-the-playwright-adapter-imports-playwright',
       severity: 'error',
       comment:
-        'runner-playwright and the explicit public Playwright facade are the only modules permitted to import @playwright/test. Other core modules must remain framework-neutral.',
+        'The dedicated integration package is the only module permitted to import @playwright/test. Other core modules must remain framework-neutral.',
       from: { pathNot: PLAYWRIGHT_IMPORTERS },
       to: { path: '/node_modules/@playwright/' },
     },
