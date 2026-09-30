@@ -65,6 +65,55 @@ it('places uncaused traces before, between and after activities, in start order'
   ]);
 });
 
+it('places ties after the later activity and skips activities without a readable start', () => {
+  const tied = {
+    ...second,
+    activityId: 'act-3',
+    sequence: 3,
+    traceId: '3'.repeat(32),
+    startedAt: second.startedAt,
+  };
+  const unreadable = {
+    ...first,
+    activityId: 'act-4',
+    sequence: 4,
+    traceId: '4'.repeat(32),
+    startedAt: 'not-a-time',
+  };
+  const placements = placeTraces({
+    activities: [unreadable, tied, second, first],
+    traces: [{ traceId: 'f'.repeat(32), earliestStartUnixNano: ns('2026-09-01T10:00:20.000Z') }],
+  });
+  expect(placements).toEqual([
+    {
+      kind: 'uncaused',
+      traceId: 'f'.repeat(32),
+      placedAfter: 'act-3',
+      earliestStartUnixNano: ns('2026-09-01T10:00:20.000Z'),
+    },
+  ]);
+});
+
+it('places 5,000 traces among 5,000 activities within 500 ms', () => {
+  const base = Date.parse('2026-09-01T10:00:00.000Z');
+  const activities = Array.from({ length: 5_000 }, (_, index) => ({
+    activityId: `act-${String(index)}`,
+    sequence: index,
+    traceId: index.toString(16).padStart(32, 'a'),
+    startedAt: new Date(base + index * 1_000).toISOString(),
+  }));
+  const traces = Array.from({ length: 5_000 }, (_, index) => ({
+    traceId: index.toString(16).padStart(32, 'b'),
+    earliestStartUnixNano: String(BigInt(base + index * 1_000 + 500) * 1_000_000n),
+  }));
+  const started = performance.now();
+  const placements = placeTraces({ activities, traces });
+  const elapsed = performance.now() - started;
+  expect(placements).toHaveLength(5_000);
+  expect(placements[4_999]).toMatchObject({ kind: 'uncaused', placedAfter: 'act-4999' });
+  expect(elapsed).toBeLessThan(500);
+});
+
 /** The HTML report's own trace association for one trace inside the activity's window. */
 function reportAssociations(input: {
   readonly activity: ReturnType<typeof completedHostActivity>;

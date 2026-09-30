@@ -9,7 +9,12 @@ import { createRedactionContext, redactText } from '../../../reporting/redaction
 import { formatColumns } from '../../cli/output.js';
 import { nextSteps } from '../../cli/next-steps.js';
 import { offsetMs, rootSummary, type CapsuleInvestigation } from './investigation-model.js';
-import { limitationsOf, observationDocument, type ActivityObservation } from './show-json.js';
+import {
+  limitationsOf,
+  observationDocument,
+  statusDocument,
+  type ActivityObservation,
+} from './show-json.js';
 import {
   contextText,
   field,
@@ -38,7 +43,9 @@ function driverFailedEarly(activity: CapsuleActivityReport): boolean {
   );
 }
 
-function driverFailure(activity: CapsuleActivityReport):
+function driverFailure(
+  activity: CapsuleActivityReport,
+):
   | { readonly kind: 'driver-prepare-failed'; readonly message: string }
   | { readonly kind: 'driver-propagation-refused' }
   | null {
@@ -139,7 +146,9 @@ export function activityView(input: ActivityViewInput) {
     return {
       lines: [...head, field('failure', failureText)],
       next: [],
-      document: { failure, limitations: [] },
+      // No process ran, so there is no observation, but every show document
+      // still carries the capsule's status.
+      document: { ...statusDocument(investigation.data.completeness), failure, limitations: [] },
     };
   }
   const context: ActivityContext | null = activityContext(activity);

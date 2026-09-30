@@ -98,6 +98,36 @@ void test('show activity: shared-state driver, nothing observed, uncaused traces
   t.assert.fileSnapshot(text(view), join(SNAPSHOTS, 'activity-shared-state.txt'), raw);
 });
 
+void test('show activity: an early driver failure still carries the capsule status', async () => {
+  const recorded = await fixture('recorded-capsule');
+  const base = activityNamed(recorded, 'Create Alice subscription');
+  if (base.kind !== 'completed') {
+    throw new Error('fixture activity is not completed');
+  }
+  if (!('propagation' in base.outcome)) {
+    throw new Error('fixture activity has no propagation record');
+  }
+  // The recorded activity, as if its driver had failed before any process ran.
+  const failed = {
+    ...base,
+    outcome: {
+      kind: 'driver-prepare-failed',
+      driverId: 'public-api',
+      propagation: base.outcome.propagation,
+      error: { name: 'Error', message: 'no endpoint' },
+    },
+  } satisfies CapsuleActivityReport;
+  const view = activityView({
+    short: short(failed.activityId),
+    activity: failed,
+    investigation: investigation(recorded),
+  });
+  const document: Record<string, unknown> = view.document;
+  assert.equal(document.status, 'complete');
+  assert.equal('observation' in document, false);
+  assert.ok('failure' in document);
+});
+
 void test('show activity: untraced host command', async (t) => {
   const recorded = await fixture('recorded-capsule');
   const activity = activityNamed(recorded, 'Check health once more');

@@ -60,22 +60,31 @@ function compareStarts(left: string | null, right: string | null): number {
   return difference < 0n ? -1 : 1;
 }
 
-function placedAfter(
-  ordered: readonly CausalityActivity[],
-  earliest: string | null,
-): string | null {
+interface ActivityStart {
+  readonly started: bigint;
+  readonly activityId: string;
+}
+
+/**
+ * The latest activity that started at or before `earliest`, by binary search
+ * over activities already in start order (ties keep the later activity).
+ */
+function placedAfter(starts: readonly ActivityStart[], earliest: string | null): string | null {
   if (earliest === null) {
     return null;
   }
   const start = BigInt(earliest);
-  let found: string | null = null;
-  for (const activity of ordered) {
-    const started = isoToUnixNano(activity.startedAt);
-    if (started !== null && started <= start) {
-      found = activity.activityId;
+  let low = 0;
+  let high = starts.length;
+  while (low < high) {
+    const middle = (low + high) >>> 1;
+    if (starts[middle].started <= start) {
+      low = middle + 1;
+    } else {
+      high = middle;
     }
   }
-  return found;
+  return low === 0 ? null : starts[low - 1].activityId;
 }
 
 /**
@@ -90,6 +99,12 @@ export function placeTraces(input: {
 }): readonly TracePlacement[] {
   const ordered = [...input.activities].sort(compareActivities);
   const owner = new Map(ordered.map((activity) => [activity.traceId, activity.activityId]));
+  // Activities whose start parses, in start order: placement is one binary
+  // search per trace instead of a scan of every activity.
+  const starts = ordered.flatMap((activity) => {
+    const started = isoToUnixNano(activity.startedAt);
+    return started === null ? [] : [{ started, activityId: activity.activityId }];
+  });
   const caused: TracePlacement[] = [];
   const uncaused: Extract<TracePlacement, { kind: 'uncaused' }>[] = [];
   for (const trace of input.traces) {
@@ -98,7 +113,7 @@ export function placeTraces(input: {
       uncaused.push({
         kind: 'uncaused',
         traceId: trace.traceId,
-        placedAfter: placedAfter(ordered, trace.earliestStartUnixNano),
+        placedAfter: placedAfter(starts, trace.earliestStartUnixNano),
         earliestStartUnixNano: trace.earliestStartUnixNano,
       });
     } else {
