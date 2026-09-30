@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, expect, it } from 'vitest';
 import { acquireStorageLeaseWithRuntime } from '../../lease.js';
-import { lockDirectoryPath } from '../../paths.js';
+import { lockDirectoryPath, lockPath } from '../../paths.js';
 import { candidatePath } from '../candidate.js';
 import { releaseOwnedLock } from '../lifecycle/release.js';
 import {
@@ -185,7 +185,7 @@ it('allows only the current record token to release the lock', async () => {
     token: 'owner-token',
     state: 'owned',
   });
-  await releaseOwnedLock({ path, token: 'foreign-token' });
+  await releaseOwnedLock({ path, legacyPath: lockPath(lease), token: 'foreign-token' });
   expect(await readFile(path, 'utf8')).toContain('owner-token');
   await acquired.release();
   await expect(readFile(path, 'utf8')).rejects.toMatchObject({ code: 'ENOENT' });

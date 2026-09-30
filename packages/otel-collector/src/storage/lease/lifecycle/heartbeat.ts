@@ -29,6 +29,7 @@ async function verifyOwnership(input: {
 
 export function startLeaseHeartbeat(input: {
   readonly path: string;
+  readonly legacyPath: string;
   readonly token: string;
   readonly intervalMs: number;
 }): LeaseHeartbeat {

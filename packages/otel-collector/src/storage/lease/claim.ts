@@ -1,5 +1,5 @@
 import { mkdir, rename } from 'node:fs/promises';
-import { candidatePath, temporaryCandidatePath } from './candidate.js';
+import { candidatePath, encodedToken, temporaryCandidatePath } from './candidate.js';
 import { readCandidateSet } from './candidate-set.js';
 import { publishLock, removeLock } from './io.js';
 import { admitLegacyLock } from './legacy.js';
@@ -23,7 +23,7 @@ export async function claimLock(input: {
   readonly runtime: LeaseRuntime;
   readonly sessionId: string;
   readonly executionId: string;
-}): Promise<string> {
+}): Promise<{ readonly ownedPath: string; readonly legacyPath: string }> {
   if (!(await admitLegacyLock({ path: input.legacyPath, runtime: input.runtime }))) {
     throw conflict(input);
   }
@@ -38,38 +38,56 @@ export async function claimLock(input: {
     token: input.record.token,
     state: 'owned',
   });
-  await publishLock({
-    temporaryPath: temporaryCandidatePath({
-      directory: input.directory,
-      token: input.record.token,
-    }),
-    path: claiming,
-    record: input.record,
-  });
-  for (let attempt = 0; attempt < 50; attempt += 1) {
-    const set = await readCandidateSet({ directory: input.directory, runtime: input.runtime });
-    if (set.kind === 'foreign-candidate') {
-      await removeLock(claiming);
+  const legacyTemporaryPath = `${input.legacyPath}.${encodedToken(input.record.token)}.tmp`;
+  try {
+    await publishLock({
+      temporaryPath: legacyTemporaryPath,
+      path: input.legacyPath,
+      record: input.record,
+    });
+  } catch (error) {
+    if (error instanceof Error && 'code' in error && error.code === 'EEXIST') {
       throw conflict(input);
     }
-    const others = set.candidates.filter(
-      (candidate) => candidate.record.token !== input.record.token,
-    );
-    if (others.some((candidate) => candidate.kind === 'owned-candidate')) {
-      await removeLock(claiming);
-      throw conflict(input);
-    }
-    if (others.length === 0) {
-      await rename(claiming, owned);
-      return owned;
-    }
-    const tokens = [input.record.token, ...others.map((candidate) => candidate.record.token)];
-    if (tokens.sort()[0] !== input.record.token) {
-      await removeLock(claiming);
-      throw conflict(input);
-    }
-    await settle();
+    throw error;
   }
-  await removeLock(claiming);
-  throw conflict(input);
+  try {
+    await publishLock({
+      temporaryPath: temporaryCandidatePath({
+        directory: input.directory,
+        token: input.record.token,
+      }),
+      path: claiming,
+      record: input.record,
+    });
+    for (let attempt = 0; attempt < 50; attempt += 1) {
+      const set = await readCandidateSet({ directory: input.directory, runtime: input.runtime });
+      if (set.kind === 'foreign-candidate') {
+        await removeLock(claiming);
+        throw conflict(input);
+      }
+      const others = set.candidates.filter(
+        (candidate) => candidate.record.token !== input.record.token,
+      );
+      if (others.some((candidate) => candidate.kind === 'owned-candidate')) {
+        await removeLock(claiming);
+        throw conflict(input);
+      }
+      if (others.length === 0) {
+        await rename(claiming, owned);
+        return { ownedPath: owned, legacyPath: input.legacyPath };
+      }
+      const tokens = [input.record.token, ...others.map((candidate) => candidate.record.token)];
+      if (tokens.sort()[0] !== input.record.token) {
+        await removeLock(claiming);
+        throw conflict(input);
+      }
+      await settle();
+    }
+    await removeLock(claiming);
+    throw conflict(input);
+  } catch (error) {
+    await removeLock(input.legacyPath);
+    throw error;
+  }
 }
