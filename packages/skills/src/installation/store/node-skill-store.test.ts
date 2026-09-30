@@ -3,13 +3,17 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { expect, it } from 'vitest';
 
-import { SkillStoreError } from '../install-skill.js';
+import { SkillStoreError, type SkillStore } from '../install-skill.js';
 import { nodeSkillStore } from './node-skill-store.js';
 
 const DESTINATION = '.agents/skills/discovery';
 const files = (entries: Record<string, string>) =>
   new Map(Object.entries(entries).map(([path, content]) => [path, Buffer.from(content)]));
 const record = Buffer.from('{"record":true}\n');
+const ABSENT = { kind: 'absent' } as const;
+/** Replaces the destination after reading it, as the installer does. */
+const replaceRead = async (store: SkillStore, entries: Record<string, string>) =>
+  store.replace(DESTINATION, files(entries), await store.read(DESTINATION));
 const failAt = (hook: 'afterStage' | 'afterRetire') => ({
   afterStage: () =>
     hook === 'afterStage' ? Promise.reject(new Error('interrupted')) : Promise.resolve(),
@@ -59,13 +63,13 @@ it('replace creates the tree, and later swaps it whole, leaving siblings alone',
     expect(await store.read(DESTINATION)).toEqual({ kind: 'absent' });
     await mkdir(join(project, '.agents', 'skills', 'mine'), { recursive: true });
     await writeFile(join(project, '.agents', 'skills', 'mine', 'SKILL.md'), 'mine\n');
-    await store.replace(DESTINATION, files({ 'SKILL.md': 'v1\n', 'references/a.md': 'a\n' }));
+    await replaceRead(store, { 'SKILL.md': 'v1\n', 'references/a.md': 'a\n' });
     const read = await store.read(DESTINATION);
     expect(read.kind === 'directory' ? [...read.files.keys()].sort() : []).toEqual([
       'SKILL.md',
       'references/a.md',
     ]);
-    await store.replace(DESTINATION, files({ 'SKILL.md': 'v2\n' }));
+    await replaceRead(store, { 'SKILL.md': 'v2\n' });
     expect(await tree(join(project, DESTINATION))).toEqual(['SKILL.md']);
     expect(await readFile(join(project, DESTINATION, 'SKILL.md'), 'utf8')).toBe('v2\n');
     expect((await readdir(join(project, '.agents', 'skills'))).sort()).toEqual([
@@ -80,13 +84,9 @@ it('replace creates the tree, and later swaps it whole, leaving siblings alone',
 
 it('an install interrupted while staging leaves the previous tree and no residue', async () => {
   await withProject(async (project) => {
-    await nodeSkillStore(project).replace(DESTINATION, files({ 'SKILL.md': 'v1\n' }));
+    await replaceRead(nodeSkillStore(project), { 'SKILL.md': 'v1\n' });
     const interrupted = nodeSkillStore(project, failAt('afterStage'));
-    await rejectsWith(
-      interrupted.replace(DESTINATION, files({ 'SKILL.md': 'v2\n' })),
-      'io-error',
-      /interrupted/u,
-    );
+    await rejectsWith(replaceRead(interrupted, { 'SKILL.md': 'v2\n' }), 'io-error', /interrupted/u);
     expect(await readFile(join(project, DESTINATION, 'SKILL.md'), 'utf8')).toBe('v1\n');
     expect(await readdir(join(project, '.agents', 'skills'))).toEqual(['discovery']);
   });
@@ -94,13 +94,9 @@ it('an install interrupted while staging leaves the previous tree and no residue
 
 it('an install interrupted mid-swap restores the previous tree', async () => {
   await withProject(async (project) => {
-    await nodeSkillStore(project).replace(DESTINATION, files({ 'SKILL.md': 'v1\n' }));
+    await replaceRead(nodeSkillStore(project), { 'SKILL.md': 'v1\n' });
     const interrupted = nodeSkillStore(project, failAt('afterRetire'));
-    await rejectsWith(
-      interrupted.replace(DESTINATION, files({ 'SKILL.md': 'v2\n' })),
-      'io-error',
-      /interrupted/u,
-    );
+    await rejectsWith(replaceRead(interrupted, { 'SKILL.md': 'v2\n' }), 'io-error', /interrupted/u);
     expect(await readFile(join(project, DESTINATION, 'SKILL.md'), 'utf8')).toBe('v1\n');
     expect(await readdir(join(project, '.agents', 'skills'))).toEqual(['discovery']);
   });
@@ -125,7 +121,7 @@ it('a process killed mid-swap is recovered on the next run', async () => {
         (read.kind === 'directory' ? read.files.get('SKILL.md') : undefined) ?? new Uint8Array(),
       ).toString(),
     ).toBe('user content\n');
-    await store.replace(DESTINATION, files({ 'SKILL.md': 'v2\n' }));
+    await replaceRead(store, { 'SKILL.md': 'v2\n' });
     expect(await readdir(skills)).toEqual(['discovery']);
   });
 });
@@ -161,7 +157,7 @@ it('a symlinked destination is refused and its target is never touched', async (
       const store = nodeSkillStore(project);
       await rejectsWith(store.read(DESTINATION), 'unsafe-path', /symlinked skill directory/u);
       await rejectsWith(
-        store.replace(DESTINATION, files({ 'SKILL.md': 'x' })),
+        store.replace(DESTINATION, files({ 'SKILL.md': 'x' }), ABSENT),
         'unsafe-path',
         /symlinked/u,
       );
@@ -184,7 +180,7 @@ it('a symlinked skills directory component is refused before anything is written
       const store = nodeSkillStore(project);
       await rejectsWith(store.read(DESTINATION), 'unsafe-path', /unsafe skill directory/u);
       await rejectsWith(
-        store.replace(DESTINATION, files({ 'SKILL.md': 'x' })),
+        store.replace(DESTINATION, files({ 'SKILL.md': 'x' }), ABSENT),
         'unsafe-path',
         /unsafe skill directory/u,
       );
@@ -200,7 +196,7 @@ it('a symlinked skills directory component is refused before anything is written
 
 it('a symlink inside an installed skill is refused rather than read', async () => {
   await withProject(async (project) => {
-    await nodeSkillStore(project).replace(DESTINATION, files({ 'SKILL.md': 'v1\n' }));
+    await replaceRead(nodeSkillStore(project), { 'SKILL.md': 'v1\n' });
     await symlink('/etc/hostname', join(project, DESTINATION, 'leak.md'));
     await rejectsWith(
       nodeSkillStore(project).read(DESTINATION),
@@ -221,14 +217,14 @@ it('paths that could escape the project are refused', async () => {
     ]) {
       await rejectsWith(store.read(path), 'unsafe-path', /unsafe skill path/u);
       await rejectsWith(
-        store.replace(path, files({ 'SKILL.md': 'x' })),
+        store.replace(path, files({ 'SKILL.md': 'x' }), ABSENT),
         'unsafe-path',
         /unsafe skill path/u,
       );
       await rejectsWith(store.writeRecord(path, record), 'unsafe-path', /unsafe skill path/u);
     }
     await rejectsWith(
-      store.replace(DESTINATION, files({ '../escape.md': 'x' })),
+      store.replace(DESTINATION, files({ '../escape.md': 'x' }), ABSENT),
       'unsafe-path',
       /unsafe skill path/u,
     );
@@ -243,7 +239,7 @@ it.skipIf(typeof process.getuid === 'function' && process.getuid() === 0)(
       await mkdir(join(project, '.agents', 'skills'), { recursive: true });
       await chmod(join(project, '.agents', 'skills'), 0o555);
       await rejectsWith(
-        nodeSkillStore(project).replace(DESTINATION, files({ 'SKILL.md': 'x' })),
+        replaceRead(nodeSkillStore(project), { 'SKILL.md': 'x' }),
         'permission-denied',
         /EACCES/u,
       );
@@ -254,5 +250,9 @@ it.skipIf(typeof process.getuid === 'function' && process.getuid() === 0)(
 it('a missing project directory is an io-error, not an empty install', async () => {
   const store = nodeSkillStore(join(tmpdir(), 'skill-store-missing-0123456789'));
   await rejectsWith(store.read(DESTINATION), 'io-error', /ENOENT/u);
-  await rejectsWith(store.replace(DESTINATION, files({ 'SKILL.md': 'x' })), 'io-error', /ENOENT/u);
+  await rejectsWith(
+    store.replace(DESTINATION, files({ 'SKILL.md': 'x' }), ABSENT),
+    'io-error',
+    /ENOENT/u,
+  );
 });

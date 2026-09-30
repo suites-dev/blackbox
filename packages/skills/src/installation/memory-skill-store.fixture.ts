@@ -41,7 +41,11 @@ export class MemoryStore implements SkillStore {
     );
   }
 
-  replace(path: string, files: ReadonlyMap<string, Uint8Array>): Promise<void> {
+  replace(
+    path: string,
+    files: ReadonlyMap<string, Uint8Array>,
+    _expected: StoredSkill,
+  ): Promise<void> {
     this.#fail(path, 'replace');
     this.writes += 1;
     this.others.delete(path);

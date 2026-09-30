@@ -59,6 +59,7 @@ project-relative `path`, `agents`, `outcome`, `version`, `from`, `reason`, `mess
 | Installed by Blackbox, then a file was edited, added, or removed | `conflict`, reason `locally-modified`                              | Nothing; `changes` lists each file |
 | Anything else already there (other files, a file, another skill) | `conflict`, reason `not-installed-by-blackbox`                     | Nothing                            |
 | Unreadable/unwritable, or reached through a symlink              | `failed`, reason `permission-denied`, `unsafe-path`, or `io-error` | Nothing                            |
+| Changed by someone else while the command was running            | `failed`, reason `changed-during-install`                          | Nothing; rerun to reassess it      |
 
 The command exits `0` when every destination is `installed`, `updated`, `unchanged`, or `adopted`, and `1` when any is
 a conflict or failed; the other destinations are still processed and reported. Blackbox never replaces a conflicting

@@ -3,7 +3,7 @@ import { mkdir, readdir, rename, rm, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 
 import { INSTALL_RECORD_NAME } from '../install-record.js';
-import type { SkillStore, StoredSkill } from '../install-skill.js';
+import { SkillStoreError, type SkillStore, type StoredSkill } from '../install-skill.js';
 import {
   asStoreError,
   lstatOrNull,
@@ -39,27 +39,47 @@ async function siblings(parent: string, name: string, kind: 'tmp' | 'old'): Prom
 }
 
 /**
- * An install interrupted between moving the previous tree aside and moving the
- * new one in leaves no destination and one retired sibling. Put it back so the
- * next run judges the content that was there, never an empty destination.
+ * Recovers from an interrupted run. With no destination and one retired
+ * sibling, the swap stopped midway: put the previous tree back so the next run
+ * judges the content that was there. Staging siblings are always removed.
+ * Retired siblings are removed only once a destination exists, because the swap
+ * that retired them then finished; without one they are left for the user.
  */
-async function restoreInterrupted(parent: string, name: string): Promise<void> {
-  if ((await lstatOrNull(join(parent, name))) !== null) {
-    return;
+async function recoverInterrupted(parent: string, name: string): Promise<void> {
+  const destination = join(parent, name);
+  if ((await lstatOrNull(destination)) === null) {
+    const retired = await siblings(parent, name, 'old');
+    if (retired.length === 1) {
+      await rename(join(parent, retired[0]), destination);
+    }
   }
-  const retired = await siblings(parent, name, 'old');
-  if (retired.length === 1) {
-    await rename(join(parent, retired[0]), join(parent, name));
-  }
-}
-
-/** Removes temporary trees left by an earlier interrupted run. */
-async function removeStale(parent: string, name: string): Promise<void> {
-  for (const kind of ['tmp', 'old'] as const) {
+  const kinds =
+    (await lstatOrNull(destination)) === null ? (['tmp'] as const) : (['tmp', 'old'] as const);
+  for (const kind of kinds) {
     for (const entry of await siblings(parent, name, kind)) {
       await rm(join(parent, entry), { recursive: true, force: true });
     }
   }
+}
+
+function changedDuringInstall(destination: string): SkillStoreError {
+  return new SkillStoreError(
+    'changed-during-install',
+    `${destination} changed while installing; nothing was replaced, rerun to reassess it`,
+  );
+}
+
+function sameTree(
+  left: ReadonlyMap<string, Uint8Array>,
+  right: ReadonlyMap<string, Uint8Array>,
+): boolean {
+  return (
+    left.size === right.size &&
+    [...left].every(([path, content]) => {
+      const other = right.get(path);
+      return other !== undefined && Buffer.from(content).equals(other);
+    })
+  );
 }
 
 async function stage(directory: string, files: ReadonlyMap<string, Uint8Array>): Promise<void> {
@@ -78,7 +98,7 @@ async function readStored(projectDirectory: string, path: string): Promise<Store
   if (parent === null) {
     return { kind: 'absent' };
   }
-  await restoreInterrupted(parent, name);
+  await recoverInterrupted(parent, name);
   const destination = join(parent, name);
   const info = await lstatOrNull(destination);
   if (info === null) {
@@ -93,25 +113,42 @@ async function readStored(projectDirectory: string, path: string): Promise<Store
   return { kind: 'directory', files: await readSkillTree(destination) };
 }
 
-/** Moves `staged` into place, restoring the previous tree if the swap fails. */
+/**
+ * Moves `staged` into place, restoring the previous tree if the swap fails. The
+ * previous tree is compared with `expected` after it is moved aside, so content
+ * written after the assessment is put back rather than replaced.
+ */
 async function swapIn(input: {
   readonly parent: string;
   readonly name: string;
   readonly staged: string;
+  readonly expected: StoredSkill;
   readonly hooks: ReplaceHooks;
 }): Promise<void> {
   const destination = join(input.parent, input.name);
   const info = await lstatOrNull(destination);
   if (info === null) {
-    await rename(input.staged, destination);
+    if (input.expected.kind !== 'absent') {
+      throw changedDuringInstall(destination);
+    }
+    await rename(input.staged, destination).catch((error: unknown) => {
+      const code = error instanceof Error && 'code' in error ? error.code : '';
+      throw code === 'EEXIST' || code === 'ENOTEMPTY' ? changedDuringInstall(destination) : error;
+    });
     return;
   }
   if (info.isSymbolicLink()) {
     throw unsafe(`Refusing symlinked skill directory: ${destination}`);
   }
+  if (input.expected.kind !== 'directory') {
+    throw changedDuringInstall(destination);
+  }
   const retired = join(input.parent, temporaryName(input.name, 'old'));
   await rename(destination, retired);
   try {
+    if (!sameTree(await readSkillTree(retired), input.expected.files)) {
+      throw changedDuringInstall(destination);
+    }
     await input.hooks.afterRetire();
     await rename(input.staged, destination);
   } catch (error) {
@@ -126,6 +163,7 @@ async function replaceTree(
   hooks: ReplaceHooks,
   path: string,
   files: ReadonlyMap<string, Uint8Array>,
+  expected: StoredSkill,
 ): Promise<void> {
   let staged: string | null = null;
   try {
@@ -135,12 +173,11 @@ async function replaceTree(
     if (parent === null) {
       throw unsafe(`Cannot create skill directory: ${path}`);
     }
-    await restoreInterrupted(parent, name);
-    await removeStale(parent, name);
+    await recoverInterrupted(parent, name);
     staged = join(parent, temporaryName(name, 'tmp'));
     await stage(staged, files);
     await hooks.afterStage();
-    await swapIn({ parent, name, staged, hooks });
+    await swapIn({ parent, name, staged, expected, hooks });
     staged = null;
   } catch (error) {
     if (staged !== null) {
@@ -204,8 +241,9 @@ export function nodeSkillStore(
     };
   return {
     read: storeErrors((path: string) => readStored(projectDirectory, path)),
-    replace: storeErrors((path: string, files: ReadonlyMap<string, Uint8Array>) =>
-      replaceTree(projectDirectory, hooks, path, files),
+    replace: storeErrors(
+      (path: string, files: ReadonlyMap<string, Uint8Array>, expected: StoredSkill) =>
+        replaceTree(projectDirectory, hooks, path, files, expected),
     ),
     writeRecord: storeErrors((path: string, content: Uint8Array) =>
       writeRecordFile(projectDirectory, hooks, path, content),

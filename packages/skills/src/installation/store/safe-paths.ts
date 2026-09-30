@@ -44,9 +44,11 @@ export function segments(path: string): readonly string[] {
  * directory listing is refused rather than read through.
  */
 async function readRegularFile(path: string): Promise<Uint8Array> {
-  const handle = await open(path, constants.O_RDONLY | constants.O_NOFOLLOW).catch((error: unknown) => {
-    throw errorCode(error) === 'ELOOP' ? unsafe(`Refusing symlinked skill path: ${path}`) : error;
-  });
+  const handle = await open(path, constants.O_RDONLY | constants.O_NOFOLLOW).catch(
+    (error: unknown) => {
+      throw errorCode(error) === 'ELOOP' ? unsafe(`Refusing symlinked skill path: ${path}`) : error;
+    },
+  );
   try {
     if (!(await handle.stat()).isFile()) {
       throw unsafe(`Refusing special file in skill directory: ${path}`);

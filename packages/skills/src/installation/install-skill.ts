@@ -21,7 +21,8 @@ export type StoredSkill =
   /** A file or other non-directory entry occupies the destination. */
   | { readonly kind: 'other' };
 
-export type SkillFailureReason = 'unsafe-path' | 'permission-denied' | 'io-error';
+export type SkillFailureReason =
+  'unsafe-path' | 'permission-denied' | 'io-error' | 'changed-during-install';
 
 /** A store failure the installer reports as a `failed` destination. */
 export class SkillStoreError extends Error {
@@ -37,7 +38,16 @@ export class SkillStoreError extends Error {
 /** Project-relative skill directories. `replace` and `writeRecord` must be all-or-nothing. */
 export interface SkillStore {
   read(path: string): Promise<StoredSkill>;
-  replace(path: string, files: ReadonlyMap<string, Uint8Array>): Promise<void>;
+  /**
+   * Writes `files` at `path` only if it still holds `expected`, the state `read`
+   * returned when the destination was assessed; otherwise it throws
+   * `changed-during-install` and leaves the destination as it is.
+   */
+  replace(
+    path: string,
+    files: ReadonlyMap<string, Uint8Array>,
+    expected: StoredSkill,
+  ): Promise<void>;
   /** Adds the install record to an existing directory without touching its other files. */
   writeRecord(path: string, content: Uint8Array): Promise<void>;
 }
@@ -204,7 +214,7 @@ async function installDestination(input: {
   }
   const assessment = assess(bundle.name, stored);
   if (assessment.kind === 'absent') {
-    return await done('installed', null, () => input.store.replace(path, input.files));
+    return await done('installed', null, () => input.store.replace(path, input.files, stored));
   }
   if (assessment.kind === 'unrecorded') {
     // A manual copy of exactly this version is adopted: only the record is added.
@@ -223,7 +233,7 @@ async function installDestination(input: {
   ) {
     return { ...base, outcome: 'unchanged', version: bundle.version, from: null };
   }
-  return await done('updated', from, () => input.store.replace(path, input.files));
+  return await done('updated', from, () => input.store.replace(path, input.files, stored));
 }
 
 /**
