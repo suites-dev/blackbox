@@ -19,7 +19,7 @@ import {
   parseGolden,
   replaceRunBlock,
 } from './journey-format.mjs';
-import { jsonShape, keyPaths } from './lib/json-shape.mjs';
+import { jsonShape, keyPaths } from './lib/json-shape-core.mjs';
 import {
   JOURNEY_LIB,
   cleanupJourneyProject,
@@ -613,17 +613,25 @@ void test('json-shape prints key paths and the named fields, never other values'
   assert.ok(keyPaths(shallow).includes('observation.tree[].children'));
 });
 
-void test('json-shape proves one document per command and takes no arguments', async () => {
+void test('json-shape proves one document per command and ignores arguments', async () => {
   assert.throws(() => jsonShape('{"kind":"a"}\n{"kind":"b"}\n'), /exactly one JSON document/u);
   assert.throws(() => jsonShape(''), /exactly one JSON document/u);
   const script = join(HERE, 'lib', 'json-shape.mjs');
-  await assert.rejects(execute(process.execPath, [script, 'observation']), (error) => {
-    assert.equal(error.code, 2);
-    assert.match(error.stderr, /takes no arguments/u);
-    return true;
-  });
-  const child = execFile(process.execPath, [script]);
-  child.stdin.end('{"kind":"x"}\n');
-  const [code] = await once(child, 'close');
-  assert.equal(code, 0);
+  const shape = async (input, ...args) => {
+    const child = execFile(process.execPath, [script, ...args]);
+    let stdout = '';
+    child.stdout.on('data', (chunk) => {
+      stdout += chunk;
+    });
+    child.stdin.end(input);
+    const [code] = await once(child, 'close');
+    return { code, stdout };
+  };
+  const document = '{"kind":"x","observation":{"status":"provisional"}}\n';
+  const plain = await shape(document);
+  assert.equal(plain.code, 0);
+  assert.match(plain.stdout, /^observation\.status provisional$/mu);
+  // An argument changes nothing: a golden cannot select a field or a file.
+  assert.deepEqual(await shape(document, 'kind', '/etc/passwd'), plain);
+  assert.equal((await shape('{"kind":"a"}\n{"kind":"b"}\n')).code, 1);
 });

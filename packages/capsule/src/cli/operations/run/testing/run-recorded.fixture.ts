@@ -21,7 +21,8 @@ import { runSummaryLines } from '../run-output.js';
  * inspection/testing/fixtures/README.md), with each span's recorded arrival
  * time, and the `run` block inputs derived from it.
  */
-export const PACKAGE = process.env.BLACKBOX_CLI_TEST_PACKAGE_DIRECTORY ?? process.cwd();
+// The test runner starts in the package directory; no path comes from the environment.
+export const PACKAGE = process.cwd();
 export const FIXTURES = join(PACKAGE, 'src/operations/inspection/testing/fixtures');
 export const SNAPSHOTS = join(PACKAGE, 'src/operations/run/testing/snapshots');
 export const FORBIDDEN_WORDS = /\b(?:success|successful|passed|verified|effects?)\b/iu;
