@@ -13,3 +13,8 @@ export NODE_OPTIONS="--max-old-space-size=8192"
 
 pnpm lint-staged
 pnpm typecheck
+
+# Workspace manifests: one dependency ordering, one version per external
+# dependency, and no runtime dependencies on the private root. It reads only
+# package.json files, so it costs well under a second even when none changed.
+pnpm check:packages

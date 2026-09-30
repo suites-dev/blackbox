@@ -13,8 +13,9 @@
     "test:demo": "bash demo/acceptance/capsule-test.sh",
     "test:demo:storyboard": "bash demo/storyboard/capsule-player.sh --no-pause --no-color --no-browser",
     "test:e2e:journeys": "node --test e2e/journeys/journey-harness.test.mjs && node e2e/journeys/run-journeys.mjs --repeat 2",
-    "lint": "node scripts/check-source-layout.mjs && eslint packages --cache && pnpm check:runtime-deps",
+    "lint": "node scripts/check-source-layout.mjs && pnpm check:packages && eslint packages --cache && pnpm check:runtime-deps",
     "lint:fix": "eslint packages --cache --fix",
+    "check:packages": "manypkg check",
     "check:runtime-deps": "dependency-cruiser packages --config .dependency-cruiser.cjs --focus '^packages/instrumentation-runtime-' --focus-depth 1 --exclude '(^|/)(dist/|coverage/|vitest(?:\\.integration)?\\.config\\.ts$)' --output-type err-long",
     "typecheck": "tsc --project tsconfig.json --noEmit",
     "format": "prettier --write \"packages/**/*.{ts,tsx,js,jsx,json,md,yaml,yml}\" package.json pnpm-workspace.yaml",
@@ -22,9 +23,6 @@
   },
   "engines": {
     "node": ">=22.15"
-  },
-  "dependencies": {
-    "@suites/blackbox-driver": "workspace:*"
   },
   "packageManager": "pnpm@9.15.4",
   "pnpm": {
@@ -53,6 +51,12 @@
     "@commitlint/cli": "catalog:",
     "@commitlint/config-conventional": "catalog:",
     "@eslint/js": "catalog:",
+    "@manypkg/cli": "^0.25.1",
+    "@suites/blackbox-capsule": "workspace:*",
+    "@suites/blackbox-catalog": "workspace:*",
+    "@suites/blackbox-driver": "workspace:*",
+    "@suites/blackbox-inst-runtime-node": "workspace:*",
+    "@suites/blackbox-skills": "workspace:*",
     "@types/node": "catalog:",
     "@vitest/coverage-v8": "5.0.1",
     "dependency-cruiser": "18.4.0",
@@ -67,11 +71,7 @@
     "prettier": "catalog:",
     "typescript": "catalog:",
     "typescript-eslint": "catalog:",
-    "vitest": "catalog:",
-    "@suites/blackbox-capsule": "workspace:*",
-    "@suites/blackbox-catalog": "workspace:*",
-    "@suites/blackbox-inst-runtime-node": "workspace:*",
-    "@suites/blackbox-skills": "workspace:*"
+    "vitest": "catalog:"
   },
   "lint-staged": {
     "*.ts": [
