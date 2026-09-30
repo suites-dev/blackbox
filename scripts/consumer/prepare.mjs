@@ -22,10 +22,9 @@ import { resetCapsuleDemo } from './capsule-reset.mjs';
 const execute = promisify(execFile);
 const scriptDirectory = dirname(fileURLToPath(import.meta.url));
 const workspaceRoot = resolve(scriptDirectory, '..', '..');
-const projectRoot =
-  process.env.BLACKBOX_PROJECT_ROOT === undefined
-    ? join(workspaceRoot, 'e2e')
-    : resolve(process.env.BLACKBOX_PROJECT_ROOT);
+// The consumer is shared: the demo and the CLI journeys prepare it against the
+// same project, and e2e is the only one in this repository.
+const projectRoot = join(workspaceRoot, 'e2e');
 const registry = process.env.BLACKBOX_TEST_REGISTRY ?? 'http://127.0.0.1:4874/';
 
 const projectDrivers = ['public-api.mjs', 'postgres.mjs', 'redis.mjs'];

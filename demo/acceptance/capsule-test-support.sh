@@ -9,9 +9,9 @@ DEMO_ROOT="$(cd -- "$SCRIPT_DIR/.." && pwd)"
 REPO_ROOT="$(cd -- "$DEMO_ROOT/.." && pwd)"
 SUPPORT_DIR="$DEMO_ROOT/support"
 CONSUMER_DIR="$REPO_ROOT/scripts/consumer"
-# The demo drives the same project the CLI journeys drive. It is the only one
-# in this repository, so e2e is the default rather than a required argument.
-E2E_ROOT="${BLACKBOX_PROJECT_ROOT:-$REPO_ROOT/e2e}"
+# The demo drives the same project the CLI journeys drive, and it is the only
+# one in this repository.
+E2E_ROOT="$REPO_ROOT/e2e"
 NPM_CONFIG_REGISTRY="${BLACKBOX_TEST_REGISTRY:-http://127.0.0.1:4874/}"
 export NPM_CONFIG_REGISTRY
 STATE_FILE="$E2E_ROOT/.blackbox/capsule-assets.json"

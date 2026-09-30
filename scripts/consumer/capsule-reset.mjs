@@ -69,10 +69,7 @@ export async function resetCapsuleDemo(input) {
 }
 
 async function main() {
-  const projectDirectory =
-    process.env.BLACKBOX_PROJECT_ROOT === undefined
-      ? resolve(dirname(scriptPath), '..', '..', 'e2e')
-      : resolve(process.env.BLACKBOX_PROJECT_ROOT);
+  const projectDirectory = resolve(dirname(scriptPath), '..', '..', 'e2e');
   const cliEntrypoint = process.env.BLACKBOX_ENTRYPOINT;
   if (cliEntrypoint === undefined || !cliEntrypoint.startsWith('/')) {
     throw new Error(

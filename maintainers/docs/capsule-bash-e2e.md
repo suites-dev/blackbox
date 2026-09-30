@@ -55,7 +55,7 @@ done
 ```
 
 The default registry is `http://127.0.0.1:4874/`, overridable with `BLACKBOX_TEST_REGISTRY`. The project directory
-the journey installs into is `e2e/` by default, overridable with `BLACKBOX_PROJECT_ROOT`.
+the journey installs into is `e2e/`.
 
 > **The journey resets its fixture.** Use a disposable checkout, or preserve wanted `e2e/.blackbox/` evidence first.
 > Preparing the consumer stops prior E2E Capsules and resets generated experiments, reports, temporary files,

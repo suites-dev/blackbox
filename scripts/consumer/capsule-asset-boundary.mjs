@@ -8,12 +8,8 @@ import { fileURLToPath } from 'node:url';
 const scriptDirectory = dirname(fileURLToPath(import.meta.url));
 const workspacePath = resolve(scriptDirectory, '..', '..');
 // The consumer is shared: the demo and the CLI journeys prepare it against the
-// same project. BLACKBOX_PROJECT_ROOT names that project, and e2e is the only
-// one in this repository.
-const projectRoot =
-  process.env.BLACKBOX_PROJECT_ROOT === undefined
-    ? join(workspacePath, 'e2e')
-    : resolve(process.env.BLACKBOX_PROJECT_ROOT);
+// same project, and e2e is the only one in this repository.
+const projectRoot = join(workspacePath, 'e2e');
 const statePath = join(projectRoot, '.blackbox', 'capsule-assets.json');
 const packedPackages = [
   '@suites/blackbox-capsule',
