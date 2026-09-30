@@ -5,31 +5,27 @@
 import { execFile } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
 import { copyFile, mkdir, mkdtemp, readFile, readdir, realpath, writeFile } from 'node:fs/promises';
-import { join, resolve, sep } from 'node:path';
+import { join } from 'node:path';
 import { promisify } from 'node:util';
 
 const execute = promisify(execFile);
 
 /**
- * The drivers package.json written by capsule-assets.sh for THIS asset run:
- * every @suites dependency must be a tarball inside the current asset root.
+ * The drivers package.json written by the consumer preparation: every @suites
+ * dependency must name the published version exactly, so the journey project
+ * resolves the same tarballs the consumer installed and never a workspace path
+ * or a floating range.
  */
-async function packedDriverManifest({ e2eRoot, assetRoot }) {
+async function publishedDriverManifest({ e2eRoot, version }) {
   const text = await readFile(join(e2eRoot, '.blackbox', 'drivers', 'package.json'), 'utf8');
   const specs = Object.values(JSON.parse(text).dependencies ?? {});
-  // capsule-assets.sh may write `${TMPDIR}/…` with a doubled slash; compare
-  // normalized absolute paths, never raw strings.
-  const inAssetRoot = (spec) =>
-    typeof spec === 'string' &&
-    spec.startsWith('file:') &&
-    resolve(spec.slice('file:'.length)).startsWith(`${resolve(assetRoot)}${sep}`);
-  if (specs.length === 0 || !specs.every(inAssetRoot)) {
-    throw new Error('journeys: drivers package.json is not from the current capsule-assets.sh run');
+  if (specs.length === 0 || !specs.every((spec) => spec === version)) {
+    throw new Error(`journeys: drivers package.json does not pin the published ${version}`);
   }
   return text;
 }
 
-export async function createJourneyProject({ e2eRoot, parent, name, blackbox, assetRoot }) {
+export async function createJourneyProject({ e2eRoot, parent, name, blackbox, version }) {
   await mkdir(parent, { recursive: true });
   const directory = await realpath(await mkdtemp(join(parent, 'bbj-')));
   await copyFile(join(e2eRoot, 'blackbox.config.yaml'), join(directory, 'blackbox.config.yaml'));
@@ -50,12 +46,12 @@ export async function createJourneyProject({ e2eRoot, parent, name, blackbox, as
   }
   await writeFile(
     join(drivers, 'package.json'),
-    await packedDriverManifest({ e2eRoot, assetRoot }),
+    await publishedDriverManifest({ e2eRoot, version }),
   );
   await mkdir(join(directory, '.blackbox', 'state'), { recursive: true });
-  // Prerequisites are installed by the packed CLI itself from this run's packed
-  // tarballs, exactly as capsule-assets.sh and capsule-test.sh do; nothing is
-  // assumed to survive an earlier E2E step.
+  // Prerequisites are installed by the published CLI itself, from the same
+  // registry the consumer was installed from, exactly as the demo does; nothing
+  // is assumed to survive an earlier E2E step.
   await execute(blackbox, ['driver', 'install', '--runtime', 'node'], { cwd: directory });
   await execute(blackbox, ['inst', 'install', '--runtime', 'node'], { cwd: directory });
   return directory;

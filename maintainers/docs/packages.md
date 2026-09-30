@@ -34,12 +34,14 @@ pnpm test
 ```
 
 `pnpm test` includes a build. The [workspace definition](../../pnpm-workspace.yaml) includes `packages/*`; `e2e/`
-is not itself a workspace package. Its older Playwright manifest references packages absent from this branch.
-The root `pnpm test:e2e:capsule` script is the active E2E entrypoint.
+is not itself a workspace package. It holds the project fixture the lanes drive: the catalog, the project-authored
+drivers, the system under test, and the golden CLI journeys. `pnpm run test:demo` and `pnpm run test:e2e:journeys`
+are the active entrypoints, each against a consumer installed from a disposable registry.
 
 Package and source checks run in
 [Continuous Integration](../../.github/workflows/ci.yml). The separate
-[Capsule E2E workflow](../../.github/workflows/e2e.yml) exercises packed consumers and Docker-backed behavior.
+[E2E workflow](../../.github/workflows/e2e.yml) builds once, then runs the demo, the journeys, and the release
+rehearsal against packages installed from a disposable registry.
 Passing one lane does not imply the others passed. See
 [contributing](../../CONTRIBUTING.md) before making changes.
 

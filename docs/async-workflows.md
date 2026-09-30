@@ -79,9 +79,9 @@ The matching trace should differ from the stimulus activity's trace. Delivery is
 repeat the session query and inspect the new results. A single early empty query does not show that nothing happened.
 For scripted checks, use a bounded wait for the specific evidence and report missing evidence on timeout.
 
-The [Bash journey](../e2e/bash/capsule-test.sh) takes a session snapshot before the stimulus, polls for the marked
-consumer-to-API trace, and checks that both traces remain in the session and reports. Its
-[evidence check](../e2e/bash/capsule-telemetry-proof.mjs) keeps the downstream association as `session-only`.
+The [acceptance journey](../demo/acceptance/capsule-test.sh) takes a session snapshot before the stimulus, polls for
+the marked consumer-to-API trace, and checks that both traces remain in the session and reports. Its
+[evidence check](../demo/support/capsule-telemetry-proof.mjs) keeps the downstream association as `session-only`.
 That is a limit on recorded trace correlation, not a reason to discard the observed request.
 
 ## Decide what the execution establishes
