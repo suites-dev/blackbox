@@ -29,6 +29,7 @@ async function verifyOwnership(input: {
 
 export function startLeaseHeartbeat(input: {
   readonly path: string;
+  readonly markerPath: string;
   readonly token: string;
   readonly intervalMs: number;
 }): LeaseHeartbeat {
@@ -41,7 +42,10 @@ export function startLeaseHeartbeat(input: {
     updating = true;
     try {
       const now = new Date();
-      await utimes(input.path, now, now);
+      await Promise.all([
+        utimes(input.path, now, now),
+        utimes(input.markerPath, now, now),
+      ]);
     } catch {
       compromised = ownershipError();
     } finally {

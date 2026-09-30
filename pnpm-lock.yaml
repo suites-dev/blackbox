@@ -92,6 +92,18 @@ importers:
       '@eslint/js':
         specifier: 'catalog:'
         version: 9.39.4
+      '@suites/blackbox-capsule':
+        specifier: workspace:*
+        version: link:packages/capsule
+      '@suites/blackbox-catalog':
+        specifier: workspace:*
+        version: link:packages/catalog
+      '@suites/blackbox-inst-runtime-node':
+        specifier: workspace:*
+        version: link:packages/instrumentation-runtime-node
+      '@suites/blackbox-skills':
+        specifier: workspace:*
+        version: link:packages/skills
       '@types/node':
         specifier: 'catalog:'
         version: 26.6.3
@@ -140,9 +152,15 @@ importers:
 
   packages/capsule:
     dependencies:
+      '@oclif/core':
+        specifier: ^5.1.0
+        version: 5.1.2
       '@suites/blackbox-catalog':
         specifier: workspace:*
         version: link:../catalog
+      '@suites/blackbox-cli-contract':
+        specifier: workspace:*
+        version: link:../cli-contract
       '@suites/blackbox-driver':
         specifier: workspace:*
         version: link:../driver
@@ -152,6 +170,9 @@ importers:
       '@suites/blackbox-otel-collector':
         specifier: workspace:*
         version: link:../otel-collector
+      '@suites/blackbox-report-server':
+        specifier: workspace:*
+        version: link:../report-server
       '@suites/blackbox-sandbox':
         specifier: workspace:*
         version: link:../sandbox
@@ -161,6 +182,9 @@ importers:
       ajv:
         specifier: 8.20.0
         version: 8.20.0
+      string-width:
+        specifier: 8.3.0
+        version: 8.3.0
     devDependencies:
       '@types/node':
         specifier: 'catalog:'
@@ -177,6 +201,12 @@ importers:
 
   packages/catalog:
     dependencies:
+      '@oclif/core':
+        specifier: ^5.1.0
+        version: 5.1.2
+      '@suites/blackbox-cli-contract':
+        specifier: workspace:*
+        version: link:../cli-contract
       '@suites/blackbox-telemetry':
         specifier: workspace:*
         version: link:../telemetry
@@ -205,24 +235,9 @@ importers:
       '@oclif/core':
         specifier: ^5.1.0
         version: 5.1.2
-      '@suites/blackbox-capsule':
+      '@suites/blackbox-cli-contract':
         specifier: workspace:*
-        version: link:../capsule
-      '@suites/blackbox-catalog':
-        specifier: workspace:*
-        version: link:../catalog
-      '@suites/blackbox-driver':
-        specifier: workspace:*
-        version: link:../driver
-      '@suites/blackbox-inst-runtime-node':
-        specifier: workspace:*
-        version: link:../instrumentation-runtime-node
-      '@suites/blackbox-instrumentation':
-        specifier: workspace:*
-        version: link:../instrumentation
-      '@suites/blackbox-report-server':
-        specifier: workspace:*
-        version: link:../report-server
+        version: link:../cli-contract
       string-width:
         specifier: 8.3.0
         version: 8.3.0
@@ -237,8 +252,26 @@ importers:
         specifier: 'catalog:'
         version: 5.7.3
 
+  packages/cli-contract:
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.6.3
+      rimraf:
+        specifier: 'catalog:'
+        version: 6.1.3
+      typescript:
+        specifier: 'catalog:'
+        version: 5.7.3
+
   packages/driver:
     dependencies:
+      '@oclif/core':
+        specifier: ^5.1.0
+        version: 5.1.2
+      '@suites/blackbox-cli-contract':
+        specifier: workspace:*
+        version: link:../cli-contract
       '@suites/blackbox-telemetry':
         specifier: workspace:*
         version: link:../telemetry
@@ -276,6 +309,12 @@ importers:
 
   packages/instrumentation-runtime-node:
     dependencies:
+      '@oclif/core':
+        specifier: ^5.1.0
+        version: 5.1.2
+      '@suites/blackbox-cli-contract':
+        specifier: workspace:*
+        version: link:../cli-contract
       '@suites/blackbox-instrumentation':
         specifier: workspace:*
         version: link:../instrumentation
@@ -368,6 +407,28 @@ importers:
       testcontainers:
         specifier: 12.1.0
         version: 12.1.0
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.6.3
+      rimraf:
+        specifier: 'catalog:'
+        version: 6.1.3
+      typescript:
+        specifier: 'catalog:'
+        version: 5.7.3
+      vitest:
+        specifier: 'catalog:'
+        version: 5.0.1(@types/node@26.6.3)(@vitest/coverage-v8@5.0.1)(vite@7.3.6(@types/node@26.6.3)(jiti@2.6.1)(tsx@4.23.13)(yaml@2.9.1))
+
+  packages/skills:
+    dependencies:
+      '@oclif/core':
+        specifier: ^5.1.0
+        version: 5.1.2
+      '@suites/blackbox-cli-contract':
+        specifier: workspace:*
+        version: link:../cli-contract
     devDependencies:
       '@types/node':
         specifier: 'catalog:'

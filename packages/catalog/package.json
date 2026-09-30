@@ -34,7 +34,24 @@
     "lint": "eslint .",
     "test": "vitest run --config vitest.config.ts"
   },
+  "blackbox": {
+    "cli": {
+      "apiVersion": 1,
+      "pluginId": "catalog",
+      "topic": "catalog"
+    }
+  },
+  "oclif": {
+    "commands": {
+      "strategy": "explicit",
+      "target": "./dist/cli/command-registry.js",
+      "identifier": "COMMANDS"
+    },
+    "topicSeparator": " "
+  },
   "dependencies": {
+    "@oclif/core": "^5.1.0",
+    "@suites/blackbox-cli-contract": "workspace:*",
     "@suites/blackbox-telemetry": "workspace:*",
     "ajv": "8.20.0",
     "yaml": "2.9.1"

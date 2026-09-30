@@ -11,6 +11,7 @@ parts are available in this alpha.
 - Start a configured application or subsystem with Docker Compose.
 - Run host commands or use configured drivers, recording each activity and its result.
 - Install Node instrumentation and inspect raw runtime observations by session, activity, or trace.
+- Install the project-local Discovery skill for Codex, Claude Code, or Cursor.
 - Open a local Capsule report or export JSON and HTML snapshots.
 - Stop the application and keep its experiment records for later inspection.
 
@@ -24,7 +25,7 @@ See the [CLI reference](cli.md) for command options.
 | Playwright integration                              | Preview: per-attempt Sandbox and raw telemetry fixtures only.     |
 | Effect matchers and snapshots                       | Not available yet. Raw observation queries are available.         |
 | Capsule checkpoints                                 | Not available yet.                                                |
-| Automatic project setup and skill installation      | Not available yet; the CLI reports a not-implemented error.       |
+| Automatic project setup                             | Not available yet; `setup init` remains reserved.                 |
 | General test reports, history, and baseline updates | Not available yet. Capsule reports work through `capsule report`. |
 | Python and Java instrumentation installers          | Not supported yet. The current installer supports Node.           |
 
@@ -42,7 +43,8 @@ Commands, configuration, and report formats may change as the first alpha takes 
 ## Use Blackbox with a coding agent
 
 The repository includes a portable discovery skill. Follow [agent skill setup](agent-skills.md) for
-Codex, Claude Code, or Cursor, copying the complete directory and its references. CLI-based skill installation is not available yet.
+Codex, Claude Code, or Cursor. The Skills plugin can install the complete directory and its references
+with `blackbox skill install discovery`.
 Some skill references discuss capabilities still in development; use the status above to choose a working path.
 
 Try asking your agent:

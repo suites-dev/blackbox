@@ -66,7 +66,11 @@
     "prettier": "catalog:",
     "typescript": "catalog:",
     "typescript-eslint": "catalog:",
-    "vitest": "catalog:"
+    "vitest": "catalog:",
+    "@suites/blackbox-capsule": "workspace:*",
+    "@suites/blackbox-catalog": "workspace:*",
+    "@suites/blackbox-inst-runtime-node": "workspace:*",
+    "@suites/blackbox-skills": "workspace:*"
   },
   "lint-staged": {
     "*.ts": [
