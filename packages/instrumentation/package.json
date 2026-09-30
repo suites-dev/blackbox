@@ -34,8 +34,8 @@
     "test:integration": "vitest run --config vitest.integration.config.ts"
   },
   "devDependencies": {
-    "rimraf": "catalog:",
     "@types/node": "catalog:",
+    "rimraf": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
   },

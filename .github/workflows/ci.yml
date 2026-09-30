@@ -65,6 +65,13 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           pnpm-version: ${{ env.PNPM_VERSION }}
 
+      # Named separately from `pnpm run lint`, which also runs it, so a manifest
+      # failure is diagnosable without reading the lint output. It reads only
+      # package.json files and takes well under a second.
+      - name: Check workspace manifests
+        timeout-minutes: 5
+        run: pnpm run check:packages
+
       - name: Check source layout and lint packages
         timeout-minutes: 15
         run: pnpm run lint
