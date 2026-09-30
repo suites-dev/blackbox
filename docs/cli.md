@@ -138,8 +138,9 @@ telemetry status, not only the CLI exit code.
 
 ## Commands not available yet
 
-With valid arguments, `setup init`, `skill install discovery`, and
-`effects baseline update --run <id>` exit `3` with a not-implemented message. These reserved commands
-are outside the [available alpha workflows](alpha-status.md).
+With valid arguments, `setup init` and `effects baseline update --run <id>` exit
+`3` with a not-implemented message. `skill install discovery` is implemented by
+the Skills plugin and accepts `--codex`, `--claude`, `--cursor`, repeated
+`--agent <name>`, `--yes`, and `--json`.
 
 See [Capsule experiments](experiments.md) for the sequence and [reports](reports.md) for viewing and exporting results.

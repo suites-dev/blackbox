@@ -56,7 +56,7 @@ it('retains the child failure when the driver closes a large request without rea
 
 function descendantSource(pidPath: string): string {
   return `
-    const { spawn } = await import('node:child_process');
+    import { spawn } from 'node:child_process';
     const child = spawn(process.execPath, ['-e',
       'require("node:fs").writeFileSync(process.argv[1], String(process.pid)); ' +
       'setInterval(() => undefined, 1000)', ${JSON.stringify(pidPath)}],
@@ -129,7 +129,7 @@ it.skipIf(process.platform === 'win32')(
     const directory = await projectDirectory();
     const pidPath = join(directory, 'descendant.pid');
     const source = `${descendantSource(pidPath)}
-      const { existsSync } = await import('node:fs');
+      import { existsSync } from 'node:fs';
       const output = setInterval(() => {
         if (existsSync(${JSON.stringify(pidPath)})) {
           clearInterval(output);

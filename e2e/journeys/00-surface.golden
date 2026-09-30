@@ -1,8 +1,7 @@
 $ blackbox catalog ls
-NAME  KIND  SERVICES  ENTRYPOINT
-payment-mock  subsystem  1  payment-mock (http)
-payment-mock-dist  subsystem  1  payment-mock (http)
-subscription-system  system  8  public-api (http)  default
+payment-mock
+payment-mock-dist
+subscription-system (default)
 $ blackbox capsule up --silent --no-color
 capsule <CAPSULE_1> is up · subscription-system · 8 services · <DUR>
 current capsule: <CAPSULE_1>

@@ -1,9 +1,11 @@
 import assert from 'node:assert/strict';
 import { readdir, readFile } from 'node:fs/promises';
+import { createRequire } from 'node:module';
 import path from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const require = createRequire(import.meta.url);
 const embedded = process.argv.includes('--embedded');
 const authoredModules = [
   'domain.ts',
@@ -96,7 +98,7 @@ for (const authoredRelative of authoredModules) {
 
 if (embedded) {
   assert.match(process.env.NODE_OPTIONS ?? '', /(?:^|\s)--enable-source-maps(?:\s|$)/);
-  const config = await import(pathToFileURL(path.join(root, 'dist/lib/config.js')).href);
+  const config = require(path.join(root, 'dist/lib/config.js'));
   let mappedStack = '';
   try {
     config.requiredEnvironment('SOURCE_MAP_PROBE_MUST_BE_UNSET');

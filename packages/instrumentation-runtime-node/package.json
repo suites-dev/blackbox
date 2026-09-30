@@ -34,7 +34,24 @@
     "test": "vitest run --config vitest.config.ts",
     "test:integration": "vitest run --config vitest.integration.config.ts"
   },
+  "blackbox": {
+    "cli": {
+      "apiVersion": 1,
+      "pluginId": "inst-runtime-node",
+      "topic": "inst"
+    }
+  },
+  "oclif": {
+    "commands": {
+      "strategy": "explicit",
+      "target": "./dist/cli/command-registry.js",
+      "identifier": "COMMANDS"
+    },
+    "topicSeparator": " "
+  },
   "dependencies": {
+    "@oclif/core": "^5.1.0",
+    "@suites/blackbox-cli-contract": "workspace:*",
     "@suites/blackbox-instrumentation": "workspace:*"
   },
   "devDependencies": {
