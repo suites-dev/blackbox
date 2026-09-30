@@ -4,7 +4,7 @@ import test from 'node:test';
 import { buildSpanTree, type CapsuleReportSpan } from '@suites/blackbox-capsule';
 
 import { treeLines } from '../../inspection/show-format.js';
-import { filterRunTree, isRunTreeSpan, runTreeLines } from '../run-tree.js';
+import { filterRunTree, isRunTreeSpan, runTreeLines, runTreeSize } from '../run-tree.js';
 
 /** One span; attributes and a parent only where a test needs them. */
 function span(
@@ -119,4 +119,35 @@ void test('a deep trace is filtered without recursion', () => {
     count += 1;
   }
   assert.equal(count, depth / 2);
+});
+
+void test('a very deep trace formats only the lines shown', () => {
+  const depth = 20_000;
+  let formatted = 0;
+  const spans = Array.from({ length: depth }, (_, index) => {
+    const base = span(
+      `d${String(index)}`,
+      'server',
+      index === 0 ? null : `d${String(index - 1)}`,
+      index + 1,
+    );
+    // Only formatting a line reads the service (start times differ, so sorting never does).
+    return Object.defineProperty({ ...base }, 'service', {
+      get: () => {
+        formatted += 1;
+        return 'svc';
+      },
+      enumerable: true,
+    });
+  });
+  const roots = buildSpanTree({ spans, activitySpanIds: new Set(), provisional: false });
+  formatted = 0;
+  const lines = runTreeLines(roots);
+  assert.equal(lines.length, 41);
+  assert.equal(lines[40], `… ${String(depth - 40)} more spans`);
+  assert.equal(lines[39], `${'   '.repeat(38)}└─ svc  d39`);
+  assert.equal(formatted, 40);
+  formatted = 0;
+  assert.equal(runTreeSize(roots), depth);
+  assert.equal(formatted, 0);
 });

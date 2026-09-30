@@ -64,15 +64,34 @@ export function filterRunTree(roots: readonly SpanTreeNode[]): readonly SpanTree
   return out;
 }
 
-/** The filtered tree lines, at most `max`, then one `… <n> more spans` line. */
+/** Nodes in a tree, counted without formatting anything. */
+function countNodes(roots: readonly SpanTreeNode[]): number {
+  let count = 0;
+  const stack = [...roots];
+  for (let node = stack.pop(); node !== undefined; node = stack.pop()) {
+    count += 1;
+    stack.push(...node.children);
+  }
+  return count;
+}
+
+/** How many spans the filtered tree holds: one tree line each. */
+export function runTreeSize(roots: readonly SpanTreeNode[]): number {
+  return countNodes(filterRunTree(roots));
+}
+
+/**
+ * The filtered tree lines, at most `max`, then one `… <n> more spans` line.
+ * Only the lines shown are formatted: a deep trace's indentation grows with
+ * every level, so formatting all of it would cost far more than 40 lines.
+ */
 export function runTreeLines(
   roots: readonly SpanTreeNode[],
   max: number = RUN_TREE_MAX_LINES,
 ): readonly string[] {
-  const lines = treeLines(filterRunTree(roots));
-  if (lines.length <= max) {
-    return lines;
-  }
-  const shown = Math.max(0, max);
-  return [...lines.slice(0, shown), `… ${String(lines.length - shown)} more spans`];
+  const filtered = filterRunTree(roots);
+  const total = countNodes(filtered);
+  const shown = Math.max(0, Math.min(max, total));
+  const lines = treeLines(filtered, shown);
+  return total <= max ? lines : [...lines, `… ${String(total - shown)} more spans`];
 }

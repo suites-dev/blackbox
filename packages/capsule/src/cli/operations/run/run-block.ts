@@ -11,7 +11,7 @@ import {
 import { contextText, field, showDuration, statusText } from '../inspection/show-format.js';
 import { observationDocument, type TelemetryWait } from '../inspection/show-json.js';
 import type { RunSnapshot } from './run-telemetry.js';
-import { RUN_TREE_MAX_LINES, runTreeLines } from './run-tree.js';
+import { RUN_TREE_MAX_LINES, runTreeLines, runTreeSize } from './run-tree.js';
 
 export interface RunBlockInput {
   /** The phase 1 run line, unchanged. */
@@ -30,8 +30,7 @@ function viewInput(input: RunBlockInput): ActivityViewInput {
 /** How many tree lines the block has before the 40-line cap (0 when nothing was observed). */
 function treeLineCount(input: RunBlockInput): number {
   const { activity, investigation } = input.snapshot;
-  return runTreeLines(investigation.tree(activity.telemetry.context.traceId).roots, Infinity)
-    .length;
+  return runTreeSize(investigation.tree(activity.telemetry.context.traceId).roots);
 }
 
 /**
