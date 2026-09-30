@@ -150,7 +150,7 @@ jobs:
         timeout-minutes: 20
         run: >-
           node .github/scripts/ci-evidence.mjs run --lane demo --project capsule
-          --evidence-dir ci-evidence/demo/capsule -- pnpm run test:demo
+          --evidence-dir ci-evidence/demo/capsule -- pnpm test:demo
 
       # Preserve hidden files and original colon-containing filenames inside tar.
       - name: Archive exact harness output
@@ -171,7 +171,7 @@ jobs:
           evidence-dir: ci-evidence/demo/capsule
           setup-result: ${{ steps.setup.outcome }}
           result: ${{ steps.acceptance.outcome }}
-          command: pnpm run test:demo
+          command: pnpm test:demo
           expected: |
             log=ci-evidence/demo/capsule/logs/command.log
             archive=.blackbox/tmp/ci-e2e-transport/evidence.tar
@@ -257,7 +257,7 @@ jobs:
         # outside the evidence output tree; the collector copies them in.
         run: >-
           node .github/scripts/ci-evidence.mjs run --lane e2e --project journeys
-          --evidence-dir ci-evidence/e2e/journeys -- pnpm run test:e2e:journeys
+          --evidence-dir ci-evidence/e2e/journeys -- pnpm test:e2e:journeys
 
       - name: Retain journey evidence
         id: journey_evidence
@@ -269,7 +269,7 @@ jobs:
           evidence-dir: ci-evidence/e2e/journeys
           setup-result: ${{ steps.setup.outcome }}
           result: ${{ steps.journeys.outcome }}
-          command: pnpm run test:e2e:journeys
+          command: pnpm test:e2e:journeys
           expected: |
             log=ci-evidence/e2e/journeys/logs/command.log
             logs?=.blackbox/tmp/ci-e2e-journeys

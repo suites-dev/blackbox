@@ -47,7 +47,7 @@ mkdir -p .blackbox/tmp
 capsule_run_dir=$(mktemp -d .blackbox/tmp/capsule-validation.XXXXXX)
 node .github/scripts/ci-evidence.mjs run --lane demo --project capsule \
   --evidence-dir "$capsule_run_dir/journey" \
-  -- pnpm run test:demo </dev/null
+  -- pnpm test:demo </dev/null
 ```
 
 Redirecting stdin disables the harness's TTY-based pauses/browser opening;
