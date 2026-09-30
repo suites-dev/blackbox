@@ -69,11 +69,14 @@ export async function resetCapsuleDemo(input) {
 }
 
 async function main() {
-  const projectDirectory = resolve(dirname(scriptPath), '..');
+  const projectDirectory =
+    process.env.BLACKBOX_PROJECT_ROOT === undefined
+      ? resolve(dirname(scriptPath), '..', '..', 'e2e')
+      : resolve(process.env.BLACKBOX_PROJECT_ROOT);
   const cliEntrypoint = process.env.BLACKBOX_ENTRYPOINT;
   if (cliEntrypoint === undefined || !cliEntrypoint.startsWith('/')) {
     throw new Error(
-      'capsule-reset requires an absolute BLACKBOX_ENTRYPOINT from capsule-assets.sh',
+      'capsule-reset requires an absolute BLACKBOX_ENTRYPOINT from the consumer preparation',
     );
   }
   await resetCapsuleDemo({ projectDirectory, stopSession: async ({ sessionId }) => {

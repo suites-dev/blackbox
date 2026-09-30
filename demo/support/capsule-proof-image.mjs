@@ -7,7 +7,10 @@ import { promisify } from 'node:util';
 
 const executeFile = promisify(execFile);
 const scriptPath = fileURLToPath(import.meta.url);
-const e2eRoot = resolve(dirname(scriptPath), '..');
+const e2eRoot =
+  process.env.BLACKBOX_PROJECT_ROOT === undefined
+    ? resolve(dirname(scriptPath), '..', '..', 'e2e')
+    : resolve(process.env.BLACKBOX_PROJECT_ROOT);
 const proofStateFile = join(
   e2eRoot,
   '.blackbox',

@@ -6,9 +6,15 @@ import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 
 const scriptDirectory = dirname(fileURLToPath(import.meta.url));
-const e2eRoot = resolve(scriptDirectory, '..');
-const workspacePath = resolve(e2eRoot, '..');
-const statePath = join(e2eRoot, '.blackbox', 'capsule-assets.json');
+const workspacePath = resolve(scriptDirectory, '..', '..');
+// The consumer is shared: the demo and the CLI journeys prepare it against the
+// same project. BLACKBOX_PROJECT_ROOT names that project, and e2e is the only
+// one in this repository.
+const projectRoot =
+  process.env.BLACKBOX_PROJECT_ROOT === undefined
+    ? join(workspacePath, 'e2e')
+    : resolve(process.env.BLACKBOX_PROJECT_ROOT);
+const statePath = join(projectRoot, '.blackbox', 'capsule-assets.json');
 const packedPackages = [
   '@suites/blackbox-capsule',
   '@suites/blackbox-catalog',
@@ -20,6 +26,7 @@ const packedPackages = [
   '@suites/blackbox-otel-collector',
   '@suites/blackbox-report-server',
   '@suites/blackbox-sandbox',
+  '@suites/blackbox-skills',
   '@suites/blackbox-telemetry',
 ];
 
@@ -65,7 +72,7 @@ async function readState() {
   const assetRoot = join(tmpdir(), assetName);
   const consumerRoot = join(assetRoot, 'consumer');
   const blackboxBin = join(consumerRoot, 'node_modules', '.bin', 'blackbox');
-  const driverDirectory = join(e2eRoot, '.blackbox', 'drivers');
+  const driverDirectory = join(projectRoot, '.blackbox', 'drivers');
   const actualPackages = [...value.packages].sort();
   if (
     resolve(value.assetRoot) !== resolve(assetRoot) ||
@@ -150,21 +157,15 @@ export async function verifyCapsuleAssetBoundary() {
     throw new Error('Project drivers resolved different Driver SDK installations');
   }
 
-  process.stdout.write(
-    `${JSON.stringify(
-      {
-        kind: 'capsule-packed-asset-boundary',
-        assetRoot,
-        consumerRoot,
-        blackboxBin,
-        driverSdk,
-        drivers,
-        packages,
-      },
-      null,
-      2,
-    )}\n`,
-  );
+  return {
+    kind: 'capsule-registry-consumer-boundary',
+    assetRoot,
+    consumerRoot,
+    blackboxBin,
+    driverSdk,
+    drivers,
+    packages,
+  };
 }
 
 export async function cleanupCapsuleAssets() {

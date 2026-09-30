@@ -5,8 +5,15 @@
 set -Eeuo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-E2E_ROOT="$(cd -- "$SCRIPT_DIR/.." && pwd)"
-REPO_ROOT="$(cd -- "$E2E_ROOT/.." && pwd)"
+DEMO_ROOT="$(cd -- "$SCRIPT_DIR/.." && pwd)"
+REPO_ROOT="$(cd -- "$DEMO_ROOT/.." && pwd)"
+SUPPORT_DIR="$DEMO_ROOT/support"
+CONSUMER_DIR="$REPO_ROOT/scripts/consumer"
+# The demo drives the same project the CLI journeys drive. It is the only one
+# in this repository, so e2e is the default rather than a required argument.
+E2E_ROOT="${BLACKBOX_PROJECT_ROOT:-$REPO_ROOT/e2e}"
+NPM_CONFIG_REGISTRY="${BLACKBOX_TEST_REGISTRY:-http://127.0.0.1:4874/}"
+export NPM_CONFIG_REGISTRY
 STATE_FILE="$E2E_ROOT/.blackbox/capsule-assets.json"
 
 SYSTEM_ID="subscription-system"
@@ -35,7 +42,7 @@ if [[ -t 1 && -z "${NO_COLOR:-}" ]]; then
 else
   C_RESET=''; C_DIM=''; C_CYAN=''; C_BLUE=''; C_GREEN=''; C_YELLOW=''; C_RED=''
 fi
-source "$SCRIPT_DIR/capsule-poll-progress.sh"
+source "$SUPPORT_DIR/capsule-poll-progress.sh"
 
 require_command() {
   if ! command -v "$1" >/dev/null 2>&1; then
@@ -46,14 +53,14 @@ require_command() {
 
 require_command jq
 if [[ ! -s "$STATE_FILE" ]]; then
-  echo 'capsule-test: run e2e/bash/capsule-assets.sh first' >&2
+  echo 'capsule-test: prepare the registry consumer first' >&2
   exit 1
 fi
 ASSET_ROOT="$(jq -er '.assetRoot' "$STATE_FILE")"
 BLACKBOX_BIN="$(jq -er '.blackboxBin' "$STATE_FILE")"
 BLACKBOX_ENTRYPOINT="$ASSET_ROOT/consumer/node_modules/@suites/blackbox-cli/bin/run.js"
 export BLACKBOX_BIN
-node "$SCRIPT_DIR/capsule-asset-verify.mjs" \
+node "$CONSUMER_DIR/capsule-asset-verify.mjs" \
   >"$E2E_ROOT/.blackbox/tmp/capsule-package-boundary.json"
 BLACKBOX_COMMAND=("$BLACKBOX_BIN")
 
@@ -187,7 +194,7 @@ wait_for_shared_state_proof() {
       done <"$trace_ids_file"
       if [[ "$traces_complete" -eq 1 ]]; then
         condition='waiting for separate consumer -> public-api trace'
-        if node "$SCRIPT_DIR/capsule-telemetry-proof.mjs" shared-state \
+        if node "$SUPPORT_DIR/capsule-telemetry-proof.mjs" shared-state \
           "$execution_file" "$activity_file" "$session_file" \
           "$trace_directory" "$proof_id" >"$proof_file" 2>"$diagnostics_file"; then
           finish_poll_progress
@@ -236,7 +243,7 @@ cleanup() {
   fi
 
   if [[ -n "$PROOF_IMAGE_STATE" && -s "$PROOF_IMAGE_STATE" ]]; then
-    if ! node "$SCRIPT_DIR/capsule-proof-image-cleanup.mjs"; then
+    if ! node "$SUPPORT_DIR/capsule-proof-image-cleanup.mjs"; then
       echo 'capsule-test: owned proof-consumer image cleanup failed' >&2
       final_status=1
     else
@@ -245,7 +252,7 @@ cleanup() {
     fi
   fi
 
-  if ! node "$SCRIPT_DIR/capsule-asset-cleanup.mjs"; then
+  if ! node "$CONSUMER_DIR/capsule-asset-cleanup.mjs"; then
     echo "capsule-test: packed asset cleanup failed for $ASSET_ROOT" >&2
     final_status=1
   fi

@@ -3,8 +3,7 @@
 # Phase 1: real catalog -> Capsule -> user-owned tools -> live reports -> exports,
 # through the public CLI (capsule up, run, show, report, down, report serve). A
 # final section checks the hidden commands.
-# First run: bash e2e/bash/capsule-assets.sh
-# Then run:  bash e2e/bash/capsule-test.sh
+# First prepare the registry consumer, then run: bash demo/acceptance/capsule-test.sh
 # A terminal gets explanations, colors, browser opening, and Enter pauses.
 # Redirected/noninteractive runs execute the same commands without opening a browser.
 # Only the viewer uses a background process; cleanup and assertions live in support.
@@ -54,7 +53,7 @@ jq -e --arg system "$SYSTEM_ID" '.entries | any(.id == $system)' \
 PROOF_IMAGE_STATE="$E2E_ROOT/.blackbox/tmp/proof-consumer-image-ownership.json"
 PROOF_IMAGE_SESSION="$E2E_ROOT/.blackbox/tmp/proof-consumer-session.json"
 PROOF_IMAGE_RESULT="$E2E_ROOT/.blackbox/tmp/proof-consumer-image-cleanup.json"
-node "$SCRIPT_DIR/capsule-proof-image-baseline.mjs"
+node "$SUPPORT_DIR/capsule-proof-image-baseline.mjs"
 
 # Start the registry before acquisition so admission/startup can appear live.
 # In a terminal this executes: blackbox capsule report serve --open (default port)
@@ -96,7 +95,7 @@ jq -e --arg session "$SESSION_ID" \
    (.capsules | any(.capsule == $session and .state == "running"))' \
   "$ARTIFACT_ROOT/ls-running.json" >/dev/null
 cp "$ARTIFACT_ROOT/capsule-start.json" "$PROOF_IMAGE_SESSION"
-node "$SCRIPT_DIR/capsule-proof-image-capture.mjs"
+node "$SUPPORT_DIR/capsule-proof-image-capture.mjs"
 cp "$PROOF_IMAGE_STATE" "$ARTIFACT_ROOT/proof-consumer-image-ownership.json"
 
 assert_served_report running "$ARTIFACT_ROOT/served-running-before.json"
@@ -230,7 +229,7 @@ explain_step \
   "blackbox capsule show $TRACE_ID \\
         --session $SESSION_ID \\
         --json"
-node "$SCRIPT_DIR/capsule-telemetry-proof.mjs" http-until \
+node "$SUPPORT_DIR/capsule-telemetry-proof.mjs" http-until \
   "$BLACKBOX_ENTRYPOINT" \
   "$SESSION_ID" \
   "$TRACE_ID" \
@@ -268,7 +267,7 @@ run_captured_step \
   --purpose stimulus \
   --json \
   -- redis-cli RPUSH blackbox:proof:stimuli "$PROOF_ID"
-jq -e -f "$SCRIPT_DIR/capsule-redis-execution.jq" \
+jq -e -f "$SUPPORT_DIR/capsule-redis-execution.jq" \
   "$ARTIFACT_ROOT/redis-execution.json" >/dev/null
 REDIS_ACTIVITY_ID="$(jq -er '.activityId' "$ARTIFACT_ROOT/redis-execution.json")"
 

@@ -1,0 +1,79 @@
+name: Disposable package registry
+description: >-
+  Serve the built workspace packages from a throwaway Verdaccio instance, so a
+  lane installs Blackbox the way a user would instead of reaching into the
+  workspace. Requires the packages to be built already; it never builds.
+
+inputs:
+  port:
+    description: Host port the registry listens on.
+    required: false
+    default: '4874'
+  container:
+    description: Name of the registry container.
+    required: false
+    default: blackbox-test-registry
+  image:
+    description: Pinned Verdaccio image.
+    required: false
+    default: verdaccio/verdaccio:6.10.3
+  dist-tag:
+    description: Distribution tag the packages are published under.
+    required: false
+    default: e2e
+
+outputs:
+  registry:
+    description: URL of the running registry.
+    value: ${{ steps.start.outputs.registry }}
+
+runs:
+  using: composite
+  steps:
+    - name: Start the registry
+      id: start
+      shell: bash
+      env:
+        PORT: ${{ inputs.port }}
+        CONTAINER: ${{ inputs.container }}
+        IMAGE: ${{ inputs.image }}
+      run: |
+        registry="http://127.0.0.1:${PORT}/"
+        docker rm --force "$CONTAINER" >/dev/null 2>&1 || true
+        docker run --detach \
+          --name "$CONTAINER" \
+          --publish "127.0.0.1:${PORT}:4873" \
+          --volume "$GITHUB_WORKSPACE/.github/verdaccio/config.yaml:/verdaccio/conf/config.yaml:ro" \
+          "$IMAGE"
+        # --retry-all-errors covers the window where the port is bound but
+        # Verdaccio answers with an empty reply; --retry-connrefused alone is
+        # not enough and exits 52.
+        if ! curl --retry 60 --retry-all-errors --retry-delay 1 --fail --silent "${registry}-/ping" >/dev/null; then
+          docker logs "$CONTAINER"
+          exit 1
+        fi
+        echo "registry=$registry" >>"$GITHUB_OUTPUT"
+
+    # pnpm packs each package so the workspace protocol is rewritten to the
+    # exact published version; npm then publishes those tarballs. The token is
+    # a formality the registry accepts under its $all publish policy, and npm
+    # refuses to publish at all without one. --provenance=false is the only way
+    # to override publishConfig.provenance, which the real release keeps.
+    - name: Publish the built packages
+      shell: bash
+      env:
+        REGISTRY: ${{ steps.start.outputs.registry }}
+        PORT: ${{ inputs.port }}
+        DIST_TAG: ${{ inputs.dist-tag }}
+      run: |
+        tarballs="$RUNNER_TEMP/blackbox-registry-tarballs"
+        rm -rf "$tarballs"
+        mkdir -p "$tarballs"
+        pnpm --recursive --filter './packages/*' exec pnpm pack --pack-destination "$tarballs"
+        for tarball in "$tarballs"/*.tgz; do
+          env "npm_config_//127.0.0.1:${PORT}/:_authToken=blackbox-e2e" \
+            npm publish "$tarball" \
+              --registry "$REGISTRY" \
+              --tag "$DIST_TAG" \
+              --provenance=false
+        done

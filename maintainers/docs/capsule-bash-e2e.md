@@ -11,7 +11,8 @@ when reviewing a feature branch, run that branch to evaluate its implementation.
 Prerequisites:
 
 - Node.js 22.15 or newer in the Node 22 line and pnpm 9.15.4.
-- Docker with Compose available and a reachable daemon (`docker info`).
+- Docker with a reachable daemon (`docker info`). The daemon runs both the fixture's Compose stack and the
+  disposable package registry.
 - Bash, `jq`, and `curl` on the host. The fixture images provide the participant-side PostgreSQL and Redis clients.
 - Network access for dependencies and container images on a fresh setup.
 
@@ -19,36 +20,80 @@ From the repository root:
 
 ```sh
 pnpm install --frozen-lockfile
+pnpm build
 ```
 
-Keep the pnpm store backing this install available. Asset preparation reuses it when installing packed packages
-into a temporary consumer outside the workspace.
+The journey no longer builds or packs packages itself. It installs the ten public packages from a disposable
+Verdaccio registry, the same way CI does, so build the workspace once before preparing the consumer.
+
+Start the registry (the values below match [`.github/actions/registry`](../../.github/actions/registry/action.yml)):
+
+```sh
+docker run --detach \
+  --name blackbox-test-registry \
+  --publish 127.0.0.1:4874:4873 \
+  --volume "$(pwd)/.github/verdaccio/config.yaml:/verdaccio/conf/config.yaml:ro" \
+  verdaccio/verdaccio:6.10.3
+```
+
+Publish the built packages to it:
+
+```sh
+tarballs="$(mktemp -d)"
+pnpm --recursive --filter './packages/*' exec pnpm pack --pack-destination "$tarballs"
+for tarball in "$tarballs"/*.tgz; do
+  env "npm_config_//127.0.0.1:4874/:_authToken=blackbox-e2e" \
+    npm publish "$tarball" --registry http://127.0.0.1:4874/ --tag e2e --provenance=false
+done
+```
+
+The default registry is `http://127.0.0.1:4874/`, overridable with `BLACKBOX_TEST_REGISTRY`. The project directory
+the journey installs into is `e2e/` by default, overridable with `BLACKBOX_PROJECT_ROOT`.
 
 > **The journey resets its fixture.** Use a disposable checkout, or preserve wanted `e2e/.blackbox/` evidence first.
-> Preparation stops prior E2E Capsules and resets generated experiments, reports, temporary files, instrumentation,
-> clients, and driver state. Run one journey at a time in a checkout.
+> Preparing the consumer stops prior E2E Capsules and resets generated experiments, reports, temporary files,
+> instrumentation, clients, and driver state. Run one journey at a time in a checkout.
 
 ## Run unattended or walk through interactively
 
-For an unattended run:
+Install the published packages into the consumer, then run the acceptance journey:
 
 ```sh
-pnpm test:e2e:capsule </dev/null
+pnpm run prepare:consumer
+pnpm run test:demo </dev/null
 ```
 
-For a walkthrough in a terminal:
+For a walkthrough in a terminal, drop the redirect:
 
 ```sh
-pnpm test:e2e:capsule
+pnpm run prepare:consumer
+pnpm run test:demo
 ```
 
 The terminal walkthrough opens the report viewer and waits for Enter between steps. Redirecting stdin disables those
 pauses and browser opening; `CI=true` alone does not select unattended mode.
 
-The root script runs [asset preparation](../../e2e/bash/capsule-assets.sh), then the
-[Capsule journey](../../e2e/bash/capsule-test.sh). Preparation builds and packs all ten packages and installs the
-tarballs into an external consumer. The journey uses that consumer's CLI and a project-local packed driver SDK,
-so it checks the package boundary as well as runtime behavior.
+`prepare:consumer` runs [`scripts/consumer/prepare.mjs`](../../scripts/consumer/prepare.mjs). It installs the ten
+public packages from the registry into a throwaway consumer outside the workspace, then installs the project's
+Node driver and instrumentation there too. It builds nothing and packs nothing. The acceptance journey,
+[`demo/acceptance/capsule-test.sh`](../../demo/acceptance/capsule-test.sh), uses that consumer's CLI and
+project-local driver SDK, so it checks the package boundary as well as runtime behavior.
+
+A narrated walkthrough of the same journey is also available:
+
+```sh
+pnpm run prepare:consumer
+pnpm run test:demo:storyboard
+```
+
+[`demo/storyboard/capsule-player.sh`](../../demo/storyboard/capsule-player.sh) plays
+[`demo/storyboard/capsule-demo.yaml`](../../demo/storyboard/capsule-demo.yaml) against the same consumer.
+
+Stop the registry when done:
+
+```sh
+docker rm --force blackbox-test-registry
+```
 
 ## Follow the running system
 
@@ -72,7 +117,7 @@ cleanup. The `Capsule journey passed` banner appears before the exit cleanup fin
 
 | Location                                          | Contents                                                                                 |
 | ------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| `e2e/.blackbox/tmp/capsule-assets/`               | Package boundary checks and asset preparation receipt.                                   |
+| `e2e/.blackbox/tmp/capsule-assets/`               | Package boundary checks and consumer preparation receipt.                               |
 | `e2e/.blackbox/tmp/capsule-test.*/`               | Command outputs, telemetry proofs, report checks, cleanup evidence, and journey receipt. |
 | `e2e/.blackbox/experiments/capsule-<session-id>/` | Retained session, activities, startup progress, sandbox and collector records.           |
 | `e2e/.blackbox/reports/capsule-<session-id>/`     | Exported JSON and HTML snapshots.                                                        |
@@ -84,12 +129,14 @@ generated output, so preserve evidence you need before rerunning. Review telemet
 
 | Symptom                                  | Next check                                                                                                                                 |
 | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| Missing dependency store or command      | Check the frozen install, pnpm store, and host prerequisites.                                                                              |
+| `prepare:consumer` fails to resolve a package | Check that the registry is running (`docker logs blackbox-test-registry`) and serves the version recorded in `lerna.json`.            |
 | Startup or readiness failure             | Inspect retained progress and sandbox records, Docker access, image builds, and fixture configuration.                                     |
 | Expected spans do not arrive             | Inspect activation and collector status, then the exact session/activity/trace. Read [observation limits](../../docs/runtime-evidence.md). |
 | Viewer port conflict                     | Check the owning viewer; the default is port `4310`. An unrelated listener is not stopped automatically.                                   |
 | Banner appears but command exits nonzero | Read cleanup output and retained ownership records. The run has not passed.                                                                |
 
 For package development, run `pnpm lint`, `pnpm typecheck`, and `pnpm test` separately. Package tests and helper tests
-do not replace the Docker-backed journey. CI uses a separate [Capsule E2E workflow](../../.github/workflows/e2e.yml)
-and retains its outputs even when the run fails. See [contributing](../../CONTRIBUTING.md) for the development workflow.
+do not replace the Docker-backed journey. CI runs the same journey in the `demo` job of the
+[E2E workflow](../../.github/workflows/e2e.yml), alongside `build`, `e2e`, and `rehearsal` jobs and a `gate` job that
+enforces all four, and retains its outputs even when the run fails. See [contributing](../../CONTRIBUTING.md) for
+the development workflow.

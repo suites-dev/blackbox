@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import postgresDriver from '../.blackbox/drivers/postgres.mjs';
+import postgresDriver from '../../e2e/.blackbox/drivers/postgres.mjs';
 
 const argv = [
   'psql',

@@ -49,9 +49,9 @@ begin
   puts "#{blue}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━#{reset}"
   puts "#{cyan}[blackbox]#{reset} #{yellow}#{story.fetch('title')}#{reset}"
   puts "#{dim}Storyboard: #{story_path}#{reset}"
-  # No reset here: capsule-assets.sh, which must run right before the player,
-  # already resets demo outputs and then prepares the packed drivers. A second
-  # reset would delete that driver preparation.
+  # No reset here: the consumer preparation, which must run right before the
+  # player, already resets demo outputs and then installs the drivers. A second
+  # reset would delete that driver installation.
 
   story.fetch('steps').each_with_index do |step, index|
     kind = step.fetch('kind')
