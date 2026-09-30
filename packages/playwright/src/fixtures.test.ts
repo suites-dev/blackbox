@@ -86,12 +86,15 @@ it('lets the Playwright test timeout govern sandbox acquisition', async () => {
     outputDirectory: join(directory, 'output'),
   });
   expect(result.exitCode, result.output).toBe(1);
-  expect(result.output).toContain('2 failed');
+  expect(result.output).toContain('3 failed');
   expect(result.output).toContain(
     'Blackbox sandbox acquisition exceeded the Playwright test timeout of 20ms',
   );
   expect(result.output).toContain('BLACKBOX_PLAYWRIGHT_TIMEOUT_STOP failed');
   expect(result.output).toContain(
     'Blackbox sandbox acquisition cleanup did not settle within 30ms',
+  );
+  expect(result.output).toContain(
+    'Blackbox sandbox cleanup did not settle within 30ms after completed',
   );
 });

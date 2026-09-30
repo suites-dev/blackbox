@@ -45,11 +45,39 @@ function stopReason(status: TestInfo['status']): SandboxStopReason {
 
 const acquisitionTimedOut = Symbol('acquisitionTimedOut');
 
-const defaultAcquisitionCleanupTimeoutMs = 30_000;
+const defaultSandboxCleanupTimeoutMs = 30_000;
+
+const cleanupCompleted = Symbol('cleanupCompleted');
+const cleanupTimedOut = Symbol('cleanupTimedOut');
 
 interface BlackboxFixturePolicy {
-  /** Maximum time to wait for an acquisition that outlived the test deadline to settle and stop. */
-  readonly acquisitionCleanupTimeoutMs: number;
+  /** Maximum time to wait for any sandbox cleanup operation. */
+  readonly sandboxCleanupTimeoutMs: number;
+}
+
+async function cleanupSettledWithin(
+  cleanup: Promise<void>,
+  timeoutMs: number,
+): Promise<boolean> {
+  // If the bounded wait expires, retain a rejection handler without awaiting
+  // this continuation in fixture teardown.
+  void cleanup.catch(() => undefined);
+
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const deadline = new Promise<typeof cleanupTimedOut>((resolveTimeout) => {
+    timer = setTimeout(() => {
+      resolveTimeout(cleanupTimedOut);
+    }, timeoutMs);
+  });
+  const outcome = await Promise.race([
+    cleanup.then(() => cleanupCompleted),
+    deadline,
+  ]).finally(() => {
+    if (timer !== undefined) {
+      clearTimeout(timer);
+    }
+  });
+  return outcome === cleanupCompleted;
 }
 
 async function awaitLateAcquisitionCleanup(input: {
@@ -72,32 +100,25 @@ async function awaitLateAcquisitionCleanup(input: {
       throw new Error(input.timeoutError.message, { cause });
     },
   );
-  // If the bounded wait expires, retain a rejection handler and still stop any
-  // attempt that eventually materializes without awaiting it in fixture teardown.
-  void cleanup.catch(() => undefined);
-
-  let timer: ReturnType<typeof setTimeout> | undefined;
-  const cleanupTimedOut = Symbol('cleanupTimedOut');
-  const deadline = new Promise<typeof cleanupTimedOut>((resolveTimeout) => {
-    timer = setTimeout(() => {
-      resolveTimeout(cleanupTimedOut);
-    }, input.cleanupTimeoutMs);
-  });
-  const outcome = await Promise.race([
-    cleanup.then(() => undefined),
-    deadline,
-  ]).finally(() => {
-    if (timer !== undefined) {
-      clearTimeout(timer);
-    }
-  });
-  if (outcome === cleanupTimedOut) {
+  if (!(await cleanupSettledWithin(cleanup, input.cleanupTimeoutMs))) {
     throw new AggregateError(
       [input.timeoutError],
       `Blackbox sandbox acquisition cleanup did not settle within ${input.cleanupTimeoutMs}ms`,
     );
   }
   throw input.timeoutError;
+}
+
+async function stopWithinCleanupTimeout(input: {
+  readonly attempt: RunningBlackboxAttempt;
+  readonly reason: SandboxStopReason;
+  readonly cleanupTimeoutMs: number;
+}): Promise<void> {
+  if (!(await cleanupSettledWithin(input.attempt.stop(input.reason), input.cleanupTimeoutMs))) {
+    throw new Error(
+      `Blackbox sandbox cleanup did not settle within ${input.cleanupTimeoutMs}ms after ${input.reason}`,
+    );
+  }
 }
 
 async function acquireWithinTestTimeout(input: {
@@ -139,7 +160,7 @@ async function acquireWithinTestTimeout(input: {
 export function createBlackboxTest(
   runtime: BlackboxAttemptRuntime,
   policy: BlackboxFixturePolicy = {
-    acquisitionCleanupTimeoutMs: defaultAcquisitionCleanupTimeoutMs,
+    sandboxCleanupTimeoutMs: defaultSandboxCleanupTimeoutMs,
   },
 ) {
   return playwrightTest.extend<BlackboxFixtures>({
@@ -153,7 +174,7 @@ export function createBlackboxTest(
         const attempt = await acquireWithinTestTimeout({
           runtime,
           testInfo,
-          cleanupTimeoutMs: policy.acquisitionCleanupTimeoutMs,
+          cleanupTimeoutMs: policy.sandboxCleanupTimeoutMs,
           request: {
             selection: catalogEntry,
             configFile: configFilePath(blackboxConfigFile, testInfo),
@@ -169,10 +190,14 @@ export function createBlackboxTest(
         try {
           await use(attempt);
         } finally {
-          await attempt.stop(stopReason(testInfo.status));
+          await stopWithinCleanupTimeout({
+            attempt,
+            reason: stopReason(testInfo.status),
+            cleanupTimeoutMs: policy.sandboxCleanupTimeoutMs,
+          });
         }
       },
-      // The helper enforces both the test deadline and a bounded late-cleanup grace period.
+      // The helper enforces the test deadline and bounds every sandbox cleanup wait.
       { auto: true, timeout: 0 },
     ],
     sandbox: async ({ _blackboxAttempt }, use) => {

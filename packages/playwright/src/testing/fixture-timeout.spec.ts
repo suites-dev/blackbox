@@ -55,7 +55,23 @@ const veryLateRuntime = {
 } satisfies BlackboxAttemptRuntime;
 
 const boundedTest = createBlackboxTest(veryLateRuntime, {
-  acquisitionCleanupTimeoutMs: 30,
+  sandboxCleanupTimeoutMs: 30,
+});
+
+const verySlowStopRuntime = {
+  async start(input) {
+    const attempt = await runtime.start(input);
+    return {
+      ...attempt,
+      async stop() {
+        await delay(500);
+      },
+    };
+  },
+} satisfies BlackboxAttemptRuntime;
+
+const boundedStopTest = createBlackboxTest(verySlowStopRuntime, {
+  sandboxCleanupTimeoutMs: 30,
 });
 
 test.describe('fixture acquisition timeout', () => {
@@ -72,6 +88,15 @@ boundedTest.describe('bounded fixture acquisition cleanup', () => {
   boundedTest.setTimeout(20);
 
   boundedTest('reports when late acquisition cleanup does not settle', () => {
+    playwrightExpect(true).toBe(true);
+  });
+});
+
+boundedStopTest.describe('bounded fixture teardown', () => {
+  boundedStopTest.use({ catalogEntry: { kind: 'system', id: 'orders' } });
+  boundedStopTest.setTimeout(500);
+
+  boundedStopTest('reports when sandbox teardown does not settle', () => {
     playwrightExpect(true).toBe(true);
   });
 });
