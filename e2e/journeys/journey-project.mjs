@@ -5,10 +5,13 @@
 import { execFile } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
 import { copyFile, mkdir, mkdtemp, readFile, readdir, realpath, writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 
 const execute = promisify(execFile);
+/** Journey helpers a golden may pipe into (lib/json-shape.mjs); a fixed directory. */
+export const JOURNEY_LIB = join(dirname(fileURLToPath(import.meta.url)), 'lib');
 
 /**
  * The drivers package.json written by the consumer preparation: every @suites
@@ -64,13 +67,14 @@ export function newFixtureToken() {
 
 /**
  * The environment of one journey's bash session: the packed CLI first on
- * PATH, no ambient BLACKBOX_CAPSULE, and that journey's own fixture token.
+ * PATH, then the journey helpers, no ambient BLACKBOX_CAPSULE, and that
+ * journey's own fixture token.
  * The runner's own process.env is never modified.
  */
 export function journeyEnvironment({ binDirectory, fixtureToken, base = process.env }) {
   const env = {
     ...base,
-    PATH: `${binDirectory}:${base.PATH}`,
+    PATH: `${binDirectory}:${JOURNEY_LIB}:${base.PATH}`,
     NO_COLOR: '1',
     FIXTURE_CONTROL_TOKEN: fixtureToken,
   };

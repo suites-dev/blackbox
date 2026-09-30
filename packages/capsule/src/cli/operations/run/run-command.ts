@@ -17,8 +17,13 @@ import { capsulePackageFailure } from '../../capsule/capsule-output.js';
 import { runProcessInteractiveCapsuleExec } from '../../capsule/execution/interactive-execution.js';
 import { ActivityDisplay } from '../../context/display.js';
 import { InvocationContext } from '../../context/invocation.js';
+import type { CapsuleSummary } from '../../context/project-index.js';
 import { OutputTracker } from './output-tracker.js';
+import { runBlockLines, runDocument, type LiveRunBlock, type RunBlockInput } from './run-block.js';
+import { interruptOnSigint, liveBlock, observeRun } from './run-observe.js';
 import { processOutcome, runExitCode, runSummaryLines } from './run-output.js';
+import { RunTelemetry, type RunSnapshot } from './run-telemetry.js';
+import { systemClock } from './run-wait.js';
 
 export interface RunRequest {
   readonly capsuleFlag: string | null;
@@ -27,6 +32,8 @@ export interface RunRequest {
   readonly purpose: CapsuleActivityPurpose;
   readonly allowUntraced: boolean;
   readonly json: boolean;
+  /** Longest wait for telemetry after the child exits, in ms; 0 does not wait. */
+  readonly waitMs: number;
 }
 
 function writeCaptured(process: CapsuleProcessOutcome, tracker: OutputTracker): void {
@@ -93,19 +100,41 @@ export abstract class RunCommand extends BlackboxCommand {
     if (result.kind !== 'capsule-exec-completed') {
       throw capsulePackageFailure(result, capsule);
     }
-    await this.report({ request, context, capsule, result, durationMs, interactive, tracker });
+    // From the moment the child has exited, Ctrl-C only ends the telemetry
+    // wait: it never replaces the child's exit code.
+    const interrupt = interruptOnSigint();
+    try {
+      await this.report({
+        request,
+        context,
+        capsule,
+        summary,
+        result,
+        durationMs,
+        interactive,
+        tracker,
+        signal: interrupt.signal,
+      });
+    } finally {
+      interrupt.dispose();
+    }
   }
 
   private async report(input: {
     readonly request: RunRequest;
     readonly context: InvocationContext;
     readonly capsule: string;
+    readonly summary: CapsuleSummary | null;
     readonly result: Extract<CapsuleExecResult, { kind: 'capsule-exec-completed' }>;
     readonly durationMs: number;
     readonly interactive: boolean;
     readonly tracker: OutputTracker;
+    readonly signal: AbortSignal;
   }): Promise<void> {
     const { request, capsule, result } = input;
+    // The exit code is the child's, decided now: nothing after this point
+    // (the telemetry wait, a failed read, Ctrl-C) can change it.
+    this.finish(runExitCode(result.outcome));
     // The index loaded before the child ran is reused: the child's output must
     // never depend on another registry read succeeding after it has run.
     // allActivities() never throws (unreadable records are skipped).
@@ -113,27 +142,82 @@ export abstract class RunCommand extends BlackboxCommand {
     const ids = (await index.allActivities()).map(({ activity }) => activity.activityId);
     const activity = new ActivityDisplay([...ids, result.activityId]).short(result.activityId);
     const next = [nextSteps.showActivity(activity, capsule)];
-    if (request.json) {
-      this.json({ ...result, capsule, next });
-    } else {
-      const captured = processOutcome(result.outcome);
+    const captured = processOutcome(result.outcome);
+    if (!request.json) {
       if (!input.interactive && captured !== null) {
         writeCaptured(captured, input.tracker);
       }
       process.stderr.write(input.tracker.separator());
-      this.human([
-        ...runSummaryLines({
-          activity,
-          capsule,
-          purpose: request.purpose,
-          driver: request.driver,
-          outcome: result.outcome,
-          durationMs: input.durationMs,
-        }),
-        ...next.map((command) => `→ ${command}`),
-      ]);
     }
-    this.finish(runExitCode(result.outcome));
+    const [runLine, ...failure] = runSummaryLines({
+      activity,
+      capsule,
+      purpose: request.purpose,
+      driver: request.driver,
+      outcome: result.outcome,
+      durationMs: input.durationMs,
+    });
+    // A driver that failed before any process existed sent and caused nothing: no wait.
+    const observed =
+      captured === null || input.summary === null
+        ? null
+        : await this.observe({
+            request,
+            summary: input.summary,
+            result,
+            runLine,
+            activity,
+            next,
+            signal: input.signal,
+          });
+    if (request.json) {
+      // A driver that failed first keeps its phase 1 document: no context or observation.
+      this.json({ ...result, capsule, next, ...(observed === null ? {} : runDocument(observed)) });
+    } else if (observed === null) {
+      this.human([runLine, ...failure, ...next.map((command) => `→ ${command}`)]);
+    } else {
+      const lines = runBlockLines(observed);
+      if (observed.live === null) {
+        this.human(lines);
+      } else {
+        observed.live.end(lines);
+      }
+    }
+  }
+
+  private async observe(input: {
+    readonly request: RunRequest;
+    readonly summary: CapsuleSummary;
+    readonly result: Extract<CapsuleExecResult, { kind: 'capsule-exec-completed' }>;
+    readonly runLine: string;
+    readonly activity: string;
+    readonly next: readonly string[];
+    readonly signal: AbortSignal;
+  }): Promise<(RunBlockInput & { readonly live: LiveRunBlock | null }) | null> {
+    const live = liveBlock(input.request.json);
+    const block = (snapshot: RunSnapshot, wait: RunBlockInput['wait']): RunBlockInput => ({
+      runLine: input.runLine,
+      short: input.activity,
+      snapshot,
+      wait,
+      next: input.next,
+    });
+    const observed = await observeRun({
+      telemetry: new RunTelemetry({
+        projectDirectory: process.cwd(),
+        capsule: input.summary,
+        activityId: input.result.activityId,
+      }),
+      capMs: input.request.waitMs,
+      clock: systemClock,
+      signal: input.signal,
+      draw: (snapshot, wait) => {
+        if (live !== null) {
+          live.draw(block(snapshot, wait));
+        }
+      },
+    });
+    return observed === null ? null : { ...block(observed.snapshot, observed.wait), live };
   }
 
   private childArgv(): readonly [string, ...string[]] {

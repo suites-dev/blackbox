@@ -1,7 +1,7 @@
 // Harness tests for the golden journey runner. They need bash, not Docker.
 import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
-import { EventEmitter } from 'node:events';
+import { EventEmitter, once } from 'node:events';
 import { chmod, mkdir, mkdtemp, readFile, realpath, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
@@ -11,8 +11,21 @@ import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 
 import { BashSession, JourneySessionTimeout, STATUS_SENTINEL } from './journey-session.mjs';
-import { CAPTURES, createNormalizer, normalizeWhitespace, parseGolden } from './journey-format.mjs';
-import { cleanupJourneyProject, journeyEnvironment, newFixtureToken } from './journey-project.mjs';
+import {
+  CAPTURES,
+  VOLATILE,
+  createNormalizer,
+  normalizeWhitespace,
+  parseGolden,
+  replaceRunBlock,
+} from './journey-format.mjs';
+import { jsonShape, keyPaths } from './lib/json-shape.mjs';
+import {
+  JOURNEY_LIB,
+  cleanupJourneyProject,
+  journeyEnvironment,
+  newFixtureToken,
+} from './journey-project.mjs';
 import { runItems } from './journey-steps.mjs';
 import { canonicalizeTrees } from './journey-trees.mjs';
 
@@ -411,7 +424,9 @@ void test('each journey gets its own fixture token, only in its own environment'
   const base = { PATH: '/usr/bin', BLACKBOX_CAPSULE: 'ambient' };
   const env = journeyEnvironment({ binDirectory: '/bin/bb', fixtureToken: first, base });
   assert.equal(env.FIXTURE_CONTROL_TOKEN, first);
-  assert.equal(env.PATH, '/bin/bb:/usr/bin');
+  // The packed CLI first, then only the fixed journey helper directory.
+  assert.equal(env.PATH, `/bin/bb:${JOURNEY_LIB}:/usr/bin`);
+  assert.equal(JOURNEY_LIB, join(HERE, 'lib'));
   assert.equal(env.BLACKBOX_CAPSULE, undefined);
   assert.deepEqual(base, { PATH: '/usr/bin', BLACKBOX_CAPSULE: 'ambient' });
   assert.equal(process.env.FIXTURE_CONTROL_TOKEN, undefined);
@@ -495,4 +510,120 @@ void test('--spans rows are reordered by tree, ignoring IDs and durations; paren
     row('cccccccccccccccc', 'bbbbbbbbbbbbbbbb', 'GET', '2ms'),
   );
   assert.deepEqual(titles(nested), ['POST /s', 'SET', 'GET']);
+});
+
+const RUN = 'blackbox capsule run --via public-api -- curl /x';
+const RUN_OUTPUT = [
+  '{"child":"stdout before"}',
+  'activity <ACT_1> · capsule <CAPSULE_1> · stimulus · via public-api · host · exit 0 · <DUR>',
+  '  context   sent (w3c, http-headers)',
+  '  observed  1 traces · 2 services · <N> spans · provisional (capsule running)',
+  '    api  POST /x  201',
+  '→ blackbox capsule show <ACT_1> --session <CAPSULE_1>',
+  'child stderr written after the block',
+  '',
+].join('\n');
+
+void test('#! volatile run-block parses with no argument and refuses any other form', () => {
+  assert.deepEqual(parseGolden(`#! volatile run-block\n$ ${RUN}\n`)[0], {
+    kind: 'volatile',
+    line: '#! volatile run-block',
+  });
+  for (const line of [
+    '#! volatile',
+    '#! volatile run-block extra',
+    '#! volatile /activity.*/',
+    '#! volatile show-block',
+    '#! volatile  run-block',
+  ]) {
+    assert.throws(() => parseGolden(`${line}\n$ ${RUN}\n`), /volatile takes exactly/u, line);
+  }
+});
+
+void test('volatile replaces only the Blackbox block; the child output around it stays compared', () => {
+  const replaced = replaceRunBlock(RUN, RUN_OUTPUT);
+  assert.equal(
+    replaced,
+    ['{"child":"stdout before"}', VOLATILE, 'child stderr written after the block', ''].join('\n'),
+  );
+  // Negative control: a replacement that swallowed the child's lines would
+  // change the child's own output, which the golden must still see.
+  const swallowing = RUN_OUTPUT.replace(/^[\s\S]*→ [^\n]*\n/u, `${VOLATILE}\n`);
+  assert.notEqual(swallowing, replaced);
+  assert.doesNotMatch(swallowing, /stdout before/u);
+});
+
+void test('volatile is refused outside a provisional capsule run block', () => {
+  assert.throws(
+    () => replaceRunBlock('blackbox capsule show abc', RUN_OUTPUT),
+    /only to blackbox capsule run/u,
+  );
+  assert.throws(() => replaceRunBlock(RUN, 'plain child output\n'), /no Blackbox block/u);
+  const complete = RUN_OUTPUT.replace('provisional (capsule running)', 'complete');
+  assert.throws(() => replaceRunBlock(RUN, complete), /only while the capsule is provisional/u);
+  const leaked = RUN_OUTPUT.replace('api  POST /x  201', 'api  POST /x?token=<SECRET>  201');
+  assert.throws(() => replaceRunBlock(RUN, leaked), /secret appeared/u);
+});
+
+void test('#! volatile marks only the next command', async () => {
+  await withSession(async (session) => {
+    const items = parseGolden(
+      ['$ echo first', '#! volatile run-block', '$ echo second', '$ echo third', ''].join('\n'),
+    );
+    const executed = await runItems({ items, session, raw: [] });
+    const commands = executed.filter((item) => item.kind === 'command');
+    assert.deepEqual(
+      commands.map((item) => [item.command, item.volatile === true]),
+      [
+        ['echo first', false],
+        ['echo second', true],
+        ['echo third', false],
+      ],
+    );
+  });
+});
+
+void test('json-shape prints key paths and the named fields, never other values', () => {
+  const document = {
+    kind: 'capsule-exec-completed',
+    outcome: { process: { argv: ['curl', '-H', 'Authorization: Bearer hidden-value'] } },
+    context: { kind: 'sent', carrier: 'http-headers' },
+    observation: {
+      status: 'provisional',
+      tree: [{ spanId: 'a', children: [{ spanId: 'b', children: [{ spanId: 'c', children: [] }] }] }],
+    },
+    limitations: [{ kind: 'observation-provisional' }, { kind: 'still-arriving', waitedMs: 5000 }],
+    next: ['blackbox capsule show abc --session cap'],
+  };
+  const shape = jsonShape(`${JSON.stringify(document)}\n`);
+  assert.doesNotMatch(shape, /hidden-value|Bearer|http-headers|5000/u);
+  assert.match(shape, /^documents 1\nkind capsule-exec-completed\n/u);
+  assert.match(shape, /^ {2}outcome\.process\.argv$/mu);
+  assert.match(shape, /^observation\.status provisional$/mu);
+  assert.match(shape, /^context\.kind sent$/mu);
+  assert.match(shape, /^limitations observation-provisional still-arriving$/mu);
+  assert.match(shape, /^next blackbox capsule show abc --session cap$/mu);
+  // A deeper tree has the same shape as a shallow one.
+  const shallow = { ...document, observation: { status: 'provisional', tree: [{ spanId: 'a', children: [] }] } };
+  const deep = keyPaths(document).filter((path) => path.startsWith('observation.tree'));
+  assert.deepEqual(
+    deep,
+    ['observation.tree', 'observation.tree[].children', 'observation.tree[].children[].spanId', 'observation.tree[].spanId'],
+  );
+  assert.ok(keyPaths(shallow).includes('observation.tree[].children'));
+});
+
+void test('json-shape proves one document per command and takes no arguments', async () => {
+  assert.throws(() => jsonShape('{"kind":"a"}\n{"kind":"b"}\n'), /exactly one JSON document/u);
+  assert.throws(() => jsonShape(''), /exactly one JSON document/u);
+  const script = join(HERE, 'lib', 'json-shape.mjs');
+  await assert.rejects(execute(process.execPath, [script, 'observation']), (error) => {
+    assert.equal(error.code, 2);
+    assert.match(error.stderr, /takes no arguments/u);
+    return true;
+  });
+  const child = execFile(process.execPath, [script]);
+  child.stdin.end('{"kind":"x"}\n');
+  const [code] = await once(child, 'close');
+  assert.equal(code, 0);
 });

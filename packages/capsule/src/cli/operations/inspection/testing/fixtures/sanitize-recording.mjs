@@ -16,7 +16,8 @@
 // capsule starts at 2026-01-01T00:00:00Z, and each activity's argv, output and
 // execution details are dropped (they can hold credentials). Spans are stored
 // as the CLI projects them (projectInvestigationSpans), so attributes are
-// already bounded and redacted.
+// already bounded and redacted. Each trace also keeps `arrivals`: when the
+// collector received each span (its fragment's receivedAt), shifted likewise.
 import { readFile, readdir } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 
@@ -119,7 +120,21 @@ for (const file of (await readdir(fileURLToPath(directory)))
     endTimeUnixNano: shiftNano(projected.endTimeUnixNano),
     links: [],
   }));
-  traces.push({ traceId: trace(document.traceId), spans });
+  // When the collector received each span (its fragment's receivedAt), so
+  // run renderers can replay arrival. Absent from recordings made before it.
+  const arrivals = {};
+  for (const fragment of document.fragments) {
+    for (const resource of fragment.request?.resourceSpans ?? []) {
+      for (const scope of resource.scopeSpans ?? []) {
+        for (const raw of scope.spans ?? []) {
+          const id = raw.traceId === document.traceId ? span(raw.spanId) : null;
+          const at = shiftIso(fragment.receivedAt);
+          if (id !== null && (arrivals[id] === undefined || at < arrivals[id])) arrivals[id] = at;
+        }
+      }
+    }
+  }
+  traces.push({ traceId: trace(document.traceId), spans, arrivals });
 }
 
 const lifecycle = session.kind === 'collector-session-found' ? session.lifecycle : null;

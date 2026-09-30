@@ -16,11 +16,15 @@ $ blackbox capsule use $CAPSULE_1
 current capsule: <CAPSULE_1> (payment-mock, running)
 $ blackbox capsule run -- sh -c 'exit 1'
 activity <ACT_1> · capsule <CAPSULE_1> · stimulus · host · host · exit 1 · <DUR>
+  context  untraced: no driver, so no trace context was sent
+  observed  nothing yet · provisional (capsule running)
 → blackbox capsule show <ACT_1> --session <CAPSULE_1>
 $ echo $?
 1
 $ blackbox capsule run -- sh -c 'exit 3'
 activity <ACT_2> · capsule <CAPSULE_1> · stimulus · host · host · exit 3 · <DUR>
+  context  untraced: no driver, so no trace context was sent
+  observed  nothing yet · provisional (capsule running)
 → blackbox capsule show <ACT_2> --session <CAPSULE_1>
 $ echo $?
 3
@@ -30,11 +34,15 @@ $ echo $?
 2
 $ blackbox capsule run -- sh -c 'kill -TERM $$'
 activity <ACT_3> · capsule <CAPSULE_1> · stimulus · host · host · signal SIGTERM · <DUR>
+  context  untraced: no driver, so no trace context was sent
+  observed  nothing yet · provisional (capsule running)
 → blackbox capsule show <ACT_3> --session <CAPSULE_1>
 $ echo $?
 143
 $ blackbox capsule run -- sh -c 'kill -KILL $$'
 activity <ACT_4> · capsule <CAPSULE_1> · stimulus · host · host · signal SIGKILL · <DUR>
+  context  untraced: no driver, so no trace context was sent
+  observed  nothing yet · provisional (capsule running)
 → blackbox capsule show <ACT_4> --session <CAPSULE_1>
 $ echo $?
 137

@@ -4,10 +4,10 @@ current capsule: <CAPSULE_1>
 entrypoint: <URL>
 → blackbox capsule run --session <CAPSULE_1> --via public-api -- curl /health
 #! capture CAPSULE_1 capsule-up
+#! volatile run-block
 $ blackbox capsule run --via redis --name "Queue proof stimulus" -- redis-cli RPUSH blackbox:proof:stimuli proof-journey
 1
-activity <ACT_1> · capsule <CAPSULE_1> · stimulus · via redis · participant redis · exit 0 · <DUR>
-→ blackbox capsule show <ACT_1> --session <CAPSULE_1>
+<VOLATILE>
 #! capture ACT_1 activity
 #! wait 60 "no known cause" blackbox capsule show $ACT_1 --session $CAPSULE_1
 $ blackbox capsule down

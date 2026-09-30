@@ -1,0 +1,71 @@
+import { LiveRunBlock, type RunBlockInput } from './run-block.js';
+import { acceptedSpans, type RunTelemetry, type RunSnapshot } from './run-telemetry.js';
+import { waitForTelemetry, type WaitClock } from './run-wait.js';
+
+/** Stops the telemetry wait on Ctrl-C instead of letting the signal end the process. */
+export function interruptOnSigint(): {
+  readonly signal: AbortSignal;
+  readonly dispose: () => void;
+} {
+  const controller = new AbortController();
+  const abort = () => {
+    controller.abort();
+  };
+  process.on('SIGINT', abort);
+  return {
+    signal: controller.signal,
+    dispose: () => {
+      process.off('SIGINT', abort);
+    },
+  };
+}
+
+/** The block drawn in place while waiting, when stderr is a terminal and not --json. */
+export function liveBlock(json: boolean): LiveRunBlock | null {
+  const stderr = process.stderr;
+  if (json || !stderr.isTTY) {
+    return null;
+  }
+  return new LiveRunBlock({
+    write: (text) => stderr.write(text),
+    viewport: () => ({ columns: stderr.columns || 80, rows: stderr.rows || 24 }),
+  });
+}
+
+/**
+ * Waits for the activity's telemetry and returns the final snapshot, or null
+ * when the activity record cannot be read (nothing to show, so no wait).
+ * `draw` is called with each snapshot as spans arrive.
+ */
+export async function observeRun(input: {
+  readonly telemetry: Pick<RunTelemetry, 'session' | 'snapshot'>;
+  readonly capMs: number;
+  readonly clock: WaitClock;
+  readonly signal: AbortSignal;
+  readonly draw: (snapshot: RunSnapshot, wait: RunBlockInput['wait']) => void;
+}): Promise<{ readonly snapshot: RunSnapshot; readonly wait: RunBlockInput['wait'] } | null> {
+  const first = await input.telemetry.session();
+  const initial = await input.telemetry.snapshot(first);
+  if (initial === null) {
+    return null;
+  }
+  let snapshot = initial;
+  input.draw(snapshot, { waitedMs: 0, stillArriving: false });
+  let latest = first;
+  const start = input.clock.now();
+  const wait = await waitForTelemetry({
+    capMs: input.capMs,
+    clock: input.clock,
+    signal: input.signal,
+    baseline: acceptedSpans(first),
+    poll: async () => {
+      latest = await input.telemetry.session();
+      return acceptedSpans(latest);
+    },
+    arrived: async () => {
+      snapshot = (await input.telemetry.snapshot(latest)) ?? snapshot;
+      input.draw(snapshot, { waitedMs: input.clock.now() - start, stillArriving: false });
+    },
+  });
+  return { snapshot, wait };
+}

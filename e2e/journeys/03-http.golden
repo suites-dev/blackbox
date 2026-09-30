@@ -4,14 +4,14 @@ current capsule: <CAPSULE_1>
 entrypoint: <URL>
 → blackbox capsule run --session <CAPSULE_1> --via public-api -- curl /health
 #! capture CAPSULE_1 capsule-up
+#! volatile run-block
 $ blackbox capsule run --via public-api --purpose setup --name "Reset fixture" -- curl -fsS -X POST -H "Authorization: Bearer $FIXTURE_CONTROL_TOKEN" -H "Content-Type: application/json" -d '{"profile":"fresh"}' /fixture/reset
 {"fraudAudit":[],"payment":{"paymentIntents":[],"refunds":[]},"queueDepth":0,"redis":{},"subscriptions":[]}
-activity <ACT_1> · capsule <CAPSULE_1> · setup · via public-api · host · exit 0 · <DUR>
-→ blackbox capsule show <ACT_1> --session <CAPSULE_1>
+<VOLATILE>
+#! volatile run-block
 $ blackbox capsule run --via public-api --name "Create Alice subscription" -- curl -fsS -X POST -H "Content-Type: application/json" -d '{"userId":"alice","paymentMethodId":"pm_capsule_alice"}' /subscriptions
 {"userId":"alice","tier":"pro","subscription":{"id":"subscription_alice","status":"active"},"paymentIntentId":"pi_alice1","orderId":"order_alice"}
-activity <ACT_2> · capsule <CAPSULE_1> · stimulus · via public-api · host · exit 0 · <DUR>
-→ blackbox capsule show <ACT_2> --session <CAPSULE_1>
+<VOLATILE>
 #! capture ACT_2 activity
 $ blackbox capsule down
 capsule <CAPSULE_1> stopped · evidence kept

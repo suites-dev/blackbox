@@ -4,18 +4,24 @@ current capsule: <CAPSULE_1>
 entrypoint: <URL>
 → blackbox capsule run --session <CAPSULE_1> --via public-api -- curl /health
 #! capture CAPSULE_1 capsule-up
-$ blackbox capsule run --via postgres --purpose inspection -- psql --username fixture --dbname subscriptions --tuples-only --no-align --command "SELECT count(*) FROM subscriptions"
+$ blackbox capsule run --via postgres --purpose inspection --wait 0 -- psql --username fixture --dbname subscriptions --tuples-only --no-align --command "SELECT count(*) FROM subscriptions"
 0
 activity <ACT_1> · capsule <CAPSULE_1> · inspection · via postgres · participant postgres · exit 0 · <DUR>
+  context  not carried: postgresql is shared state (expected for this driver)
+  observed  nothing yet · provisional (capsule running)
 → blackbox capsule show <ACT_1> --session <CAPSULE_1>
-$ blackbox capsule run --via postgres --purpose inspection -- blackbox-missing-client
+$ blackbox capsule run --via postgres --purpose inspection --wait 0 -- blackbox-missing-client
 activity <ACT_2> · capsule <CAPSULE_1> · inspection · via postgres · participant postgres · not found · <DUR>
+  context  not carried: postgresql is shared state (expected for this driver)
+  observed  nothing yet · provisional (capsule running)
 → blackbox capsule show <ACT_2> --session <CAPSULE_1>
 $ echo $?
 127
 $ printf '#!/bin/sh\necho hi\n' > not-executable && chmod -x not-executable
-$ blackbox capsule run -- ./not-executable
+$ blackbox capsule run --wait 0 -- ./not-executable
 activity <ACT_3> · capsule <CAPSULE_1> · stimulus · host · host · not executable · <DUR>
+  context  untraced: no driver, so no trace context was sent
+  observed  nothing yet · provisional (capsule running)
 → blackbox capsule show <ACT_3> --session <CAPSULE_1>
 $ echo $?
 126
