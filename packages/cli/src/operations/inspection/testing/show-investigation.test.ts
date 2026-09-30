@@ -48,7 +48,14 @@ void test('a trace not observed yet in an explicit, running capsule is provision
     const human = await capsule(fixture.directory, 'show', ABSENT_TRACE, '--session', CAPSULE_A);
     assert.equal(human.status, 0, human.stderr);
     assert.equal(human.stderr, pendingLine(CAPSULE_A));
-    const json = await capsule(fixture.directory, 'show', ABSENT_TRACE, '--session', CAPSULE_A, '--json');
+    const json = await capsule(
+      fixture.directory,
+      'show',
+      ABSENT_TRACE,
+      '--session',
+      CAPSULE_A,
+      '--json',
+    );
     const document = onlyDocument(json);
     assert.equal(json.status, 0);
     assert.equal(document.kind, 'collector-trace-missing');
@@ -64,7 +71,14 @@ void test('a trace not observed yet in an explicit, running capsule is provision
     assert.equal(fromEnvironment.status, 0);
     assert.equal(fromEnvironment.stderr, pendingLine(CAPSULE_A));
     // The observations alias takes the same path.
-    const alias = await run(fixture.directory, 'observations', '--session', CAPSULE_A, '--trace', ABSENT_TRACE);
+    const alias = await run(
+      fixture.directory,
+      'observations',
+      '--session',
+      CAPSULE_A,
+      '--trace',
+      ABSENT_TRACE,
+    );
     assert.equal(alias.status, 0);
     assert.equal(alias.stderr, pendingLine(CAPSULE_A));
   } finally {
@@ -115,7 +129,10 @@ void test('every new explicit-capsule path refuses a malformed capsule before an
           kind: 'capsule-operation-failed',
           operation: 'observations',
           sessionId: value,
-          error: { name: 'Error', message: 'sessionId must be an exact Capsule-generated identity' },
+          error: {
+            name: 'Error',
+            message: 'sessionId must be an exact Capsule-generated identity',
+          },
           capsule: value,
           next: ['blackbox capsule ls --all'],
         });
@@ -141,12 +158,26 @@ void test('show adds status, trees and limitations without changing phase 1 fiel
       tree: [],
       uncaused: [],
     });
-    assert.deepEqual(activity.limitations, [{ kind: 'observation-provisional' }, { kind: 'untraced' }]);
-    const capsuleDocument = onlyDocument(await capsule(fixture.directory, 'show', STOPPED, '--json'));
+    assert.deepEqual(activity.limitations, [
+      { kind: 'observation-provisional' },
+      { kind: 'untraced' },
+    ]);
+    const capsuleDocument = onlyDocument(
+      await capsule(fixture.directory, 'show', STOPPED, '--json'),
+    );
     assert.equal(capsuleDocument.kind, 'collector-session-missing');
     assert.equal(capsuleDocument.status, 'incomplete');
+    // Every view keeps the reason, not only the activity observation.
+    assert.equal(capsuleDocument.reason, 'no collector record');
     assert.equal('timeline' in capsuleDocument, false);
-    const timeline = onlyDocument(await capsule(fixture.directory, 'show', CAPSULE_A, '--timeline', '--json'));
+    const stoppedTimeline = onlyDocument(
+      await capsule(fixture.directory, 'show', STOPPED, '--timeline', '--json'),
+    );
+    assert.equal(stoppedTimeline.status, 'incomplete');
+    assert.equal(stoppedTimeline.reason, 'no collector record');
+    const timeline = onlyDocument(
+      await capsule(fixture.directory, 'show', CAPSULE_A, '--timeline', '--json'),
+    );
     assert.equal(timeline.status, 'provisional');
     assert.deepEqual(timeline.timeline, [
       { offsetMs: 2000, activity: ACTIVITY_A, trace: null, marker: 'none' },
@@ -191,7 +222,11 @@ void test('show never prints the activity argv, human or JSON', async () => {
       const result = await run(fixture.directory, ...argv);
       assert.equal(result.status, 0, argv.join(' '));
       const output = result.stdout + result.stderr;
-      assert.doesNotMatch(output, /argv-secret|Authorization|\/fixture\/reset|curl/u, argv.join(' '));
+      assert.doesNotMatch(
+        output,
+        /argv-secret|Authorization|\/fixture\/reset|curl/u,
+        argv.join(' '),
+      );
     }
     // Negative control: the secret really is in the record show reads.
     const record = await readFile(

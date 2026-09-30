@@ -107,6 +107,14 @@ Every observation carries a status. Blackbox never claims to have seen everythin
 A trace ID that no capsule retains is `id-unknown` (exit `2`), except when an explicit capsule
 (`--session` or `BLACKBOX_CAPSULE`) is still provisional: then `capsule show` exits `0` with
 `not observed yet · provisional (capsule running)`, because its spans may simply not have arrived.
+In JSON, every `capsule show` document carries `status`, and `reason` when the status is `incomplete`.
+`--timeline` exits `125` when the capsule's activity record cannot be read, rather than placing every
+trace as if there were no activities.
+
+Span titles print an HTTP span's route template when the service reports one. A title built from a
+raw request path keeps only plain words and short versions such as `v1`; every other segment prints as
+`{…}`, so IDs and tokens in paths are not shown. Names, titles and services from telemetry are written
+to the terminal without control characters or escape sequences.
 
 `capsule show` output never uses the words success, successful, passed, verified, effect or effects: it reports
 what was observed, not whether the system behaved correctly.

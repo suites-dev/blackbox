@@ -12,7 +12,7 @@ import { nextSteps } from '../../cli/next-steps.js';
 import type { CapsuleSummary } from '../../context/project-index.js';
 import { offsetMs, rootSummary, type CapsuleInvestigation } from './investigation-model.js';
 import { showDuration, statusText, traceShort, treeLines } from './show-format.js';
-import { treeDocument } from './show-json.js';
+import { statusDocument, treeDocument } from './show-json.js';
 
 export { activityView } from './show-activity.js';
 
@@ -59,7 +59,7 @@ export function traceView(input: {
     ],
     next,
     document: {
-      status: investigation.data.completeness.status,
+      ...statusDocument(investigation.data.completeness),
       tree: treeDocument(tree.roots),
     },
   };
@@ -105,7 +105,7 @@ export function capsuleView(input: {
       `  activities ${activities} · traces ${String(input.traceCount)}`,
     ],
     next,
-    document: { status: input.completeness.status },
+    document: statusDocument(input.completeness),
   };
 }
 
@@ -226,7 +226,7 @@ export function timelineView(input: {
     ],
     next: input.latest === null ? [] : [nextSteps.showActivity(input.latest, capsule.capsule)],
     document: {
-      status: investigation.data.completeness.status,
+      ...statusDocument(investigation.data.completeness),
       timeline: rows.map((row) => ({
         offsetMs: Math.round(row.offsetMs),
         activity: row.activity,

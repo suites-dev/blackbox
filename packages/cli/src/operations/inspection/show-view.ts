@@ -1,8 +1,7 @@
-import type {
-  CapsuleActivityReport,
-  CapsuleObservationsResult,
-} from '@suites/blackbox-capsule';
+import type { CapsuleActivityReport, CapsuleObservationsResult } from '@suites/blackbox-capsule';
 
+import { CliFailure } from '../../cli/failure.js';
+import { nextSteps } from '../../cli/next-steps.js';
 import { ActivityDisplay } from '../../context/display.js';
 import type { CapsuleSummary, ProjectIndex } from '../../context/project-index.js';
 import type { Resolved } from '../../context/resolver.js';
@@ -77,10 +76,21 @@ async function capsuleShow(input: {
       latest: short,
     });
   }
+  if (input.activities === null) {
+    // Without the activity record, every trace would look uncaused and the
+    // timeline would claim there were no activities: refuse instead.
+    throw new CliFailure({
+      code: 'operation-failed',
+      message: `capsule ${input.capsule.capsule}: its activity record could not be read, so there is no timeline`,
+      details: [],
+      candidates: [],
+      next: [nextSteps.showCapsule(input.capsule.capsule)],
+    });
+  }
   const data = await loadInvestigation({
     projectDirectory: input.projectDirectory,
     capsule: input.capsule,
-    activities: input.activities ?? [],
+    activities: input.activities,
     session: input.result,
     traceIds: 'all',
   });

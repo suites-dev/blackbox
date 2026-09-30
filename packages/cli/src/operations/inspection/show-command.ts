@@ -9,6 +9,7 @@ import { EXIT_CODES } from '../../cli/exit-codes.js';
 import { CliFailure } from '../../cli/failure.js';
 import { capsulePackageFailure } from '../../capsule/capsule-output.js';
 import { isTraceId } from '../../context/identifiers.js';
+import { terminalText } from '../../progress/terminal-text.js';
 import { InvocationContext } from '../../context/invocation.js';
 import type { ProjectIndex } from '../../context/project-index.js';
 import { resolveId, type Resolved } from '../../context/resolver.js';
@@ -68,7 +69,9 @@ export abstract class ShowCommand extends BlackboxCommand {
     if (request.json) {
       this.json({ ...result, capsule, next: view.next, ...view.document });
     } else {
-      this.human([...view.lines, ...view.next.map((command) => `→ ${command}`)]);
+      // Service names, span names, titles and activity names come from telemetry
+      // and records: no control character or escape sequence reaches the terminal.
+      this.human([...view.lines, ...view.next.map((command) => `→ ${command}`)].map(terminalText));
     }
     this.finish(EXIT_CODES.success);
   }
