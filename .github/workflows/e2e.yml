@@ -316,7 +316,7 @@ jobs:
       # only those tarballs, so it needs neither the registry nor the consumer.
       - name: Run the packed Skills install check
         id: skills
-        if: always() && steps.setup.outcome == success
+        if: always() && steps.setup.outcome == 'success'
         timeout-minutes: 10
         run: >-
           node .github/scripts/ci-evidence.mjs run --lane e2e --project skills
