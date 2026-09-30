@@ -1,4 +1,8 @@
-import { readCapsuleActivities, type CapsuleActivityReport } from '@suites/blackbox-capsule';
+import {
+  readCapsuleActivities,
+  readCapsuleLifecycle,
+  type CapsuleActivityReport,
+} from '@suites/blackbox-capsule';
 
 import { ProjectIndex, type CapsuleSummary } from '../../context/project-index.js';
 import { loadInvestigation, readSession } from '../inspection/investigation-data.js';
@@ -56,6 +60,24 @@ export class RunTelemetry {
       // Keep the last state read.
     }
     return this.#capsule.state !== before;
+  }
+
+  /**
+   * The collector's accepted-span total from its lifecycle record alone (no
+   * fragment is read), or null when unreadable: what the wait polls.
+   */
+  async acceptedSpans(): Promise<number | null> {
+    try {
+      const result = await readCapsuleLifecycle({
+        projectDirectory: this.input.projectDirectory,
+        sessionId: this.input.capsule.capsule,
+      });
+      return result.kind === 'collector-lifecycle-found'
+        ? result.lifecycle.telemetry.acceptedSpans
+        : null;
+    } catch {
+      return null;
+    }
   }
 
   /** The capsule's session read (lifecycle, trace IDs), or null when unreadable. */

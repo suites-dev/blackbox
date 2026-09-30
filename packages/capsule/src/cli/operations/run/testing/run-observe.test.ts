@@ -18,16 +18,29 @@ function clock() {
   } satisfies WaitClock;
 }
 
-/** Every span read returns a new snapshot, recorded in order, so tests can tell them apart. */
-async function telemetry(input: { readonly stateChanges: boolean }) {
+/**
+ * Every span read returns a new snapshot, recorded in order, so tests can tell
+ * them apart. `totals` is what successive counter polls return (then its last value).
+ */
+async function telemetry(input: {
+  readonly stateChanges: boolean;
+  readonly totals: readonly number[];
+}) {
   const recorded = await running();
   const activity = named(recorded, 'Create Alice subscription');
   const reads: RunSnapshot[] = [];
+  const totals = input.totals;
   let sessions = 0;
+  let polls = 0;
   return {
     reads,
     sessions: () => sessions,
+    polls: () => polls,
     source: {
+      acceptedSpans: () => {
+        polls += 1;
+        return Promise.resolve(totals[Math.min(polls, totals.length) - 1] ?? null);
+      },
       session: () => {
         sessions += 1;
         return Promise.resolve(null);
@@ -42,10 +55,10 @@ async function telemetry(input: { readonly stateChanges: boolean }) {
   };
 }
 
-function observe(source: Awaited<ReturnType<typeof telemetry>>['source']) {
+function observe(source: Awaited<ReturnType<typeof telemetry>>['source'], capMs = 0) {
   return observeRun({
     telemetry: source,
-    capMs: 0,
+    capMs,
     clock: clock(),
     signal: new AbortController().signal,
     draw: () => undefined,
@@ -53,7 +66,7 @@ function observe(source: Awaited<ReturnType<typeof telemetry>>['source']) {
 }
 
 void test('a capsule that stopped during the wait gets a final snapshot from a fresh session', async () => {
-  const fake = await telemetry({ stateChanges: true });
+  const fake = await telemetry({ stateChanges: true, totals: [] });
   const observed = await observe(fake.source);
   assert.ok(observed !== null);
   assert.equal(fake.reads.length, 2);
@@ -62,10 +75,20 @@ void test('a capsule that stopped during the wait gets a final snapshot from a f
 });
 
 void test('an unchanged capsule is not re-read after the wait', async () => {
-  const fake = await telemetry({ stateChanges: false });
+  const fake = await telemetry({ stateChanges: false, totals: [] });
   const observed = await observe(fake.source);
   assert.ok(observed !== null);
   assert.equal(fake.reads.length, 1);
   assert.equal(fake.sessions(), 1);
   assert.equal(observed.snapshot, fake.reads[0]);
+});
+
+void test('polls read only the lifecycle counter; the session is re-read only when it changes', async () => {
+  // Unreadable at child exit (null), then the counter reads 4 and stays put: one change.
+  const fake = await telemetry({ stateChanges: false, totals: [4] });
+  await observe(fake.source, 5000);
+  assert.ok(fake.polls() >= 5, String(fake.polls()));
+  // One session read at child exit, one for the single change.
+  assert.equal(fake.sessions(), 2);
+  assert.equal(fake.reads.length, 2);
 });

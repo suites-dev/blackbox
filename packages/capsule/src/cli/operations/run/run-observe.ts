@@ -38,7 +38,7 @@ export function liveBlock(json: boolean): LiveRunBlock | null {
  * `draw` is called with each snapshot as spans arrive.
  */
 export async function observeRun(input: {
-  readonly telemetry: Pick<RunTelemetry, 'session' | 'snapshot' | 'stateChanged'>;
+  readonly telemetry: Pick<RunTelemetry, 'acceptedSpans' | 'session' | 'snapshot' | 'stateChanged'>;
   readonly capMs: number;
   readonly clock: WaitClock;
   readonly signal: AbortSignal;
@@ -51,19 +51,17 @@ export async function observeRun(input: {
   }
   let snapshot = initial;
   input.draw(snapshot, { waitedMs: 0, stillArriving: false });
-  let latest = first;
   const start = input.clock.now();
   const wait = await waitForTelemetry({
     capMs: input.capMs,
     clock: input.clock,
     signal: input.signal,
     baseline: acceptedSpans(first),
-    poll: async () => {
-      latest = await input.telemetry.session();
-      return acceptedSpans(latest);
-    },
+    // Each poll reads only the lifecycle counter; the session and every
+    // retained trace are read again only when that counter changed.
+    poll: () => input.telemetry.acceptedSpans(),
     arrived: async () => {
-      snapshot = (await input.telemetry.snapshot(latest)) ?? snapshot;
+      snapshot = (await input.telemetry.snapshot(await input.telemetry.session())) ?? snapshot;
       input.draw(snapshot, { waitedMs: input.clock.now() - start, stillArriving: false });
     },
   });
