@@ -23,7 +23,7 @@ import { fileURLToPath } from 'node:url';
 import { projectInvestigationSpans } from '@suites/blackbox-capsule';
 
 // A fixed location, never a path from the command line or the environment.
-const directory = new URL('../../../../../../../.blackbox/tmp/show-recording/', import.meta.url);
+const directory = new URL('../../../../../../../../.blackbox/tmp/show-recording/', import.meta.url);
 const TRACE_FILE = /^trace-[0-9a-f]{32}\.json$/u;
 const read = async (name) => JSON.parse(await readFile(new URL(name, directory), 'utf8'));
 const record = await read('record.json');
