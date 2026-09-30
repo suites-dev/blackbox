@@ -11,6 +11,7 @@ SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd -- "$SCRIPT_DIR/../.." && pwd)"
 E2E_ROOT="$REPO_ROOT/e2e"
 RESULT_ROOT="$E2E_ROOT/test-results"
+RUN_RESULT_ROOT=""
 STATE_FILE="$E2E_ROOT/.blackbox/capsule-assets.json"
 FIXTURE_TOKEN="playwright-e2e-token"
 ASSET_ROOT=""
@@ -26,13 +27,20 @@ require_command() {
 }
 
 recover_sandboxes() {
-  if [[ -d "$RESULT_ROOT" && -n "$CONSUMER_ROOT" && -d "$CONSUMER_ROOT" ]]; then
-    if node "$SCRIPT_DIR/playwright-recover.mjs" "$RESULT_ROOT" "$CONSUMER_ROOT" \
-      >"$RESULT_ROOT/recovery.json"; then
+  if [[ -n "$RUN_RESULT_ROOT" && -d "$RUN_RESULT_ROOT" && -d "$CONSUMER_ROOT" ]]; then
+    if node "$CONSUMER_ROOT/playwright-recover.mjs" \
+      >"$RUN_RESULT_ROOT/recovery.json"; then
       RECOVERY_RECORDED=1
     else
       return 1
     fi
+  fi
+}
+
+retain_results() {
+  if [[ -n "$RUN_RESULT_ROOT" && -d "$RUN_RESULT_ROOT" ]]; then
+    rm -rf "$RESULT_ROOT"
+    cp -R "$RUN_RESULT_ROOT" "$RESULT_ROOT"
   fi
 }
 
@@ -43,6 +51,10 @@ cleanup() {
 
   if [[ "$RECOVERY_RECORDED" -eq 0 ]] && ! recover_sandboxes; then
     echo 'playwright-test: interrupted Sandbox recovery failed' >&2
+    final_status=1
+  fi
+  if ! retain_results; then
+    echo 'playwright-test: retaining Playwright artifacts failed' >&2
     final_status=1
   fi
   if ! node "$REPO_ROOT/scripts/consumer/capsule-asset-cleanup.mjs"; then
@@ -63,7 +75,6 @@ require_command node
 docker info >/dev/null
 
 rm -rf "$RESULT_ROOT"
-mkdir -p "$RESULT_ROOT"
 
 if [[ ! -f "$STATE_FILE" ]]; then
   echo 'playwright-test: registry consumer is not prepared; run pnpm prepare:consumer' >&2
@@ -88,6 +99,8 @@ ASSET_NAME="$(basename -- "$ASSET_ROOT")"
   echo 'playwright-test: prepared consumer does not expose the Blackbox CLI' >&2
   exit 1
 }
+RUN_RESULT_ROOT="$CONSUMER_ROOT/test-results"
+mkdir -p "$RUN_RESULT_ROOT"
 
 mkdir -p "$CONSUMER_ROOT/.blackbox/catalog" "$CONSUMER_ROOT/.blackbox/drivers"
 mkdir -p "$CONSUMER_ROOT/tests/playwright"
@@ -99,24 +112,26 @@ cp "$E2E_ROOT/playwright.config.ts" "$CONSUMER_ROOT/playwright.config.ts"
 cp "$E2E_ROOT/tests/playwright/"*.ts "$CONSUMER_ROOT/tests/playwright/"
 cp "$SCRIPT_DIR/playwright-boundary.mjs" "$CONSUMER_ROOT/playwright-boundary.mjs"
 cp "$SCRIPT_DIR/playwright-evidence.mjs" "$CONSUMER_ROOT/playwright-evidence.mjs"
+cp "$SCRIPT_DIR/playwright-recover.mjs" "$CONSUMER_ROOT/playwright-recover.mjs"
+cp "$SCRIPT_DIR/playwright-verify.mjs" "$CONSUMER_ROOT/playwright-verify.mjs"
 
 cd "$CONSUMER_ROOT"
 NPM_CONFIG_REGISTRY="${BLACKBOX_TEST_REGISTRY:-http://127.0.0.1:4874/}" \
 NPM_CONFIG_CACHE="$ASSET_ROOT/npm-cache" \
   "$BLACKBOX_BIN" inst install --runtime node \
-  >"$RESULT_ROOT/instrumentation-install.txt"
+  >"$RUN_RESULT_ROOT/instrumentation-install.txt"
 test -s "$CONSUMER_ROOT/.blackbox/instrumentation/instrumentation.js"
 test -d "$CONSUMER_ROOT/.blackbox/instrumentation/node_modules"
 
-"$BLACKBOX_BIN" catalog validate --json >"$RESULT_ROOT/catalog-validate.json"
-jq -e '.ok == true' "$RESULT_ROOT/catalog-validate.json" >/dev/null
-"$BLACKBOX_BIN" catalog ls --json >"$RESULT_ROOT/catalog.json"
+"$BLACKBOX_BIN" catalog validate --json >"$RUN_RESULT_ROOT/catalog-validate.json"
+jq -e '.ok == true' "$RUN_RESULT_ROOT/catalog-validate.json" >/dev/null
+"$BLACKBOX_BIN" catalog ls --json >"$RUN_RESULT_ROOT/catalog.json"
 jq -e '
   (.entries | any(.id == "subscription-system" and .kind == "system")) and
   (.entries | any(.id == "payment-mock" and .kind == "subsystem"))
-' "$RESULT_ROOT/catalog.json" >/dev/null
+' "$RUN_RESULT_ROOT/catalog.json" >/dev/null
 
-node "$CONSUMER_ROOT/playwright-boundary.mjs" >"$RESULT_ROOT/package-boundary.json"
+node "$CONSUMER_ROOT/playwright-boundary.mjs" >"$RUN_RESULT_ROOT/package-boundary.json"
 
 PLAYWRIGHT_BIN="$CONSUMER_ROOT/node_modules/.bin/playwright"
 if [[ ! -x "$PLAYWRIGHT_BIN" ]]; then
@@ -125,11 +140,11 @@ if [[ ! -x "$PLAYWRIGHT_BIN" ]]; then
 fi
 
 BLACKBOX_E2E_FIXTURE_TOKEN="$FIXTURE_TOKEN" \
-BLACKBOX_E2E_RESULTS_ROOT="$RESULT_ROOT" \
+BLACKBOX_E2E_RESULTS_ROOT="$RUN_RESULT_ROOT" \
   "$PLAYWRIGHT_BIN" test --config "$CONSUMER_ROOT/playwright.config.ts"
 
 recover_sandboxes
-node "$SCRIPT_DIR/playwright-verify.mjs" "$RESULT_ROOT" >"$RESULT_ROOT/receipt.json"
+node "$CONSUMER_ROOT/playwright-verify.mjs" >"$RUN_RESULT_ROOT/receipt.json"
 
 printf '%s\n' \
   'Playwright journey passed' \

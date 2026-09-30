@@ -1,9 +1,12 @@
 import { execFile } from 'node:child_process';
-import { readFile, readdir, realpath, stat } from 'node:fs/promises';
+import { lstat, readFile, readdir, realpath } from 'node:fs/promises';
 import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 
 const execute = promisify(execFile);
+const supportDirectory = dirname(fileURLToPath(import.meta.url));
+const resultsRoot = resolve(supportDirectory, 'test-results');
 const expectedSpecs = [
   'Scenario: a local-only user activates without payment or ordering',
   'Scenario: a repeated request does not repeat downstream effects',
@@ -24,23 +27,25 @@ function isWithin(candidate, root) {
   return difference === '' || (!difference.startsWith('..') && !isAbsolute(difference));
 }
 
-async function filesUnder(root) {
+async function filesUnder() {
   const files = [];
   async function visit(directory) {
     for (const name of await readdir(directory)) {
       const path = join(directory, name);
-      const information = await stat(path);
+      assert(isWithin(path, resultsRoot), `Evidence path escaped the results root: ${path}`);
+      const information = await lstat(path);
       if (information.isDirectory()) await visit(path);
       else if (information.isFile()) files.push(path);
+      else throw new Error(`Unsupported evidence entry: ${path}`);
     }
   }
-  await visit(root);
+  await visit(resultsRoot);
   return files;
 }
 
-async function sandboxRecords(resultsRoot) {
+async function sandboxRecords() {
   const records = [];
-  for (const path of await filesUnder(resultsRoot)) {
+  for (const path of await filesUnder()) {
     if (!path.endsWith('.json')) continue;
     let value;
     try {
@@ -122,9 +127,9 @@ export async function boundary(consumerRootValue) {
   };
 }
 
-export async function recover(resultsRoot, recoverSandbox) {
+export async function recover(recoverSandbox) {
   const recoveries = [];
-  for (const item of await sandboxRecords(resultsRoot)) {
+  for (const item of await sandboxRecords()) {
     recoveries.push({
       sandboxId: item.value.sandboxId,
       result: await recoverSandbox({
@@ -143,8 +148,8 @@ function collectSpecs(suite, result = []) {
   return result;
 }
 
-export async function verify(resultsRoot) {
-  const records = await sandboxRecords(resultsRoot);
+export async function verify() {
+  const records = await sandboxRecords();
   assert(
     records.length === expectedSpecs.length,
     `Expected ${expectedSpecs.length} physical Sandbox records, found ${records.length}`,
