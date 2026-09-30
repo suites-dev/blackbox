@@ -23,8 +23,8 @@ import { runSummaryLines } from '../run-output.js';
  */
 // The test runner starts in the package directory; no path comes from the environment.
 export const PACKAGE = process.cwd();
-export const FIXTURES = join(PACKAGE, 'src/operations/inspection/testing/fixtures');
-export const SNAPSHOTS = join(PACKAGE, 'src/operations/run/testing/snapshots');
+export const FIXTURES = join(PACKAGE, 'src/cli/operations/inspection/testing/fixtures');
+export const SNAPSHOTS = join(PACKAGE, 'src/cli/operations/run/testing/snapshots');
 export const FORBIDDEN_WORDS = /\b(?:success|successful|passed|verified|effects?)\b/iu;
 export const raw = { serializers: [(value: unknown) => String(value)] };
 
