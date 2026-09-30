@@ -46,8 +46,14 @@ function first(attributes: Attributes, keys: readonly string[]): string | null {
   return entry === null ? null : entry.value;
 }
 
-/** A path segment printed as is: a lowercase word, or a short version like `v1`. */
-const PLAIN_SEGMENT = /^(?:[a-z][a-z_-]{0,31}|v\d{1,3})$/u;
+/**
+ * A path segment printed as is: up to four short lowercase words joined by `-`
+ * or `_` (each at most 16 letters, like `payment_intents` or `subscriptions`), or a short version
+ * like `v1`. A longer run of letters is treated as a possible token, so an
+ * all-lowercase credential such as `/password-reset/abcdefghijklmnopqrs` is
+ * redacted too; the cost is that a long word in a raw path prints as `{…}`.
+ */
+const PLAIN_SEGMENT = /^(?:[a-z]{1,16}(?:[-_][a-z]{1,16}){0,3}|v\d{1,3})$/u;
 
 /**
  * A route never carries its query or fragment (they can hold credentials).

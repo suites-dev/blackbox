@@ -27,6 +27,17 @@ describe('spanTitle', () => {
       'POST /password-reset/{…}',
     ],
     [{ 'http.method': 'POST', 'url.path': '/v1/payment_intents' }, 'POST /v1/payment_intents'],
+    // An all-lowercase token is not a plain word: long letter runs are redacted.
+    [
+      { 'http.method': 'POST', 'url.path': '/password-reset/abcdefghijklmnopqrstuvwxyz' },
+      'POST /password-reset/{…}',
+    ],
+    [{ 'http.method': 'GET', 'url.path': '/invite/qwertyuiopasdfghj' }, 'GET /invite/{…}'],
+    [{ 'http.method': 'POST', 'url.path': '/subscriptions' }, 'POST /subscriptions'],
+    [
+      { 'http.method': 'POST', 'url.path': '/fixture/shared-state-proof/proof-journey' },
+      'POST /fixture/shared-state-proof/proof-journey',
+    ],
     [
       { 'http.method': 'GET', 'url.path': '/users/3f9a2c41-7b00-4000-8000-00000000000a/keys' },
       'GET /users/{…}/keys',
