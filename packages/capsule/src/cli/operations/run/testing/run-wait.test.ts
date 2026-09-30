@@ -223,3 +223,27 @@ void test('Ctrl-C during a poll stops the wait before any span reread', async ()
   assert.equal(rereads, 0);
   assert.deepEqual(wait, { waitedMs: WAIT_POLL_MS, stillArriving: false });
 });
+
+void test('a span reread that outlasts the quiet period is followed by one more poll', async () => {
+  const fake = fakeClock();
+  let total = 1;
+  let rereads = 0;
+  const wait = await waitForTelemetry({
+    capMs: DEFAULT_WAIT_CAP_MS,
+    clock: fake.clock,
+    signal: new AbortController().signal,
+    baseline: 0,
+    poll: () => Promise.resolve(total),
+    arrived: async () => {
+      rereads += 1;
+      // The reread takes 800 ms, and more spans arrive meanwhile (once).
+      await fake.clock.sleep(800);
+      if (rereads === 1) {
+        total = 2;
+      }
+    },
+  });
+  // Both arrivals were read: the second is only seen by the poll before quiet.
+  assert.equal(rereads, 2);
+  assert.equal(wait.stillArriving, false);
+});

@@ -40,31 +40,39 @@ export async function waitForTelemetry(input: {
   const interrupted = () => input.signal.aborted;
   const start = clock.now();
   const waited = () => clock.now() - start;
-  let last = input.baseline;
-  let lastArrival: number | null = null;
+  // Mutated inside `arrival`, so kept in one object rather than narrowed locals.
+  const seen = { last: input.baseline, lastArrival: null as number | null };
+  /** Polls once; true when the total changed (the spans were then re-read). */
+  const arrival = async (): Promise<boolean> => {
+    const current = await input.poll();
+    // Ctrl-C during the poll must not wait for a full span reread.
+    if (interrupted() || current === null || current === seen.last) {
+      return false;
+    }
+    seen.last = current;
+    seen.lastArrival = clock.now();
+    await input.arrived();
+    return true;
+  };
   for (;;) {
     if (input.capMs <= 0 || interrupted()) {
       return { waitedMs: waited(), stillArriving: false };
     }
-    if (clock.now() - (lastArrival ?? start) >= WAIT_QUIET_MS) {
+    // Quiet is declared only after a poll that saw nothing new: a span reread
+    // can itself outlast the quiet period while more spans arrive.
+    if (clock.now() - (seen.lastArrival ?? start) >= WAIT_QUIET_MS && !(await arrival())) {
+      return { waitedMs: waited(), stillArriving: false };
+    }
+    if (interrupted()) {
       return { waitedMs: waited(), stillArriving: false };
     }
     if (waited() >= input.capMs) {
-      return { waitedMs: waited(), stillArriving: lastArrival !== null };
+      return { waitedMs: waited(), stillArriving: seen.lastArrival !== null };
     }
     await clock.sleep(Math.min(WAIT_POLL_MS, input.capMs - waited()), input.signal);
     if (interrupted()) {
       return { waitedMs: waited(), stillArriving: false };
     }
-    const current = await input.poll();
-    // Ctrl-C during the poll must not wait for a full span reread.
-    if (interrupted()) {
-      return { waitedMs: waited(), stillArriving: false };
-    }
-    if (current !== null && current !== last) {
-      last = current;
-      lastArrival = clock.now();
-      await input.arrived();
-    }
+    await arrival();
   }
 }
