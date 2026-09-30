@@ -12,7 +12,7 @@ export async function acquireStorageLeaseWithRuntime(input: {
   readonly runtime: LeaseRuntime;
 }): Promise<CollectorStorageLease> {
   const lease = input.lease;
-  const legacyPath = lockPath(lease);
+  const markerPath = lockPath(lease);
   const directory = lockDirectoryPath(lease);
   const token = input.runtime.createToken();
   const record = {
@@ -24,7 +24,7 @@ export async function acquireStorageLeaseWithRuntime(input: {
   await mkdir(sessionDirectory(lease), { recursive: true, mode: 0o700 });
   await mkdir(fragmentDirectory(lease), { recursive: true, mode: 0o700 });
   const claimed = await claimLock({
-    legacyPath,
+    markerPath,
     directory,
     record,
     runtime: input.runtime,
@@ -32,7 +32,7 @@ export async function acquireStorageLeaseWithRuntime(input: {
   });
   const heartbeat = startLeaseHeartbeat({
     path: claimed.ownedPath,
-    legacyPath: claimed.legacyPath,
+    markerPath: claimed.markerPath,
     token,
     intervalMs: input.runtime.heartbeatIntervalMs,
   });

@@ -1,8 +1,8 @@
 import { mkdir, rename } from 'node:fs/promises';
 import { candidatePath, encodedToken, temporaryCandidatePath } from './candidate.js';
 import { readCandidateSet } from './candidate-set.js';
-import { publishLock, removeLock } from './io.js';
-import { admitLegacyLock } from './legacy.js';
+import { publishLock, readLock, removeLock } from './io.js';
+import { admitLeaseMarker } from './admission-marker.js';
 import type { CurrentLockRecord } from './record.js';
 import type { LeaseRuntime } from './types.js';
 
@@ -16,15 +16,30 @@ async function settle(): Promise<void> {
   await new Promise<void>((resolve) => setTimeout(resolve, 2));
 }
 
+async function removePublishedMarker(input: {
+  readonly path: string;
+  readonly token: string;
+}): Promise<void> {
+  const lock = await readLock(input.path);
+  if (
+    lock.kind === 'lock-read' &&
+    lock.decoded.kind === 'lock-record-decoded' &&
+    lock.decoded.record.kind === 'collector-storage-lock-v2' &&
+    lock.decoded.record.token === input.token
+  ) {
+    await removeLock(input.path);
+  }
+}
+
 export async function claimLock(input: {
-  readonly legacyPath: string;
+  readonly markerPath: string;
   readonly directory: string;
   readonly record: CurrentLockRecord;
   readonly runtime: LeaseRuntime;
   readonly sessionId: string;
   readonly executionId: string;
-}): Promise<{ readonly ownedPath: string; readonly legacyPath: string }> {
-  if (!(await admitLegacyLock({ path: input.legacyPath, runtime: input.runtime }))) {
+}): Promise<{ readonly ownedPath: string; readonly markerPath: string }> {
+  if (!(await admitLeaseMarker({ path: input.markerPath, runtime: input.runtime }))) {
     throw conflict(input);
   }
   await mkdir(input.directory, { recursive: true, mode: 0o700 });
@@ -38,11 +53,11 @@ export async function claimLock(input: {
     token: input.record.token,
     state: 'owned',
   });
-  const legacyTemporaryPath = `${input.legacyPath}.${encodedToken(input.record.token)}.tmp`;
+  const markerTemporaryPath = `${input.markerPath}.${encodedToken(input.record.token)}.tmp`;
   try {
     await publishLock({
-      temporaryPath: legacyTemporaryPath,
-      path: input.legacyPath,
+      temporaryPath: markerTemporaryPath,
+      path: input.markerPath,
       record: input.record,
     });
   } catch (error) {
@@ -75,7 +90,7 @@ export async function claimLock(input: {
       }
       if (others.length === 0) {
         await rename(claiming, owned);
-        return { ownedPath: owned, legacyPath: input.legacyPath };
+        return { ownedPath: owned, markerPath: input.markerPath };
       }
       const tokens = [input.record.token, ...others.map((candidate) => candidate.record.token)];
       if (tokens.sort()[0] !== input.record.token) {
@@ -87,7 +102,7 @@ export async function claimLock(input: {
     await removeLock(claiming);
     throw conflict(input);
   } catch (error) {
-    await removeLock(input.legacyPath);
+    await removePublishedMarker({ path: input.markerPath, token: input.record.token });
     throw error;
   }
 }

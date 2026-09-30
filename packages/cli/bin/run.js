@@ -8,15 +8,16 @@ try {
     process.cwd(),
     fileURLToPath(new URL('..', import.meta.url)),
   );
-  if (plugins?.kind === 'source-checkout') {
-    process.env.NODE_ENV ??= 'development';
-  }
   await run(process.argv.slice(2), {
     root: fileURLToPath(new URL('..', import.meta.url)),
     pluginAdditions:
       plugins === null
         ? undefined
-        : { core: [...plugins.names], dev: [...plugins.names], path: plugins.path },
+        : {
+            core: [...plugins.names],
+            ...(plugins.kind === 'source-checkout' ? { dev: [...plugins.names] } : {}),
+            path: plugins.path,
+          },
   });
   await flush();
 } catch (error) {
