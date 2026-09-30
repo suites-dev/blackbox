@@ -2,13 +2,13 @@
 
 ## Know which layer failed
 
-| Layer               | Source                                                          | Required distinction                                    |
-| ------------------- | --------------------------------------------------------------- | ------------------------------------------------------- |
-| Packed consumer     | `e2e/bash/capsule-assets.sh`, `capsule-asset-verify.mjs`        | Fresh tarball dependency closure, not workspace imports |
-| Public CLI journey  | `e2e/bash/capsule-test.sh`                                      | Real commands and assertions, not a narrated demo       |
-| Runtime and cleanup | `e2e/bash/capsule-test-support.sh`                              | Exact session/PID ownership; reused viewers survive     |
-| Telemetry oracle    | `e2e/bash/capsule-telemetry-proof.mjs`                          | Activity-correlated versus session-only observations    |
-| CI retention        | `.github/scripts/e2e-evidence.mjs`, `.github/workflows/e2e.yml` | Test, archive, and retention must all succeed           |
+| Layer               | Source                                                              | Required distinction                                    |
+| ------------------- | --------------------------------------------------------------------- | ------------------------------------------------------- |
+| Registry consumer   | `scripts/consumer/prepare.mjs`, `scripts/consumer/capsule-asset-verify.mjs` | Registry-installed dependency closure, not workspace imports |
+| Public CLI journey  | `demo/acceptance/capsule-test.sh`                                      | Real commands and assertions, not a narrated demo       |
+| Runtime and cleanup | `demo/acceptance/capsule-test-support.sh`                              | Exact session/PID ownership; reused viewers survive     |
+| Telemetry oracle    | `demo/support/capsule-telemetry-proof.mjs`                             | Activity-correlated versus session-only observations    |
+| CI retention        | `.github/scripts/e2e-evidence.mjs`, `.github/workflows/e2e.yml`       | Test, archive, and retention must all succeed           |
 
 Resolve paths relative to the repo root. Read only the source/helper relevant to
 the failure, but inspect both the assertion and its production behavior before
@@ -24,7 +24,7 @@ output, and the retained experiment under `e2e/.blackbox/experiments/`.
 
 Verify the specific assertions in the current harness, including:
 
-- Packed consumer package-boundary verification and absence of workspace imports.
+- Registry consumer package-boundary verification and absence of workspace imports.
 - Fixture state changes after real HTTP/Postgres/Redis interactions, not just an
   HTTP 200 or a command invocation recorded by a mock.
 - Exact HTTP activity/trace relationships; Redis shared-state downstream work is
@@ -33,11 +33,11 @@ Verify the specific assertions in the current harness, including:
   outcome. An arbitrary command failure is not equivalent.
 - Stopped-session JSON/HTML reports remain readable; the running snapshot stays
   unchanged; fixture tokens are not leaked into exported reports.
-- Owned session resources, newly owned proof images, temporary packed assets,
-  and started viewers are cleaned up. A reused viewer remains running.
+- Owned session resources, newly owned proof images, the temporary registry
+  consumer, and started viewers are cleaned up. A reused viewer remains running.
 
 On failure, retain the wrapper log/result, assertion output, receipt if produced,
-and partial harness artifacts before considering another asset-preparation run.
+and partial harness artifacts before considering another consumer-preparation run.
 If the receipt was never produced, say which stage failed; missing artifacts are
 not proof of cleanup or a successful earlier stage.
 
@@ -50,15 +50,15 @@ a failed CI evidence archive or upload check.
 Cheap checks from the repository root:
 
 ```sh
-bash -n e2e/bash/capsule-assets.sh e2e/bash/capsule-test.sh e2e/bash/capsule-test-support.sh
-node --test e2e/bash/*.test.mjs
+bash -n demo/acceptance/capsule-test.sh demo/acceptance/capsule-test-support.sh demo/storyboard/capsule-player.sh
+node --test demo/support/*.test.mjs scripts/consumer/*.test.mjs
 node --test .github/scripts/e2e-evidence.test.mjs .github/scripts/capsule-evidence.test.mjs
 ```
 
 Inspect helper tests before running them and ensure glob expansion finds actual
 tests. These commands check syntax and helper behavior; they do not exercise the
 full real Docker journey. Follow with the skill's acceptance command for changes
-to packed assets, CLI interactions, telemetry proof, or lifecycle behavior.
+to the registry consumer, CLI interactions, telemetry proof, or lifecycle behavior.
 
 When changing a behavioral assertion, demonstrate that a plausible wrong outcome
 is rejected: a mismatched session, missing side effect, incorrectly correlated

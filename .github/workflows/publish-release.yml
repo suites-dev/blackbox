@@ -27,7 +27,7 @@ env:
 jobs:
   verify:
     name: Verify immutable release
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 45
     outputs:
       commit: ${{ steps.source.outputs.commit }}
@@ -116,7 +116,7 @@ jobs:
   publish:
     name: Publish with npm provenance
     needs: verify
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     environment: npm
     permissions:

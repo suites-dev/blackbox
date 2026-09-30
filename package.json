@@ -9,8 +9,10 @@
   "scripts": {
     "build": "pnpm --recursive --sort run build",
     "test": "pnpm run build && pnpm --recursive run test",
-    "test:e2e:capsule": "bash e2e/bash/capsule-assets.sh && bash e2e/bash/capsule-test.sh",
-    "test:e2e:journeys": "node --test e2e/journeys/journey-harness.test.mjs && bash e2e/bash/capsule-assets.sh && node e2e/journeys/run-journeys.mjs --repeat 2",
+    "prepare:consumer": "node scripts/consumer/prepare.mjs",
+    "test:demo": "bash demo/acceptance/capsule-test.sh",
+    "test:demo:storyboard": "bash demo/storyboard/capsule-player.sh --no-pause --no-color --no-browser",
+    "test:e2e:journeys": "node --test e2e/journeys/journey-harness.test.mjs && node e2e/journeys/run-journeys.mjs --repeat 2",
     "lint": "node scripts/check-source-layout.mjs && pnpm check:packages && eslint packages --cache && pnpm check:runtime-deps",
     "lint:fix": "eslint packages --cache --fix",
     "check:packages": "manypkg check",

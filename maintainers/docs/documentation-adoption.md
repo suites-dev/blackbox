@@ -31,7 +31,7 @@ schemas, and the Bash acceptance journey determine what belongs in operational d
 - [Workspace manifest](../../package.json), [workspace definition](../../pnpm-workspace.yaml), and [package map](packages.md).
 - [CLI handlers](../../packages/cli/src/commands/) and [not-implemented exit contract](../../packages/cli/src/contract/stub.ts).
 - [Catalog schema](../../packages/catalog/schema/blackbox-config-v1.json) and [fixture catalog](../../e2e/blackbox.config.yaml).
-- [Packed asset preparation](../../e2e/bash/capsule-assets.sh), [journey](../../e2e/bash/capsule-test.sh), and [support/cleanup](../../e2e/bash/capsule-test-support.sh).
+- [Registry consumer preparation](../../scripts/consumer/prepare.mjs), [journey](../../demo/acceptance/capsule-test.sh), and [support/cleanup](../../demo/acceptance/capsule-test-support.sh).
 - [Collector contract](../../packages/otel-collector/README.md), [Capsule report ownership](../../packages/capsule/README.md), and [viewer contract](../../packages/report-server/README.md).
 
 ## Keep the docs tied to implementation
@@ -67,7 +67,7 @@ must retain their own revision and execution evidence.
 
 ## Command storyboard as documentation source
 
-The [Capsule command storyboard](../../e2e/bash/capsule-demo.yaml), its
+The [Capsule command storyboard](../../demo/storyboard/capsule-demo.yaml), its
 [catalog](../../e2e/blackbox.config.yaml), and project drivers ground the public
 [subscription investigation](../../docs/experiments.md), [instrumentation guide](../../docs/instrumentation.md),
 and [driver guide](../../docs/drivers.md). The reader-facing lessons are:

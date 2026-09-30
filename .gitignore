@@ -54,7 +54,6 @@ packages/*/docs/
 !e2e/.blackbox/
 .codex-background-agents/
 trace-store
-e2e/tests/suite.spec.d.ts
 blackbox-docs-draft-gpt-v1-old
 .agents/*
 !.agents/skills/

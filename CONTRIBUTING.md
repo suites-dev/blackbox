@@ -20,10 +20,12 @@ pnpm typecheck
 pnpm test
 ```
 
-`pnpm test` builds the packages first. For the Docker-backed acceptance journey,
-use a disposable checkout and run `pnpm test:e2e:capsule </dev/null`. Preparation
-resets generated `e2e/.blackbox/` state and stops previous E2E sessions. Read the
-[acceptance guide](maintainers/docs/capsule-bash-e2e.md) before running it in an existing checkout.
+`pnpm test` builds the packages first. The Docker-backed acceptance journey needs
+more setup: the workspace has to be built, published to a local registry, and
+installed into a consumer before `pnpm run test:demo </dev/null` will run. Use a
+disposable checkout, because preparation resets generated `e2e/.blackbox/` state and
+stops previous sessions. The [acceptance guide](maintainers/docs/capsule-bash-e2e.md)
+has the registry commands; read it before running any of this in an existing checkout.
 
 The checked-in [CI](.github/workflows/ci.yml), [E2E](.github/workflows/e2e.yml), and
 [security](.github/workflows/security.yml) workflows define the repository lanes.
