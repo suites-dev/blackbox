@@ -1,4 +1,5 @@
 import {
+  SkillStoreError,
   installSkillBundle,
   type SkillBundle,
   type SkillStore,
@@ -8,6 +9,19 @@ import type { SkillAgent } from './hosts.js';
 import { INSTALL_RECORD_NAME, decodeInstallRecord, type InstallRecord } from './install-record.js';
 
 export const text = (value: string) => Buffer.from(value);
+
+function sameStored(left: StoredSkill, right: StoredSkill): boolean {
+  if (left.kind !== 'directory' || right.kind !== 'directory') {
+    return left.kind === right.kind;
+  }
+  return (
+    left.files.size === right.files.size &&
+    [...left.files].every(([path, content]) => {
+      const other = right.files.get(path);
+      return other !== undefined && Buffer.from(content).equals(other);
+    })
+  );
+}
 
 export function bundle(version: string, skill = '# discovery v1\n'): SkillBundle {
   return {
@@ -41,16 +55,18 @@ export class MemoryStore implements SkillStore {
     );
   }
 
-  replace(
+  async replace(
     path: string,
     files: ReadonlyMap<string, Uint8Array>,
-    _expected: StoredSkill,
+    expected: StoredSkill,
   ): Promise<void> {
     this.#fail(path, 'replace');
+    if (!sameStored(await this.read(path), expected)) {
+      throw new SkillStoreError('changed-during-install', `${path} changed while installing`);
+    }
     this.writes += 1;
     this.others.delete(path);
     this.directories.set(path, new Map(files));
-    return Promise.resolve();
   }
 
   writeRecord(path: string, content: Uint8Array): Promise<void> {

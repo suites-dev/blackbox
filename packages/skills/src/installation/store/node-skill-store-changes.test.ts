@@ -63,6 +63,20 @@ it('a destination created after it was assessed as absent is left alone', async 
   });
 });
 
+it('a destination removed after it was assessed is not recreated', async () => {
+  await withProject(async (project) => {
+    const store = nodeSkillStore(project);
+    await store.replace(DESTINATION, files({ 'SKILL.md': 'v1\n' }), await store.read(DESTINATION));
+    const assessed = await store.read(DESTINATION);
+    const removing = nodeSkillStore(project, {
+      afterStage: () => rm(join(project, DESTINATION), { recursive: true }),
+      afterRetire: () => Promise.resolve(),
+    });
+    await rejectsAsChanged(removing.replace(DESTINATION, files({ 'SKILL.md': 'v2\n' }), assessed));
+    expect(await readdir(join(project, '.agents', 'skills'))).toEqual([]);
+  });
+});
+
 it('stale siblings are removed on read once the destination exists', async () => {
   await withProject(async (project) => {
     const skills = join(project, '.agents', 'skills');

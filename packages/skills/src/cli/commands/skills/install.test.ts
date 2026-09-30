@@ -1,4 +1,4 @@
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, afterEach, beforeAll, expect, it, vi } from 'vitest';
@@ -135,4 +135,19 @@ it('--yes selects every agent; no agent without a terminal is a usage error', as
   expect(
     (JSON.parse(all.stdout) as { results: { agent: string }[] }).results.map(({ agent }) => agent),
   ).toEqual(['codex', 'cursor', 'claude']);
+});
+
+it('an unknown agent or skill is a usage error and writes nothing', async () => {
+  const directory = await project();
+  created.push(directory);
+  for (const argv of [
+    ['discovery', '--agent', 'copilot', '--json'],
+    ['nope', '--codex', '--json'],
+    ['discovery', '--agent'],
+  ]) {
+    const rejected = await run(directory, ...argv);
+    expect(rejected.exit, argv.join(' ')).toBe(2);
+    expect(rejected.stdout, argv.join(' ')).toBe('');
+  }
+  expect(await readdir(directory)).toEqual([]);
 });
