@@ -4,6 +4,7 @@ import type {
 } from '@suites/blackbox-driver';
 
 import type { CapsuleProcessOutcome, CapsuleRecordedError } from '../../types.js';
+import { isUnstartedProcess } from '../unstarted-process.js';
 import { redactValues } from '../output/value-redaction.js';
 
 type EnvironmentSelection =
@@ -80,7 +81,7 @@ export function redactProcessMetadata(input: {
     selection: { kind: 'keys', keys: input.redaction.keys },
   });
   const argv = input.process.argv.map((value) => redactValues(value, values));
-  if (input.process.kind === 'executable-not-found') {
+  if (isUnstartedProcess(input.process)) {
     return {
       ...input.process,
       argv,

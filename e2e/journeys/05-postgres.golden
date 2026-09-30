@@ -1,0 +1,25 @@
+$ blackbox capsule up --silent --no-color
+capsule <CAPSULE_1> is up · subscription-system · 8 services · <DUR>
+current capsule: <CAPSULE_1>
+entrypoint: <URL>
+→ blackbox capsule run --session <CAPSULE_1> --via public-api -- curl /health
+#! capture CAPSULE_1 capsule-up
+$ blackbox capsule run --via postgres --purpose inspection -- psql --username fixture --dbname subscriptions --tuples-only --no-align --command "SELECT count(*) FROM subscriptions"
+0
+activity <ACT_1> · capsule <CAPSULE_1> · inspection · via postgres · participant postgres · exit 0 · <DUR>
+→ blackbox capsule show <ACT_1> --session <CAPSULE_1>
+$ blackbox capsule run --via postgres --purpose inspection -- blackbox-missing-client
+activity <ACT_2> · capsule <CAPSULE_1> · inspection · via postgres · participant postgres · not found · <DUR>
+→ blackbox capsule show <ACT_2> --session <CAPSULE_1>
+$ echo $?
+127
+$ printf '#!/bin/sh\necho hi\n' > not-executable && chmod -x not-executable
+$ blackbox capsule run -- ./not-executable
+activity <ACT_3> · capsule <CAPSULE_1> · stimulus · host · host · not executable · <DUR>
+→ blackbox capsule show <ACT_3> --session <CAPSULE_1>
+$ echo $?
+126
+$ blackbox capsule down
+capsule <CAPSULE_1> stopped · evidence kept
+current capsule: none
+→ blackbox capsule report <CAPSULE_1>

@@ -8,6 +8,8 @@ export interface FixtureActivity {
   readonly traceId: string;
   readonly name: string | null;
   readonly exitCode: number;
+  /** The recorded command line (the activity's argv and its process argv). */
+  readonly argv: readonly string[];
 }
 
 export interface FixtureCapsule {
@@ -19,7 +21,7 @@ export interface FixtureCapsule {
 }
 
 export function fixtureActivity(activityId: string, traceId: string, name: string | null = null) {
-  return { activityId, traceId, name, exitCode: 0 } satisfies FixtureActivity;
+  return { activityId, traceId, name, exitCode: 0, argv: ['true'] } satisfies FixtureActivity;
 }
 
 function activityRecord(activity: FixtureActivity, sequence: number) {
@@ -38,7 +40,7 @@ function activityRecord(activity: FixtureActivity, sequence: number) {
     name: activity.name === null ? { kind: 'omitted' } : { kind: 'provided', value: activity.name },
     purpose: 'stimulus',
     target: { kind: 'host' },
-    argv: ['true'],
+    argv: activity.argv,
     telemetry: {
       schemaVersion: 1,
       kind: 'telemetry-execution-scope-completed-v1',
@@ -57,7 +59,7 @@ function activityRecord(activity: FixtureActivity, sequence: number) {
         expectation: { kind: 'propagation-not-requested' },
         outcome: { kind: 'context-not-injected', reason: 'raw-command' },
       },
-      argv: ['true'],
+      argv: activity.argv,
       location: { kind: 'host' },
       exitCode: activity.exitCode,
       stdout: '',

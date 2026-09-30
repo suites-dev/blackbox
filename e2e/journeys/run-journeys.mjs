@@ -24,11 +24,15 @@ import {
   renderTranscript,
 } from './journey-format.mjs';
 import { runItems } from './journey-steps.mjs';
+import { canonicalizeTrees } from './journey-trees.mjs';
 import {
   cleanupJourneyProject,
   createJourneyProject,
+  journeyEnvironment,
   listCapsules,
+  newFixtureToken,
   retainedActivityIds,
+  retainedTraceIds,
 } from './journey-project.mjs';
 
 const execute = promisify(execFile);
@@ -93,9 +97,12 @@ async function runJourney({
   });
   const before = await listCapsules({ directory, blackbox });
   if (before.length !== 0) throw new Error(`${name}: isolated project is not empty`);
+  // A fresh secret per journey, visible only to this journey's shell. It
+  // proves show never prints a credential the commands carried.
+  const fixtureToken = newFixtureToken();
   const session = new BashSession({
     cwd: directory,
-    env: journeyEnvironment(dirname(blackbox)),
+    env: journeyEnvironment({ binDirectory: dirname(blackbox), fixtureToken }),
   });
   const raw = [];
   const executed = [];
@@ -110,6 +117,7 @@ async function runJourney({
     problems = await cleanupJourneyProject({ directory, blackbox });
   }
   const activityIds = await retainedActivityIds(directory);
+  const traceIds = await retainedTraceIds({ directory, blackbox });
   if (problems.length === 0) {
     // Nothing is left running; the transcript and artifacts carry the evidence.
     await rm(directory, { recursive: true, force: true });
@@ -117,11 +125,15 @@ async function runJourney({
   const normalize = createNormalizer({
     projectPaths: [directory],
     activityIds,
+    traceIds,
+    secrets: [fixtureToken],
   });
   const actual = normalizeWhitespace(
     renderTranscript(
       executed.map((item) =>
-        item.kind === 'command' ? { ...item, output: normalize(item.output) } : item,
+        item.kind === 'command'
+          ? { ...item, output: normalize(canonicalizeTrees(item.output)) }
+          : item,
       ),
     ),
   );
@@ -134,12 +146,6 @@ async function runJourney({
     actual === expected ? '' : await unifiedDiff(goldenPath, join(output, 'normalized.txt'));
   await writeFile(join(output, 'diff.txt'), diff);
   return { name, goldenPath, actual, matched: actual === expected, failure, problems, output };
-}
-
-function journeyEnvironment(binDirectory) {
-  const env = { ...process.env, PATH: `${binDirectory}:${process.env.PATH}`, NO_COLOR: '1' };
-  delete env.BLACKBOX_CAPSULE;
-  return env;
 }
 
 async function unifiedDiff(expectedPath, actualPath) {

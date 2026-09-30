@@ -144,18 +144,20 @@ void test('human output names the capsule acted on, including one taken from the
         'activity 3f9a2c41  Create order',
         `  capsule   ${CAPSULE_A} (orders, running)`,
         '  purpose   stimulus',
-        '  process   exited 0 on host',
-        '  observed  collector-activity-missing · 0 traces',
+        '  via       host',
+        '  process   exit 0 on host',
+        '  context   untraced: no driver, so no trace context was sent',
+        '  observed  nothing yet · provisional (capsule running)',
         '',
       ].join('\n'),
     );
     assert.equal(
       (await capsule(fixture.directory, 'show', CAPSULE_A)).stderr,
-      `capsule ${CAPSULE_A}  orders  running\n  activities 2 · traces 0\n→ blackbox capsule show 00000000 --session ${CAPSULE_A}\n`,
+      `capsule ${CAPSULE_A}  orders  running · provisional (capsule running)\n  activities 2 · traces 0\n→ blackbox capsule show 00000000 --session ${CAPSULE_A}\n`,
     );
     assert.equal(
       (await capsule(fixture.directory, 'show', TRACE_A)).stderr,
-      `trace ${TRACE_A} · capsule ${CAPSULE_A} · 0 spans\n→ blackbox capsule show 3f9a2c41 --session ${CAPSULE_A}\n`,
+      `trace ${TRACE_A} · capsule ${CAPSULE_A} · 0 spans · provisional (capsule running)\n→ blackbox capsule show 3f9a2c41 --session ${CAPSULE_A}\n`,
     );
   } finally {
     await manager.close();

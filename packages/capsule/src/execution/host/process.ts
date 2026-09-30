@@ -138,6 +138,15 @@ export function runHostWithRedaction(
       }
       settled = true;
       state.completed = true;
+      if (error.code === 'EACCES' || error.code === 'EPERM') {
+        resolve({
+          kind: 'not-executable',
+          argv: [...input.argv],
+          location: { kind: 'host' },
+          remediation: `${command} is not executable; check its permissions or run it through its interpreter`,
+        });
+        return;
+      }
       if (error.code !== 'ENOENT') {
         reject(error);
         return;

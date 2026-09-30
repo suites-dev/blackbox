@@ -117,3 +117,4 @@ export {
   capsuleSessionSchema,
   capsuleSessionSchemaUrl,
 } from './schema/artifact-schemas.js';
+export * from './investigation/index.js';

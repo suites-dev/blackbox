@@ -1,6 +1,6 @@
 import { expect, it } from 'vitest';
 
-import type { CapsuleActivityReport } from '../types.js';
+import type { CapsuleActivityReport, CapsuleExecutionOutcome } from '../types.js';
 import { decodeCapsuleActivities } from './activity-decoder.js';
 import {
   activeTelemetry,
@@ -11,6 +11,11 @@ import {
 } from './testing/record.fixture.js';
 
 const activity = completedHostActivity();
+const driverActivity = completedDriverActivity();
+const driverOutcome = driverActivity.outcome as Extract<
+  CapsuleExecutionOutcome,
+  { readonly kind: 'driver-completed' }
+>;
 
 it.each([
   activity,
@@ -58,6 +63,31 @@ it.each([
     completedAt: '2026-09-23T12:00:06.000Z',
   },
   completedDriverActivity(),
+  {
+    ...activity,
+    activityId: 'activity-7',
+    outcome: {
+      kind: 'not-executable',
+      propagation: rawCommandPropagation,
+      argv: ['./not-executable'],
+      location: { kind: 'host' },
+      remediation:
+        './not-executable is not executable; check its permissions or run it through its interpreter',
+    },
+  },
+  {
+    ...driverActivity,
+    activityId: 'activity-8',
+    outcome: {
+      ...driverOutcome,
+      process: {
+        kind: 'not-executable',
+        argv: ['./tool'],
+        location: { kind: 'host' },
+        remediation: './tool is not executable; check its permissions or run it through its interpreter',
+      },
+    },
+  },
   {
     ...activity,
     activityId: 'activity-5',
@@ -122,6 +152,24 @@ it.each([
       },
     },
   },
+  {
+    outcome: {
+      kind: 'not-executable',
+      propagation: rawCommandPropagation,
+      argv: ['./tool'],
+      location: { kind: 'host' },
+    },
+  },
+  {
+    outcome: {
+      kind: 'not-executable',
+      propagation: rawCommandPropagation,
+      argv: ['./tool'],
+      location: { kind: 'host' },
+      remediation: 'x',
+      stdout: '',
+    },
+  },
 ])('rejects invalid activity state rather than treating it as success: %j', (change) => {
   expect(() =>
     decodeCapsuleActivities({ bytes: JSON.stringify([{ ...activity, ...change }]) }),
@@ -147,4 +195,17 @@ it('requires a canonical propagation record on a retained raw command', () => {
       bytes: JSON.stringify([{ ...activity, outcome }]),
     }),
   ).toThrow();
+});
+
+/**
+ * Bytes exactly as phase 1 persisted them (before not-executable existed): a
+ * host activity whose executable was missing, and a driver activity that
+ * exited. They must decode to the very same value.
+ */
+const PHASE_ONE_ACTIVITIES = String.raw`[{"kind":"completed","activityId":"0b7f3e0c-1f2a-4d5b-8c6d-7e8f9a0b1c2d","sequence":1,"name":{"kind":"omitted"},"purpose":"stimulus","target":{"kind":"host"},"argv":["definitely-not-a-command"],"telemetry":{"schemaVersion":1,"kind":"telemetry-execution-scope-completed-v1","executionId":"0b7f3e0c-1f2a-4d5b-8c6d-7e8f9a0b1c2d","operationName":"capsule.host","startedAt":"2026-09-01T10:00:00.000Z","endedAt":"2026-09-01T10:00:00.050Z","result":{"kind":"telemetry-scope-failed","message":"Activity completed with executable-not-found"},"context":{"kind":"w3c-trace-context","traceId":"11111111111111111111111111111111","spanId":"2222222222222222","traceFlags":"01","traceparent":"00-11111111111111111111111111111111-2222222222222222-01","traceState":{"kind":"trace-state-absent"}}},"outcome":{"kind":"executable-not-found","argv":["definitely-not-a-command"],"location":{"kind":"host"},"remediation":"Install \"definitely-not-a-command\" on the host or select a driver with participant execution.","propagation":{"schemaVersion":1,"kind":"telemetry-propagation-v1","expectation":{"kind":"propagation-not-requested"},"outcome":{"kind":"context-not-injected","reason":"raw-command"}}},"startedAt":"2026-09-01T10:00:00.000Z","completedAt":"2026-09-01T10:00:00.050Z"}]`;
+
+it('decodes an activity record persisted before not-executable existed, unchanged', () => {
+  expect(decodeCapsuleActivities({ bytes: PHASE_ONE_ACTIVITIES })).toStrictEqual(
+    JSON.parse(PHASE_ONE_ACTIVITIES),
+  );
 });

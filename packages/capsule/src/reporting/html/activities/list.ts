@@ -2,11 +2,12 @@ export const capsuleActivityListScript = `
 function processOutcome(a) {
   if (a.kind !== 'completed') return null;
   return a.outcome.kind === 'driver-completed' ? a.outcome.process :
-    ['exited', 'signaled', 'executable-not-found'].includes(a.outcome.kind) ? a.outcome : null;
+    ['exited', 'signaled', 'executable-not-found', 'not-executable'].includes(a.outcome.kind) ? a.outcome : null;
 }
 function processBadge(outcome) {
   if (!outcome) return null;
   if (outcome.kind === 'executable-not-found') return badge('executable missing', 'bad');
+  if (outcome.kind === 'not-executable') return badge('not executable', 'bad');
   if (outcome.kind === 'signaled') return badge('signal ' + outcome.signal, 'bad');
   return badge('exit ' + outcome.exitCode, outcome.exitCode === 0 ? 'good' : 'bad');
 }

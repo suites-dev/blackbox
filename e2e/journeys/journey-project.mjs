@@ -3,6 +3,7 @@
 // .blackbox/state and no retained capsules, so every capsule it contains was
 // created by that journey.
 import { execFile } from 'node:child_process';
+import { randomBytes } from 'node:crypto';
 import { copyFile, mkdir, mkdtemp, readFile, readdir, realpath, writeFile } from 'node:fs/promises';
 import { join, resolve, sep } from 'node:path';
 import { promisify } from 'node:util';
@@ -60,6 +61,27 @@ export async function createJourneyProject({ e2eRoot, parent, name, blackbox, as
   return directory;
 }
 
+/** A fresh random FIXTURE_CONTROL_TOKEN for one journey. */
+export function newFixtureToken() {
+  return randomBytes(24).toString('hex');
+}
+
+/**
+ * The environment of one journey's bash session: the packed CLI first on
+ * PATH, no ambient BLACKBOX_CAPSULE, and that journey's own fixture token.
+ * The runner's own process.env is never modified.
+ */
+export function journeyEnvironment({ binDirectory, fixtureToken, base = process.env }) {
+  const env = {
+    ...base,
+    PATH: `${binDirectory}:${base.PATH}`,
+    NO_COLOR: '1',
+    FIXTURE_CONTROL_TOKEN: fixtureToken,
+  };
+  delete env.BLACKBOX_CAPSULE;
+  return env;
+}
+
 export async function listCapsules({ directory, blackbox }) {
   const { stdout } = await execute(blackbox, ['capsule', 'ls', '--all', '--json'], { cwd: directory });
   const document = JSON.parse(stdout);
@@ -77,6 +99,23 @@ export async function retainedActivityIds(directory) {
       () => '[]',
     );
     ids.push(...JSON.parse(activities).map((activity) => activity.activityId));
+  }
+  return ids;
+}
+
+/** Every trace ID retained by the project's capsules, read with the packed CLI. */
+export async function retainedTraceIds({ directory, blackbox }) {
+  const ids = [];
+  for (const capsule of await listCapsules({ directory, blackbox }).catch(() => [])) {
+    try {
+      const { stdout } = await execute(blackbox, ['capsule', 'show', capsule.capsule, '--json'], {
+        cwd: directory,
+      });
+      const document = JSON.parse(stdout);
+      if (Array.isArray(document.traceIds)) ids.push(...document.traceIds);
+    } catch {
+      // An unreadable capsule contributes no trace IDs; its output stays literal.
+    }
   }
   return ids;
 }

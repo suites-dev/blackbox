@@ -1,0 +1,21 @@
+trace e0000002000000000000000000000000 · capsule calm-comet-ada-000000000001 · 19 spans · complete
+  public-api  POST /subscriptions  201
+  ├─ public-api  GET
+  ├─ public-api  pg-pool.connect
+  ├─ public-api  pg.query:SELECT subscriptions
+  ├─ public-api  SET
+  ├─ public-api  POST /assess  200
+  │  └─ fraud-check  POST /assess  200
+  │     ├─ fraud-check  pg-pool.connect
+  │     └─ fraud-check  pg.query:INSERT subscriptions
+  ├─ public-api  GET
+  ├─ public-api  SET
+  ├─ public-api  POST /v1/payment_intents  201
+  │  └─ payment-mock  POST /v1/payment_intents  201
+  ├─ public-api  POST /orders  201
+  │  └─ order-service  POST /orders  201
+  │     └─ order-service  subscription-orders  200
+  │        └─ order-service  POST  200
+  ├─ public-api  pg-pool.connect
+  └─ public-api  pg.query:INSERT subscriptions
+→ blackbox capsule show c0000002 --session calm-comet-ada-000000000001

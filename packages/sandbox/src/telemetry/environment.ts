@@ -3,6 +3,8 @@ import type { SandboxTelemetryEnabledInput, SandboxTelemetryParticipant } from '
 export const COLLECTOR_TRACES_PATH = '/v1/traces';
 export const COLLECTOR_ACTIVATION_PATH = '/v1/activation';
 export const COLLECTOR_STATUS_PATH = '/status';
+/** OTEL_BSP_SCHEDULE_DELAY for every instrumented participant, in milliseconds. */
+export const PARTICIPANT_EXPORT_DELAY_MS = '200';
 
 export function collectorInternalUrl(input: SandboxTelemetryEnabledInput): string {
   return `http://${input.collector.service}:${input.collector.containerPort}`;
@@ -71,5 +73,9 @@ export function participantEnvironment(input: {
     OTEL_EXPORTER_OTLP_HEADERS: `authorization=Bearer ${input.ingestToken}`,
     OTEL_METRICS_EXPORTER: 'none',
     OTEL_LOGS_EXPORTER: 'none',
+    // Spans reach the collector within ~200 ms of ending instead of the SDK's
+    // 5 s default, so show can report them soon after a run. Set after the
+    // participant's own entries, which therefore cannot override it.
+    OTEL_BSP_SCHEDULE_DELAY: PARTICIPANT_EXPORT_DELAY_MS,
   });
 }

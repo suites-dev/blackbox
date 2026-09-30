@@ -27,6 +27,7 @@ export function spanProjection(
   span: Record<string, unknown>,
   service: unknown,
   context: Context,
+  attributeKeys?: ReadonlySet<string>,
 ): CapsuleReportSpan {
   const status = object(span.status).code;
   return {
@@ -39,7 +40,7 @@ export function spanProjection(
     startTimeUnixNano: timestamp(span.startTimeUnixNano),
     endTimeUnixNano: timestamp(span.endTimeUnixNano),
     statusCode: typeof status === 'number' ? status : null,
-    attributes: attributes(span.attributes, context),
+    attributes: attributes(span.attributes, context, attributeKeys),
     links: array(span.links).map((link) => ({
       traceId: string(object(link).traceId),
       spanId: string(object(link).spanId),

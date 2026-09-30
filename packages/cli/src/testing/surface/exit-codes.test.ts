@@ -87,6 +87,36 @@ void test('run returns 127 for a missing executable and 125 for a driver failure
   );
 });
 
+void test('run returns 126 when the host refused to execute the file', async () => {
+  const refused = await runOutcome({
+    kind: 'not-executable',
+    argv: ['./not-executable'],
+    location: { kind: 'host' },
+    remediation: './not-executable is not executable; check its permissions or run it through its interpreter',
+    propagation: {
+      schemaVersion: 1,
+      kind: 'telemetry-propagation-v1',
+      expectation: { kind: 'propagation-not-requested' },
+      outcome: { kind: 'context-not-injected', reason: 'raw-command' },
+    },
+  });
+  assert.equal(refused.status, EXIT_CODES.notExecutable);
+  assert.equal(refused.stdout, '');
+  assert.match(
+    refused.stderr,
+    new RegExp(`^activity 00000000 · capsule ${CAPSULE_A} · stimulus · host · host · not executable · \\d+(?:\\.\\d)?m?s\\n→ `, 'u'),
+  );
+  // Negative control: the neighbouring outcome keeps its own code and words.
+  const missing = await runOutcome({
+    kind: 'executable-not-found',
+    argv: ['sh'],
+    location: { kind: 'host' },
+    remediation: 'Install "sh" on the host.',
+  });
+  assert.equal(missing.status, EXIT_CODES.executableNotFound);
+  assert.doesNotMatch(missing.stderr, /not executable/u);
+});
+
 void test('run turns every usage and resolution error into 125', async () => {
   const fixture = await projectFixture([
     {

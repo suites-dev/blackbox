@@ -17,7 +17,7 @@ blackbox capsule run --help
 | `capsule up [system]`                          | Start a capsule (the catalog default when `system` is omitted) and make it current. Optional `--title`, `--description`, repeated `--env KEY=VALUE`, and `--json`.            |
 | `capsule run [--via <driver>] -- <command...>` | Run a command against a capsule and retain it as an activity. Optional `--session`, `--name`, `--purpose`, `--allow-untraced`, and `--json`.                                  |
 | `capsule down [capsule-id]`                    | Stop a capsule and keep its evidence. Takes only a capsule ID; without one, the resolved capsule. Optional `--session` and `--json`.                                          |
-| `capsule show <id>`                            | Show a capsule, activity or trace, running or stopped. Activity IDs accept a 6+ character prefix. Optional `--session` (search only that capsule) and `--json`.               |
+| `capsule show <id>`                            | Show a capsule, activity or trace, running or stopped. Activity IDs accept a 6+ character prefix. Optional `--session`, `--spans` (trace), `--timeline` (capsule), `--json`.  |
 | `capsule ls`                                   | List running capsules, newest first; `*` marks the current one. `--all` lists every retained capsule. Optional `--json`.                                                      |
 | `capsule use <capsule-id>`                     | Make a capsule current, in any state. Optional `--json`.                                                                                                                      |
 | `capsule report [capsule-id]`                  | Write the HTML and JSON report to `.blackbox/reports/`. `--format json\|html` writes one; `--output <path>` requires `--format`; `--output -` is JSON-only, without `--json`. |
@@ -43,13 +43,14 @@ Without `--session` it shows the registry of all capsules.
 | Success                                                                                            | `0`       |
 | `capsule run`: the child exited with `N`                                                           | `N`       |
 | `capsule run`: the child was killed by signal `S`                                                  | `128 + S` |
+| `capsule run`: the host refused to execute the file (no execute permission)                        | `126`     |
 | `capsule run`: the executable was not found                                                        | `127`     |
 | `capsule run`: any Blackbox failure, including usage and resolution errors                         | `125`     |
 | Other commands: usage and resolution errors (flags, unknown or ambiguous IDs, no capsule selected) | `2`       |
 | Other commands: Blackbox and capsule failures                                                      | `125`     |
 | Reserved commands                                                                                  | `3`       |
 
-`126` is reserved and not produced. A child can itself exit `125`, `126` or `127`, so the exit code alone
+A child can itself exit `125`, `126` or `127`, so the exit code alone
 never proves where a failure came from: with `--json`, stdout carries exactly one JSON document for success
 and for every failure, and that document is authoritative. A capsule failure keeps the Capsule package's
 document (`capsule-not-found`, `capsule-invalid-state`, `capsule-operation-failed`) and adds the same
@@ -65,6 +66,51 @@ stdout and its stderr to stderr. A captured (non-terminal) run prints the retain
 redacted and, above 1 MiB per stream, truncated to its first and last 512 KiB; the JSON envelope records
 the retention.
 
+## Reading `capsule show`
+
+`capsule show <activity>` names the activity by its short ID and name; it never prints the command line, which
+can hold credentials. It reports how the command ran (`via`, `process`), what happened to its trace
+context (`context`), and what the capsule observed:
+
+| `context`                                                            | Meaning                                                                         |
+| -------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| `sent (w3c, <carrier>)`                                              | The driver injected W3C trace context.                                          |
+| `not carried: <resource> is shared state (expected for this driver)` | The command writes shared state (Redis, a database): nothing can carry context. |
+| `untraced: no driver, so no trace context was sent`                  | A raw host command; no driver carried context.                                  |
+| `not sent: driver <driver> declares no propagation`                  | The driver does not propagate context.                                          |
+| `injection failed: <message>`                                        | The driver tried and failed.                                                    |
+
+`SPANS` is the tree of the activity's own trace: every span whose trace ID is the activity's context
+trace ID, nested only by each span's recorded parent. A root whose parent is absent ends with
+`(parent not yet observed)` while the capsule runs, or `(parent not retained)` once it has stopped.
+Siblings are ordered by start time, then service, then title, then span ID. `capsule show <trace> --spans`
+lists the same spans as rows with their span and parent IDs.
+
+Only trace context links an activity to what it caused. Every other trace in the capsule whose
+first span started at or after the activity started is listed under `later in this capsule, no known
+cause`, with a `⚠ Blackbox cannot prove that …` line: it happened in the same capsule, but no trace
+context connects it to the activity. Earlier traces, and traces without a start time, are not listed
+there. `capsule show <capsule> --timeline` places each uncaused trace after the latest activity that
+started at or before its first span, or before every activity when none did (`┈┈`), and marks
+traces an activity caused with `──`. Placement is display order only, never a cause. Traces from
+before the first activity (instrumentation start-up, readiness probes) are summarized in one row; the
+JSON timeline keeps one row per trace.
+
+Every observation carries a status. Blackbox never claims to have seen everything while a capsule runs:
+
+| Status                          | When                                                                                                                                    |
+| ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `provisional (capsule running)` | The capsule is starting, running or stopping; more telemetry may still arrive.                                                          |
+| `complete`                      | The capsule stopped and every collector run drained and stopped without a failure.                                                      |
+| `incomplete (<reason>)`         | The capsule stopped but the collector timed out, was interrupted, failed, left no record or did not stop, or the capsule itself failed. |
+
+A trace ID that no capsule retains is `id-unknown` (exit `2`), except when an explicit capsule
+(`--session` or `BLACKBOX_CAPSULE`) is still provisional: then `capsule show` exits `0` with
+`not observed yet · provisional (capsule running)`, because its spans may simply not have arrived.
+
+`capsule show` output never uses the words success, successful, passed, verified, effect or effects: it reports
+what was observed, not whether the system behaved correctly.
+
 `capsule up` accepts one of `--interactive`, `--non-interactive`, or `--silent`, plus `--no-color`.
 Silencing terminal progress does not suppress retained progress records.
 
@@ -79,7 +125,7 @@ there is no `capsule run --interactive` flag. A redirected or piped command uses
 automation that needs the result envelope. The `capsule up` presentation flags above are a separate choice.
 
 In `capsule run` JSON mode, delegated stdout/stderr belong inside the result envelope. A nonzero child exit remains
-nonzero; a missing executable exits `127`. Observation queries return discriminated results: inspect `kind` and
+nonzero; a missing executable exits `127`, and a host file without execute permission exits `126`. Observation queries return discriminated results: inspect `kind` and
 telemetry status, not only the CLI exit code.
 
 ## Commands not available yet

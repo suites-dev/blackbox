@@ -72,15 +72,13 @@ export function composeTelemetryController(input: {
       }
     },
     async prepareStop(request): Promise<void> {
-      const totalSeconds = Math.max(1, Math.floor(request.timeoutMs / 1_000));
-      const collectorTimeout = Math.max(1, Math.ceil(totalSeconds / 4));
-      const participantTimeout = Math.max(0, totalSeconds - collectorTimeout);
+      const { participantMs, collectorMs } = stopGrace(request.timeoutMs);
       const errors: unknown[] = [];
       const participantStops = await Promise.allSettled(
         input.telemetry.participants.map(async (participant) =>
           input.started
             .getContainer(`${participant.service}-1`)
-            .stop({ timeout: participantTimeout, remove: false, removeVolumes: false }),
+            .stop({ timeout: participantMs, remove: false, removeVolumes: false }),
         ),
       );
       for (const result of participantStops) {
@@ -89,7 +87,11 @@ export function composeTelemetryController(input: {
         }
       }
       try {
-        await collector.stop({ timeout: collectorTimeout, remove: false, removeVolumes: false });
+        await collector.stop({
+          timeout: collectorMs,
+          remove: false,
+          removeVolumes: false,
+        });
       } catch (error) {
         errors.push(error);
       }
@@ -98,4 +100,29 @@ export function composeTelemetryController(input: {
       }
     },
   };
+}
+
+/** The longest a participant may take to exit after SIGTERM before Docker kills it. */
+const PARTICIPANT_GRACE_MAX_SECONDS = 10;
+
+/**
+ * Splits a stop budget into grace periods, in the milliseconds testcontainers
+ * expects (it truncates them to whole seconds for Docker; passing seconds made
+ * every grace 0 s, so the collector was killed mid-drain and never recorded its
+ * close). A quarter of the budget stays in reserve for Docker itself, so a
+ * participant that ignores SIGTERM cannot push the drain past the caller's
+ * deadline. Participants get at most 10 s; the collector a third of the grace.
+ */
+export function stopGrace(timeoutMs: number): {
+  readonly participantMs: number;
+  readonly collectorMs: number;
+} {
+  const totalSeconds = Math.max(1, Math.floor(timeoutMs / 1_000));
+  const graceSeconds = Math.max(1, totalSeconds - Math.ceil(totalSeconds / 4));
+  const collectorSeconds = Math.max(1, Math.ceil(graceSeconds / 3));
+  const participantSeconds = Math.min(
+    PARTICIPANT_GRACE_MAX_SECONDS,
+    Math.max(0, graceSeconds - collectorSeconds),
+  );
+  return { participantMs: participantSeconds * 1_000, collectorMs: collectorSeconds * 1_000 };
 }

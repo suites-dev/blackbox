@@ -1,0 +1,3372 @@
+{
+  "capsule": {
+    "capsule": "calm-comet-ada-000000000001",
+    "system": "subscription-system",
+    "title": "subscription-system",
+    "state": "stopped",
+    "startedAt": "2026-01-01T00:00:00.000Z"
+  },
+  "lifecycle": {
+    "schemaVersion": 1,
+    "sessionId": "calm-comet-ada-000000000001",
+    "executionId": "00000000-0000-4000-8000-000000000001",
+    "revision": 35,
+    "runs": [
+      {
+        "instanceId": "00000000-0000-4000-8000-000000000100",
+        "startedAt": "2026-01-01T00:00:06.501Z",
+        "updatedAt": "2026-01-01T00:00:31.202Z",
+        "stoppedAt": "2026-01-01T00:00:31.202Z",
+        "receiver": "stopped",
+        "instrumentation": {
+          "kind": "activated",
+          "activations": [
+            {
+              "kind": "instrumentation-activation",
+              "runtime": "node",
+              "serviceName": "payment-mock",
+              "activatedAt": "2026-01-01T00:00:10.337Z"
+            },
+            {
+              "kind": "instrumentation-activation",
+              "runtime": "node",
+              "serviceName": "fraud-check",
+              "activatedAt": "2026-01-01T00:00:10.355Z"
+            },
+            {
+              "kind": "instrumentation-activation",
+              "runtime": "node",
+              "serviceName": "order-service",
+              "activatedAt": "2026-01-01T00:00:12.898Z"
+            },
+            {
+              "kind": "instrumentation-activation",
+              "runtime": "node",
+              "serviceName": "public-api",
+              "activatedAt": "2026-01-01T00:00:18.664Z"
+            },
+            {
+              "kind": "instrumentation-activation",
+              "runtime": "node",
+              "serviceName": "redis-proof-consumer",
+              "activatedAt": "2026-01-01T00:00:24.282Z"
+            }
+          ]
+        },
+        "shutdown": "complete",
+        "failure": null,
+        "endpoint": {
+          "kind": "http",
+          "host": "0.0.0.0",
+          "port": 4318,
+          "baseUrl": "http://0.0.0.0:4318",
+          "tracesPath": "/v1/traces",
+          "tracesUrl": "http://0.0.0.0:4318/v1/traces",
+          "activationPath": "/v1/activation",
+          "activationUrl": "http://0.0.0.0:4318/v1/activation",
+          "readinessPath": "/ready",
+          "readinessUrl": "http://0.0.0.0:4318/ready",
+          "readPath": "/status",
+          "readUrl": "http://0.0.0.0:4318/status"
+        }
+      }
+    ],
+    "telemetry": {
+      "status": "received",
+      "acceptedRequests": 27,
+      "acceptedSpans": 130,
+      "lastReceivedAt": "2026-01-01T00:00:30.326Z"
+    }
+  },
+  "activities": [
+    {
+      "kind": "completed",
+      "activityId": "c0000001-0000-4000-8000-000000000000",
+      "sequence": 1,
+      "name": {
+        "kind": "provided",
+        "value": "Reset fixture"
+      },
+      "purpose": "setup",
+      "target": {
+        "kind": "driver",
+        "driverId": "public-api"
+      },
+      "argv": [
+        "<argv removed>"
+      ],
+      "startedAt": "2026-01-01T00:00:25.233Z",
+      "telemetry": {
+        "schemaVersion": 1,
+        "kind": "telemetry-execution-scope-completed-v1",
+        "executionId": "c0000001-0000-4000-8000-000000000000",
+        "operationName": "capsule.activity",
+        "startedAt": "2026-01-01T00:00:25.233Z",
+        "context": {
+          "kind": "w3c-trace-context",
+          "traceId": "e0000001000000000000000000000000",
+          "spanId": "d000000100000000",
+          "traceFlags": "01",
+          "traceparent": "00-e0000001000000000000000000000000-d000000100000000-01",
+          "traceState": {
+            "kind": "trace-state-absent"
+          }
+        },
+        "endedAt": "2026-01-01T00:00:25.888Z",
+        "result": {
+          "kind": "telemetry-scope-succeeded"
+        }
+      },
+      "outcome": {
+        "kind": "driver-completed",
+        "driver": {
+          "id": "public-api",
+          "target": {
+            "kind": "participant",
+            "participantId": "public-api",
+            "service": "public-api",
+            "protocol": "http",
+            "containerPort": 3000
+          },
+          "execution": {
+            "kind": "host"
+          }
+        },
+        "propagation": {
+          "schemaVersion": 1,
+          "kind": "telemetry-propagation-v1",
+          "expectation": {
+            "kind": "w3c-trace-context-propagation",
+            "carrier": "http-headers"
+          },
+          "outcome": {
+            "kind": "context-injected",
+            "format": "w3c-trace-context",
+            "carrier": "http-headers"
+          }
+        },
+        "redaction": {
+          "kind": "driver-redaction",
+          "requestArgv": {
+            "kind": "none"
+          },
+          "preparedArgv": {
+            "kind": "none"
+          },
+          "environment": {
+            "kind": "none"
+          }
+        },
+        "process": {
+          "kind": "exited",
+          "argv": [
+            "<argv removed>"
+          ],
+          "location": {
+            "kind": "host"
+          },
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "",
+          "retention": {
+            "stdout": {
+              "kind": "complete",
+              "originalBytes": 0
+            },
+            "stderr": {
+              "kind": "complete",
+              "originalBytes": 0
+            }
+          }
+        }
+      },
+      "completedAt": "2026-01-01T00:00:25.888Z"
+    },
+    {
+      "kind": "completed",
+      "activityId": "c0000002-0000-4000-8000-000000000000",
+      "sequence": 2,
+      "name": {
+        "kind": "provided",
+        "value": "Create Alice subscription"
+      },
+      "purpose": "stimulus",
+      "target": {
+        "kind": "driver",
+        "driverId": "public-api"
+      },
+      "argv": [
+        "<argv removed>"
+      ],
+      "startedAt": "2026-01-01T00:00:26.455Z",
+      "telemetry": {
+        "schemaVersion": 1,
+        "kind": "telemetry-execution-scope-completed-v1",
+        "executionId": "c0000002-0000-4000-8000-000000000000",
+        "operationName": "capsule.activity",
+        "startedAt": "2026-01-01T00:00:26.455Z",
+        "context": {
+          "kind": "w3c-trace-context",
+          "traceId": "e0000002000000000000000000000000",
+          "spanId": "d000000200000000",
+          "traceFlags": "01",
+          "traceparent": "00-e0000002000000000000000000000000-d000000200000000-01",
+          "traceState": {
+            "kind": "trace-state-absent"
+          }
+        },
+        "endedAt": "2026-01-01T00:00:26.716Z",
+        "result": {
+          "kind": "telemetry-scope-succeeded"
+        }
+      },
+      "outcome": {
+        "kind": "driver-completed",
+        "driver": {
+          "id": "public-api",
+          "target": {
+            "kind": "participant",
+            "participantId": "public-api",
+            "service": "public-api",
+            "protocol": "http",
+            "containerPort": 3000
+          },
+          "execution": {
+            "kind": "host"
+          }
+        },
+        "propagation": {
+          "schemaVersion": 1,
+          "kind": "telemetry-propagation-v1",
+          "expectation": {
+            "kind": "w3c-trace-context-propagation",
+            "carrier": "http-headers"
+          },
+          "outcome": {
+            "kind": "context-injected",
+            "format": "w3c-trace-context",
+            "carrier": "http-headers"
+          }
+        },
+        "redaction": {
+          "kind": "driver-redaction",
+          "requestArgv": {
+            "kind": "none"
+          },
+          "preparedArgv": {
+            "kind": "none"
+          },
+          "environment": {
+            "kind": "none"
+          }
+        },
+        "process": {
+          "kind": "exited",
+          "argv": [
+            "<argv removed>"
+          ],
+          "location": {
+            "kind": "host"
+          },
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "",
+          "retention": {
+            "stdout": {
+              "kind": "complete",
+              "originalBytes": 0
+            },
+            "stderr": {
+              "kind": "complete",
+              "originalBytes": 0
+            }
+          }
+        }
+      },
+      "completedAt": "2026-01-01T00:00:26.716Z"
+    },
+    {
+      "kind": "completed",
+      "activityId": "c0000003-0000-4000-8000-000000000000",
+      "sequence": 3,
+      "name": {
+        "kind": "provided",
+        "value": "Queue proof stimulus"
+      },
+      "purpose": "stimulus",
+      "target": {
+        "kind": "driver",
+        "driverId": "redis"
+      },
+      "argv": [
+        "<argv removed>"
+      ],
+      "startedAt": "2026-01-01T00:00:27.315Z",
+      "telemetry": {
+        "schemaVersion": 1,
+        "kind": "telemetry-execution-scope-completed-v1",
+        "executionId": "c0000003-0000-4000-8000-000000000000",
+        "operationName": "capsule.activity",
+        "startedAt": "2026-01-01T00:00:27.315Z",
+        "context": {
+          "kind": "w3c-trace-context",
+          "traceId": "e0000003000000000000000000000000",
+          "spanId": "d000000300000000",
+          "traceFlags": "01",
+          "traceparent": "00-e0000003000000000000000000000000-d000000300000000-01",
+          "traceState": {
+            "kind": "trace-state-absent"
+          }
+        },
+        "endedAt": "2026-01-01T00:00:27.543Z",
+        "result": {
+          "kind": "telemetry-scope-succeeded"
+        }
+      },
+      "outcome": {
+        "kind": "driver-completed",
+        "driver": {
+          "id": "redis",
+          "target": {
+            "kind": "participant",
+            "participantId": "redis",
+            "service": "redis",
+            "protocol": "redis",
+            "containerPort": 6379
+          },
+          "execution": {
+            "kind": "participant",
+            "participantId": "redis",
+            "service": "redis"
+          }
+        },
+        "propagation": {
+          "schemaVersion": 1,
+          "kind": "telemetry-propagation-v1",
+          "expectation": {
+            "kind": "shared-state-propagation-unsupported",
+            "resource": "redis"
+          },
+          "outcome": {
+            "kind": "context-not-supported",
+            "boundary": "shared-state",
+            "resource": "redis"
+          }
+        },
+        "redaction": {
+          "kind": "driver-redaction",
+          "requestArgv": {
+            "kind": "none"
+          },
+          "preparedArgv": {
+            "kind": "none"
+          },
+          "environment": {
+            "kind": "none"
+          }
+        },
+        "process": {
+          "kind": "exited",
+          "argv": [
+            "<argv removed>"
+          ],
+          "location": {
+            "kind": "participant",
+            "participantId": "redis",
+            "service": "redis"
+          },
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "",
+          "retention": {
+            "stdout": {
+              "kind": "complete",
+              "originalBytes": 0
+            },
+            "stderr": {
+              "kind": "complete",
+              "originalBytes": 0
+            }
+          }
+        }
+      },
+      "completedAt": "2026-01-01T00:00:27.543Z"
+    },
+    {
+      "kind": "completed",
+      "activityId": "c0000004-0000-4000-8000-000000000000",
+      "sequence": 4,
+      "name": {
+        "kind": "provided",
+        "value": "Check health"
+      },
+      "purpose": "stimulus",
+      "target": {
+        "kind": "host"
+      },
+      "argv": [
+        "<argv removed>"
+      ],
+      "startedAt": "2026-01-01T00:00:28.756Z",
+      "telemetry": {
+        "schemaVersion": 1,
+        "kind": "telemetry-execution-scope-completed-v1",
+        "executionId": "c0000004-0000-4000-8000-000000000000",
+        "operationName": "capsule.activity",
+        "startedAt": "2026-01-01T00:00:28.755Z",
+        "context": {
+          "kind": "w3c-trace-context",
+          "traceId": "e0000004000000000000000000000000",
+          "spanId": "d000000400000000",
+          "traceFlags": "01",
+          "traceparent": "00-e0000004000000000000000000000000-d000000400000000-01",
+          "traceState": {
+            "kind": "trace-state-absent"
+          }
+        },
+        "endedAt": "2026-01-01T00:00:28.837Z",
+        "result": {
+          "kind": "telemetry-scope-succeeded"
+        }
+      },
+      "outcome": {
+        "kind": "exited",
+        "argv": [
+          "<argv removed>"
+        ],
+        "location": {
+          "kind": "host"
+        },
+        "exitCode": 0,
+        "stdout": "",
+        "stderr": "",
+        "retention": {
+          "stdout": {
+            "kind": "complete",
+            "originalBytes": 0
+          },
+          "stderr": {
+            "kind": "complete",
+            "originalBytes": 0
+          }
+        },
+        "propagation": {
+          "schemaVersion": 1,
+          "kind": "telemetry-propagation-v1",
+          "expectation": {
+            "kind": "propagation-not-requested"
+          },
+          "outcome": {
+            "kind": "context-not-injected",
+            "reason": "raw-command"
+          }
+        }
+      },
+      "completedAt": "2026-01-01T00:00:28.837Z"
+    },
+    {
+      "kind": "completed",
+      "activityId": "c0000005-0000-4000-8000-000000000000",
+      "sequence": 5,
+      "name": {
+        "kind": "provided",
+        "value": "Check health again"
+      },
+      "purpose": "stimulus",
+      "target": {
+        "kind": "host"
+      },
+      "argv": [
+        "<argv removed>"
+      ],
+      "startedAt": "2026-01-01T00:00:29.420Z",
+      "telemetry": {
+        "schemaVersion": 1,
+        "kind": "telemetry-execution-scope-completed-v1",
+        "executionId": "c0000005-0000-4000-8000-000000000000",
+        "operationName": "capsule.activity",
+        "startedAt": "2026-01-01T00:00:29.420Z",
+        "context": {
+          "kind": "w3c-trace-context",
+          "traceId": "e0000005000000000000000000000000",
+          "spanId": "d000000500000000",
+          "traceFlags": "01",
+          "traceparent": "00-e0000005000000000000000000000000-d000000500000000-01",
+          "traceState": {
+            "kind": "trace-state-absent"
+          }
+        },
+        "endedAt": "2026-01-01T00:00:29.493Z",
+        "result": {
+          "kind": "telemetry-scope-succeeded"
+        }
+      },
+      "outcome": {
+        "kind": "exited",
+        "argv": [
+          "<argv removed>"
+        ],
+        "location": {
+          "kind": "host"
+        },
+        "exitCode": 0,
+        "stdout": "",
+        "stderr": "",
+        "retention": {
+          "stdout": {
+            "kind": "complete",
+            "originalBytes": 0
+          },
+          "stderr": {
+            "kind": "complete",
+            "originalBytes": 0
+          }
+        },
+        "propagation": {
+          "schemaVersion": 1,
+          "kind": "telemetry-propagation-v1",
+          "expectation": {
+            "kind": "propagation-not-requested"
+          },
+          "outcome": {
+            "kind": "context-not-injected",
+            "reason": "raw-command"
+          }
+        }
+      },
+      "completedAt": "2026-01-01T00:00:29.493Z"
+    },
+    {
+      "kind": "completed",
+      "activityId": "c0000006-0000-4000-8000-000000000000",
+      "sequence": 6,
+      "name": {
+        "kind": "provided",
+        "value": "Check health once more"
+      },
+      "purpose": "stimulus",
+      "target": {
+        "kind": "host"
+      },
+      "argv": [
+        "<argv removed>"
+      ],
+      "startedAt": "2026-01-01T00:00:30.067Z",
+      "telemetry": {
+        "schemaVersion": 1,
+        "kind": "telemetry-execution-scope-completed-v1",
+        "executionId": "c0000006-0000-4000-8000-000000000000",
+        "operationName": "capsule.activity",
+        "startedAt": "2026-01-01T00:00:30.067Z",
+        "context": {
+          "kind": "w3c-trace-context",
+          "traceId": "e0000006000000000000000000000000",
+          "spanId": "d000000600000000",
+          "traceFlags": "01",
+          "traceparent": "00-e0000006000000000000000000000000-d000000600000000-01",
+          "traceState": {
+            "kind": "trace-state-absent"
+          }
+        },
+        "endedAt": "2026-01-01T00:00:30.139Z",
+        "result": {
+          "kind": "telemetry-scope-succeeded"
+        }
+      },
+      "outcome": {
+        "kind": "exited",
+        "argv": [
+          "<argv removed>"
+        ],
+        "location": {
+          "kind": "host"
+        },
+        "exitCode": 0,
+        "stdout": "",
+        "stderr": "",
+        "retention": {
+          "stdout": {
+            "kind": "complete",
+            "originalBytes": 0
+          },
+          "stderr": {
+            "kind": "complete",
+            "originalBytes": 0
+          }
+        },
+        "propagation": {
+          "schemaVersion": 1,
+          "kind": "telemetry-propagation-v1",
+          "expectation": {
+            "kind": "propagation-not-requested"
+          },
+          "outcome": {
+            "kind": "context-not-injected",
+            "reason": "raw-command"
+          }
+        }
+      },
+      "completedAt": "2026-01-01T00:00:30.139Z"
+    }
+  ],
+  "traces": [
+    {
+      "traceId": "e0000001000000000000000000000000",
+      "spans": [
+        {
+          "traceId": "e0000001000000000000000000000000",
+          "spanId": "d000002000000000",
+          "parentSpanId": "d000002100000000",
+          "spanKind": "client",
+          "operation": "pg-pool.connect",
+          "service": "public-api",
+          "startTimeUnixNano": "1767225625470000000",
+          "endTimeUnixNano": "1767225625470247750",
+          "statusCode": 0,
+          "attributes": [],
+          "links": []
+        },
+        {
+          "traceId": "e0000001000000000000000000000000",
+          "spanId": "d000002200000000",
+          "parentSpanId": "d000002100000000",
+          "spanKind": "client",
+          "operation": "pg.query:BEGIN subscriptions",
+          "service": "public-api",
+          "startTimeUnixNano": "1767225625470000000",
+          "endTimeUnixNano": "1767225625470768875",
+          "statusCode": 0,
+          "attributes": [],
+          "links": []
+        },
+        {
+          "traceId": "e0000001000000000000000000000000",
+          "spanId": "d000002300000000",
+          "parentSpanId": "d000002100000000",
+          "spanKind": "client",
+          "operation": "pg.query:TRUNCATE subscriptions",
+          "service": "public-api",
+          "startTimeUnixNano": "1767225625471000000",
+          "endTimeUnixNano": "1767225625478441375",
+          "statusCode": 0,
+          "attributes": [],
+          "links": []
+        },
+        {
+          "traceId": "e0000001000000000000000000000000",
+          "spanId": "d000002400000000",
+          "parentSpanId": "d000002100000000",
+          "spanKind": "client",
+          "operation": "pg.query:DELETE subscriptions",
+          "service": "public-api",
+          "startTimeUnixNano": "1767225625478000000",
+          "endTimeUnixNano": "1767225625479749208",
+          "statusCode": 0,
+          "attributes": [],
+          "links": []
+        },
+        {
+          "traceId": "e0000001000000000000000000000000",
+          "spanId": "d000002500000000",
+          "parentSpanId": "d000002100000000",
+          "spanKind": "client",
+          "operation": "pg.query:INSERT subscriptions",
+          "service": "public-api",
+          "startTimeUnixNano": "1767225625480000000",
+          "endTimeUnixNano": "1767225625480841833",
+          "statusCode": 0,
+          "attributes": [],
+          "links": []
+        },
+        {
+          "traceId": "e0000001000000000000000000000000",
+          "spanId": "d000002600000000",
+          "parentSpanId": "d000002100000000",
+          "spanKind": "client",
+          "operation": "pg.query:INSERT subscriptions",
+          "service": "public-api",
+          "startTimeUnixNano": "1767225625481000000",
+          "endTimeUnixNano": "1767225625481216458",
+          "statusCode": 0,
+          "attributes": [],
+          "links": []
+        },
+        {
+          "traceId": "e0000001000000000000000000000000",
+          "spanId": "d000002700000000",
+          "parentSpanId": "d000002100000000",
+          "spanKind": "client",
+          "operation": "pg.query:INSERT subscriptions",
+          "service": "public-api",
+          "startTimeUnixNano": "1767225625481000000",
+          "endTimeUnixNano": "1767225625481249125",
+          "statusCode": 0,
+          "attributes": [],
+          "links": []
+        },
+        {
+          "traceId": "e0000001000000000000000000000000",
+          "spanId": "d000002800000000",
+          "parentSpanId": "d000002100000000",
+          "spanKind": "client",
+          "operation": "pg.query:INSERT subscriptions",
+          "service": "public-api",
+          "startTimeUnixNano": "1767225625482000000",
+          "endTimeUnixNano": "1767225625482408375",
+          "statusCode": 0,
+          "attributes": [],
+          "links": []
+        },
+        {
+          "traceId": "e0000001000000000000000000000000",
+          "spanId": "d000002900000000",
+          "parentSpanId": "d000002100000000",
+          "spanKind": "client",
+          "operation": "pg.query:INSERT subscriptions",
+          "service": "public-api",
+          "startTimeUnixNano": "1767225625482000000",
+          "endTimeUnixNano": "1767225625482278959",
+          "statusCode": 0,
+          "attributes": [],
+          "links": []
+        },
+        {
+          "traceId": "e0000001000000000000000000000000",
+          "spanId": "d000003000000000",
+          "parentSpanId": "d000002100000000",
+          "spanKind": "client",
+          "operation": "pg.query:COMMIT subscriptions",
+          "service": "public-api",
+          "startTimeUnixNano": "1767225625483000000",
+          "endTimeUnixNano": "1767225625484877083",
+          "statusCode": 0,
+          "attributes": [],
+          "links": []
+        },
+        {
+          "traceId": "e0000001000000000000000000000000",
+          "spanId": "d000003100000000",
+          "parentSpanId": "d000002100000000",
+          "spanKind": "client",
+          "operation": "redis-FLUSHDB",
+          "service": "public-api",
+          "startTimeUnixNano": "1767225625485000000",
+          "endTimeUnixNano": "1767225625486136542",
+          "statusCode": 0,
+          "attributes": [
+            {
+              "key": "db.operation.name",
+              "value": "FLUSHDB"
+            }
+          ],
+          "links": []
+        },
+        {
+          "traceId": "e0000001000000000000000000000000",
+          "spanId": "d000003200000000",
+          "parentSpanId": "d000003300000000",
+          "spanKind": "client",
+          "operation": "POST",
+          "service": "public-api",
+          "startTimeUnixNano": "1767225625491000000",
+          "endTimeUnixNano": "1767225625496328708",
+          "statusCode": 0,
+          "attributes": [
+            {
+              "key": "http.request.method",
+              "value": "POST"
+            },
+            {
+              "key": "http.response.status_code",
+              "value": 200
+            }
+          ],
+          "links": []
+        },
+        {
+          "traceId": "e0000001000000000000000000000000",
+          "spanId": "d000003400000000",
+          "parentSpanId": "d000003500000000",
+          "spanKind": "client",
+          "operation": "POST",
+          "service": "public-api",
+          "startTimeUnixNano": "1767225625500000000",
+          "endTimeUnixNano": "1767225625503240750",
+          "statusCode": 0,
+          "attributes": [
+            {
+              "key": "http.request.method",
+              "value": "POST"
+            },
+            {
+              "key": "http.response.status_code",
+              "value": 200
+            }
+          ],
+          "links": []
+        },
+        {
+          "traceId": "e0000001000000000000000000000000",
+          "spanId": "d000003600000000",
+          "parentSpanId": "d000003700000000",
+          "spanKind": "client",
+          "operation": "POST",
+          "service": "public-api",
+          "startTimeUnixNano": "1767225625555000000",
+          "endTimeUnixNano": "1767225625557792875",
+          "statusCode": 0,
+          "attributes": [
+            {
+              "key": "http.request.method",
+              "value": "POST"
+            },
+            {
+              "key": "http.response.status_code",
+              "value": 200
+            }
+          ],
+          "links": []
+        },
+        {
+          "traceId": "e0000001000000000000000000000000",
+          "spanId": "d000003800000000",
+          "parentSpanId": "d000003900000000",
+          "spanKind": "client",
+          "operation": "POST",
+          "service": "public-api",
+          "startTimeUnixNano": "1767225625559000000",
+          "endTimeUnixNano": "1767225625561136417",
+          "statusCode": 0,
+          "attributes": [
+            {
+              "key": "http.request.method",
+              "value": "POST"
+            },
+            {
+              "key": "http.response.status_code",
+              "value": 200
+            }
+          ],
+          "links": []
+        },
+        {
+          "traceId": "e0000001000000000000000000000000",
+          "spanId": "d000004000000000",
+          "parentSpanId": "d000004100000000",
+          "spanKind": "client",
+          "operation": "POST",
+          "service": "public-api",
+          "startTimeUnixNano": "1767225625616000000",
+          "endTimeUnixNano": "1767225625618427292",
+          "statusCode": 0,
+          "attributes": [
+            {
+              "key": "http.request.method",
+              "value": "POST"
+            },
+            {
+              "key": "http.response.status_code",
+              "value": 200
+            }
+          ],
+          "links": []
+        },
+        {
+          "traceId": "e0000001000000000000000000000000",
+          "spanId": "d000004200000000",
+          "parentSpanId": "d000004300000000",
+          "spanKind": "client",
+          "operation": "POST",
+          "service": "public-api",
+          "startTimeUnixNano": "1767225625620000000",
+          "endTimeUnixNano": "1767225625622168250",
+          "statusCode": 0,
+          "attributes": [
+            {
+              "key": "http.request.method",
+              "value": "POST"
+            },
+            {
+              "key": "http.response.status_code",
+              "value": 200
+            }
+          ],
+          "links": []
+        },
+        {
+          "traceId": "e0000001000000000000000000000000",
+          "spanId": "d000003300000000",
+          "parentSpanId": "d000002100000000",
+          "spanKind": "consumer",
+          "operation": "subscription-orders receive",
+          "service": "public-api",
+          "startTimeUnixNano": "1767225625488000000",
+          "endTimeUnixNano": "1767225625497697750",
+          "statusCode": 0,
+          "attributes": [
+            {
+              "key": "messaging.system",
+              "value": "aws_sqs"
+            },
+            {
+              "key": "messaging.destination.name",
+              "value": "subscription-orders"
+            },
+            {
+              "key": "messaging.operation.type",
+              "value": "receive"
+            },
+            {
+              "key": "http.response.status_code",
+              "value": 200
+            }
+          ],
+          "links": []
+        },
+        {
+          "traceId": "e0000001000000000000000000000000",
+          "spanId": "d000003500000000",
+          "parentSpanId": "d000002100000000",
+          "spanKind": "client",
+          "operation": "SQS.GetQueueAttributes",
+          "service": "public-api",
+          "startTimeUnixNano": "1767225625498000000",
+          "endTimeUnixNano": "1767225625503722333",
+          "statusCode": 0,
+          "attributes": [
+            {
+              "key": "messaging.system",
+              "value": "aws_sqs"
+            },
+            {
+              "key": "messaging.destination.name",
+              "value": "subscription-orders"
+            },
+            {
+              "key": "http.response.status_code",
+              "value": 200
+            }
+          ],
+          "links": []
+        },
+        {
+          "traceId": "e0000001000000000000000000000000",
+          "spanId": "d000003700000000",
+          "parentSpanId": "d000002100000000",
+          "spanKind": "consumer",
+          "operation": "subscription-orders receive",
+          "service": "public-api",
+          "startTimeUnixNano": "1767225625554000000",
+          "endTimeUnixNano": "1767225625558764625",
+          "statusCode": 0,
+          "attributes": [
+            {
+              "key": "messaging.system",
+              "value": "aws_sqs"
+            },
+            {
+              "key": "messaging.destination.name",
+              "value": "subscription-orders"
+            },
+            {
+              "key": "messaging.operation.type",
+              "value": "receive"
+            },
+            {
+              "key": "http.response.status_code",
+              "value": 200
+            }
+          ],
+          "links": []
+        },
+        {
+          "traceId": "e0000001000000000000000000000000",
+          "spanId": "d000003900000000",
+          "parentSpanId": "d000002100000000",
+          "spanKind": "client",
+          "operation": "SQS.GetQueueAttributes",
+          "service": "public-api",
+          "startTimeUnixNano": "1767225625559000000",
+          "endTimeUnixNano": "1767225625562448500",
+          "statusCode": 0,
+          "attributes": [
+            {
+              "key": "messaging.system",
+              "value": "aws_sqs"
+            },
+            {
+              "key": "messaging.destination.name",
+              "value": "subscription-orders"
+            },
+            {
+              "key": "http.response.status_code",
+              "value": 200
+            }
+          ],
+          "links": []
+        },
+        {
+          "traceId": "e0000001000000000000000000000000",
+          "spanId": "d000004100000000",
+          "parentSpanId": "d000002100000000",
+          "spanKind": "consumer",
+          "operation": "subscription-orders receive",
+          "service": "public-api",
+          "startTimeUnixNano": "1767225625615000000",
+          "endTimeUnixNano": "1767225625619141416",
+          "statusCode": 0,
+          "attributes": [
+            {
+              "key": "messaging.system",
+              "value": "aws_sqs"
+            },
+            {
+              "key": "messaging.destination.name",
+              "value": "subscription-orders"
+            },
+            {
+              "key": "messaging.operation.type",
+              "value": "receive"
+            },
+            {
+              "key": "http.response.status_code",
+              "value": 200
+            }
+          ],
+          "links": []
+        },
+        {
+          "traceId": "e0000001000000000000000000000000",
+          "spanId": "d000004300000000",
+          "parentSpanId": "d000002100000000",
+          "spanKind": "client",
+          "operation": "SQS.GetQueueAttributes",
+          "service": "public-api",
+          "startTimeUnixNano": "1767225625619000000",
+          "endTimeUnixNano": "1767225625622149791",
+          "statusCode": 0,
+          "attributes": [
+            {
+              "key": "messaging.system",
+              "value": "aws_sqs"
+            },
+            {
+              "key": "messaging.destination.name",
+              "value": "subscription-orders"
+            },
+            {
+              "key": "http.response.status_code",
+              "value": 200
+            }
+          ],
+          "links": []
+        },
+        {
+          "traceId": "e0000001000000000000000000000000",
+          "spanId": "d000000100000000",
+          "parentSpanId": null,
+          "spanKind": "internal",
+          "operation": "capsule.driver",
+          "service": "blackbox-capsule",
+          "startTimeUnixNano": "1767225625233000000",
+          "endTimeUnixNano": "1767225625881000000",
+          "statusCode": 1,
+          "attributes": [],
+          "links": []
+        },
+        {
+          "traceId": "e0000001000000000000000000000000",
+          "spanId": "d000004400000000",
+          "parentSpanId": "d000004500000000",
+          "spanKind": "client",
+          "operation": "POST",
+          "service": "public-api",
+          "startTimeUnixNano": "1767225625678000000",
+          "endTimeUnixNano": "1767225625680984792",
+          "statusCode": 0,
+          "attributes": [
+            {
+              "key": "http.request.method",
+              "value": "POST"
+            },
+            {
+              "key": "http.response.status_code",
+              "value": 200
+            }
+          ],
+          "links": []
+        },
+        {
+          "traceId": "e0000001000000000000000000000000",
+          "spanId": "d000004600000000",
+          "parentSpanId": "d000004700000000",
+          "spanKind": "client",
+          "operation": "POST",
+          "service": "public-api",
+          "startTimeUnixNano": "1767225625683000000",
+          "endTimeUnixNano": "1767225625685454584",
+          "statusCode": 0,
+          "attributes": [
+            {
+              "key": "http.request.method",
+              "value": "POST"
+            },
+            {
+              "key": "http.response.status_code",
+              "value": 200
+            }
+          ],
+          "links": []
+        },
+        {
+          "traceId": "e0000001000000000000000000000000",
+          "spanId": "d000004800000000",
+          "parentSpanId": "d000004900000000",
+          "spanKind": "client",
+          "operation": "POST",
+          "service": "public-api",
+          "startTimeUnixNano": "1767225625738000000",
+          "endTimeUnixNano": "1767225625740578541",
+          "statusCode": 0,
+          "attributes": [
+            {
+              "key": "http.request.method",
+              "value": "POST"
+            },
+            {
+              "key": "http.response.status_code",
+              "value": 200
+            }
+          ],
+          "links": []
+        },
+        {
+          "traceId": "e0000001000000000000000000000000",
+          "spanId": "d000005000000000",
+          "parentSpanId": "d000005100000000",
+          "spanKind": "client",
+          "operation": "POST",
+          "service": "public-api",
+          "startTimeUnixNano": "1767225625742000000",
+          "endTimeUnixNano": "1767225625743850875",
+          "statusCode": 0,
+          "attributes": [
+            {
+              "key": "http.request.method",
+              "value": "POST"
+            },
+            {
+              "key": "http.response.status_code",
+              "value": 200
+            }
+          ],
+          "links": []
+        },
+        {
+          "traceId": "e0000001000000000000000000000000",
+          "spanId": "d000005200000000",
+          "parentSpanId": "d000005300000000",
+          "spanKind": "client",
+          "operation": "POST",
+          "service": "public-api",
+          "startTimeUnixNano": "1767225625796000000",
+          "endTimeUnixNano": "1767225625798208500",
+          "statusCode": 0,
+          "attributes": [
+            {
+              "key": "http.request.method",
+              "value": "POST"
+            },
+            {
+              "key": "http.response.status_code",
+              "value": 200
+            }
+          ],
+          "links": []
+        },
+        {
+          "traceId": "e0000001000000000000000000000000",
+          "spanId": "d000005400000000",
+          "parentSpanId": "d000005500000000",
+          "spanKind": "client",
+          "operation": "POST",
+          "service": "public-api",
+          "startTimeUnixNano": "1767225625799000000",
+          "endTimeUnixNano": "1767225625800609834",
+          "statusCode": 0,
+          "attributes": [
+            {
+              "key": "http.request.method",
+              "value": "POST"
+            },
+            {
+              "key": "http.response.status_code",
+              "value": 200
+            }
+          ],
+          "links": []
+        },
+        {
+          "traceId": "e0000001000000000000000000000000",
+          "spanId": "d000005600000000",
+          "parentSpanId": "d000005700000000",
+          "spanKind": "client",
+          "operation": "POST",
+          "service": "public-api",
+          "startTimeUnixNano": "1767225625851000000",
+          "endTimeUnixNano": "1767225625853470250",
+          "statusCode": 0,
+          "attributes": [
+            {
+              "key": "http.request.method",
+              "value": "POST"
+            },
+            {
+              "key": "http.response.status_code",
+              "value": 200
+            }
+          ],
+          "links": []
+        },
+        {
+          "traceId": "e0000001000000000000000000000000",
+          "spanId": "d000005800000000",
+          "parentSpanId": "d000005900000000",
+          "spanKind": "client",
+          "operation": "POST",
+          "service": "public-api",
+          "startTimeUnixNano": "1767225625855000000",
+          "endTimeUnixNano": "1767225625856658458",
+          "statusCode": 0,
+          "attributes": [
+            {
+              "key": "http.request.method",
+              "value": "POST"
+            },
+            {
+              "key": "http.response.status_code",
+              "value": 200
+            }
+          ],
+          "links": []
+        },
+        {
+          "traceId": "e0000001000000000000000000000000",
+          "spanId": "d000006000000000",
+          "parentSpanId": "d000006100000000",
+          "spanKind": "client",
+          "operation": "POST",
+          "service": "public-api",
+          "startTimeUnixNano": "1767225625870000000",
+          "endTimeUnixNano": "1767225625872243208",
+          "statusCode": 0,
+          "attributes": [
+            {
+              "key": "http.request.method",
+              "value": "POST"
+            },
+            {
+              "key": "http.response.status_code",
+              "value": 200
+            }
+          ],
+          "links": []
+        },
+        {
+          "traceId": "e0000001000000000000000000000000",
+          "spanId": "d000002100000000",
+          "parentSpanId": "d000000100000000",
+          "spanKind": "server",
+          "operation": "POST",
+          "service": "public-api",
+          "startTimeUnixNano": "1767225625467000000",
+          "endTimeUnixNano": "1767225625873909750",
+          "statusCode": 0,
+          "attributes": [
+            {
+              "key": "http.request.method",
+              "value": "POST"
+            },
+            {
+              "key": "url.path",
+              "value": "/fixture/reset"
+            },
+            {
+              "key": "http.response.status_code",
+              "value": 200
+            }
+          ],
+          "links": []
+        },
+        {
+          "traceId": "e0000001000000000000000000000000",
+          "spanId": "d000004500000000",
+          "parentSpanId": "d000002100000000",
+          "spanKind": "consumer",
+          "operation": "subscription-orders receive",
+          "service": "public-api",
+          "startTimeUnixNano": "1767225625675000000",
+          "endTimeUnixNano": "1767225625681594125",
+          "statusCode": 0,
+          "attributes": [
+            {
+              "key": "messaging.system",
+              "value": "aws_sqs"
+            },
+            {
+              "key": "messaging.destination.name",
+              "value": "subscription-orders"
+            },
+            {
+              "key": "messaging.operation.type",
+              "value": "receive"
+            },
+            {
+              "key": "http.response.status_code",
+              "value": 200
+            }
+          ],
+          "links": []
+        },
+        {
+          "traceId": "e0000001000000000000000000000000",
+          "spanId": "d000004700000000",
+          "parentSpanId": "d000002100000000",
+          "spanKind": "client",
+          "operation": "SQS.GetQueueAttributes",
+          "service": "public-api",
+          "startTimeUnixNano": "1767225625682000000",
+          "endTimeUnixNano": "1767225625686141375",
+          "statusCode": 0,
+          "attributes": [
+            {
+              "key": "messaging.system",
+              "value": "aws_sqs"
+            },
+            {
+              "key": "messaging.destination.name",
+              "value": "subscription-orders"
+            },
+            {
+              "key": "http.response.status_code",
+              "value": 200
+            }
+          ],
+          "links": []
+        },
+        {
+          "traceId": "e0000001000000000000000000000000",
+          "spanId": "d000004900000000",
+          "parentSpanId": "d000002100000000",
+          "spanKind": "consumer",
+          "operation": "subscription-orders receive",
+          "service": "public-api",
+          "startTimeUnixNano": "1767225625737000000",
+          "endTimeUnixNano": "1767225625741198750",
+          "statusCode": 0,
+          "attributes": [
+            {
+              "key": "messaging.system",
+              "value": "aws_sqs"
+            },
+            {
+              "key": "messaging.destination.name",
+              "value": "subscription-orders"
+            },
+            {
+              "key": "messaging.operation.type",
+              "value": "receive"
+            },
+            {
+              "key": "http.response.status_code",
+              "value": 200
+            }
+          ],
+          "links": []
+        },
+        {
+          "traceId": "e0000001000000000000000000000000",
+          "spanId": "d000005100000000",
+          "parentSpanId": "d000002100000000",
+          "spanKind": "client",
+          "operation": "SQS.GetQueueAttributes",
+          "service": "public-api",
+          "startTimeUnixNano": "1767225625741000000",
+          "endTimeUnixNano": "1767225625743850958",
+          "statusCode": 0,
+          "attributes": [
+            {
+              "key": "messaging.system",
+              "value": "aws_sqs"
+            },
+            {
+              "key": "messaging.destination.name",
+              "value": "subscription-orders"
+            },
+            {
+              "key": "http.response.status_code",
+              "value": 200
+            }
+          ],
+          "links": []
+        },
+        {
+          "traceId": "e0000001000000000000000000000000",
+          "spanId": "d000005300000000",
+          "parentSpanId": "d000002100000000",
+          "spanKind": "consumer",
+          "operation": "subscription-orders receive",
+          "service": "public-api",
+          "startTimeUnixNano": "1767225625795000000",
+          "endTimeUnixNano": "1767225625798286042",
+          "statusCode": 0,
+          "attributes": [
+            {
+              "key": "messaging.system",
+              "value": "aws_sqs"
+            },
+            {
+              "key": "messaging.destination.name",
+              "value": "subscription-orders"
+            },
+            {
+              "key": "messaging.operation.type",
+              "value": "receive"
+            },
+            {
+              "key": "http.response.status_code",
+              "value": 200
+            }
+          ],
+          "links": []
+        },
+        {
+          "traceId": "e0000001000000000000000000000000",
+          "spanId": "d000005500000000",
+          "parentSpanId": "d000002100000000",
+          "spanKind": "client",
+          "operation": "SQS.GetQueueAttributes",
+          "service": "public-api",
+          "startTimeUnixNano": "1767225625798000000",
+          "endTimeUnixNano": "1767225625800470500",
+          "statusCode": 0,
+          "attributes": [
+            {
+              "key": "messaging.system",
+              "value": "aws_sqs"
+            },
+            {
+              "key": "messaging.destination.name",
+              "value": "subscription-orders"
+            },
+            {
+              "key": "http.response.status_code",
+              "value": 200
+            }
+          ],
+          "links": []
+        },
+        {
+          "traceId": "e0000001000000000000000000000000",
+          "spanId": "d000005700000000",
+          "parentSpanId": "d000002100000000",
+          "spanKind": "consumer",
+          "operation": "subscription-orders receive",
+          "service": "public-api",
+          "startTimeUnixNano": "1767225625850000000",
+          "endTimeUnixNano": "1767225625853679875",
+          "statusCode": 0,
+          "attributes": [
+            {
+              "key": "messaging.system",
+              "value": "aws_sqs"
+            },
+            {
+              "key": "messaging.destination.name",
+              "value": "subscription-orders"
+            },
+            {
+              "key": "messaging.operation.type",
+              "value": "receive"
+            },
+            {
+              "key": "http.response.status_code",
+              "value": 200
+            }
+          ],
+          "links": []
+        },
+        {
+          "traceId": "e0000001000000000000000000000000",
+          "spanId": "d000005900000000",
+          "parentSpanId": "d000002100000000",
+          "spanKind": "client",
+          "operation": "SQS.GetQueueAttributes",
+          "service": "public-api",
+          "startTimeUnixNano": "1767225625854000000",
+          "endTimeUnixNano": "1767225625856495625",
+          "statusCode": 0,
+          "attributes": [
+            {
+              "key": "messaging.system",
+              "value": "aws_sqs"
+            },
+            {
+              "key": "messaging.destination.name",
+              "value": "subscription-orders"
+            },
+            {
+              "key": "http.response.status_code",
+              "value": 200
+            }
+          ],
+          "links": []
+        },
+        {
+          "traceId": "e0000001000000000000000000000000",
+          "spanId": "d000006100000000",
+          "parentSpanId": "d000002100000000",
+          "spanKind": "client",
+          "operation": "SQS.GetQueueAttributes",
+          "service": "public-api",
+          "startTimeUnixNano": "1767225625869000000",
+          "endTimeUnixNano": "1767225625872281000",
+          "statusCode": 0,
+          "attributes": [
+            {
+              "key": "messaging.system",
+              "value": "aws_sqs"
+            },
+            {
+              "key": "messaging.destination.name",
+              "value": "subscription-orders"
+            },
+            {
+              "key": "http.response.status_code",
+              "value": 200
+            }
+          ],
+          "links": []
+        },
+        {
+          "traceId": "e0000001000000000000000000000000",
+          "spanId": "d000006200000000",
+          "parentSpanId": "d000002100000000",
+          "spanKind": "client",
+          "operation": "POST",
+          "service": "public-api",
+          "startTimeUnixNano": "1767225625858000000",
+          "endTimeUnixNano": "1767225625866349834",
+          "statusCode": 0,
+          "attributes": [
+            {
+              "key": "http.request.method",
+              "value": "POST"
+            },
+            {
+              "key": "url.path",
+              "value": "/fixture/reset"
+            },
+            {
+              "key": "http.response.status_code",
+              "value": 200
+            }
+          ],
+          "links": []
+        },
+        {
+          "traceId": "e0000001000000000000000000000000",
+          "spanId": "d000006300000000",
+          "parentSpanId": "d000002100000000",
+          "spanKind": "client",
+          "operation": "GET",
+          "service": "public-api",
+          "startTimeUnixNano": "1767225625869000000",
+          "endTimeUnixNano": "1767225625873042542",
+          "statusCode": 0,
+          "attributes": [
+            {
+              "key": "http.request.method",
+              "value": "GET"
+            },
+            {
+              "key": "url.path",
+              "value": "/fixture/state"
+            },
+            {
+              "key": "http.response.status_code",
+              "value": 200
+            }
+          ],
+          "links": []
+        },
+        {
+          "traceId": "e0000001000000000000000000000000",
+          "spanId": "d000006400000000",
+          "parentSpanId": "d000002100000000",
+          "spanKind": "client",
+          "operation": "pg-pool.connect",
+          "service": "public-api",
+          "startTimeUnixNano": "1767225625867000000",
+          "endTimeUnixNano": "1767225625869616875",
+          "statusCode": 0,
+          "attributes": [],
+          "links": []
+        },
+        {
+          "traceId": "e0000001000000000000000000000000",
+          "spanId": "d000006500000000",
+          "parentSpanId": "d000002100000000",
+          "spanKind": "client",
+          "operation": "pg.query:SELECT subscriptions",
+          "service": "public-api",
+          "startTimeUnixNano": "1767225625870000000",
+          "endTimeUnixNano": "1767225625871404166",
+          "statusCode": 0,
+          "attributes": [],
+          "links": []
+        },
+        {
+          "traceId": "e0000001000000000000000000000000",
+          "spanId": "d000006600000000",
+          "parentSpanId": "d000002100000000",
+          "spanKind": "client",
+          "operation": "pg-pool.connect",
+          "service": "public-api",
+          "startTimeUnixNano": "1767225625871000000",
+          "endTimeUnixNano": "1767225625871067834",
+          "statusCode": 0,
+          "attributes": [],
+          "links": []
+        },
+        {
+          "traceId": "e0000001000000000000000000000000",
+          "spanId": "d000006700000000",
+          "parentSpanId": "d000002100000000",
+          "spanKind": "client",
+          "operation": "pg.query:SELECT subscriptions",
+          "service": "public-api",
+          "startTimeUnixNano": "1767225625872000000",
+          "endTimeUnixNano": "1767225625874204750",
+          "statusCode": 0,
+          "attributes": [],
+          "links": []
+        },
+        {
+          "traceId": "e0000001000000000000000000000000",
+          "spanId": "d000006800000000",
+          "parentSpanId": "d000002100000000",
+          "spanKind": "client",
+          "operation": "redis-KEYS",
+          "service": "public-api",
+          "startTimeUnixNano": "1767225625868000000",
+          "endTimeUnixNano": "1767225625870791750",
+          "statusCode": 0,
+          "attributes": [
+            {
+              "key": "db.operation.name",
+              "value": "KEYS"
+            }
+          ],
+          "links": []
+        },
+        {
+          "traceId": "e0000001000000000000000000000000",
+          "spanId": "d000006900000000",
+          "parentSpanId": "d000006200000000",
+          "spanKind": "server",
+          "operation": "POST",
+          "service": "payment-mock",
+          "startTimeUnixNano": "1767225625863000000",
+          "endTimeUnixNano": "1767225625866789209",
+          "statusCode": 0,
+          "attributes": [
+            {
+              "key": "http.request.method",
+              "value": "POST"
+            },
+            {
+              "key": "url.path",
+              "value": "/fixture/reset"
+            },
+            {
+              "key": "http.response.status_code",
+              "value": 200
+            }
+          ],
+          "links": []
+        },
+        {
+          "traceId": "e0000001000000000000000000000000",
+          "spanId": "d000007000000000",
+          "parentSpanId": "d000006300000000",
+          "spanKind": "server",
+          "operation": "GET",
+          "service": "payment-mock",
+          "startTimeUnixNano": "1767225625872000000",
+          "endTimeUnixNano": "1767225625872637042",
+          "statusCode": 0,
+          "attributes": [
+            {
+              "key": "http.request.method",
+              "value": "GET"
+            },
+            {
+              "key": "url.path",
+              "value": "/fixture/state"
+            },
+            {
+              "key": "http.response.status_code",
+              "value": 200
+            }
+          ],
+          "links": []
+        }
+      ]
+    },
+    {
+      "traceId": "e0000002000000000000000000000000",
+      "spans": [
+        {
+          "traceId": "e0000002000000000000000000000000",
+          "spanId": "d000000200000000",
+          "parentSpanId": null,
+          "spanKind": "internal",
+          "operation": "capsule.driver",
+          "service": "blackbox-capsule",
+          "startTimeUnixNano": "1767225626455000000",
+          "endTimeUnixNano": "1767225626711000000",
+          "statusCode": 1,
+          "attributes": [],
+          "links": []
+        },
+        {
+          "traceId": "e0000002000000000000000000000000",
+          "spanId": "d000007900000000",
+          "parentSpanId": "d000008000000000",
+          "spanKind": "client",
+          "operation": "redis-GET",
+          "service": "public-api",
+          "startTimeUnixNano": "1767225626665000000",
+          "endTimeUnixNano": "1767225626665373416",
+          "statusCode": 0,
+          "attributes": [
+            {
+              "key": "db.operation.name",
+              "value": "GET"
+            }
+          ],
+          "links": []
+        },
+        {
+          "traceId": "e0000002000000000000000000000000",
+          "spanId": "d000008100000000",
+          "parentSpanId": "d000008000000000",
+          "spanKind": "client",
+          "operation": "redis-SET",
+          "service": "public-api",
+          "startTimeUnixNano": "1767225626667000000",
+          "endTimeUnixNano": "1767225626667243833",
+          "statusCode": 0,
+          "attributes": [
+            {
+              "key": "db.operation.name",
+              "value": "SET"
+            }
+          ],
+          "links": []
+        },
+        {
+          "traceId": "e0000002000000000000000000000000",
+          "spanId": "d000008200000000",
+          "parentSpanId": "d000008000000000",
+          "spanKind": "client",
+          "operation": "redis-SET",
+          "service": "public-api",
+          "startTimeUnixNano": "1767225626678000000",
+          "endTimeUnixNano": "1767225626678289708",
+          "statusCode": 0,
+          "attributes": [
+            {
+              "key": "db.operation.name",
+              "value": "SET"
+            }
+          ],
+          "links": []
+        },
+        {
+          "traceId": "e0000002000000000000000000000000",
+          "spanId": "d000008300000000",
+          "parentSpanId": "d000008000000000",
+          "spanKind": "client",
+          "operation": "redis-GET",
+          "service": "public-api",
+          "startTimeUnixNano": "1767225626678000000",
+          "endTimeUnixNano": "1767225626678276792",
+          "statusCode": 0,
+          "attributes": [
+            {
+              "key": "db.operation.name",
+              "value": "GET"
+            }
+          ],
+          "links": []
+        },
+        {
+          "traceId": "e0000002000000000000000000000000",
+          "spanId": "d000008400000000",
+          "parentSpanId": "d000008000000000",
+          "spanKind": "client",
+          "operation": "pg-pool.connect",
+          "service": "public-api",
+          "startTimeUnixNano": "1767225626666000000",
+          "endTimeUnixNano": "1767225626666079500",
+          "statusCode": 0,
+          "attributes": [],
+          "links": []
+        },
+        {
+          "traceId": "e0000002000000000000000000000000",
+          "spanId": "d000008500000000",
+          "parentSpanId": "d000008000000000",
+          "spanKind": "client",
+          "operation": "pg.query:SELECT subscriptions",
+          "service": "public-api",
+          "startTimeUnixNano": "1767225626666000000",
+          "endTimeUnixNano": "1767225626666757625",
+          "statusCode": 0,
+          "attributes": [],
+          "links": []
+        },
+        {
+          "traceId": "e0000002000000000000000000000000",
+          "spanId": "d000008600000000",
+          "parentSpanId": "d000008000000000",
+          "spanKind": "client",
+          "operation": "pg-pool.connect",
+          "service": "public-api",
+          "startTimeUnixNano": "1767225626702000000",
+          "endTimeUnixNano": "1767225626702093167",
+          "statusCode": 0,
+          "attributes": [],
+          "links": []
+        },
+        {
+          "traceId": "e0000002000000000000000000000000",
+          "spanId": "d000008700000000",
+          "parentSpanId": "d000008000000000",
+          "spanKind": "client",
+          "operation": "pg.query:INSERT subscriptions",
+          "service": "public-api",
+          "startTimeUnixNano": "1767225626702000000",
+          "endTimeUnixNano": "1767225626703285500",
+          "statusCode": 0,
+          "attributes": [],
+          "links": []
+        },
+        {
+          "traceId": "e0000002000000000000000000000000",
+          "spanId": "d000008800000000",
+          "parentSpanId": "d000008000000000",
+          "spanKind": "client",
+          "operation": "POST",
+          "service": "public-api",
+          "startTimeUnixNano": "1767225626668000000",
+          "endTimeUnixNano": "1767225626677388458",
+          "statusCode": 0,
+          "attributes": [
+            {
+              "key": "http.request.method",
+              "value": "POST"
+            },
+            {
+              "key": "url.path",
+              "value": "/assess"
+            },
+            {
+              "key": "http.response.status_code",
+              "value": 200
+            }
+          ],
+          "links": []
+        },
+        {
+          "traceId": "e0000002000000000000000000000000",
+          "spanId": "d000008900000000",
+          "parentSpanId": "d000008000000000",
+          "spanKind": "client",
+          "operation": "POST",
+          "service": "public-api",
+          "startTimeUnixNano": "1767225626679000000",
+          "endTimeUnixNano": "1767225626683746792",
+          "statusCode": 0,
+          "attributes": [
+            {
+              "key": "http.request.method",
+              "value": "POST"
+            },
+            {
+              "key": "url.path",
+              "value": "/v1/payment_intents"
+            },
+            {
+              "key": "http.response.status_code",
+              "value": 201
+            }
+          ],
+          "links": []
+        },
+        {
+          "traceId": "e0000002000000000000000000000000",
+          "spanId": "d000009000000000",
+          "parentSpanId": "d000008000000000",
+          "spanKind": "client",
+          "operation": "POST",
+          "service": "public-api",
+          "startTimeUnixNano": "1767225626685000000",
+          "endTimeUnixNano": "1767225626700768375",
+          "statusCode": 0,
+          "attributes": [
+            {
+              "key": "http.request.method",
+              "value": "POST"
+            },
+            {
+              "key": "url.path",
+              "value": "/orders"
+            },
+            {
+              "key": "http.response.status_code",
+              "value": 201
+            }
+          ],
+          "links": []
+        },
+        {
+          "traceId": "e0000002000000000000000000000000",
+          "spanId": "d000008000000000",
+          "parentSpanId": "d000000200000000",
+          "spanKind": "server",
+          "operation": "POST",
+          "service": "public-api",
+          "startTimeUnixNano": "1767225626665000000",
+          "endTimeUnixNano": "1767225626704187542",
+          "statusCode": 0,
+          "attributes": [
+            {
+              "key": "http.request.method",
+              "value": "POST"
+            },
+            {
+              "key": "url.path",
+              "value": "/subscriptions"
+            },
+            {
+              "key": "http.response.status_code",
+              "value": 201
+            }
+          ],
+          "links": []
+        },
+        {
+          "traceId": "e0000002000000000000000000000000",
+          "spanId": "d000009100000000",
+          "parentSpanId": "d000009200000000",
+          "spanKind": "client",
+          "operation": "pg-pool.connect",
+          "service": "fraud-check",
+          "startTimeUnixNano": "1767225626672000000",
+          "endTimeUnixNano": "1767225626672334625",
+          "statusCode": 0,
+          "attributes": [],
+          "links": []
+        },
+        {
+          "traceId": "e0000002000000000000000000000000",
+          "spanId": "d000009300000000",
+          "parentSpanId": "d000009200000000",
+          "spanKind": "client",
+          "operation": "pg.query:INSERT subscriptions",
+          "service": "fraud-check",
+          "startTimeUnixNano": "1767225626673000000",
+          "endTimeUnixNano": "1767225626676355750",
+          "statusCode": 0,
+          "attributes": [],
+          "links": []
+        },
+        {
+          "traceId": "e0000002000000000000000000000000",
+          "spanId": "d000009200000000",
+          "parentSpanId": "d000008800000000",
+          "spanKind": "server",
+          "operation": "POST",
+          "service": "fraud-check",
+          "startTimeUnixNano": "1767225626671000000",
+          "endTimeUnixNano": "1767225626677283542",
+          "statusCode": 0,
+          "attributes": [
+            {
+              "key": "http.request.method",
+              "value": "POST"
+            },
+            {
+              "key": "url.path",
+              "value": "/assess"
+            },
+            {
+              "key": "http.response.status_code",
+              "value": 200
+            }
+          ],
+          "links": []
+        },
+        {
+          "traceId": "e0000002000000000000000000000000",
+          "spanId": "d000009400000000",
+          "parentSpanId": "d000008900000000",
+          "spanKind": "server",
+          "operation": "POST",
+          "service": "payment-mock",
+          "startTimeUnixNano": "1767225626682000000",
+          "endTimeUnixNano": "1767225626683214333",
+          "statusCode": 0,
+          "attributes": [
+            {
+              "key": "http.request.method",
+              "value": "POST"
+            },
+            {
+              "key": "url.path",
+              "value": "/v1/payment_intents"
+            },
+            {
+              "key": "http.response.status_code",
+              "value": 201
+            }
+          ],
+          "links": []
+        },
+        {
+          "traceId": "e0000002000000000000000000000000",
+          "spanId": "d000009500000000",
+          "parentSpanId": "d000009600000000",
+          "spanKind": "client",
+          "operation": "POST",
+          "service": "order-service",
+          "startTimeUnixNano": "1767225626693000000",
+          "endTimeUnixNano": "1767225626699525375",
+          "statusCode": 0,
+          "attributes": [
+            {
+              "key": "http.request.method",
+              "value": "POST"
+            },
+            {
+              "key": "http.response.status_code",
+              "value": 200
+            }
+          ],
+          "links": []
+        },
+        {
+          "traceId": "e0000002000000000000000000000000",
+          "spanId": "d000009700000000",
+          "parentSpanId": "d000009000000000",
+          "spanKind": "server",
+          "operation": "POST",
+          "service": "order-service",
+          "startTimeUnixNano": "1767225626688000000",
+          "endTimeUnixNano": "1767225626701053833",
+          "statusCode": 0,
+          "attributes": [
+            {
+              "key": "http.request.method",
+              "value": "POST"
+            },
+            {
+              "key": "url.path",
+              "value": "/orders"
+            },
+            {
+              "key": "http.response.status_code",
+              "value": 201
+            }
+          ],
+          "links": []
+        },
+        {
+          "traceId": "e0000002000000000000000000000000",
+          "spanId": "d000009600000000",
+          "parentSpanId": "d000009700000000",
+          "spanKind": "producer",
+          "operation": "subscription-orders send",
+          "service": "order-service",
+          "startTimeUnixNano": "1767225626690000000",
+          "endTimeUnixNano": "1767225626700611708",
+          "statusCode": 0,
+          "attributes": [
+            {
+              "key": "messaging.system",
+              "value": "aws_sqs"
+            },
+            {
+              "key": "messaging.destination.name",
+              "value": "subscription-orders"
+            },
+            {
+              "key": "http.response.status_code",
+              "value": 200
+            }
+          ],
+          "links": []
+        }
+      ]
+    },
+    {
+      "traceId": "e0000003000000000000000000000000",
+      "spans": [
+        {
+          "traceId": "e0000003000000000000000000000000",
+          "spanId": "d000000300000000",
+          "parentSpanId": null,
+          "spanKind": "internal",
+          "operation": "capsule.driver",
+          "service": "blackbox-capsule",
+          "startTimeUnixNano": "1767225627315000000",
+          "endTimeUnixNano": "1767225627535000000",
+          "statusCode": 1,
+          "attributes": [],
+          "links": []
+        }
+      ]
+    },
+    {
+      "traceId": "e0000004000000000000000000000000",
+      "spans": [
+        {
+          "traceId": "e0000004000000000000000000000000",
+          "spanId": "d000000400000000",
+          "parentSpanId": null,
+          "spanKind": "internal",
+          "operation": "capsule.host",
+          "service": "blackbox-capsule",
+          "startTimeUnixNano": "1767225628755000000",
+          "endTimeUnixNano": "1767225628830000000",
+          "statusCode": 1,
+          "attributes": [],
+          "links": []
+        }
+      ]
+    },
+    {
+      "traceId": "e0000005000000000000000000000000",
+      "spans": [
+        {
+          "traceId": "e0000005000000000000000000000000",
+          "spanId": "d000000500000000",
+          "parentSpanId": null,
+          "spanKind": "internal",
+          "operation": "capsule.host",
+          "service": "blackbox-capsule",
+          "startTimeUnixNano": "1767225629420000000",
+          "endTimeUnixNano": "1767225629486000000",
+          "statusCode": 1,
+          "attributes": [],
+          "links": []
+        }
+      ]
+    },
+    {
+      "traceId": "e0000006000000000000000000000000",
+      "spans": [
+        {
+          "traceId": "e0000006000000000000000000000000",
+          "spanId": "d000000600000000",
+          "parentSpanId": null,
+          "spanKind": "internal",
+          "operation": "capsule.host",
+          "service": "blackbox-capsule",
+          "startTimeUnixNano": "1767225630067000000",
+          "endTimeUnixNano": "1767225630132000000",
+          "statusCode": 1,
+          "attributes": [],
+          "links": []
+        }
+      ]
+    },
+    {
+      "traceId": "e0000007000000000000000000000000",
+      "spans": [
+        {
+          "traceId": "e0000007000000000000000000000000",
+          "spanId": "d000000700000000",
+          "parentSpanId": "d000000800000000",
+          "spanKind": "client",
+          "operation": "pg.connect",
+          "service": "public-api",
+          "startTimeUnixNano": "1767225618691000000",
+          "endTimeUnixNano": "1767225618697849375",
+          "statusCode": 0,
+          "attributes": [],
+          "links": []
+        },
+        {
+          "traceId": "e0000007000000000000000000000000",
+          "spanId": "d000000800000000",
+          "parentSpanId": null,
+          "spanKind": "client",
+          "operation": "pg-pool.connect",
+          "service": "public-api",
+          "startTimeUnixNano": "1767225618691000000",
+          "endTimeUnixNano": "1767225618698818750",
+          "statusCode": 0,
+          "attributes": [],
+          "links": []
+        },
+        {
+          "traceId": "e0000007000000000000000000000000",
+          "spanId": "d000000900000000",
+          "parentSpanId": "d000000800000000",
+          "spanKind": "client",
+          "operation": "pg.query:SELECT subscriptions",
+          "service": "public-api",
+          "startTimeUnixNano": "1767225618699000000",
+          "endTimeUnixNano": "1767225618699905958",
+          "statusCode": 0,
+          "attributes": [],
+          "links": []
+        }
+      ]
+    },
+    {
+      "traceId": "e0000008000000000000000000000000",
+      "spans": [
+        {
+          "traceId": "e0000008000000000000000000000000",
+          "spanId": "d000001000000000",
+          "parentSpanId": null,
+          "spanKind": "client",
+          "operation": "GET",
+          "service": "public-api",
+          "startTimeUnixNano": "1767225618703000000",
+          "endTimeUnixNano": "1767225618711270291",
+          "statusCode": 0,
+          "attributes": [
+            {
+              "key": "http.request.method",
+              "value": "GET"
+            },
+            {
+              "key": "url.path",
+              "value": "/health"
+            },
+            {
+              "key": "http.response.status_code",
+              "value": 200
+            }
+          ],
+          "links": []
+        },
+        {
+          "traceId": "e0000008000000000000000000000000",
+          "spanId": "d000001100000000",
+          "parentSpanId": "d000001000000000",
+          "spanKind": "server",
+          "operation": "GET",
+          "service": "payment-mock",
+          "startTimeUnixNano": "1767225618708000000",
+          "endTimeUnixNano": "1767225618710374292",
+          "statusCode": 0,
+          "attributes": [
+            {
+              "key": "http.request.method",
+              "value": "GET"
+            },
+            {
+              "key": "url.path",
+              "value": "/health"
+            },
+            {
+              "key": "http.response.status_code",
+              "value": 200
+            }
+          ],
+          "links": []
+        }
+      ]
+    },
+    {
+      "traceId": "e0000009000000000000000000000000",
+      "spans": [
+        {
+          "traceId": "e0000009000000000000000000000000",
+          "spanId": "d000001200000000",
+          "parentSpanId": null,
+          "spanKind": "client",
+          "operation": "POST",
+          "service": "public-api",
+          "startTimeUnixNano": "1767225618461000000",
+          "endTimeUnixNano": "1767225618673318916",
+          "statusCode": 0,
+          "attributes": [
+            {
+              "key": "http.request.method",
+              "value": "POST"
+            },
+            {
+              "key": "url.path",
+              "value": "/v1/activation"
+            },
+            {
+              "key": "http.response.status_code",
+              "value": 200
+            }
+          ],
+          "links": []
+        }
+      ]
+    },
+    {
+      "traceId": "e0000010000000000000000000000000",
+      "spans": [
+        {
+          "traceId": "e0000010000000000000000000000000",
+          "spanId": "d000001300000000",
+          "parentSpanId": "d000001400000000",
+          "spanKind": "client",
+          "operation": "pg-pool.connect",
+          "service": "public-api",
+          "startTimeUnixNano": "1767225624394000000",
+          "endTimeUnixNano": "1767225624395995042",
+          "statusCode": 0,
+          "attributes": [],
+          "links": []
+        },
+        {
+          "traceId": "e0000010000000000000000000000000",
+          "spanId": "d000001500000000",
+          "parentSpanId": "d000001400000000",
+          "spanKind": "client",
+          "operation": "pg.query:SELECT subscriptions",
+          "service": "public-api",
+          "startTimeUnixNano": "1767225624396000000",
+          "endTimeUnixNano": "1767225624399948917",
+          "statusCode": 0,
+          "attributes": [],
+          "links": []
+        },
+        {
+          "traceId": "e0000010000000000000000000000000",
+          "spanId": "d000001600000000",
+          "parentSpanId": "d000001400000000",
+          "spanKind": "client",
+          "operation": "redis-PING",
+          "service": "public-api",
+          "startTimeUnixNano": "1767225624395000000",
+          "endTimeUnixNano": "1767225624400900167",
+          "statusCode": 0,
+          "attributes": [
+            {
+              "key": "db.operation.name",
+              "value": "PING"
+            }
+          ],
+          "links": []
+        },
+        {
+          "traceId": "e0000010000000000000000000000000",
+          "spanId": "d000001700000000",
+          "parentSpanId": "d000001800000000",
+          "spanKind": "client",
+          "operation": "POST",
+          "service": "public-api",
+          "startTimeUnixNano": "1767225624399000000",
+          "endTimeUnixNano": "1767225624403837334",
+          "statusCode": 0,
+          "attributes": [
+            {
+              "key": "http.request.method",
+              "value": "POST"
+            },
+            {
+              "key": "http.response.status_code",
+              "value": 200
+            }
+          ],
+          "links": []
+        },
+        {
+          "traceId": "e0000010000000000000000000000000",
+          "spanId": "d000001400000000",
+          "parentSpanId": null,
+          "spanKind": "server",
+          "operation": "GET",
+          "service": "public-api",
+          "startTimeUnixNano": "1767225624393000000",
+          "endTimeUnixNano": "1767225624404882209",
+          "statusCode": 0,
+          "attributes": [
+            {
+              "key": "http.request.method",
+              "value": "GET"
+            },
+            {
+              "key": "url.path",
+              "value": "/health"
+            },
+            {
+              "key": "http.response.status_code",
+              "value": 200
+            }
+          ],
+          "links": []
+        },
+        {
+          "traceId": "e0000010000000000000000000000000",
+          "spanId": "d000001800000000",
+          "parentSpanId": "d000001400000000",
+          "spanKind": "client",
+          "operation": "SQS.GetQueueUrl",
+          "service": "public-api",
+          "startTimeUnixNano": "1767225624396000000",
+          "endTimeUnixNano": "1767225624404787958",
+          "statusCode": 0,
+          "attributes": [
+            {
+              "key": "messaging.system",
+              "value": "aws_sqs"
+            },
+            {
+              "key": "http.response.status_code",
+              "value": 200
+            }
+          ],
+          "links": []
+        }
+      ]
+    },
+    {
+      "traceId": "e0000011000000000000000000000000",
+      "spans": [
+        {
+          "traceId": "e0000011000000000000000000000000",
+          "spanId": "d000001900000000",
+          "parentSpanId": null,
+          "spanKind": "client",
+          "operation": "redis-connect",
+          "service": "redis-proof-consumer",
+          "startTimeUnixNano": "1767225624264000000",
+          "endTimeUnixNano": "1767225624283625958",
+          "statusCode": 0,
+          "attributes": [],
+          "links": []
+        }
+      ]
+    },
+    {
+      "traceId": "e0000012000000000000000000000000",
+      "spans": [
+        {
+          "traceId": "e0000012000000000000000000000000",
+          "spanId": "d000007100000000",
+          "parentSpanId": "d000007200000000",
+          "spanKind": "client",
+          "operation": "POST",
+          "service": "public-api",
+          "startTimeUnixNano": "1767225618683000000",
+          "endTimeUnixNano": "1767225618689553375",
+          "statusCode": 0,
+          "attributes": [
+            {
+              "key": "http.request.method",
+              "value": "POST"
+            },
+            {
+              "key": "http.response.status_code",
+              "value": 200
+            }
+          ],
+          "links": []
+        },
+        {
+          "traceId": "e0000012000000000000000000000000",
+          "spanId": "d000007200000000",
+          "parentSpanId": null,
+          "spanKind": "client",
+          "operation": "SQS.GetQueueUrl",
+          "service": "public-api",
+          "startTimeUnixNano": "1767225618671000000",
+          "endTimeUnixNano": "1767225618690686667",
+          "statusCode": 0,
+          "attributes": [
+            {
+              "key": "messaging.system",
+              "value": "aws_sqs"
+            },
+            {
+              "key": "http.response.status_code",
+              "value": 200
+            }
+          ],
+          "links": []
+        }
+      ]
+    },
+    {
+      "traceId": "e0000013000000000000000000000000",
+      "spans": [
+        {
+          "traceId": "e0000013000000000000000000000000",
+          "spanId": "d000007300000000",
+          "parentSpanId": null,
+          "spanKind": "client",
+          "operation": "redis-connect",
+          "service": "public-api",
+          "startTimeUnixNano": "1767225618646000000",
+          "endTimeUnixNano": "1767225618665866042",
+          "statusCode": 0,
+          "attributes": [],
+          "links": []
+        }
+      ]
+    },
+    {
+      "traceId": "e0000014000000000000000000000000",
+      "spans": [
+        {
+          "traceId": "e0000014000000000000000000000000",
+          "spanId": "d000007400000000",
+          "parentSpanId": "d000007500000000",
+          "spanKind": "client",
+          "operation": "pg.connect",
+          "service": "fraud-check",
+          "startTimeUnixNano": "1767225610335000000",
+          "endTimeUnixNano": "1767225610373307458",
+          "statusCode": 0,
+          "attributes": [],
+          "links": []
+        },
+        {
+          "traceId": "e0000014000000000000000000000000",
+          "spanId": "d000007500000000",
+          "parentSpanId": null,
+          "spanKind": "client",
+          "operation": "pg-pool.connect",
+          "service": "fraud-check",
+          "startTimeUnixNano": "1767225610334000000",
+          "endTimeUnixNano": "1767225610373788958",
+          "statusCode": 0,
+          "attributes": [],
+          "links": []
+        },
+        {
+          "traceId": "e0000014000000000000000000000000",
+          "spanId": "d000007600000000",
+          "parentSpanId": "d000007500000000",
+          "spanKind": "client",
+          "operation": "pg.query:SELECT subscriptions",
+          "service": "fraud-check",
+          "startTimeUnixNano": "1767225610374000000",
+          "endTimeUnixNano": "1767225610376065292",
+          "statusCode": 0,
+          "attributes": [],
+          "links": []
+        }
+      ]
+    },
+    {
+      "traceId": "e0000015000000000000000000000000",
+      "spans": [
+        {
+          "traceId": "e0000015000000000000000000000000",
+          "spanId": "d000007700000000",
+          "parentSpanId": "d000007800000000",
+          "spanKind": "client",
+          "operation": "POST",
+          "service": "order-service",
+          "startTimeUnixNano": "1767225612892000000",
+          "endTimeUnixNano": "1767225612910770833",
+          "statusCode": 0,
+          "attributes": [
+            {
+              "key": "http.request.method",
+              "value": "POST"
+            },
+            {
+              "key": "http.response.status_code",
+              "value": 200
+            }
+          ],
+          "links": []
+        },
+        {
+          "traceId": "e0000015000000000000000000000000",
+          "spanId": "d000007800000000",
+          "parentSpanId": null,
+          "spanKind": "client",
+          "operation": "SQS.GetQueueUrl",
+          "service": "order-service",
+          "startTimeUnixNano": "1767225612874000000",
+          "endTimeUnixNano": "1767225612912617333",
+          "statusCode": 0,
+          "attributes": [
+            {
+              "key": "messaging.system",
+              "value": "aws_sqs"
+            },
+            {
+              "key": "http.response.status_code",
+              "value": 200
+            }
+          ],
+          "links": []
+        }
+      ]
+    },
+    {
+      "traceId": "e0000016000000000000000000000000",
+      "spans": [
+        {
+          "traceId": "e0000016000000000000000000000000",
+          "spanId": "d000009800000000",
+          "parentSpanId": "d000009900000000",
+          "spanKind": "client",
+          "operation": "pg-pool.connect",
+          "service": "public-api",
+          "startTimeUnixNano": "1767225630123000000",
+          "endTimeUnixNano": "1767225630123523459",
+          "statusCode": 0,
+          "attributes": [],
+          "links": []
+        },
+        {
+          "traceId": "e0000016000000000000000000000000",
+          "spanId": "d000010000000000",
+          "parentSpanId": "d000009900000000",
+          "spanKind": "client",
+          "operation": "pg.query:SELECT subscriptions",
+          "service": "public-api",
+          "startTimeUnixNano": "1767225630123000000",
+          "endTimeUnixNano": "1767225630124682917",
+          "statusCode": 0,
+          "attributes": [],
+          "links": []
+        },
+        {
+          "traceId": "e0000016000000000000000000000000",
+          "spanId": "d000010100000000",
+          "parentSpanId": "d000009900000000",
+          "spanKind": "client",
+          "operation": "redis-PING",
+          "service": "public-api",
+          "startTimeUnixNano": "1767225630123000000",
+          "endTimeUnixNano": "1767225630125408917",
+          "statusCode": 0,
+          "attributes": [
+            {
+              "key": "db.operation.name",
+              "value": "PING"
+            }
+          ],
+          "links": []
+        },
+        {
+          "traceId": "e0000016000000000000000000000000",
+          "spanId": "d000010200000000",
+          "parentSpanId": "d000010300000000",
+          "spanKind": "client",
+          "operation": "POST",
+          "service": "public-api",
+          "startTimeUnixNano": "1767225630124000000",
+          "endTimeUnixNano": "1767225630126341167",
+          "statusCode": 0,
+          "attributes": [
+            {
+              "key": "http.request.method",
+              "value": "POST"
+            },
+            {
+              "key": "http.response.status_code",
+              "value": 200
+            }
+          ],
+          "links": []
+        },
+        {
+          "traceId": "e0000016000000000000000000000000",
+          "spanId": "d000009900000000",
+          "parentSpanId": null,
+          "spanKind": "server",
+          "operation": "GET",
+          "service": "public-api",
+          "startTimeUnixNano": "1767225630122000000",
+          "endTimeUnixNano": "1767225630126814875",
+          "statusCode": 0,
+          "attributes": [
+            {
+              "key": "http.request.method",
+              "value": "GET"
+            },
+            {
+              "key": "url.path",
+              "value": "/health"
+            },
+            {
+              "key": "http.response.status_code",
+              "value": 200
+            }
+          ],
+          "links": []
+        },
+        {
+          "traceId": "e0000016000000000000000000000000",
+          "spanId": "d000010300000000",
+          "parentSpanId": "d000009900000000",
+          "spanKind": "client",
+          "operation": "SQS.GetQueueUrl",
+          "service": "public-api",
+          "startTimeUnixNano": "1767225630123000000",
+          "endTimeUnixNano": "1767225630126959291",
+          "statusCode": 0,
+          "attributes": [
+            {
+              "key": "messaging.system",
+              "value": "aws_sqs"
+            },
+            {
+              "key": "http.response.status_code",
+              "value": 200
+            }
+          ],
+          "links": []
+        }
+      ]
+    },
+    {
+      "traceId": "e0000017000000000000000000000000",
+      "spans": [
+        {
+          "traceId": "e0000017000000000000000000000000",
+          "spanId": "d000010400000000",
+          "parentSpanId": null,
+          "spanKind": "client",
+          "operation": "POST",
+          "service": "fraud-check",
+          "startTimeUnixNano": "1767225610259000000",
+          "endTimeUnixNano": "1767225610365716833",
+          "statusCode": 0,
+          "attributes": [
+            {
+              "key": "http.request.method",
+              "value": "POST"
+            },
+            {
+              "key": "url.path",
+              "value": "/v1/activation"
+            },
+            {
+              "key": "http.response.status_code",
+              "value": 200
+            }
+          ],
+          "links": []
+        }
+      ]
+    },
+    {
+      "traceId": "e0000018000000000000000000000000",
+      "spans": [
+        {
+          "traceId": "e0000018000000000000000000000000",
+          "spanId": "d000010500000000",
+          "parentSpanId": null,
+          "spanKind": "client",
+          "operation": "redis-BLPOP",
+          "service": "redis-proof-consumer",
+          "startTimeUnixNano": "1767225624284000000",
+          "endTimeUnixNano": "1767225627526074126",
+          "statusCode": 0,
+          "attributes": [
+            {
+              "key": "db.operation.name",
+              "value": "BLPOP"
+            }
+          ],
+          "links": []
+        }
+      ]
+    },
+    {
+      "traceId": "e0000019000000000000000000000000",
+      "spans": [
+        {
+          "traceId": "e0000019000000000000000000000000",
+          "spanId": "d000010600000000",
+          "parentSpanId": "d000010700000000",
+          "spanKind": "client",
+          "operation": "pg-pool.connect",
+          "service": "public-api",
+          "startTimeUnixNano": "1767225629476000000",
+          "endTimeUnixNano": "1767225629476706125",
+          "statusCode": 0,
+          "attributes": [],
+          "links": []
+        },
+        {
+          "traceId": "e0000019000000000000000000000000",
+          "spanId": "d000010800000000",
+          "parentSpanId": "d000010700000000",
+          "spanKind": "client",
+          "operation": "pg.query:SELECT subscriptions",
+          "service": "public-api",
+          "startTimeUnixNano": "1767225629477000000",
+          "endTimeUnixNano": "1767225629478887459",
+          "statusCode": 0,
+          "attributes": [],
+          "links": []
+        },
+        {
+          "traceId": "e0000019000000000000000000000000",
+          "spanId": "d000010900000000",
+          "parentSpanId": "d000010700000000",
+          "spanKind": "client",
+          "operation": "redis-PING",
+          "service": "public-api",
+          "startTimeUnixNano": "1767225629476000000",
+          "endTimeUnixNano": "1767225629479471584",
+          "statusCode": 0,
+          "attributes": [
+            {
+              "key": "db.operation.name",
+              "value": "PING"
+            }
+          ],
+          "links": []
+        },
+        {
+          "traceId": "e0000019000000000000000000000000",
+          "spanId": "d000011000000000",
+          "parentSpanId": "d000011100000000",
+          "spanKind": "client",
+          "operation": "POST",
+          "service": "public-api",
+          "startTimeUnixNano": "1767225629478000000",
+          "endTimeUnixNano": "1767225629480432542",
+          "statusCode": 0,
+          "attributes": [
+            {
+              "key": "http.request.method",
+              "value": "POST"
+            },
+            {
+              "key": "http.response.status_code",
+              "value": 200
+            }
+          ],
+          "links": []
+        },
+        {
+          "traceId": "e0000019000000000000000000000000",
+          "spanId": "d000010700000000",
+          "parentSpanId": null,
+          "spanKind": "server",
+          "operation": "GET",
+          "service": "public-api",
+          "startTimeUnixNano": "1767225629476000000",
+          "endTimeUnixNano": "1767225629481110791",
+          "statusCode": 0,
+          "attributes": [
+            {
+              "key": "http.request.method",
+              "value": "GET"
+            },
+            {
+              "key": "url.path",
+              "value": "/health"
+            },
+            {
+              "key": "http.response.status_code",
+              "value": 200
+            }
+          ],
+          "links": []
+        },
+        {
+          "traceId": "e0000019000000000000000000000000",
+          "spanId": "d000011100000000",
+          "parentSpanId": "d000010700000000",
+          "spanKind": "client",
+          "operation": "SQS.GetQueueUrl",
+          "service": "public-api",
+          "startTimeUnixNano": "1767225629477000000",
+          "endTimeUnixNano": "1767225629481055917",
+          "statusCode": 0,
+          "attributes": [
+            {
+              "key": "messaging.system",
+              "value": "aws_sqs"
+            },
+            {
+              "key": "http.response.status_code",
+              "value": 200
+            }
+          ],
+          "links": []
+        }
+      ]
+    },
+    {
+      "traceId": "e0000020000000000000000000000000",
+      "spans": [
+        {
+          "traceId": "e0000020000000000000000000000000",
+          "spanId": "d000011200000000",
+          "parentSpanId": null,
+          "spanKind": "client",
+          "operation": "GET",
+          "service": "public-api",
+          "startTimeUnixNano": "1767225618703000000",
+          "endTimeUnixNano": "1767225618715449791",
+          "statusCode": 0,
+          "attributes": [
+            {
+              "key": "http.request.method",
+              "value": "GET"
+            },
+            {
+              "key": "url.path",
+              "value": "/health"
+            },
+            {
+              "key": "http.response.status_code",
+              "value": 200
+            }
+          ],
+          "links": []
+        },
+        {
+          "traceId": "e0000020000000000000000000000000",
+          "spanId": "d000011300000000",
+          "parentSpanId": "d000011400000000",
+          "spanKind": "client",
+          "operation": "POST",
+          "service": "order-service",
+          "startTimeUnixNano": "1767225618710000000",
+          "endTimeUnixNano": "1767225618713459292",
+          "statusCode": 0,
+          "attributes": [
+            {
+              "key": "http.request.method",
+              "value": "POST"
+            },
+            {
+              "key": "http.response.status_code",
+              "value": 200
+            }
+          ],
+          "links": []
+        },
+        {
+          "traceId": "e0000020000000000000000000000000",
+          "spanId": "d000011500000000",
+          "parentSpanId": "d000011200000000",
+          "spanKind": "server",
+          "operation": "GET",
+          "service": "order-service",
+          "startTimeUnixNano": "1767225618707000000",
+          "endTimeUnixNano": "1767225618715724875",
+          "statusCode": 0,
+          "attributes": [
+            {
+              "key": "http.request.method",
+              "value": "GET"
+            },
+            {
+              "key": "url.path",
+              "value": "/health"
+            },
+            {
+              "key": "http.response.status_code",
+              "value": 200
+            }
+          ],
+          "links": []
+        },
+        {
+          "traceId": "e0000020000000000000000000000000",
+          "spanId": "d000011400000000",
+          "parentSpanId": "d000011500000000",
+          "spanKind": "client",
+          "operation": "SQS.GetQueueUrl",
+          "service": "order-service",
+          "startTimeUnixNano": "1767225618708000000",
+          "endTimeUnixNano": "1767225618714915208",
+          "statusCode": 0,
+          "attributes": [
+            {
+              "key": "messaging.system",
+              "value": "aws_sqs"
+            },
+            {
+              "key": "http.response.status_code",
+              "value": 200
+            }
+          ],
+          "links": []
+        }
+      ]
+    },
+    {
+      "traceId": "e0000021000000000000000000000000",
+      "spans": [
+        {
+          "traceId": "e0000021000000000000000000000000",
+          "spanId": "d000011600000000",
+          "parentSpanId": null,
+          "spanKind": "client",
+          "operation": "POST",
+          "service": "payment-mock",
+          "startTimeUnixNano": "1767225610264000000",
+          "endTimeUnixNano": "1767225610345135458",
+          "statusCode": 0,
+          "attributes": [
+            {
+              "key": "http.request.method",
+              "value": "POST"
+            },
+            {
+              "key": "url.path",
+              "value": "/v1/activation"
+            },
+            {
+              "key": "http.response.status_code",
+              "value": 200
+            }
+          ],
+          "links": []
+        }
+      ]
+    },
+    {
+      "traceId": "e0000022000000000000000000000000",
+      "spans": [
+        {
+          "traceId": "e0000022000000000000000000000000",
+          "spanId": "d000011700000000",
+          "parentSpanId": null,
+          "spanKind": "client",
+          "operation": "POST",
+          "service": "redis-proof-consumer",
+          "startTimeUnixNano": "1767225624112000000",
+          "endTimeUnixNano": "1767225624289751250",
+          "statusCode": 0,
+          "attributes": [
+            {
+              "key": "http.request.method",
+              "value": "POST"
+            },
+            {
+              "key": "url.path",
+              "value": "/v1/activation"
+            },
+            {
+              "key": "http.response.status_code",
+              "value": 200
+            }
+          ],
+          "links": []
+        }
+      ]
+    },
+    {
+      "traceId": "e0000023000000000000000000000000",
+      "spans": [
+        {
+          "traceId": "e0000023000000000000000000000000",
+          "spanId": "d000011800000000",
+          "parentSpanId": null,
+          "spanKind": "client",
+          "operation": "POST",
+          "service": "redis-proof-consumer",
+          "startTimeUnixNano": "1767225627527000000",
+          "endTimeUnixNano": "1767225627530865000",
+          "statusCode": 0,
+          "attributes": [
+            {
+              "key": "http.request.method",
+              "value": "POST"
+            },
+            {
+              "key": "url.path",
+              "value": "/fixture/shared-state-proof/proof-journey"
+            },
+            {
+              "key": "http.response.status_code",
+              "value": 202
+            }
+          ],
+          "links": []
+        },
+        {
+          "traceId": "e0000023000000000000000000000000",
+          "spanId": "d000011900000000",
+          "parentSpanId": "d000011800000000",
+          "spanKind": "server",
+          "operation": "POST",
+          "service": "public-api",
+          "startTimeUnixNano": "1767225627529000000",
+          "endTimeUnixNano": "1767225627529516334",
+          "statusCode": 0,
+          "attributes": [
+            {
+              "key": "http.request.method",
+              "value": "POST"
+            },
+            {
+              "key": "url.path",
+              "value": "/fixture/shared-state-proof/proof-journey"
+            },
+            {
+              "key": "http.response.status_code",
+              "value": 202
+            }
+          ],
+          "links": []
+        }
+      ]
+    },
+    {
+      "traceId": "e0000024000000000000000000000000",
+      "spans": [
+        {
+          "traceId": "e0000024000000000000000000000000",
+          "spanId": "d000012000000000",
+          "parentSpanId": null,
+          "spanKind": "client",
+          "operation": "POST",
+          "service": "order-service",
+          "startTimeUnixNano": "1767225612838000000",
+          "endTimeUnixNano": "1767225612905576125",
+          "statusCode": 0,
+          "attributes": [
+            {
+              "key": "http.request.method",
+              "value": "POST"
+            },
+            {
+              "key": "url.path",
+              "value": "/v1/activation"
+            },
+            {
+              "key": "http.response.status_code",
+              "value": 200
+            }
+          ],
+          "links": []
+        }
+      ]
+    },
+    {
+      "traceId": "e0000025000000000000000000000000",
+      "spans": [
+        {
+          "traceId": "e0000025000000000000000000000000",
+          "spanId": "d000012100000000",
+          "parentSpanId": "d000012200000000",
+          "spanKind": "client",
+          "operation": "pg-pool.connect",
+          "service": "public-api",
+          "startTimeUnixNano": "1767225628810000000",
+          "endTimeUnixNano": "1767225628810557417",
+          "statusCode": 0,
+          "attributes": [],
+          "links": []
+        },
+        {
+          "traceId": "e0000025000000000000000000000000",
+          "spanId": "d000012300000000",
+          "parentSpanId": "d000012200000000",
+          "spanKind": "client",
+          "operation": "pg.query:SELECT subscriptions",
+          "service": "public-api",
+          "startTimeUnixNano": "1767225628811000000",
+          "endTimeUnixNano": "1767225628812356750",
+          "statusCode": 0,
+          "attributes": [],
+          "links": []
+        },
+        {
+          "traceId": "e0000025000000000000000000000000",
+          "spanId": "d000012400000000",
+          "parentSpanId": "d000012200000000",
+          "spanKind": "client",
+          "operation": "redis-PING",
+          "service": "public-api",
+          "startTimeUnixNano": "1767225628811000000",
+          "endTimeUnixNano": "1767225628813109208",
+          "statusCode": 0,
+          "attributes": [
+            {
+              "key": "db.operation.name",
+              "value": "PING"
+            }
+          ],
+          "links": []
+        },
+        {
+          "traceId": "e0000025000000000000000000000000",
+          "spanId": "d000012500000000",
+          "parentSpanId": "d000012600000000",
+          "spanKind": "client",
+          "operation": "POST",
+          "service": "public-api",
+          "startTimeUnixNano": "1767225628812000000",
+          "endTimeUnixNano": "1767225628823153042",
+          "statusCode": 0,
+          "attributes": [
+            {
+              "key": "http.request.method",
+              "value": "POST"
+            },
+            {
+              "key": "http.response.status_code",
+              "value": 200
+            }
+          ],
+          "links": []
+        },
+        {
+          "traceId": "e0000025000000000000000000000000",
+          "spanId": "d000012200000000",
+          "parentSpanId": null,
+          "spanKind": "server",
+          "operation": "GET",
+          "service": "public-api",
+          "startTimeUnixNano": "1767225628810000000",
+          "endTimeUnixNano": "1767225628823562042",
+          "statusCode": 0,
+          "attributes": [
+            {
+              "key": "http.request.method",
+              "value": "GET"
+            },
+            {
+              "key": "url.path",
+              "value": "/health"
+            },
+            {
+              "key": "http.response.status_code",
+              "value": 200
+            }
+          ],
+          "links": []
+        },
+        {
+          "traceId": "e0000025000000000000000000000000",
+          "spanId": "d000012600000000",
+          "parentSpanId": "d000012200000000",
+          "spanKind": "client",
+          "operation": "SQS.GetQueueUrl",
+          "service": "public-api",
+          "startTimeUnixNano": "1767225628811000000",
+          "endTimeUnixNano": "1767225628823644708",
+          "statusCode": 0,
+          "attributes": [
+            {
+              "key": "messaging.system",
+              "value": "aws_sqs"
+            },
+            {
+              "key": "http.response.status_code",
+              "value": 200
+            }
+          ],
+          "links": []
+        }
+      ]
+    },
+    {
+      "traceId": "e0000026000000000000000000000000",
+      "spans": [
+        {
+          "traceId": "e0000026000000000000000000000000",
+          "spanId": "d000012700000000",
+          "parentSpanId": null,
+          "spanKind": "client",
+          "operation": "GET",
+          "service": "public-api",
+          "startTimeUnixNano": "1767225618702000000",
+          "endTimeUnixNano": "1767225618709759833",
+          "statusCode": 0,
+          "attributes": [
+            {
+              "key": "http.request.method",
+              "value": "GET"
+            },
+            {
+              "key": "url.path",
+              "value": "/health"
+            },
+            {
+              "key": "http.response.status_code",
+              "value": 200
+            }
+          ],
+          "links": []
+        },
+        {
+          "traceId": "e0000026000000000000000000000000",
+          "spanId": "d000012800000000",
+          "parentSpanId": "d000012900000000",
+          "spanKind": "client",
+          "operation": "pg-pool.connect",
+          "service": "fraud-check",
+          "startTimeUnixNano": "1767225618707000000",
+          "endTimeUnixNano": "1767225618707476709",
+          "statusCode": 0,
+          "attributes": [],
+          "links": []
+        },
+        {
+          "traceId": "e0000026000000000000000000000000",
+          "spanId": "d000013000000000",
+          "parentSpanId": "d000012900000000",
+          "spanKind": "client",
+          "operation": "pg.query:SELECT subscriptions",
+          "service": "fraud-check",
+          "startTimeUnixNano": "1767225618707000000",
+          "endTimeUnixNano": "1767225618707699250",
+          "statusCode": 0,
+          "attributes": [],
+          "links": []
+        },
+        {
+          "traceId": "e0000026000000000000000000000000",
+          "spanId": "d000012900000000",
+          "parentSpanId": "d000012700000000",
+          "spanKind": "server",
+          "operation": "GET",
+          "service": "fraud-check",
+          "startTimeUnixNano": "1767225618706000000",
+          "endTimeUnixNano": "1767225618709822542",
+          "statusCode": 0,
+          "attributes": [
+            {
+              "key": "http.request.method",
+              "value": "GET"
+            },
+            {
+              "key": "url.path",
+              "value": "/health"
+            },
+            {
+              "key": "http.response.status_code",
+              "value": 200
+            }
+          ],
+          "links": []
+        }
+      ]
+    }
+  ]
+}

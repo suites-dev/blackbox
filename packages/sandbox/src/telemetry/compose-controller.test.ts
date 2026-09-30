@@ -1,7 +1,7 @@
 import { expect, it, vi } from 'vitest';
 
 import type { SandboxTelemetryEnabledInput } from '../types.js';
-import { composeTelemetryController } from './compose-controller.js';
+import { composeTelemetryController, stopGrace } from './compose-controller.js';
 
 function telemetry(): SandboxTelemetryEnabledInput {
   return {
@@ -65,14 +65,29 @@ it('stops participants concurrently and reserves the final deadline for the coll
     release();
   });
   await stopping;
+  // testcontainers StopOptions.timeout is in milliseconds: 4 s and 2 s of grace,
+  // with 2 s of the 8 s budget left in reserve.
   expect(participantStop).toHaveBeenNthCalledWith(1, {
-    timeout: 6,
+    timeout: 4_000,
     remove: false,
     removeVolumes: false,
   });
   expect(collectorStop).toHaveBeenCalledWith({
-    timeout: 2,
+    timeout: 2_000,
     remove: false,
     removeVolumes: false,
   });
+});
+
+it('stop grace always leaves a reserve under the caller deadline', () => {
+  for (const timeoutMs of [1_000, 2_000, 8_000, 30_000, 60_000, 600_000]) {
+    const { participantMs, collectorMs } = stopGrace(timeoutMs);
+    expect(collectorMs).toBeGreaterThanOrEqual(1_000);
+    expect(participantMs).toBeLessThanOrEqual(10_000);
+    if (timeoutMs >= 4_000) {
+      expect(participantMs + collectorMs).toBeLessThanOrEqual(timeoutMs * 0.75);
+    }
+  }
+  // The capsule stop budget: a participant that ignores SIGTERM costs at most 10 s.
+  expect(stopGrace(60_000)).toEqual({ participantMs: 10_000, collectorMs: 15_000 });
 });

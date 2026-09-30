@@ -14,6 +14,11 @@ x-service-environment: &service-environment
   AWS_REGION: us-east-1
   AWS_ACCESS_KEY_ID: test
   AWS_SECRET_ACCESS_KEY: test
+  # dns and net spans start within microseconds of their siblings, so their
+  # order varies between runs; leaving them out keeps the golden journeys'
+  # span trees small and stable. Postgres pool spans (pg-pool.connect) come
+  # from the pg instrumentation and stay.
+  OTEL_NODE_DISABLED_INSTRUMENTATIONS: &quiet-instrumentations dns,net
 
 services:
   postgres:
@@ -50,6 +55,7 @@ services:
       FIXTURE_CONTROL_TOKEN: ${FIXTURE_CONTROL_TOKEN:-demo-fixture-token}
       PUBLIC_API_URL: http://public-api:3000
       REDIS_URL: redis://redis:6379
+      OTEL_NODE_DISABLED_INSTRUMENTATIONS: *quiet-instrumentations
     depends_on:
       public-api:
         condition: service_healthy
@@ -79,6 +85,7 @@ services:
     environment:
       FIXTURE_CONTROL_TOKEN: ${FIXTURE_CONTROL_TOKEN:-demo-fixture-token}
       PORT: 8080
+      OTEL_NODE_DISABLED_INSTRUMENTATIONS: *quiet-instrumentations
     healthcheck:
       test:
         [

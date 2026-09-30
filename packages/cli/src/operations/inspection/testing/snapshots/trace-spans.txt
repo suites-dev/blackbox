@@ -1,0 +1,22 @@
+trace e0000002000000000000000000000000 · capsule calm-comet-ada-000000000001 · 19 spans · complete
+  SPAN              PARENT            SERVICE        KIND      TITLE                          RESULT  DURATION
+  d000008000000000  d000000200000000  public-api     server    POST /subscriptions            201     39ms
+  d000007900000000  d000008000000000  public-api     client    GET                                    0ms
+  d000008400000000  d000008000000000  public-api     client    pg-pool.connect                        0ms
+  d000008500000000  d000008000000000  public-api     client    pg.query:SELECT subscriptions          1ms
+  d000008100000000  d000008000000000  public-api     client    SET                                    0ms
+  d000008800000000  d000008000000000  public-api     client    POST /assess                   200     9ms
+  d000009200000000  d000008800000000  fraud-check    server    POST /assess                   200     6ms
+  d000009100000000  d000009200000000  fraud-check    client    pg-pool.connect                        0ms
+  d000009300000000  d000009200000000  fraud-check    client    pg.query:INSERT subscriptions          3ms
+  d000008300000000  d000008000000000  public-api     client    GET                                    0ms
+  d000008200000000  d000008000000000  public-api     client    SET                                    0ms
+  d000008900000000  d000008000000000  public-api     client    POST /v1/payment_intents       201     5ms
+  d000009400000000  d000008900000000  payment-mock   server    POST /v1/payment_intents       201     1ms
+  d000009000000000  d000008000000000  public-api     client    POST /orders                   201     16ms
+  d000009700000000  d000009000000000  order-service  server    POST /orders                   201     13ms
+  d000009600000000  d000009700000000  order-service  producer  subscription-orders            200     11ms
+  d000009500000000  d000009600000000  order-service  client    POST                           200     7ms
+  d000008600000000  d000008000000000  public-api     client    pg-pool.connect                        0ms
+  d000008700000000  d000008000000000  public-api     client    pg.query:INSERT subscriptions          1ms
+→ blackbox capsule show c0000002 --session calm-comet-ada-000000000001

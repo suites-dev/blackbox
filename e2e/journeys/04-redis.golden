@@ -1,0 +1,36 @@
+$ blackbox capsule up --silent --no-color
+capsule <CAPSULE_1> is up · subscription-system · 8 services · <DUR>
+current capsule: <CAPSULE_1>
+entrypoint: <URL>
+→ blackbox capsule run --session <CAPSULE_1> --via public-api -- curl /health
+#! capture CAPSULE_1 capsule-up
+$ blackbox capsule run --via redis --name "Queue proof stimulus" -- redis-cli RPUSH blackbox:proof:stimuli proof-journey
+1
+activity <ACT_1> · capsule <CAPSULE_1> · stimulus · via redis · participant redis · exit 0 · <DUR>
+→ blackbox capsule show <ACT_1> --session <CAPSULE_1>
+#! capture ACT_1 activity
+#! wait 60 "no known cause" blackbox capsule show $ACT_1 --session $CAPSULE_1
+$ blackbox capsule down
+capsule <CAPSULE_1> stopped · evidence kept
+current capsule: none
+→ blackbox capsule report <CAPSULE_1>
+$ blackbox capsule show $ACT_1 --session $CAPSULE_1
+activity <ACT_1>  Queue proof stimulus
+  capsule  <CAPSULE_1> (subscription-system, stopped)
+  purpose  stimulus
+  via  redis → redis (redis)
+  process  exit 0 on participant redis
+  context  not carried: redis is shared state (expected for this driver)
+  observed  nothing yet · complete
+  later in this capsule, no known cause:
+  <TRACE_1>  redis-proof-consumer  POST /fixture/shared-state-proof/proof-journey  202  +<DUR>
+  ⚠ Blackbox cannot prove that <ACT_1> caused <TRACE_1>.
+  Both belong to capsule <CAPSULE_1>, but no trace context links them.
+$ blackbox capsule show $CAPSULE_1 --timeline
+capsule <CAPSULE_1>  subscription-system  stopped  · complete
+  +<DUR>  (no activity)  ┈┈ <N> traces before the first activity
+  +<DUR>  <ACT_1>  stimulus  Queue proof stimulus  (no telemetry)
+  +<DUR>  (no activity)  ┈┈ <TRACE_1>  redis-proof-consumer  POST /fixture/shared-state-proof/proof-journey  202
+
+  ┈┈ observed in this capsule, cause unknown
+→ blackbox capsule show <ACT_1> --session <CAPSULE_1>
