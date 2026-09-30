@@ -55,7 +55,7 @@ use [drivers to seed data or run migrations](docs/drivers.md#seed-data-and-run-m
 For example, investigating subscription creation can involve three distinct pieces of evidence:
 
 | Question                     | What to inspect                                                               |
-|------------------------------|-------------------------------------------------------------------------------|
+| ---------------------------- | ----------------------------------------------------------------------------- |
 | What did the caller receive? | The HTTP client's response and exit result.                                   |
 | Which services participated? | The instrumented application's traces.                                        |
 | What state was saved?        | A database query or application state endpoint, recorded as another activity. |
@@ -109,7 +109,7 @@ The tutorial uses an included subscription application with Node services, Postg
 A guided demo also walks through HTTP and database drivers, observations, and reports.
 
 | Guide                                                    | What you'll learn                                                                 |
-|----------------------------------------------------------|-----------------------------------------------------------------------------------|
+| -------------------------------------------------------- | --------------------------------------------------------------------------------- |
 | [The verification machine](docs/verification-machine.md) | Understand Capsules, experiments, trials, evidence, and claim assessment.         |
 | [Getting started](docs/getting-started.md)               | Run an application, send a request, inspect the result, and stop the Capsule.     |
 | [Configuration](docs/configuration.md)                   | Define your system, participants, drivers, and Node instrumentation.              |
@@ -118,6 +118,7 @@ A guided demo also walks through HTTP and database drivers, observations, and re
 | [Capsule experiments](docs/experiments.md)               | Organize actions and query an experiment.                                         |
 | [Runtime evidence](docs/runtime-evidence.md)             | Understand observations, propagation, and missing evidence.                       |
 | [Async holes and Redis](docs/async-workflows.md)         | Follow worker behavior when trace context does not cross a shared-state boundary. |
+| [Completion barriers](docs/completion-barriers.md)       | Seal asynchronous work before asserting absence or exact effect counts.           |
 | [Reports](docs/reports.md)                               | Browse a live experiment and export snapshots.                                    |
 | [CLI reference](docs/cli.md)                             | Find commands and options.                                                        |
 

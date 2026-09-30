@@ -1,6 +1,6 @@
 # Plan native Playwright journeys
 
-This is design guidance for the upcoming native Playwright integration. It is not available in the current alpha. Use Capsule for working execution today. The planned integration keeps Playwright as the runner; automated effects evaluation is a later assurance stage.
+This is design guidance for the native Playwright integration. The current alpha creates a fresh Sandbox for every physical attempt and exposes telemetry and effects-contract fixtures. Effect projection and automated evaluation remain a later assurance stage, so use Capsule for working effect investigation today.
 
 ## Turn a request into test obligations
 

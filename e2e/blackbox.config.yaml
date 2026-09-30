@@ -8,7 +8,6 @@ catalog:
         adapter: docker-compose@1
         files:
           - .blackbox/catalog/subscription-system.yml
-      isolation: per-test
       entrypoint:
         participant: public-api
         protocol: http
@@ -126,7 +125,6 @@ catalog:
         adapter: docker-compose@1
         files:
           - .blackbox/catalog/payment-mock-image.yml
-      isolation: per-test
       entrypoint:
         participant: payment-mock
         protocol: http
@@ -148,7 +146,6 @@ catalog:
         adapter: docker-compose@1
         files:
           - .blackbox/catalog/payment-mock-dist.yml
-      isolation: per-test
       entrypoint:
         participant: payment-mock
         protocol: http

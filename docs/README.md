@@ -39,10 +39,11 @@ Follow the [roadmap](roadmap.md) for the next seven work items and [agent skill 
 | [Capsule experiments](experiments.md)               | Start a session, perform actions, query observations, and stop it.      |
 | [Runtime evidence](runtime-evidence.md)             | Interpret what observations establish and where correlation is limited. |
 | [Async holes and Redis](async-workflows.md)         | Inspect an asynchronous entrypoint across separate traces.              |
+| [Completion barriers](completion-barriers.md)       | Seal queue, worker, and workflow activity before asserting effects.     |
 | [Reports](reports.md)                               | Browse an experiment or export JSON and HTML.                           |
 | [CLI reference](cli.md)                             | Find command syntax and output behavior.                                |
 | [Alpha availability](alpha-status.md)               | Check supported workflows and preview limitations.                      |
 | [Support](../SUPPORT.md)                            | Get help or report a problem.                                           |
 
-Blackbox is an alpha preview distributed from source. Playwright integration is in progress.
+Blackbox is an alpha preview distributed from source. Playwright effect projection is in progress.
 To contribute to the project, see [contributing](../CONTRIBUTING.md).

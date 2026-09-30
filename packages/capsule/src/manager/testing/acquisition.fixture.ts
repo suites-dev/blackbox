@@ -23,7 +23,6 @@ export function catalogFixture(directory: string): LoadedCatalog {
           orders: {
             kind: 'system',
             acquisition: { adapter: 'docker-compose@1', files: ['compose.yaml'] },
-            isolation: { kind: 'per-test' },
             entrypoint: {
               participant: 'api',
               protocol: 'http',

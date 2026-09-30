@@ -15,7 +15,6 @@ catalog:
       acquisition:
         adapter: docker-compose@1
         files: [.blackbox/compose/orders.yml]
-      isolation: per-test
       entrypoint:
         participant: api
         protocol: http

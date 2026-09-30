@@ -14,17 +14,18 @@ test.use({
   catalogEntry: { kind: 'system', id: 'subscription-system' },
 });
 
-test('reports ready', async ({ request, sandbox, telemetry }) => {
+test('reports ready', async ({ request, sandbox, telemetry, effects }) => {
   const response = await request.get('/health');
   expect(response.ok()).toBe(true);
   expect(sandbox.catalogEntry.id).toBe('subscription-system');
   expect(telemetry.executionId).toBe(sandbox.executionId);
+  expect(effects.executionId).toBe(sandbox.executionId);
 });
 ```
 
-The selected ID must exist in `blackbox.config.yaml`, its declared kind must
-match `system` or `subsystem`, and it must declare `per-test` isolation. The
-catalog is resolved for every physical attempt, including retries. Setup starts
+The selected ID must exist in `blackbox.config.yaml`, and its declared kind must
+match `system` or `subsystem`. The catalog is resolved for every physical
+attempt, including retries. Setup starts
 the catalog-selected Compose services, installs the current Node activation
 adapter where configured, starts the collector, verifies activation, waits for
 application readiness, and then enters the test body.
@@ -40,6 +41,11 @@ reasons. Setup failure also attempts cleanup before surfacing the error.
   artifact identity. Lifecycle control remains fixture-owned.
 - `telemetry` exposes the attempt identity, live collector status, and raw
   retained session or trace reads.
+- `effects` exposes the attempt identity and the contract-evaluation boundary.
+  `expect(effects).toSatisfy(...)` compiles and delegates an immutable contract,
+  but the Alpha does not yet project raw telemetry into normalized effects. The
+  matcher therefore reports an inconclusive failure unless an evaluator is
+  supplied by the runtime.
 
-Effects, effect matchers, accepted baselines, drivers, reports, and shared
-worker sandboxes are intentionally outside this package's current surface.
+Effect projection, accepted baselines, drivers, reports, and shared worker
+sandboxes are intentionally outside this package's current surface.

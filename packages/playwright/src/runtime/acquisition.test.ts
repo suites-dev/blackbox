@@ -12,6 +12,7 @@ import {
   type BlackboxAttemptInput,
   type BlackboxAcquisitionPorts,
 } from './acquisition.js';
+import { createBlackboxEffects } from '../effects/runtime.js';
 import { catalog } from '../testing/catalog-fixture.js';
 
 interface RuntimeFixture {
@@ -127,6 +128,12 @@ function runtimeFixture(input: {
       return value;
     },
     randomToken: () => 'test-token',
+    createEffects: ({ sessionId, executionId }) =>
+      createBlackboxEffects({
+        sessionId,
+        executionId,
+        evaluator: { evaluate: () => Promise.resolve({ kind: 'satisfied' }) },
+      }),
   } satisfies BlackboxAcquisitionPorts;
   return { ports, starts, stops, readiness };
 }
@@ -149,6 +156,9 @@ it('acquires an independent catalog-selected sandbox for each physical attempt',
   const first = await acquireBlackboxAttempt(request, fixture.ports);
   const second = await acquireBlackboxAttempt(request, fixture.ports);
   expect(first.sandbox.executionId).not.toBe(second.sandbox.executionId);
+  expect(first.effects.executionId).toBe(first.sandbox.executionId);
+  expect(first.effects.sessionId).toBe(first.telemetry.sessionId);
+  expect(second.effects.executionId).toBe(second.sandbox.executionId);
   expect(fixture.starts).toHaveLength(2);
   expect(fixture.starts[0].sandbox.serviceSelection).toEqual({
     kind: 'selected',
@@ -184,17 +194,6 @@ it('requires an explicit catalog entry selection', async () => {
   await expect(
     acquireBlackboxAttempt(attemptInput({ kind: 'unselected' }), fixture.ports),
   ).rejects.toThrow('catalog entry is not selected');
-  expect(fixture.starts).toHaveLength(0);
-});
-
-it('rejects catalog isolation that could share state between tests', async () => {
-  const fixture = runtimeFixture({
-    catalog: catalog('system', { kind: 'per-worker' }),
-    readinessFailure: null,
-  });
-  await expect(
-    acquireBlackboxAttempt(attemptInput({ kind: 'system', id: 'orders' }), fixture.ports),
-  ).rejects.toThrow('requires catalog isolation kind "per-test"');
   expect(fixture.starts).toHaveLength(0);
 });
 

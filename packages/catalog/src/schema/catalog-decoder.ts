@@ -15,8 +15,7 @@ interface SchemaParticipantFields {
 }
 
 type SchemaParticipant =
-  | (SchemaParticipantFields & { readonly activation: string })
-  | SchemaParticipantFields;
+  (SchemaParticipantFields & { readonly activation: string }) | SchemaParticipantFields;
 
 interface SchemaCatalogEntryFields {
   readonly kind: CatalogEntryKind;
@@ -35,12 +34,7 @@ interface SchemaCatalogEntryFields {
   readonly observation: ObservationPolicy;
 }
 
-type SchemaCatalogEntry = SchemaCatalogEntryFields &
-  (
-    | { readonly isolation: 'per-test' }
-    | { readonly isolation: 'per-worker' }
-    | { readonly isolation: 'group'; readonly groupName: string }
-  );
+type SchemaCatalogEntry = SchemaCatalogEntryFields;
 
 export interface SchemaBlackboxConfig {
   readonly schemaVersion: 1;
@@ -63,22 +57,10 @@ function decodeParticipant(participant: SchemaParticipant): Participant {
   };
 }
 
-function decodeIsolation(entry: SchemaCatalogEntry): CatalogEntry['isolation'] {
-  switch (entry.isolation) {
-    case 'per-test':
-      return { kind: 'per-test' };
-    case 'per-worker':
-      return { kind: 'per-worker' };
-    case 'group':
-      return { kind: 'group', groupName: entry.groupName };
-  }
-}
-
 function decodeCatalogEntry(entry: SchemaCatalogEntry): CatalogEntry {
   return {
     kind: entry.kind,
     acquisition: entry.acquisition,
-    isolation: decodeIsolation(entry),
     entrypoint: entry.entrypoint,
     participants: Object.fromEntries(
       Object.entries(entry.participants).map(([id, participant]) => [

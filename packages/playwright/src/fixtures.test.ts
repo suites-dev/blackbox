@@ -18,11 +18,7 @@ async function runPlaywright(input: {
 }): Promise<{ readonly exitCode: number; readonly output: string }> {
   const require = createRequire(import.meta.url);
   const cli = require.resolve('@playwright/test/cli');
-  const config = join(
-    import.meta.dirname,
-    'testing',
-    input.configFile,
-  );
+  const config = join(import.meta.dirname, 'testing', input.configFile);
   const child = spawn(process.execPath, [cli, 'test', '--config', config], {
     cwd: join(import.meta.dirname, '..'),
     env: {

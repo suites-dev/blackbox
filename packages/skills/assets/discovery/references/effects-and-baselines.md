@@ -1,6 +1,6 @@
 # Read effects and manage accepted baselines
 
-This is design guidance for planned assurance. The current alpha exposes raw observations and command results; it has no normalized-effects matcher or baseline-update backend. Use this reference to plan evidence requirements, not to invoke unavailable APIs.
+This is design guidance for planned assurance. The current alpha exposes raw observations, command results, and a Playwright effects-contract matcher boundary. It has no normalized-effect projector or baseline-update backend, so the matcher cannot produce a supported verdict yet. Use this reference to plan evidence requirements, not to invoke unavailable projection APIs.
 
 ## Know what an effect can establish
 
