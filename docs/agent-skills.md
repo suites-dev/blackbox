@@ -4,8 +4,10 @@ The discovery skill teaches an agent how to inspect an application, configure a 
 and interpret the evidence. It ships as a portable `SKILL.md` directory with supporting references.
 Install the whole directory so those references remain available.
 
-**Current alpha:** manual project installation works. `blackbox skill install discovery` is a reserved command
-that exits with a not-implemented error. The [roadmap](roadmap.md) tracks its implementation.
+**Current alpha:** project-local installation works through
+`blackbox skill install discovery`. Select destinations with `--codex`, `--claude`,
+`--cursor`, or repeated `--agent <name>` flags. Use `--json` for machine-readable
+results; `--yes` selects all supported agents when no agent flag is supplied.
 
 ## Choose a project location
 

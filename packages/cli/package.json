@@ -29,12 +29,7 @@
   },
   "dependencies": {
     "@oclif/core": "^5.1.0",
-    "@suites/blackbox-catalog": "workspace:*",
-    "@suites/blackbox-capsule": "workspace:*",
-    "@suites/blackbox-driver": "workspace:*",
-    "@suites/blackbox-inst-runtime-node": "workspace:*",
-    "@suites/blackbox-instrumentation": "workspace:*",
-    "@suites/blackbox-report-server": "workspace:*",
+    "@suites/blackbox-cli-contract": "workspace:*",
     "string-width": "8.3.0"
   },
   "devDependencies": {
