@@ -1,9 +1,11 @@
 #!/usr/bin/env node
 // Turns a real e2e recording into a stable, sanitized show fixture.
 //
-//   node sanitize-recording.mjs <recording-directory> > recorded-capsule.json
+//   node sanitize-recording.mjs > recorded-capsule.json
 //
-// A recording directory holds, from one capsule after `blackbox capsule down`:
+// It reads the fixed recording directory `.blackbox/tmp/show-recording/` at the
+// repository root (ignored by git), which holds, from one capsule after
+// `blackbox capsule down`:
 // session.json (`blackbox capsule show <capsule> --json`), record.json and
 // activities.json (the capsule's own files) and trace-<id>.json
 // (`blackbox capsule show <trace> --session <capsule> --json` per retained trace).
@@ -16,12 +18,14 @@
 // as the CLI projects them (projectInvestigationSpans), so attributes are
 // already bounded and redacted.
 import { readFile, readdir } from 'node:fs/promises';
-import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import { projectInvestigationSpans } from '@suites/blackbox-capsule';
 
-const directory = process.argv[2];
-const read = async (name) => JSON.parse(await readFile(join(directory, name), 'utf8'));
+// A fixed location, never a path from the command line or the environment.
+const directory = new URL('../../../../../../../.blackbox/tmp/show-recording/', import.meta.url);
+const TRACE_FILE = /^trace-[0-9a-f]{32}\.json$/u;
+const read = async (name) => JSON.parse(await readFile(new URL(name, directory), 'utf8'));
 const record = await read('record.json');
 const session = await read('session.json');
 const activities = await read('activities.json');
@@ -99,7 +103,9 @@ const sanitizedActivities = activities.map((activity) => ({
 }));
 
 const traces = [];
-for (const file of (await readdir(directory)).filter((name) => name.startsWith('trace-')).sort()) {
+for (const file of (await readdir(fileURLToPath(directory)))
+  .filter((name) => TRACE_FILE.test(name))
+  .sort()) {
   const document = await read(file);
   const spans = projectInvestigationSpans({
     fragments: document.fragments,

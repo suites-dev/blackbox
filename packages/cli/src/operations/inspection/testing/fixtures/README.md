@@ -24,10 +24,11 @@ snapshots in `../snapshots/` are rendered from it by `../show-snapshots.test.ts`
    blackbox capsule down
    ```
 
-3. After `down`, into a recording directory: `blackbox capsule show <capsule> --json` as `session.json`,
+3. After `down`, into `.blackbox/tmp/show-recording/` at the repository root (a fixed, git-ignored
+   directory): `blackbox capsule show <capsule> --json` as `session.json`,
    the capsule's `session.json` and `activities.json` as `record.json` and `activities.json`, and
    `blackbox capsule show <trace> --session <capsule> --json` for every retained trace as `trace-<id>.json`.
-4. `node sanitize-recording.mjs <recording-directory> > recorded-capsule.json`.
+4. `node sanitize-recording.mjs > recorded-capsule.json` (it reads only that directory).
 
 Sanitizing keeps structure and relative timing and replaces every identifier (capsule, activity,
 trace and span IDs; collector instance and execution IDs), shifts times so the capsule starts at

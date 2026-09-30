@@ -20,7 +20,20 @@ describe('spanTitle', () => {
   it.each([
     [{ 'http.request.method': 'POST', 'http.route': '/subscriptions' }, 'POST /subscriptions'],
     [{ 'http.method': 'GET', 'url.path': '/health' }, 'GET /health'],
-    [{ 'http.method': 'GET', 'http.target': '/orders/7?token=secret#frag' }, 'GET /orders/7'],
+    [{ 'http.method': 'GET', 'http.target': '/orders/7?token=secret#frag' }, 'GET /orders/{…}'],
+    // Raw paths keep plain words and short versions; every other segment is redacted.
+    [
+      { 'http.method': 'POST', 'url.path': '/password-reset/Zq8vT3mKp1XwR7aB' },
+      'POST /password-reset/{…}',
+    ],
+    [{ 'http.method': 'POST', 'url.path': '/v1/payment_intents' }, 'POST /v1/payment_intents'],
+    [
+      { 'http.method': 'GET', 'url.path': '/users/3f9a2c41-7b00-4000-8000-00000000000a/keys' },
+      'GET /users/{…}/keys',
+    ],
+    [{ 'http.method': 'GET', 'url.path': '/files/a%2Fb/Token.txt' }, 'GET /files/{…}/{…}'],
+    // The server's route template is kept as is: it names parameters, not values.
+    [{ 'http.method': 'GET', 'http.route': '/users/:id/keys' }, 'GET /users/:id/keys'],
     [
       { 'http.request.method': 'PUT', 'http.method': 'GET', 'http.route': '/r', 'url.path': '/p' },
       'PUT /r',

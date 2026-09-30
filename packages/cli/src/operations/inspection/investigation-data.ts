@@ -2,6 +2,7 @@ import {
   observationCompleteness,
   projectInvestigationSpans,
   readCapsuleObservations,
+  readCapsuleTraces,
   type CapsuleActivityReport,
   type CapsuleObservationsResult,
   type CapsuleReportSpan,
@@ -52,27 +53,40 @@ export async function readSession(input: {
   return isSessionResult(result) ? result : null;
 }
 
-async function readTrace(input: {
+/**
+ * Every requested trace's projected spans from ONE read of the capsule's
+ * fragment files. A trace the collector did not retain (or an unreadable
+ * trace set) has no spans.
+ */
+async function readTraces(input: {
   readonly projectDirectory: string;
   readonly capsule: string;
-  readonly traceId: string;
-}): Promise<RetainedTrace> {
-  const result = await readCapsuleObservations({
+  readonly traceIds: readonly string[];
+}): Promise<readonly RetainedTrace[]> {
+  if (input.traceIds.length === 0) {
+    return [];
+  }
+  const result = await readCapsuleTraces({
     projectDirectory: input.projectDirectory,
     sessionId: input.capsule,
-    selection: { kind: 'trace', traceId: input.traceId },
   });
-  return {
-    traceId: input.traceId,
-    spans:
-      result.kind === 'collector-trace-found'
-        ? projectInvestigationSpans({ fragments: result.fragments, traceId: input.traceId })
-        : [],
-  };
+  const fragments = new Map(
+    result.kind === 'collector-traces-found'
+      ? result.traces.map((trace) => [trace.traceId, trace.fragments] as const)
+      : [],
+  );
+  return input.traceIds.map((traceId) => {
+    const retained = fragments.get(traceId);
+    return {
+      traceId,
+      spans:
+        retained === undefined ? [] : projectInvestigationSpans({ fragments: retained, traceId }),
+    };
+  });
 }
 
 /**
- * Reads the capsule's retained traces through the existing observation reads:
+ * Reads the capsule's retained traces in one pass over its fragment files:
  * the given trace IDs, or with 'all' every trace the collector retained plus
  * each activity's own trace.
  */
@@ -90,17 +104,11 @@ export async function loadInvestigation(input: {
       : [];
   const own = input.activities.map((activity) => activity.telemetry.context.traceId);
   const traceIds = input.traceIds === 'all' ? [...new Set([...collected, ...own])] : input.traceIds;
-  // One read at a time: each opens the capsule's fragment files.
-  const traces: RetainedTrace[] = [];
-  for (const traceId of traceIds) {
-    traces.push(
-      await readTrace({
-        projectDirectory: input.projectDirectory,
-        capsule: input.capsule.capsule,
-        traceId,
-      }),
-    );
-  }
+  const traces = await readTraces({
+    projectDirectory: input.projectDirectory,
+    capsule: input.capsule.capsule,
+    traceIds,
+  });
   return {
     capsule: input.capsule,
     completeness: completenessOf(input.capsule, input.session),

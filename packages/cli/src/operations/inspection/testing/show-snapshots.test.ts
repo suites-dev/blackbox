@@ -20,10 +20,8 @@ import { activityView, capsuleView, timelineView, traceView } from '../show-outp
  * fixtures/README.md for how each fixture was captured. Update them with
  * `node --test --test-update-snapshots` on the compiled test and review the diff.
  */
-const SOURCE = join(
-  process.env.BLACKBOX_CLI_TEST_PACKAGE_DIRECTORY ?? process.cwd(),
-  'src/operations/inspection/testing',
-);
+// The package test runner starts every test with the package directory as cwd.
+const SOURCE = join(process.cwd(), 'src/operations/inspection/testing');
 const SNAPSHOTS = join(SOURCE, 'snapshots');
 const FORBIDDEN_WORDS = /\b(?:success|successful|passed|verified|effects?)\b/iu;
 

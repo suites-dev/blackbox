@@ -5,7 +5,7 @@ export {
   reportCapsule,
   stopCapsule,
 } from './session/operations.js';
-export { readCapsuleObservations } from './session/observations.js';
+export { readCapsuleObservations, readCapsuleTraces } from './session/observations.js';
 export { projectCapsuleReport } from './reporting/document.js';
 export { serializeCapsuleReportDocument } from './reporting/serialization.js';
 export { renderCapsuleHtml } from './reporting/html.js';

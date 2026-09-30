@@ -25,21 +25,46 @@ export const investigationAttributeKeys = new Set<string>(
   [...FAMILIES.flat(2), ...HTTP_STATUS].concat(['db.system', 'messaging.system']),
 );
 
-/** The first present, non-empty value among `keys`, in order. */
-function first(attributes: Attributes, keys: readonly string[]): string | null {
+/** The first present, non-empty attribute among `keys`, in order, with its key. */
+function firstEntry(
+  attributes: Attributes,
+  keys: readonly string[],
+): { readonly key: string; readonly value: string } | null {
   for (const key of keys) {
     const found = attributes.find((attribute) => attribute.key === key);
     const value = found === undefined ? '' : String(found.value);
     if (value !== '') {
-      return value;
+      return { key, value };
     }
   }
   return null;
 }
 
-/** A route never carries its query or fragment (they can hold credentials). */
-function withoutQuery(route: string): string {
-  return route.split(/[?#]/u, 1)[0] ?? '';
+/** The first present, non-empty value among `keys`, in order. */
+function first(attributes: Attributes, keys: readonly string[]): string | null {
+  const entry = firstEntry(attributes, keys);
+  return entry === null ? null : entry.value;
+}
+
+/** A path segment printed as is: a lowercase word, or a short version like `v1`. */
+const PLAIN_SEGMENT = /^(?:[a-z][a-z_-]{0,31}|v\d{1,3})$/u;
+
+/**
+ * A route never carries its query or fragment (they can hold credentials).
+ * `http.route` is the server's template and is kept. A raw path (`url.path`,
+ * `http.target`) can carry IDs and tokens in its segments, so every segment
+ * that is not a plain word becomes `{…}`: `/password-reset/9f2c…` prints as
+ * `/password-reset/{…}`.
+ */
+function routeText(entry: { readonly key: string; readonly value: string }): string {
+  const route = entry.value.split(/[?#]/u, 1)[0] ?? '';
+  if (entry.key === 'http.route') {
+    return route;
+  }
+  return route
+    .split('/')
+    .map((segment) => (segment === '' || PLAIN_SEGMENT.test(segment) ? segment : '{…}'))
+    .join('/');
 }
 
 /**
@@ -50,11 +75,11 @@ function withoutQuery(route: string): string {
 export function spanTitle(span: CapsuleReportSpan): string {
   for (const family of FAMILIES) {
     const parts = family.flatMap((keys) => {
-      const value = first(span.attributes, keys);
-      if (value === null) {
+      const entry = firstEntry(span.attributes, keys);
+      if (entry === null) {
         return [];
       }
-      const part = keys === HTTP_ROUTE ? withoutQuery(value) : value;
+      const part = keys === HTTP_ROUTE ? routeText(entry) : entry.value;
       return part === '' ? [] : [part];
     });
     if (parts.length > 0) {
