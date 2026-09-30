@@ -1070,8 +1070,8 @@ function approvedCliCommand(command) {
       return ['pnpm', 'lint'];
     case 'pnpm\0test':
       return ['pnpm', 'test'];
-    case 'pnpm\0test:e2e:capsule':
-      return ['pnpm', 'test:e2e:capsule'];
+    case 'pnpm\0test:demo':
+      return ['pnpm', 'test:demo'];
     case 'pnpm\0test:e2e:journeys':
       return ['pnpm', 'test:e2e:journeys'];
     case 'pnpm\0test:e2e:playwright':

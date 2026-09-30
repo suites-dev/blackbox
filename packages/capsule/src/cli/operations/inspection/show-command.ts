@@ -1,67 +1,77 @@
 import {
   readCapsuleObservations,
-  type CapsuleActivityReport,
   type CapsuleObservationsInput,
   type CapsuleObservationsResult,
 } from '@suites/blackbox-capsule';
 
 import { BlackboxCommand } from '../../cli/base-command.js';
 import { EXIT_CODES } from '../../cli/exit-codes.js';
+import { CliFailure } from '../../cli/failure.js';
 import { capsulePackageFailure } from '../../capsule/capsule-output.js';
-import { ActivityDisplay } from '../../context/display.js';
+import { isTraceId } from '../../context/identifiers.js';
+import { terminalText } from '../../progress/terminal-text.js';
 import { InvocationContext } from '../../context/invocation.js';
 import type { ProjectIndex } from '../../context/project-index.js';
 import { resolveId, type Resolved } from '../../context/resolver.js';
-import { activityView, capsuleView, traceView } from './show-output.js';
+import { completenessOf, readSession } from './investigation-data.js';
+import { pendingTraceView } from './show-output.js';
+import { showView, type PendingTrace, type ShowRequest } from './show-view.js';
 
-export interface ShowRequest {
-  readonly id: string;
-  readonly capsuleFlag: string | null;
-  readonly json: boolean;
-}
+export type { ShowRequest } from './show-view.js';
 
-function selection(resolved: Resolved): CapsuleObservationsInput['selection'] {
+function selection(resolved: Resolved | PendingTrace): CapsuleObservationsInput['selection'] {
   switch (resolved.kind) {
     case 'capsule':
       return { kind: 'session' };
     case 'activity':
       return { kind: 'activity', activityId: resolved.activity.activityId };
     case 'trace':
+    case 'pending-trace':
       return { kind: 'trace', traceId: resolved.traceId };
   }
 }
 
-function latest(activities: readonly CapsuleActivityReport[]): CapsuleActivityReport | null {
-  return activities.reduce<CapsuleActivityReport | null>(
-    (found, activity) => (found === null || activity.sequence > found.sequence ? activity : found),
-    null,
+type PackageFailureResult = Extract<
+  CapsuleObservationsResult,
+  { kind: 'capsule-not-found' | 'capsule-invalid-state' | 'capsule-operation-failed' }
+>;
+
+function isPackageFailure(result: CapsuleObservationsResult): result is PackageFailureResult {
+  return (
+    result.kind === 'capsule-not-found' ||
+    result.kind === 'capsule-invalid-state' ||
+    result.kind === 'capsule-operation-failed'
   );
 }
 
 /** `show` and its `observations` alias. Works on stopped capsules. */
 export abstract class ShowCommand extends BlackboxCommand {
   protected async executeShow(request: ShowRequest): Promise<void> {
-    const context = new InvocationContext(process.cwd());
+    const projectDirectory = process.cwd();
+    const context = new InvocationContext(projectDirectory);
     const index = await context.index();
     const resolved = await this.resolve(context, index, request);
     const capsule = resolved.capsule.capsule;
     const result = await readCapsuleObservations({
-      projectDirectory: process.cwd(),
+      projectDirectory,
       sessionId: capsule,
       selection: selection(resolved),
     });
-    if (
-      result.kind === 'capsule-not-found' ||
-      result.kind === 'capsule-invalid-state' ||
-      result.kind === 'capsule-operation-failed'
-    ) {
+    if (isPackageFailure(result)) {
       throw capsulePackageFailure(result, capsule);
     }
-    const view = await this.view(index, resolved, result);
+    const view =
+      // Only a trace the collector reports missing is "not observed yet"; a
+      // corrupt read is shown like any other trace, never as pending.
+      resolved.kind === 'pending-trace' && result.kind === 'collector-trace-missing'
+        ? pendingTraceView({ traceId: resolved.traceId, capsule })
+        : await showView({ projectDirectory, index, resolved, result, request });
     if (request.json) {
-      this.json({ ...result, capsule, next: view.next });
+      this.json({ ...result, capsule, next: view.next, ...view.document });
     } else {
-      this.human([...view.lines, ...view.next.map((command) => `→ ${command}`)]);
+      // Service names, span names, titles and activity names come from telemetry
+      // and records: no control character or escape sequence reaches the terminal.
+      this.human([...view.lines, ...view.next.map((command) => `→ ${command}`)].map(terminalText));
     }
     this.finish(EXIT_CODES.success);
   }
@@ -69,53 +79,42 @@ export abstract class ShowCommand extends BlackboxCommand {
   /**
    * A positional capsule ID is the highest-precedence context, so it resolves
    * before any explicit context is checked. Otherwise an explicit context
-   * (flag or BLACKBOX_CAPSULE) must name a listed capsule, and narrows the search.
+   * (flag or BLACKBOX_CAPSULE) must name a listed capsule, and narrows the
+   * search. A trace ID retained nowhere is still accepted for an explicit
+   * capsule whose observation is provisional: its spans may not have arrived.
    */
   private async resolve(
     context: InvocationContext,
     index: ProjectIndex,
     request: ShowRequest,
-  ): Promise<Resolved> {
+  ): Promise<Resolved | PendingTrace> {
     const exact = index.capsule(request.id);
     if (exact !== null) {
       return { kind: 'capsule', capsule: exact };
     }
-    return resolveId(index, request.id, await context.scope(request.capsuleFlag, 'observations'));
-  }
-
-  private async view(index: ProjectIndex, resolved: Resolved, result: CapsuleObservationsResult) {
-    const display = new ActivityDisplay(
-      (await index.allActivities()).map(({ activity }) => activity.activityId),
-    );
-    const activities = await index.activities(resolved.capsule.capsule);
-    switch (resolved.kind) {
-      case 'activity':
-        return activityView({
-          short: display.short(resolved.activity.activityId),
-          capsule: resolved.capsule,
-          activity: resolved.activity,
-          result,
-        });
-      case 'capsule': {
-        const last = activities === null ? null : latest(activities);
-        return capsuleView({
-          capsule: resolved.capsule,
-          activities,
-          latest: last === null ? null : display.short(last.activityId),
-          result,
-        });
+    const explicit = await context.explicit(request.capsuleFlag, 'observations');
+    const scope =
+      explicit === null
+        ? ({ kind: 'project' } as const)
+        : ({ kind: 'capsule', capsule: explicit.capsule } as const);
+    try {
+      return await resolveId(index, request.id, scope);
+    } catch (error) {
+      // Only the registry's own summary reaches a Capsule read or a path.
+      const summary = explicit === null ? null : index.capsule(explicit.capsule);
+      const unknownTrace =
+        isTraceId(request.id) && error instanceof CliFailure && error.detail.code === 'id-unknown';
+      if (summary === null || !unknownTrace) {
+        throw error;
       }
-      case 'trace': {
-        const owner = (activities ?? []).find(
-          (activity) => activity.telemetry.context.traceId === resolved.traceId,
-        );
-        return traceView({
-          traceId: resolved.traceId,
-          capsule: resolved.capsule,
-          associated: owner === undefined ? null : display.short(owner.activityId),
-          result,
-        });
+      const session = await readSession({
+        projectDirectory: index.projectDirectory,
+        capsule: summary.capsule,
+      });
+      if (completenessOf(summary, session).status !== 'provisional') {
+        throw error;
       }
+      return { kind: 'pending-trace', capsule: summary, traceId: request.id };
     }
   }
 }

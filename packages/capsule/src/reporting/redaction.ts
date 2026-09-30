@@ -13,6 +13,7 @@ import type {
 } from '../types.js';
 import type { CapsuleReportActivity } from './types.js';
 
+import { isUnstartedProcess } from '../execution/unstarted-process.js';
 import {
   createRedactionContext,
   redactArgv,
@@ -31,7 +32,7 @@ function redactProcess(
   explicit: DriverArgvRedaction,
 ): CapsuleProcessOutcome {
   const argv = redactArgv({ argv: outcome.argv, location: `${location}.argv`, context, explicit });
-  if (outcome.kind === 'executable-not-found') {
+  if (isUnstartedProcess(outcome)) {
     return {
       ...outcome,
       argv,
@@ -106,6 +107,7 @@ function redactOutcome(
         ),
       };
     case 'executable-not-found':
+    case 'not-executable':
     case 'exited':
     case 'signaled':
       return 'propagation' in outcome

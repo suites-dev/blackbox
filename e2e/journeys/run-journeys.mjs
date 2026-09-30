@@ -24,11 +24,15 @@ import {
   renderTranscript,
 } from './journey-format.mjs';
 import { runItems } from './journey-steps.mjs';
+import { canonicalizeTrees } from './journey-trees.mjs';
 import {
   cleanupJourneyProject,
   createJourneyProject,
+  journeyEnvironment,
   listCapsules,
+  newFixtureToken,
   retainedActivityIds,
+  retainedTraceIds,
 } from './journey-project.mjs';
 
 const execute = promisify(execFile);
@@ -44,10 +48,11 @@ const PROJECT_PARENT = '/tmp';
 const STATE_FILE = join(E2E_ROOT, '.blackbox', 'capsule-assets.json');
 
 const ASSET_ROOT_NAME = /^blackbox-capsule-assets\.[A-Za-z0-9]+$/u;
+const REGISTRY = process.env.BLACKBOX_TEST_REGISTRY ?? 'http://127.0.0.1:4874/';
 
 /**
- * The packed CLI of the current capsule-assets.sh run. As in
- * e2e/bash/capsule-asset-boundary.mjs, every path is rebuilt from the fixed
+ * The published CLI of the current consumer preparation. As in
+ * scripts/consumer/capsule-asset-boundary.mjs, every path is rebuilt from the fixed
  * asset layout under the OS temp directory; the state file only names which
  * asset directory, and nothing it contains is executed or used as a path as-is.
  */
@@ -57,7 +62,7 @@ async function packedAssets() {
     state = JSON.parse(await readFile(STATE_FILE, 'utf8'));
   } catch {
     throw new Error(
-      'journeys: packed CLI assets are missing; run e2e/bash/capsule-assets.sh first',
+      'journeys: the registry consumer is missing; prepare it first',
     );
   }
   const name = typeof state?.assetRoot === 'string' ? basename(state.assetRoot) : '';
@@ -70,7 +75,7 @@ async function packedAssets() {
     throw new Error('journeys: packed asset state does not match the fixed E2E asset layout');
   }
   await execute(blackbox, ['--help']);
-  return { blackbox, assetRoot };
+  return { blackbox };
 }
 
 async function runJourney({
@@ -78,7 +83,7 @@ async function runJourney({
   pass,
   goldenPath,
   blackbox,
-  assetRoot,
+  version,
   artifactRoot,
   projectParent,
 }) {
@@ -89,13 +94,16 @@ async function runJourney({
     parent: projectParent,
     name,
     blackbox,
-    assetRoot,
+    version,
   });
   const before = await listCapsules({ directory, blackbox });
   if (before.length !== 0) throw new Error(`${name}: isolated project is not empty`);
+  // A fresh secret per journey, visible only to this journey's shell. It
+  // proves show never prints a credential the commands carried.
+  const fixtureToken = newFixtureToken();
   const session = new BashSession({
     cwd: directory,
-    env: journeyEnvironment(dirname(blackbox)),
+    env: journeyEnvironment({ binDirectory: dirname(blackbox), fixtureToken }),
   });
   const raw = [];
   const executed = [];
@@ -110,6 +118,7 @@ async function runJourney({
     problems = await cleanupJourneyProject({ directory, blackbox });
   }
   const activityIds = await retainedActivityIds(directory);
+  const traceIds = await retainedTraceIds({ directory, blackbox });
   if (problems.length === 0) {
     // Nothing is left running; the transcript and artifacts carry the evidence.
     await rm(directory, { recursive: true, force: true });
@@ -117,11 +126,15 @@ async function runJourney({
   const normalize = createNormalizer({
     projectPaths: [directory],
     activityIds,
+    traceIds,
+    secrets: [fixtureToken],
   });
   const actual = normalizeWhitespace(
     renderTranscript(
       executed.map((item) =>
-        item.kind === 'command' ? { ...item, output: normalize(item.output) } : item,
+        item.kind === 'command'
+          ? { ...item, output: normalize(canonicalizeTrees(item.output)) }
+          : item,
       ),
     ),
   );
@@ -136,12 +149,6 @@ async function runJourney({
   return { name, goldenPath, actual, matched: actual === expected, failure, problems, output };
 }
 
-function journeyEnvironment(binDirectory) {
-  const env = { ...process.env, PATH: `${binDirectory}:${process.env.PATH}`, NO_COLOR: '1' };
-  delete env.BLACKBOX_CAPSULE;
-  return env;
-}
-
 async function unifiedDiff(expectedPath, actualPath) {
   try {
     await execute('diff', ['-u', expectedPath, actualPath]);
@@ -153,18 +160,22 @@ async function unifiedDiff(expectedPath, actualPath) {
 
 async function main() {
   const update = process.env.BLACKBOX_GOLDEN_UPDATE === '1';
-  const { blackbox, assetRoot } = await packedAssets();
+  // Every install a journey makes goes through the same registry the consumer
+  // came from, so no journey can silently reach npmjs for a Blackbox package.
+  process.env.NPM_CONFIG_REGISTRY = REGISTRY;
+  const { blackbox } = await packedAssets();
+  const { version } = JSON.parse(await readFile(join(WORKSPACE_ROOT, 'lerna.json'), 'utf8'));
   try {
-    await runSelected({ update, blackbox, assetRoot });
+    await runSelected({ update, blackbox, version });
   } finally {
-    // capsule-assets.sh resets the e2e project's instrumentation; reinstall it
+    // Consumer preparation resets the e2e project's instrumentation; reinstall it
     // with the packed CLI exactly as capsule-test.sh does, so the checkout is
     // left as it was found.
     await execute(blackbox, ['inst', 'install', '--runtime', 'node'], { cwd: E2E_ROOT });
   }
 }
 
-async function runSelected({ update, blackbox, assetRoot }) {
+async function runSelected({ update, blackbox, version }) {
   // Fixed locations only; nothing here comes from the environment. CI collects
   // ARTIFACT_ROOT as this run's evidence (see .github/workflows/e2e.yml).
   await rm(ARTIFACT_ROOT, { recursive: true, force: true });
@@ -193,7 +204,7 @@ async function runSelected({ update, blackbox, assetRoot }) {
         pass,
         goldenPath: join(JOURNEY_ROOT, file),
         blackbox,
-        assetRoot,
+        version,
         artifactRoot,
         projectParent,
       });
@@ -223,8 +234,8 @@ if (process.env.BLACKBOX_GOLDEN_UPDATE === '1' && process.env.CI === 'true') {
 try {
   await main();
 } finally {
-  // The packed consumer belongs to this run, exactly as capsule-test.sh treats it.
-  await execute(process.execPath, [join(E2E_ROOT, 'bash', 'capsule-asset-cleanup.mjs')]).catch(
+  // The registry consumer belongs to this run, exactly as capsule-test.sh treats it.
+  await execute(process.execPath, [join(WORKSPACE_ROOT, 'scripts', 'consumer', 'capsule-asset-cleanup.mjs')]).catch(
     (error) => {
       console.error(`journeys: packed asset cleanup failed: ${error.message}`);
       process.exitCode = 1;

@@ -54,20 +54,20 @@
   },
   "dependencies": {
     "@oclif/core": "^5.1.0",
+    "@suites/blackbox-catalog": "workspace:*",
     "@suites/blackbox-cli-contract": "workspace:*",
     "@suites/blackbox-driver": "workspace:*",
-    "@suites/blackbox-catalog": "workspace:*",
     "@suites/blackbox-instrumentation": "workspace:*",
     "@suites/blackbox-otel-collector": "workspace:*",
+    "@suites/blackbox-report-server": "workspace:*",
     "@suites/blackbox-sandbox": "workspace:*",
     "@suites/blackbox-telemetry": "workspace:*",
-    "@suites/blackbox-report-server": "workspace:*",
     "ajv": "8.20.0",
     "string-width": "8.3.0"
   },
   "devDependencies": {
-    "rimraf": "catalog:",
     "@types/node": "catalog:",
+    "rimraf": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
   },

@@ -1,0 +1,11 @@
+{
+  "name": "@suites/blackbox-e2e-harness",
+  "version": "0.0.0",
+  "type": "module",
+  "private": true,
+  "description": "Project fixture for the CLI journeys and the demo: the YAML catalog, the project-authored drivers, and the Compose system under test.",
+  "dependencies": {
+    "@suites/blackbox-catalog": "workspace:*",
+    "@suites/blackbox-cli": "workspace:*"
+  }
+}

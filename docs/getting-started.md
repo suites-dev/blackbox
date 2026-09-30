@@ -101,16 +101,24 @@ Your session remains under `e2e/.blackbox/experiments/capsule-<session-id>/`, an
 ## Try the guided demo
 
 After stopping your Capsule, you can run a walkthrough that shows HTTP, Redis, and PostgreSQL drivers,
-observation queries, and reports. From the repository root, in a terminal with Bash available:
+observation queries, and reports. It installs the Blackbox packages from a local registry rather than from your
+checkout, so the [acceptance guide](../maintainers/docs/capsule-bash-e2e.md) covers starting that registry and
+publishing to it first. With the registry running, from the repository root in a terminal with Bash available:
 
 ```sh
 cd "$blackbox_checkout"
-pnpm test:e2e:capsule
+pnpm run prepare:consumer
+pnpm run test:demo:storyboard
 ```
 
-The demo presents commands step by step, waits for Enter, and opens the viewer.
-It prepares its dependencies and cleans up the application when finished. To run without pauses or browser opening,
-use `pnpm test:e2e:capsule </dev/null`.
+`test:demo:storyboard` runs unattended: no pauses, no color, no browser. To step through it instead, with a
+pause before each command and the viewer opening in a browser, run the player directly:
+
+```sh
+bash demo/storyboard/capsule-player.sh
+```
+
+Either way it cleans up the application when it finishes.
 
 The demo resets previous example sessions and generated output under `e2e/.blackbox/`. Copy any reports you want to
 keep outside that directory before running it.

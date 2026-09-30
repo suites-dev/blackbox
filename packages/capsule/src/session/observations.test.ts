@@ -3,10 +3,16 @@ import { join } from 'node:path';
 
 import { afterEach, expect, it } from 'vitest';
 
-import { readCapsuleObservations } from './observations.js';
+import { readCapsuleObservations, readCapsuleTraces } from './observations.js';
 import { readCapsuleActivityObservations } from './activity-observations.js';
-import { cleanObservationFixtures, collectorFixture, collectorStorage, postTrace,
-  sessionFixture, traceId } from './testing/observations.fixture.js';
+import {
+  cleanObservationFixtures,
+  collectorFixture,
+  collectorStorage,
+  postTrace,
+  sessionFixture,
+  traceId,
+} from './testing/observations.fixture.js';
 
 afterEach(cleanObservationFixtures);
 
@@ -85,4 +91,29 @@ it('reads the exact activity trace including descendants without an activity att
   await expect(
     readCapsuleActivityObservations({ ...fixture, activityId: 'activity-8' }),
   ).resolves.toMatchObject({ kind: 'collector-activity-missing' });
+});
+
+it('reads every retained trace in one pass, with the same fragments as a single trace read', async () => {
+  const fixture = await sessionFixture('bright-meadow-ada', 'activity-3');
+  const collector = await collectorFixture(fixture);
+  await postTrace(collector, 'activity-3');
+  const all = await readCapsuleTraces(fixture);
+  expect(all).toMatchObject({ kind: 'collector-traces-found', traces: [{ traceId }] });
+  const single = await readCapsuleObservations({
+    ...fixture,
+    selection: { kind: 'trace', traceId },
+  });
+  if (all.kind !== 'collector-traces-found' || single.kind !== 'collector-trace-found') {
+    throw new Error('expected both reads to find the trace');
+  }
+  expect(all.traces.map((trace) => trace.fragments)).toEqual([single.fragments]);
+
+  const missing = await sessionFixture('gentle-harbor-eve');
+  await expect(readCapsuleTraces(missing)).resolves.toMatchObject({
+    kind: 'collector-traces-missing',
+  });
+  // A malformed session ID fails validation before any file is read.
+  await expect(
+    readCapsuleTraces({ projectDirectory: fixture.projectDirectory, sessionId: '../../x' }),
+  ).resolves.toMatchObject({ kind: 'capsule-operation-failed' });
 });

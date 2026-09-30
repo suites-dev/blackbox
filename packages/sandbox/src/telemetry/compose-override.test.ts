@@ -111,6 +111,31 @@ it('injects Blackbox identity and standard OTLP configuration', async () => {
   });
 });
 
+it('exports participant spans every 200 ms, whatever the participant environment says', async () => {
+  const { telemetry, directory } = await telemetryFixture();
+  const participant = {
+    ...telemetry.participants[0],
+    environment: { OTEL_BSP_SCHEDULE_DELAY: '9000', KEEP: 'kept' },
+  };
+  const environment = participantEnvironment({
+    telemetry,
+    participant,
+    ingestToken: 'resolved-token',
+    effectiveEnvironment: { OTEL_BSP_SCHEDULE_DELAY: '7000' },
+  });
+  expect(environment.OTEL_BSP_SCHEDULE_DELAY).toBe('200');
+  expect(environment.KEEP).toBe('kept');
+  const path = await writeTelemetryComposeOverride({
+    telemetry: { ...telemetry, participants: [participant] },
+    directory,
+    effectiveEnvironments: new Map([['orders', { OTEL_BSP_SCHEDULE_DELAY: '7000' }]]),
+  });
+  const document = JSON.parse(await readFile(path, 'utf8')) as {
+    services: Record<string, { environment: Record<string, string> }>;
+  };
+  expect(document.services.orders.environment.OTEL_BSP_SCHEDULE_DELAY).toBe('200');
+});
+
 it('configures the collector readiness route used by its health check', async () => {
   const { telemetry } = await telemetryFixture();
   const custom = {

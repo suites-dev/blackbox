@@ -1,0 +1,3 @@
+capsule calm-comet-ada-000000000001  subscription-system  stopped · complete
+  activities 6 · traces 26
+→ blackbox capsule show c0000006 --session calm-comet-ada-000000000001

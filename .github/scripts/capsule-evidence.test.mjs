@@ -115,7 +115,7 @@ test('allowlisted receipt names cannot smuggle directories or symlink targets in
 });
 
 test('the Capsule player propagates but never displays a configured fixture token', () => {
-  const testFile = fileURLToPath(new URL('../../e2e/bash/capsule-player.test.rb', import.meta.url));
+  const testFile = fileURLToPath(new URL('../../demo/storyboard/capsule-player.test.rb', import.meta.url));
   const result = spawnSync('ruby', [testFile], { encoding: 'utf8' });
   assert.equal(result.status, 0, result.stderr || result.stdout);
   assert.match(result.stdout, /1 runs, \d+ assertions/u);

@@ -1,5 +1,6 @@
 import {
   execCapsule,
+  isUnstartedProcess,
   normalizeCapsuleActivityName,
   type CapsuleActivityName,
   type CapsuleActivityPurpose,
@@ -29,7 +30,7 @@ export interface RunRequest {
 }
 
 function writeCaptured(process: CapsuleProcessOutcome, tracker: OutputTracker): void {
-  if (process.kind === 'executable-not-found') {
+  if (isUnstartedProcess(process)) {
     return;
   }
   if (process.stdout.length > 0) {

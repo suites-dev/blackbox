@@ -14,6 +14,7 @@ import type {
   CapsuleProcessOutcome,
 } from '../types.js';
 import { runHostWithRedaction } from './commands.js';
+import { isUnstartedProcess } from './unstarted-process.js';
 import { prepareCapsuleDriver } from './driver/preparation.js';
 import { executionEnvironment, failedPropagation } from './driver/propagation.js';
 import { createDriverPrepareRequest } from './driver/request.js';
@@ -109,7 +110,7 @@ function redactProcess(
   const argv = process.argv.map((value, index) =>
     positions.includes(index) ? '[REDACTED]' : value,
   );
-  return process.kind === 'executable-not-found'
+  return isUnstartedProcess(process)
     ? { ...process, argv, remediation: redactValues(process.remediation, values) }
     : { ...process, argv };
 }

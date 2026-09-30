@@ -189,6 +189,21 @@
       ],
       "unevaluatedProperties": false
     },
+    "notExecutableOutcome": {
+      "type": "object",
+      "allOf": [
+        { "$ref": "#/$defs/processBase" },
+        {
+          "type": "object",
+          "required": ["kind", "remediation"],
+          "properties": {
+            "kind": { "const": "not-executable" },
+            "remediation": { "type": "string", "minLength": 1 }
+          }
+        }
+      ],
+      "unevaluatedProperties": false
+    },
     "driverCompletedOutcome": {
       "type": "object",
       "additionalProperties": false,
@@ -238,7 +253,8 @@
       "oneOf": [
         { "$ref": "#/$defs/exitedOutcome" },
         { "$ref": "#/$defs/signaledOutcome" },
-        { "$ref": "#/$defs/executableNotFoundOutcome" }
+        { "$ref": "#/$defs/executableNotFoundOutcome" },
+        { "$ref": "#/$defs/notExecutableOutcome" }
       ]
     },
     "driverDetails": {

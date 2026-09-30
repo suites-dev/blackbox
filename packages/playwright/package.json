@@ -34,8 +34,8 @@
   },
   "dependencies": {
     "@suites/blackbox-catalog": "workspace:*",
-    "@suites/blackbox-instrumentation": "workspace:*",
     "@suites/blackbox-inst-runtime-node": "workspace:*",
+    "@suites/blackbox-instrumentation": "workspace:*",
     "@suites/blackbox-otel-collector": "workspace:*",
     "@suites/blackbox-sandbox": "workspace:*"
   },

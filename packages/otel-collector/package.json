@@ -41,8 +41,8 @@
     "test:coverage": "vitest run --coverage --config vitest.config.ts"
   },
   "devDependencies": {
-    "rimraf": "catalog:",
     "@types/node": "catalog:",
+    "rimraf": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
   },

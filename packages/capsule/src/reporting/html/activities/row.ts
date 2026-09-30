@@ -38,6 +38,10 @@ function addProcess(body, outcome) {
     add(body, n('h4', '', 'Executable unavailable'), n('pre', '', outcome.remediation));
     return;
   }
+  if (outcome.kind === 'not-executable') {
+    add(body, n('h4', '', 'Executable not runnable'), n('pre', '', outcome.remediation));
+    return;
+  }
   for (const [label, value, retention] of [
     ['Standard output', outcome.stdout || '(no standard output)', outcome.retention.stdout],
     ['Standard error', outcome.stderr || '(no standard error)', outcome.retention.stderr],

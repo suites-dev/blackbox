@@ -55,8 +55,8 @@
     "@suites/blackbox-instrumentation": "workspace:*"
   },
   "devDependencies": {
-    "rimraf": "catalog:",
     "@types/node": "catalog:",
+    "rimraf": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
   },

@@ -28,11 +28,15 @@ export function projectActivityTelemetry(
     : { kind: 'unavailable', activityId: result.activityId, reason: 'not-retained' };
 }
 
-export function projectTraceSpans(input: {
-  readonly fragments: readonly TraceFragment[];
-  readonly traceId: string;
-  readonly context: Context;
-}): readonly CapsuleReportSpan[] {
+/** `attributeKeys` defaults to the report's own attribute allowlist. */
+export function projectTraceSpans(
+  input: {
+    readonly fragments: readonly TraceFragment[];
+    readonly traceId: string;
+    readonly context: Context;
+  },
+  attributeKeys?: ReadonlySet<string>,
+): readonly CapsuleReportSpan[] {
   const spans = input.fragments.flatMap((fragment) =>
     array(object(fragment.request).resourceSpans).flatMap((resource) => {
       const item = object(resource);
@@ -41,7 +45,7 @@ export function projectTraceSpans(input: {
         array(object(scope).spans)
           .map(object)
           .filter((span) => string(span.traceId) === input.traceId)
-          .map((span) => spanProjection(span, service, input.context)),
+          .map((span) => spanProjection(span, service, input.context, attributeKeys)),
       );
     }),
   );

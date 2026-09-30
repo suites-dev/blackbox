@@ -1,6 +1,6 @@
 # Workspace packages
 
-All eleven workspace packages are public alpha packages with one fixed Lerna version.
+All thirteen workspace packages are public alpha packages with one fixed Lerna version.
 `pnpm exec lerna list --all` is the package source of truth, and Lerna determines
 their publication order. Alpha exports may change between releases.
 
@@ -8,6 +8,7 @@ their publication order. Alpha exports may change between releases.
 | ------------------------------------------------------------------------------------- | ------------------------------------ | ------------------------------------------------------------------------------------------------ |
 | [cli](../../packages/cli/README.md)                                                   | `@suites/blackbox-cli`               | Compose working catalog, Capsule, driver, instrumentation, observation, and report commands.     |
 | [catalog](../../packages/catalog/README.md)                                           | `@suites/blackbox-catalog`           | Validate YAML and resolve catalog selections into structural sandbox inputs.                     |
+| [cli-contract](../../packages/cli-contract/README.md)                                 | `@suites/blackbox-cli-contract`      | Define the shared protocol between the CLI and project-authored extensions.                      |
 | [sandbox](../../packages/sandbox/README.md)                                           | `@suites/blackbox-sandbox`           | Acquire Docker Compose resources, resolve endpoints, observe startup, and clean owned resources. |
 | [capsule](../../packages/capsule/README.md)                                           | `@suites/blackbox-capsule`           | Own sessions, activities, execution, retained records, and report projections.                   |
 | [driver](../../packages/driver/README.md)                                             | `@suites/blackbox-driver`            | Define and prepare project Node drivers, validate execution and propagation contracts.           |
@@ -17,6 +18,7 @@ their publication order. Alpha exports may change between releases.
 | [otel-collector](../../packages/otel-collector/README.md)                             | `@suites/blackbox-otel-collector`    | Receive and retain raw OTLP/HTTP JSON traces; read exact sessions, activities, and traces.       |
 | [playwright](../../packages/playwright/README.md)                                     | `@suites/blackbox-playwright`        | Compose native Playwright tests with one catalog-selected Sandbox per physical attempt.          |
 | [report-server](../../packages/report-server/README.md)                               | `@suites/blackbox-report-server`     | Serve a local read-only registry and provider-owned report projections.                          |
+| [skills](../../packages/skills/README.md)                                             | `@suites/blackbox-skills`            | Publish the supported agent skills for consuming Blackbox.                                       |
 
 The sandbox does not read catalogs or implement effect evaluation. The collector does not infer causal attribution
 or capture completeness. The report server does not own Capsule semantics. Keeping these responsibilities separate
@@ -35,12 +37,15 @@ pnpm test
 ```
 
 `pnpm test` includes a build. The [workspace definition](../../pnpm-workspace.yaml) includes `packages/*`; `e2e/`
-is not itself a workspace package. The root `pnpm test:e2e:capsule` and
-`pnpm test:e2e:playwright` scripts are the active packed-consumer E2E entrypoints.
+is not itself a workspace package. It holds the project fixture the lanes drive: the catalog, the project-authored
+drivers, the system under test, and the golden CLI journeys. `pnpm run test:demo` and `pnpm run test:e2e:journeys`
+are active entrypoints. `pnpm run test:e2e:playwright` runs the system tests against the same project fixture.
+Every lane consumes packages installed from a disposable registry.
 
 Package and source checks run in
 [Continuous Integration](../../.github/workflows/ci.yml). The separate
-[Capsule E2E workflow](../../.github/workflows/e2e.yml) exercises packed consumers and Docker-backed behavior.
+[E2E workflow](../../.github/workflows/e2e.yml) builds once, then runs the demo, the journeys, the Playwright
+system tests, and the release rehearsal against packages installed from a disposable registry.
 Passing one lane does not imply the others passed. See
 [contributing](../../CONTRIBUTING.md) before making changes.
 

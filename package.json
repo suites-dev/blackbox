@@ -9,11 +9,14 @@
   "scripts": {
     "build": "pnpm --recursive --sort run build",
     "test": "pnpm run build && pnpm --recursive run test",
-    "test:e2e:capsule": "bash e2e/bash/capsule-assets.sh && bash e2e/bash/capsule-test.sh",
-    "test:e2e:playwright": "bash e2e/bash/playwright-test.sh",
-    "test:e2e:journeys": "node --test e2e/journeys/journey-harness.test.mjs && bash e2e/bash/capsule-assets.sh && node e2e/journeys/run-journeys.mjs --repeat 2",
-    "lint": "node scripts/check-source-layout.mjs && eslint packages --cache && pnpm check:runtime-deps",
+    "prepare:consumer": "node scripts/consumer/prepare.mjs",
+    "test:demo": "bash demo/acceptance/capsule-test.sh",
+    "test:demo:storyboard": "bash demo/storyboard/capsule-player.sh --no-pause --no-color --no-browser",
+    "test:e2e:journeys": "node --test e2e/journeys/journey-harness.test.mjs && node e2e/journeys/run-journeys.mjs --repeat 2",
+    "test:e2e:playwright": "pnpm run prepare:consumer && bash demo/support/playwright-test.sh",
+    "lint": "node scripts/check-source-layout.mjs && pnpm check:packages && eslint packages --cache && pnpm check:runtime-deps",
     "lint:fix": "eslint packages --cache --fix",
+    "check:packages": "manypkg check",
     "check:runtime-deps": "dependency-cruiser packages --config .dependency-cruiser.cjs --focus '^packages/instrumentation-runtime-' --focus-depth 1 --exclude '(^|/)(dist/|coverage/|vitest(?:\\.integration)?\\.config\\.ts$)' --output-type err-long",
     "typecheck": "tsc --project tsconfig.json --noEmit && tsc --project e2e/tsconfig.json",
     "format": "prettier --write \"packages/**/*.{ts,tsx,js,jsx,json,md,yaml,yml}\" package.json pnpm-workspace.yaml",
@@ -21,9 +24,6 @@
   },
   "engines": {
     "node": ">=22.15"
-  },
-  "dependencies": {
-    "@suites/blackbox-driver": "workspace:*"
   },
   "packageManager": "pnpm@9.15.4",
   "pnpm": {
@@ -37,7 +37,7 @@
       "brace-expansion@5": "5.0.12",
       "browserslist": "4.28.7",
       "fast-uri": "3.1.8",
-      "ip-address": "10.7.1",
+      "ip-address": "10.7.2",
       "js-yaml": "4.3.2",
       "nanoid@3": "3.3.18",
       "pacote": "21.5.1",
@@ -52,6 +52,12 @@
     "@commitlint/cli": "catalog:",
     "@commitlint/config-conventional": "catalog:",
     "@eslint/js": "catalog:",
+    "@manypkg/cli": "^0.25.1",
+    "@suites/blackbox-capsule": "workspace:*",
+    "@suites/blackbox-catalog": "workspace:*",
+    "@suites/blackbox-driver": "workspace:*",
+    "@suites/blackbox-inst-runtime-node": "workspace:*",
+    "@suites/blackbox-skills": "workspace:*",
     "@types/node": "catalog:",
     "@vitest/coverage-v8": "5.0.1",
     "dependency-cruiser": "18.4.0",
@@ -66,11 +72,7 @@
     "prettier": "catalog:",
     "typescript": "catalog:",
     "typescript-eslint": "catalog:",
-    "vitest": "catalog:",
-    "@suites/blackbox-capsule": "workspace:*",
-    "@suites/blackbox-catalog": "workspace:*",
-    "@suites/blackbox-inst-runtime-node": "workspace:*",
-    "@suites/blackbox-skills": "workspace:*"
+    "vitest": "catalog:"
   },
   "lint-staged": {
     "*.ts": [

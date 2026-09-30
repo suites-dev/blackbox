@@ -1,0 +1,11 @@
+activity c0000006  Check health once more
+  capsule   calm-comet-ada-000000000001 (subscription-system, stopped)
+  purpose   stimulus
+  via       host
+  process   exit 0 on host
+  context   untraced: no driver, so no trace context was sent
+  observed  nothing observed · complete
+  later in this capsule, no known cause:
+    e0000016  public-api  GET /health  200  +55ms
+  ⚠ Blackbox cannot prove that c0000006 caused e0000016.
+    Both belong to capsule calm-comet-ada-000000000001, but no trace context links them.

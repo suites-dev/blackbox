@@ -78,6 +78,28 @@ export async function readCapsuleObservations(
   }
 }
 
+/**
+ * Every retained trace of a capsule from one read of its fragment files, for
+ * callers that need many traces (one trace read per trace would reread every
+ * fragment each time).
+ */
+export async function readCapsuleTraces(input: {
+  readonly projectDirectory: string;
+  readonly sessionId: string;
+}): Promise<CollectorTracesReadResult | CapsuleOperationFailure> {
+  try {
+    validateSessionId(input.sessionId);
+    const projectDirectory = await canonicalProjectDirectory(input.projectDirectory);
+    const record = await readRecordOrNotFound({ projectDirectory, sessionId: input.sessionId });
+    if (isFailure(record)) {
+      return record;
+    }
+    return await readCollectorTraces(collectorIdentity({ projectDirectory, record }));
+  } catch (error) {
+    return capsuleFailure({ operation: 'observations', sessionId: input.sessionId, error });
+  }
+}
+
 export async function readCapsuleTraceObservations(input: {
   readonly projectDirectory: string;
   readonly record: CapsuleSessionRecord;

@@ -253,7 +253,6 @@ export default [
       parser: tseslint.parser,
       parserOptions: {
         projectService: {
-          allowDefaultProject: ['e2e/tests/examples/gherkin/payments-system.e2e.spec.ts'],
         },
         tsconfigRootDir: import.meta.dirname,
       },

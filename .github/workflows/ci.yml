@@ -29,7 +29,7 @@ env:
 jobs:
   build:
     name: Build and Typecheck
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
       - name: Checkout
@@ -53,7 +53,7 @@ jobs:
 
   lint:
     name: Lint
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - name: Checkout
@@ -65,13 +65,20 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           pnpm-version: ${{ env.PNPM_VERSION }}
 
+      # Named separately from `pnpm run lint`, which also runs it, so a manifest
+      # failure is diagnosable without reading the lint output. It reads only
+      # package.json files and takes well under a second.
+      - name: Check workspace manifests
+        timeout-minutes: 5
+        run: pnpm run check:packages
+
       - name: Check source layout and lint packages
         timeout-minutes: 15
         run: pnpm run lint
 
   test:
     name: Package Tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
       - name: Checkout
@@ -101,7 +108,7 @@ jobs:
     name: CI Gate
     needs: [build, lint, test]
     if: always()
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
       - name: Evaluate required lanes
