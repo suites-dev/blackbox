@@ -512,6 +512,51 @@ void test('--spans rows are reordered by tree, ignoring IDs and durations; paren
   assert.deepEqual(titles(nested), ['POST /s', 'SET', 'GET']);
 });
 
+void test('an optional pg.connect under the same service pg-pool.connect is not compared', () => {
+  const tree = (connect) =>
+    ACTIVITY_TREE([
+      '    └─ fraud-check  POST /assess  200',
+      '       ├─ fraud-check  pg-pool.connect',
+      ...(connect === null ? [] : [`       │  └─ ${connect}`]),
+      '       └─ fraud-check  pg.query:INSERT subscriptions',
+    ]);
+  const warm = tree(null);
+  assert.equal(canonicalizeTrees(tree('fraud-check  pg.connect')), canonicalizeTrees(warm));
+  // Negative controls: every other span still counts.
+  assert.notEqual(canonicalizeTrees(tree('other-service  pg.connect')), canonicalizeTrees(warm));
+  assert.notEqual(canonicalizeTrees(tree('fraud-check  pg.query:SELECT x')), canonicalizeTrees(warm));
+  const withChild = ACTIVITY_TREE([
+    '    └─ fraud-check  pg-pool.connect',
+    '       └─ fraud-check  pg.connect',
+    '          └─ fraud-check  dns.lookup',
+  ]);
+  assert.match(canonicalizeTrees(withChild), /pg\.connect/u);
+  const elsewhere = ACTIVITY_TREE(['    └─ fraud-check  pg.connect']);
+  assert.match(canonicalizeTrees(elsewhere), /pg\.connect/u);
+
+  const header = '  SPAN              PARENT            SERVICE      KIND    TITLE            RESULT  DURATION';
+  const row = (id, parent, title) =>
+    `  ${id}  ${parent}  fraud-check  client  ${title.padEnd(15)}          1ms`;
+  const rows = (connect) =>
+    [
+      'trace t · capsule c · 3 spans · complete',
+      header,
+      row('aaaaaaaaaaaaaaaa', '1111111111111111', 'pg-pool.connect'),
+      ...(connect ? [row('bbbbbbbbbbbbbbbb', 'aaaaaaaaaaaaaaaa', 'pg.connect')] : []),
+      row('cccccccccccccccc', '1111111111111111', 'pg.query:INSERT'),
+      '→ next',
+    ].join('\n');
+  const dropped = canonicalizeTrees(rows(true));
+  assert.doesNotMatch(dropped, / pg\.connect /u);
+  assert.equal(dropped.split('\n').length, rows(false).split('\n').length);
+  // A pg.connect row under a different parent is kept.
+  const other = rows(true).replace(
+    row('bbbbbbbbbbbbbbbb', 'aaaaaaaaaaaaaaaa', 'pg.connect'),
+    row('bbbbbbbbbbbbbbbb', 'cccccccccccccccc', 'pg.connect'),
+  );
+  assert.match(canonicalizeTrees(other), / pg\.connect /u);
+});
+
 const RUN = 'blackbox capsule run --via public-api -- curl /x';
 const RUN_OUTPUT = [
   '{"child":"stdout before"}',
