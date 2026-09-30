@@ -5,14 +5,28 @@ import { promisify } from 'node:util';
 
 const execute = promisify(execFile);
 const packedPackages = [
+  '@suites/blackbox-capsule',
   '@suites/blackbox-catalog',
+  '@suites/blackbox-cli',
+  '@suites/blackbox-driver',
   '@suites/blackbox-inst-runtime-node',
   '@suites/blackbox-instrumentation',
   '@suites/blackbox-otel-collector',
   '@suites/blackbox-playwright',
+  '@suites/blackbox-report-server',
   '@suites/blackbox-sandbox',
   '@suites/blackbox-telemetry',
 ];
+const expectedSpecs = [
+  'Scenario: a local-only user activates without payment or ordering',
+  'Scenario: a repeated request does not repeat downstream effects',
+  'Scenario: a second refund for the same payment is rejected',
+  'Scenario: a valid payment method creates a payment intent',
+  'Scenario: an eligible user receives an active subscription',
+  'Scenario: an unknown payment intent cannot be refunded',
+  'Scenario: an unknown user is rejected without side effects',
+  'Scenario: concurrent requests create exactly one subscription',
+].sort();
 
 function assert(value, message) {
   if (!value) throw new Error(message);
@@ -86,7 +100,31 @@ export async function boundary(consumerRootValue) {
     assert(manifest.name === name, `Packed package identity mismatch: ${name}`);
     packages.push({ name, packageRoot });
   }
-  return { kind: 'playwright-packed-boundary', consumerRoot, packages };
+  const projectFiles = [
+    'blackbox.config.yaml',
+    '.blackbox/catalog/subscription-system.yml',
+    '.blackbox/instrumentation/instrumentation.js',
+    '.blackbox/instrumentation/package.json',
+    'playwright.config.ts',
+  ];
+  for (const name of projectFiles) {
+    const path = resolve(await realpath(join(consumerRoot, name)));
+    assert(isWithin(path, consumerRoot), `Project file escaped the packed consumer: ${name}`);
+  }
+  const instrumentationDependencies = resolve(
+    await realpath(join(consumerRoot, '.blackbox', 'instrumentation', 'node_modules')),
+  );
+  assert(
+    isWithin(instrumentationDependencies, consumerRoot),
+    'Instrumentation dependencies escaped the packed consumer',
+  );
+  return {
+    kind: 'playwright-packed-boundary',
+    consumerRoot,
+    packages,
+    projectFiles,
+    instrumentationDependencies,
+  };
 }
 
 export async function recover(resultsRoot, recoverSandbox) {
@@ -112,13 +150,16 @@ function collectSpecs(suite, result = []) {
 
 export async function verify(resultsRoot) {
   const records = await sandboxRecords(resultsRoot);
-  assert(records.length === 3, `Expected three physical Sandbox records, found ${records.length}`);
   assert(
-    new Set(records.map(({ value }) => value.sandboxId)).size === 3,
+    records.length === expectedSpecs.length,
+    `Expected ${expectedSpecs.length} physical Sandbox records, found ${records.length}`,
+  );
+  assert(
+    new Set(records.map(({ value }) => value.sandboxId)).size === expectedSpecs.length,
     'Sandbox IDs were reused',
   );
   assert(
-    new Set(records.map(({ value }) => value.projectName)).size === 3,
+    new Set(records.map(({ value }) => value.projectName)).size === expectedSpecs.length,
     'Compose projects were reused',
   );
   assert(
@@ -129,10 +170,9 @@ export async function verify(resultsRoot) {
     records.every(({ value }) => value.cleanup === 'complete'),
     'Sandbox cleanup was incomplete',
   );
-  const reasons = records.map(({ value }) => value.stopReason).sort();
   assert(
-    JSON.stringify(reasons) === JSON.stringify(['completed', 'completed', 'failed']),
-    `Unexpected stop reasons: ${JSON.stringify(reasons)}`,
+    records.every(({ value }) => value.stopReason === 'completed'),
+    `Unexpected stop reasons: ${JSON.stringify(records.map(({ value }) => value.stopReason))}`,
   );
   for (const { value } of records) {
     const resources = await dockerResources(value.projectName);
@@ -144,13 +184,25 @@ export async function verify(resultsRoot) {
 
   const report = JSON.parse(await readFile(join(resultsRoot, 'results.json'), 'utf8'));
   const specs = report.suites.flatMap((suite) => collectSpecs(suite));
-  assert(specs.length === 2, `Expected two Playwright specs, found ${specs.length}`);
-  const attempts = specs.flatMap((spec) => spec.tests.flatMap((test) => test.results));
-  assert(attempts.length === 3, `Expected three Playwright attempts, found ${attempts.length}`);
-  const statuses = attempts.map((attempt) => attempt.status).sort();
   assert(
-    JSON.stringify(statuses) === JSON.stringify(['failed', 'passed', 'passed']),
-    `Unexpected Playwright attempt statuses: ${JSON.stringify(statuses)}`,
+    specs.length === expectedSpecs.length,
+    `Expected ${expectedSpecs.length} Playwright specs, found ${specs.length}`,
+  );
+  const discoveredSpecs = specs.map((spec) => spec.title).sort();
+  assert(
+    JSON.stringify(discoveredSpecs) === JSON.stringify(expectedSpecs),
+    `Unexpected Playwright specs: ${JSON.stringify(discoveredSpecs)}`,
+  );
+  const attempts = specs.flatMap((spec) => spec.tests.flatMap((test) => test.results));
+  assert(
+    attempts.length === expectedSpecs.length,
+    `Expected ${expectedSpecs.length} Playwright attempts, found ${attempts.length}`,
+  );
+  assert(
+    attempts.every((attempt) => attempt.status === 'passed'),
+    `Unexpected Playwright attempt statuses: ${JSON.stringify(
+      attempts.map((attempt) => attempt.status),
+    )}`,
   );
   return {
     kind: 'playwright-e2e-proof',

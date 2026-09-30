@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 
 # Packed-consumer acceptance for the native Playwright fixtures. It uses the
-# same demo catalog and Compose application as Capsule, but tests only the
-# implemented Playwright surface: catalog selection, per-attempt Sandbox,
-# request baseURL, raw telemetry, retries, and cleanup.
+# same demo catalog and Compose application as Capsule, materialized as a real
+# external project with its own config, catalog, SUT, instrumentation install,
+# and tests. Every Playwright test receives its own catalog-selected Sandbox;
+# the evidence verifier checks discovery, per-test isolation, and cleanup.
 
 set -Eeuo pipefail
 
@@ -14,15 +15,18 @@ RESULT_ROOT="$E2E_ROOT/test-results"
 FIXTURE_TOKEN="playwright-e2e-token"
 ASSET_ROOT=""
 CONSUMER_ROOT=""
-INSTRUMENTATION_OWNED=0
 RECOVERY_RECORDED=0
 
 PACKAGES=(
+  capsule
   catalog
+  cli
+  driver
   instrumentation
   instrumentation-runtime-node
   otel-collector
   playwright
+  report-server
   sandbox
   telemetry
 )
@@ -53,9 +57,6 @@ cleanup() {
   if [[ "$RECOVERY_RECORDED" -eq 0 ]] && ! recover_sandboxes; then
     echo 'playwright-test: interrupted Sandbox recovery failed' >&2
     final_status=1
-  fi
-  if [[ "$INSTRUMENTATION_OWNED" -eq 1 ]]; then
-    rm -rf "$E2E_ROOT/.blackbox/instrumentation/node_modules"
   fi
   if [[ -n "$ASSET_ROOT" ]]; then
     case "$ASSET_ROOT" in
@@ -119,17 +120,37 @@ done
 pnpm --dir "$CONSUMER_ROOT" install --ignore-workspace --prefer-offline --ignore-scripts \
   --store-dir "$PNPM_STORE_DIR"
 
-if [[ ! -d "$E2E_ROOT/.blackbox/instrumentation/node_modules" ]]; then
-  INSTRUMENTATION_OWNED=1
-  pnpm --dir "$E2E_ROOT/.blackbox/instrumentation" install \
-    --ignore-workspace --prod --prefer-offline --ignore-scripts --lockfile=false
-fi
-
-mkdir -p "$CONSUMER_ROOT/tests/playwright"
+mkdir -p "$CONSUMER_ROOT/.blackbox" "$CONSUMER_ROOT/tests/playwright"
+cp "$E2E_ROOT/blackbox.config.yaml" "$CONSUMER_ROOT/blackbox.config.yaml"
+cp -R "$E2E_ROOT/.blackbox/catalog" "$CONSUMER_ROOT/.blackbox/catalog"
+cp -R "$E2E_ROOT/.blackbox/drivers" "$CONSUMER_ROOT/.blackbox/drivers"
+cp -R "$E2E_ROOT/sut" "$CONSUMER_ROOT/sut"
 cp "$E2E_ROOT/playwright.config.ts" "$CONSUMER_ROOT/playwright.config.ts"
-cp "$E2E_ROOT/tests/playwright/"*.spec.ts "$CONSUMER_ROOT/tests/playwright/"
+cp "$E2E_ROOT/tests/playwright/"*.ts "$CONSUMER_ROOT/tests/playwright/"
 cp "$SCRIPT_DIR/playwright-boundary.mjs" "$CONSUMER_ROOT/playwright-boundary.mjs"
 cp "$SCRIPT_DIR/playwright-evidence.mjs" "$CONSUMER_ROOT/playwright-evidence.mjs"
+
+BLACKBOX_BIN="$CONSUMER_ROOT/node_modules/.bin/blackbox"
+if [[ ! -x "$BLACKBOX_BIN" ]]; then
+  echo 'playwright-test: packed consumer did not install the Blackbox CLI' >&2
+  exit 1
+fi
+
+cd "$CONSUMER_ROOT"
+"$BLACKBOX_BIN" inst install --runtime node \
+  >"$RESULT_ROOT/instrumentation-install.txt"
+test -s "$CONSUMER_ROOT/.blackbox/instrumentation/instrumentation.js"
+test -d "$CONSUMER_ROOT/.blackbox/instrumentation/node_modules"
+
+"$BLACKBOX_BIN" catalog validate --json \
+  >"$RESULT_ROOT/catalog-validate.json"
+jq -e '.ok == true' "$RESULT_ROOT/catalog-validate.json" >/dev/null
+"$BLACKBOX_BIN" catalog ls --json \
+  >"$RESULT_ROOT/catalog.json"
+jq -e '
+  (.entries | any(.id == "subscription-system" and .kind == "system")) and
+  (.entries | any(.id == "payment-mock" and .kind == "subsystem"))
+' "$RESULT_ROOT/catalog.json" >/dev/null
 
 node "$CONSUMER_ROOT/playwright-boundary.mjs" \
   >"$RESULT_ROOT/package-boundary.json"
@@ -140,8 +161,6 @@ if [[ ! -x "$PLAYWRIGHT_BIN" ]]; then
   exit 1
 fi
 
-cd "$CONSUMER_ROOT"
-BLACKBOX_E2E_CONFIG_FILE="$E2E_ROOT/blackbox.config.yaml" \
 BLACKBOX_E2E_FIXTURE_TOKEN="$FIXTURE_TOKEN" \
 BLACKBOX_E2E_RESULTS_ROOT="$RESULT_ROOT" \
   "$PLAYWRIGHT_BIN" test --config "$CONSUMER_ROOT/playwright.config.ts"
