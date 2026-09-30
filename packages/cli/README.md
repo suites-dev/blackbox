@@ -24,10 +24,11 @@ and generated `--help` output.
 | Evidence          | `observations --session <id>`                                     | `capsule` reads retained observations at session, activity, or trace scope.                                                                                                             |
 | Reports           | `capsule report`, `capsule report serve`, `capsule report export` | `capsule` projects retained records; [`report-server`](../report-server/README.md) serves the local read-only viewer.                                                                   |
 
-The reserved `setup init`, `skill install discovery`, and
-`effects baseline update --run <id>` routes deliberately fail closed with exit
-code `3`. They are planned command contracts, not working integrations. The CLI
-must not report a successful artifact until a backend exists.
+The reserved `setup init` and `effects baseline update --run <id>` routes
+deliberately fail closed with exit code `3`. They are planned command contracts,
+not working integrations. The `skill install discovery` route is provided when
+the Skills plugin is installed and supports `--codex`, `--claude`, `--cursor`,
+repeated `--agent <name>`, `--yes`, and `--json`.
 
 ## Typical flow
 
