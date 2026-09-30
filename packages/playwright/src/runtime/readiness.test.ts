@@ -31,6 +31,21 @@ it.each(['http://127.0.0.1:41002/health', '//127.0.0.1:41002/health'])(
   },
 );
 
+it('rejects a delimiter-injected readiness protocol before constructing its URL', async () => {
+  const fetchRequest = vi.fn<typeof fetch>().mockResolvedValue(new Response(null, { status: 204 }));
+  vi.stubGlobal('fetch', fetchRequest);
+  const poisonedEntrypoint = {
+    ...entrypoint,
+    protocol: 'http://169.254.169.254/latest?x',
+    url: 'http://169.254.169.254/latest?x://127.0.0.1:41001',
+  } satisfies BlackboxEntrypoint;
+
+  await expect(
+    awaitReadiness({ entrypoint: poisonedEntrypoint, path: '/health', timeoutMs: 100 }),
+  ).rejects.toThrow('Readiness protocol must be http or https');
+  expect(fetchRequest).not.toHaveBeenCalled();
+});
+
 it('allows an absolute readiness URL on the sandbox origin', async () => {
   const fetchRequest = vi.fn<typeof fetch>().mockResolvedValue(new Response(null, { status: 204 }));
   vi.stubGlobal('fetch', fetchRequest);

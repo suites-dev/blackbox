@@ -4,8 +4,11 @@ function asError(error: unknown): Error {
   return error instanceof Error ? error : new Error(String(error));
 }
 
-function readinessUrl(entrypointUrl: string, path: string): URL {
-  const entrypoint = new URL(`${entrypointUrl}/`);
+function readinessUrl(entrypointInput: BlackboxEntrypoint, path: string): URL {
+  if (entrypointInput.protocol !== 'http' && entrypointInput.protocol !== 'https') {
+    throw new Error('Readiness protocol must be http or https');
+  }
+  const entrypoint = new URL(`${entrypointInput.url}/`);
   const url = new URL(path, entrypoint);
   if (url.origin !== entrypoint.origin) {
     throw new Error('Readiness path must resolve to the sandbox entrypoint origin');
@@ -19,7 +22,7 @@ export async function awaitReadiness(input: {
   readonly timeoutMs: number;
 }): Promise<void> {
   const deadline = Date.now() + input.timeoutMs;
-  const url = readinessUrl(input.entrypoint.url, input.path);
+  const url = readinessUrl(input.entrypoint, input.path);
   let lastError = new Error('Readiness endpoint was not attempted');
   let probeBudgetMs = deadline - Date.now();
   while (probeBudgetMs > 0) {
