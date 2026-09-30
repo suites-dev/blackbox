@@ -35,7 +35,7 @@ export class SkillStoreError extends Error {
   }
 }
 
-/** Project-relative skill directories. `replace` and `writeRecord` must be all-or-nothing. */
+/** Project-relative skill directories. `replace` must be all-or-nothing. */
 export interface SkillStore {
   read(path: string): Promise<StoredSkill>;
   /**
@@ -48,8 +48,6 @@ export interface SkillStore {
     files: ReadonlyMap<string, Uint8Array>,
     expected: StoredSkill,
   ): Promise<void>;
-  /** Adds the install record to an existing directory without touching its other files. */
-  writeRecord(path: string, content: Uint8Array): Promise<void>;
 }
 
 export type SkillOutcome =
@@ -220,7 +218,13 @@ async function installDestination(input: {
     // A manual copy of exactly this version is adopted: only the record is added.
     return assessment.files !== null &&
       sameFiles(fileHashes(bundle.files), fileHashes(assessment.files))
-      ? await done('adopted', null, () => input.store.writeRecord(path, recordFor(bundle)))
+      ? await done('adopted', null, () =>
+          input.store.replace(
+            path,
+            new Map(assessment.files).set(INSTALL_RECORD_NAME, recordFor(bundle)),
+            stored,
+          ),
+        )
       : conflict('not-installed-by-blackbox', null, []);
   }
   const from = assessment.record === null ? null : assessment.record.version;

@@ -61,12 +61,17 @@ async function readRegularFile(path: string): Promise<Uint8Array> {
 
 /**
  * Reads a skill tree: only real directories and regular files. Any symlink or
- * special file inside it is refused rather than followed.
+ * special file inside it is refused rather than followed. An empty directory is
+ * reported as `<path>/` with no content, so it counts as a local change.
  */
 export async function readSkillTree(directory: string): Promise<Map<string, Uint8Array>> {
   const files = new Map<string, Uint8Array>();
   async function walk(current: string, prefix: string): Promise<void> {
-    for (const entry of await readdir(current, { withFileTypes: true })) {
+    const entries = await readdir(current, { withFileTypes: true });
+    if (entries.length === 0 && prefix !== '') {
+      files.set(`${prefix}/`, new Uint8Array());
+    }
+    for (const entry of entries) {
       const path = join(current, entry.name);
       const key = prefix === '' ? entry.name : `${prefix}/${entry.name}`;
       if (entry.isSymbolicLink()) {

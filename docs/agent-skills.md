@@ -50,16 +50,16 @@ Every run reports each destination with one outcome: one `<agent>: <outcome> <pa
 `projectDirectory`, `results` (one per agent: `kind`, `agent`, absolute `path`), and `destinations` (one per directory:
 project-relative `path`, `agents`, `outcome`, `version`, `from`, `reason`, `message`, `changes`).
 
-| Destination before the run                                       | Outcome                                                            | What is written                    |
-| ---------------------------------------------------------------- | ------------------------------------------------------------------ | ---------------------------------- |
-| Absent                                                           | `installed`                                                        | The complete skill and its record  |
-| Installed by Blackbox, unmodified, same version and content      | `unchanged`                                                        | Nothing                            |
-| Installed by Blackbox, unmodified, another version or content    | `updated` (`from` the recorded version)                            | The complete skill and its record  |
-| A copy without a record whose files match this version           | `adopted`                                                          | Only the record                    |
-| Installed by Blackbox, then a file was edited, added, or removed | `conflict`, reason `locally-modified`                              | Nothing; `changes` lists each file |
-| Anything else already there (other files, a file, another skill) | `conflict`, reason `not-installed-by-blackbox`                     | Nothing                            |
-| Unreadable/unwritable, or reached through a symlink              | `failed`, reason `permission-denied`, `unsafe-path`, or `io-error` | Nothing                            |
-| Changed by someone else while the command was running            | `failed`, reason `changed-during-install`                          | Nothing; rerun to reassess it      |
+| Destination before the run                                       | Outcome                                                            | What is written                      |
+| ---------------------------------------------------------------- | ------------------------------------------------------------------ | ------------------------------------ |
+| Absent                                                           | `installed`                                                        | The complete skill and its record    |
+| Installed by Blackbox, unmodified, same version and content      | `unchanged`                                                        | Nothing                              |
+| Installed by Blackbox, unmodified, another version or content    | `updated` (`from` the recorded version)                            | The complete skill and its record    |
+| A copy without a record whose files match this version           | `adopted`                                                          | The record; files kept byte for byte |
+| Installed by Blackbox, then a file was edited, added, or removed | `conflict`, reason `locally-modified`                              | Nothing; `changes` lists each file   |
+| Anything else already there (other files, a file, another skill) | `conflict`, reason `not-installed-by-blackbox`                     | Nothing                              |
+| Unreadable/unwritable, or reached through a symlink              | `failed`, reason `permission-denied`, `unsafe-path`, or `io-error` | Nothing                              |
+| Changed by someone else while the command was running            | `failed`, reason `changed-during-install`                          | Nothing; rerun to reassess it        |
 
 The command exits `0` when every destination is `installed`, `updated`, `unchanged`, or `adopted`, and `1` when any is
 a conflict or failed; the other destinations are still processed and reported. Blackbox never replaces a conflicting

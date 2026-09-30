@@ -55,7 +55,6 @@ it('an unchanged repeat writes nothing', async () => {
   expect(result.destinations[0].outcome).toBe('unchanged');
   expect(result.destinations[0].from).toBeNull();
   expect(store.writes).toBe(writes);
-  expect(store.recordWrites).toBe(0);
 });
 
 it('a newer version updates a clean installation and reports the previous version', async () => {
@@ -109,7 +108,6 @@ it('local edits, additions and removals are a conflict and are preserved', async
   ]);
   expect(installSucceeded(result)).toBe(false);
   expect(store.writes).toBe(writes);
-  expect(store.recordWrites).toBe(0);
   expect(store.file(AGENTS_DIR, 'SKILL.md')).toBe('# my edits\n');
   expect(store.file(AGENTS_DIR, 'notes.md')).toBe('mine\n');
 });
@@ -140,7 +138,6 @@ it('an edited or foreign provenance record is not trusted', async () => {
   other.directories.set(AGENTS_DIR, other.tree('.agents/skills/other'));
   const foreign = await install(other);
   expect(foreign.destinations[0].reason).toBe('not-installed-by-blackbox');
-  expect(other.recordWrites).toBe(0);
 });
 
 it('an unrelated existing destination is a conflict and is left untouched', async () => {
@@ -153,11 +150,11 @@ it('an unrelated existing destination is a conflict and is left untouched', asyn
     { outcome: 'conflict', reason: 'not-installed-by-blackbox' },
   ]);
   expect(result.destinations[1].message).toMatch(/move or remove it, then rerun/u);
-  expect(store.writes + store.recordWrites).toBe(0);
+  expect(store.writes).toBe(0);
   expect(store.file(CLAUDE_DIR, 'SKILL.md')).toBe('someone else\n');
 });
 
-it('a manual copy that matches the bundle is adopted by adding only the record', async () => {
+it('a manual copy that matches the bundle is adopted byte for byte with a record', async () => {
   const store = new MemoryStore();
   // A CRLF manual copy still matches: hashes are line-ending normalized.
   store.directories.set(
@@ -174,8 +171,7 @@ it('a manual copy that matches the bundle is adopted by adding only the record',
     from: null,
   });
   expect(installSucceeded(result)).toBe(true);
-  expect(store.writes).toBe(0);
-  expect(store.recordWrites).toBe(1);
+  expect(store.writes).toBe(1);
   expect(store.file(AGENTS_DIR, 'SKILL.md')).toBe('# discovery v1\r\n');
   expect(recordAt(store, AGENTS_DIR).version).toBe('1.0.0');
   const repeat = await install(store);
@@ -205,8 +201,17 @@ it('a manual copy that differs from the bundle is a conflict, not adopted', asyn
       outcome: 'conflict',
       reason: 'not-installed-by-blackbox',
     });
-    expect(store.writes + store.recordWrites).toBe(0);
+    expect(store.writes).toBe(0);
   }
+});
+
+it('an empty directory added to an installation is a local change', async () => {
+  const store = new MemoryStore();
+  await install(store);
+  store.tree(AGENTS_DIR).set('notes/', new Uint8Array());
+  const result = await install(store, { bundle: bundle('2.0.0') });
+  expect(result.destinations[0]).toMatchObject({ outcome: 'conflict', reason: 'locally-modified' });
+  expect(result.destinations[0].changes).toEqual([{ path: 'notes/', change: 'added' }]);
 });
 
 it('unreadable, unwritable and unsafe destinations fail without stopping the others', async () => {

@@ -2,7 +2,6 @@ import { randomBytes } from 'node:crypto';
 import { mkdir, readdir, rename, rm, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 
-import { INSTALL_RECORD_NAME } from '../install-record.js';
 import { SkillStoreError, type SkillStore, type StoredSkill } from '../install-skill.js';
 import {
   asStoreError,
@@ -143,10 +142,11 @@ async function swapIn(input: {
   if (input.expected.kind !== 'directory') {
     throw changedDuringInstall(destination);
   }
+  const assessed = input.expected.files;
   const retired = join(input.parent, temporaryName(input.name, 'old'));
   await rename(destination, retired);
   try {
-    if (!sameTree(await readSkillTree(retired), input.expected.files)) {
+    if (!sameTree(await readSkillTree(retired), assessed)) {
       throw changedDuringInstall(destination);
     }
     await input.hooks.afterRetire();
@@ -154,6 +154,17 @@ async function swapIn(input: {
   } catch (error) {
     await rename(retired, destination);
     throw error;
+  }
+  // A write through a file handle opened before the swap can still land in the
+  // retired tree. Check once more and put that tree back rather than delete it.
+  const intact = await readSkillTree(retired).then(
+    (files) => sameTree(files, assessed),
+    () => false,
+  );
+  if (!intact) {
+    await rename(destination, input.staged);
+    await rename(retired, destination);
+    throw changedDuringInstall(destination);
   }
   await rm(retired, { recursive: true, force: true });
 }
@@ -187,40 +198,6 @@ async function replaceTree(
   }
 }
 
-async function writeRecordFile(
-  projectDirectory: string,
-  hooks: ReplaceHooks,
-  path: string,
-  content: Uint8Array,
-): Promise<void> {
-  let staged: string | null = null;
-  try {
-    const parts = segments(path);
-    const name = parts[parts.length - 1];
-    const parent = await safeParent(projectDirectory, parts, false);
-    const info = parent === null ? null : await lstatOrNull(join(parent, name));
-    if (parent === null || info === null || info.isSymbolicLink() || !info.isDirectory()) {
-      throw unsafe(`Refusing to record an unsafe skill directory: ${path}`);
-    }
-    const record = join(parent, name, INSTALL_RECORD_NAME);
-    if ((await lstatOrNull(record)) !== null) {
-      throw unsafe(`Refusing to replace an existing install record: ${record}`);
-    }
-    // Staged beside the skill, never inside it, so an interrupted write
-    // leaves no extra file in the skill directory.
-    staged = join(parent, temporaryName(name, 'tmp'));
-    await writeFile(staged, content, { flag: 'wx' });
-    await hooks.afterStage();
-    await rename(staged, record);
-    staged = null;
-  } catch (error) {
-    if (staged !== null) {
-      await rm(staged, { force: true }).catch(() => undefined);
-    }
-    throw error;
-  }
-}
-
 /**
  * Skill directories under a project, written by swapping a fully staged sibling
  * into place with `rename`, so an interrupted install never leaves a partial
@@ -244,9 +221,6 @@ export function nodeSkillStore(
     replace: storeErrors(
       (path: string, files: ReadonlyMap<string, Uint8Array>, expected: StoredSkill) =>
         replaceTree(projectDirectory, hooks, path, files, expected),
-    ),
-    writeRecord: storeErrors((path: string, content: Uint8Array) =>
-      writeRecordFile(projectDirectory, hooks, path, content),
     ),
   };
 }

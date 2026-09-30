@@ -77,6 +77,39 @@ it('a destination removed after it was assessed is not recreated', async () => {
   });
 });
 
+it('an edit that lands in the retired tree during the swap is kept', async () => {
+  await withProject(async (project) => {
+    const skills = join(project, '.agents', 'skills');
+    const store = nodeSkillStore(project);
+    await store.replace(DESTINATION, files({ 'SKILL.md': 'v1\n' }), await store.read(DESTINATION));
+    const assessed = await store.read(DESTINATION);
+    // Simulates a write through a file handle opened before the swap.
+    const lateWrite = nodeSkillStore(project, {
+      afterStage: () => Promise.resolve(),
+      afterRetire: async () => {
+        const [retired] = (await readdir(skills)).filter((entry) => entry.includes('blackbox-old'));
+        await writeFile(join(skills, retired, 'SKILL.md'), 'late edit\n');
+      },
+    });
+    await rejectsAsChanged(lateWrite.replace(DESTINATION, files({ 'SKILL.md': 'v2\n' }), assessed));
+    expect(await readFile(join(project, DESTINATION, 'SKILL.md'), 'utf8')).toBe('late edit\n');
+    expect(await readdir(skills)).toEqual(['discovery']);
+  });
+});
+
+it('an empty directory inside a skill is part of what is read', async () => {
+  await withProject(async (project) => {
+    const store = nodeSkillStore(project);
+    await store.replace(DESTINATION, files({ 'SKILL.md': 'v1\n' }), await store.read(DESTINATION));
+    await mkdir(join(project, DESTINATION, 'notes'));
+    const read = await store.read(DESTINATION);
+    expect(read.kind === 'directory' ? [...read.files.keys()].sort() : []).toEqual([
+      'SKILL.md',
+      'notes/',
+    ]);
+  });
+});
+
 it('stale siblings are removed on read once the destination exists', async () => {
   await withProject(async (project) => {
     const skills = join(project, '.agents', 'skills');

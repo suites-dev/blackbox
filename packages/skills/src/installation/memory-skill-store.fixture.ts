@@ -34,7 +34,7 @@ export function bundle(version: string, skill = '# discovery v1\n'): SkillBundle
   };
 }
 
-type Operation = 'read' | 'replace' | 'writeRecord';
+type Operation = 'read' | 'replace';
 
 /** Skill directories kept in memory; `failures` makes one path's operation throw. */
 export class MemoryStore implements SkillStore {
@@ -42,7 +42,6 @@ export class MemoryStore implements SkillStore {
   readonly others = new Set<string>();
   readonly failures = new Map<string, { operation: Operation; error: Error }>();
   writes = 0;
-  recordWrites = 0;
 
   read(path: string): Promise<StoredSkill> {
     this.#fail(path, 'read');
@@ -67,13 +66,6 @@ export class MemoryStore implements SkillStore {
     this.writes += 1;
     this.others.delete(path);
     this.directories.set(path, new Map(files));
-  }
-
-  writeRecord(path: string, content: Uint8Array): Promise<void> {
-    this.#fail(path, 'writeRecord');
-    this.recordWrites += 1;
-    this.tree(path).set('.blackbox-install.json', content);
-    return Promise.resolve();
   }
 
   file(path: string, name: string): string | undefined {

@@ -9,7 +9,6 @@ import { nodeSkillStore } from './node-skill-store.js';
 const DESTINATION = '.agents/skills/discovery';
 const files = (entries: Record<string, string>) =>
   new Map(Object.entries(entries).map(([path, content]) => [path, Buffer.from(content)]));
-const record = Buffer.from('{"record":true}\n');
 const ABSENT = { kind: 'absent' } as const;
 /** Replaces the destination after reading it, as the installer does. */
 const replaceRead = async (store: SkillStore, entries: Record<string, string>) =>
@@ -126,28 +125,6 @@ it('a process killed mid-swap is recovered on the next run', async () => {
   });
 });
 
-it('writeRecord adds only the record; an interrupted write leaves nothing behind', async () => {
-  await withProject(async (project) => {
-    await mkdir(join(project, DESTINATION), { recursive: true });
-    await writeFile(join(project, DESTINATION, 'SKILL.md'), 'manual\r\n');
-    await rejectsWith(
-      nodeSkillStore(project, failAt('afterStage')).writeRecord(DESTINATION, record),
-      'io-error',
-      /interrupted/u,
-    );
-    expect(await tree(join(project, DESTINATION))).toEqual(['SKILL.md']);
-    expect(await readdir(join(project, '.agents', 'skills'))).toEqual(['discovery']);
-    await nodeSkillStore(project).writeRecord(DESTINATION, record);
-    expect(await tree(join(project, DESTINATION))).toEqual(['.blackbox-install.json', 'SKILL.md']);
-    expect(await readFile(join(project, DESTINATION, 'SKILL.md'), 'utf8')).toBe('manual\r\n');
-    await rejectsWith(
-      nodeSkillStore(project).writeRecord(DESTINATION, record),
-      'unsafe-path',
-      /existing install record/u,
-    );
-  });
-});
-
 it('a symlinked destination is refused and its target is never touched', async () => {
   await withProject(async (project) => {
     await withOutside(async (outside) => {
@@ -160,11 +137,6 @@ it('a symlinked destination is refused and its target is never touched', async (
         store.replace(DESTINATION, files({ 'SKILL.md': 'x' }), ABSENT),
         'unsafe-path',
         /symlinked/u,
-      );
-      await rejectsWith(
-        store.writeRecord(DESTINATION, record),
-        'unsafe-path',
-        /unsafe skill directory/u,
       );
       expect(await readdir(outside)).toEqual(['SKILL.md']);
       expect(await readFile(join(outside, 'SKILL.md'), 'utf8')).toBe('outside\n');
@@ -181,11 +153,6 @@ it('a symlinked skills directory component is refused before anything is written
       await rejectsWith(store.read(DESTINATION), 'unsafe-path', /unsafe skill directory/u);
       await rejectsWith(
         store.replace(DESTINATION, files({ 'SKILL.md': 'x' }), ABSENT),
-        'unsafe-path',
-        /unsafe skill directory/u,
-      );
-      await rejectsWith(
-        store.writeRecord(DESTINATION, record),
         'unsafe-path',
         /unsafe skill directory/u,
       );
@@ -221,7 +188,6 @@ it('paths that could escape the project are refused', async () => {
         'unsafe-path',
         /unsafe skill path/u,
       );
-      await rejectsWith(store.writeRecord(path, record), 'unsafe-path', /unsafe skill path/u);
     }
     await rejectsWith(
       store.replace(DESTINATION, files({ '../escape.md': 'x' }), ABSENT),
