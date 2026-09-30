@@ -110,7 +110,7 @@ jobs:
           retention-days: 3
 
   demo:
-    name: Demo
+    name: Capsule demo
     needs: build
     runs-on: ubuntu-24.04
     timeout-minutes: 45
@@ -371,9 +371,13 @@ jobs:
 
       # A change entering main is a release candidate, so the version it would
       # publish is stated on the pull request. Release branches carry the same
-      # version across many merges, so they get no comment.
+      # version across many merges, so they get no comment. A pull request from
+      # a fork carries a read-only token, and writing the comment would fail the
+      # rehearsal, so the comment is limited to this repository's own branches.
       - name: Report the version on the pull request
-        if: github.event_name == 'pull_request' && github.base_ref == 'main'
+        if: >-
+          github.event_name == 'pull_request' && github.base_ref == 'main'
+          && github.event.pull_request.head.repo.full_name == github.repository
         env:
           GH_TOKEN: ${{ github.token }}
           PR: ${{ github.event.number }}
@@ -399,7 +403,7 @@ jobs:
         run: docker rm --force blackbox-test-registry
 
   gate:
-    name: E2E gate
+    name: Capsule E2E (Testcontainers)
     if: always()
     needs: [build, demo, e2e, rehearsal]
     runs-on: ubuntu-24.04
