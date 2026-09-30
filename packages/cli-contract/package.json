@@ -11,7 +11,12 @@
       "default": "./dist/index.js"
     }
   },
-  "files": ["dist", "README.md", "LICENSE", "NOTICE"],
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "NOTICE"
+  ],
   "scripts": {
     "prebuild": "rimraf dist",
     "build": "tsc --project tsconfig.build.json",
@@ -25,14 +30,21 @@
     "typescript": "catalog:"
   },
   "license": "Apache-2.0",
-  "engines": { "node": ">=22.15" },
-  "publishConfig": { "access": "public", "provenance": true },
+  "engines": {
+    "node": ">=22.15"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/suites-dev/blackbox.git",
     "directory": "packages/cli-contract"
   },
   "homepage": "https://github.com/suites-dev/blackbox/tree/main/packages/cli-contract#readme",
-  "bugs": { "url": "https://github.com/suites-dev/blackbox/issues" },
+  "bugs": {
+    "url": "https://github.com/suites-dev/blackbox/issues"
+  },
   "author": "Suites"
 }
