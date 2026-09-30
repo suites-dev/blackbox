@@ -138,7 +138,16 @@ export async function showView(input: {
       });
     case 'trace':
     case 'pending-trace': {
-      const owner = (activities ?? []).find(
+      if (activities === null) {
+        throw new CliFailure({
+          code: 'operation-failed',
+          message: `capsule ${capsule.capsule}: its activity record could not be read, so there is no trace context`,
+          details: [],
+          candidates: [],
+          next: [nextSteps.showCapsule(capsule.capsule)],
+        });
+      }
+      const owner = activities.find(
         (activity) => activity.telemetry.context.traceId === resolved.traceId,
       );
       return traceView({
@@ -146,7 +155,7 @@ export async function showView(input: {
         investigation: await investigate({
           projectDirectory,
           capsule,
-          activities: activities ?? [],
+          activities,
           traceIds: [resolved.traceId],
         }),
         associated: owner === undefined ? null : display.short(owner.activityId),

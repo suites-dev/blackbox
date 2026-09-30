@@ -10,7 +10,12 @@ import {
 import { formatColumns } from '../../cli/output.js';
 import { nextSteps } from '../../cli/next-steps.js';
 import type { CapsuleSummary } from '../../context/project-index.js';
-import { offsetMs, rootSummary, type CapsuleInvestigation } from './investigation-model.js';
+import {
+  offsetMs,
+  rootSummary,
+  type CapsuleInvestigation,
+  type UncausedPlacement,
+} from './investigation-model.js';
 import { showDuration, statusText, traceShort, treeLines } from './show-format.js';
 import { statusDocument, treeDocument } from './show-json.js';
 
@@ -143,14 +148,25 @@ function activityRow(
   };
 }
 
+function groupedUncaused(
+  investigation: CapsuleInvestigation,
+): ReadonlyMap<string | null, readonly UncausedPlacement[]> {
+  const groups = new Map<string | null, UncausedPlacement[]>();
+  for (const placement of investigation.uncaused()) {
+    const group = groups.get(placement.placedAfter) ?? [];
+    group.push(placement);
+    groups.set(placement.placedAfter, group);
+  }
+  return groups;
+}
+
 function uncausedRows(
   investigation: CapsuleInvestigation,
   placedAfter: string | null,
+  groups: ReadonlyMap<string | null, readonly UncausedPlacement[]>,
 ): readonly TimelineRow[] {
   const start = investigation.data.capsule.startedAt;
-  return investigation
-    .uncaused()
-    .filter((placement) => placement.placedAfter === placedAfter)
+  return (groups.get(placedAfter) ?? [])
     .map((placement) => {
       const root = rootSummary(investigation.tree(placement.traceId));
       const offset = offsetMs(start, placement.earliestStartUnixNano);
@@ -175,14 +191,15 @@ function uncausedRows(
 function timelineRows(
   investigation: CapsuleInvestigation,
   short: (activityId: string) => string,
+  groups: ReadonlyMap<string | null, readonly UncausedPlacement[]>,
 ): readonly TimelineRow[] {
   return [
-    ...uncausedRows(investigation, null),
+    ...uncausedRows(investigation, null, groups),
     ...investigation
       .orderedActivities()
       .flatMap((activity) => [
         activityRow(investigation, activity, short),
-        ...uncausedRows(investigation, activity.activityId),
+        ...uncausedRows(investigation, activity.activityId, groups),
       ]),
   ];
 }
@@ -193,9 +210,11 @@ function timelineRows(
  * readiness probes) are one summary row; every other row is one line.
  * The JSON timeline keeps one row per trace.
  */
-function humanRows(investigation: CapsuleInvestigation, rows: readonly TimelineRow[]) {
-  const before =
-    investigation.data.activities.length === 0 ? [] : uncausedRows(investigation, null);
+function humanRows(
+  investigation: CapsuleInvestigation,
+  rows: readonly TimelineRow[],
+  before: readonly TimelineRow[],
+) {
   const line = (row: TimelineRow) => `  ${row.cells.filter((cell) => cell !== '').join('  ')}`;
   if (before.length === 0) {
     return rows.map(line);
@@ -212,7 +231,10 @@ export function timelineView(input: {
 }) {
   const { investigation } = input;
   const capsule = investigation.data.capsule;
-  const rows = timelineRows(investigation, input.short);
+  const groups = groupedUncaused(investigation);
+  const rows = timelineRows(investigation, input.short, groups);
+  const before =
+    investigation.data.activities.length === 0 ? [] : uncausedRows(investigation, null, groups);
   const markers = new Set(rows.map((row) => row.marker));
   const legend = [
     ...(markers.has('caused') ? ['  ── caused by the activity (trace context)'] : []),
@@ -221,7 +243,7 @@ export function timelineView(input: {
   return {
     lines: [
       capsuleHead(capsule, investigation.data.completeness, '  '),
-      ...humanRows(investigation, rows),
+      ...humanRows(investigation, rows, before),
       ...(legend.length === 0 ? [] : ['', ...legend]),
     ],
     next: input.latest === null ? [] : [nextSteps.showActivity(input.latest, capsule.capsule)],

@@ -4,6 +4,8 @@ import {
   type CapsuleActivityReport,
 } from '@suites/blackbox-capsule';
 
+import { createRedactionContext, redactText } from '../../../reporting/redaction.js';
+
 import { formatColumns } from '../../cli/output.js';
 import { nextSteps } from '../../cli/next-steps.js';
 import { offsetMs, rootSummary, type CapsuleInvestigation } from './investigation-model.js';
@@ -34,6 +36,29 @@ function driverFailedEarly(activity: CapsuleActivityReport): boolean {
     (activity.outcome.kind === 'driver-prepare-failed' ||
       activity.outcome.kind === 'driver-propagation-refused')
   );
+}
+
+function driverFailure(activity: CapsuleActivityReport):
+  | { readonly kind: 'driver-prepare-failed'; readonly message: string }
+  | { readonly kind: 'driver-propagation-refused' }
+  | null {
+  if (!driverFailedEarly(activity) || activity.kind !== 'completed') {
+    return null;
+  }
+  if (activity.outcome.kind === 'driver-prepare-failed') {
+    return {
+      kind: activity.outcome.kind,
+      message: redactText(
+        activity.outcome.error.message,
+        'activity.outcome.error.message',
+        createRedactionContext(),
+      ),
+    };
+  }
+  if (activity.outcome.kind === 'driver-propagation-refused') {
+    return { kind: activity.outcome.kind };
+  }
+  return null;
 }
 
 function driverOf(activity: CapsuleActivityReport): string | null {
@@ -108,7 +133,14 @@ export function activityView(input: ActivityViewInput) {
     field('process', processText(activity)),
   ];
   if (driverFailedEarly(activity)) {
-    return { lines: head, next: [], document: { limitations: [] } };
+    const failure = driverFailure(activity);
+    const failureText =
+      failure === null ? 'unknown' : 'message' in failure ? failure.message : failure.kind;
+    return {
+      lines: [...head, field('failure', failureText)],
+      next: [],
+      document: { failure, limitations: [] },
+    };
   }
   const context: ActivityContext | null = activityContext(activity);
   const observation = observationDocument(input);
