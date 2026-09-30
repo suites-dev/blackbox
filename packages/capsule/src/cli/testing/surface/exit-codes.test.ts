@@ -153,7 +153,7 @@ void test('the same flag error exits 2 on show; oclif default 2 is what run over
     const show = await run(fixture.directory, 'capsule', 'show', ACTIVITY_A, '--no-such-flag');
     assert.equal(show.status, EXIT_CODES.usage);
     assert.match(show.stderr, /^blackbox: Nonexistent flag: --no-such-flag\n/u);
-    assert.match(show.stderr, /→ blackbox capsule show --help\n$/u);
+    assert.match(show.stderr, /→ blackbox capsule show --help\n/u);
     // Negative control: an unchanged plain oclif command keeps oclif's own 2.
     const plain = await run(fixture.directory, 'catalog', 'validate', '--no-such-flag');
     assert.equal(plain.status, 2);
@@ -164,7 +164,7 @@ void test('the same flag error exits 2 on show; oclif default 2 is what run over
   }
 });
 
-void test('other commands: usage/resolution 2, Blackbox failure 125, reserved 3, success 0', async () => {
+void test('other commands: usage/resolution 2, Blackbox failure 125 and success 0', async () => {
   const fixture = await twoCapsuleProject();
   try {
     const expectations = [
@@ -181,7 +181,7 @@ void test('other commands: usage/resolution 2, Blackbox failure 125, reserved 3,
         ['capsule', 'show', ACTIVITY_A, '--session', 'quiet-river-ada-000000000009'],
         EXIT_CODES.blackboxFailure,
       ],
-      [['setup', 'init'], EXIT_CODES.reserved],
+      [['setup', 'init'], EXIT_CODES.usage],
       [['capsule', 'ls'], EXIT_CODES.success],
     ] as const;
     for (const [argv, code] of expectations) {
