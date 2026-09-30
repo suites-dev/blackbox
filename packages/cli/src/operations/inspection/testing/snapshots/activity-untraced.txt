@@ -4,7 +4,7 @@ activity c0000006  Check health once more
   via       host
   process   exit 0 on host
   context   untraced: no driver, so no trace context was sent
-  observed  nothing yet · complete
+  observed  nothing observed · complete
   later in this capsule, no known cause:
     e0000016  public-api  GET /health  200  +55ms
   ⚠ Blackbox cannot prove that c0000006 caused e0000016.

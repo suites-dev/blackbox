@@ -21,7 +21,7 @@ activity <ACT_1>  Queue proof stimulus
   via  redis → redis (redis)
   process  exit 0 on participant redis
   context  not carried: redis is shared state (expected for this driver)
-  observed  nothing yet · complete
+  observed  nothing observed · complete
   later in this capsule, no known cause:
   <TRACE_1>  redis-proof-consumer  POST /fixture/shared-state-proof/proof-journey  202  +<DUR>
   ⚠ Blackbox cannot prove that <ACT_1> caused <TRACE_1>.

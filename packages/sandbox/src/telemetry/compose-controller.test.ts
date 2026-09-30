@@ -18,7 +18,13 @@ function telemetry(): SandboxTelemetryEnabledInput {
       containerPort: 4318,
       runtime: { kind: 'image-default', image: 'collector:test' },
       environment: {},
-      readiness: { kind: 'http', path: '/ready', intervalSeconds: 1, timeoutSeconds: 1, retries: 1 },
+      readiness: {
+        kind: 'http',
+        path: '/ready',
+        intervalSeconds: 1,
+        timeoutSeconds: 1,
+        retries: 1,
+      },
       drain: { kind: 'signal', signal: 'SIGTERM' },
     },
     participants: [
@@ -42,9 +48,7 @@ function telemetry(): SandboxTelemetryEnabledInput {
 
 it('stops participants concurrently and reserves the final deadline for the collector', async () => {
   const releases: (() => void)[] = [];
-  const participantStop = vi.fn(
-    () => new Promise<void>((resolve) => releases.push(resolve)),
-  );
+  const participantStop = vi.fn(() => new Promise<void>((resolve) => releases.push(resolve)));
   const collectorStop = vi.fn(() => Promise.resolve());
   const started = {
     getContainer(name: string) {
@@ -80,14 +84,18 @@ it('stops participants concurrently and reserves the final deadline for the coll
 });
 
 it('stop grace always leaves a reserve under the caller deadline', () => {
-  for (const timeoutMs of [1_000, 2_000, 8_000, 30_000, 60_000, 600_000]) {
+  for (const timeoutMs of [1, 500, 999, 1_000, 1_999, 2_000, 8_000, 30_000, 60_000, 600_000]) {
     const { participantMs, collectorMs } = stopGrace(timeoutMs);
-    expect(collectorMs).toBeGreaterThanOrEqual(1_000);
+    expect(participantMs + collectorMs, String(timeoutMs)).toBeLessThanOrEqual(timeoutMs);
     expect(participantMs).toBeLessThanOrEqual(10_000);
     if (timeoutMs >= 4_000) {
       expect(participantMs + collectorMs).toBeLessThanOrEqual(timeoutMs * 0.75);
+      expect(collectorMs).toBeGreaterThanOrEqual(1_000);
     }
   }
+  // A budget under two seconds leaves no grace instead of exceeding the budget.
+  expect(stopGrace(999)).toEqual({ participantMs: 0, collectorMs: 0 });
+  expect(stopGrace(2_000)).toEqual({ participantMs: 0, collectorMs: 1_000 });
   // The capsule stop budget: a participant that ignores SIGTERM costs at most 10 s.
   expect(stopGrace(60_000)).toEqual({ participantMs: 10_000, collectorMs: 15_000 });
 });

@@ -4,7 +4,7 @@ activity c0000003  Queue proof stimulus
   via       redis → redis (redis)
   process   exit 0 on participant redis
   context   not carried: redis is shared state (expected for this driver)
-  observed  nothing yet · complete
+  observed  nothing observed · complete
   later in this capsule, no known cause:
     e0000023  redis-proof-consumer  POST /fixture/shared-state-proof/proof-journey  202  +212ms
     e0000025  public-api            GET /health                                     200  +1.5s

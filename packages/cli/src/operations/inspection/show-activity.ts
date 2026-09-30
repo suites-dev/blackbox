@@ -74,7 +74,12 @@ function uncausedLines(input: ActivityViewInput, capsule: string): readonly stri
 function observedLines(input: ActivityViewInput, observation: ActivityObservation) {
   const status = statusText(input.investigation.data.completeness);
   if (observation.spans === 0) {
-    return [field('observed', `nothing yet · ${status}`)];
+    // "yet" only while more telemetry can still arrive.
+    const nothing =
+      input.investigation.data.completeness.status === 'provisional'
+        ? 'nothing yet'
+        : 'nothing observed';
+    return [field('observed', `${nothing} · ${status}`)];
   }
   const tree = input.investigation.tree(input.activity.telemetry.context.traceId);
   return [

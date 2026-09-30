@@ -112,14 +112,17 @@ const PARTICIPANT_GRACE_MAX_SECONDS = 10;
  * close). A quarter of the budget stays in reserve for Docker itself, so a
  * participant that ignores SIGTERM cannot push the drain past the caller's
  * deadline. Participants get at most 10 s; the collector a third of the grace.
+ * The grace never exceeds the budget, however small.
  */
 export function stopGrace(timeoutMs: number): {
   readonly participantMs: number;
   readonly collectorMs: number;
 } {
-  const totalSeconds = Math.max(1, Math.floor(timeoutMs / 1_000));
-  const graceSeconds = Math.max(1, totalSeconds - Math.ceil(totalSeconds / 4));
-  const collectorSeconds = Math.max(1, Math.ceil(graceSeconds / 3));
+  // Whole seconds (Docker's unit), never more than the budget: a budget under
+  // two seconds leaves no grace, and Docker stops the containers at once.
+  const totalSeconds = Math.max(0, Math.floor(timeoutMs / 1_000));
+  const graceSeconds = totalSeconds - Math.ceil(totalSeconds / 4);
+  const collectorSeconds = Math.ceil(graceSeconds / 3);
   const participantSeconds = Math.min(
     PARTICIPANT_GRACE_MAX_SECONDS,
     Math.max(0, graceSeconds - collectorSeconds),
