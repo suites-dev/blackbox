@@ -29,12 +29,19 @@ Verdaccio registry, the same way CI does, so build the workspace once before pre
 Start the registry (the values below match [`.github/actions/registry`](../../.github/actions/registry/action.yml)):
 
 ```sh
+storage="$(mktemp -d)"
 docker run --detach \
   --name blackbox-test-registry \
+  --user "$(id -u):$(id -g)" \
   --publish 127.0.0.1:4874:4873 \
   --volume "$(pwd)/.github/verdaccio/config.yaml:/verdaccio/conf/config.yaml:ro" \
+  --volume "$storage:/verdaccio/storage" \
   verdaccio/verdaccio:6.10.3
 ```
+
+The storage directory is where the published packages land. CI publishes into one exactly like it in the `build`
+job and passes it to every other job as the build artifact, so the lanes publish nothing and all install the same
+bytes. Locally the directory is yours to keep or discard; `--user` lets the container write it.
 
 Publish the built packages to it:
 
@@ -52,7 +59,9 @@ the journey installs into is `e2e/` by default, overridable with `BLACKBOX_PROJE
 
 > **The journey resets its fixture.** Use a disposable checkout, or preserve wanted `e2e/.blackbox/` evidence first.
 > Preparing the consumer stops prior E2E Capsules and resets generated experiments, reports, temporary files,
-> instrumentation, clients, and driver state. Run one journey at a time in a checkout.
+> instrumentation, clients, and driver state. It reinstalls the tracked instrumentation files before it returns, so
+> a prepared checkout is clean, but anything you wanted under `e2e/.blackbox/` is gone. Run one journey at a time in
+> a checkout.
 
 ## Run unattended or walk through interactively
 

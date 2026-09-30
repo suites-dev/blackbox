@@ -193,6 +193,14 @@ async function main() {
       },
     });
 
+    // The reset removes generated instrumentation, and those two files are
+    // tracked. Reinstalling them here keeps preparation self-consistent: a run
+    // that stops before any lane still leaves the checkout as it found it.
+    await execute(blackboxBin, ['inst', 'install', '--runtime', 'node'], {
+      cwd: projectRoot,
+      env: { ...process.env, NPM_CONFIG_REGISTRY: registry, NPM_CONFIG_CACHE: npmCache },
+    });
+
     await mkdir(artifactRoot, { recursive: true });
     await mkdir(driverDirectory, { recursive: true });
     const driverInstall = await installDrivers({

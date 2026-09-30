@@ -3,9 +3,11 @@ name: E2E
 # Docker-backed and slow, so it is a workflow of its own: the fast package gate
 # in ci.yml never waits on it.
 #
-# The workspace is built once. Every lane then downloads that build, serves it
-# from a disposable registry, and installs from there, so nothing a lane runs
-# can resolve back into packages/*/src.
+# The workspace is built once and published once, into a disposable registry
+# whose storage travels between jobs as the build artifact. Every lane serves
+# that same storage and installs from it, so nothing a lane runs can resolve
+# back into packages/*/src, and no lane can publish something different from
+# what the others got.
 on:
   pull_request:
     branches:
@@ -33,7 +35,7 @@ env:
   CI: true
   PNPM_VERSION: 9.15.4
   NODE_VERSION: 22.x
-  BUILD_ARTIFACT: blackbox-dist
+  BUILD_ARTIFACT: blackbox-registry
   BLACKBOX_TEST_REGISTRY: http://127.0.0.1:4874/
 
 jobs:
@@ -68,11 +70,42 @@ jobs:
         id: version
         run: echo "version=$(jq -er '.version' lerna.json)" >>"$GITHUB_OUTPUT"
 
-      - name: Upload the build
+      - name: Serve an empty registry to publish into
+        uses: ./.github/actions/registry
+        with:
+          storage: ${{ runner.temp }}/registry-storage
+
+      # pnpm packs each package so the workspace protocol is rewritten to the
+      # exact published version; npm then publishes those tarballs. The token
+      # is a formality the registry accepts under its $all publish policy, and
+      # npm refuses to publish at all without one. --provenance=false is the
+      # only way to override publishConfig.provenance, which the real release
+      # keeps: a local registry issues no npm provenance.
+      - name: Publish every package once
+        run: |
+          tarballs="$RUNNER_TEMP/tarballs"
+          rm -rf "$tarballs"
+          mkdir -p "$tarballs"
+          pnpm --recursive --filter './packages/*' exec pnpm pack --pack-destination "$tarballs"
+          for tarball in "$tarballs"/*.tgz; do
+            env "npm_config_//127.0.0.1:4874/:_authToken=blackbox-e2e" \
+              npm publish "$tarball" \
+                --registry "$BLACKBOX_TEST_REGISTRY" \
+                --tag e2e \
+                --provenance=false
+          done
+
+      # Stopped before upload so Verdaccio cannot be mid-write when the storage
+      # is read.
+      - name: Stop the registry
+        run: docker rm --force blackbox-test-registry
+
+      - name: Upload the published registry
         uses: actions/upload-artifact@v5
         with:
           name: ${{ env.BUILD_ARTIFACT }}
-          path: packages/*/dist
+          path: ${{ runner.temp }}/registry-storage
+          include-hidden-files: true
           if-no-files-found: error
           retention-days: 3
 
@@ -97,14 +130,16 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           pnpm-version: ${{ env.PNPM_VERSION }}
 
-      - name: Download the build
+      - name: Download the published registry
         uses: actions/download-artifact@v5
         with:
           name: ${{ env.BUILD_ARTIFACT }}
-          path: packages
+          path: ${{ runner.temp }}/registry-storage
 
-      - name: Serve the build from a disposable registry
+      - name: Serve the published packages
         uses: ./.github/actions/registry
+        with:
+          storage: ${{ runner.temp }}/registry-storage
 
       - name: Install the published packages into a consumer
         timeout-minutes: 10
@@ -200,14 +235,16 @@ jobs:
           -- node --test .github/scripts/e2e-evidence.test.mjs
           .github/scripts/capsule-evidence.test.mjs
 
-      - name: Download the build
+      - name: Download the published registry
         uses: actions/download-artifact@v5
         with:
           name: ${{ env.BUILD_ARTIFACT }}
-          path: packages
+          path: ${{ runner.temp }}/registry-storage
 
-      - name: Serve the build from a disposable registry
+      - name: Serve the published packages
         uses: ./.github/actions/registry
+        with:
+          storage: ${{ runner.temp }}/registry-storage
 
       - name: Install the published packages into a consumer
         timeout-minutes: 10
@@ -278,14 +315,16 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           pnpm-version: ${{ env.PNPM_VERSION }}
 
-      - name: Download the build
+      - name: Download the published registry
         uses: actions/download-artifact@v5
         with:
           name: ${{ env.BUILD_ARTIFACT }}
-          path: packages
+          path: ${{ runner.temp }}/registry-storage
 
-      - name: Serve the build from a disposable registry
+      - name: Serve the published packages
         uses: ./.github/actions/registry
+        with:
+          storage: ${{ runner.temp }}/registry-storage
 
       # A consumer with no relationship to this checkout: it installs every
       # package by name and version, imports each public root, and runs the
