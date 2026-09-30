@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, expect, it } from 'vitest';
 import { acquireStorageLeaseWithRuntime } from '../../lease.js';
-import { lockDirectoryPath } from '../../paths.js';
+import { lockDirectoryPath, lockPath } from '../../paths.js';
 import { candidatePath } from '../candidate.js';
 import { releaseOwnedLock } from '../lifecycle/release.js';
 import {
@@ -129,6 +129,7 @@ it('fences the prior owner after an expired heartbeat is replaced', async () => 
     state: 'owned',
   });
   await expireTestCandidate(previousPath);
+  await expireTestCandidate(lockPath(lease));
   const replacementOwner = testOwnerInNamespace({
     pid: 1,
     startTimeTicks: '200',
@@ -185,7 +186,7 @@ it('allows only the current record token to release the lock', async () => {
     token: 'owner-token',
     state: 'owned',
   });
-  await releaseOwnedLock({ path, token: 'foreign-token' });
+  await releaseOwnedLock({ path, markerPath: lockPath(lease), token: 'foreign-token' });
   expect(await readFile(path, 'utf8')).toContain('owner-token');
   await acquired.release();
   await expect(readFile(path, 'utf8')).rejects.toMatchObject({ code: 'ENOENT' });

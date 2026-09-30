@@ -16,6 +16,7 @@ const IGNORE_PATTERNS = [
   '**/coverage/**',
   '.baseline/**',
   'maintainers/**',
+  'archive/**',
   'full-final-product/**',
   '**/*.d.ts',
   '**/*.d.cts',

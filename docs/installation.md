@@ -69,6 +69,8 @@ your completed build:
 mkdir -p "$blackbox_checkout/.blackbox/driver-packages"
 pnpm --config.ignore-scripts=true --dir "$blackbox_checkout/packages/telemetry" \
   pack --pack-destination "$blackbox_checkout/.blackbox/driver-packages"
+pnpm --config.ignore-scripts=true --dir "$blackbox_checkout/packages/cli-contract" \
+  pack --pack-destination "$blackbox_checkout/.blackbox/driver-packages"
 pnpm --config.ignore-scripts=true --dir "$blackbox_checkout/packages/driver" \
   pack --pack-destination "$blackbox_checkout/.blackbox/driver-packages"
 ```
@@ -84,6 +86,7 @@ For your own application, use its project directory instead. Then install both l
 ```sh
 npm install --prefix .blackbox/drivers --ignore-scripts --no-audit --no-fund \
   "$blackbox_checkout/.blackbox/driver-packages/suites-blackbox-telemetry-0.0.1-alpha.0.tgz" \
+  "$blackbox_checkout/.blackbox/driver-packages/suites-blackbox-cli-contract-0.0.1-alpha.0.tgz" \
   "$blackbox_checkout/.blackbox/driver-packages/suites-blackbox-driver-0.0.1-alpha.0.tgz"
 npm pkg set --prefix .blackbox/drivers \
   'overrides.@suites/blackbox-telemetry=$@suites/blackbox-telemetry'

@@ -35,16 +35,35 @@
     "build": "tsc --project tsconfig.build.json",
     "prepack": "pnpm build",
     "lint": "eslint .",
-    "test": "vitest run --config vitest.config.ts"
+    "test": "node scripts/run-tests.mjs"
+  },
+  "blackbox": {
+    "cli": {
+      "apiVersion": 1,
+      "pluginId": "capsule",
+      "topic": "capsule"
+    }
+  },
+  "oclif": {
+    "commands": {
+      "strategy": "explicit",
+      "target": "./dist/cli/command-registry.js",
+      "identifier": "COMMANDS"
+    },
+    "topicSeparator": " "
   },
   "dependencies": {
+    "@oclif/core": "^5.1.0",
+    "@suites/blackbox-cli-contract": "workspace:*",
     "@suites/blackbox-driver": "workspace:*",
     "@suites/blackbox-catalog": "workspace:*",
     "@suites/blackbox-instrumentation": "workspace:*",
     "@suites/blackbox-otel-collector": "workspace:*",
     "@suites/blackbox-sandbox": "workspace:*",
     "@suites/blackbox-telemetry": "workspace:*",
-    "ajv": "8.20.0"
+    "@suites/blackbox-report-server": "workspace:*",
+    "ajv": "8.20.0",
+    "string-width": "8.3.0"
   },
   "devDependencies": {
     "rimraf": "catalog:",
