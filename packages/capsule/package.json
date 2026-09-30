@@ -35,7 +35,6 @@
     "build": "tsc --project tsconfig.build.json",
     "prepack": "pnpm build",
     "lint": "eslint .",
-    "pretest": "pnpm build",
     "test": "node scripts/run-tests.mjs"
   },
   "blackbox": {

@@ -9,6 +9,8 @@ interface ProjectManifest {
   readonly devDependencies: Record<string, string>;
 }
 
+const blackboxSourcePackageName = 'suites-blackbox-monorepo';
+
 export type CliPluginDiscovery =
   | {
       readonly kind: 'source-checkout';
@@ -36,12 +38,13 @@ async function nearestPackageDirectory(start: string): Promise<string | null> {
       return current;
     } catch {
       const parent = dirname(current);
-      if (parent === current) {return null;}
+      if (parent === current) {
+        return null;
+      }
       current = parent;
     }
   }
 }
-
 
 async function workspaceRoot(start: string): Promise<string | null> {
   let current = start;
@@ -51,9 +54,27 @@ async function workspaceRoot(start: string): Promise<string | null> {
       return current;
     } catch {
       const parent = dirname(current);
-      if (parent === current) {return null;}
+      if (parent === current) {
+        return null;
+      }
       current = parent;
     }
+  }
+}
+
+async function isBlackboxSourceRoot(directory: string): Promise<boolean> {
+  try {
+    const manifest = JSON.parse(await readFile(join(directory, 'package.json'), 'utf8')) as Record<
+      string,
+      unknown
+    >;
+    if (manifest.name !== blackboxSourcePackageName) {
+      return false;
+    }
+    await access(join(directory, 'packages', 'cli', 'package.json'));
+    return true;
+  } catch {
+    return false;
   }
 }
 
@@ -65,15 +86,21 @@ async function pluginsFromManifest(
   const requireFromProject = createRequire(join(projectPath, 'package.json'));
   const plugins: string[] = [];
   for (const name of names) {
-    if (!name.startsWith('@suites/blackbox-')) {continue;}
+    if (!name.startsWith('@suites/blackbox-')) {
+      continue;
+    }
     try {
       const entry = requireFromProject.resolve(name);
       const packageDirectory = await nearestPackageDirectory(dirname(entry));
-      if (packageDirectory === null) {continue;}
+      if (packageDirectory === null) {
+        continue;
+      }
       const packageManifest = JSON.parse(
         await readFile(join(packageDirectory, 'package.json'), 'utf8'),
       ) as unknown;
-      if (isBlackboxCliPluginPackage(packageManifest)) {plugins.push(name);}
+      if (isBlackboxCliPluginPackage(packageManifest)) {
+        plugins.push(name);
+      }
     } catch {
       // An unresolved optional package is absent, not a host failure.
     }
@@ -81,9 +108,7 @@ async function pluginsFromManifest(
   return plugins;
 }
 
-async function discoverFromAncestors(
-  startDirectory: string,
-): Promise<CliPluginDiscovery | null> {
+async function discoverFromAncestors(startDirectory: string): Promise<CliPluginDiscovery | null> {
   let current = startDirectory;
   for (;;) {
     try {
@@ -100,7 +125,9 @@ async function discoverFromAncestors(
       // An ancestor without a readable manifest is not a composition root.
     }
     const parent = dirname(current);
-    if (parent === current) {return null;}
+    if (parent === current) {
+      return null;
+    }
     current = parent;
   }
 }
@@ -112,7 +139,9 @@ export async function discoverProjectCliPlugins(
   // A source checkout is a deliberate composition root. Its workspace
   // manifest owns the feature packages even when a nested harness manifest
   // still lists only a subset of the current command surface.
-  const sourceRoot = await workspaceRoot(installationDirectory);
+  const workspace = await workspaceRoot(installationDirectory);
+  const sourceRoot =
+    workspace !== null && (await isBlackboxSourceRoot(workspace)) ? workspace : null;
   if (sourceRoot !== null) {
     const rootManifest = JSON.parse(
       await readFile(join(sourceRoot, 'package.json'), 'utf8'),
@@ -154,10 +183,13 @@ export async function discoverProjectCliPlugins(
   }
 
   const root = await workspaceRoot(installationDirectory);
-  if (root === null) {return null;}
-  const rootManifest = JSON.parse(
-    await readFile(join(root, 'package.json'), 'utf8'),
-  ) as Record<string, unknown>;
+  if (root === null) {
+    return null;
+  }
+  const rootManifest = JSON.parse(await readFile(join(root, 'package.json'), 'utf8')) as Record<
+    string,
+    unknown
+  >;
   const plugins = await pluginsFromManifest(root, {
     dependencies: dependencyMap(rootManifest.dependencies),
     devDependencies: dependencyMap(rootManifest.devDependencies),

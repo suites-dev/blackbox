@@ -71,14 +71,48 @@ void test('discovers consumer plugins above an installed CLI package', async () 
     })}\n`,
   );
   await writeFile(join(pluginDirectory, 'index.js'), '');
-  await writeFile(join(cliDirectory, 'package.json'), `${JSON.stringify({ name: '@suites/blackbox-cli' })}\n`);
-  const result = await discoverProjectCliPlugins(
-    join(consumer, 'workspace'),
-    cliDirectory,
+  await writeFile(
+    join(cliDirectory, 'package.json'),
+    `${JSON.stringify({ name: '@suites/blackbox-cli' })}\n`,
   );
+  const result = await discoverProjectCliPlugins(join(consumer, 'workspace'), cliDirectory);
   if (result === null) {
     throw new Error('expected the consumer plugin result');
   }
   assert.equal(result.path, consumer);
   assert.deepEqual(result.names, ['@suites/blackbox-zeta']);
+});
+
+void test('does not classify an unrelated pnpm workspace as the Blackbox source checkout', async () => {
+  const workspace = await mkdtemp(join(tmpdir(), 'blackbox-cli-unrelated-workspace-'));
+  await mkdir(join(workspace, 'packages', 'cli'), { recursive: true });
+  await mkdir(join(workspace, 'node_modules', '@suites', 'blackbox-zeta'), { recursive: true });
+  await writeFile(join(workspace, 'pnpm-workspace.yaml'), 'packages:\n  - packages/*\n');
+  await writeFile(
+    join(workspace, 'package.json'),
+    `${JSON.stringify({
+      name: 'consumer-workspace',
+      dependencies: { '@suites/blackbox-zeta': 'file:plugin.tgz' },
+    })}\n`,
+  );
+  await writeFile(join(workspace, 'packages', 'cli', 'package.json'), '{"name":"cli"}\n');
+  await writeFile(
+    join(workspace, 'node_modules', '@suites', 'blackbox-zeta', 'package.json'),
+    `${JSON.stringify({
+      name: '@suites/blackbox-zeta',
+      type: 'module',
+      main: 'index.js',
+      blackbox: { cli: { apiVersion: 1, pluginId: 'zeta', topic: 'zeta' } },
+    })}\n`,
+  );
+  await writeFile(join(workspace, 'node_modules', '@suites', 'blackbox-zeta', 'index.js'), '');
+
+  const result = await discoverProjectCliPlugins(
+    join(workspace, 'packages', 'cli'),
+    join(workspace, 'packages', 'cli'),
+  );
+  if (result === null) {
+    throw new Error('expected an installed consumer result');
+  }
+  assert.equal(result.kind, 'installed-consumer');
 });

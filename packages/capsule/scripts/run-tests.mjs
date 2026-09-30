@@ -42,7 +42,7 @@ function run(command, args) {
     child.once('error', reject);
     child.once('close', (code) => {
       currentChild = undefined;
-      resolve(interrupted !== 0 ? interrupted : code ?? 1);
+      resolve(interrupted !== 0 ? interrupted : (code ?? 1));
     });
   });
 }
@@ -58,36 +58,40 @@ async function testsIn(directory) {
 }
 
 try {
-  const vitest = await run('pnpm', [
-    'exec',
-    'vitest',
-    'run',
-    '--config',
-    'vitest.config.ts',
-    '--configLoader',
-    'runner',
-    '--exclude',
-    'src/cli/**/*.test.ts',
-  ]);
-  if (vitest !== 0) process.exitCode = vitest;
+  const build = await run('pnpm', ['build']);
+  if (build !== 0) process.exitCode = build;
   else {
-    await symlink(join(packageDirectory, 'node_modules'), join(output, 'node_modules'), 'dir');
-    await symlink(join(packageDirectory, 'dist'), join(output, 'dist'), 'dir');
-    const packageManifest = await readFile(join(packageDirectory, 'package.json'), 'utf8');
-    await writeFile(join(output, 'package.json'), packageManifest);
-    const compile = await run('pnpm', [
+    const vitest = await run('pnpm', [
       'exec',
-      'tsc',
-      '--project',
-      'tsconfig.test.json',
-      '--outDir',
-      output,
+      'vitest',
+      'run',
+      '--config',
+      'vitest.config.ts',
+      '--configLoader',
+      'runner',
+      '--exclude',
+      'src/cli/**/*.test.ts',
     ]);
-    if (compile !== 0) process.exitCode = compile;
+    if (vitest !== 0) process.exitCode = vitest;
     else {
-      const tests = await testsIn(join(output, 'cli'));
-      if (tests.length === 0) throw new Error('No emitted Capsule CLI tests were found');
-      process.exitCode = await run(process.execPath, ['--test', ...tests]);
+      await symlink(join(packageDirectory, 'node_modules'), join(output, 'node_modules'), 'dir');
+      await symlink(join(packageDirectory, 'dist'), join(output, 'dist'), 'dir');
+      const packageManifest = await readFile(join(packageDirectory, 'package.json'), 'utf8');
+      await writeFile(join(output, 'package.json'), packageManifest);
+      const compile = await run('pnpm', [
+        'exec',
+        'tsc',
+        '--project',
+        'tsconfig.test.json',
+        '--outDir',
+        output,
+      ]);
+      if (compile !== 0) process.exitCode = compile;
+      else {
+        const tests = await testsIn(join(output, 'cli'));
+        if (tests.length === 0) throw new Error('No emitted Capsule CLI tests were found');
+        process.exitCode = await run(process.execPath, ['--test', ...tests]);
+      }
     }
   }
 } finally {
