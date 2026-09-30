@@ -1,6 +1,6 @@
 import { readCapsuleActivities, type CapsuleActivityReport } from '@suites/blackbox-capsule';
 
-import type { CapsuleSummary } from '../../context/project-index.js';
+import { ProjectIndex, type CapsuleSummary } from '../../context/project-index.js';
 import { loadInvestigation, readSession } from '../inspection/investigation-data.js';
 import { CapsuleInvestigation } from '../inspection/investigation-model.js';
 
@@ -26,6 +26,8 @@ export function acceptedSpans(session: Session): number | null {
  */
 export class RunTelemetry {
   #activities: readonly CapsuleActivityReport[] | null = null;
+  /** The capsule as last read; its state feeds the 2a completeness function. */
+  #capsule: CapsuleSummary;
 
   constructor(
     private readonly input: {
@@ -33,7 +35,28 @@ export class RunTelemetry {
       readonly capsule: CapsuleSummary;
       readonly activityId: string;
     },
-  ) {}
+  ) {
+    this.#capsule = input.capsule;
+  }
+
+  /**
+   * Re-reads the capsule's state and reports whether it changed since the
+   * last read (for example another process ran `capsule down` meanwhile).
+   */
+  async stateChanged(): Promise<boolean> {
+    const before = this.#capsule.state;
+    try {
+      const summary = (await ProjectIndex.load(this.input.projectDirectory)).capsule(
+        this.input.capsule.capsule,
+      );
+      if (summary !== null) {
+        this.#capsule = summary;
+      }
+    } catch {
+      // Keep the last state read.
+    }
+    return this.#capsule.state !== before;
+  }
 
   /** The capsule's session read (lifecycle, trace IDs), or null when unreadable. */
   async session(): Promise<Session> {
@@ -64,7 +87,7 @@ export class RunTelemetry {
     try {
       const data = await loadInvestigation({
         projectDirectory: this.input.projectDirectory,
-        capsule: this.input.capsule,
+        capsule: this.#capsule,
         activities,
         session,
         traceIds: 'all',
@@ -73,7 +96,7 @@ export class RunTelemetry {
     } catch {
       const data = await loadInvestigation({
         projectDirectory: this.input.projectDirectory,
-        capsule: this.input.capsule,
+        capsule: this.#capsule,
         activities,
         session: null,
         traceIds: [],

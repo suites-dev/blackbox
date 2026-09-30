@@ -217,19 +217,30 @@ export const VOLATILE = '<VOLATILE>';
 
 /**
  * `#! volatile run-block`: replaces the Blackbox block of a `capsule run`
- * output (its first line starting `activity ` through its first line starting
- * `→ `, inclusive) with one <VOLATILE> line. Applied to NORMALIZED output, so
- * the child's own lines around the block are still compared. Refused when the
- * block is missing, not provisional, or would hide a secret.
+ * output with one <VOLATILE> line. The block is found from its end: the LAST
+ * `→ blackbox capsule show <ACT_n> --session <CAPSULE_m>` suggestion, back to
+ * the nearest `activity <ACT_n> · capsule <CAPSULE_m> · ` run line with the
+ * same placeholders. Placeholders exist only for IDs the capsule retained, so
+ * a child line that merely starts with `activity ` never anchors the block.
+ * Applied to NORMALIZED output, so the child's own lines around the block are
+ * still compared. Refused when the block is missing, not provisional, or would
+ * hide a secret.
  */
 export function replaceRunBlock(command, output) {
   if (!/^blackbox capsule run /u.test(command)) {
     throw new Error(`volatile run-block applies only to blackbox capsule run: ${command}`);
   }
   const lines = output.split('\n');
-  const first = lines.findIndex((line) => line.startsWith('activity '));
-  const last =
-    first < 0 ? -1 : lines.findIndex((line, index) => index > first && line.startsWith('→ '));
+  const suggestion = /^→ blackbox capsule show (<ACT_\d+>) --session (<CAPSULE_\d+>)$/u;
+  let last = -1;
+  for (let index = lines.length - 1; index >= 0 && last < 0; index -= 1) {
+    if (suggestion.test(lines[index])) last = index;
+  }
+  const ids = last < 0 ? null : suggestion.exec(lines[last]);
+  let first = -1;
+  for (let index = last - 1; ids !== null && index >= 0 && first < 0; index -= 1) {
+    if (lines[index].startsWith(`activity ${ids[1]} · capsule ${ids[2]} · `)) first = index;
+  }
   if (first < 0 || last < 0) {
     throw new Error(`volatile run-block found no Blackbox block in the output of: ${command}`);
   }

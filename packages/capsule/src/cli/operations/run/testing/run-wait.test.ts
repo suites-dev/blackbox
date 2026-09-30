@@ -200,3 +200,26 @@ void test('an unreadable total never counts as an arrival', async () => {
   });
   assert.deepEqual(wait, { waitedMs: WAIT_QUIET_MS, stillArriving: false });
 });
+
+void test('Ctrl-C during a poll stops the wait before any span reread', async () => {
+  const controller = new AbortController();
+  const fake = fakeClock();
+  let rereads = 0;
+  const wait = await waitForTelemetry({
+    capMs: DEFAULT_WAIT_CAP_MS,
+    clock: fake.clock,
+    signal: controller.signal,
+    baseline: 1,
+    poll: () => {
+      // The total changed, and Ctrl-C arrives while the poll is in flight.
+      controller.abort();
+      return Promise.resolve(2);
+    },
+    arrived: () => {
+      rereads += 1;
+      return Promise.resolve();
+    },
+  });
+  assert.equal(rereads, 0);
+  assert.deepEqual(wait, { waitedMs: WAIT_POLL_MS, stillArriving: false });
+});

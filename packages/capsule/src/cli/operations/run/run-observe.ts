@@ -38,7 +38,7 @@ export function liveBlock(json: boolean): LiveRunBlock | null {
  * `draw` is called with each snapshot as spans arrive.
  */
 export async function observeRun(input: {
-  readonly telemetry: Pick<RunTelemetry, 'session' | 'snapshot'>;
+  readonly telemetry: Pick<RunTelemetry, 'session' | 'snapshot' | 'stateChanged'>;
   readonly capMs: number;
   readonly clock: WaitClock;
   readonly signal: AbortSignal;
@@ -67,5 +67,10 @@ export async function observeRun(input: {
       input.draw(snapshot, { waitedMs: input.clock.now() - start, stillArriving: false });
     },
   });
+  // The capsule may have stopped meanwhile: its status then comes from its
+  // current state and final collector record, still decided by the 2a function.
+  if (await input.telemetry.stateChanged()) {
+    snapshot = (await input.telemetry.snapshot(await input.telemetry.session())) ?? snapshot;
+  }
   return { snapshot, wait };
 }

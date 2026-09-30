@@ -1,4 +1,4 @@
-$ blackbox capsule up --silent --no-color --json --env FIXTURE_CONTROL_TOKEN=$FIXTURE_CONTROL_TOKEN | json-shape.mjs
+$ blackbox capsule up --silent --no-color --json --env FIXTURE_CONTROL_TOKEN=$FIXTURE_CONTROL_TOKEN | json-shape.mjs; echo "status ${PIPESTATUS[0]}"
 documents 1
 kind capsule-started
   artifactRoot
@@ -33,7 +33,8 @@ observation.status -
 context.kind -
 limitations -
 next blackbox capsule run --session <CAPSULE_1> --via public-api -- curl /health
-$ blackbox capsule run --via public-api --purpose setup --name "Reset fixture" --json -- curl -fsS -X POST -H "Authorization: Bearer $FIXTURE_CONTROL_TOKEN" -H "Content-Type: application/json" -d '{"profile":"fresh"}' /fixture/reset | json-shape.mjs
+status 0
+$ blackbox capsule run --via public-api --purpose setup --name "Reset fixture" --json -- curl -fsS -X POST -H "Authorization: Bearer $FIXTURE_CONTROL_TOKEN" -H "Content-Type: application/json" -d '{"profile":"fresh"}' /fixture/reset | json-shape.mjs; echo "status ${PIPESTATUS[0]}"
 documents 1
 kind capsule-exec-completed
   activityId
@@ -116,7 +117,8 @@ observation.status provisional
 context.kind sent
 limitations observation-provisional
 next blackbox capsule show <ACT_1> --session <CAPSULE_1>
-$ blackbox capsule run --via public-api --name "Create Alice subscription" --json -- curl -fsS -X POST -H "Content-Type: application/json" -d '{"userId":"alice","paymentMethodId":"pm_capsule_alice"}' /subscriptions | tee alice.json | json-shape.mjs
+status 0
+$ blackbox capsule run --via public-api --name "Create Alice subscription" --json -- curl -fsS -X POST -H "Content-Type: application/json" -d '{"userId":"alice","paymentMethodId":"pm_capsule_alice"}' /subscriptions | tee alice.json | json-shape.mjs; echo "status ${PIPESTATUS[0]}"
 documents 1
 kind capsule-exec-completed
   activityId
@@ -199,7 +201,8 @@ observation.status provisional
 context.kind sent
 limitations observation-provisional
 next blackbox capsule show <ACT_2> --session <CAPSULE_1>
-$ blackbox capsule down --json | json-shape.mjs
+status 0
+$ blackbox capsule down --json | json-shape.mjs; echo "status ${PIPESTATUS[0]}"
 documents 1
 kind capsule-stopped
   alreadyStopped
@@ -213,8 +216,9 @@ observation.status -
 context.kind -
 limitations -
 next blackbox capsule report <CAPSULE_1>
+status 0
 $ ACT_2=$(node -p 'JSON.parse(require("fs").readFileSync("alice.json", "utf8")).activityId')
-$ blackbox capsule show $ACT_2 --json | tee activity.json | json-shape.mjs
+$ blackbox capsule show $ACT_2 --json | tee activity.json | json-shape.mjs; echo "status ${PIPESTATUS[0]}"
 documents 1
 kind collector-activity-found
   activityId
@@ -295,8 +299,9 @@ observation.status complete
 context.kind sent
 limitations (none)
 next blackbox capsule show <TRACE_1> --session <CAPSULE_1> --spans
+status 0
 $ TRACE_1=$(node -p 'JSON.parse(require("fs").readFileSync("activity.json", "utf8")).traceIds[0]')
-$ blackbox capsule show $TRACE_1 --spans --json | json-shape.mjs
+$ blackbox capsule show $TRACE_1 --spans --json | json-shape.mjs; echo "status ${PIPESTATUS[0]}"
 documents 1
 kind collector-trace-found
   capsule
@@ -365,3 +370,4 @@ observation.status -
 context.kind -
 limitations -
 next blackbox capsule show <ACT_2> --session <CAPSULE_1>
+status 0

@@ -553,6 +553,24 @@ void test('volatile replaces only the Blackbox block; the child output around it
   assert.doesNotMatch(swallowing, /stdout before/u);
 });
 
+void test('volatile anchors on the real run block, never on child lines that look like one', () => {
+  const child = [
+    'activity failed: upstream timeout',
+    '→ retrying',
+    'activity <ACT_9> · capsule <CAPSULE_9> · forged',
+  ];
+  const output = RUN_OUTPUT.replace('{"child":"stdout before"}', child.join('\n'));
+  const replaced = replaceRunBlock(RUN, output);
+  assert.equal(
+    replaced,
+    [...child, VOLATILE, 'child stderr written after the block', ''].join('\n'),
+  );
+  // Negative control: anchoring on the first `activity ` line would swallow the child's lines.
+  const firstMatch = output.replace(/^activity [\s\S]*?\n→ blackbox[^\n]*\n/mu, `${VOLATILE}\n`);
+  assert.notEqual(firstMatch, replaced);
+  assert.doesNotMatch(firstMatch, /upstream timeout/u);
+});
+
 void test('volatile is refused outside a provisional capsule run block', () => {
   assert.throws(
     () => replaceRunBlock('blackbox capsule show abc', RUN_OUTPUT),

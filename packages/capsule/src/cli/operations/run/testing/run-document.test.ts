@@ -78,3 +78,27 @@ void test('word rule: no run snapshot claims success, verification or effects', 
     assert.match(`observed ${word} here`, FORBIDDEN_WORDS, word);
   }
 });
+
+void test('telemetry text reaches the terminal without escape sequences or control characters', async () => {
+  const recorded = await running();
+  const activity = named(recorded, 'Create Alice subscription');
+  const traceId = activity.telemetry.context.traceId;
+  const hostile = '\u001b[2J\u001b]8;;http://x\u0007evil\r\nforged line';
+  const tainted = {
+    ...recorded,
+    traces: recorded.traces.map((trace) => ({
+      ...trace,
+      spans: trace.spans.map((span) => ({ ...span, service: `${span.service}${hostile}` })),
+    })),
+  };
+  const lines = runBlockLines(block(tainted, activity, waited(900)));
+  const text = lines.join('\n');
+  // eslint-disable-next-line no-control-regex -- the assertion is about control characters
+  assert.doesNotMatch(text, /[\u0000-\u0008\u000b-\u001f\u007f]/u);
+  assert.ok(lines.every((line) => !line.includes('\n')));
+  // The words stay visible; only the control sequences are removed.
+  assert.match(text, /evil/u);
+  // Negative control: the fixture does carry the escape sequence into the tree.
+  const tree = tainted.traces.find((trace) => trace.traceId === traceId);
+  assert.ok(tree !== undefined && tree.spans.some((span) => span.service.includes('\u001b')));
+});

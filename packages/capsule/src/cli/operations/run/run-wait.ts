@@ -57,6 +57,10 @@ export async function waitForTelemetry(input: {
       return { waitedMs: waited(), stillArriving: false };
     }
     const current = await input.poll();
+    // Ctrl-C during the poll must not wait for a full span reread.
+    if (interrupted()) {
+      return { waitedMs: waited(), stillArriving: false };
+    }
     if (current !== null && current !== last) {
       last = current;
       lastArrival = clock.now();
