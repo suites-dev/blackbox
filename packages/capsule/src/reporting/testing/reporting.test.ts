@@ -12,6 +12,7 @@ import {
 } from '../../records.js';
 import { reportCapsule } from '../../session/operations.js';
 import type { CapsuleActivityReport, CapsuleSessionState } from '../../types.js';
+import { createRedactionContext, redactText } from '../redaction.js';
 import {
   completeOutputRetention,
   completedDriverActivity,
@@ -21,6 +22,13 @@ import {
 import { serializeCapsuleReportDocument } from '../serialization.js';
 
 const roots: string[] = [];
+
+it('audit #12: Windows pipe paths must be redacted from reports', () => {
+  const context = createRedactionContext();
+  const value = redactText('manager at \\\\.\\pipe\\bb-secret-pipe', 'audit', context);
+  expect(value).toBe('manager at [REDACTED]');
+  expect(value).not.toContain('\\\\.\\pipe\\bb-secret-pipe');
+});
 
 function record(input: {
   readonly projectDirectory: string;

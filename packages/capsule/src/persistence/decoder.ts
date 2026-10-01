@@ -1,8 +1,12 @@
 import type { CapsuleSessionRecord } from '../records.js';
+import { capsuleSessionSchema } from '../schema/artifact-schemas.js';
 import type { CapsuleManagerOwnership } from '../types.js';
 
 type JsonObject = Record<string, unknown>;
 type ValidatedSessionRecord = JsonObject & Omit<CapsuleSessionRecord, 'manager'>;
+const allowedSessionFields = new Set(
+  Object.keys((capsuleSessionSchema as { readonly properties: JsonObject }).properties),
+);
 
 export function object(value: unknown, location: string): JsonObject {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) {
@@ -133,6 +137,11 @@ function failure(value: unknown): void {
 }
 
 function validateSession(record: JsonObject): asserts record is ValidatedSessionRecord {
+  for (const field of Object.keys(record)) {
+    if (!allowedSessionFields.has(field)) {
+      throw new Error(`session.${field} is unsupported`);
+    }
+  }
   if (record.schemaVersion !== 1) {
     throw new Error('session.schemaVersion must be 1');
   }

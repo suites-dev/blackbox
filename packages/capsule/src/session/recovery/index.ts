@@ -99,8 +99,15 @@ function probedStatus(probe: ManagerInstanceProbe): ManagerProcessStatus {
     case 'manager-instance-exact':
       return { kind: 'alive' };
     case 'manager-instance-different':
-    case 'manager-socket-missing':
       return { kind: 'dead' };
+    case 'manager-socket-missing':
+      return {
+        kind: 'unconfirmed',
+        error: {
+          name: 'CapsuleManagerIdentityUnavailable',
+          message: 'Capsule manager socket could not be found',
+        },
+      };
     case 'manager-instance-unavailable':
       return {
         kind: 'unconfirmed',
