@@ -29,12 +29,12 @@ function isExisting(error: unknown): boolean {
  * record that later claimers would have to treat as foreign.
  */
 async function createGuard(path: string, claimer: CurrentLockRecord): Promise<boolean> {
+  const temporaryPath = `${path}.${encodedToken(claimer.token)}.tmp`;
+  // The temporary name is unique to this claimer's token: a file there is a
+  // leftover of this claimer's own interrupted publish, never contention.
+  await removeLock(temporaryPath);
   try {
-    await publishLock({
-      temporaryPath: `${path}.${encodedToken(claimer.token)}.tmp`,
-      path,
-      record: claimer,
-    });
+    await publishLock({ temporaryPath, path, record: claimer });
     return true;
   } catch (error) {
     if (isExisting(error)) {

@@ -26,9 +26,12 @@ export async function publishLock(input: {
   try {
     await file.writeFile(`${JSON.stringify(input.record)}\n`, 'utf8');
     await file.sync();
-  } finally {
+  } catch (error) {
     await file.close();
+    await removeLock(input.temporaryPath);
+    throw error;
   }
+  await file.close();
   try {
     await link(input.temporaryPath, input.path);
   } finally {

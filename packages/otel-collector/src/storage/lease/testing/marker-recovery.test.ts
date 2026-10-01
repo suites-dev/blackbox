@@ -154,3 +154,20 @@ it('removes the marker on release and leaves no guard behind', async () => {
     (await readdir(sessionDirectory(lease))).filter((name) => name.includes('.recover-')),
   ).toEqual([]);
 });
+
+it('releases the marker even after an earlier guard publish left its temporary file', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'blackbox-collector-release-leftover-'));
+  roots.push(root);
+  const lease = testLeaseInput(root);
+  const acquired = await acquireStorageLeaseWithRuntime({
+    lease,
+    runtime: testRuntime({ currentOwner, inspections: [], token: 'owner' }),
+  });
+  // An interrupted publish by this same lease left its token-unique temporary
+  // guard file. It is not another holder's guard and must not block release.
+  const guard = recoveryGuardPath({ path: lockPath(lease), token: 'owner' });
+  await writeFile(`${guard}.${Buffer.from('owner').toString('hex')}.tmp`, '');
+  await acquired.release();
+  await expect(readFile(lockPath(lease), 'utf8')).rejects.toMatchObject({ code: 'ENOENT' });
+  await expect(readFile(guard, 'utf8')).rejects.toMatchObject({ code: 'ENOENT' });
+});
