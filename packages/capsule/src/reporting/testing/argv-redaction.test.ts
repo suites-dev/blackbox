@@ -95,6 +95,20 @@ const CASES = [
   ['curl -uuser:password', [`-ualice:${SECRET}`], [`-u${MASK}`]],
   ['curl --proxy-user user:password', ['--proxy-user', `alice:${SECRET}`], ['--proxy-user', MASK]],
   ['curl -U user:password', ['-U', `alice:${SECRET}`], ['-U', MASK]],
+  ['curl --oauth2-bearer', ['--oauth2-bearer', SECRET], ['--oauth2-bearer', MASK]],
+  ['curl --oauth2-bearer=', [`--oauth2-bearer=${SECRET}`], [`--oauth2-bearer=${MASK}`]],
+  [
+    'curl --pass',
+    ['--key', 'client.key', '--pass', SECRET],
+    ['--key', 'client.key', '--pass', MASK],
+  ],
+  ['curl --proxy-pass', ['--proxy-pass', SECRET], ['--proxy-pass', MASK]],
+  [
+    'curl --cert file:password',
+    ['--cert', `client.pem:${SECRET}`],
+    ['--cert', `client.pem:${MASK}`],
+  ],
+  ['curl --cert=file:password', [`--cert=client.pem:${SECRET}`], [`--cert=client.pem:${MASK}`]],
   [
     'URL user information with an empty user name',
     [`https://:${SECRET}@api.example.test/v1`],
@@ -129,6 +143,15 @@ describe('redactOutcomeArgv', () => {
       MASK,
       '/orders',
     ]);
+  });
+
+  it.each([
+    ['python3', '-u', 'worker.py'],
+    ['psql', '-U', 'fixture', '--dbname', 'subscriptions'],
+    ['curl', '-u', 'alice', '/prompted-password'],
+    ['curl', '--cert', 'client.pem', '/x'],
+  ])('leaves a value that is not a credential untouched: %s', (...argv) => {
+    expect(argvOf(redactOutcomeArgv(hostExited(argv)))).toEqual(argv);
   });
 
   it('leaves flags that only start with -u untouched', () => {

@@ -8,11 +8,46 @@ const sensitiveName =
 const header = /^(authorization|proxy-authorization|cookie|set-cookie|x-api-key|api-key)\s*:/iu;
 const assignment = /^([A-Za-z_][A-Za-z0-9_]*)=(.*)$/u;
 const socketPath = /(?:\/[^\s"']+)?\.blackbox\/(?:s|tmp)\/[^\s"']+\.sock/gu;
-/** Flags whose value is a `user:password` credential (curl and alike). */
-const credentialFlags = new Set(['-u', '--user', '-U', '--proxy-user']);
-// `--user=value`, or a short flag with an attached `user:password` (`-ualice:pw`,
-// never an unrelated flag such as `-update`).
-const credentialFlagValue = /^(--user=|--proxy-user=|-[uU](?=[^\s:]*:))(.+)$/u;
+/** Flags whose value is always a secret (curl's OAuth token and key pass phrases). */
+const secretValueFlags = new Set(['--oauth2-bearer', '--pass', '--proxy-pass']);
+/**
+ * Flags whose value is a credential only when it is `user:password`. Other
+ * tools use `-u`/`-U` without a value or with a plain name (`python3 -u`,
+ * `psql -U`), so a value without `:` is left alone.
+ */
+const userPasswordFlags = new Set(['-u', '--user', '-U', '--proxy-user']);
+/** Flags whose value is `file[:password]` (curl client certificates). */
+const certificateFlags = new Set(['--cert', '--proxy-cert']);
+// `--user=alice:pw` or `-ualice:pw`; never `-update` or `--user=alice`.
+const attachedUserPassword = /^(--user=|--proxy-user=|-[uU])([^\s:]*:.*)$/u;
+const attachedCertificate = /^(--cert=|--proxy-cert=)([^:]+:)(.+)$/u;
+
+/** How much of the argument after a flag is a secret. */
+type FollowingValue = 'whole' | 'after-colon';
+
+function followingValue(flag: string, next: string | undefined): FollowingValue | null {
+  if (secretValueFlags.has(flag)) {
+    return 'whole';
+  }
+  if (next === undefined || !next.includes(':')) {
+    return null;
+  }
+  if (userPasswordFlags.has(flag)) {
+    return 'whole';
+  }
+  return certificateFlags.has(flag) ? 'after-colon' : null;
+}
+
+/** A credential flag with its value attached, redacted; null when it is not one. */
+function redactAttachedFlag(argument: string): string | null {
+  // `--oauth2-bearer=token` needs nothing here: every `name=value` is redacted below.
+  const secret = attachedUserPassword.exec(argument);
+  if (secret !== null) {
+    return `${secret[1]}${MASK}`;
+  }
+  const certificate = attachedCertificate.exec(argument);
+  return certificate === null ? null : `${certificate[1]}${certificate[2]}${MASK}`;
+}
 
 export interface RedactionContext {
   readonly entries: CapsuleReportRedaction[];
@@ -97,34 +132,39 @@ export function redactArgv(input: {
   readonly explicit: DriverArgvRedaction;
 }): readonly string[] {
   const positions = new Set(input.explicit.kind === 'positions' ? input.explicit.positions : []);
-  let redactNext = false;
+  let pending: FollowingValue | null = null;
   return input.argv.map((argument, index) => {
     const itemLocation = `${input.location}[${String(index)}]`;
-    if (positions.has(index) || redactNext) {
-      redactNext = false;
+    const following = pending;
+    pending = null;
+    if (positions.has(index) || following === 'whole') {
       note(input.context, 'sensitive-argument', itemLocation);
       return MASK;
+    }
+    if (following === 'after-colon') {
+      note(input.context, 'sensitive-argument', itemLocation);
+      return `${argument.slice(0, argument.indexOf(':') + 1)}${MASK}`;
     }
     if (
       (argument === '--env' || argument === '--environment' || argument === '-e') &&
       !argument.includes('=')
     ) {
-      redactNext = true;
+      pending = 'whole';
       return argument;
     }
     if (argument.startsWith('--') && sensitiveName.test(argument) && !argument.includes('=')) {
-      redactNext = true;
+      pending = 'whole';
       return argument;
     }
-    // `-u user:password`, `--user=user:password`, `-uuser:password`.
-    if (credentialFlags.has(argument)) {
-      redactNext = true;
+    // `-u user:password`, `--oauth2-bearer token`, `--cert file:password`.
+    pending = followingValue(argument, input.argv[index + 1]);
+    if (pending !== null) {
       return argument;
     }
-    const attached = credentialFlagValue.exec(argument);
+    const attached = redactAttachedFlag(argument);
     if (attached !== null) {
       note(input.context, 'sensitive-argument', itemLocation);
-      return `${attached[1]}${MASK}`;
+      return attached;
     }
     return redactArgument(argument, itemLocation, input.context);
   });
