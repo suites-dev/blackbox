@@ -32,7 +32,7 @@ Use the public matcher or query surface available in the installed version. Do n
 
 A baseline is an accepted comparison reference, not a record that observed behavior is correct. A candidate or first run is descriptive. Review relevant requirements and targeted assertions before deciding whether a behavior change is intentional.
 
-The current `blackbox effects baseline update --run <run-id>` route is a stub that exits `3`. Exact-run baseline acceptance is planned; its final command design belongs to the CLI roadmap. Do not use a Playwright snapshot-update flag or an agent-authored file replacement to impersonate implemented acceptance.
+Exact-run baseline acceptance is planned and has no current CLI command; its final command design belongs to the CLI roadmap. Do not invoke historical baseline-update examples or use a Playwright snapshot-update flag or an agent-authored file replacement to impersonate implemented acceptance.
 
 A baseline update changes acceptance material. Do it only when the current task authorizes the specific change. Afterward, inspect the actual changed files and run a fresh test against the new reference when that verification is requested. An update command is not a verification run, and it does not rewrite the result of the source run.
 

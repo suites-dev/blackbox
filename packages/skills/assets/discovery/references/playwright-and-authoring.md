@@ -1,6 +1,6 @@
-# Plan native Playwright journeys
+# Author native Playwright journeys
 
-This is design guidance for the native Playwright integration. The current alpha creates a fresh Sandbox for every physical attempt and exposes telemetry and effects-contract fixtures. Effect projection and automated evaluation remain a later assurance stage, so use Capsule for working effect investigation today.
+Use the native Playwright integration to author journeys with a fresh Sandbox for every physical attempt and telemetry and effects-contract fixtures. Effect projection and automated evaluation remain a later assurance stage, so use Capsule for working effect investigation today when that package is selected.
 
 ## Turn a request into test obligations
 
@@ -19,7 +19,7 @@ Choose the full system when the behavior crosses all of its participants. Choose
 
 For each expectation, choose an appropriate source. An HTTP response is a native assertion. A supported client observation may witness a request or statement. Persisted values generally require an application-state assertion or another source that can establish the values. A producer send does not prove consumer completion. Avoid broad statements such as “everything worked” when the evidence covers only dispatch.
 
-## Keep the future integration native
+## Keep Playwright native
 
 Inspect the installed Alpha package exports, the project's Playwright version, existing configuration and fixtures, and current public documentation before importing helpers or adding Blackbox-specific hooks. Historical examples may name APIs that are not in the installed release. Keep the system selection in the catalog and use the actual integration’s public SUT-selection API; do not introduce a second SUT ID authority in test metadata.
 
@@ -31,7 +31,7 @@ Keep runtime checks alongside ordinary assertions. A response assertion and an e
 
 ## Make data independent
 
-Arrange unique, deterministic inputs for each test or physical attempt. Do not depend on an earlier Capsule, another test's cart, ordering between workers, or a row left by a previous run. Document the reset, transaction, namespace, or cleanup strategy. The planned first integration provides a fresh sandbox per physical attempt, including retries and serial tests. Worker-shared sandbox lifetimes are deferred.
+Arrange unique, deterministic inputs for each test or physical attempt. Do not depend on an earlier Capsule, another test's cart, ordering between workers, or a row left by a previous run. Document the reset, transaction, namespace, or cleanup strategy. The current integration provides a fresh Sandbox per physical attempt, including retries and serial tests. Worker-shared sandbox lifetimes are not supported.
 
 Use fixtures for setup and cleanup, and keep setup requests distinct from product behavior. Do not silently classify harness traffic as a product effect. Browser network calls may follow a different instrumentation path than Node's direct API client; verify the path before relying on it.
 
