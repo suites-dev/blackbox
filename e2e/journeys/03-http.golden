@@ -8,6 +8,13 @@ entrypoint: <URL>
 $ blackbox capsule run --via public-api --purpose setup --name "Reset fixture" -- curl -fsS -X POST -H "Authorization: Bearer $FIXTURE_CONTROL_TOKEN" -H "Content-Type: application/json" -d '{"profile":"fresh"}' /fixture/reset
 {"fraudAudit":[],"payment":{"paymentIntents":[],"refunds":[]},"queueDepth":0,"redis":{},"subscriptions":[]}
 <VOLATILE>
+$ blackbox capsule run --via public-api --purpose setup --name "Reset fixture as JSON" --json -- curl -fsS -X POST -H "Authorization: Bearer $FIXTURE_CONTROL_TOKEN" -H "Content-Type: application/json" -d '{"profile":"fresh"}' /fixture/reset > reset.json 2> reset.err; echo "status $?"
+status 0
+$ grep -c -- "$FIXTURE_CONTROL_TOKEN" reset.json reset.err
+reset.json:0
+reset.err:0
+$ node -p 'JSON.parse(require("fs").readFileSync("reset.json", "utf8")).outcome.process.argv.filter((a) => a.includes("Authorization")).join("\n")'
+Authorization: [REDACTED]
 #! volatile run-block
 $ blackbox capsule run --via public-api --name "Create Alice subscription" -- curl -fsS -X POST -H "Content-Type: application/json" -d '{"userId":"alice","paymentMethodId":"pm_capsule_alice"}' /subscriptions
 {"userId":"alice","tier":"pro","subscription":{"id":"subscription_alice","status":"active"},"paymentIntentId":"pi_alice1","orderId":"order_alice"}

@@ -143,7 +143,8 @@ const SPAN_ID = String.raw`\b[0-9a-f]{16}\b`;
 const CAPSULE_TRACES = String.raw`(?<=· traces )\d+\b`;
 // So does the number of startup traces the timeline groups before the first activity.
 const STARTUP_TRACES = String.raw`\b\d+(?= traces before the first activity\b)`;
-const DURATION = String.raw`\b\d+(?:\.\d+)?(?:ms|s)\b`;
+// `850ms`, `12.4s`, and from a minute on `1m06s` (show's format for long offsets).
+const DURATION = String.raw`\b(?:\d+m\d{2}s|\d+(?:\.\d+)?(?:ms|s))\b`;
 
 /**
  * Stateful normalizer for one journey: placeholders are numbered by first

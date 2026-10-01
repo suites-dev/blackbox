@@ -116,6 +116,15 @@ every span kind), with `observation.waitedMs` and `observation.stillArriving`, a
 limitation (`waitedMs`) when the limit ended the wait. A driver failure before any process existed adds
 nothing. `capsule show <activity> --json` reports `waitedMs: 0` and `stillArriving: false`.
 
+The command line can carry credentials, so the argv in the document (`outcome.argv`, or
+`outcome.process.argv` for a driver) is redacted exactly as the report redacts it: `Bearer`/`Basic`
+credentials, `Authorization`, `Proxy-Authorization`, `Cookie`, `Set-Cookie`, `X-Api-Key` and `Api-Key`
+header values, `user:password@` in URLs, secret query parameters (`token`, `secret`, `password`,
+`api_key`, …), `NAME=value` assignments, the value after a sensitive flag (`--token value`), and every
+position the driver declares become `[REDACTED]`. `argv[0]`, the executable, is always kept, and the
+field keeps its name, place and type (a string array). Only what is printed changes: the retained
+activity record keeps the command as run, and the report redacts it when rendered.
+
 ## Reading `capsule show`
 
 `capsule show <activity>` names the activity by its short ID and name; it never prints the command line, which
