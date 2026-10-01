@@ -6,21 +6,23 @@ import type { SandboxHandle } from '@suites/blackbox-sandbox';
 import { verifyRequiredActivations } from './activation.js';
 import { catalog } from '../testing/catalog-fixture.js';
 
-const statusWithEmptyServiceName = {
-  kind: 'collector-status',
-  sessionId: 'quiet-river-ada',
-  executionId: 'execution-1',
-  instrumentation: {
-    kind: 'activated',
-    activations: [
-      {
-        kind: 'instrumentation-activation',
-        runtime: 'node',
-        serviceName: '',
-      },
-    ],
-  },
-};
+function statusWithActivation(runtime: string, serviceName: string) {
+  return {
+    kind: 'collector-status',
+    sessionId: 'quiet-river-ada',
+    executionId: 'execution-1',
+    instrumentation: {
+      kind: 'activated',
+      activations: [
+        {
+          kind: 'instrumentation-activation',
+          runtime,
+          serviceName,
+        },
+      ],
+    },
+  };
+}
 
 function activationPlan() {
   const base = catalog();
@@ -98,8 +100,14 @@ function sandbox(): SandboxHandle {
   };
 }
 
-test('audit H3: playwright rejects empty collector service names', async () => {
-  vi.stubGlobal('fetch', vi.fn(() => Promise.resolve(Response.json(statusWithEmptyServiceName))));
+test.each([
+  { description: 'empty collector service names', runtime: 'node', serviceName: '' },
+  { description: 'blank collector runtimes', runtime: '   ', serviceName: 'orders-api' },
+])('audit H3: playwright rejects $description', async ({ runtime, serviceName }) => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(() => Promise.resolve(Response.json(statusWithActivation(runtime, serviceName)))),
+  );
 
   await expect(
     verifyRequiredActivations({
