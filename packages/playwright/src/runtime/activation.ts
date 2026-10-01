@@ -32,7 +32,9 @@ function activation(value: unknown): RequiredActivation {
     !isRecord(value) ||
     value.kind !== 'instrumentation-activation' ||
     typeof value.runtime !== 'string' ||
-    typeof value.serviceName !== 'string'
+    value.runtime.trim().length === 0 ||
+    typeof value.serviceName !== 'string' ||
+    value.serviceName.trim().length === 0
   ) {
     throw new Error('Collector status contains an invalid instrumentation activation');
   }
