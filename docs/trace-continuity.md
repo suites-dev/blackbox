@@ -1,8 +1,9 @@
-# Follow work across async holes
+# Trace continuity across asynchronous boundaries
 
-An **async hole** is a gap in the trace relationship across an asynchronous handoff: the work continues, but the
-context connecting it to the initiating action does not. A producer might write a Redis list item, a database row,
-or a file that a worker reads later. If that handoff does not carry trace context, the worker can start another trace.
+A **trace continuity gap** occurs when work crosses an asynchronous handoff without preserving its trace relationship:
+the work continues, but the context connecting it to the initiating action does not. A producer might write a Redis
+list item, a database row, or a file that a worker reads later. If that handoff does not carry trace context, the
+worker can start an unlinked downstream trace.
 
 Blackbox retains both the commands you execute and supported application traces within the Capsule session. You can
 investigate the whole execution even when it cannot be represented as one continuous trace.
@@ -54,7 +55,7 @@ list length after the push; its successful exit records that the push succeeded,
 The result records `context-not-supported` at the shared-state boundary. This is expected for this driver and payload,
 so `--allow-untraced` is unnecessary.
 
-## Look beyond the activity trace
+## Look beyond the initiating trace
 
 First inspect the stimulus's activity:
 
@@ -84,7 +85,7 @@ the marked consumer-to-API trace, and checks that both traces remain in the sess
 [evidence check](../demo/support/capsule-telemetry-proof.mjs) keeps the downstream association as `session-only`.
 That is a limit on recorded trace correlation, not a reason to discard the observed request.
 
-## Decide what the execution establishes
+## Decide what unlinked work establishes
 
 | Observation                                                             | What it supports                                                                                                             |
 | ----------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
@@ -95,18 +96,18 @@ That is a limit on recorded trace correlation, not a reason to discard the obser
 
 One marker observed in the expected services is useful evidence of occurrence. It does not establish exactly-once
 processing, absence of retries, or completion of every possible downstream task. Those claims need additional checks
-and appropriate completion and coverage conditions. Shared session membership alone does not establish that an
+and an explicit [completion barrier](completion-barriers.md). Shared session membership alone does not establish that an
 arbitrary command caused an arbitrary span, especially when a Capsule contains several stimuli.
 
 Stop the Capsule when finished and retain its report using the [walkthrough's final steps](experiments.md#save-a-snapshot-stop-and-inspect-again).
 
 ## Distinguish three different gaps
 
-| Gap                                                                         | What to inspect next                                                                                                      |
-| --------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
-| Trace continuity is missing, but downstream spans exist.                    | Use the session view, visible business identifiers, and controlled conditions to assess the claim.                        |
-| The relevant runtime operation is not instrumented.                         | Add an appropriate observation source or an authoritative state check; a session cannot recover an uncollected operation. |
-| Command execution finished, but downstream work or export is still pending. | Wait for the application's completion signal and required evidence within a defined timeout.                              |
+| Gap                                                               | What to inspect next                                                                                                      |
+| ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| Trace continuity is missing, but downstream spans exist.          | Use the session view, visible business identifiers, and controlled conditions to assess the claim.                        |
+| The relevant runtime operation is not instrumented.               | Add an appropriate observation source or an authoritative state check; a session cannot recover an uncollected operation. |
+| Command execution finished, but downstream work is still pending. | Seal the flow with an application-specific completion barrier before assessing effects.                                   |
 
 Queues can carry trace context when the producer, message format, and consumer support it. This Redis example
 demonstrates a handoff that does not. Blackbox preserves that limitation alongside the evidence it did collect.

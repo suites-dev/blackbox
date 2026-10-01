@@ -6,10 +6,6 @@ export type CatalogDriverPropagation = Exclude<
 >;
 
 export type CatalogEntryKind = 'system' | 'subsystem';
-export type CatalogIsolation =
-  | { readonly kind: 'per-test' }
-  | { readonly kind: 'per-worker' }
-  | { readonly kind: 'group'; readonly groupName: string };
 
 export interface BlackboxConfig {
   readonly schemaVersion: 1;
@@ -37,8 +33,7 @@ export interface CatalogDriverTarget {
 }
 
 export type CatalogDriverExecution =
-  | { readonly kind: 'host' }
-  | { readonly kind: 'participant'; readonly participant: string };
+  { readonly kind: 'host' } | { readonly kind: 'participant'; readonly participant: string };
 
 export interface CatalogEntry {
   readonly kind: CatalogEntryKind;
@@ -46,7 +41,6 @@ export interface CatalogEntry {
     readonly adapter: 'docker-compose@1';
     readonly files: readonly string[];
   };
-  readonly isolation: CatalogIsolation;
   readonly entrypoint: {
     readonly participant: string;
     readonly protocol: string;
@@ -122,7 +116,6 @@ export interface CatalogSandboxInput {
   readonly drivers: Readonly<Record<string, ResolvedCatalogDriver>>;
   readonly metadata: {
     readonly kind: CatalogEntryKind;
-    readonly isolation: CatalogIsolation;
     readonly participants: Readonly<Record<string, Participant>>;
     readonly observation: ObservationPolicy;
     readonly activations: Readonly<Record<string, Activation>>;

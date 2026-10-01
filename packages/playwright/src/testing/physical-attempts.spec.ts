@@ -28,7 +28,6 @@ const runtime = {
         catalogEntry: {
           id: input.selection.id,
           kind: input.selection.kind,
-          declaredIsolation: { kind: 'per-test' },
         },
         projectName: `blackbox-${executionId}`,
         artifactDirectory: input.artifactDirectory,
@@ -47,6 +46,10 @@ const runtime = {
         read: () => Promise.reject(new Error('not used by this fixture')),
         readTrace: () => Promise.reject(new Error('not used by this fixture')),
       },
+      effects: {
+        sessionId: `session-${executionId}`,
+        executionId,
+      },
       stop: (reason) => {
         record({ kind: 'stop', executionId, reason });
         return Promise.resolve();
@@ -63,8 +66,9 @@ test('starts the automatic sandbox even without destructuring its fixture', () =
   playwrightExpect(true).toBe(true);
 });
 
-test('second physical attempt', ({ sandbox }) => {
+test('second physical attempt', ({ effects, sandbox }) => {
   playwrightExpect(sandbox.catalogEntry).toMatchObject({ id: 'orders', kind: 'system' });
+  playwrightExpect(effects.executionId).toBe(sandbox.executionId);
 });
 
 test('retry gets a new physical attempt', ({ sandbox }, testInfo) => {

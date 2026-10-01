@@ -12,11 +12,10 @@ const observation = {
   },
 } as const;
 
-function entry(kind: CatalogEntry['kind'], isolation: CatalogEntry['isolation']): CatalogEntry {
+function entry(kind: CatalogEntry['kind']): CatalogEntry {
   return {
     kind,
     acquisition: { adapter: 'docker-compose@1', files: ['compose.yaml'] },
-    isolation,
     entrypoint: {
       participant: 'api',
       protocol: 'http',
@@ -36,16 +35,13 @@ function entry(kind: CatalogEntry['kind'], isolation: CatalogEntry['isolation'])
   };
 }
 
-export function catalog(
-  kind: CatalogEntry['kind'] = 'system',
-  isolation: CatalogEntry['isolation'] = { kind: 'per-test' },
-): LoadedCatalog {
+export function catalog(kind: CatalogEntry['kind'] = 'system'): LoadedCatalog {
   return {
     sourceFile: '/project/blackbox.config.yaml',
     projectDirectory: '/project',
     config: {
       schemaVersion: 1,
-      catalog: { default: 'orders', entries: { orders: entry(kind, isolation) } },
+      catalog: { default: 'orders', entries: { orders: entry(kind) } },
       activations: {},
     },
   };

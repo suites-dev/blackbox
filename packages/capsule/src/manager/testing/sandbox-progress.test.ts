@@ -21,7 +21,6 @@ async function fixture() {
   const entry = {
     kind: 'system',
     acquisition: { adapter: 'docker-compose@1', files: ['compose.yaml'] },
-    isolation: { kind: 'per-test' },
     entrypoint: {
       participant: 'postgres',
       protocol: 'tcp',

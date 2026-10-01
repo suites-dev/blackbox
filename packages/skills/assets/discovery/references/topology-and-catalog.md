@@ -14,7 +14,7 @@ Propose a full-system boundary and, when useful, the smallest subsystem that ans
 
 ## Keep one configuration authority
 
-Create or update only root `blackbox.config.yaml`. It is the sole project-authored catalog and product-configuration source for systems, subsystems, participants, acquisition, readiness, isolation, observation, and activation. Do not revive `blackbox.config.ts`, hidden manifest scanning, Compose extension metadata, or another service graph.
+Create or update only root `blackbox.config.yaml`. It is the sole project-authored catalog and product-configuration source for systems, subsystems, participants, acquisition, readiness, observation, and activation. Do not revive `blackbox.config.ts`, hidden manifest scanning, Compose extension metadata, or another service graph.
 
 Use project-owned ordinary Compose files, such as `.blackbox/catalog/` in the example. Reference them from the catalog as an explicitly ordered list. Preserve useful existing Compose services and deployment conventions where possible. Compose files contain no Blackbox metadata or `x-blackbox` extension; Blackbox-specific topology and activation references belong in the catalog.
 
@@ -30,7 +30,7 @@ Do not guess field names, defaults, or YAML schemas from a historical example. F
 
 Catalog facts should describe what the application contains and how Blackbox can acquire and observe it. They do not declare that behavior is correct. Keep acceptance expectations in the project’s tests or baseline flow as appropriate; a catalog change must not make a failed observation disappear by deleting its boundary.
 
-For isolation, identify databases, queues, local files, and external services that can be shared between physical executions. Select a supported isolation profile based on the real state model. Reuse requires an explicit reset or namespace mechanism; a worker or container being reused does not make state fresh. Flag host Docker socket access, production credentials, production endpoints, and shared writable services for careful scope review.
+Identify databases, queues, local files, and external services whose state can escape a physical execution. Playwright creates a fresh Sandbox for every physical test attempt; the catalog does not select another lifetime. Flag host Docker socket access, production credentials, production endpoints, and shared writable services for careful scope review.
 
 ## Validate in layers
 

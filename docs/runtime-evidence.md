@@ -41,8 +41,8 @@ retained data. This table describes how to reason about evidence, not a promise 
 
 ## Investigate shared-state behavior across traces
 
-An **async hole** occurs when work crosses an asynchronous boundary without preserving the trace relationship.
-The [Redis walkthrough](async-workflows.md) shows the implemented path: a recorded `redis-cli` stimulus, a consumer,
+A **trace continuity gap** occurs when work crosses an asynchronous boundary without preserving the trace relationship.
+The [Redis walkthrough](trace-continuity.md) shows the implemented path: a recorded `redis-cli` stimulus, a consumer,
 and a separately traced HTTP interaction retained in the same Capsule session.
 
 Consider a controlled trial with a fresh data store, one worker, no competing producer, a unique job ID, and observation
@@ -124,8 +124,9 @@ See [instrumentation](instrumentation.md) and [drivers](drivers.md) for setup an
 Keep the observed flow, accepted expectations, and claim assessment separate. Exploring what happened does not
 implicitly approve it as correct. Assess previously chosen expectations against fresh evidence when confirming behavior.
 
-The alpha provides raw observations and command results for inspection and explicit checks; general normalized-effect
-matchers and automated qualification are in development. Report projections do not create new verdicts.
+The alpha provides raw observations and command results for inspection and explicit checks. Playwright exposes an
+effects contract matcher, but normalized-effect projection and automated qualification are still in development; the
+matcher is inconclusive without that projection. Report projections do not create new verdicts.
 Use “insufficient evidence” when the available observations cannot answer the claim, rather than forcing pass or fail.
 
 Keep findings bounded to the tested conditions and execution. Review telemetry and delegated output before sharing:

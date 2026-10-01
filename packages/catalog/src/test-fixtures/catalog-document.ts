@@ -49,7 +49,6 @@ export function validCatalogDocument(): BlackboxConfig {
             adapter: 'docker-compose@1',
             files: ['.blackbox/compose/base.yml', '.blackbox/compose/test.yml'],
           },
-          isolation: { kind: 'per-test' },
           entrypoint: {
             participant: 'api',
             protocol: 'http',
@@ -108,7 +107,6 @@ export function validCatalogSourceDocument() {
             adapter: 'docker-compose@1' as const,
             files: ['.blackbox/compose/base.yml', '.blackbox/compose/test.yml'],
           },
-          isolation: 'per-test' as const,
           entrypoint: {
             participant: 'api',
             protocol: 'http',

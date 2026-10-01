@@ -16,10 +16,12 @@ import {
 
 import type {
   BlackboxCatalogSelection,
+  BlackboxEffects,
   BlackboxEntrypoint,
   BlackboxSandbox,
   BlackboxTelemetry,
 } from '../types.js';
+import { createUnavailableBlackboxEffects } from '../effects/runtime.js';
 import { verifyRequiredActivations } from './activation.js';
 import { resolveCollectorRuntime } from './collector-runtime.js';
 import { awaitReadiness } from './readiness.js';
@@ -36,6 +38,7 @@ export interface BlackboxAttemptInput {
 export interface RunningBlackboxAttempt {
   readonly sandbox: BlackboxSandbox;
   readonly telemetry: BlackboxTelemetry;
+  readonly effects: BlackboxEffects;
   stop(reason: SandboxStopReason): Promise<void>;
 }
 
@@ -53,6 +56,11 @@ export interface BlackboxAcquisitionPorts {
   readonly awaitReadiness: typeof awaitReadiness;
   readonly randomId: () => string;
   readonly randomToken: () => string;
+  readonly createEffects: (input: {
+    readonly sessionId: string;
+    readonly executionId: string;
+    readonly telemetry: BlackboxTelemetry;
+  }) => BlackboxEffects;
 }
 
 const productionPorts = {
@@ -65,6 +73,7 @@ const productionPorts = {
   awaitReadiness,
   randomId: randomUUID,
   randomToken: () => randomBytes(32).toString('base64url'),
+  createEffects: createUnavailableBlackboxEffects,
 } satisfies BlackboxAcquisitionPorts;
 
 function selectedPlan(input: {
@@ -85,12 +94,6 @@ function selectedPlan(input: {
     throw new Error(
       `Catalog entry ${JSON.stringify(input.selection.id)} is ${JSON.stringify(plan.metadata.kind)}, ` +
         `not ${JSON.stringify(input.selection.kind)}.`,
-    );
-  }
-  if (plan.metadata.isolation.kind !== 'per-test') {
-    throw new Error(
-      `Catalog entry ${JSON.stringify(input.selection.id)} declares ${JSON.stringify(plan.metadata.isolation.kind)} isolation. ` +
-        'Native Playwright execution requires catalog isolation kind "per-test".',
     );
   }
   return plan;
@@ -220,21 +223,22 @@ export async function acquireBlackboxAttempt(
       catalogEntry: Object.freeze({
         id: plan.catalogEntryId,
         kind: plan.metadata.kind,
-        declaredIsolation: plan.metadata.isolation,
       }),
       projectName: sandbox.projectName,
       artifactDirectory: input.artifactDirectory,
       entrypoint: Object.freeze(selectedEntrypoint),
       containers: sandbox.containers,
     }) satisfies BlackboxSandbox;
+    const exposedTelemetry = publicTelemetry({
+      sandbox,
+      recordDirectory,
+      sessionId,
+      executionId,
+    });
     return {
       sandbox: publicSandbox,
-      telemetry: publicTelemetry({
-        sandbox,
-        recordDirectory,
-        sessionId,
-        executionId,
-      }),
+      telemetry: exposedTelemetry,
+      effects: ports.createEffects({ sessionId, executionId, telemetry: exposedTelemetry }),
       async stop(reason): Promise<void> {
         await sandbox.stop({ reason });
       },
