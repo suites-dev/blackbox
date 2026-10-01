@@ -60,6 +60,7 @@ export class RunningCollectorStore implements CollectorStore {
   #retainedFragments: number;
   readonly #limits: CollectorRetentionLimits;
   #tail: Promise<void> = Promise.resolve();
+  #intakeStopped = false;
 
   public constructor(input: {
     readonly lease: CollectorStorageLease;
@@ -223,7 +224,7 @@ export class RunningCollectorStore implements CollectorStore {
   private assertAcceptingTelemetry(
     run: CollectorRunRecord | undefined = this.#record.runs.at(-1),
   ): void {
-    if (run !== undefined && run.receiver === 'failed') {
+    if (this.#intakeStopped || (run !== undefined && run.receiver === 'failed')) {
       throw new CollectorIntakeStoppedError();
     }
   }
@@ -232,7 +233,9 @@ export class RunningCollectorStore implements CollectorStore {
     const result = this.#tail.then(operation, operation);
     this.#tail = result.then(
       () => undefined,
-      () => undefined,
+      () => {
+        this.#intakeStopped = true;
+      },
     );
     return result;
   }
