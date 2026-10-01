@@ -102,6 +102,13 @@ export class AttemptReport implements AttemptProgress {
       contentType: 'application/json',
       body: JSON.stringify({
         schemaVersion: 1,
+        owner: {
+          testId: this.testInfo.testId,
+          retry: this.testInfo.retry,
+          workerIndex: this.testInfo.workerIndex,
+          parallelIndex: this.testInfo.parallelIndex,
+          outputDirectory: output,
+        },
         identity: this.identity,
         events: this.events,
         omittedObservations: this.dropped,

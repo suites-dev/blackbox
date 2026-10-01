@@ -61,7 +61,7 @@ async function sandboxRecords() {
       Array.isArray(value.composeFiles) &&
       typeof value.state === 'string'
     ) {
-      records.push({ path, recordDirectory: dirname(path), value });
+      records.push({ path, recordDirectory: await realpath(dirname(path)), value });
     }
   }
   return records;
@@ -194,7 +194,17 @@ export async function verify() {
     JSON.stringify(discoveredSpecs) === JSON.stringify(expectedSpecs),
     `Unexpected Playwright specs: ${JSON.stringify(discoveredSpecs)}`,
   );
-  const attempts = specs.flatMap((spec) => spec.tests.flatMap((test) => test.results));
+  const attempts = specs.flatMap((spec) => {
+    const catalogByFile = {
+      'payment-service.spec.ts': { kind: 'subsystem', id: 'payment-mock' },
+      'subscription-system.spec.ts': { kind: 'system', id: 'subscription-system' },
+    };
+    const expectedCatalog = catalogByFile[spec.file.split('/').at(-1)];
+    assert(expectedCatalog !== undefined, `Unexpected scenario file: ${spec.file}`);
+    return spec.tests.flatMap((test) =>
+      test.results.map((result) => ({ ...result, testId: spec.id, expectedCatalog })),
+    );
+  });
   assert(
     attempts.length === expectedSpecs.length,
     `Expected ${expectedSpecs.length} Playwright attempts, found ${attempts.length}`,

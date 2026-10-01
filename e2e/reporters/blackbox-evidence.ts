@@ -13,6 +13,7 @@ interface Event {
   readonly phase: string;
   readonly status: string;
   readonly sequence: number;
+  readonly detail: string;
 }
 
 /** Acceptance oracle: observe worker events before the test result is finalized. */
@@ -21,6 +22,11 @@ export default class BlackboxEvidence implements Reporter {
     TestResult,
     {
       title: string;
+      testId: string;
+      retry: number;
+      workerIndex: number;
+      parallelIndex: number;
+      sandboxId: string | null;
       events: Event[];
       businessSteps: number;
       nestedSteps: number;
@@ -35,6 +41,11 @@ export default class BlackboxEvidence implements Reporter {
   onTestBegin(test: TestCase, result: TestResult): void {
     this.attempts.set(result, {
       title: test.title,
+      testId: test.id,
+      retry: result.retry,
+      workerIndex: result.workerIndex,
+      parallelIndex: result.parallelIndex,
+      sandboxId: null,
       events: [],
       businessSteps: 0,
       nestedSteps: 0,
@@ -69,6 +80,9 @@ export default class BlackboxEvidence implements Reporter {
       }
       const event = JSON.parse(attachment.body.toString('utf8')) as Event;
       attempt.events.push(event);
+      if (event.phase === 'sandbox' && event.status === 'completed') {
+        attempt.sandboxId = event.detail.split(';')[0];
+      }
       if (event.phase === 'acquisition' && attempt.businessSteps > 0) {
         attempt.errors.push('Acquisition event was delivered after business execution started');
       }
@@ -99,10 +113,6 @@ export default class BlackboxEvidence implements Reporter {
   }
 
   async onEnd(): Promise<{ status: FullResult['status'] } | undefined> {
-    const root = process.env.BLACKBOX_E2E_RESULTS_ROOT;
-    if (root === undefined) {
-      throw new Error('Missing evidence root');
-    }
     const attempts = [...this.attempts.values()];
     const errors = attempts.flatMap(({ title, errors }) =>
       errors.map((error) => `${title}: ${error}`),
@@ -114,7 +124,7 @@ export default class BlackboxEvidence implements Reporter {
       errors.push('No nested business steps');
     }
     await writeFile(
-      join(root, 'live-reporting.json'),
+      join(import.meta.dirname, '../test-results/live-reporting.json'),
       JSON.stringify({ attempts, errors }, null, 2),
     );
     if (errors.length > 0) {

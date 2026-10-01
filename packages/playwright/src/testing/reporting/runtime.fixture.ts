@@ -6,10 +6,8 @@ import { setTimeout as delay } from 'node:timers/promises';
 import type { BlackboxAttemptInput, BlackboxAttemptRuntime } from '../../runtime/acquisition.js';
 
 async function waitForReporter(): Promise<void> {
-  const output = process.env.BLACKBOX_PLAYWRIGHT_OUTPUT_DIR;
-  if (output === undefined) {
-    throw new Error('Missing output directory');
-  }
+  // The parent launches this isolated process in its own mkdtemp directory.
+  const output = process.cwd();
   for (let attempt = 0; attempt < 200; attempt++) {
     try {
       await access(join(output, 'reporter-observed-startup'));

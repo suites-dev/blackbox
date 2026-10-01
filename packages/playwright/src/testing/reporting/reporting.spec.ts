@@ -25,7 +25,8 @@ test('retry isolation', ({ sandbox }, info) => {
 test.describe('startup failure', () => {
   test.describe.configure({ retries: 0 });
   test.use({ catalogEntry: { kind: 'system', id: 'setup-failure' } });
-  test('cannot enter the body', () => {
+  test('cannot enter the body', async () => {
+    await test.info().attach('setup-body-entered', { body: 'entered' });
     throw new Error('BODY_MUST_NOT_EXECUTE');
   });
 });

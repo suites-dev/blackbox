@@ -26,14 +26,29 @@ it('streams before setup can finish and retains isolated retry, failure and nest
     const report = JSON.parse(
       await readFile(join(directory, 'results.json'), 'utf8'),
     ) as JSONReport;
-    const serialized = JSON.stringify(report);
-    expect(serialized).not.toContain('BODY_MUST_NOT_EXECUTE');
     const allResults = resultsIn(report.suites);
     expect(allResults).toHaveLength(5);
+    // Error snippets may quote the unexecuted body. Observe execution, not source text.
+    expect(
+      allResults.flatMap(({ attachments }) => attachments.map(({ name }) => name)),
+    ).not.toContain('setup-body-entered');
+    const messages = allResults.flatMap(({ error }) =>
+      error === undefined ? [] : [error.message ?? ''],
+    );
+    expect(messages.some((message) => message.includes('synthetic setup failure'))).toBe(true);
+    expect(messages.some((message) => message.includes('BODY_MUST_NOT_EXECUTE'))).toBe(false);
     const transcripts = allResults.map((attempt) => {
       const retained = attempt.attachments.find(({ name }) => name === 'blackbox-attempt');
       expect(retained).toBeDefined();
-      return Buffer.from(retained!.body!, 'base64').toString('utf8');
+      const text = Buffer.from(retained!.body!, 'base64').toString('utf8');
+      const document = JSON.parse(text) as { owner: Record<string, unknown> };
+      expect(document.owner).toMatchObject({
+        testId: attempt.testId,
+        retry: attempt.retry,
+        workerIndex: attempt.workerIndex,
+        parallelIndex: attempt.parallelIndex,
+      });
+      return text;
     });
     expect(transcripts.join('\n')).not.toContain('synthetic-secret');
     const reportedDurations = [...result.output.matchAll(/· (\d+)ms total/gu)].map((match) =>
@@ -64,9 +79,13 @@ it('streams before setup can finish and retains isolated retry, failure and nest
 
 function resultsIn(
   suites: JSONReport['suites'],
-): JSONReport['suites'][number]['specs'][number]['tests'][number]['results'] {
+): (JSONReport['suites'][number]['specs'][number]['tests'][number]['results'][number] & {
+  testId: string;
+})[] {
   return suites.flatMap((suite) => [
-    ...suite.specs.flatMap((spec) => spec.tests.flatMap((test) => test.results)),
+    ...suite.specs.flatMap((spec) =>
+      spec.tests.flatMap((test) => test.results.map((result) => ({ ...result, testId: spec.id }))),
+    ),
     ...resultsIn(suite.suites ?? []),
   ]);
 }
@@ -82,6 +101,7 @@ async function run(directory: string): Promise<{ code: number; output: string }>
       join(import.meta.dirname, '../testing/reporting/playwright.config.ts'),
     ],
     {
+      cwd: directory,
       env: {
         ...process.env,
         BLACKBOX_PLAYWRIGHT_OUTPUT_DIR: directory,

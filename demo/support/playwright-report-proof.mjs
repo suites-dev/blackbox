@@ -1,3 +1,5 @@
+import { join } from 'node:path';
+
 function assert(value, message) {
   if (!value) throw new Error(message);
 }
@@ -15,6 +17,24 @@ export function verifyAttemptReports({ attempts, records, live, text }) {
       'Missing acquired identity',
     );
     const { sandboxId, executionId, sessionId, catalogEntry } = document.identity;
+    const owner = document.owner;
+    assert(
+      owner !== undefined &&
+        ['testId', 'retry', 'workerIndex', 'parallelIndex'].every(
+          (key) => owner[key] !== undefined && owner[key] === attempt[key],
+        ),
+      'Report belongs to a different Playwright attempt',
+    );
+    const liveAttempts = live.attempts.filter(
+      (item) => item.testId === attempt.testId && item.retry === attempt.retry,
+    );
+    assert(
+      liveAttempts.length === 1 &&
+        liveAttempts[0].workerIndex === attempt.workerIndex &&
+        liveAttempts[0].parallelIndex === attempt.parallelIndex &&
+        liveAttempts[0].sandboxId === sandboxId,
+      'Live report belongs to a different Playwright attempt or sandbox',
+    );
     assert(
       sandboxId === executionId && typeof sessionId === 'string',
       'Invalid report execution identity',
@@ -25,8 +45,14 @@ export function verifyAttemptReports({ attempts, records, live, text }) {
       'Report has no matching cleaned Sandbox',
     );
     assert(
-      ['subscription-system', 'payment-mock'].includes(catalogEntry.id),
-      'Unexpected report catalog',
+      catalogEntry.id === attempt.expectedCatalog.id &&
+        catalogEntry.kind === attempt.expectedCatalog.kind,
+      'Report catalog does not match its scenario',
+    );
+    assert(
+      typeof owner.outputDirectory === 'string' &&
+        record.recordDirectory === join(owner.outputDirectory, 'blackbox'),
+      'Sandbox record is outside its owning attempt output directory',
     );
     const events = document.events;
     const completed = (phase) =>
