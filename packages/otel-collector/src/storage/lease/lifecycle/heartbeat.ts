@@ -1,7 +1,9 @@
 import { clearInterval, setInterval } from 'node:timers';
 import { utimes } from 'node:fs/promises';
 import { readLock } from '../io.js';
-import { releaseOwnedLock } from './release.js';
+import type { CurrentLockRecord } from '../record.js';
+import type { LeaseRuntime } from '../types.js';
+import { releaseOwnedLockWith } from './release.js';
 
 export interface LeaseHeartbeat {
   readonly assertOwned: () => Promise<void>;
@@ -31,6 +33,8 @@ export function startLeaseHeartbeat(input: {
   readonly path: string;
   readonly markerPath: string;
   readonly token: string;
+  readonly record: CurrentLockRecord;
+  readonly runtime: LeaseRuntime;
   readonly intervalMs: number;
 }): LeaseHeartbeat {
   let compromised: Error | null = null;
@@ -63,7 +67,12 @@ export function startLeaseHeartbeat(input: {
     },
     release: async () => {
       clearInterval(timer);
-      await releaseOwnedLock(input);
+      await releaseOwnedLockWith({
+        path: input.path,
+        markerPath: input.markerPath,
+        record: input.record,
+        runtime: input.runtime,
+      });
     },
   };
 }

@@ -1,8 +1,8 @@
-import { open } from 'node:fs/promises';
+import { stat } from 'node:fs/promises';
 import { encodedToken } from './candidate.js';
-import { readLock, removeLock } from './io.js';
+import { publishLock, readLock, removeLock } from './io.js';
 import { inspectLockOwnership } from './ownership.js';
-import type { CurrentLockRecord, LockRecord } from './record.js';
+import type { CurrentLockRecord } from './record.js';
 import type { LeaseRuntime } from './types.js';
 
 /** A crashed guard holder is itself recovered through a guard, at most this deep. */
@@ -10,7 +10,7 @@ const MAX_GUARD_DEPTH = 2;
 
 /**
  * The guard that serializes removal of one exact record at `path`: its name
- * carries that record's token, so it can be created exactly once per record.
+ * carries that record's token, so only one holder at a time may remove it.
  */
 export function recoveryGuardPath(input: {
   readonly path: string;
@@ -23,15 +23,18 @@ function isExisting(error: unknown): boolean {
   return error instanceof Error && 'code' in error && error.code === 'EEXIST';
 }
 
+/**
+ * Publishes the guard atomically: written and synced under a temporary name
+ * first, then linked into place, so the guard path never holds a partial
+ * record that later claimers would have to treat as foreign.
+ */
 async function createGuard(path: string, claimer: CurrentLockRecord): Promise<boolean> {
   try {
-    const file = await open(path, 'wx', 0o600);
-    try {
-      await file.writeFile(`${JSON.stringify(claimer)}\n`, 'utf8');
-      await file.sync();
-    } finally {
-      await file.close();
-    }
+    await publishLock({
+      temporaryPath: `${path}.${encodedToken(claimer.token)}.tmp`,
+      path,
+      record: claimer,
+    });
     return true;
   } catch (error) {
     if (isExisting(error)) {
@@ -49,6 +52,19 @@ async function releaseGuard(path: string, claimer: CurrentLockRecord): Promise<v
     guard.decoded.record.token === claimer.token
   ) {
     await removeLock(path);
+  }
+}
+
+/**
+ * Guards are not heartbeated: one held by a process in another PID namespace
+ * is stale once it is older than the staleness threshold.
+ */
+async function expired(path: string, runtime: LeaseRuntime): Promise<boolean> {
+  try {
+    const guard = await stat(path);
+    return runtime.nowMilliseconds() - guard.mtimeMs > runtime.staleAfterMs;
+  } catch {
+    return false;
   }
 }
 
@@ -74,12 +90,16 @@ async function clearStaleGuard(input: {
     record: guard.decoded.record,
     runtime: input.runtime,
   });
-  if (ownership.kind !== 'stale-lock') {
+  const stale =
+    ownership.kind === 'stale-lock' ||
+    (ownership.kind === 'heartbeat-qualified-lock' &&
+      (await expired(input.guardPath, input.runtime)));
+  if (!stale) {
     return false;
   }
-  return removeStaleRecord({
+  return removeMarkerRecord({
     path: input.guardPath,
-    stale: guard.decoded.record,
+    token: guard.decoded.record.token,
     claimer: input.claimer,
     runtime: input.runtime,
     depth: input.depth + 1,
@@ -87,21 +107,23 @@ async function clearStaleGuard(input: {
 }
 
 /**
- * Removes the record at `path` only if it is still exactly `stale`, as one
- * atomic claim: first create the guard for that record with O_CREAT|O_EXCL
- * (only one claimer can), then, while holding it, re-read `path` and unlink
- * it only if it still carries the stale token. Returns true when `path` no
- * longer holds the stale record (removed here or already gone), false when it
- * now holds another record or another claimer is recovering it.
+ * Removes the record at `path` only if it still carries `token`, as one
+ * atomic claim: first create the guard for that token (only one holder at a
+ * time can), then, while holding it, re-read `path` and unlink it only if it
+ * still carries the token. Every removal of a marker record goes through
+ * here, the owner's own release included, so no removal can delete a record
+ * that replaced the one it inspected. Returns true when `path` no longer
+ * holds that record (removed here or already gone), false when it now holds
+ * another record or another holder is removing it.
  */
-export async function removeStaleRecord(input: {
+export async function removeMarkerRecord(input: {
   readonly path: string;
-  readonly stale: LockRecord;
+  readonly token: string;
   readonly claimer: CurrentLockRecord;
   readonly runtime: LeaseRuntime;
   readonly depth: number;
 }): Promise<boolean> {
-  const guardPath = recoveryGuardPath({ path: input.path, token: input.stale.token });
+  const guardPath = recoveryGuardPath({ path: input.path, token: input.token });
   if (!(await createGuard(guardPath, input.claimer))) {
     if (!(await clearStaleGuard({ ...input, guardPath }))) {
       return false;
@@ -117,7 +139,7 @@ export async function removeStaleRecord(input: {
     }
     if (
       current.decoded.kind !== 'lock-record-decoded' ||
-      current.decoded.record.token !== input.stale.token
+      current.decoded.record.token !== input.token
     ) {
       return false;
     }

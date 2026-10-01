@@ -34,6 +34,8 @@ export async function acquireStorageLeaseWithRuntime(input: {
     path: claimed.ownedPath,
     markerPath: claimed.markerPath,
     token,
+    record,
+    runtime: input.runtime,
     intervalMs: input.runtime.heartbeatIntervalMs,
   });
   return {

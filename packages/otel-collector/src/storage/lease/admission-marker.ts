@@ -1,6 +1,6 @@
 import { stat } from 'node:fs/promises';
 import { readLock } from './io.js';
-import { removeStaleRecord } from './marker-recovery.js';
+import { removeMarkerRecord } from './marker-recovery.js';
 import { inspectLockOwnership } from './ownership.js';
 import type { CurrentLockRecord } from './record.js';
 import type { LeaseRuntime } from './types.js';
@@ -39,9 +39,9 @@ export async function admitLeaseMarker(input: {
   }
   // Never check-then-remove: another claimer may already have replaced the
   // stale marker with its own. Only the guard holder may remove it.
-  return removeStaleRecord({
+  return removeMarkerRecord({
     path: input.path,
-    stale: lock.decoded.record,
+    token: lock.decoded.record.token,
     claimer: input.claimer,
     runtime: input.runtime,
     depth: 0,

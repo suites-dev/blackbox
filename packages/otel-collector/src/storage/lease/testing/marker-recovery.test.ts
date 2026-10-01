@@ -1,11 +1,18 @@
-import { mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, readFile, readdir, rm, utimes, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, expect, it } from 'vitest';
 import { acquireStorageLeaseWithRuntime } from '../../lease.js';
 import { lockPath, sessionDirectory } from '../../paths.js';
 import { recoveryGuardPath } from '../marker-recovery.js';
-import { testLeaseInput, testOwner, testRecord, testRuntime, writeTestLock } from './testing.js';
+import {
+  testLeaseInput,
+  testOwner,
+  testOwnerInNamespace,
+  testRecord,
+  testRuntime,
+  writeTestLock,
+} from './testing.js';
 
 const staleOwner = testOwner({ pid: 91, startTimeTicks: '100' });
 const currentOwner = testOwner({ pid: 92, startTimeTicks: '200' });
@@ -89,4 +96,61 @@ it('fails closed on an unreadable guard', async () => {
   );
   expect(await markerToken(lockPath(lease))).toBe('stale');
   expect(await readFile(guard, 'utf8')).toBe('not a lease record');
+});
+
+it('expires a guard from another PID namespace only once it is older than the stale threshold', async () => {
+  const { lease, guard, runtime } = await staleMarkerSession();
+  const elsewhere = testOwnerInNamespace({
+    pid: 7,
+    startTimeTicks: '700',
+    pidNamespace: 'pid:[other-namespace]',
+  });
+  await writeFile(guard, `${JSON.stringify(testRecord({ owner: elsewhere, token: 'remote' }))}\n`);
+  // Fresh: its holder may still be recovering, so nobody else may.
+  await expect(acquireStorageLeaseWithRuntime({ lease, runtime })).rejects.toThrow('already owns');
+  expect(await markerToken(lockPath(lease))).toBe('stale');
+  // Older than the threshold: guards are not heartbeated, so its holder is gone.
+  await utimes(guard, new Date(0), new Date(0));
+  const acquired = await acquireStorageLeaseWithRuntime({ lease, runtime });
+  try {
+    expect(await markerToken(lockPath(lease))).toBe('fresh');
+  } finally {
+    await acquired.release();
+  }
+});
+
+it('leaves the marker to a live recoverer instead of removing it on release', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'blackbox-collector-release-guard-'));
+  roots.push(root);
+  const lease = testLeaseInput(root);
+  const acquired = await acquireStorageLeaseWithRuntime({
+    lease,
+    runtime: testRuntime({ currentOwner, inspections: [], token: 'owner' }),
+  });
+  // Another live claimer judged this marker stale and holds its guard. Only it
+  // may remove the marker: a pathname unlink here could delete a marker that a
+  // third claimer publishes after the recoverer removes this one.
+  const guard = recoveryGuardPath({ path: lockPath(lease), token: 'owner' });
+  await writeFile(
+    guard,
+    `${JSON.stringify(testRecord({ owner: currentOwner, token: 'recoverer' }))}\n`,
+  );
+  await acquired.release();
+  expect(await markerToken(lockPath(lease))).toBe('owner');
+  expect(await markerToken(guard)).toBe('recoverer');
+});
+
+it('removes the marker on release and leaves no guard behind', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'blackbox-collector-release-'));
+  roots.push(root);
+  const lease = testLeaseInput(root);
+  const acquired = await acquireStorageLeaseWithRuntime({
+    lease,
+    runtime: testRuntime({ currentOwner, inspections: [], token: 'owner' }),
+  });
+  await acquired.release();
+  await expect(readFile(lockPath(lease), 'utf8')).rejects.toMatchObject({ code: 'ENOENT' });
+  expect(
+    (await readdir(sessionDirectory(lease))).filter((name) => name.includes('.recover-')),
+  ).toEqual([]);
 });
