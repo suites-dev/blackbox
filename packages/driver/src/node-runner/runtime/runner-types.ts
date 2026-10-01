@@ -4,10 +4,17 @@ import type { DriverPrepareRequest } from '../../model/driver-context.js';
 import type { DriverDefinition } from '../../model/definition.js';
 import type { DriverPrepareResponse, DriverPreparation } from '../../model/preparation.js';
 
-export interface CreateNodeDriverRunnerSourceInput {
+interface CreateNodeDriverRunnerSourceDefaultInput {
   readonly driverModuleUrl: URL;
   readonly runnerModuleUrl: URL;
 }
+
+interface CreateNodeDriverRunnerSourceWithProtocolInput extends CreateNodeDriverRunnerSourceDefaultInput {
+  readonly protocolFd: number;
+}
+
+export type CreateNodeDriverRunnerSourceInput =
+  CreateNodeDriverRunnerSourceDefaultInput | CreateNodeDriverRunnerSourceWithProtocolInput;
 
 export interface RunNodeDriverProcessInput {
   readonly definition: unknown;
