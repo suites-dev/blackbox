@@ -92,3 +92,15 @@ it('does not contact Docker when Sandbox admission never completed', async () =>
   });
   expect(cleanup).not.toHaveBeenCalled();
 });
+
+it.fails('audit F4: recovery rejects mismatched sandbox record identity', async () => {
+  const cleanup = vi.fn<SandboxRecoveryPorts['cleanupOwnedComposeProject']>(() =>
+    Promise.resolve());
+  const fixture = recoveryPorts({ record: admitted, cleanup });
+  await expect(recoverSandboxWithPorts({
+    recordDirectory: '/records',
+    sandboxId: 'other-sandbox',
+    timeoutMs: 5000,
+  }, fixture.ports)).rejects.toThrow(/sandbox identity/u);
+  expect(cleanup).not.toHaveBeenCalled();
+});

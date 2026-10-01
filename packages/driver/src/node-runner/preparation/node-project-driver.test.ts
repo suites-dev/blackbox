@@ -49,6 +49,19 @@ it('prepares a project driver without executing the prepared command', async () 
   });
 });
 
+it.fails('audit F11: driver logs do not corrupt protocol response', async () => {
+  const projectDirectory = await mkdtemp(join(tmpdir(), 'blackbox-driver-runtime-'));
+  const driverModulePath = join(projectDirectory, 'http-driver.mjs');
+  await writeFile(driverModulePath, `console.log('driver diagnostic');\n${driverSource}`, 'utf8');
+  await expect(
+    prepareNodeProjectDriver({
+      driverModulePath,
+      projectDirectory,
+      request: driverPrepareRequest(),
+    }),
+  ).resolves.toMatchObject({ kind: 'driver-prepare-succeeded' });
+});
+
 it('rejects relative runtime paths before starting a project driver', async () => {
   await expect(
     prepareNodeProjectDriver({
