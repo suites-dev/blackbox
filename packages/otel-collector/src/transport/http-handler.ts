@@ -9,6 +9,7 @@ import { requireAuthorization } from './authorization.js';
 import { RequestFailure, writeJson } from './response.js';
 import { serveCollectorRead } from './read-handler.js';
 import { CollectorRetentionLimitError } from '../lifecycle/retention.js';
+import { CollectorIntakeStoppedError } from '../lifecycle/running-store.js';
 
 function readEncodedBody(input: {
   readonly request: IncomingMessage;
@@ -198,9 +199,11 @@ export async function handleCollectorRequest(input: {
     const status =
       error instanceof RequestFailure
         ? error.status
-        : error instanceof CollectorRetentionLimitError
-          ? 507
-          : 500;
+        : error instanceof CollectorIntakeStoppedError
+          ? 503
+          : error instanceof CollectorRetentionLimitError
+            ? 507
+            : 500;
     if ((status === 500 || status === 507) && input.store !== null) {
       await input.store.fail(error).catch(() => undefined);
     }
