@@ -78,7 +78,7 @@ test('preserves provider unavailable state rather than returning empty success',
   expect(result.failures[0].failure.code).toBe('artifact-unavailable');
 });
 
-test.fails('audit M4: validates each real registry response against exported schemas', async () => {
+test('audit M4: validates each real registry response against exported schemas', async () => {
   const { provider } = fixtureProvider();
   const server = await startReportServer({
     kind: 'start-report-server',

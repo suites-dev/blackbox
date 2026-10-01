@@ -85,7 +85,7 @@ test('provider invalid-request failures preserve 400 status and diagnostic messa
   expect((await result.json()).message).toBe('Artifact name is not supported.');
 });
 
-test.fails('audit M6: returns a response for unknown provider failure codes', async () => {
+test('audit M6: returns a response for unknown provider failure codes', async () => {
   const { provider } = fixtureProvider();
   const server = await setup({
     provider: {

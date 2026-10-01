@@ -62,7 +62,7 @@ it('rejects unresolved references and project-root escapes', () => {
   );
 });
 
-it.fails('audit M1: rejects unsupported entrypoint protocol and activation version', () => {
+it('audit M1: rejects unsupported entrypoint protocol and activation version', () => {
   const base = validCatalogSourceDocument();
   const document = {
     ...base,
