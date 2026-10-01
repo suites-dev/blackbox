@@ -82,7 +82,12 @@ function validateFrame(value: unknown): CapsuleManagerClientFrame {
       return item as CapsuleManagerClientFrame;
     }
     case 'stop-request':
-      if (!['completed', 'cancelled', 'failed', 'interrupted'].includes(String(item.reason))) {
+      if (
+        item.reason !== 'completed' &&
+        item.reason !== 'cancelled' &&
+        item.reason !== 'failed' &&
+        item.reason !== 'interrupted'
+      ) {
         throw new Error('Capsule manager request reason is unsupported');
       }
       return item as CapsuleManagerClientFrame;
