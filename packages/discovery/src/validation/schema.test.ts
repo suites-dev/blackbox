@@ -51,3 +51,14 @@ test('does not follow external schema references or accept unknown schema vocabu
   );
   expect(() => validateShape(true, { type: 'boolean' })).toThrow('Unsupported bundled schema rule');
 });
+
+test('accepts only precompiled bundled patterns, rejecting arbitrary expressions', () => {
+  const schema = { type: 'string', pattern: '^[a-f0-9]{64}$' };
+  expect(validateShape('a'.repeat(64), schema)).toEqual([]);
+  expect(validateShape('z'.repeat(64), schema)).toEqual([
+    expect.objectContaining({ code: 'schema.invalid' }),
+  ]);
+  expect(() => validateShape('anything', { type: 'string', pattern: '.*' })).toThrow(
+    'Unsupported bundled schema pattern',
+  );
+});

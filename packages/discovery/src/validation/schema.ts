@@ -21,6 +21,22 @@ function dereference(schema: RecordValue, root: RecordValue): RecordValue {
   return target;
 }
 
+// This checker supports the closed bundled vocabulary, not caller-supplied regexes.
+const BUNDLED_PATTERNS = [/^[a-f0-9]{64}$/u, /^(?![/\\])(?!.*(?:^|[/\\])\.\.(?:[/\\]|$))[^\\]+$/u];
+
+function patternMatches(value: string, pattern: unknown): boolean {
+  if (typeof pattern !== 'string') {
+    return true;
+  }
+  const compiled = BUNDLED_PATTERNS.find(
+    (candidate) => candidate.source.replaceAll('\\/', '/') === pattern,
+  );
+  if (compiled === undefined) {
+    throw new Error('Unsupported bundled schema pattern');
+  }
+  return compiled.test(value);
+}
+
 function scalarMatches(value: unknown, schema: RecordValue): boolean {
   if ('const' in schema && !Object.is(value, schema.const)) {
     return false;
@@ -37,7 +53,7 @@ function scalarMatches(value: unknown, schema: RecordValue): boolean {
     const pattern = schema.pattern;
     return (
       (typeof minimum !== 'number' || Array.from(value).length >= minimum) &&
-      (typeof pattern !== 'string' || new RegExp(pattern, 'u').test(value))
+      patternMatches(value, pattern)
     );
   }
   if (schema.type === 'integer') {

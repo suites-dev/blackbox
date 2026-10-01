@@ -37,10 +37,16 @@ test('accepts a static preflight without claiming runtime operability', () => {
   audit.task = { kind: 'preflight' };
   audit.execution = { kind: 'not-run', reason: 'static only' };
   audit.operability = { kind: 'not-assessed', reason: 'static only' };
-  for (const name of Object.keys(audit.stages as Record<string, unknown>)) {
-    if (name !== 'catalog') {
-      audit.stages[name] = { kind: 'not-run', reason: 'static only' };
-    }
+  for (const name of [
+    'acquisition',
+    'readiness',
+    'setup',
+    'stimulus',
+    'terminal',
+    'observation',
+    'cleanup',
+  ]) {
+    audit.stages[name] = { kind: 'not-run', reason: 'static only' };
   }
   receipts.receipts = receipts.receipts.filter((x) => x.id === 'r-catalog');
   assert.equal(validateAudit(audit, receipts).kind, 'accepted');
