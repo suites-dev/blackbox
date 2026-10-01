@@ -23,7 +23,7 @@ import { serializeCapsuleReportDocument } from '../serialization.js';
 
 const roots: string[] = [];
 
-it.fails('audit #12: Windows pipe paths must be redacted from reports', () => {
+it('audit #12: Windows pipe paths must be redacted from reports', () => {
   const context = createRedactionContext();
   const value = redactText('manager at \\\\.\\pipe\\bb-secret-pipe', 'audit', context);
   expect(value).toContain('[REDACTED]');

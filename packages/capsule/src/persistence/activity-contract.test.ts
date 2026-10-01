@@ -215,7 +215,7 @@ it('decodes an activity record persisted before not-executable existed, unchange
   );
 });
 
-it.fails('audit #1: invalid activity purpose cannot brick session cleanup', async () => {
+it('audit #1: invalid activity purpose cannot brick session cleanup', async () => {
   const projectDirectory = await mkdtemp(join(tmpdir(), 'capsule-audit-1-'));
   try {
     await mkdir(join(projectDirectory, '.blackbox', 'experiments', 'capsule-quiet-river-ada'), {

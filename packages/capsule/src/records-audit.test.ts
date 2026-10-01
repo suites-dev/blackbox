@@ -7,7 +7,7 @@ import { expect, it } from 'vitest';
 import { admitCapsuleRecord } from './records.js';
 import { runningRecord } from './session/recovery/recovery.fixture.js';
 
-it.fails('audit #13: state directory creation must reject symlink traversal', async () => {
+it('audit #13: state directory creation must reject symlink traversal', async () => {
   const projectDirectory = await mkdtemp(join(tmpdir(), 'capsule-audit-13-project-'));
   const outsideDirectory = await mkdtemp(join(tmpdir(), 'capsule-audit-13-outside-'));
   try {
