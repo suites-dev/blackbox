@@ -1,19 +1,15 @@
-import { createRequire } from 'node:module';
 import { join } from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+import { ModuleLoader, type Interfaces } from '@oclif/core';
+import { resolve } from 'import-meta-resolve';
 
-type ModuleLoader = (specifier: string, packageRoot: string) => unknown;
-
-interface SkillPlugin {
-  readonly name: string;
-  readonly root: string;
-  readonly pjson: unknown;
-}
+type SkillModuleLoader = (specifier: string, plugin: Interfaces.Plugin) => unknown;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-function skillModuleExport(plugin: SkillPlugin): string | null {
+function skillModuleExport(plugin: Interfaces.Plugin): string | null {
   const manifest = plugin.pjson;
   if (!isRecord(manifest)) {
     throw new Error(`Blackbox plugin ${plugin.name} has an invalid package manifest.`);
@@ -30,13 +26,16 @@ function skillModuleExport(plugin: SkillPlugin): string | null {
   return `${plugin.name}/skills`;
 }
 
-const loadModule: ModuleLoader = (specifier, packageRoot) =>
-  createRequire(join(packageRoot, 'package.json'))(specifier) as unknown;
+const loadModule: SkillModuleLoader = (specifier, plugin) => {
+  const parent = pathToFileURL(join(plugin.root, 'package.json')).href;
+  const entrypoint = fileURLToPath(resolve(specifier, parent));
+  return ModuleLoader.load<unknown>(plugin, entrypoint);
+};
 
 /** Load skill contributions only from the plugin set selected by the CLI composition root. */
 export async function loadCliSkillModules(
-  plugins: ReadonlyMap<string, SkillPlugin>,
-  loader: ModuleLoader = loadModule,
+  plugins: ReadonlyMap<string, Interfaces.Plugin>,
+  loader: SkillModuleLoader = loadModule,
 ): Promise<readonly unknown[]> {
   const contributions: unknown[] = [];
   const selected = [...plugins.values()].sort((left, right) => left.name.localeCompare(right.name));
@@ -45,7 +44,7 @@ export async function loadCliSkillModules(
     if (specifier === null) {
       continue;
     }
-    const loaded = await loader(specifier, plugin.root);
+    const loaded = await loader(specifier, plugin);
     if (!isRecord(loaded) || !Object.hasOwn(loaded, 'skillModule')) {
       throw new Error(`Blackbox plugin ${plugin.name} did not export skillModule from ./skills.`);
     }
