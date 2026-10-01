@@ -15,7 +15,7 @@ API.
 ## Agent skill
 
 Capsule owns the operational agent guidance for lifecycle, execution, observation,
-evidence, reports, repair, and cleanup under [`assets/capsule`](assets/capsule).
+evidence, reports, repair, and cleanup under [`skills/capsule`](skills/capsule).
 The public `@suites/blackbox-capsule/skills` ESM entrypoint contributes it to the
 Skills registry when this package is a selected CLI plugin. Discovery may route live
 work to this skill, but neither Discovery nor the Skills registry imports or installs

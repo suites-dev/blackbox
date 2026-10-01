@@ -2,7 +2,7 @@ import type { SkillDefinition, SkillModule } from '@suites/blackbox-skills';
 
 export const capsuleSkill = {
   name: 'capsule',
-  source: new URL('../assets/capsule/', import.meta.url),
+  source: new URL('../skills/capsule/', import.meta.url),
   dependencies: [],
   integrations: [],
 } as const satisfies SkillDefinition;

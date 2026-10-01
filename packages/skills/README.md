@@ -1,7 +1,7 @@
 # `@suites/blackbox-skills`
 
 `@suites/blackbox-skills` owns Blackbox's package-neutral skill contracts,
-registry, project installer, and the Discovery skill. Feature packages keep their
+registry and project installer. It owns no concrete skills. Feature packages keep their
 own operational knowledge and contribute it through ESM skill modules.
 
 ## Package composition
@@ -24,7 +24,7 @@ or imports packages.
 
 This separation is intentional:
 
-- `@suites/blackbox-skills` contributes `discovery`.
+- `@suites/blackbox-discovery` contributes `discovery` and owns its executable helpers.
 - `@suites/blackbox-catalog` contributes `catalog`.
 - `@suites/blackbox-capsule` contributes `capsule`.
 - An unselected feature package contributes nothing at runtime.
@@ -47,11 +47,29 @@ Capsule work only when those skills are available.
 ## Public exports
 
 - `@suites/blackbox-skills` exports the registry, installer, and contracts.
-- `@suites/blackbox-skills/skills` exports this package's `skillModule`.
-- `@suites/blackbox-skills/discovery` exports the Discovery definition directly.
+  Feature packages export their contributions from `./skills`, and individual definitions
+  from paths such as `@suites/blackbox-discovery/skills/discovery` and
+  `@suites/blackbox-capsule/skills/capsule`. Only the owning module resolves its
+  package-relative content; consumers use the exported descriptor.
+
+Programmatic callers explicitly inject a registry:
+
+```ts
+import { createSkillRegistry, installSkill } from '@suites/blackbox-skills';
+import { skillModule } from '@suites/blackbox-discovery/skills';
+
+await installSkill(
+  { projectDirectory: process.cwd(), skillName: 'discovery', agents: ['codex'] },
+  createSkillRegistry([skillModule]),
+  { gitignore: true },
+);
+```
+
+There is no global registration side effect or built-in fallback. Optional packages
+must be selected by the caller; importing this generic package loads none of them.
 
 The installer validates complete skill trees, rejects unsafe paths and links,
-records file hashes and package versions, and publishes each replacement through
+records source-package ownership, file hashes and package versions, and publishes each replacement through
 a staged atomic swap. It reports conflicts without overwriting a different or
 locally modified installed skill.
 
@@ -65,5 +83,5 @@ pnpm --filter @suites/blackbox-skills build
 pnpm --filter @suites/blackbox-skills test
 ```
 
-Changes to discovery, registration, installation, fixtures, or assertions also
+Changes to registration, installation, fixtures, or assertions also
 require the repository's test-qualification workflow.

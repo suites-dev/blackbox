@@ -1,0 +1,87 @@
+{
+  "name": "@suites/blackbox-discovery",
+  "version": "0.0.1-alpha.0",
+  "type": "module",
+  "description": "Discovery audit contracts, validation, boundary planning, and agent skill.",
+  "files": [
+    "dist",
+    "skills",
+    "README.md",
+    "LICENSE",
+    "NOTICE"
+  ],
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "blackbox-source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./skills": {
+      "blackbox-source": "./src/skills.ts",
+      "types": "./dist/skills.d.ts",
+      "import": "./dist/skills.js",
+      "default": "./dist/skills.js"
+    },
+    "./skills/discovery": {
+      "blackbox-source": "./src/skills.ts",
+      "types": "./dist/skills.d.ts",
+      "import": "./dist/skills.js",
+      "default": "./dist/skills.js"
+    }
+  },
+  "scripts": {
+    "prebuild": "rimraf dist",
+    "build": "tsc --project tsconfig.build.json",
+    "prepack": "pnpm build",
+    "lint": "eslint .",
+    "test": "vitest run --config vitest.config.ts"
+  },
+  "blackbox": {
+    "cli": {
+      "apiVersion": 1,
+      "pluginId": "discovery",
+      "topic": "discovery"
+    },
+    "skills": {
+      "apiVersion": 1,
+      "export": "./skills"
+    }
+  },
+  "oclif": {
+    "commands": {
+      "strategy": "explicit",
+      "target": "./dist/cli/command-registry.js",
+      "identifier": "COMMANDS"
+    },
+    "topicSeparator": " "
+  },
+  "dependencies": {
+    "@suites/blackbox-skills": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "rimraf": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=22.15"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/suites-dev/blackbox.git",
+    "directory": "packages/discovery"
+  },
+  "homepage": "https://github.com/suites-dev/blackbox/tree/main/packages/discovery#readme",
+  "bugs": {
+    "url": "https://github.com/suites-dev/blackbox/issues"
+  },
+  "author": "Suites"
+}

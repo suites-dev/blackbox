@@ -25,7 +25,8 @@ resolved. Deployment colocation alone adds nothing to `RequiredPrerequisites`.
 
 If no evidenced path reaches a required terminal, return an unresolved/invalid
 proposal. Do not manufacture an edge to make a graph connected. The included
-`proposeBoundary` and `dependencyClosure` helpers implement this conservative
+`proposeBoundary` and `dependencyClosure` helpers exported by
+`@suites/blackbox-discovery` implement this conservative
 proposal, not a program slicer or optimizer.
 
 ## Cost subject to preservation

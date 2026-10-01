@@ -5,7 +5,6 @@ import { createInterface } from 'node:readline/promises';
 
 import { SKILL_AGENTS, installSkill, type SkillAgent } from '../../../installation/install.js';
 import { createSkillRegistry } from '../../../registry/registry.js';
-import { skillModule } from '../../../skills.js';
 import {
   skillInstallDocument,
   skillInstallFailure,
@@ -25,12 +24,16 @@ export default class SkillsInstall extends Command {
     cursor: Flags.boolean({ default: false }),
     yes: Flags.boolean({ default: false }),
     json: Flags.boolean({ default: false }),
+    gitignore: Flags.boolean({
+      default: false,
+      description: 'Ignore successful skill copies in the project .gitignore.',
+    }),
   };
 
   public async run(): Promise<void> {
     const { args, flags } = await this.parse(SkillsInstall);
     const modules = readCliSkillModules(this.config);
-    const registry = createSkillRegistry(modules.length === 0 ? [skillModule] : modules);
+    const registry = createSkillRegistry(modules);
     if (registry.get(args.name) === null) {
       this.error(`Skill is unavailable in the selected plugins: ${args.name}`, { exit: 2 });
     }
@@ -62,6 +65,7 @@ export default class SkillsInstall extends Command {
       await installSkill(
         { projectDirectory: process.cwd(), skillName: args.name, agents },
         registry,
+        { gitignore: flags.gitignore },
       ),
     );
     const failure = skillInstallFailure(document);

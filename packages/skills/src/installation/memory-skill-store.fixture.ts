@@ -26,6 +26,7 @@ function sameStored(left: StoredSkill, right: StoredSkill): boolean {
 export function bundle(version: string, skill = '# discovery v1\n'): SkillBundle {
   return {
     name: 'discovery',
+    packageName: 'fixture-skills',
     version,
     files: new Map([
       ['SKILL.md', text(skill)],

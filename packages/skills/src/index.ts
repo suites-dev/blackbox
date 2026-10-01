@@ -1,5 +1,3 @@
-import type { SkillDefinition } from './registry/contracts.js';
-
 export type { SkillAgent } from './installation/install.js';
 export { installSkill } from './installation/install.js';
 export { createSkillRegistry } from './registry/registry.js';
@@ -11,8 +9,8 @@ export type {
 } from './registry/contracts.js';
 
 /** Feature packages augment this public interface from their ESM skill entrypoint. */
-export interface SkillRegistry {
-  readonly discovery: SkillDefinition;
-}
+// An intentionally empty declaration-merging hook, never used as an object constraint.
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export interface SkillRegistry {}
 
 export type SkillName = keyof SkillRegistry;

@@ -8,6 +8,7 @@ import type {
 } from '../installation/install.js';
 
 export interface SkillInstallDocument {
+  readonly gitignore: ProjectSkillInstallation['gitignore'];
   readonly kind: 'skill-install';
   readonly ok: boolean;
   readonly skill: string;
@@ -26,6 +27,7 @@ export interface SkillInstallDocument {
 
 export function skillInstallDocument(installation: ProjectSkillInstallation): SkillInstallDocument {
   return {
+    gitignore: installation.gitignore,
     kind: 'skill-install',
     ok: installation.ok,
     skill: installation.skill,
@@ -48,6 +50,9 @@ function detail(destination: SkillDestinationResult): string {
     case 'updated':
       return destination.from === null ? '' : ` (from ${destination.from})`;
     case 'conflict':
+      if (destination.reason === 'source-package-mismatch') {
+        return ' (different source package)';
+      }
       return destination.reason === 'locally-modified'
         ? ` (locally modified: ${destination.changes.map(({ path, change }) => `${path} ${change}`).join(', ')})`
         : ' (not installed by Blackbox)';
@@ -71,6 +76,9 @@ export function skillInstallLines(document: SkillInstallDocument): readonly stri
       const destination = byPath.get(result.path);
       return `${result.agent}: ${result.kind} ${result.path}${destination === undefined ? '' : detail(destination)}`;
     }),
+    ...(document.gitignore.outcome === 'not-requested'
+      ? []
+      : [`.gitignore: ${document.gitignore.outcome}`]),
   ];
 }
 
@@ -79,7 +87,9 @@ export function skillInstallFailure(document: SkillInstallDocument): string | nu
   const problems = document.destinations.filter(
     ({ outcome }) => outcome === 'conflict' || outcome === 'failed',
   );
-  return problems.length === 0
-    ? null
-    : problems.map(({ message }) => message ?? 'skill installation failed').join('\n');
+  const messages = problems.map(({ message }) => message ?? 'skill installation failed');
+  if (document.gitignore.outcome === 'failed') {
+    messages.push(document.gitignore.message ?? 'Could not update .gitignore');
+  }
+  return messages.length === 0 ? null : messages.join('\n');
 }

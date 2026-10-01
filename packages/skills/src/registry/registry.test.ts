@@ -1,7 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import { bindCliSkillModules, readCliSkillModules } from '@suites/blackbox-cli-contract';
-import { discoverySkill } from '../discovery.js';
-import { skillModule } from '../skills.js';
 import { createSkillRegistry } from './registry.js';
 import type { SkillDefinition } from './contracts.js';
 
@@ -17,6 +15,9 @@ const moduleFor = (skills: readonly SkillDefinition[]) => ({
   packageRoot: new URL('file:///fixture-package/'),
   skills,
 });
+
+const discoverySkill = { ...feature('discovery'), integrations: ['capsule'] };
+const skillModule = moduleFor([discoverySkill]);
 
 describe('skill composition', () => {
   it('keeps optional integrations absent and never follows them as dependencies', () => {

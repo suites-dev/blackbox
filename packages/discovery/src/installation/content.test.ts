@@ -2,7 +2,8 @@ import { access, mkdtemp, readFile, readdir, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve, relative } from 'node:path';
 import { expect, it } from 'vitest';
-import { installSkill } from './install.js';
+import { createSkillRegistry, installSkill } from '@suites/blackbox-skills';
+import { skillModule } from '@suites/blackbox-discovery/skills';
 
 async function files(directory: string): Promise<readonly string[]> {
   const result: string[] = [];
@@ -20,7 +21,10 @@ async function files(directory: string): Promise<readonly string[]> {
 it('installs a self-contained Discovery tree with every routed local reference and schema', async () => {
   const projectDirectory = await mkdtemp(join(tmpdir(), 'blackbox-discovery-assets-'));
   try {
-    await installSkill({ projectDirectory, skillName: 'discovery', agents: ['codex'] });
+    await installSkill(
+      { projectDirectory, skillName: 'discovery', agents: ['codex'] },
+      createSkillRegistry([skillModule]),
+    );
     const root = join(projectDirectory, '.agents/skills/discovery');
     const installed = await files(root);
     expect(installed).toContain(join(root, 'schemas/discovery-audit.v1.json'));

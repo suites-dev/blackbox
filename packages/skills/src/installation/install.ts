@@ -1,8 +1,7 @@
 import type { ResolvedSkillRegistry } from '../registry/contracts.js';
-import { createSkillRegistry } from '../registry/registry.js';
-import { skillModule } from '../skills.js';
 import { loadRegisteredSkill } from './bundled-skill.js';
 import type { SkillAgent } from './hosts.js';
+import { ignoreInstalledSkills, type SkillGitIgnoreResult } from './ignore/git-ignore.js';
 import { installSkillBundle, installSucceeded, type SkillInstallResult } from './install-skill.js';
 import { nodeSkillStore } from './store/node-skill-store.js';
 
@@ -16,6 +15,7 @@ export interface InstalledSkill extends SkillInstallResult {
 }
 
 export interface ProjectSkillInstallation extends SkillInstallResult {
+  readonly gitignore: SkillGitIgnoreResult;
   readonly ok: boolean;
   readonly skill: string;
   readonly version: string;
@@ -24,11 +24,9 @@ export interface ProjectSkillInstallation extends SkillInstallResult {
   readonly installations: readonly InstalledSkill[];
 }
 
-const defaultRegistry = createSkillRegistry([skillModule]);
-
 /**
  * Install a contributed skill and its required skill dependencies. The registry
- * is supplied by the CLI composition root; the default contains Discovery only.
+ * is supplied by the caller or CLI composition root; no feature is registered implicitly.
  */
 export async function installSkill(
   input: {
@@ -36,7 +34,8 @@ export async function installSkill(
     readonly skillName: string;
     readonly agents: readonly SkillAgent[];
   },
-  registry: ResolvedSkillRegistry = defaultRegistry,
+  registry: ResolvedSkillRegistry,
+  options: { readonly gitignore: boolean } = { gitignore: false },
 ): Promise<ProjectSkillInstallation> {
   const selected = registry.resolve([input.skillName]);
   const loaded = await Promise.all(selected.map((skill) => loadRegisteredSkill(skill)));
@@ -59,8 +58,20 @@ export async function installSkill(
     throw new Error(`Skill resolution omitted requested root: ${input.skillName}`);
   }
   const destinations = installations.flatMap(({ destinations: entries }) => entries);
+  const gitignore: SkillGitIgnoreResult = options.gitignore
+    ? await ignoreInstalledSkills(
+        input.projectDirectory,
+        destinations
+          .filter(({ outcome }) => outcome !== 'conflict' && outcome !== 'failed')
+          .map(({ path }) => path),
+      )
+    : { outcome: 'not-requested', message: null };
   return {
-    ok: installations.length === loaded.length && installations.every(installSucceeded),
+    ok:
+      installations.length === loaded.length &&
+      installations.every(installSucceeded) &&
+      gitignore.outcome !== 'failed',
+    gitignore,
     skill: input.skillName,
     version: root.bundle.version,
     sourcePackage: root.packageName,

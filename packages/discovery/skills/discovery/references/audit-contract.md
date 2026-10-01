@@ -20,11 +20,17 @@ and content digest where relevant. A hash is not proof of provenance. A command
 exit is not a terminal witness, a configured observer is not capture evidence, and
 successful cleanup does not erase a failed experiment.
 
-These assets provide schemas and illustrative examples. They do not include the
-old bundle's executable audit checker, automatic receipt normalizer or provenance
-authentication. Use an available JSON Schema 2020-12 validator for structural
-checks and report that tool and its result. Review linkage and evidence separately;
-schema acceptance alone cannot establish behavioral correctness.
+These copied assets provide schemas and illustrative examples. The installed
+`@suites/blackbox-discovery` package separately exports `validateAudit(audit, receipts)`
+and `validateInspectorResult(fragment)` as executable TypeScript/ESM APIs. The
+package loads its own bundled schemas through its public skill descriptor; the
+copied instructions do not contain executable helpers. No standalone audit CLI,
+automatic receipt normalizer or provenance authentication is provided.
+
+`validateAudit` returns `kind: 'accepted'` with qualification
+`structure-and-receipt-links-only`, or `kind: 'rejected'` with diagnostics. Acceptance
+checks structure and receipt linkage, never authenticates the supplied evidence or
+proves live behavior. Report the validator result and review evidence separately.
 
 Keep examples (including their example provenance) separate from live results.
 Retain screened audit artifacts under a project-owned output directory such as

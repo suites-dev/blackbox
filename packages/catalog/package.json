@@ -5,7 +5,7 @@
   "description": "YAML catalog schema, validation, selection, and sandbox-input resolution.",
   "files": [
     "dist",
-    "assets",
+    "skills",
     "schema",
     "README.md",
     "LICENSE",
@@ -28,6 +28,12 @@
     },
     "./schema/blackbox-config-v1.json": "./schema/blackbox-config-v1.json",
     "./skills": {
+      "blackbox-source": "./src/skills.ts",
+      "types": "./dist/skills.d.ts",
+      "import": "./dist/skills.js",
+      "default": "./dist/skills.js"
+    },
+    "./skills/catalog": {
       "blackbox-source": "./src/skills.ts",
       "types": "./dist/skills.d.ts",
       "import": "./dist/skills.js",

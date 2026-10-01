@@ -1,17 +1,23 @@
 import { cp, mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
-import { installSkill } from './install.js';
+import {
+  createSkillRegistry,
+  installSkill as installRegisteredSkill,
+} from '@suites/blackbox-skills';
+import { discoverySkill, skillModule } from '@suites/blackbox-discovery/skills';
 
-const ASSETS = fileURLToPath(new URL('../../assets/discovery', import.meta.url));
+const SOURCE = fileURLToPath(discoverySkill.source);
+const installSkill = (input: Parameters<typeof installRegisteredSkill>[0]) =>
+  installRegisteredSkill(input, createSkillRegistry([skillModule]));
 
 async function files(directory: string): Promise<string[]> {
   return (await readdir(directory, { recursive: true, withFileTypes: true }))
     .filter((entry) => entry.isFile())
-    .map((entry) => join(entry.parentPath, entry.name).slice(directory.length + 1))
+    .map((entry) => relative(directory, join(entry.parentPath, entry.name)))
     .sort();
 }
 
@@ -28,7 +34,7 @@ describe('skill installation', () => {
   it('installs the complete packaged tree for each agent and is idempotent', async () => {
     await withProject(async (projectDirectory) => {
       const version = (
-        JSON.parse(await readFile(new URL('../../package.json', import.meta.url), 'utf8')) as {
+        JSON.parse(await readFile(new URL('package.json', skillModule.packageRoot), 'utf8')) as {
           version: string;
         }
       ).version;
@@ -45,13 +51,13 @@ describe('skill installation', () => {
         { path: '.agents/skills/discovery', agents: ['codex', 'cursor'], outcome: 'installed' },
         { path: '.claude/skills/discovery', agents: ['claude'], outcome: 'installed' },
       ]);
-      const source = await files(ASSETS);
+      const source = await files(SOURCE);
       expect(source).toContain('SKILL.md');
       for (const { path } of first.destinations) {
         const installed = join(projectDirectory, path);
         expect(await files(installed)).toEqual([...source, '.blackbox-install.json'].sort());
         for (const file of source) {
-          expect(await readFile(join(installed, file))).toEqual(await readFile(join(ASSETS, file)));
+          expect(await readFile(join(installed, file))).toEqual(await readFile(join(SOURCE, file)));
         }
       }
       const second = await installSkill({
@@ -87,7 +93,7 @@ describe('skill installation', () => {
     await withProject(async (projectDirectory) => {
       const target = join(projectDirectory, '.claude/skills/discovery');
       await mkdir(join(projectDirectory, '.claude/skills'), { recursive: true });
-      await cp(ASSETS, target, { recursive: true });
+      await cp(SOURCE, target, { recursive: true });
       const before = await files(target);
       const result = await installSkill({
         projectDirectory,

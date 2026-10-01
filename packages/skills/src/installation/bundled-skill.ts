@@ -56,7 +56,12 @@ export async function loadRegisteredSkill(
     throw new Error(`The ${skill.packageName} package contains a malformed ${skill.name} skill`);
   }
   return {
-    bundle: { name: skill.name, version: await packageVersion(skill), files },
+    bundle: {
+      name: skill.name,
+      packageName: skill.packageName,
+      version: await packageVersion(skill),
+      files,
+    },
     packageName: skill.packageName,
   };
 }

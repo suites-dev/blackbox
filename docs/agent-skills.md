@@ -1,7 +1,7 @@
 # Use Blackbox with agent skills
 
 Blackbox packages contribute portable agent skills through the same selected-plugin
-composition used by the CLI. The Skills package contributes `discovery`, Catalog
+composition used by the CLI. Discovery contributes `discovery`, Catalog
 contributes `catalog`, and Capsule contributes `capsule`. A package that is not in
 the CLI composition contributes no runtime skill module and therefore no
 installable skill.
@@ -41,7 +41,7 @@ flags and output may still change while the
 ## Install the skill
 
 The `skills` commands come from the `@suites/blackbox-skills` plugin. Add it to your project's dependencies next to
-`@suites/blackbox-cli`; the CLI loads Blackbox plugins listed in the nearest `package.json`. Then run the command from
+`@suites/blackbox-cli` and `@suites/blackbox-discovery`; the CLI loads Blackbox plugins listed in the nearest `package.json`. Add Capsule or Catalog only when needed. Then run the command from
 your project's root directory, naming every agent your team uses:
 
 ```sh
@@ -66,9 +66,18 @@ older Cursor versions were reported to list such duplicates separately.
 
 After installing, check that each agent lists the skill; a successful copy does not by itself show that the agent
 loaded it. Commit the installed directories when the team, fresh checkouts, cloud agents, or CI workers need them.
+Alternatively, pass `--gitignore` to append exact successful destination paths to the current project's `.gitignore`:
+
+```sh
+blackbox skills install discovery --codex --gitignore
+```
+
+Existing rules remain intact; conflicting skill directories are not ignored. Copies remain locally invokable as
+`$discovery` in Codex. Ignored copies must be reinstalled in new checkouts. This flag does not untrack already committed files.
+An unsafe or unwritable `.gitignore` produces a failed result even if the skill copy succeeded.
 
 Catalog and Capsule have the same portable layout under
-`packages/catalog/assets/catalog` and `packages/capsule/assets/capsule`. Manual
+`packages/catalog/skills/catalog` and `packages/capsule/skills/capsule`. Manual
 copying does not change which CLI packages are installed or selected.
 
 Try this static task with Discovery alone:
@@ -88,7 +97,7 @@ The skill does not install Blackbox, grant execution permissions, or make planne
 
 Every run reports each destination with one outcome: one `<agent>: <outcome> <path>` line per selected agent. With
 `--json`, stdout carries one `skill-install` document with `ok`, `skill`, `version`, `source` (package and version),
-`projectDirectory`, `results` (one per agent: `kind`, `agent`, absolute `path`), and `destinations` (one per directory:
+`projectDirectory`, `gitignore` (`outcome` and `message`), `results` (one per agent: `kind`, `agent`, absolute `path`), and `destinations` (one per directory:
 project-relative `path`, `agents`, `outcome`, `version`, `from`, `reason`, `message`, `changes`).
 
 | Destination before the run                                       | Outcome                                                            | What is written                      |
@@ -104,11 +113,13 @@ project-relative `path`, `agents`, `outcome`, `version`, `from`, `reason`, `mess
 
 The command exits `0` when every destination is `installed`, `updated`, `unchanged`, or `adopted`, and `1` when any is
 a conflict or failed. Every destination for the current skill is processed and reported; a failed required skill stops
-later skills in the dependency chain. Blackbox never replaces a conflicting directory. Review it, move or remove it,
+later skills in the dependency chain. A copy owned by a different source package conflicts with `source-package-mismatch`, even when its name and bytes match.
+Older records without source ownership are adopted only when their complete contents match the current bundle.
+Blackbox never replaces a conflicting directory. Review it, move or remove it,
 and rerun.
 
 Blackbox records what it installed in `.blackbox-install.json` inside the skill directory: the installer package,
-skill name, version, and a SHA-256 hash of every file. The record has no timestamps or absolute paths, so it can be
+source package, skill name, version, and a SHA-256 hash of every file. The record has no timestamps or absolute paths, so it can be
 committed and teammates' reruns report `unchanged`. Line endings are normalized before hashing, so a Windows
 checkout that converts to CRLF is not a local edit.
 
@@ -156,7 +167,7 @@ if [ -e "$skill_target" ] || [ -L "$skill_target" ]; then
   printf 'Skill destination already exists: %s\n' "$skill_target" >&2
 else
   mkdir -p "$(dirname "$skill_target")"
-  cp -R "$blackbox_checkout/packages/skills/assets/discovery" "$skill_target"
+  cp -R "$blackbox_checkout/packages/discovery/skills/discovery" "$skill_target"
 fi
 ```
 
@@ -168,7 +179,7 @@ Keep the skill's purpose and trigger description in its frontmatter. Put longer,
 and keep links relative to the installed directory. Platform-specific metadata may improve a host's presentation or
 invocation controls, but it must not become necessary to understand the common instructions.
 The [Agent Skills specification](https://agentskills.io/specification) defines the shared format and progressive loading.
-The owning package's `assets/<name>/` directory is the only source for each skill.
+The owning package's `skills/<name>/` directory is the only source for each skill.
 
 See the current [Codex](https://learn.chatgpt.com/docs/build-skills), [Claude Code](https://code.claude.com/docs/en/skills),
 and [Cursor](https://cursor.com/docs/skills) documentation for discovery, invocation, nested directories, and remote

@@ -3,6 +3,10 @@
 The CLI composition root loads ESM skill contributions only from the consumer's
 selected Blackbox plugins. The skill registry is scoped to that CLI invocation.
 TypeScript module augmentation describes names; it cannot install or enable them.
+Discovery is owned by `@suites/blackbox-discovery/skills/discovery`, Capsule by
+`@suites/blackbox-capsule/skills/capsule`, and Catalog by
+`@suites/blackbox-catalog/skills/catalog`. These ESM exports identify the owning
+package's portable content. The generic Skills package knows none of these names.
 
 | Work                                                         | Owner     | Missing integration                                                               |
 | ------------------------------------------------------------ | --------- | --------------------------------------------------------------------------------- |
@@ -27,6 +31,11 @@ initial state, unique attempt/business identity, deadlines, observation needs an
 authorized execution scope. Require actual session/activity IDs, independent
 terminal/observation outcomes, screened artifact references and cleanup status.
 Keep source inference separate from returned runtime evidence.
+
+If Capsule is absent, say: "I don't have the Capsule skill in the selected packages."
+If its package is available but the agent copy is missing, explain that distinction
+and offer the explicit `blackbox skills install capsule --codex` command for Codex
+(or the selected host flag). Never treat a stale copied skill as an installed runtime.
 
 An unavailable optional integration does not invalidate completed static work.
 For an inventory task, live stages may be not-required; for a requested exercise,
