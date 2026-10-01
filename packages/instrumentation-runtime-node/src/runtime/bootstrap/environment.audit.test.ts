@@ -2,7 +2,7 @@ import { expect, test } from 'vitest';
 
 import { createNodeTelemetryEnvironment } from './environment.js';
 
-test.fails('audit H6: node telemetry producer includes export delay', () => {
+test('audit H6: node telemetry producer includes export delay', () => {
   const result = createNodeTelemetryEnvironment({
     kind: 'node-telemetry-environment',
     tracesEndpoint: 'http://collector/v1/traces',

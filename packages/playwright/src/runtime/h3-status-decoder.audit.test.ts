@@ -98,7 +98,7 @@ function sandbox(): SandboxHandle {
   };
 }
 
-test.fails('audit H3: playwright rejects empty collector service names', async () => {
+test('audit H3: playwright rejects empty collector service names', async () => {
   vi.stubGlobal('fetch', vi.fn(() => Promise.resolve(Response.json(statusWithEmptyServiceName))));
 
   await expect(
