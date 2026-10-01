@@ -18,6 +18,18 @@
   ],
   "types": "./dist/index.d.ts",
   "exports": {
+    "./config": {
+      "blackbox-source": "./src/config.ts",
+      "types": "./dist/config.d.ts",
+      "import": "./dist/config.js",
+      "default": "./dist/config.js"
+    },
+    "./reporter": {
+      "blackbox-source": "./src/reporter.ts",
+      "types": "./dist/reporter.d.ts",
+      "import": "./dist/reporter.js",
+      "default": "./dist/reporter.js"
+    },
     ".": {
       "blackbox-source": "./src/index.ts",
       "types": "./dist/index.d.ts",

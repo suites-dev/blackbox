@@ -1,6 +1,6 @@
 import { join } from 'node:path';
 
-import { defineConfig } from '@playwright/test';
+import { defineConfig } from '@suites/blackbox-playwright/config';
 
 function requiredEnvironment(name: string): string {
   const value = process.env[name];
@@ -13,6 +13,7 @@ function requiredEnvironment(name: string): string {
 const resultsRoot = requiredEnvironment('BLACKBOX_E2E_RESULTS_ROOT');
 
 export default defineConfig({
+  blackboxConfigFile: './blackbox.config.yaml',
   testDir: join(import.meta.dirname, 'tests', 'playwright'),
   testMatch: '*.spec.ts',
   fullyParallel: false,
@@ -22,7 +23,8 @@ export default defineConfig({
   preserveOutput: 'always',
   outputDir: join(resultsRoot, 'output'),
   reporter: [
-    ['line'],
+    ['@suites/blackbox-playwright/reporter'],
+    [join(import.meta.dirname, 'reporters', 'blackbox-evidence.ts')],
     ['junit', { outputFile: join(resultsRoot, 'junit.xml') }],
     ['json', { outputFile: join(resultsRoot, 'results.json') }],
   ],

@@ -9,6 +9,9 @@ import {
   type RunningBlackboxAttempt,
 } from './runtime/acquisition.js';
 import type { BlackboxTestFixtures, BlackboxTestOptions } from './types.js';
+import { AttemptReport } from './reporting/attempt.js';
+import { reported } from './reporting/events.js';
+import { reportObservations } from './reporting/observations.js';
 
 interface PrivateFixtures {
   readonly _blackboxAttempt: RunningBlackboxAttempt;
@@ -16,7 +19,13 @@ interface PrivateFixtures {
 
 type BlackboxFixtures = BlackboxTestOptions & BlackboxTestFixtures & PrivateFixtures;
 
-function configFilePath(declared: string, testInfo: TestInfo): string {
+function configFilePath(testInfo: TestInfo): string {
+  const declared: unknown = testInfo.config.metadata.blackboxConfigFile;
+  if (typeof declared !== 'string' || declared.trim().length === 0) {
+    throw new Error(
+      'Set blackboxConfigFile using defineConfig from @suites/blackbox-playwright/config',
+    );
+  }
   if (isAbsolute(declared)) {
     return declared;
   }
@@ -161,34 +170,58 @@ export function createBlackboxTest(
 ) {
   return playwrightTest.extend<BlackboxFixtures>({
     catalogEntry: [{ kind: 'unselected' }, { option: true }],
-    blackboxConfigFile: ['blackbox.config.yaml', { option: true }],
     blackboxEnvironment: [Object.freeze({}), { option: true }],
     _blackboxAttempt: [
-      async ({ catalogEntry, blackboxConfigFile, blackboxEnvironment }, use, testInfo) => {
-        const configuredTimeout = testInfo.timeout;
-        const acquisitionStartedAt = Date.now();
-        const attempt = await acquireWithinTestTimeout({
-          runtime,
-          testInfo,
-          cleanupTimeoutMs: policy.sandboxCleanupTimeoutMs,
-          request: {
-            selection: catalogEntry,
-            configFile: configFilePath(blackboxConfigFile, testInfo),
-            environment: blackboxEnvironment,
-            artifactDirectory: testInfo.outputPath('blackbox'),
-          },
-        });
-        if (configuredTimeout > 0) {
-          testInfo.setTimeout(Math.max(1, configuredTimeout - (Date.now() - acquisitionStartedAt)));
-        }
+      async ({ catalogEntry, blackboxEnvironment }, use, testInfo) => {
+        const report = new AttemptReport(testInfo);
+        report.protect(blackboxEnvironment);
         try {
-          await use(attempt);
-        } finally {
-          await stopWithinCleanupTimeout({
-            attempt,
-            reason: stopReason(testInfo.status),
+          const configuredTimeout = testInfo.timeout;
+          const acquisitionStartedAt = Date.now();
+          const attempt = await acquireWithinTestTimeout({
+            runtime,
+            testInfo,
             cleanupTimeoutMs: policy.sandboxCleanupTimeoutMs,
+            request: {
+              selection: catalogEntry,
+              configFile: configFilePath(testInfo),
+              environment: blackboxEnvironment,
+              artifactDirectory: testInfo.outputPath('blackbox'),
+              progress: report,
+            },
           });
+          if (configuredTimeout > 0) {
+            testInfo.setTimeout(
+              Math.max(1, configuredTimeout - (Date.now() - acquisitionStartedAt)),
+            );
+          }
+          report.acquired(attempt.sandbox, attempt.telemetry);
+          report.emit(
+            'sandbox',
+            'completed',
+            `${attempt.sandbox.sandboxId}; ${attempt.sandbox.entrypoint.url}`,
+          );
+          report.emit('execution', 'started', 'test fixtures, hooks and body');
+          try {
+            await report.flush();
+            await use(attempt);
+          } finally {
+            const reason = stopReason(testInfo.status);
+            report.emit('execution', 'info', testInfo.status ?? 'unknown');
+            await reported(report, 'teardown', `reason=${reason}; cleanup owned resources`, () =>
+              stopWithinCleanupTimeout({
+                attempt,
+                reason,
+                cleanupTimeoutMs: policy.sandboxCleanupTimeoutMs,
+              }),
+            );
+            await reportObservations(report, attempt.telemetry);
+          }
+        } catch (error) {
+          report.emit('attempt', 'failed', 'setup or teardown failed; see test error');
+          throw error;
+        } finally {
+          await report.finish();
         }
       },
       // The helper enforces the test deadline and bounds every sandbox cleanup wait.

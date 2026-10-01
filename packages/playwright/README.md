@@ -7,6 +7,19 @@ state between tests.
 
 ## Use
 
+Configure the catalog once in `playwright.config.ts`. The path is resolved
+relative to that file; every test still selects its system or subsystem.
+
+```ts
+import { defineConfig } from '@suites/blackbox-playwright/config';
+
+export default defineConfig({
+  blackboxConfigFile: './blackbox.config.yaml',
+  testDir: './tests/system',
+  reporter: [['@suites/blackbox-playwright/reporter'], ['html', { open: 'never' }]],
+});
+```
+
 ```ts
 import { expect, test } from '@suites/blackbox-playwright';
 
@@ -47,5 +60,24 @@ reasons. Setup failure also attempts cleanup before surfacing the error.
   matcher therefore reports an inconclusive failure unless an evaluator is
   supplied by the runtime.
 
-Effect projection, accepted baselines, drivers, reports, and shared worker
+## Execution reporting
+
+The text reporter prints startup events as they happen: catalog resolution,
+container states, instrumentation verification, and application readiness. It
+also displays nested `test.step()` calls and reports the final test outcome
+after teardown. Every line identifies its attempt so parallel tests and retries
+remain distinguishable.
+
+Fixtures attach sanitized `blackbox-progress` events and a final
+`blackbox-attempt` JSON document to Playwright results, including failures.
+Other Playwright reporters retain these attachments too. Startup observations
+are bounded; the attempt document records how many were omitted.
+
+The telemetry summary describes retained requests, spans, and traces. Collector
+shutdown is reported from its retained status. Neither a trace count nor a
+completed collector shutdown proves that a business workflow finished; the test
+must await its completion boundary before asserting behavior. Effect contract
+diagnostics will be added with the effect evaluator.
+
+Effect projection, accepted baselines, drivers, and shared worker
 sandboxes are intentionally outside this package's current surface.

@@ -72,6 +72,7 @@ trap 'exit 143' TERM
 require_command docker
 require_command jq
 require_command node
+node --test "$SCRIPT_DIR/playwright-report-proof.test.mjs"
 docker info >/dev/null
 
 rm -rf "$RESULT_ROOT"
@@ -104,14 +105,17 @@ mkdir -p "$RUN_RESULT_ROOT"
 
 mkdir -p "$CONSUMER_ROOT/.blackbox/catalog" "$CONSUMER_ROOT/.blackbox/drivers"
 mkdir -p "$CONSUMER_ROOT/tests/playwright"
+mkdir -p "$CONSUMER_ROOT/reporters"
 cp "$E2E_ROOT/blackbox.config.yaml" "$CONSUMER_ROOT/blackbox.config.yaml"
 cp "$E2E_ROOT/.blackbox/catalog/"*.yml "$CONSUMER_ROOT/.blackbox/catalog/"
 cp "$E2E_ROOT/.blackbox/drivers/"*.mjs "$CONSUMER_ROOT/.blackbox/drivers/"
 cp -R "$E2E_ROOT/sut" "$CONSUMER_ROOT/sut"
 cp "$E2E_ROOT/playwright.config.ts" "$CONSUMER_ROOT/playwright.config.ts"
+cp "$E2E_ROOT/reporters/"*.ts "$CONSUMER_ROOT/reporters/"
 cp "$E2E_ROOT/tests/playwright/"*.ts "$CONSUMER_ROOT/tests/playwright/"
 cp "$SCRIPT_DIR/playwright-boundary.mjs" "$CONSUMER_ROOT/playwright-boundary.mjs"
 cp "$SCRIPT_DIR/playwright-evidence.mjs" "$CONSUMER_ROOT/playwright-evidence.mjs"
+cp "$SCRIPT_DIR/playwright-report-proof.mjs" "$CONSUMER_ROOT/playwright-report-proof.mjs"
 cp "$SCRIPT_DIR/playwright-recover.mjs" "$CONSUMER_ROOT/playwright-recover.mjs"
 cp "$SCRIPT_DIR/playwright-verify.mjs" "$CONSUMER_ROOT/playwright-verify.mjs"
 
@@ -141,7 +145,8 @@ fi
 
 BLACKBOX_E2E_FIXTURE_TOKEN="$FIXTURE_TOKEN" \
 BLACKBOX_E2E_RESULTS_ROOT="$RUN_RESULT_ROOT" \
-  "$PLAYWRIGHT_BIN" test --config "$CONSUMER_ROOT/playwright.config.ts"
+  "$PLAYWRIGHT_BIN" test --config "$CONSUMER_ROOT/playwright.config.ts" \
+  | tee "$RUN_RESULT_ROOT/execution.txt"
 
 recover_sandboxes
 node "$CONSUMER_ROOT/playwright-verify.mjs" >"$RUN_RESULT_ROOT/receipt.json"

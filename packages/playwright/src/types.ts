@@ -45,8 +45,6 @@ export interface BlackboxEffects {
 export interface BlackboxTestOptions {
   /** Catalog entry selected for every test in the current Playwright scope. */
   readonly catalogEntry: BlackboxCatalogSelection;
-  /** Relative to the Playwright config directory, or absolute. */
-  readonly blackboxConfigFile: string;
   /** Compose substitution environment supplied to the selected sandbox. */
   readonly blackboxEnvironment: Readonly<Record<string, string>>;
 }

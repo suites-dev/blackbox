@@ -3,6 +3,7 @@ import { lstat, readFile, readdir, realpath } from 'node:fs/promises';
 import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
+import { verifyAttemptReports } from './playwright-report-proof.mjs';
 
 const execute = promisify(execFile);
 const supportDirectory = dirname(fileURLToPath(import.meta.url));
@@ -206,6 +207,12 @@ export async function verify() {
   );
   return {
     kind: 'playwright-e2e-proof',
+    reporting: verifyAttemptReports({
+      attempts,
+      records,
+      live: JSON.parse(await readFile(join(resultsRoot, 'live-reporting.json'), 'utf8')),
+      text: await readFile(join(resultsRoot, 'execution.txt'), 'utf8'),
+    }),
     specs: specs.map((spec) => spec.title),
     attempts: attempts.length,
     sandboxes: records.map(({ value }) => ({
