@@ -1,9 +1,11 @@
 import { createRequire } from 'node:module';
+import { join } from 'node:path';
 
-type ModuleLoader = (specifier: string) => unknown;
+type ModuleLoader = (specifier: string, packageRoot: string) => unknown;
 
 interface SkillPlugin {
   readonly name: string;
+  readonly root: string;
   readonly pjson: unknown;
 }
 
@@ -28,9 +30,8 @@ function skillModuleExport(plugin: SkillPlugin): string | null {
   return `${plugin.name}/skills`;
 }
 
-const requireModule = createRequire(import.meta.url);
-
-const loadModule: ModuleLoader = (specifier) => requireModule(specifier) as unknown;
+const loadModule: ModuleLoader = (specifier, packageRoot) =>
+  createRequire(join(packageRoot, 'package.json'))(specifier) as unknown;
 
 /** Load skill contributions only from the plugin set selected by the CLI composition root. */
 export async function loadCliSkillModules(
@@ -44,7 +45,7 @@ export async function loadCliSkillModules(
     if (specifier === null) {
       continue;
     }
-    const loaded = await loader(specifier);
+    const loaded = await loader(specifier, plugin.root);
     if (!isRecord(loaded) || !Object.hasOwn(loaded, 'skillModule')) {
       throw new Error(`Blackbox plugin ${plugin.name} did not export skillModule from ./skills.`);
     }
