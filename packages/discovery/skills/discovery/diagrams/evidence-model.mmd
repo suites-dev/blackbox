@@ -1,0 +1,14 @@
+flowchart LR
+  SRC["Source files and build metadata"] --> MOD["Package and module graph"]
+  MOD --> MAP["Explicit build and launch mapping"]
+  MAP --> N["Stable participant and resource IDs"]
+  INF["CI and IaC declarations"] --> DEP["Deployment view"]
+  DEP --> N
+  OWN["Ownership, reset and cleanup"] --> LIFE["Lifecycle-control view"]
+  LIFE --> N
+  Q["Accepted input and terminal predicate"] --> BEH["Behavioral view"]
+  BEH --> N
+  RUN["Exact Capsule runtime records"] --> EV["Occurrence evidence"]
+  EV --> BEH
+  N --> CAT["Supported catalog fields"]
+  N --> AUD["Separate audit with provenance and uncertainty"]

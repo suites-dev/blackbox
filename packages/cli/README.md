@@ -23,11 +23,14 @@ and generated `--help` output.
 | Capsule lifecycle | `capsule up`, `capsule run`, `capsule down`                       | [`capsule`](../capsule/README.md) acquires resources, retains activities, and cleans up owned resources. The CLI supplies Node runtime activation adapters when starting a Capsule.     |
 | Evidence          | `observations --session <id>`                                     | `capsule` reads retained observations at session, activity, or trace scope.                                                                                                             |
 | Reports           | `capsule report`, `capsule report serve`, `capsule report export` | `capsule` projects retained records; [`report-server`](../report-server/README.md) serves the local read-only viewer.                                                                   |
-| Agent skills      | `skills install discovery` (alias `skill install`)                | [`skills`](../skills/src) installs its packaged discovery skill into the project; see [agent skill setup](../../docs/agent-skills.md).                                                  |
+| Agent skills      | `skills list`, `skills install <name>`                            | [`skills`](../skills/README.md) composes contributions from selected plugins and installs portable skill directories.                                                                   |
 
 The reserved `setup init` and `effects baseline update --run <id>` routes
 deliberately fail closed with exit code `3`. They are planned command contracts, not working integrations. The CLI
-must not report a successful artifact until a backend exists.
+must not report a successful artifact until a backend exists. The
+`skills install <name>` route is provided when the Skills plugin is installed and
+supports `--codex`, `--claude`, `--cursor`, repeated `--agent <name>`, `--yes`,
+and `--json`. `skill install` remains an alias.
 
 ## Typical flow
 
@@ -70,6 +73,9 @@ command adapters ──► catalog / capsule / instrumentation / driver packages
 - [`src/commands`](src/commands) contains thin command adapters: parse flags,
   construct typed package inputs, select output mode, and map failures to exit
   codes.
+- [`src/hooks/prerun.ts`](src/hooks/prerun.ts) is the skill composition root. It loads
+  `./skills` ESM contributions only from selected oclif plugins and binds them to
+  that CLI config; it does not discover or install packages.
 - [`src/capsule`](src/capsule) owns CLI-only Capsule presentation, including
   progress rendering, interactive execution, and failure formatting.
 - [`src/reporting`](src/reporting) bridges Capsule report projections to local

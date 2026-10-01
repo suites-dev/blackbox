@@ -16,6 +16,7 @@ const packedPackages = [
   '@suites/blackbox-catalog',
   '@suites/blackbox-cli',
   '@suites/blackbox-cli-contract',
+  '@suites/blackbox-discovery',
   '@suites/blackbox-driver',
   '@suites/blackbox-inst-runtime-node',
   '@suites/blackbox-instrumentation',

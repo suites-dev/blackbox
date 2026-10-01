@@ -7,7 +7,7 @@ See [agent skill setup](../docs/agent-skills.md) for installation with `blackbox
 
 ## Installable Alpha skill
 
-[`packages/skills/assets/discovery`](../packages/skills/assets/discovery/) is the portable Alpha onboarding entrypoint, shipped in `@suites/blackbox-skills`. Install it with `blackbox skills install discovery`, or copy the complete directory to a skill location supported by the agent host. Its `SKILL.md` and all supporting references stay together, so the installed copy has no links back to this repository or the historical source bundle.
+[`packages/discovery/skills/discovery`](../packages/discovery/skills/discovery/) is the portable Alpha onboarding entrypoint, shipped in `@suites/blackbox-discovery`. Install it with `blackbox skills install discovery`, or copy the complete directory to a skill location supported by the agent host. Its `SKILL.md` and all supporting references stay together, so the installed copy has no links back to this repository or the historical source bundle.
 
 The entrypoint progressively routes among references for topology and catalog authoring, runtime observation, Capsule experiments, native Playwright, asynchronous workflows, effects and baselines, evidence and reports, troubleshooting and repair, and CI. Read only the reference needed for the current task.
 

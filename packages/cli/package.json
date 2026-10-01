@@ -30,6 +30,7 @@
   "dependencies": {
     "@oclif/core": "^5.1.0",
     "@suites/blackbox-cli-contract": "workspace:*",
+    "import-meta-resolve": "4.2.0",
     "string-width": "8.3.0"
   },
   "devDependencies": {
@@ -44,6 +45,9 @@
       "strategy": "explicit",
       "target": "./dist/command-registry.js",
       "identifier": "COMMANDS"
+    },
+    "hooks": {
+      "prerun": "./dist/hooks/prerun.js"
     },
     "helpClass": "./dist/help.js",
     "topicSeparator": " ",

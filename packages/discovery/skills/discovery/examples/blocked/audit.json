@@ -1,0 +1,91 @@
+{
+  "schemaVersion": 1,
+  "kind": "discovery-audit",
+  "mode": "reconcile",
+  "task": {
+    "kind": "inventory"
+  },
+  "project": {
+    "repository": "example/application",
+    "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  "catalog": {
+    "kind": "absent",
+    "reason": "A matching CLI/catalog contract has not been resolved."
+  },
+  "approvals": [
+    {
+      "id": "denied-1",
+      "action": "read-repository",
+      "scope": "example/worker-infra",
+      "requestedAt": "2026-09-29T00:00:00Z",
+      "kind": "denied",
+      "reason": "Outside the approved repository scope."
+    }
+  ],
+  "evidence": [
+    {
+      "kind": "unresolved",
+      "id": "external-1",
+      "assertion": "A worker infrastructure reference was identified locally.",
+      "reason": "The related repository was not read because access was denied."
+    }
+  ],
+  "graph": {
+    "nodes": [],
+    "edges": []
+  },
+  "boundary": {
+    "kind": "unselected",
+    "reason": "Required topology remains unresolved."
+  },
+  "environment": [],
+  "execution": {
+    "kind": "not-run",
+    "reason": "No live resources were started."
+  },
+  "stages": {
+    "catalog": {
+      "kind": "not-run",
+      "reason": "Prerequisites unresolved."
+    },
+    "acquisition": {
+      "kind": "not-run",
+      "reason": "Prerequisites unresolved."
+    },
+    "readiness": {
+      "kind": "not-run",
+      "reason": "Prerequisites unresolved."
+    },
+    "setup": {
+      "kind": "not-run",
+      "reason": "Prerequisites unresolved."
+    },
+    "stimulus": {
+      "kind": "not-run",
+      "reason": "Prerequisites unresolved."
+    },
+    "terminal": {
+      "kind": "not-run",
+      "reason": "Prerequisites unresolved."
+    },
+    "observation": {
+      "kind": "not-run",
+      "reason": "Prerequisites unresolved."
+    },
+    "cleanup": {
+      "kind": "not-run",
+      "reason": "Prerequisites unresolved."
+    }
+  },
+  "operability": {
+    "kind": "not-assessed",
+    "reason": "Nothing was exercised."
+  },
+  "outcome": {
+    "kind": "blocked",
+    "reasons": ["Required topology and installed capabilities unresolved."]
+  },
+  "limitations": ["Cross-repository source was not fetched."],
+  "nextActions": ["Resolve the missing topology within an approved scope."]
+}

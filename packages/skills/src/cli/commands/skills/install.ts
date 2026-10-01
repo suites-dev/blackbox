@@ -1,9 +1,10 @@
 import { Args, Command, Flags } from '@oclif/core';
-import { createInterface } from 'node:readline/promises';
+import { readCliSkillModules } from '@suites/blackbox-cli-contract';
 import { stdin, stdout } from 'node:process';
+import { createInterface } from 'node:readline/promises';
 
-import { BUNDLED_SKILLS } from '../../../installation/bundled-skill.js';
 import { SKILL_AGENTS, installSkill, type SkillAgent } from '../../../installation/install.js';
+import { createSkillRegistry } from '../../../registry/registry.js';
 import {
   skillInstallDocument,
   skillInstallFailure,
@@ -12,12 +13,10 @@ import {
 
 export default class SkillsInstall extends Command {
   static override description =
-    'Install a Blackbox workflow Skill for coding agents into the current directory. ' +
+    'Install a contributed Blackbox workflow Skill into the current directory. ' +
     'codex and cursor read .agents/skills/, claude reads .claude/skills/. Directories that ' +
     'Blackbox did not install, or that changed since it installed them, are left untouched.';
-  static override args = {
-    name: Args.string({ required: true, options: [...BUNDLED_SKILLS] }),
-  };
+  static override args = { name: Args.string({ required: true }) };
   static override flags = {
     agent: Flags.string({ multiple: true, options: [...SKILL_AGENTS] }),
     codex: Flags.boolean({ default: false }),
@@ -25,10 +24,19 @@ export default class SkillsInstall extends Command {
     cursor: Flags.boolean({ default: false }),
     yes: Flags.boolean({ default: false }),
     json: Flags.boolean({ default: false }),
+    gitignore: Flags.boolean({
+      default: false,
+      description: 'Ignore successful skill copies in the project .gitignore.',
+    }),
   };
 
   public async run(): Promise<void> {
     const { args, flags } = await this.parse(SkillsInstall);
+    const modules = readCliSkillModules(this.config);
+    const registry = createSkillRegistry(modules);
+    if (registry.get(args.name) === null) {
+      this.error(`Skill is unavailable in the selected plugins: ${args.name}`, { exit: 2 });
+    }
     const agents = [
       ...new Set([
         ...(flags.agent ?? []),
@@ -43,7 +51,7 @@ export default class SkillsInstall extends Command {
     if (agents.length === 0 && !flags.json && stdin.isTTY && stdout.isTTY) {
       const prompt = createInterface({ input: stdin, output: stdout });
       const answer = await prompt.question(
-        'Install Discovery for Codex, Claude Code, and Cursor? [Y/n] ',
+        `Install ${args.name} for Codex, Claude Code, and Cursor? [Y/n] `,
       );
       prompt.close();
       if (answer.trim() === '' || /^y(es)?$/iu.test(answer.trim())) {
@@ -54,11 +62,11 @@ export default class SkillsInstall extends Command {
       this.error('Choose an agent with --codex, --claude, --cursor, or --agent.', { exit: 2 });
     }
     const document = skillInstallDocument(
-      await installSkill({
-        projectDirectory: process.cwd(),
-        skillName: args.name as (typeof BUNDLED_SKILLS)[number],
-        agents,
-      }),
+      await installSkill(
+        { projectDirectory: process.cwd(), skillName: args.name, agents },
+        registry,
+        { gitignore: flags.gitignore },
+      ),
     );
     const failure = skillInstallFailure(document);
     if (flags.json) {

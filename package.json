@@ -56,6 +56,7 @@
     "@manypkg/cli": "^0.25.1",
     "@suites/blackbox-capsule": "workspace:*",
     "@suites/blackbox-catalog": "workspace:*",
+    "@suites/blackbox-discovery": "workspace:*",
     "@suites/blackbox-driver": "workspace:*",
     "@suites/blackbox-inst-runtime-node": "workspace:*",
     "@suites/blackbox-skills": "workspace:*",

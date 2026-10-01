@@ -27,7 +27,8 @@ blackbox capsule run --help
 | `catalog validate`                             | Validate `blackbox.config.yaml` and referenced Compose/activation files. Optional `--json`.                                                                                   |
 | `driver install --runtime node`                | Prepare `.blackbox/drivers/` and install the driver SDK. Optional `--json`. Does not install protocol tools.                                                                  |
 | `inst install --runtime node`                  | Install `.blackbox/instrumentation/` and its pinned Node dependencies.                                                                                                        |
-| `skills install discovery`                     | Install the discovery skill for `--codex`, `--claude`, `--cursor` (or `--agent`, `--yes`). Needs `@suites/blackbox-skills`; see [agent skills](agent-skills.md).              |
+| `skills list`                                  | List skills contributed by selected Blackbox plugins. `--json` also reports availability of optional integrations.                                                            |
+| `skills install <name>`                        | Install a contributed skill for one or more project-local agent hosts. Supports host flags, repeated `--agent`, `--yes`, and `--json`.                                        |
 
 The capsule a command acts on is, in order: a positional capsule ID, `--session`, the `BLACKBOX_CAPSULE`
 environment variable, then the current capsule in `.blackbox/state/current-capsule` (set by `capsule up` and
@@ -198,7 +199,12 @@ telemetry status, not only the CLI exit code.
 ## Commands not available yet
 
 With valid arguments, `setup init` and `effects baseline update --run <id>` exit `3` with a
-not-implemented message. These reserved commands
-are outside the [available alpha workflows](alpha-status.md).
+not-implemented message. These reserved commands are outside the
+[available alpha workflows](alpha-status.md).
+
+`skills install` resolves only skills contributed by selected plugins. Required
+skill dependencies are included; optional integrations are reported by
+`skills list --json` and are never installed automatically. The singular
+`skill install <name>` spelling remains an alias.
 
 See [Capsule experiments](experiments.md) for the sequence and [reports](reports.md) for viewing and exporting results.
