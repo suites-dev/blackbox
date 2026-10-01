@@ -95,7 +95,7 @@
       "verifiedSourceSha256": "d1743c930e70994e08509b4617ffb6067735c2f561f30983bc59d340550fcbc1",
       "sourceClass": "active",
       "disposition": "retained-as-reference",
-      "targets": ["skills/discovery/references/async-workflows.md"],
+      "targets": ["skills/discovery/references/trace-continuity.md"],
       "rationale": "Preserves bounded terminal conditions, correlation, retry isolation, and limits on absence and exact-count claims; removes proposed async DSL behavior."
     },
     {

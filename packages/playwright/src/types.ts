@@ -1,4 +1,4 @@
-import type { CatalogEntryKind, CatalogIsolation } from '@suites/blackbox-catalog';
+import type { CatalogEntryKind } from '@suites/blackbox-catalog';
 import type {
   CollectorSessionReadResult,
   CollectorTraceReadResult,
@@ -21,7 +21,6 @@ export interface BlackboxSandbox {
   readonly catalogEntry: {
     readonly id: string;
     readonly kind: CatalogEntryKind;
-    readonly declaredIsolation: CatalogIsolation;
   };
   readonly projectName: string;
   readonly artifactDirectory: string;
@@ -35,6 +34,12 @@ export interface BlackboxTelemetry {
   inspect(): Promise<SandboxTelemetryStatus>;
   read(): Promise<CollectorSessionReadResult>;
   readTrace(traceId: string): Promise<CollectorTraceReadResult>;
+}
+
+/** Attempt-scoped handle evaluated by the configured effects provider. */
+export interface BlackboxEffects {
+  readonly sessionId: string;
+  readonly executionId: string;
 }
 
 export interface BlackboxTestOptions {
@@ -51,4 +56,6 @@ export interface BlackboxTestFixtures {
   readonly sandbox: BlackboxSandbox;
   /** Raw retained telemetry for this physical test attempt. */
   readonly telemetry: BlackboxTelemetry;
+  /** Attempt-scoped handle for evaluating normalized behavioral contracts. */
+  readonly effects: BlackboxEffects;
 }

@@ -1,5 +1,4 @@
 import { expect, it } from 'vitest';
-import { resolveCatalogEntry } from '../selection/sandbox-resolution.js';
 import { validCatalogSourceDocument } from '../test-fixtures/catalog-document.js';
 import { validateCatalogDocument } from './catalog-validation.js';
 
@@ -17,43 +16,12 @@ function validateEntry(change: Readonly<Record<string, unknown>>) {
   });
 }
 
-it.each(['per-test', 'per-worker', 'group'])(
-  'retains %s isolation through selection and JSON transport',
-  (kind) => {
-    const isolation =
-      kind === 'group' ? { isolation: kind, groupName: 'checkout-sequence' } : { isolation: kind };
-    const config = validateEntry(isolation);
-    const input = resolveCatalogEntry({
-      catalog: {
-        config,
-        projectDirectory: '/project',
-        sourceFile: '/project/blackbox.config.yaml',
-      },
-      selection: { kind: 'default-entry' },
-    });
-    expect(input.metadata.isolation).toStrictEqual(
-      kind === 'group' ? { kind, groupName: 'checkout-sequence' } : { kind },
-    );
-    expect(input.metadata.participants.api.activation).toStrictEqual({
-      kind: 'configured',
-      activationId: 'node-runtime',
-    });
-    expect(input.metadata.participants.database.activation).toStrictEqual({ kind: 'unconfigured' });
-    expect(JSON.parse(JSON.stringify(input))).toStrictEqual(input);
+it.each([{ isolation: 'per-test' }, { groupName: 'checkout-sequence' }])(
+  'rejects retired runner-lifetime configuration: %j',
+  (change) => {
+    expect(() => validateEntry(change)).toThrow('Invalid Blackbox catalog');
   },
 );
-
-it.each([
-  { isolation: 'group' },
-  { isolation: 'group', groupName: null },
-  { isolation: 'per-test', groupName: 'lost-group' },
-  { isolation: 'per-worker', groupName: 'lost-group' },
-  { isolation: 'unknown' },
-  { isolation: null },
-  { isolation: { kind: 'per-test' } },
-])('rejects invalid isolation without silently selecting a lifetime: %j', (change) => {
-  expect(() => validateEntry(change)).toThrow('Invalid Blackbox catalog');
-});
 
 it.each([
   null,
@@ -69,7 +37,7 @@ it.each([
   ).toThrow('Invalid Blackbox catalog');
 });
 
-it.each(['isolation', 'participants', 'observation', 'entrypoint'])(
+it.each(['participants', 'observation', 'entrypoint'])(
   'rejects omitted required entry field %s',
   (field) => {
     const source = validCatalogSourceDocument();
