@@ -30,7 +30,6 @@ export type {
   CatalogEntry,
   CatalogEntryKind,
   CatalogEntrySummary,
-  CatalogIsolation,
   CatalogReadinessRequest,
   CatalogSandboxInput,
   CatalogValidationIssue,

@@ -45,7 +45,6 @@ export function resolveCatalogEntry(input: ResolveCatalogEntryInput): CatalogSan
     drivers: resolveDrivers(entry),
     metadata: {
       kind: entry.kind,
-      isolation: entry.isolation,
       participants: { ...entry.participants },
       observation: entry.observation,
       activations: selectedActivations({ catalog, entry }),

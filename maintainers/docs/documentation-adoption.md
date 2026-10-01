@@ -100,7 +100,7 @@ The bundle's `docs/assets/figures/07-evidence-qualification.svg` and `11-instrum
 unchanged into the public assets directory. Their captions distinguish conceptual qualification from an implemented
 evaluator and other-process boundaries from available language installers. HTML reports were not imported.
 
-[Async holes and Redis](../../docs/async-workflows.md) follows the actual Redis driver, consumer, and Bash evidence
+[Trace continuity and Redis](../../docs/trace-continuity.md) follows the actual Redis driver, consumer, and Bash evidence
 checks: unchanged `RPUSH` arguments, `BLPOP`, a marked HTTP path, separate trace identities, and retained session scope.
 The seeding example uses the fixture's real schema. The migration example is explicitly an application-owned mounted
 file pattern, not a shipped fixture migration. System reduction uses existing `payment-mock` catalog entries.

@@ -192,6 +192,11 @@ void test('project paths, URLs, timestamps, durations and span counts are normal
     ),
     '✔ <PROJECT>/a.html <URL> <TIME> <DUR> <DUR> <N> spans',
   );
+  // From a minute on, show prints minutes and seconds; it is a duration too.
+  assert.equal(
+    normalize('  +1m06s  <ACT_1>  stimulus  ·  +12m00s  ·  build 3m'),
+    '  +<DUR>  <ACT_1>  stimulus  ·  +<DUR>  ·  build 3m',
+  );
 });
 
 void test('a capsule trace total is normalized; an activity trace count stays literal', () => {

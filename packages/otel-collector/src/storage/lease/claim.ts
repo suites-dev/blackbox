@@ -1,7 +1,8 @@
 import { mkdir, rename } from 'node:fs/promises';
 import { candidatePath, encodedToken, temporaryCandidatePath } from './candidate.js';
 import { readCandidateSet } from './candidate-set.js';
-import { publishLock, readLock, removeLock } from './io.js';
+import { publishLock, removeLock } from './io.js';
+import { removeMarkerRecord } from './marker-recovery.js';
 import { admitLeaseMarker } from './admission-marker.js';
 import type { CurrentLockRecord } from './record.js';
 import type { LeaseRuntime } from './types.js';
@@ -16,18 +17,20 @@ async function settle(): Promise<void> {
   await new Promise<void>((resolve) => setTimeout(resolve, 2));
 }
 
-async function removePublishedMarker(input: {
-  readonly path: string;
-  readonly token: string;
+async function admitOrConflict(input: {
+  readonly markerPath: string;
+  readonly record: CurrentLockRecord;
+  readonly runtime: LeaseRuntime;
+  readonly sessionId: string;
+  readonly executionId: string;
 }): Promise<void> {
-  const lock = await readLock(input.path);
-  if (
-    lock.kind === 'lock-read' &&
-    lock.decoded.kind === 'lock-record-decoded' &&
-    lock.decoded.record.kind === 'collector-storage-lock-v2' &&
-    lock.decoded.record.token === input.token
-  ) {
-    await removeLock(input.path);
+  const admitted = await admitLeaseMarker({
+    path: input.markerPath,
+    claimer: input.record,
+    runtime: input.runtime,
+  });
+  if (!admitted) {
+    throw conflict(input);
   }
 }
 
@@ -39,9 +42,7 @@ export async function claimLock(input: {
   readonly sessionId: string;
   readonly executionId: string;
 }): Promise<{ readonly ownedPath: string; readonly markerPath: string }> {
-  if (!(await admitLeaseMarker({ path: input.markerPath, runtime: input.runtime }))) {
-    throw conflict(input);
-  }
+  await admitOrConflict(input);
   await mkdir(input.directory, { recursive: true, mode: 0o700 });
   const claiming = candidatePath({
     directory: input.directory,
@@ -102,7 +103,13 @@ export async function claimLock(input: {
     await removeLock(claiming);
     throw conflict(input);
   } catch (error) {
-    await removePublishedMarker({ path: input.markerPath, token: input.record.token });
+    await removeMarkerRecord({
+      path: input.markerPath,
+      token: input.record.token,
+      claimer: input.record,
+      runtime: input.runtime,
+      depth: 0,
+    });
     throw error;
   }
 }

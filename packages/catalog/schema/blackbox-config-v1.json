@@ -46,26 +46,13 @@
     "catalogEntry": {
       "type": "object",
       "additionalProperties": false,
-      "required": [
-        "kind",
-        "acquisition",
-        "isolation",
-        "entrypoint",
-        "participants",
-        "drivers",
-        "observation"
-      ],
+      "required": ["kind", "acquisition", "entrypoint", "participants", "drivers", "observation"],
       "properties": {
         "kind": {
           "enum": ["system", "subsystem"],
           "description": "Whether this entry represents a complete system or a selectable subsystem."
         },
         "acquisition": { "$ref": "#/$defs/acquisition" },
-        "isolation": {
-          "enum": ["per-test", "per-worker", "group"],
-          "default": "per-test"
-        },
-        "groupName": { "$ref": "#/$defs/identifier" },
         "entrypoint": { "$ref": "#/$defs/entrypoint" },
         "participants": {
           "type": "object",
@@ -79,17 +66,7 @@
           "additionalProperties": { "$ref": "#/$defs/driver" }
         },
         "observation": { "$ref": "#/$defs/observation" }
-      },
-      "allOf": [
-        {
-          "if": { "properties": { "isolation": { "const": "group" } }, "required": ["isolation"] },
-          "then": {
-            "properties": { "groupName": { "$ref": "#/$defs/identifier" } },
-            "required": ["groupName"]
-          },
-          "else": { "not": { "required": ["groupName"] } }
-        }
-      ]
+      }
     },
     "acquisition": {
       "type": "object",

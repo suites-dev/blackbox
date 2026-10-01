@@ -55,10 +55,7 @@ interface BlackboxFixturePolicy {
   readonly sandboxCleanupTimeoutMs: number;
 }
 
-async function cleanupSettledWithin(
-  cleanup: Promise<void>,
-  timeoutMs: number,
-): Promise<boolean> {
+async function cleanupSettledWithin(cleanup: Promise<void>, timeoutMs: number): Promise<boolean> {
   // If the bounded wait expires, retain a rejection handler without awaiting
   // this continuation in fixture teardown.
   void cleanup.catch(() => undefined);
@@ -69,14 +66,13 @@ async function cleanupSettledWithin(
       resolveTimeout(cleanupTimedOut);
     }, timeoutMs);
   });
-  const outcome = await Promise.race([
-    cleanup.then(() => cleanupCompleted),
-    deadline,
-  ]).finally(() => {
-    if (timer !== undefined) {
-      clearTimeout(timer);
-    }
-  });
+  const outcome = await Promise.race([cleanup.then(() => cleanupCompleted), deadline]).finally(
+    () => {
+      if (timer !== undefined) {
+        clearTimeout(timer);
+      }
+    },
+  );
   return outcome === cleanupCompleted;
 }
 
@@ -183,9 +179,7 @@ export function createBlackboxTest(
           },
         });
         if (configuredTimeout > 0) {
-          testInfo.setTimeout(
-            Math.max(1, configuredTimeout - (Date.now() - acquisitionStartedAt)),
-          );
+          testInfo.setTimeout(Math.max(1, configuredTimeout - (Date.now() - acquisitionStartedAt)));
         }
         try {
           await use(attempt);
@@ -205,6 +199,9 @@ export function createBlackboxTest(
     },
     telemetry: async ({ _blackboxAttempt }, use) => {
       await use(_blackboxAttempt.telemetry);
+    },
+    effects: async ({ _blackboxAttempt }, use) => {
+      await use(_blackboxAttempt.effects);
     },
     baseURL: async ({ _blackboxAttempt }, use) => {
       await use(_blackboxAttempt.sandbox.entrypoint.url);

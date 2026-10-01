@@ -76,9 +76,10 @@ flowchart TD
 ```
 
 This diagram describes the verification model. The alpha supplies Capsule execution, Node observation, command
-results, queries, and reports. General normalized-effect matchers, automated claim qualification, and Playwright
-integration are still in development. You can apply the procedure using explicit scripts, state checks, and evidence
-inspection without pretending the CLI has produced a canonical claim verdict. See [alpha availability](alpha-status.md).
+results, queries, and reports. Playwright supplies an attempt-scoped effects contract boundary, but normalized-effect
+projection and automated claim qualification are still in development. You can apply the procedure using explicit
+scripts, state checks, and evidence inspection without pretending the CLI has produced a canonical claim verdict. See
+[alpha availability](alpha-status.md).
 
 ## Make the question easier to answer
 
@@ -90,7 +91,8 @@ A useful experiment deliberately reduces those alternatives:
 3. Control competing producers, scheduled work, and traffic relevant to the claim.
 4. Use a distinctive business identifier when it helps identify the affected job, order, or subscription.
 5. Enable the required observation sources before the stimulus.
-6. Define when the work is complete and what evidence each claim needs.
+6. Define when the work is complete and what evidence each claim needs. For asynchronous work, name an explicit
+   [completion barrier](completion-barriers.md).
 
 A fresh container is useful, but it does not by itself guarantee known data, exclusive traffic, or control over an
 external dependency. Those conditions belong to the protocol. Preserve the context needed to understand the result.
@@ -120,9 +122,9 @@ For a later trial, record which actions and observations belong to it, re-establ
 a fresh Capsule. A timestamp range alone does not establish exclusive attribution or complete observation.
 Blackbox's current activity queries select runtime correlation; they are not an automatic experiment-window model.
 
-A test runner's attempt can be a convenient way to organize a protocol and its claims. Actual isolation still depends
-on its configuration. Playwright integration is in progress; it does not create a conceptual restriction on the kinds
-of experiments a Capsule can support.
+A test runner's attempt can be a convenient way to organize a protocol and its claims. Native Playwright execution
+owns one fresh Sandbox for every physical attempt, including retries. That runner policy does not create a conceptual
+restriction on the kinds of experiments a Capsule can support.
 
 ## Separate discovery from confirmation
 

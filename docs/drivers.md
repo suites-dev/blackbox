@@ -145,7 +145,8 @@ migration ordering and schema changes. `ON_ERROR_STOP` makes `psql` stop on SQL 
 file in a transaction.
 
 Use `--purpose setup` to make preparation recognizable in the retained activity record. Purpose labels do not change
-command semantics or provide rollback. See [async holes](async-workflows.md) for using Redis as the stimulus itself.
+command semantics or provide rollback. See [trace continuity gaps](trace-continuity.md) for using Redis as the
+stimulus itself.
 
 ## Inspect database state
 
