@@ -6,7 +6,7 @@ import path from 'node:path';
 import { Writable } from 'node:stream';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { collectEvidence, runCommand } from './ci-evidence.mjs';
+import { approvedCliCommand, collectEvidence, runCommand } from './ci-evidence.mjs';
 import { retainE2eEvidence } from './e2e-evidence.mjs';
 
 async function workspace(t) {
@@ -357,6 +357,37 @@ test('the CLI rejects unapproved node programs before they execute', async (t) =
   assert.notEqual(result.status, 0);
   assert.match(result.stderr, /not an approved repository check/);
   await assert.rejects(fs.stat(marker), { code: 'ENOENT' });
+});
+
+test('the CLI approves one journey run for every golden the checkout ships', async () => {
+  const journeys = (await fs.readdir(new URL('../../e2e/journeys/', import.meta.url)))
+    .filter((file) => file.endsWith('.golden'))
+    .map((file) => file.slice(0, -'.golden'.length));
+  assert.ok(journeys.length > 0);
+  for (const journey of journeys) {
+    assert.deepEqual(approvedCliCommand(['pnpm', 'test:e2e:journeys', journey]), [
+      'pnpm',
+      'test:e2e:journeys',
+      journey,
+    ]);
+  }
+  assert.deepEqual(approvedCliCommand(['pnpm', 'test:e2e:journeys']), ['pnpm', 'test:e2e:journeys']);
+});
+
+test('the CLI refuses journey runs that do not name exactly one shipped golden', () => {
+  const refused = [
+    // Journey grammar, but no such golden.
+    ['pnpm', 'test:e2e:journeys', '99-not-shipped'],
+    // Resolves to a shipped golden, but is not a journey name.
+    ['pnpm', 'test:e2e:journeys', '../journeys/00-surface'],
+    ['pnpm', 'test:e2e:journeys', '00-surface', '--repeat', '1'],
+    ['pnpm', 'test:e2e:journeys', '--repeat'],
+    ['pnpm', 'test:demo', '00-surface'],
+    ['node', 'test:e2e:journeys', '00-surface'],
+  ];
+  for (const command of refused) {
+    assert.throws(() => approvedCliCommand(command), /not an approved repository check/, command.join(' '));
+  }
 });
 
 test('files modified during archiving cannot produce a successful transport receipt', async (t) => {
