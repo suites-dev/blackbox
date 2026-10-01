@@ -85,6 +85,10 @@ const aliases = {
   internal: {},
 } as const;
 
+const selectorFields = new Set('node kind operation target actor outcome where'.split(' '));
+const countConstraintFields = new Set(['node', 'operator', 'count', 'selector']);
+const orderConstraintFields = new Set(['node', 'operator', 'first', 'second']);
+
 function freeze<T>(value: T): T {
   if (value !== null && typeof value === 'object') {
     for (const child of Object.values(value)) {
@@ -112,6 +116,23 @@ function assertWhere(value: unknown): asserts value is Readonly<Record<string, E
     ) {
       throw new TypeError('where must contain finite JSON scalar values');
     }
+  }
+}
+
+function assertKnownFields(
+  context: string,
+  record: Readonly<Record<string, unknown>>,
+  supported: ReadonlySet<string>,
+): void {
+  const unknownField = Object.keys(record).find((field) => !supported.has(field));
+  if (unknownField !== undefined) {
+    throw new TypeError(`Unknown ${context} field: ${unknownField}`);
+  }
+}
+
+function assertCount(value: unknown): asserts value is number {
+  if (typeof value !== 'number' || !Number.isSafeInteger(value) || value < 0) {
+    throw new TypeError('Effect count must be a nonnegative safe integer');
   }
 }
 
@@ -156,26 +177,38 @@ function count(
   value: number,
   selected: unknown,
 ): EffectCountConstraint {
-  if (!Number.isSafeInteger(value) || value < 0) {
-    throw new TypeError('Effect count must be a nonnegative safe integer');
-  }
-  assertSelector(selected);
+  assertCount(value);
+  assertSelector(selected, `${operator}.selector`);
   return freeze({ node: 'constraint', operator, count: value, selector: selected });
 }
 
 function before(first: unknown, second: unknown): EffectOrderConstraint {
-  assertSelector(first);
-  assertSelector(second);
+  assertSelector(first, 'before.first');
+  assertSelector(second, 'before.second');
   return freeze({ node: 'constraint', operator: 'before', first, second });
 }
 
-function assertSelector(value: unknown): asserts value is EffectSelector {
+function assertSelector(value: unknown, context: string): asserts value is EffectSelector {
   if (value === null || typeof value !== 'object' || Array.isArray(value)) {
-    throw new TypeError('Expected an effect selector');
+    throw new TypeError(`${context} must be an effect selector`);
   }
   const record = value as Readonly<Record<string, unknown>>;
   if (record.node !== 'selector') {
-    throw new TypeError('Expected an effect selector');
+    throw new TypeError(`${context} must be an effect selector`);
+  }
+  assertKnownFields('effect selector', record, selectorFields);
+  if (Object.hasOwn(record, 'kind')) {
+    if (typeof record.kind !== 'string' || !Object.hasOwn(aliases, record.kind)) {
+      throw new TypeError(`${context}.kind must be a supported effect kind`);
+    }
+  }
+  for (const field of ['operation', 'target', 'actor', 'outcome']) {
+    if (Object.hasOwn(record, field)) {
+      assertText(`${context}.${field}`, record[field]);
+    }
+  }
+  if (Object.hasOwn(record, 'where')) {
+    assertWhere(record.where);
   }
 }
 
@@ -187,6 +220,22 @@ function assertConstraint(value: unknown): asserts value is EffectConstraint {
   if (record.node !== 'constraint') {
     throw new TypeError('The effects callback must return constraints, not selectors');
   }
+  if (typeof record.operator !== 'string') {
+    throw new TypeError('Effect constraint operator must be exactly, atLeast, atMost, or before');
+  }
+  if (['exactly', 'atLeast', 'atMost'].includes(record.operator)) {
+    assertKnownFields('effect count constraint', record, countConstraintFields);
+    assertCount(record.count);
+    assertSelector(record.selector, `${record.operator}.selector`);
+    return;
+  }
+  if (record.operator === 'before') {
+    assertKnownFields('effect order constraint', record, orderConstraintFields);
+    assertSelector(record.first, 'before.first');
+    assertSelector(record.second, 'before.second');
+    return;
+  }
+  throw new TypeError('Effect constraint operator must be exactly, atLeast, atMost, or before');
 }
 
 export const effectContractBuilder = freeze({

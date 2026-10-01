@@ -8,6 +8,9 @@ export const expect = playwrightExpect.extend({
   async toSatisfy(received: BlackboxEffects, builder: EffectContractBuilder) {
     const contract = compileEffectContract(builder);
     const evaluation = await evaluateBlackboxEffects(received, contract);
+    if (evaluation.kind === 'inconclusive') {
+      throw new Error(evaluation.message);
+    }
     const pass = evaluation.kind === 'satisfied';
     return {
       pass,

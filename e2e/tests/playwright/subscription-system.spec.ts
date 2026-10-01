@@ -1,8 +1,16 @@
-import type { APIRequestContext } from '@playwright/test';
-
 import { expect, test } from '@suites/blackbox-playwright';
 
-import { blackboxEnvironment, expectJson } from './support.js';
+import {
+  blackboxEnvironment,
+  expectAttemptEvidenceIdentity,
+  expectJson,
+  readFixtureState,
+} from './support.js';
+import {
+  emptySystemState,
+  expectSingleBobSubscriptionFlow,
+  type SystemState,
+} from './subscription-state.js';
 
 interface SubscriptionResult {
   readonly userId: string;
@@ -12,7 +20,11 @@ interface SubscriptionResult {
   readonly orderId: string | null;
 }
 
-function subscribe(request: APIRequestContext, userId: string, paymentMethodId: string) {
+async function subscribe(
+  request: Parameters<typeof readFixtureState>[0],
+  userId: string,
+  paymentMethodId: string,
+) {
   return request.post('/subscriptions', { data: { userId, paymentMethodId } });
 }
 
@@ -21,12 +33,23 @@ test.use({
   blackboxEnvironment,
 });
 
-test.describe('Rule: an eligible user receives one complete subscription flow', () => {
-  test('Scenario: Alice completes the full subscription flow', async ({ request, effects }) => {
+test.describe('Rule: full-path subscriptions settle every required effect', () => {
+  test('Scenario: an eligible user receives an active subscription', async ({
+    request,
+    sandbox,
+    telemetry,
+    effects,
+  }) => {
+    expectAttemptEvidenceIdentity({ effects, sandbox, telemetry });
+
+    await test.step('Given Alice has no subscription or downstream effects', async () => {
+      expect(await readFixtureState<SystemState>(request)).toEqual(emptySystemState);
+    });
+
     const response = await test.step('When Alice subscribes with a payment method', () =>
       subscribe(request, 'alice', 'pm_alice_primary'));
 
-    await test.step('Then the completed response seals a successful subscription flow', async () => {
+    await test.step('Then the subscription is active only after every effect settles', async () => {
       expect(await expectJson<SubscriptionResult>(response, 201)).toEqual({
         orderId: 'order_alice',
         paymentIntentId: 'pi_alice1',
@@ -34,105 +57,61 @@ test.describe('Rule: an eligible user receives one complete subscription flow', 
         tier: 'pro',
         userId: 'alice',
       });
-    });
 
-    await test.step('And the sealed execution contains each business effect exactly once', async () => {
-      await expect(effects).toSatisfy((e) => [
-        e.exactly(
-          1,
-          e.http({
-            actor: 'public-api',
-            method: 'POST',
-            outcome: 'success',
-            route: '/assess',
-          }),
-        ),
-        e.exactly(
-          1,
-          e.http({
-            actor: 'public-api',
-            method: 'POST',
-            outcome: 'success',
-            route: '/v1/payment_intents',
-          }),
-        ),
-        e.exactly(
-          1,
-          e.http({
-            actor: 'public-api',
-            method: 'POST',
-            outcome: 'success',
-            route: '/orders',
-          }),
-        ),
-        e.exactly(
-          1,
-          e.db({
-            actor: 'public-api',
-            operation: 'INSERT',
-            outcome: 'success',
-            table: 'subscriptions',
-          }),
-        ),
-        e.exactly(
-          1,
-          e.message({
-            actor: 'order-service',
-            destination: 'subscription-orders',
-            operation: 'send',
-            outcome: 'success',
-          }),
-        ),
-        e.before(
-          e.http({ actor: 'public-api', method: 'POST', route: '/v1/payment_intents' }),
-          e.message({
-            actor: 'order-service',
-            destination: 'subscription-orders',
-            operation: 'send',
-          }),
-        ),
-        e.before(
-          e.message({
-            actor: 'order-service',
-            destination: 'subscription-orders',
-            operation: 'send',
-          }),
-          e.db({ actor: 'public-api', operation: 'INSERT', table: 'subscriptions' }),
-        ),
-      ]);
+      await test.step('And the durable state records one coherent subscription flow', async () => {
+        expect(await readFixtureState<SystemState>(request)).toEqual({
+          fraudAudit: [{ decision: 'approved', hintProfile: 'long', id: '1', userId: 'alice' }],
+          payment: {
+            paymentIntents: [
+              {
+                id: 'pi_alice1',
+                paymentMethodId: 'pm_alice_primary',
+                status: 'succeeded',
+                userId: 'alice',
+              },
+            ],
+            refunds: [],
+          },
+          queueDepth: 1,
+          redis: { 'hint:long:alice': '1', 'user:alice:tier': 'pro' },
+          subscriptions: [
+            {
+              id: 'subscription_alice',
+              orderId: 'order_alice',
+              paymentIntentId: 'pi_alice1',
+              status: 'active',
+              tier: 'pro',
+              userId: 'alice',
+            },
+          ],
+        });
+      });
     });
   });
 });
 
 test.describe('Rule: invalid subscription attempts have no side effects', () => {
-  test('Scenario: an unknown user is rejected without calling downstream services', async ({
+  test('Scenario: an unknown user is rejected without side effects', async ({
     request,
+    sandbox,
+    telemetry,
     effects,
   }) => {
+    expectAttemptEvidenceIdentity({ effects, sandbox, telemetry });
+
+    await test.step('Given the system has no prior subscription activity', async () => {
+      expect(await readFixtureState<SystemState>(request)).toEqual(emptySystemState);
+    });
+
     const response = await test.step('When an unknown user attempts to subscribe', () =>
       subscribe(request, 'ghost-user', 'pm_ghost'));
 
-    await test.step('Then the completed response seals the rejection', async () => {
+    await test.step('Then the request is rejected and the system remains unchanged', async () => {
       expect(await expectJson(response, 404)).toEqual({
         outcome: 'unknown-user',
         userId: 'ghost-user',
       });
-    });
-
-    await test.step('And the sealed execution contains no subscription side effects', async () => {
-      await expect(effects).toSatisfy((e) => [
-        e.absent(e.http({ actor: 'public-api', method: 'POST', route: '/assess' })),
-        e.absent(e.http({ actor: 'public-api', method: 'POST', route: '/v1/payment_intents' })),
-        e.absent(e.http({ actor: 'public-api', method: 'POST', route: '/orders' })),
-        e.absent(e.db({ actor: 'public-api', operation: 'INSERT', table: 'subscriptions' })),
-        e.absent(
-          e.message({
-            actor: 'order-service',
-            destination: 'subscription-orders',
-            operation: 'send',
-          }),
-        ),
-      ]);
+      expect(await readFixtureState<SystemState>(request)).toEqual(emptySystemState);
     });
   });
 });
@@ -140,12 +119,20 @@ test.describe('Rule: invalid subscription attempts have no side effects', () => 
 test.describe('Rule: local-only subscriptions avoid external service effects', () => {
   test('Scenario: a local-only user activates without payment or ordering', async ({
     request,
+    sandbox,
+    telemetry,
     effects,
   }) => {
+    expectAttemptEvidenceIdentity({ effects, sandbox, telemetry });
+
+    await test.step('Given Dora has no subscription or downstream effects', async () => {
+      expect(await readFixtureState<SystemState>(request)).toEqual(emptySystemState);
+    });
+
     const response = await test.step('When Dora subscribes with a payment method', () =>
       subscribe(request, 'dora', 'pm_dora_unused'));
 
-    await test.step('Then the completed response seals a locally-created subscription', async () => {
+    await test.step('Then her subscription is activated entirely within the local path', async () => {
       expect(await expectJson<SubscriptionResult>(response, 201)).toEqual({
         orderId: null,
         paymentIntentId: null,
@@ -153,38 +140,22 @@ test.describe('Rule: local-only subscriptions avoid external service effects', (
         tier: 'pro',
         userId: 'dora',
       });
-    });
-
-    await test.step('And the sealed execution stays on the local path', async () => {
-      await expect(effects).toSatisfy((e) => [
-        e.exactly(
-          1,
-          e.db({
-            actor: 'public-api',
-            operation: 'INSERT',
-            outcome: 'success',
-            table: 'subscriptions',
-          }),
-        ),
-        e.atLeast(
-          1,
-          e.cache({
-            actor: 'public-api',
-            operation: 'SET',
-            outcome: 'success',
-          }),
-        ),
-        e.absent(e.http({ actor: 'public-api', method: 'POST', route: '/assess' })),
-        e.absent(e.http({ actor: 'public-api', method: 'POST', route: '/v1/payment_intents' })),
-        e.absent(e.http({ actor: 'public-api', method: 'POST', route: '/orders' })),
-        e.absent(
-          e.message({
-            actor: 'order-service',
-            destination: 'subscription-orders',
-            operation: 'send',
-          }),
-        ),
-      ]);
+      expect(await readFixtureState<SystemState>(request)).toEqual({
+        fraudAudit: [],
+        payment: { paymentIntents: [], refunds: [] },
+        queueDepth: 0,
+        redis: { 'reg:dora': '1', 'user:dora:tier': 'pro' },
+        subscriptions: [
+          {
+            id: 'subscription_dora',
+            orderId: null,
+            paymentIntentId: null,
+            status: 'active',
+            tier: 'pro',
+            userId: 'dora',
+          },
+        ],
+      });
     });
   });
 });
@@ -192,68 +163,72 @@ test.describe('Rule: local-only subscriptions avoid external service effects', (
 test.describe('Rule: a user can hold only one subscription', () => {
   test('Scenario: a repeated request does not repeat downstream effects', async ({
     request,
+    sandbox,
+    telemetry,
     effects,
   }) => {
-    await test.step('Given Carol completed one subscription', async () => {
+    expectAttemptEvidenceIdentity({ effects, sandbox, telemetry });
+
+    await test.step('Given Carol already completed one subscription', async () => {
+      expect(await readFixtureState<SystemState>(request)).toEqual(emptySystemState);
       expect((await subscribe(request, 'carol', 'pm_carol_primary')).status()).toBe(201);
     });
 
     const response = await test.step('When Carol submits another subscription request', () =>
       subscribe(request, 'carol', 'pm_carol_secondary'));
 
-    await test.step('Then the completed response seals the duplicate rejection', async () => {
+    await test.step('Then the duplicate is rejected without another downstream flow', async () => {
       expect(await expectJson(response, 409)).toEqual({
         outcome: 'duplicate-subscription',
         userId: 'carol',
       });
-    });
-
-    await test.step('And both requests produced only one downstream flow', async () => {
-      await expect(effects).toSatisfy((e) => [
-        e.exactly(1, e.http({ actor: 'public-api', method: 'POST', route: '/v1/payment_intents' })),
-        e.exactly(1, e.http({ actor: 'public-api', method: 'POST', route: '/orders' })),
-        e.exactly(1, e.db({ actor: 'public-api', operation: 'INSERT', table: 'subscriptions' })),
-        e.exactly(
-          1,
-          e.message({
-            actor: 'order-service',
-            destination: 'subscription-orders',
-            operation: 'send',
-          }),
-        ),
+      const state = await readFixtureState<SystemState>(request);
+      expect(state.subscriptions).toHaveLength(1);
+      expect(state.fraudAudit).toHaveLength(1);
+      expect(state.payment.paymentIntents).toEqual([
+        {
+          id: 'pi_carol1',
+          paymentMethodId: 'pm_carol_primary',
+          status: 'succeeded',
+          userId: 'carol',
+        },
       ]);
+      expect(state.queueDepth).toBe(1);
     });
   });
 
-  test('Scenario: concurrent requests create exactly one subscription flow', async ({
+  test('Scenario: concurrent requests create exactly one subscription', async ({
     request,
+    sandbox,
+    telemetry,
     effects,
   }) => {
+    expectAttemptEvidenceIdentity({ effects, sandbox, telemetry });
+
+    await test.step('Given Bob has no subscription or downstream effects', async () => {
+      expect(await readFixtureState<SystemState>(request)).toEqual(emptySystemState);
+    });
+
     const responses = await test.step('When two subscription requests arrive together', () =>
       Promise.all([
         subscribe(request, 'bob', 'pm_bob_one'),
         subscribe(request, 'bob', 'pm_bob_two'),
       ]));
 
-    await test.step('Then both completed responses seal one success and one rejection', () => {
+    await test.step('Then exactly one request wins and one complete flow is recorded', async () => {
       expect(responses.map((response) => response.status()).sort()).toEqual([201, 409]);
-    });
+      const duplicate = responses.find((response) => response.status() === 409);
+      if (duplicate === undefined) {
+        throw new Error('Expected one duplicate response');
+      }
+      expect(await duplicate.json()).toEqual({
+        outcome: 'duplicate-subscription',
+        userId: 'bob',
+      });
 
-    await test.step('And concurrent arrival produced exactly one downstream flow', async () => {
-      await expect(effects).toSatisfy((e) => [
-        e.exactly(1, e.http({ actor: 'public-api', method: 'POST', route: '/assess' })),
-        e.exactly(1, e.http({ actor: 'public-api', method: 'POST', route: '/v1/payment_intents' })),
-        e.exactly(1, e.http({ actor: 'public-api', method: 'POST', route: '/orders' })),
-        e.exactly(1, e.db({ actor: 'public-api', operation: 'INSERT', table: 'subscriptions' })),
-        e.exactly(
-          1,
-          e.message({
-            actor: 'order-service',
-            destination: 'subscription-orders',
-            operation: 'send',
-          }),
-        ),
-      ]);
+      await test.step('And concurrent arrival does not duplicate any effect', async () => {
+        expectSingleBobSubscriptionFlow(await readFixtureState<SystemState>(request));
+      });
     });
   });
 });
