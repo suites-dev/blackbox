@@ -1,4 +1,5 @@
 import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process';
+import { Readable } from 'node:stream';
 
 import { DriverPreparationTimeoutError } from '../../protocol/timeout.js';
 
@@ -16,6 +17,12 @@ export interface ProjectDriverProcessOutput {
   readonly stderr: string;
 }
 
+interface CapturedOutput {
+  readonly protocol: Buffer[];
+  readonly stderr: Buffer[];
+  readonly outputLimitExceeded: () => boolean;
+}
+
 function terminateProjectDriver(child: ChildProcessWithoutNullStreams): void {
   if (process.platform === 'win32' || child.pid === undefined) {
     child.kill('SIGKILL');
@@ -31,6 +38,42 @@ function terminateProjectDriver(child: ChildProcessWithoutNullStreams): void {
   child.stderr.destroy();
 }
 
+function captureOutput(child: ChildProcessWithoutNullStreams): CapturedOutput {
+  const protocol: Buffer[] = [];
+  const stderr: Buffer[] = [];
+  let retainedBytes = 0;
+  let outputLimitExceeded = false;
+  const retainOutput = (chunks: Buffer[], chunk: Buffer): void => {
+    if (outputLimitExceeded) {
+      return;
+    }
+    const remaining = MAX_PROTOCOL_OUTPUT_BYTES - retainedBytes;
+    if (chunk.byteLength <= remaining) {
+      chunks.push(chunk);
+      retainedBytes += chunk.byteLength;
+      return;
+    }
+    if (remaining > 0) {
+      chunks.push(chunk.subarray(0, remaining));
+      retainedBytes += remaining;
+    }
+    outputLimitExceeded = true;
+    terminateProjectDriver(child);
+  };
+  const protocolStream = child.stdio[3];
+  if (!(protocolStream instanceof Readable)) {
+    throw new Error('Driver protocol output stream unavailable');
+  }
+  child.stdout.resume();
+  child.stderr.on('data', (chunk: Buffer) => {
+    retainOutput(stderr, chunk);
+  });
+  protocolStream.on('data', (chunk: Buffer) => {
+    retainOutput(protocol, chunk);
+  });
+  return { protocol, stderr, outputLimitExceeded: () => outputLimitExceeded };
+}
+
 export function runProjectDriverProcess(
   input: RunProjectDriverProcessInput,
 ): Promise<ProjectDriverProcessOutput> {
@@ -40,42 +83,23 @@ export function runProjectDriverProcess(
       detached: process.platform !== 'win32',
       env: process.env,
       shell: false,
-      stdio: ['pipe', 'pipe', 'pipe'],
+      stdio: ['pipe', 'pipe', 'pipe', 'pipe'],
     });
-    const stdout: Buffer[] = [];
-    const stderr: Buffer[] = [];
-    let retainedBytes = 0;
-    let outputLimitExceeded = false;
+    let output: CapturedOutput;
+    try {
+      output = captureOutput(child);
+    } catch (error) {
+      child.kill('SIGKILL');
+      reject(error instanceof Error ? error : new Error(String(error)));
+      return;
+    }
     let settled = false;
     let stdinError: Error | null = null;
-    const retainOutput = (chunks: Buffer[], chunk: Buffer): void => {
-      if (outputLimitExceeded) {
-        return;
-      }
-      const remaining = MAX_PROTOCOL_OUTPUT_BYTES - retainedBytes;
-      if (chunk.byteLength <= remaining) {
-        chunks.push(chunk);
-        retainedBytes += chunk.byteLength;
-        return;
-      }
-      if (remaining > 0) {
-        chunks.push(chunk.subarray(0, remaining));
-        retainedBytes += remaining;
-      }
-      outputLimitExceeded = true;
-      terminateProjectDriver(child);
-    };
     const timeout = setTimeout(() => {
       settled = true;
       terminateProjectDriver(child);
       reject(new DriverPreparationTimeoutError());
     }, input.timeoutMs);
-    child.stdout.on('data', (chunk: Buffer) => {
-      retainOutput(stdout, chunk);
-    });
-    child.stderr.on('data', (chunk: Buffer) => {
-      retainOutput(stderr, chunk);
-    });
     child.stdin.on('error', (error) => {
       stdinError = error;
     });
@@ -92,9 +116,9 @@ export function runProjectDriverProcess(
         return;
       }
       settled = true;
-      const output = Buffer.concat(stdout).toString('utf8');
-      const errorOutput = Buffer.concat(stderr).toString('utf8');
-      if (outputLimitExceeded) {
+      const protocolOutput = Buffer.concat(output.protocol).toString('utf8');
+      const errorOutput = Buffer.concat(output.stderr).toString('utf8');
+      if (output.outputLimitExceeded()) {
         reject(new Error('Driver protocol output exceeded 1 MiB'));
       } else if (code !== 0) {
         reject(
@@ -103,7 +127,7 @@ export function runProjectDriverProcess(
       } else if (stdinError !== null) {
         reject(stdinError);
       } else {
-        resolve({ stdout: output, stderr: errorOutput });
+        resolve({ stdout: protocolOutput, stderr: errorOutput });
       }
     });
     child.stdin.end(input.requestJson);

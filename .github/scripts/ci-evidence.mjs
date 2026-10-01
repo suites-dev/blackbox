@@ -1052,7 +1052,31 @@ function parseCli(argv) {
   return { options, command: [] };
 }
 
-function approvedCliCommand(command) {
+// E2E runs one golden journey per runner. A name is approved only when it has
+// the journey grammar and names a golden this checkout ships.
+const JOURNEY_NAME = /^[0-9]{2}(?:-[a-z0-9]+)+$/u;
+const JOURNEY_ROOT = fileURLToPath(new URL('../../e2e/journeys/', import.meta.url));
+
+function shippedJourney(name) {
+  if (!JOURNEY_NAME.test(name)) {
+    return false;
+  }
+  try {
+    return lstatSync(path.join(JOURNEY_ROOT, `${name}.golden`)).isFile();
+  } catch {
+    return false;
+  }
+}
+
+export function approvedCliCommand(command) {
+  if (
+    command.length === 3 &&
+    command[0] === 'pnpm' &&
+    command[1] === 'test:e2e:journeys' &&
+    shippedJourney(command[2])
+  ) {
+    return ['pnpm', 'test:e2e:journeys', command[2]];
+  }
   const signature = command.join('\0');
   switch (signature) {
     case 'node\0--test\0.github/scripts/e2e-evidence.test.mjs\0.github/scripts/capsule-evidence.test.mjs':

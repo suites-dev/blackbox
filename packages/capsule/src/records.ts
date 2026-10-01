@@ -1,6 +1,6 @@
-import { link, mkdir, readFile, unlink, writeFile } from 'node:fs/promises';
+import { link, lstat, mkdir, readFile, realpath, unlink, writeFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
-import { join, resolve } from 'node:path';
+import { isAbsolute, join, relative, resolve } from 'node:path';
 import { replaceFile } from '@suites/blackbox-sandbox';
 
 import type {
@@ -101,6 +101,39 @@ export function capsuleActivityPath(input: CapsuleSessionSelector): string {
   return join(capsuleSessionDirectory(input), 'activities.json');
 }
 
+function errorCode(error: unknown): string {
+  return error instanceof Error && 'code' in error && typeof error.code === 'string'
+    ? error.code
+    : '';
+}
+
+function within(path: string, root: string): boolean {
+  const value = relative(root, path);
+  return value === '' || (!value.startsWith('..') && !isAbsolute(value));
+}
+
+async function safeSessionDirectory(input: CapsuleSessionSelector): Promise<string> {
+  const root = resolve(await realpath(input.projectDirectory));
+  let directory = root;
+  for (const name of ['.blackbox', 'experiments', `capsule-${input.sessionId}`]) {
+    const path = join(directory, name);
+    await mkdir(path, { mode: 0o700 }).catch((error: unknown) => {
+      if (errorCode(error) !== 'EEXIST') {
+        throw error;
+      }
+    });
+    const info = await lstat(path);
+    if (info.isSymbolicLink() || !info.isDirectory()) {
+      throw new Error(`Refusing unsafe Capsule state directory: ${path}`);
+    }
+    directory = resolve(await realpath(path));
+    if (!within(directory, root)) {
+      throw new Error(`Capsule state directory escapes the project: ${path}`);
+    }
+  }
+  return directory;
+}
+
 export function capsuleSandboxRecordDirectory(input: CapsuleSessionSelector): string {
   return join(capsuleSessionDirectory(input), 'sandbox');
 }
@@ -128,11 +161,11 @@ export async function writeJsonArtifact(input: {
 }
 
 export async function admitCapsuleRecord(input: CapsuleRecordWriteInput): Promise<void> {
-  const directory = capsuleSessionDirectory({
+  const selector = {
     projectDirectory: input.projectDirectory,
     sessionId: input.record.sessionId,
-  });
-  await mkdir(directory, { recursive: true, mode: 0o700 });
+  } satisfies CapsuleSessionSelector;
+  const directory = await safeSessionDirectory(selector);
   const target = capsuleRecordPath({
     projectDirectory: input.projectDirectory,
     sessionId: input.record.sessionId,
@@ -149,8 +182,7 @@ export async function admitCapsuleRecord(input: CapsuleRecordWriteInput): Promis
     await unlink(temporary);
   }
   await writeCapsuleActivities({
-    projectDirectory: input.projectDirectory,
-    sessionId: input.record.sessionId,
+    ...selector,
     activities: [],
   });
   await writeJsonArtifact({
@@ -188,6 +220,7 @@ export async function writeCapsuleActivities(input: {
   readonly sessionId: string;
   readonly activities: readonly CapsuleActivityReport[];
 }): Promise<void> {
+  decodeCapsuleActivities({ bytes: JSON.stringify(input.activities) });
   await atomicWrite({
     target: capsuleActivityPath(input),
     revision: input.activities.length,

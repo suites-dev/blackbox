@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Packed-consumer check for `blackbox skills install`. Packs the CLI, its
-# contract and the skills plugin, installs only those tarballs into a clean
+# contract, generic skills plugin and Discovery, installs only those tarballs into a clean
 # project outside the workspace, and drives the installed CLI there: a fresh
 # install, an unchanged rerun, the `skill install` alias, a preserved conflict,
 # and adoption of a matching manual copy. Needs no Docker and no network beyond
@@ -11,7 +11,7 @@ set -Eeuo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd -- "$SCRIPT_DIR/../.." && pwd)"
-PACKAGES=(cli-contract cli skills)
+PACKAGES=(cli-contract cli skills discovery)
 
 for command in pnpm jq node diff; do
   command -v "$command" >/dev/null 2>&1 || {
@@ -54,21 +54,27 @@ done
 pnpm --dir "$PROJECT" install --ignore-workspace --prefer-offline --ignore-scripts \
   ${PNPM_STORE_DIR:+--store-dir "$PNPM_STORE_DIR"} >/dev/null
 BLACKBOX="$PROJECT/node_modules/.bin/blackbox"
-PACKED_SKILL="$(cd "$PROJECT/node_modules/@suites/blackbox-skills/assets/discovery" && pwd -P)"
-[[ -f "$PACKED_SKILL/SKILL.md" ]] || fail "the packed skills package has no assets/discovery/SKILL.md"
+cd "$PROJECT"
+PACKED_SKILL="$(node --input-type=module -e 'import { discoverySkill } from "@suites/blackbox-discovery/skills/discovery"; import { fileURLToPath } from "node:url"; console.log(fileURLToPath(discoverySkill.source));')"
+PACKED_VERSION="$(node --input-type=module -e 'import { skillModule } from "@suites/blackbox-discovery/skills"; import { readFileSync } from "node:fs"; console.log(JSON.parse(readFileSync(new URL("package.json", skillModule.packageRoot), "utf8")).version);')"
+[[ -f "$PACKED_SKILL/SKILL.md" ]] || fail "the Discovery public export has no SKILL.md"
 case "$PACKED_SKILL" in
   "$REPO_ROOT"/*) fail "the packed skill resolved through the workspace" ;;
 esac
 
 cd "$PROJECT"
-"$BLACKBOX" skills install discovery --codex --claude --json >"$WORK_ROOT/first.json"
+"$BLACKBOX" skills list --json >"$WORK_ROOT/list.json"
+jq -e '[.skills[].name] == ["discovery"] and ([.skills[].integrations[].available] == [false, false])' "$WORK_ROOT/list.json" >/dev/null ||
+  fail "absent packages contributed skills: $(cat "$WORK_ROOT/list.json")"
+node --input-type=module -e 'import { readFileSync } from "node:fs"; import { discoverySkill } from "@suites/blackbox-discovery/skills/discovery"; import { validateAudit } from "@suites/blackbox-discovery"; const read = (name) => JSON.parse(readFileSync(new URL(`examples/http/${name}.json`, discoverySkill.source), "utf8")); if (validateAudit(read("audit"), read("receipts")).kind !== "accepted") throw new Error("packed audit validation failed");'
+"$BLACKBOX" skills install discovery --codex --claude --gitignore --json >"$WORK_ROOT/first.json"
 jq -e '.ok and ([.destinations[].outcome] == ["installed", "installed"])' "$WORK_ROOT/first.json" >/dev/null ||
   fail "fresh install: $(cat "$WORK_ROOT/first.json")"
 for destination in .agents/skills/discovery .claude/skills/discovery; do
   diff -r -x .blackbox-install.json "$PACKED_SKILL" "$destination" >/dev/null ||
     fail "$destination differs from the packed skill"
-  jq -e --arg version "$(jq -r .version "$PACKED_SKILL/../../package.json")" \
-    '.installer == "@suites/blackbox-skills" and .version == $version' \
+  jq -e --arg version "$PACKED_VERSION" \
+    '.installer == "@suites/blackbox-skills" and .sourcePackage == "@suites/blackbox-discovery" and .version == $version' \
     "$destination/.blackbox-install.json" >/dev/null || fail "$destination has a wrong record"
 done
 
@@ -93,4 +99,15 @@ cp -R "$PACKED_SKILL" .claude/skills/discovery
 jq -e '.ok and ([.destinations[].outcome] == ["adopted"])' "$WORK_ROOT/adopt.json" >/dev/null ||
   fail "adoption: $(cat "$WORK_ROOT/adopt.json")"
 
-echo "skills-packed-consumer: passed (installed, unchanged, alias, conflict preserved, adopted)"
+# The module remains on disk but removing it from the selected project plugins
+# must remove its contribution, even when an old agent copy remains installed.
+jq 'del(.dependencies["@suites/blackbox-discovery"])' package.json >package.json.next
+mv package.json.next package.json
+"$BLACKBOX" skills list --json >"$WORK_ROOT/unselected.json"
+jq -e '.skills == []' "$WORK_ROOT/unselected.json" >/dev/null || fail "unselected Discovery remained registered"
+status=0
+"$BLACKBOX" skills install discovery --codex >"$WORK_ROOT/unavailable.out" 2>&1 || status=$?
+[[ "$status" -eq 2 ]] || fail "unselected Discovery exited $status, expected 2"
+grep -q 'Skill is unavailable' "$WORK_ROOT/unavailable.out" || fail "missing skill was not explained"
+
+echo "skills-packed-consumer: passed (public exports, packed helpers, absent integrations, installed, unchanged, alias, conflict preserved, adopted, unselected provider)"

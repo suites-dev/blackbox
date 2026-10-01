@@ -1,0 +1,161 @@
+{
+  "schemaVersion": 1,
+  "kind": "receipt-bundle",
+  "provenance": {
+    "kind": "example",
+    "description": "Hand-authored test vectors, not runtime receipts."
+  },
+  "receipts": [
+    {
+      "id": "r-catalog",
+      "scope": {
+        "kind": "project",
+        "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "catalogDigest": "b5319d1ef6b80e077af0578e305a6146e8783ac8eec10bc0030b5fcd1485fe06"
+      },
+      "artifact": "illustrative/catalog.json",
+      "digest": "c0c77da725f70361b7cae1b04fa85baebca8263fd7d1b8e04d491802143bf37d",
+      "activity": {
+        "kind": "not-applicable",
+        "reason": "No delegated activity for this illustrative control operation."
+      },
+      "kind": "command",
+      "phase": "catalog",
+      "argv": ["illustrative-only", "catalog"],
+      "result": {
+        "kind": "exited",
+        "code": 0
+      }
+    },
+    {
+      "id": "r-acquisition",
+      "scope": {
+        "kind": "capsule",
+        "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "catalogDigest": "b5319d1ef6b80e077af0578e305a6146e8783ac8eec10bc0030b5fcd1485fe06",
+        "capsuleId": "example-queue",
+        "attemptId": "example-attempt-1"
+      },
+      "artifact": "illustrative/acquisition.json",
+      "digest": "b0f1a4283daadc257a2dbf3b7cc2df6d1c71cb0fdf740a0f6d0ac3a42ab532f9",
+      "activity": {
+        "kind": "not-applicable",
+        "reason": "No delegated activity for this illustrative control operation."
+      },
+      "kind": "command",
+      "phase": "acquisition",
+      "argv": ["illustrative-only", "acquisition"],
+      "result": {
+        "kind": "exited",
+        "code": 0
+      }
+    },
+    {
+      "id": "r-readiness",
+      "scope": {
+        "kind": "capsule",
+        "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "catalogDigest": "b5319d1ef6b80e077af0578e305a6146e8783ac8eec10bc0030b5fcd1485fe06",
+        "capsuleId": "example-queue",
+        "attemptId": "example-attempt-1"
+      },
+      "artifact": "illustrative/readiness.json",
+      "digest": "02dfeb5e7be0893a5a82be10c2e85f650d6299ca7ac3b1cb1b581b8236caa709",
+      "activity": {
+        "kind": "not-applicable",
+        "reason": "No delegated activity for this illustrative control operation."
+      },
+      "kind": "command",
+      "phase": "readiness",
+      "argv": ["illustrative-only", "readiness"],
+      "result": {
+        "kind": "exited",
+        "code": 0
+      }
+    },
+    {
+      "id": "r-stimulus",
+      "scope": {
+        "kind": "capsule",
+        "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "catalogDigest": "b5319d1ef6b80e077af0578e305a6146e8783ac8eec10bc0030b5fcd1485fe06",
+        "capsuleId": "example-queue",
+        "attemptId": "example-attempt-1"
+      },
+      "artifact": "illustrative/stimulus.json",
+      "digest": "754d305717e83303c8aea3b6451c5bdf8894156d5f60cc629d18410d4e821689",
+      "activity": {
+        "kind": "recorded",
+        "id": "activity-stimulus"
+      },
+      "kind": "command",
+      "phase": "stimulus",
+      "argv": ["illustrative-only", "stimulus"],
+      "result": {
+        "kind": "exited",
+        "code": 0
+      }
+    },
+    {
+      "id": "r-terminal",
+      "scope": {
+        "kind": "capsule",
+        "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "catalogDigest": "b5319d1ef6b80e077af0578e305a6146e8783ac8eec10bc0030b5fcd1485fe06",
+        "capsuleId": "example-queue",
+        "attemptId": "example-attempt-1"
+      },
+      "artifact": "illustrative/terminal.json",
+      "digest": "d15d31ba8930c052fbb3d9ecbf145a9845738890d873dea2ec6732b9fbb4656b",
+      "activity": {
+        "kind": "recorded",
+        "id": "activity-terminal"
+      },
+      "kind": "terminal",
+      "claimId": "claim-queue",
+      "nodeId": "output-queue",
+      "businessId": "queue-attempt-1",
+      "result": "observed"
+    },
+    {
+      "id": "r-observation",
+      "scope": {
+        "kind": "capsule",
+        "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "catalogDigest": "b5319d1ef6b80e077af0578e305a6146e8783ac8eec10bc0030b5fcd1485fe06",
+        "capsuleId": "example-queue",
+        "attemptId": "example-attempt-1"
+      },
+      "artifact": "illustrative/observation.json",
+      "digest": "2fc233a8d5e4ce71afb261b76c010b64449aa243b0ef0168bd6a709540a23887",
+      "activity": {
+        "kind": "not-applicable",
+        "reason": "No delegated activity for this illustrative control operation."
+      },
+      "kind": "observation",
+      "nodeIds": ["input-queue", "worker", "output-queue", "postgres"],
+      "traceIds": ["illustrative-trace"],
+      "result": "captured"
+    },
+    {
+      "id": "r-cleanup",
+      "scope": {
+        "kind": "capsule",
+        "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "catalogDigest": "b5319d1ef6b80e077af0578e305a6146e8783ac8eec10bc0030b5fcd1485fe06",
+        "capsuleId": "example-queue",
+        "attemptId": "example-attempt-1"
+      },
+      "artifact": "illustrative/cleanup.json",
+      "digest": "cbd068d6ed8f4866681c14853f025aef640b98a274418a0d5cbbcc690ae3c81f",
+      "activity": {
+        "kind": "not-applicable",
+        "reason": "No delegated activity for this illustrative control operation."
+      },
+      "kind": "cleanup",
+      "result": "released",
+      "releasedIds": ["illustrative-owned-resource"],
+      "remainingOwnedIds": []
+    }
+  ]
+}

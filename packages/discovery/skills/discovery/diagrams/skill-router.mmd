@@ -1,0 +1,23 @@
+flowchart TD
+  R["Discovery router"] --> D{"Existing or partial setup"}
+  D -->|No| I["Initial setup"]
+  D -->|Yes| C["Reconcile existing setup"]
+  I --> E["Repository inventory"]
+  C --> E
+  E --> L["Dependency inspector router"]
+  E --> CI["CI inspection and attachment"]
+  E --> IA["Infrastructure router"]
+  E --> IO["I/O and environment"]
+  L --> B["Behavioral boundary"]
+  CI --> B
+  IA --> B
+  IO --> B
+  B --> KC{"Catalog skill available?"}
+  KC -->|Yes| K["Delegate catalog authoring"]
+  KC -->|No| Q["Structured audit with capability gap"]
+  K --> P["Static preflight"]
+  P --> VC{"Live work authorized and Capsule skill available?"}
+  VC -->|Yes| V["Delegate to Capsule: execution, async, observation, cleanup"]
+  VC -->|No| Q
+  V --> Q
+  Q --> X["Repair the failed stage"]

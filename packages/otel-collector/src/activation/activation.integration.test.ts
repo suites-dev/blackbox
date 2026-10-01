@@ -70,6 +70,36 @@ it('durably records exact-identity activation and remains idempotent per service
   });
 });
 
+it('rejects activation after collector failure without changing the failure state', async () => {
+  await withCollector(
+    async ({ input, collector }) => {
+      expect((await postJson(collector, traceRequest())).status).toBe(200);
+      expect((await postJson(collector, traceRequest())).status).toBe(507);
+      expect(collector.status()).toMatchObject({
+        receiver: 'failed',
+        instrumentation: { kind: 'not-activated' },
+        failure: { name: 'CollectorRetentionLimitError' },
+      });
+
+      const rejected = await fetch(collector.endpoint.activationUrl, {
+        method: 'POST',
+        headers: collectorHeaders({ 'content-type': 'application/json' }),
+        body: JSON.stringify(activation(input)),
+      });
+      expect(rejected.status).toBe(503);
+      expect(await rejected.json()).toEqual({
+        message: 'Collector has failed; telemetry intake is stopped.',
+      });
+      expect(collector.status()).toMatchObject({
+        receiver: 'failed',
+        instrumentation: { kind: 'not-activated' },
+        failure: { name: 'CollectorRetentionLimitError' },
+      });
+    },
+    { maxRetainedFragments: 1 },
+  );
+});
+
 it('rejects invalid activation fields without poisoning the collector', async () => {
   await withCollector(async ({ input, collector }) => {
     const invalid = await fetch(collector.endpoint.activationUrl, {

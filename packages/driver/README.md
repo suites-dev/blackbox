@@ -73,7 +73,7 @@ Use the working [HTTP](../../e2e/.blackbox/drivers/public-api.mjs), [PostgreSQL]
 
 ## Preparation and execution are separate
 
-`prepareNodeProjectDriver()` generates a small ESM runner, starts the current Node executable with the project directory as its working directory, writes the request to stdin, and decodes one response from stdout. The runner imports the project's default export and calls `prepare()`; it never runs the prepared `argv`.
+`prepareNodeProjectDriver()` generates a small ESM runner, starts the current Node executable with the project directory as its working directory, writes the request to stdin, and decodes one response from a dedicated protocol pipe. The runner imports the project's default export and calls `prepare()`; it never runs the prepared `argv`. The public `createNodeDriverRunnerSource()` helper defaults its protocol output to stdout for callers that launch the generated source with ordinary standard I/O. The private preparation process selects fd 3 so project diagnostics on stdout remain separate from the protocol response.
 
 Capsule owns the next stage. It combines the validated preparation with Capsule-managed environment and telemetry state, enforces propagation policy, and starts the preserved executable either:
 

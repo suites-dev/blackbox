@@ -96,7 +96,7 @@ it('does not recover when the same PID is rebound to a new manager identity', as
     {
       now: () => '2026-09-25T10:00:00.000Z',
       signal: () => true,
-      probeManager: () => Promise.resolve({ kind: 'manager-socket-missing' }),
+      probeManager: () => Promise.resolve({ kind: 'manager-instance-different' }),
       readRecord,
       readActivities: () => Promise.resolve([]),
       writeActivities: () => Promise.resolve(),

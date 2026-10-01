@@ -34,6 +34,7 @@ it('fresh install writes the whole tree plus a provenance record per destination
     expect(store.file(path, 'references/ci.md')).toBe('ci\n');
     const record = recordAt(store, path);
     expect(record.version).toBe('1.0.0');
+    expect(record.sourcePackage).toBe('fixture-skills');
     expect(Object.keys(record.files)).toEqual(['SKILL.md', 'references/ci.md']);
   }
   // Both copies are byte-identical, so whichever one Cursor picks carries the same text.

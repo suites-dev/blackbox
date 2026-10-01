@@ -86,6 +86,26 @@ it('acknowledges OTLP JSON hex identifiers only after fragments and lifecycle ar
   });
 });
 
+it('preserves the original failure when later telemetry is rejected', async () => {
+  await withCollector(
+    async ({ collector }) => {
+      expect((await postJson(collector, traceRequest())).status).toBe(200);
+      const failed = await postJson(collector, traceRequest());
+      expect(failed.status).toBe(507);
+      expect(collector.status().failure).toMatchObject({
+        name: 'CollectorRetentionLimitError',
+      });
+
+      const rejected = await postJson(collector, traceRequest());
+      expect(collector.status().failure).toMatchObject({
+        name: 'CollectorRetentionLimitError',
+      });
+      expect(rejected.status).toBe(503);
+    },
+    { maxRetainedFragments: 1 },
+  );
+});
+
 it('serializes concurrent acknowledgements without overwriting fragment identities', async () => {
   await withCollector(async ({ input, collector }) => {
     const responses = await Promise.all(

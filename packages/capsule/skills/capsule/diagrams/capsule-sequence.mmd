@@ -1,0 +1,28 @@
+sequenceDiagram
+  actor User
+  participant Agent
+  participant CLI as Installed CLI
+  participant Capsule
+  participant SUT
+  participant Records
+  Agent->>CLI: Validate catalog and inspect capabilities
+  CLI-->>Agent: Static result, no behavioral claim
+  Agent->>User: Request missing code/resource/external scope
+  User-->>Agent: Explicit scoped approval or denial
+  alt Live probe approved
+    Agent->>CLI: Acquire selected catalog entry
+    CLI->>Capsule: Acquire resources and wait for supported readiness
+    Capsule->>SUT: Start owned participants
+    CLI-->>Agent: Exact Capsule/session identity
+    Agent->>CLI: Setup activity, then one stimulus activity
+    CLI->>SUT: Execute through selected driver
+    Agent->>CLI: Bounded terminal inspections
+    SUT-->>Records: State witnesses and runtime observations
+    Agent->>Records: Inspect exact attempt and required observation scope
+    Agent->>CLI: Export report and release exact Capsule
+    CLI->>Capsule: Cleanup owned resources even after failure
+    Capsule-->>Records: Cleanup result
+    Agent-->>User: Audit with independent stage outcomes
+  else Static only or blocked
+    Agent-->>User: Audit without invented runtime receipts
+  end

@@ -1,0 +1,16 @@
+flowchart TD
+  Q["Requested task scope"] --> L["Read authorized local repository"]
+  L --> E["Unresolved reference to another repository"]
+  E --> G{"Explicit read/search approval"}
+  G -->|Denied| U["Preserve unresolved edge"]
+  G -->|Approved| F["Fetch only approved sources"]
+  F --> PLAN["Proposed setup and behavior"]
+  L --> PLAN
+  PLAN --> W{"Project or CI edit approval"}
+  W --> WRITE["Scoped edits only"]
+  PLAN --> X{"Code and local-resource approval"}
+  X --> LIVE["Bounded Capsule"]
+  LIVE --> REMOTE{"Specific external-service approval"}
+  REMOTE -->|Denied| BLOCK["Block external operation"]
+  REMOTE -->|Approved| EXT["Permitted test endpoint only"]
+  LIVE --> CLEAN["Cleanup recorded owned resources"]

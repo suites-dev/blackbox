@@ -10,6 +10,8 @@ export const INSTALLER_PACKAGE = '@suites/blackbox-skills';
 
 export interface InstallRecord {
   readonly skill: string;
+  /** Null only for older records that did not identify the contributing package. */
+  readonly sourcePackage: string | null;
   readonly version: string;
   /** Skill-relative `/` path → `sha256:<hex>`, excluding the record itself. */
   readonly files: Readonly<Record<string, string>>;
@@ -38,6 +40,7 @@ export function encodeInstallRecord(record: InstallRecord): Uint8Array {
   const document = {
     installer: INSTALLER_PACKAGE,
     skill: record.skill,
+    ...(record.sourcePackage === null ? {} : { sourcePackage: record.sourcePackage }),
     version: record.version,
     files: Object.fromEntries(
       Object.keys(record.files)
@@ -59,10 +62,12 @@ export function decodeInstallRecord(content: Uint8Array): InstallRecord | null {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) {
     return null;
   }
-  const { installer, skill, version, files } = value as Record<string, unknown>;
+  const { installer, skill, version, files, sourcePackage } = value as Record<string, unknown>;
   if (
     installer !== INSTALLER_PACKAGE ||
     typeof skill !== 'string' ||
+    (sourcePackage !== undefined &&
+      (typeof sourcePackage !== 'string' || sourcePackage.length === 0)) ||
     typeof version !== 'string' ||
     typeof files !== 'object' ||
     files === null ||
@@ -74,5 +79,10 @@ export function decodeInstallRecord(content: Uint8Array): InstallRecord | null {
   if (!entries.every(([, hash]) => typeof hash === 'string' && HASH.test(hash))) {
     return null;
   }
-  return { skill, version, files: Object.fromEntries(entries) as Record<string, string> };
+  return {
+    skill,
+    sourcePackage: typeof sourcePackage === 'string' ? sourcePackage : null,
+    version,
+    files: Object.fromEntries(entries) as Record<string, string>,
+  };
 }

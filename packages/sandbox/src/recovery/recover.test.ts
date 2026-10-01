@@ -1,19 +1,45 @@
 import { expect, it, vi } from 'vitest';
 
 import type { ActiveSandboxRecord, SandboxRecord } from '../ownership/records.js';
+import { composeProjectName } from '../lifecycle/helpers.js';
 import { recoverSandboxWithPorts } from './recover.js';
 import type { SandboxRecoveryPorts } from './types.js';
 
 const admitted = {
   schemaVersion: 1,
   sandboxId: 'sandbox-1',
-  projectName: 'bb-owned-project',
+  projectName: composeProjectName({ sandboxId: 'sandbox-1' }),
   composeFiles: ['/project/compose.yaml'],
   state: 'running',
   revision: 2,
   admittedAt: '2026-09-25T09:00:00.000Z',
   updatedAt: '2026-09-25T09:01:00.000Z',
 } satisfies ActiveSandboxRecord;
+
+const mismatchedRecords = [
+  {
+    label: 'running',
+    record: admitted,
+  },
+  {
+    label: 'start-failed',
+    record: {
+      ...admitted,
+      state: 'start-failed',
+      primaryError: { name: 'Error', message: 'start failed' },
+      cleanup: { kind: 'not-attempted' },
+    },
+  },
+  {
+    label: 'stop-failed',
+    record: {
+      ...admitted,
+      state: 'stop-failed',
+      primaryError: { name: 'Error', message: 'stop failed' },
+      cleanup: { kind: 'failed', error: { name: 'Error', message: 'cleanup failed' } },
+    },
+  },
+] satisfies readonly { readonly label: string; readonly record: SandboxRecord }[];
 
 function recoveryPorts(input: {
   readonly record: SandboxRecord;
@@ -91,4 +117,36 @@ it('does not contact Docker when Sandbox admission never completed', async () =>
     reason: 'record-not-found',
   });
   expect(cleanup).not.toHaveBeenCalled();
+});
+
+it.each(mismatchedRecords)(
+  'audit F4: recovery rejects mismatched $label record identity',
+  async ({ record }) => {
+    const cleanup = vi.fn<SandboxRecoveryPorts['cleanupOwnedComposeProject']>(() =>
+      Promise.resolve());
+    const fixture = recoveryPorts({ record, cleanup });
+    await expect(recoverSandboxWithPorts({
+      recordDirectory: '/records',
+      sandboxId: 'other-sandbox',
+      timeoutMs: 5000,
+    }, fixture.ports)).rejects.toThrow(/sandbox identity/u);
+    expect(cleanup).not.toHaveBeenCalled();
+  },
+);
+
+it('audit F4: recovery rejects a traversal sandboxId before reading any record', async () => {
+  const readRecord = vi.fn<SandboxRecoveryPorts['readRecord']>(() => Promise.resolve(admitted));
+  const ports = {
+    now: () => new Date(),
+    readRecord,
+    writeRecord: vi.fn<SandboxRecoveryPorts['writeRecord']>(),
+    cleanupOwnedComposeProject: vi.fn<SandboxRecoveryPorts['cleanupOwnedComposeProject']>(),
+  } satisfies SandboxRecoveryPorts;
+
+  await expect(recoverSandboxWithPorts({
+    recordDirectory: '/records',
+    sandboxId: '../escape',
+    timeoutMs: 5000,
+  }, ports)).rejects.toThrow(/sandboxId/u);
+  expect(readRecord).not.toHaveBeenCalled();
 });

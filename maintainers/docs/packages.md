@@ -44,8 +44,8 @@ Every lane consumes packages installed from a disposable registry.
 
 Package and source checks run in
 [Continuous Integration](../../.github/workflows/ci.yml). The separate
-[E2E workflow](../../.github/workflows/e2e.yml) builds once, then runs the demo, the journeys, the Playwright
-system tests, and the release rehearsal against packages installed from a disposable registry.
+[E2E workflow](../../.github/workflows/e2e.yml) builds once, then runs the demo, the journeys, and the Playwright
+system tests against packages installed from a disposable registry.
 Passing one lane does not imply the others passed. See
 [contributing](../../CONTRIBUTING.md) before making changes.
 

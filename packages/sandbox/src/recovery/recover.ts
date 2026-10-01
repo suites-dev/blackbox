@@ -8,6 +8,8 @@ import {
 } from '../ownership/records.js';
 import { cleanupOwnedComposeProject } from './cleanup.js';
 import { createComposeRecoveryClient } from './docker-client.js';
+import { composeProjectName } from '../lifecycle/helpers.js';
+import { validateSandboxId } from '../validation/input.js';
 import type {
   RecoverSandboxInput,
   SandboxRecoveryPorts,
@@ -67,6 +69,7 @@ export async function recoverSandboxWithPorts(
   input: RecoverSandboxInput,
   ports: SandboxRecoveryPorts,
 ): Promise<SandboxRecoveryResult> {
+  validateSandboxId(input.sandboxId);
   let record: SandboxRecord;
   try {
     record = await ports.readRecord(input);
@@ -79,6 +82,12 @@ export async function recoverSandboxWithPorts(
       };
     }
     throw error;
+  }
+  if (record.sandboxId !== input.sandboxId) {
+    throw new Error('Sandbox recovery record has a mismatched sandbox identity');
+  }
+  if (record.projectName !== composeProjectName({ sandboxId: record.sandboxId })) {
+    throw new Error('Sandbox recovery record has a mismatched sandbox identity');
   }
   if (alreadyClean(record)) {
     return {

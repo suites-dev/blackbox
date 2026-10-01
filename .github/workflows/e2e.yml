@@ -8,6 +8,10 @@ name: E2E
 # that same storage and installs from it, so nothing a lane runs can resolve
 # back into packages/*/src, and no lane can publish something different from
 # what the others got.
+#
+# Lanes run on separate runners so the slowest one sets the wall clock: each
+# golden journey gets its own leg, and lanes that need no registry start with
+# the build. The gate below is the one required check over all of them.
 on:
   pull_request:
     branches:
@@ -40,11 +44,11 @@ env:
 
 jobs:
   build:
-    name: Build
+    name: Build and publish packages to test registry
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     outputs:
-      version: ${{ steps.version.outputs.version }}
+      journeys: ${{ steps.journeys.outputs.journeys }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -66,11 +70,17 @@ jobs:
         timeout-minutes: 10
         run: pnpm typecheck
 
-      - name: Read the fixed version
-        id: version
-        run: echo "version=$(jq -er '.version' lerna.json)" >>"$GITHUB_OUTPUT"
+      # An empty list would give the journeys matrix nothing to run, so it fails
+      # here instead of passing with no journeys.
+      - name: List the golden journeys
+        id: journeys
+        run: |
+          journeys="$(find e2e/journeys -maxdepth 1 -type f -name '*.golden' -printf '%f\n' \
+            | sed 's/\.golden$//' | sort | jq -Rnc '[inputs]')"
+          jq -e 'length > 0' <<<"$journeys" >/dev/null
+          echo "journeys=$journeys" >>"$GITHUB_OUTPUT"
 
-      - name: Serve an empty registry to publish into
+      - name: Serve an empty test registry
         uses: ./.github/actions/registry
         with:
           storage: ${{ runner.temp }}/registry-storage
@@ -81,7 +91,7 @@ jobs:
       # npm refuses to publish at all without one. --provenance=false is the
       # only way to override publishConfig.provenance, which the real release
       # keeps: a local registry issues no npm provenance.
-      - name: Publish every package once
+      - name: Publish every package to the test registry
         run: |
           tarballs="$RUNNER_TEMP/tarballs"
           rm -rf "$tarballs"
@@ -100,7 +110,7 @@ jobs:
       - name: Stop the registry
         run: docker rm --force blackbox-test-registry
 
-      - name: Upload the published registry
+      - name: Upload the test registry storage
         uses: actions/upload-artifact@v5
         with:
           name: ${{ env.BUILD_ARTIFACT }}
@@ -109,11 +119,64 @@ jobs:
           if-no-files-found: error
           retention-days: 3
 
+  # Needs only the toolchain, so it starts with the build instead of after it.
+  transport:
+    name: Evidence transport self-tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.target_branch || github.ref }}
+
+      - name: Setup toolchain
+        id: setup
+        uses: ./.github/actions/setup
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          pnpm-version: ${{ env.PNPM_VERSION }}
+
+      - name: Run the evidence transport self-tests
+        id: transport_tests
+        timeout-minutes: 10
+        run: >-
+          node .github/scripts/ci-evidence.mjs run --lane transport --project self-tests
+          --evidence-dir ci-evidence/transport/self-tests
+          -- node --test .github/scripts/e2e-evidence.test.mjs
+          .github/scripts/capsule-evidence.test.mjs
+
+      - name: Retain transport evidence
+        id: transport_evidence
+        if: always()
+        uses: ./.github/actions/ci-evidence
+        with:
+          lane: transport
+          project: self-tests
+          evidence-dir: ci-evidence/transport/self-tests
+          setup-result: ${{ steps.setup.outcome }}
+          result: ${{ steps.transport_tests.outcome }}
+          command: node --test .github/scripts/e2e-evidence.test.mjs .github/scripts/capsule-evidence.test.mjs
+          expected: |
+            log=ci-evidence/transport/self-tests/logs/command.log
+
+      - name: Enforce lane outcomes
+        if: always()
+        env:
+          OUTCOMES: >-
+            ${{ steps.setup.outcome }} ${{ steps.transport_tests.outcome }}
+            ${{ steps.transport_evidence.outcome }}
+        run: |
+          for outcome in $OUTCOMES; do
+            [[ "$outcome" == success ]] || exit 1
+          done
+
   demo:
-    name: Capsule demo
+    name: Capsule demo / acceptance journey
     needs: build
     runs-on: ubuntu-24.04
-    timeout-minutes: 45
+    timeout-minutes: 35
     env:
       NO_COLOR: 1
     steps:
@@ -130,18 +193,18 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           pnpm-version: ${{ env.PNPM_VERSION }}
 
-      - name: Download the published registry
+      - name: Download the test registry storage
         uses: actions/download-artifact@v5
         with:
           name: ${{ env.BUILD_ARTIFACT }}
           path: ${{ runner.temp }}/registry-storage
 
-      - name: Serve the published packages
+      - name: Serve the test registry
         uses: ./.github/actions/registry
         with:
           storage: ${{ runner.temp }}/registry-storage
 
-      - name: Install the published packages into a consumer
+      - name: Install the published packages into a consumer project
         timeout-minutes: 10
         run: pnpm run prepare:consumer
 
@@ -179,19 +242,6 @@ jobs:
             log?=.blackbox/tmp/ci-e2e-transport/archive.log
             logs?=.blackbox/tmp/ci-e2e-commands
 
-      # The acceptance journey removes the consumer on exit, so the storyboard
-      # prepares its own.
-      - name: Install the published packages again
-        if: always() && steps.acceptance.outcome != 'skipped'
-        timeout-minutes: 10
-        run: pnpm run prepare:consumer
-
-      - name: Play the storyboard
-        id: storyboard
-        if: always() && steps.acceptance.outcome != 'skipped'
-        timeout-minutes: 20
-        run: pnpm run test:demo:storyboard
-
       - name: Stop the registry
         if: always()
         run: docker rm --force blackbox-test-registry
@@ -202,17 +252,20 @@ jobs:
           OUTCOMES: >-
             ${{ steps.setup.outcome }} ${{ steps.acceptance.outcome }}
             ${{ steps.archive.outcome }} ${{ steps.evidence.outcome }}
-            ${{ steps.storyboard.outcome }}
         run: |
           for outcome in $OUTCOMES; do
             [[ "$outcome" == success ]] || exit 1
           done
 
-  e2e:
-    name: E2E
+  # The storyboard reads nothing the acceptance journey leaves behind; it only
+  # needs a prepared consumer, so it runs on its own runner.
+  storyboard:
+    name: Capsule demo / storyboard playback
     needs: build
     runs-on: ubuntu-24.04
-    timeout-minutes: 70
+    timeout-minutes: 35
+    env:
+      NO_COLOR: 1
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -227,62 +280,158 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           pnpm-version: ${{ env.PNPM_VERSION }}
 
-      - name: Validate evidence transport
-        id: transport_tests
-        run: >-
-          node .github/scripts/ci-evidence.mjs run --lane e2e --project journeys
-          --evidence-dir .blackbox/tmp/ci-e2e-commands/transport-tests
-          -- node --test .github/scripts/e2e-evidence.test.mjs
-          .github/scripts/capsule-evidence.test.mjs
-
-      - name: Download the published registry
+      - name: Download the test registry storage
         uses: actions/download-artifact@v5
         with:
           name: ${{ env.BUILD_ARTIFACT }}
           path: ${{ runner.temp }}/registry-storage
 
-      - name: Serve the published packages
+      - name: Serve the test registry
         uses: ./.github/actions/registry
         with:
           storage: ${{ runner.temp }}/registry-storage
 
-      - name: Install the published packages into a consumer
+      - name: Install the published packages into a consumer project
         timeout-minutes: 10
         run: pnpm run prepare:consumer
 
-      - name: Run the CLI journeys
+      - name: Play the storyboard without pauses
+        id: storyboard
+        timeout-minutes: 20
+        run: pnpm run test:demo:storyboard
+
+      - name: Stop the registry
+        if: always()
+        run: docker rm --force blackbox-test-registry
+
+      - name: Enforce lane outcomes
+        if: always()
+        env:
+          OUTCOMES: ${{ steps.setup.outcome }} ${{ steps.storyboard.outcome }}
+        run: |
+          for outcome in $OUTCOMES; do
+            [[ "$outcome" == success ]] || exit 1
+          done
+
+  # One runner per golden journey. The list comes from the checkout, so a new
+  # golden cannot be left out of the matrix, and each leg keeps --repeat 2.
+  journeys:
+    name: CLI journey / ${{ matrix.journey }}
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        journey: ${{ fromJSON(needs.build.outputs.journeys) }}
+    env:
+      JOURNEY: ${{ matrix.journey }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.target_branch || github.ref }}
+
+      - name: Setup toolchain
+        id: setup
+        uses: ./.github/actions/setup
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          pnpm-version: ${{ env.PNPM_VERSION }}
+
+      - name: Download the test registry storage
+        uses: actions/download-artifact@v5
+        with:
+          name: ${{ env.BUILD_ARTIFACT }}
+          path: ${{ runner.temp }}/registry-storage
+
+      - name: Serve the test registry
+        uses: ./.github/actions/registry
+        with:
+          storage: ${{ runner.temp }}/registry-storage
+
+      - name: Install the published packages into a consumer project
+        timeout-minutes: 10
+        run: pnpm run prepare:consumer
+
+      - name: Run the CLI journey twice
         id: journeys
-        timeout-minutes: 25
+        timeout-minutes: 15
         # The runner stages journey artifacts in .blackbox/tmp/ci-e2e-journeys,
         # outside the evidence output tree; the collector copies them in.
         run: >-
-          node .github/scripts/ci-evidence.mjs run --lane e2e --project journeys
-          --evidence-dir ci-evidence/e2e/journeys -- pnpm test:e2e:journeys
+          node .github/scripts/ci-evidence.mjs run --lane journeys --project "$JOURNEY"
+          --evidence-dir "ci-evidence/journeys/$JOURNEY" -- pnpm test:e2e:journeys "$JOURNEY"
 
       - name: Retain journey evidence
         id: journey_evidence
         if: always()
         uses: ./.github/actions/ci-evidence
         with:
-          lane: e2e
-          project: journeys
-          evidence-dir: ci-evidence/e2e/journeys
+          lane: journeys
+          project: ${{ matrix.journey }}
+          evidence-dir: ci-evidence/journeys/${{ matrix.journey }}
           setup-result: ${{ steps.setup.outcome }}
           result: ${{ steps.journeys.outcome }}
-          command: pnpm test:e2e:journeys
+          command: pnpm test:e2e:journeys ${{ matrix.journey }}
           expected: |
-            log=ci-evidence/e2e/journeys/logs/command.log
+            log=ci-evidence/journeys/${{ matrix.journey }}/logs/command.log
             logs?=.blackbox/tmp/ci-e2e-journeys
 
-      # The CLI journeys clean their consumer on exit. Playwright prepares a
-      # fresh registry-installed consumer, then materializes this project in it.
+      - name: Stop the registry
+        if: always()
+        run: docker rm --force blackbox-test-registry
+
+      - name: Enforce lane outcomes
+        if: always()
+        env:
+          OUTCOMES: >-
+            ${{ steps.setup.outcome }} ${{ steps.journeys.outcome }}
+            ${{ steps.journey_evidence.outcome }}
+        run: |
+          for outcome in $OUTCOMES; do
+            [[ "$outcome" == success ]] || exit 1
+          done
+
+  playwright:
+    name: Playwright system tests
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.target_branch || github.ref }}
+
+      - name: Setup toolchain
+        id: setup
+        uses: ./.github/actions/setup
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          pnpm-version: ${{ env.PNPM_VERSION }}
+
+      - name: Download the test registry storage
+        uses: actions/download-artifact@v5
+        with:
+          name: ${{ env.BUILD_ARTIFACT }}
+          path: ${{ runner.temp }}/registry-storage
+
+      - name: Serve the test registry
+        uses: ./.github/actions/registry
+        with:
+          storage: ${{ runner.temp }}/registry-storage
+
+      # The script prepares its own registry-installed consumer, then
+      # materializes this project in it.
       - name: Run the Playwright system tests
         id: playwright_tests
-        if: always() && steps.journeys.outcome != 'skipped'
         timeout-minutes: 30
         run: >-
-          node .github/scripts/ci-evidence.mjs run --lane e2e --project playwright
-          --evidence-dir ci-evidence/e2e/playwright -- pnpm test:e2e:playwright
+          node .github/scripts/ci-evidence.mjs run --lane playwright --project system-tests
+          --evidence-dir ci-evidence/playwright/system-tests -- pnpm test:e2e:playwright
 
       - name: Archive exact Playwright harness output
         id: playwright_archive
@@ -296,14 +445,14 @@ jobs:
         if: always()
         uses: ./.github/actions/ci-evidence
         with:
-          lane: e2e
-          project: playwright
-          evidence-dir: ci-evidence/e2e/playwright
+          lane: playwright
+          project: system-tests
+          evidence-dir: ci-evidence/playwright/system-tests
           setup-result: ${{ steps.setup.outcome }}
           result: ${{ steps.playwright_tests.outcome }}
           command: pnpm test:e2e:playwright
           expected: |
-            log=ci-evidence/e2e/playwright/logs/command.log
+            log=ci-evidence/playwright/system-tests/logs/command.log
             archive=.blackbox/tmp/ci-playwright-e2e-transport/evidence.tar
             transport=.blackbox/tmp/ci-playwright-e2e-transport/transport-receipt.json
             log?=.blackbox/tmp/ci-playwright-e2e-transport/archive.log
@@ -312,57 +461,24 @@ jobs:
         if: always()
         run: docker rm --force blackbox-test-registry
 
-      # Packs the CLI, its contract and the Skills plugin itself and installs
-      # only those tarballs, so it needs neither the registry nor the consumer.
-      - name: Run the packed Skills install check
-        id: skills
-        if: always() && steps.setup.outcome == 'success'
-        timeout-minutes: 10
-        run: >-
-          node .github/scripts/ci-evidence.mjs run --lane e2e --project skills
-          --evidence-dir ci-evidence/e2e/skills -- pnpm test:e2e:skills
-
-      - name: Retain Skills evidence
-        id: skills_evidence
-        if: always()
-        uses: ./.github/actions/ci-evidence
-        with:
-          lane: e2e
-          project: skills
-          evidence-dir: ci-evidence/e2e/skills
-          setup-result: ${{ steps.setup.outcome }}
-          result: ${{ steps.skills.outcome }}
-          command: pnpm test:e2e:skills
-          expected: |
-            log=ci-evidence/e2e/skills/logs/command.log
-
       - name: Enforce lane outcomes
         if: always()
         env:
           OUTCOMES: >-
-            ${{ steps.transport_tests.outcome }} ${{ steps.setup.outcome }}
-            ${{ steps.journeys.outcome }} ${{ steps.journey_evidence.outcome }}
-            ${{ steps.playwright_tests.outcome }} ${{ steps.playwright_archive.outcome }}
-            ${{ steps.playwright_evidence.outcome }}
-            ${{ steps.skills.outcome }} ${{ steps.skills_evidence.outcome }}
+            ${{ steps.setup.outcome }} ${{ steps.playwright_tests.outcome }}
+            ${{ steps.playwright_archive.outcome }} ${{ steps.playwright_evidence.outcome }}
         run: |
           for outcome in $OUTCOMES; do
             [[ "$outcome" == success ]] || exit 1
           done
 
-  rehearsal:
-    name: Release rehearsal
-    needs: build
-    # Only release traffic pays for the rehearsal: a change on its way to main
-    # or to a release branch is the one that has to install cleanly for a user.
-    if: github.event_name == 'workflow_dispatch' || github.base_ref == 'main' || startsWith(github.base_ref, 'release/')
+  # Packs the CLI, its contract and the Skills plugin itself and installs
+  # only those tarballs, so it needs neither the build, the registry nor the
+  # consumer.
+  skills:
+    name: Skills plugin packed install
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
-    permissions:
-      contents: read
-      pull-requests: write
-    env:
-      VERSION: ${{ needs.build.outputs.version }}
+    timeout-minutes: 20
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -371,121 +487,74 @@ jobs:
           ref: ${{ github.event_name == 'workflow_dispatch' && inputs.target_branch || github.ref }}
 
       - name: Setup toolchain
+        id: setup
         uses: ./.github/actions/setup
         with:
           node-version: ${{ env.NODE_VERSION }}
           pnpm-version: ${{ env.PNPM_VERSION }}
 
-      - name: Download the published registry
-        uses: actions/download-artifact@v5
-        with:
-          name: ${{ env.BUILD_ARTIFACT }}
-          path: ${{ runner.temp }}/registry-storage
+      - name: Run the packed Skills install check
+        id: skills
+        timeout-minutes: 10
+        run: >-
+          node .github/scripts/ci-evidence.mjs run --lane skills --project packed-install
+          --evidence-dir ci-evidence/skills/packed-install -- pnpm test:e2e:skills
 
-      - name: Serve the published packages
-        uses: ./.github/actions/registry
-        with:
-          storage: ${{ runner.temp }}/registry-storage
-
-      # A consumer with no relationship to this checkout: it installs every
-      # package by name and version, imports each public root, and runs the
-      # shipped executables. This is what a user gets, and nothing else here
-      # proves it.
-      - name: Verify a clean registry consumer
-        id: consumer
-        run: |
-          consumer="$(mktemp -d)"
-          jq -n --arg version "$VERSION" '{
-            name: "blackbox-release-consumer",
-            private: true,
-            type: "module",
-            dependencies: ($ARGS.positional | map({key: ., value: $version}) | from_entries)
-          }' --args $(jq -r -s 'map(.name) | .[]' packages/*/package.json) \
-            >"$consumer/package.json"
-
-          npm install \
-            --prefix "$consumer" \
-            --registry "$BLACKBOX_TEST_REGISTRY" \
-            --cache "$consumer/.npm-cache" \
-            --ignore-scripts \
-            --no-audit \
-            --no-fund
-
-          while IFS= read -r package; do
-            (cd "$consumer" && node --input-type=module --eval 'await import(process.argv[1])' "$package")
-          done < <(jq -r -s 'map(.name) | .[]' packages/*/package.json)
-
-          test -x "$consumer/node_modules/.bin/blackbox"
-          test -x "$consumer/node_modules/.bin/blackbox-otel-collector"
-          "$consumer/node_modules/.bin/blackbox" --help >/dev/null
-          (
-            cd "$consumer"
-            NPM_CONFIG_REGISTRY="$BLACKBOX_TEST_REGISTRY" \
-              NPM_CONFIG_CACHE="$consumer/.npm-cache" \
-              "$consumer/node_modules/.bin/blackbox" \
-              driver install --runtime node --json >/dev/null
-          )
-          jq -e --arg version "$VERSION" \
-            '.dependencies["@suites/blackbox-driver"] == $version' \
-            "$consumer/.blackbox/drivers/package.json" >/dev/null
-          rm -rf "$consumer"
-
-      # A change entering main is a release candidate, so the version it would
-      # publish is stated on the pull request. Release branches carry the same
-      # version across many merges, so they get no comment. A pull request from
-      # a fork carries a read-only token, and writing the comment would fail the
-      # rehearsal, so the comment is limited to this repository's own branches.
-      - name: Report the version on the pull request
-        if: >-
-          github.event_name == 'pull_request' && github.base_ref == 'main'
-          && github.event.pull_request.head.repo.full_name == github.repository
-        env:
-          GH_TOKEN: ${{ github.token }}
-          PR: ${{ github.event.number }}
-          MARKER: '<!-- blackbox-release-version -->'
-        run: |
-          body="$MARKER
-          **Release rehearsal passed for \`$VERSION\`.**
-
-          Every package published to a disposable registry at this version,
-          installed into a clean consumer, imported, and ran its executables."
-          comment="$(gh api "repos/$GITHUB_REPOSITORY/issues/$PR/comments" \
-            --jq "map(select(.body | startswith(\"$MARKER\"))) | .[0].id // empty")"
-          if [[ -n "$comment" ]]; then
-            gh api --method PATCH "repos/$GITHUB_REPOSITORY/issues/comments/$comment" \
-              --field body="$body" >/dev/null
-          else
-            gh api --method POST "repos/$GITHUB_REPOSITORY/issues/$PR/comments" \
-              --field body="$body" >/dev/null
-          fi
-
-      - name: Stop the registry
+      - name: Retain Skills evidence
+        id: skills_evidence
         if: always()
-        run: docker rm --force blackbox-test-registry
+        uses: ./.github/actions/ci-evidence
+        with:
+          lane: skills
+          project: packed-install
+          evidence-dir: ci-evidence/skills/packed-install
+          setup-result: ${{ steps.setup.outcome }}
+          result: ${{ steps.skills.outcome }}
+          command: pnpm test:e2e:skills
+          expected: |
+            log=ci-evidence/skills/packed-install/logs/command.log
 
+      - name: Enforce lane outcomes
+        if: always()
+        env:
+          OUTCOMES: >-
+            ${{ steps.setup.outcome }} ${{ steps.skills.outcome }}
+            ${{ steps.skills_evidence.outcome }}
+        run: |
+          for outcome in $OUTCOMES; do
+            [[ "$outcome" == success ]] || exit 1
+          done
+
+  # This display name is the required status check in branch protection
+  # (maintainers/docs/security.md). Renaming it blocks every merge.
   gate:
     name: Capsule E2E (Testcontainers)
     if: always()
-    needs: [build, demo, e2e, rehearsal]
+    needs: [build, transport, demo, storyboard, journeys, playwright, skills]
     runs-on: ubuntu-24.04
     steps:
-      - name: Enforce lane results
+      # Every lane always runs, so anything but success fails the gate. A matrix
+      # lane reports one result for all of its legs, so one failed, cancelled or
+      # skipped journey fails it too.
+      - name: Require every lane to succeed
         env:
           BUILD_RESULT: ${{ needs.build.result }}
+          TRANSPORT_RESULT: ${{ needs.transport.result }}
           DEMO_RESULT: ${{ needs.demo.result }}
-          E2E_RESULT: ${{ needs.e2e.result }}
-          REHEARSAL_RESULT: ${{ needs.rehearsal.result }}
+          STORYBOARD_RESULT: ${{ needs.storyboard.result }}
+          JOURNEYS_RESULT: ${{ needs.journeys.result }}
+          PLAYWRIGHT_RESULT: ${{ needs.playwright.result }}
+          SKILLS_RESULT: ${{ needs.skills.result }}
         run: |
           failed=0
-          for lane in "build=$BUILD_RESULT" "demo=$DEMO_RESULT" "e2e=$E2E_RESULT" \
-            "rehearsal=$REHEARSAL_RESULT"; do
+          for lane in "build=$BUILD_RESULT" "transport=$TRANSPORT_RESULT" "demo=$DEMO_RESULT" \
+            "storyboard=$STORYBOARD_RESULT" "journeys=$JOURNEYS_RESULT" \
+            "playwright=$PLAYWRIGHT_RESULT" "skills=$SKILLS_RESULT"; do
             name="${lane%%=*}"
             result="${lane#*=}"
-            # A skipped rehearsal is the documented outcome off release traffic.
-            if [[ "$result" == success || "$result" == skipped ]]; then
-              continue
+            if [[ "$result" != success ]]; then
+              echo "lane $name: $result" >&2
+              failed=1
             fi
-            echo "lane $name: $result" >&2
-            failed=1
           done
           exit "$failed"

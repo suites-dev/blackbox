@@ -1,0 +1,13 @@
+flowchart LR
+  A["Agent-proposed audit"] --> S["Bundled JSON Schema + available external validator"]
+  S --> G["Caller reviews graph, boundary and outcome consistency"]
+  R["Runner-owned sanitized raw records"] --> N["Version-specific receipt normalization"]
+  N --> L["Caller reviews scope, activity and witness linkage"]
+  G --> L
+  L --> O["Reported structural and record consistency checks"]
+  L --> F["Rejected with diagnostics"]
+  O --> H["Caller authenticates provenance and evaluates accepted predicate"]
+  E["Illustrative records"] --> N
+  E -.-> MARK["Example provenance remains explicit"]
+  MARK --> O
+  GAP["No bundled executable checker or normalizer"] -.-> G

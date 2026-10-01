@@ -4,6 +4,8 @@ import { join } from 'node:path';
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { composeProjectName } from '@suites/blackbox-sandbox';
+
 import {
   admitCapsuleRecord,
   capsuleSandboxRecordDirectory,
@@ -179,7 +181,7 @@ describe('dead manager reader reconciliation', () => {
     await writeFile(join(sandboxDirectory, `${record.executionId}.json`), `${JSON.stringify({
       schemaVersion: 1,
       sandboxId: record.executionId,
-      projectName: 'bb-owned',
+      projectName: composeProjectName({ sandboxId: record.executionId }),
       composeFiles: ['/project/compose.yaml'],
       state: 'completed',
       revision: 3,

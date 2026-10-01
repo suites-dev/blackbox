@@ -10,6 +10,7 @@ import {
 /** The skill tree shipped in this package, versioned with the package. */
 export interface SkillBundle {
   readonly name: string;
+  readonly packageName: string;
   readonly version: string;
   /** Skill-relative `/` path → content. Never contains the install record. */
   readonly files: ReadonlyMap<string, Uint8Array>;
@@ -54,7 +55,7 @@ export type SkillOutcome =
   'installed' | 'updated' | 'unchanged' | 'adopted' | 'conflict' | 'failed';
 
 export type SkillOutcomeReason =
-  'locally-modified' | 'not-installed-by-blackbox' | SkillFailureReason;
+  'locally-modified' | 'not-installed-by-blackbox' | 'source-package-mismatch' | SkillFailureReason;
 
 export interface SkillFileChange {
   readonly path: string;
@@ -134,6 +135,10 @@ function assess(skill: string, stored: StoredSkill): Assessment {
   }
   const files = new Map(stored.files);
   files.delete(INSTALL_RECORD_NAME);
+  if (record.sourcePackage === null) {
+    // A legacy record proves no package ownership. Adopt only an exact current copy.
+    return { kind: 'unrecorded', files };
+  }
   return { kind: 'recorded', record, changes: compareHashes(record.files, fileHashes(files)) };
 }
 
@@ -147,6 +152,7 @@ function sameFiles(
 function recordFor(bundle: SkillBundle): Uint8Array {
   return encodeInstallRecord({
     skill: bundle.name,
+    sourcePackage: bundle.packageName,
     version: bundle.version,
     files: fileHashes(bundle.files),
   });
@@ -156,6 +162,16 @@ function installedFiles(bundle: SkillBundle): ReadonlyMap<string, Uint8Array> {
   const files = new Map(bundle.files);
   files.set(INSTALL_RECORD_NAME, recordFor(bundle));
   return files;
+}
+
+function conflictMessage(path: string, reason: SkillOutcomeReason): string {
+  const explanation =
+    reason === 'locally-modified'
+      ? 'has local changes since Blackbox installed it'
+      : reason === 'source-package-mismatch'
+        ? 'belongs to another source package'
+        : 'exists but was not installed by Blackbox';
+  return `${path} ${explanation}; move or remove it, then rerun`;
 }
 
 async function installDestination(input: {
@@ -176,7 +192,7 @@ async function installDestination(input: {
     message: error instanceof Error ? error.message : String(error),
   });
   const conflict = (
-    reason: 'locally-modified' | 'not-installed-by-blackbox',
+    reason: 'locally-modified' | 'not-installed-by-blackbox' | 'source-package-mismatch',
     from: string | null,
     changes: readonly SkillFileChange[],
   ): SkillDestinationResult => ({
@@ -185,10 +201,7 @@ async function installDestination(input: {
     version: from,
     from,
     reason,
-    message:
-      reason === 'locally-modified'
-        ? `${path} has local changes since Blackbox installed it; move or remove it, then rerun`
-        : `${path} exists but was not installed by Blackbox; move or remove it, then rerun`,
+    message: conflictMessage(path, reason),
     changes,
   });
   const done = async (
@@ -228,6 +241,9 @@ async function installDestination(input: {
       : conflict('not-installed-by-blackbox', null, []);
   }
   const from = assessment.record === null ? null : assessment.record.version;
+  if (assessment.record !== null && assessment.record.sourcePackage !== bundle.packageName) {
+    return conflict('source-package-mismatch', from, []);
+  }
   if (assessment.changes.length > 0 || assessment.record === null) {
     return conflict('locally-modified', from, assessment.changes);
   }
