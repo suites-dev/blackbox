@@ -39,6 +39,8 @@ export interface EffectCountConstraint {
   readonly selector: EffectSelector;
 }
 
+type CountConstraint = EffectCountConstraint;
+
 export interface EffectOrderConstraint {
   readonly node: 'constraint';
   readonly operator: 'before';
@@ -177,11 +179,7 @@ function selector(kind: EffectKind | undefined, input: unknown = {}): EffectSele
   return freeze(selected);
 }
 
-function count(
-  operator: EffectCountOperator,
-  value: number,
-  selected: unknown,
-): EffectCountConstraint {
+function count(operator: EffectCountOperator, value: number, selected: unknown): CountConstraint {
   assertCount(value);
   const normalized = normalizeSelector(selected, `${operator}.selector`);
   return freeze({ node: 'constraint', operator, count: value, selector: normalized });
@@ -268,8 +266,11 @@ export function compileEffectContract(builder: EffectContractBuilder): EffectCon
   if (!Array.isArray(candidate) || candidate.length === 0) {
     throw new TypeError('The effects callback must return a non-empty constraint array');
   }
-  const constraints = Array.from(candidate, (constraint, index) =>
-    normalizeConstraint(Object.hasOwn(candidate, index) ? constraint : undefined),
-  );
+  const constraints: EffectConstraint[] = [];
+  const length = candidate.length;
+  for (let index = 0; index < length; index += 1) {
+    const constraint: unknown = Object.hasOwn(candidate, index) ? candidate[index] : undefined;
+    constraints.push(normalizeConstraint(constraint));
+  }
   return freeze({ schemaVersion: 1, constraints });
 }

@@ -181,3 +181,10 @@ it('rejects sparse constraint arrays before evaluator delegation', () => {
     'The effects callback must return constraints, not selectors',
   );
 });
+
+it('reads numeric constraint slots instead of a caller-supplied array iterator', () => {
+  const candidate = [countConstraint];
+  candidate[Symbol.iterator] = () => [][Symbol.iterator]();
+
+  expect(compileUntyped(candidate).constraints).toHaveLength(1);
+});
