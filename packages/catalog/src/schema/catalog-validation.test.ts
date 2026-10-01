@@ -61,3 +61,32 @@ it('rejects unresolved references and project-root escapes', () => {
     ]),
   );
 });
+
+it('audit M1: rejects unsupported entrypoint protocol', () => {
+  const base = validCatalogSourceDocument();
+  const document = {
+    ...base,
+    catalog: {
+      ...base.catalog,
+      entries: {
+        orders: {
+          ...base.catalog.entries.orders,
+          entrypoint: { ...base.catalog.entries.orders.entrypoint, protocol: 'ftp' },
+        },
+      },
+    },
+  };
+  expect(() => validateCatalogDocument({ document, sourceName: 'unsupported.yaml' })).toThrow();
+});
+
+it('audit M1: rejects unsupported activation version', () => {
+  const base = validCatalogSourceDocument();
+  const document = {
+    ...base,
+    activations: {
+      ...base.activations,
+      'node-runtime': { ...base.activations['node-runtime'], version: 2 },
+    },
+  };
+  expect(() => validateCatalogDocument({ document, sourceName: 'unsupported.yaml' })).toThrow();
+});

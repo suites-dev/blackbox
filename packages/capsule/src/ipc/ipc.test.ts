@@ -159,6 +159,11 @@ it.each([
 it.each([
   ['malformed JSON', '{bad-json}\n', /JSON|position|property/iu],
   ['truncated frame', '{"kind":"stop-request"}', /Incomplete Capsule manager request/u],
+  [
+    'array-valued stop reason',
+    '{"kind":"stop-request","requestId":"x","reason":["completed"]}\n',
+    /Capsule manager request reason is unsupported/u,
+  ],
   ['oversized frame', 'x'.repeat(1_048_577), /exceeds 1 MiB/u],
 ])('rejects a %s request on the server boundary', async (_label, bytes, message) => {
   let complete: (result: unknown) => void = () => undefined;

@@ -17,6 +17,13 @@ import {
   type CollectorRetentionUsage,
 } from './retention.js';
 
+export class CollectorIntakeStoppedError extends Error {
+  public constructor() {
+    super('Collector has failed; telemetry intake is stopped.');
+    this.name = 'CollectorIntakeStoppedError';
+  }
+}
+
 export interface FragmentAcceptance {
   readonly rawJson: string;
   readonly contentEncoding: 'identity' | 'gzip';
@@ -53,6 +60,7 @@ export class RunningCollectorStore implements CollectorStore {
   #retainedFragments: number;
   readonly #limits: CollectorRetentionLimits;
   #tail: Promise<void> = Promise.resolve();
+  #intakeStopped = false;
 
   public constructor(input: {
     readonly lease: CollectorStorageLease;
@@ -75,6 +83,7 @@ export class RunningCollectorStore implements CollectorStore {
 
   public accept(input: FragmentAcceptance): Promise<RetainedFragment> {
     return this.enqueue(async () => {
+      this.assertAcceptingTelemetry();
       const receivedAt = new Date().toISOString();
       const fragment = this.fragment({ ...input, receivedAt });
       const retainedBytes = Buffer.byteLength(`${JSON.stringify(fragment, null, 2)}\n`, 'utf8');
@@ -111,6 +120,7 @@ export class RunningCollectorStore implements CollectorStore {
 
   public activate(input: ActivateCollectorInput): Promise<void> {
     return this.updateRun((run) => {
+      this.assertAcceptingTelemetry(run);
       const activatedAt = new Date().toISOString();
       const activation = {
         kind: 'instrumentation-activation' as const,
@@ -211,11 +221,21 @@ export class RunningCollectorStore implements CollectorStore {
     };
   }
 
+  private assertAcceptingTelemetry(
+    run: CollectorRunRecord | undefined = this.#record.runs.at(-1),
+  ): void {
+    if (this.#intakeStopped || (run !== undefined && run.receiver === 'failed')) {
+      throw new CollectorIntakeStoppedError();
+    }
+  }
+
   private enqueue<T>(operation: () => Promise<T>): Promise<T> {
     const result = this.#tail.then(operation, operation);
     this.#tail = result.then(
       () => undefined,
-      () => undefined,
+      () => {
+        this.#intakeStopped = true;
+      },
     );
     return result;
   }

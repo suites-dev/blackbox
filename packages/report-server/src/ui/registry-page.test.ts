@@ -1,7 +1,50 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, test } from 'vitest';
+import { runInNewContext } from 'node:vm';
 
 import { renderRegistryPage, selectionQuery } from './registry-page.js';
 import { fixtureProvider } from '../test-fixtures/provider.js';
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+// renderRegistryPage emits only bare lowercase script tags, so exact string
+// splitting is enough here and avoids parsing HTML with a regular expression.
+function getScriptTexts(html: string): string[] {
+  return html
+    .split('<script>')
+    .slice(1)
+    .map((chunk) => chunk.slice(0, chunk.indexOf('</script>')));
+}
+
+function runProviderScripts(html: string): {
+  views: Record<string, unknown>;
+  errors: string[];
+} {
+  const scripts = getScriptTexts(html);
+  const start = scripts.findIndex((script) => script.includes('const BlackboxReportViews='));
+  const errors: string[] = [];
+  const context = {
+    console: {
+      error(message: unknown) {
+        errors.push(String(message));
+      },
+    },
+  } satisfies Record<string, unknown>;
+  runInNewContext(scripts[start], context);
+  for (const script of scripts.slice(start + 1, -1)) {
+    try {
+      runInNewContext(script, context);
+    } catch {
+      // Browser script elements continue independently after a provider failure.
+    }
+  }
+  const views: unknown = runInNewContext('BlackboxReportViews;', context);
+  if (!isRecord(views)) {
+    throw new Error('Expected a provider view registry.');
+  }
+  return { views, errors };
+}
 
 describe('report registry UI', () => {
   it('renders accessible discovery controls and an exact-session report host', () => {
@@ -43,4 +86,185 @@ describe('report registry UI', () => {
     expect(html).toContain('restoreFocus(focus);scrollTo(0,y)');
     expect(html).toContain("closest('[data-report-nav]')");
   });
+});
+
+test('audit L8: isolates provider view syntax errors from other views', () => {
+  const first = fixtureProvider().provider;
+  const second = {
+    ...first,
+    type: 'other',
+    view: {
+      ...first.view,
+      script: "BlackboxReportViews.other={name:'other'};",
+    },
+  };
+  const html = renderRegistryPage({
+    providers: [
+      {
+        ...first,
+        view: { ...first.view, script: 'if (' },
+      },
+      second,
+    ],
+  });
+  const result = runProviderScripts(html);
+  expect(result.views.other).toEqual({ name: 'other' });
+});
+
+test('audit L8: keeps a provider line comment from hiding the wrapper', () => {
+  const first = fixtureProvider().provider;
+  const second = {
+    ...first,
+    type: 'other',
+    view: {
+      ...first.view,
+      script: "BlackboxReportViews.other={name:'other'};",
+    },
+  };
+  const html = renderRegistryPage({
+    providers: [
+      {
+        ...first,
+        view: { ...first.view, script: '// note' },
+      },
+      second,
+    ],
+  });
+  const result = runProviderScripts(html);
+  expect(result.views.other).toEqual({ name: 'other' });
+});
+
+test('audit L8: continues after a provider initializer throws', () => {
+  const first = fixtureProvider().provider;
+  const second = {
+    ...first,
+    type: 'other',
+    view: { ...first.view, script: "BlackboxReportViews.other={name:'other'};" },
+  };
+  const html = renderRegistryPage({
+    providers: [
+      { ...first, view: { ...first.view, script: "throw new Error('optional global');" } },
+      second,
+    ],
+  });
+  const result = runProviderScripts(html);
+  expect(result.views.other).toEqual({ name: 'other' });
+});
+
+test('audit L8: allows provider locals that would collide with a wrapper', () => {
+  const provider = fixtureProvider().provider;
+  const html = renderRegistryPage({
+    providers: [
+      {
+        ...provider,
+        view: {
+          ...provider.view,
+          script: "const view={name:'local'};BlackboxReportViews.capsule=view;",
+        },
+      },
+    ],
+  });
+  const result = runProviderScripts(html);
+  expect(result.views.capsule).toEqual({ name: 'local' });
+});
+
+test('audit L8: isolates duplicate provider locals between providers', () => {
+  const first = fixtureProvider().provider;
+  const second = {
+    ...first,
+    type: 'other',
+    view: {
+      ...first.view,
+      script: "const view={name:'other'};BlackboxReportViews.other=view;",
+    },
+  };
+  const html = renderRegistryPage({
+    providers: [
+      {
+        ...first,
+        view: {
+          ...first.view,
+          script: "const view={name:'first'};BlackboxReportViews.first=view;",
+        },
+      },
+      second,
+    ],
+  });
+  const result = runProviderScripts(html);
+  expect(result.views.first).toEqual({ name: 'first' });
+  expect(result.views.other).toEqual({ name: 'other' });
+});
+
+test('audit L8: reports a provider view syntax error with its provider type', () => {
+  const html = renderRegistryPage({
+    providers: [
+      {
+        ...fixtureProvider().provider,
+        type: 'broken-provider',
+        view: { ...fixtureProvider().provider.view, script: 'if (' },
+      },
+    ],
+  });
+  const result = runProviderScripts(html);
+  expect(result.errors).toContain('Blackbox report view failed for provider type: broken-provider');
+});
+
+test('reports a provider initializer error with its provider type', () => {
+  const html = renderRegistryPage({
+    providers: [
+      {
+        ...fixtureProvider().provider,
+        type: 'broken-provider',
+        view: { ...fixtureProvider().provider.view, script: "throw new Error('optional global');" },
+      },
+    ],
+  });
+  const result = runProviderScripts(html);
+  expect(result.errors).toContain('Blackbox report view failed for provider type: broken-provider');
+});
+
+test('does not report a valid provider view', () => {
+  const html = renderRegistryPage({ providers: [fixtureProvider().provider] });
+  const result = runProviderScripts(html);
+  expect(result.errors).toEqual([]);
+});
+
+test('escapes a provider type before embedding it in script text', () => {
+  const provider = fixtureProvider().provider;
+  const html = renderRegistryPage({
+    providers: [
+      {
+        ...provider,
+        type: '</script>',
+      },
+    ],
+  });
+  const scripts = getScriptTexts(html);
+  const postProviderScripts = scripts.filter((script) => script.includes('Object.defineProperty'));
+  expect(postProviderScripts).toHaveLength(1);
+  expect(postProviderScripts[0]).toContain('\\u003C/script>');
+  expect(html.split('</script>')).toHaveLength(5);
+});
+
+test("audit L8: prevents providers from overwriting each other's view entries", () => {
+  const first = fixtureProvider().provider;
+  const second = {
+    ...first,
+    type: 'other',
+    view: {
+      ...first.view,
+      script: "BlackboxReportViews.capsule={owner:'other'};",
+    },
+  };
+  const html = renderRegistryPage({
+    providers: [
+      {
+        ...first,
+        view: { ...first.view, script: "BlackboxReportViews.capsule={owner:'first'};" },
+      },
+      second,
+    ],
+  });
+  const result = runProviderScripts(html);
+  expect(result.views.capsule).toEqual({ owner: 'first' });
 });

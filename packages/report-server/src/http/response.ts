@@ -16,12 +16,22 @@ export function jsonResult(input: { status: number; document: unknown }): HttpRe
 }
 
 export function failureResult(input: { failure: ReportFailure }): HttpResult {
-  const status = {
-    'not-found': 404,
-    'invalid-request': 400,
-    'artifact-unavailable': 422,
-    'provider-error': 500,
-  }[input.failure.code];
+  const status = new Map([
+    ['not-found', 404],
+    ['invalid-request', 400],
+    ['artifact-unavailable', 422],
+    ['provider-error', 500],
+  ]).get(input.failure.code);
+  if (status === undefined) {
+    return jsonResult({
+      status: 500,
+      document: {
+        kind: 'report-failure',
+        code: 'provider-error',
+        message: 'The report provider could not read the requested records.',
+      },
+    });
+  }
   return jsonResult({ status, document: input.failure });
 }
 

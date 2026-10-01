@@ -138,11 +138,7 @@ function validateCollectorNumber(value: number, label: string, maximum: number):
 }
 
 function validateLocations(input: SandboxInput): void {
-  if (!ID_PATTERN.test(input.sandboxId)) {
-    throw new SandboxInputError(
-      'sandboxId must be 1-128 characters using letters, digits, dot, underscore, or hyphen',
-    );
-  }
+  validateSandboxId(input.sandboxId);
   if (!isAbsolute(input.projectDirectory)) {
     throw new SandboxInputError('projectDirectory must be absolute');
   }
@@ -156,6 +152,14 @@ function validateLocations(input: SandboxInput): void {
     validateRelativePath(path);
   }
   requireUnique(input.composeFiles, 'composeFiles');
+}
+
+export function validateSandboxId(sandboxId: string): void {
+  if (!ID_PATTERN.test(sandboxId)) {
+    throw new SandboxInputError(
+      'sandboxId must be 1-128 characters using letters, digits, dot, underscore, or hyphen',
+    );
+  }
 }
 
 function selectedServices(input: SandboxInput): readonly string[] {

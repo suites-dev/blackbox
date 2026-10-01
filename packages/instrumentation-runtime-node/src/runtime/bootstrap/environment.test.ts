@@ -28,6 +28,7 @@ describe('Node telemetry environment', () => {
         OTEL_EXPORTER_OTLP_TRACES_PROTOCOL: 'http/json',
         OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: 'http://collector:4318/v1/traces',
         OTEL_EXPORTER_OTLP_HEADERS: 'authorization=Bearer secret-token',
+        OTEL_BSP_SCHEDULE_DELAY: '200',
         OTEL_METRICS_EXPORTER: 'none',
         OTEL_LOGS_EXPORTER: 'none',
       },

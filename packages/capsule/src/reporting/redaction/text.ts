@@ -8,6 +8,7 @@ const sensitiveName =
 const header = /^(authorization|proxy-authorization|cookie|set-cookie|x-api-key|api-key)\s*:/iu;
 const assignment = /^([A-Za-z_][A-Za-z0-9_]*)=(.*)$/u;
 const socketPath = /(?:\/[^\s"']+)?\.blackbox\/(?:s|tmp)\/[^\s"']+\.sock/gu;
+const windowsPipePath = /\\\\\.\\pipe\\bb-[^\s"']+/gu;
 /** Flags whose value is always a secret (curl's OAuth token and key pass phrases). */
 const secretValueFlags = new Set(['--oauth2-bearer', '--pass', '--proxy-pass']);
 /**
@@ -75,6 +76,10 @@ export function redactText(input: string, location: string, context: RedactionCo
     return `${scheme} ${MASK}`;
   });
   value = value.replace(socketPath, () => {
+    note(context, 'private-ipc-path', location);
+    return MASK;
+  });
+  value = value.replace(windowsPipePath, () => {
     note(context, 'private-ipc-path', location);
     return MASK;
   });
