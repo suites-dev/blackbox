@@ -188,3 +188,28 @@ it('reads numeric constraint slots instead of a caller-supplied array iterator',
 
   expect(compileUntyped(candidate).constraints).toHaveLength(1);
 });
+
+it('captures the constraint array length once before validating its slots', () => {
+  let lengthReads = 0;
+  const candidate = new Proxy([countConstraint], {
+    get(target, property, receiver) {
+      if (property === 'length') {
+        lengthReads += 1;
+        return lengthReads === 1 ? 1 : 0;
+      }
+      return Reflect.get(target, property, receiver);
+    },
+  });
+
+  expect(compileUntyped(candidate).constraints).toHaveLength(1);
+  expect(lengthReads).toBe(1);
+});
+
+it.each([-1, Number.NaN, 1.5, 2 ** 32])('rejects a forged array length of %s', (length) => {
+  const candidate = new Proxy([countConstraint], {
+    get: (target, property, receiver) =>
+      property === 'length' ? length : Reflect.get(target, property, receiver),
+  });
+
+  expect(() => compileUntyped(candidate)).toThrow('non-empty constraint array');
+});

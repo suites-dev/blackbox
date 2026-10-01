@@ -9,22 +9,15 @@ interface BaseEffectSelectorFields {
   readonly where: Readonly<Record<string, EffectScalar>>;
 }
 
-export type EffectSelectorFields = Readonly<Partial<BaseEffectSelectorFields>>;
-export type HttpEffectSelectorFields = Readonly<
-  Partial<BaseEffectSelectorFields & { readonly method: string; readonly route: string }>
+type SelectorFields<Extra extends object = object> = Readonly<
+  Partial<BaseEffectSelectorFields & Extra>
 >;
-export type RpcEffectSelectorFields = Readonly<
-  Partial<BaseEffectSelectorFields & { readonly service: string }>
->;
-export type DatabaseEffectSelectorFields = Readonly<
-  Partial<BaseEffectSelectorFields & { readonly table: string }>
->;
-export type CacheEffectSelectorFields = Readonly<
-  Partial<BaseEffectSelectorFields & { readonly keyspace: string }>
->;
-export type MessageEffectSelectorFields = Readonly<
-  Partial<BaseEffectSelectorFields & { readonly destination: string }>
->;
+export type EffectSelectorFields = SelectorFields;
+export type HttpEffectSelectorFields = SelectorFields<{ method: string; route: string }>;
+export type RpcEffectSelectorFields = SelectorFields<{ service: string }>;
+export type DatabaseEffectSelectorFields = SelectorFields<{ table: string }>;
+export type CacheEffectSelectorFields = SelectorFields<{ keyspace: string }>;
+export type MessageEffectSelectorFields = SelectorFields<{ destination: string }>;
 
 export type EffectSelector = Readonly<
   { readonly node: 'selector' } & Partial<{ readonly kind: EffectKind } & BaseEffectSelectorFields>
@@ -263,11 +256,14 @@ export function compileEffectContract(builder: EffectContractBuilder): EffectCon
     throw new TypeError('Use toSatisfy((effects) => [...])');
   }
   const candidate: unknown = builder(effectContractBuilder);
-  if (!Array.isArray(candidate) || candidate.length === 0) {
+  if (!Array.isArray(candidate)) {
+    throw new TypeError('The effects callback must return a non-empty constraint array');
+  }
+  const length = candidate.length;
+  if (!Number.isInteger(length) || length <= 0 || length > 0xffffffff) {
     throw new TypeError('The effects callback must return a non-empty constraint array');
   }
   const constraints: EffectConstraint[] = [];
-  const length = candidate.length;
   for (let index = 0; index < length; index += 1) {
     const constraint: unknown = Object.hasOwn(candidate, index) ? candidate[index] : undefined;
     constraints.push(normalizeConstraint(constraint));
