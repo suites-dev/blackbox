@@ -1,6 +1,9 @@
-# Reason about trace continuity gaps
+# Discover trace continuity boundaries
 
-Use this reference when a request returns before a worker, queue, or scheduled task finishes, or when the claim depends on an observation window.
+Use this reference during static discovery when a request can return before a
+worker, queue, or scheduled task finishes, or when the requested claim may cross
+more than one trace. Discovery maps the boundary and the evidence gap; Capsule
+owns an authorized live completion procedure.
 
 ## State the completion claim
 
@@ -8,30 +11,38 @@ Draw the path in the selected catalog scope: input request or message, queue, co
 
 A 202 response is not proof that a job completed. A producer send is not proof that a consumer received it. Consumer receipt is not proof that durable state was written. Pick a terminal witness that matches the requested claim: correlated output, a documented completion signal, expected state, or user-visible result.
 
-## Bound the wait
+## Preserve identity distinctions
 
-Use the application's supported completion signal or a bounded poll over read-only state. Choose a deadline that matches the system's expected response and the CI budget. A timeout means the completion condition was not established within that interval; it does not prove the operation will never complete.
+Record execution identity, visible domain identifiers, supported propagation
+links, and source-backed completion signals as separate facts. A trace continuity
+gap can leave the initiating activity and a consumer's work on separate traces
+within one execution. Describe that evidence as unlinked async work or an
+unlinked downstream trace; do not manufacture direct parentage.
 
-A fixed sleep is not an observation that distributed work is settled. Repeating a non-idempotent request until a desired result appears can create the effect being asserted. Keep diagnostic polling separate from the product action and avoid allowing repeated queries to inflate effect counts.
+Known state, an exclusive stimulus, and a trustworthy unique marker may support
+a system-level behavioral claim. Under concurrency, timestamps, user IDs, or
+queue names alone do not establish one physical attempt or direct span causality.
+Bind a Playwright witness to the exact physical attempt; a result from a prior
+retry cannot complete the current retry.
 
-## Isolate and correlate
+## Keep completion axes separate
 
-Use unique test data and an owned queue or namespace where the acquisition driver supports it. Understand visibility timeouts, redelivery, deduplication, retries, delayed jobs, and fixture reset. Preserve application retry behavior instead of disabling it to make a test stable.
+Business completion and telemetry delivery are different boundaries. A producer
+send is not consumer receipt, consumer receipt is not durable state, and a stable
+effects projection does not establish remote completion unless the application
+contract defines that relationship. Fewer observations do not establish an
+exact count when relevant capture is incomplete.
 
-Preserve execution identity, visible domain identifiers, and supported propagation links as separate facts. A trace continuity gap can leave the initiating activity and a consumer's work on separate traces within one execution. Retain both: session-scoped evidence is not excluded merely because activity correlation is absent. Describe the consumer evidence as unlinked async work or an unlinked downstream trace. Known state, an exclusive stimulus, and a trustworthy unique marker may support a system-level behavioral claim. Under concurrency, timestamps, user IDs, or queue names alone do not establish one physical attempt or direct span causality.
+## Route live validation
 
-For future Playwright integration, bind each terminal witness to the exact physical attempt. A consumer action from a prior retry cannot complete the current retry. Keep all retry artifacts and identify which attempt supplied the displayed result.
+When live validation is authorized and the `capsule` skill is available, hand it
+the selected boundary, terminal condition, expected timeout, correlation facts,
+and known gaps. Capsule owns polling, subscriber ordering, destructive-read
+safety, reset, observation, and cleanup. If Capsule is absent, finish static
+discovery and mark the live claim blocked rather than importing or inventing its
+procedure.
 
-## Interpret absence and counts
-
-Removing a message with a destructive queue read or acknowledgement changes the
-environment. Use a dedicated test consumer and account for inspection during
-reset and cleanup. Read-only queries may also produce spans; keep them separate
-from stimulus effects. Register output subscribers before sending when needed.
-Record business and telemetry completion as independent boundaries.
-
-A matching counterexample can refute an upper bound when its identity and scope are established. Fewer observed occurrences do not establish an exact count if relevant capture is incomplete. A closed observation window applies only to that window and the stated scope; it does not prove that a scheduled task will never run later.
-
-Distinguish waiting for telemetry delivery from waiting for business completion. A stable effects projection says nothing about whether a remote job has finished unless the application contract makes that relationship explicit.
-
-Return the selected boundary, terminal condition, timeout, correlation, actual witnesses, and remaining gaps. Do not invent a product `until` command, a DSL flag, or a generic “wait for all async work” operation.
+Return the selected boundary, candidate terminal condition, identity and
+correlation facts, source-backed completion signals, and remaining gaps. Do not
+invent a product `until` command, a DSL flag, or a generic “wait for all async
+work” operation.

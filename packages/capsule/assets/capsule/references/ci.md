@@ -1,7 +1,8 @@
 # Run Capsule investigations in CI
 
 Use this reference when automating the current Capsule workflow or diagnosing its CI result. Native Playwright
-integration is planned; it is not the alpha's working product test entrypoint.
+provides per-attempt Sandbox, telemetry, and effects-contract fixtures. Effect projection and automated claim
+qualification remain later assurance stages, so Capsule remains the working path for direct effect investigation.
 
 Use the same root catalog, ordinary Compose files, Node instrumentation, and project drivers as local execution.
 Provide Docker access, a job-owned workspace, known fixture data, and the installed CLI. Validate configuration,
@@ -16,6 +17,6 @@ establish absence; bound waits around the particular completion signal and requi
 Clean up only resources owned by the job. Do not globally prune containers or reuse another job's evidence.
 Change workflow gates, credentials, publication, or branch protections only within the requested task.
 
-For planned Playwright work, preserve native scheduling and every physical attempt's identity and evidence, including
+For native Playwright runs, preserve scheduling and every physical attempt's identity and evidence, including
 retries, skips, interruptions, and missing shards. Fresh state belongs to each attempt. Effects qualification and
 baseline evaluation are a separate later layer. ODC and generated feature/spec workflows are outside product scope.
