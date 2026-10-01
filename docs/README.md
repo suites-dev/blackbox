@@ -38,7 +38,7 @@ Follow the [roadmap](roadmap.md) for the next seven work items and [agent skill 
 | [Drivers](drivers.md)                               | Prepare commands, choose execution locations, and propagate context.    |
 | [Capsule experiments](experiments.md)               | Start a session, perform actions, query observations, and stop it.      |
 | [Runtime evidence](runtime-evidence.md)             | Interpret what observations establish and where correlation is limited. |
-| [Async holes and Redis](async-workflows.md)         | Inspect an asynchronous entrypoint across separate traces.              |
+| [Trace continuity and Redis](trace-continuity.md)   | Inspect unlinked async work across separate traces.                     |
 | [Completion barriers](completion-barriers.md)       | Seal queue, worker, and workflow activity before asserting effects.     |
 | [Reports](reports.md)                               | Browse an experiment or export JSON and HTML.                           |
 | [CLI reference](cli.md)                             | Find command syntax and output behavior.                                |

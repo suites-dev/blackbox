@@ -1,4 +1,4 @@
-# Test asynchronous workflows
+# Reason about trace continuity gaps
 
 Use this reference when a request returns before a worker, queue, or scheduled task finishes, or when the claim depends on an observation window.
 
@@ -18,7 +18,7 @@ A fixed sleep is not an observation that distributed work is settled. Repeating 
 
 Use unique test data and an owned queue or namespace where the acquisition driver supports it. Understand visibility timeouts, redelivery, deduplication, retries, delayed jobs, and fixture reset. Preserve application retry behavior instead of disabling it to make a test stable.
 
-Preserve execution identity, visible domain identifiers, and supported propagation links as separate facts. An async hole can leave the initiating activity and a consumer's work on separate traces within one execution. Retain both: session-scoped evidence is not excluded merely because activity correlation is absent. Known state, an exclusive stimulus, and a trustworthy unique marker may support a system-level behavioral claim. Under concurrency, timestamps, user IDs, or queue names alone do not establish one physical attempt or direct span causality.
+Preserve execution identity, visible domain identifiers, and supported propagation links as separate facts. A trace continuity gap can leave the initiating activity and a consumer's work on separate traces within one execution. Retain both: session-scoped evidence is not excluded merely because activity correlation is absent. Describe the consumer evidence as unlinked async work or an unlinked downstream trace. Known state, an exclusive stimulus, and a trustworthy unique marker may support a system-level behavioral claim. Under concurrency, timestamps, user IDs, or queue names alone do not establish one physical attempt or direct span causality.
 
 For future Playwright integration, bind each terminal witness to the exact physical attempt. A consumer action from a prior retry cannot complete the current retry. Keep all retry artifacts and identify which attempt supplied the displayed result.
 

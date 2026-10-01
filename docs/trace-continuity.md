@@ -1,8 +1,9 @@
-# Follow work across async holes
+# Trace continuity across asynchronous boundaries
 
-An **async hole** is a gap in the trace relationship across an asynchronous handoff: the work continues, but the
-context connecting it to the initiating action does not. A producer might write a Redis list item, a database row,
-or a file that a worker reads later. If that handoff does not carry trace context, the worker can start another trace.
+A **trace continuity gap** occurs when work crosses an asynchronous handoff without preserving its trace relationship:
+the work continues, but the context connecting it to the initiating action does not. A producer might write a Redis
+list item, a database row, or a file that a worker reads later. If that handoff does not carry trace context, the
+worker can start an unlinked downstream trace.
 
 Blackbox retains both the commands you execute and supported application traces within the Capsule session. You can
 investigate the whole execution even when it cannot be represented as one continuous trace.
@@ -54,7 +55,7 @@ list length after the push; its successful exit records that the push succeeded,
 The result records `context-not-supported` at the shared-state boundary. This is expected for this driver and payload,
 so `--allow-untraced` is unnecessary.
 
-## Look beyond the activity trace
+## Look beyond the initiating trace
 
 First inspect the stimulus's activity:
 
@@ -84,7 +85,7 @@ the marked consumer-to-API trace, and checks that both traces remain in the sess
 [evidence check](../demo/support/capsule-telemetry-proof.mjs) keeps the downstream association as `session-only`.
 That is a limit on recorded trace correlation, not a reason to discard the observed request.
 
-## Decide what the execution establishes
+## Decide what unlinked work establishes
 
 | Observation                                                             | What it supports                                                                                                             |
 | ----------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |

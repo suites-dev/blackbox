@@ -41,8 +41,8 @@ retained data. This table describes how to reason about evidence, not a promise 
 
 ## Investigate shared-state behavior across traces
 
-An **async hole** occurs when work crosses an asynchronous boundary without preserving the trace relationship.
-The [Redis walkthrough](async-workflows.md) shows the implemented path: a recorded `redis-cli` stimulus, a consumer,
+A **trace continuity gap** occurs when work crosses an asynchronous boundary without preserving the trace relationship.
+The [Redis walkthrough](trace-continuity.md) shows the implemented path: a recorded `redis-cli` stimulus, a consumer,
 and a separately traced HTTP interaction retained in the same Capsule session.
 
 Consider a controlled trial with a fresh data store, one worker, no competing producer, a unique job ID, and observation

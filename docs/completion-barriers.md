@@ -139,5 +139,5 @@ Before relying on a completion barrier, answer these questions:
 5. Does timeout fail the test instead of returning partial evidence?
 6. After the witness, how does Blackbox establish complete observation for absence and exact-count claims?
 
-Continue with [async holes](async-workflows.md) for trace continuity across shared-state handoffs and
+Continue with [trace continuity gaps](trace-continuity.md) for unlinked async work across shared-state handoffs and
 [runtime evidence](runtime-evidence.md) for the evidence required by occurrence, absence, and cardinality claims.

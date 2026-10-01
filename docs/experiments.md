@@ -185,8 +185,7 @@ The driver reports shared-state propagation as unsupported. The returned state r
 claim, even though the query does not establish a direct trace link to the earlier write.
 
 Read [drivers](drivers.md) for target selection, seeding, migrations, and propagation outcomes.
-Before stopping, you can also [use Redis as an entrypoint](async-workflows.md) to investigate a worker across an async
-hole.
+Before stopping, you can also [use Redis as an entrypoint](trace-continuity.md) to investigate unlinked async work.
 
 ## Save a snapshot, stop, and inspect again
 
