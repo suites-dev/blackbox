@@ -1,0 +1,8 @@
+activity c0000006 · capsule calm-comet-ada-000000000001 · stimulus · host · host · exit 0 · 284ms
+  context   untraced: no driver, so no trace context was sent
+  observed  nothing yet · provisional (capsule running)
+  later in this capsule, no known cause:
+    e0000025  public-api  GET /health  200  +57ms
+  ⚠ Blackbox cannot prove that c0000006 caused e0000025.
+    Both belong to capsule calm-comet-ada-000000000001, but no trace context links them.
+→ blackbox capsule show c0000006 --session calm-comet-ada-000000000001

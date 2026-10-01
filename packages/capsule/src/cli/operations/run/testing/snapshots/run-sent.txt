@@ -1,0 +1,31 @@
+activity c0000002 · capsule calm-comet-ada-000000000001 · stimulus · via public-api · host · exit 0 · 284ms
+  context   sent (w3c, http-headers)
+  observed  1 traces · 4 services · 19 spans · provisional (capsule running)
+    public-api  POST /subscriptions  201
+    ├─ public-api  GET
+    ├─ public-api  pg-pool.connect
+    ├─ public-api  pg.query:SELECT subscriptions
+    ├─ public-api  SET
+    ├─ fraud-check  POST /assess  200
+    │  ├─ fraud-check  pg-pool.connect
+    │  └─ fraud-check  pg.query:INSERT subscriptions
+    ├─ public-api  GET
+    ├─ public-api  SET
+    ├─ payment-mock  POST /v1/payment_intents  201
+    ├─ order-service  POST /orders  201
+    │  └─ order-service  subscription-orders  200
+    ├─ public-api  pg-pool.connect
+    └─ public-api  pg.query:INSERT subscriptions
+  later in this capsule, no known cause:
+    e0000014  redis-proof-consumer  POST /fixture/shared-state-proof/proof-journey  202  +2.1s
+    e0000018  public-api            GET /health                                     200  +4.5s
+    e0000007  public-api            GET /health                                     200  +6.3s
+    e0000025  public-api            GET /health                                     200  +8.1s
+  ⚠ Blackbox cannot prove that c0000002 caused e0000014.
+    Both belong to capsule calm-comet-ada-000000000001, but no trace context links them.
+  ⚠ Blackbox cannot prove that c0000002 caused e0000018.
+    Both belong to capsule calm-comet-ada-000000000001, but no trace context links them.
+  ⚠ Blackbox cannot prove that c0000002 caused e0000007.
+    Both belong to capsule calm-comet-ada-000000000001, but no trace context links them.
+  ⚠ … 1 more traces with no known cause
+→ blackbox capsule show c0000002 --session calm-comet-ada-000000000001

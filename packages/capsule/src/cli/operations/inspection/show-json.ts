@@ -67,16 +67,28 @@ export type ActivityObservation = StatusDocument & {
     readonly rootService: string;
     readonly rootTitle: string;
   }[];
+  /** How long the command waited for telemetry before reading this (show never waits). */
+  readonly waitedMs: number;
+  /** True when the wait hit its cap while spans were still arriving. */
+  readonly stillArriving: boolean;
 };
 
-/**
- * The `observation` of `show <activity> --json`. Shaped so later additions
- * (for example how long show waited) extend it rather than replace it.
- */
-export function observationDocument(input: {
-  readonly activity: CapsuleActivityReport;
-  readonly investigation: CapsuleInvestigation;
-}): ActivityObservation {
+/** How long `run` waited for telemetry; `show` reads without waiting. */
+export interface TelemetryWait {
+  readonly waitedMs: number;
+  readonly stillArriving: boolean;
+}
+
+export const NO_WAIT = { waitedMs: 0, stillArriving: false } satisfies TelemetryWait;
+
+/** The `observation` of `show <activity> --json` and of `run --json`. */
+export function observationDocument(
+  input: {
+    readonly activity: CapsuleActivityReport;
+    readonly investigation: CapsuleInvestigation;
+  },
+  wait: TelemetryWait = NO_WAIT,
+): ActivityObservation {
   const { activity, investigation } = input;
   const tree = investigation.tree(activity.telemetry.context.traceId);
   return {
@@ -94,6 +106,8 @@ export function observationDocument(input: {
         rootTitle: root.title,
       };
     }),
+    waitedMs: Math.round(wait.waitedMs),
+    stillArriving: wait.stillArriving,
   };
 }
 
@@ -102,7 +116,8 @@ export type Limitation =
   | { readonly kind: 'causality-unknown'; readonly trace: string }
   | { readonly kind: 'untraced' }
   | { readonly kind: 'context-not-carried'; readonly resource: string }
-  | { readonly kind: 'orphan-span'; readonly spanId: string; readonly trace: string };
+  | { readonly kind: 'orphan-span'; readonly spanId: string; readonly trace: string }
+  | { readonly kind: 'still-arriving'; readonly waitedMs: number };
 
 function contextLimitations(context: ActivityContext | null): readonly Limitation[] {
   if (context === null) {
@@ -134,5 +149,8 @@ export function limitationsOf(input: {
       spanId: node.span.spanId,
       trace: input.traceId,
     })),
+    ...(observation.stillArriving
+      ? [{ kind: 'still-arriving' as const, waitedMs: observation.waitedMs }]
+      : []),
   ];
 }

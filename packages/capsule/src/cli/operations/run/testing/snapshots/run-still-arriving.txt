@@ -1,0 +1,14 @@
+activity c0000002 · capsule calm-comet-ada-000000000001 · stimulus · via public-api · host · exit 0 · 284ms
+  context   sent (w3c, http-headers)
+  observed  1 traces · 1 services · 12 spans · provisional (capsule running)
+    public-api  POST /subscriptions  201
+    ├─ public-api  GET
+    ├─ public-api  pg-pool.connect
+    ├─ public-api  pg.query:SELECT subscriptions
+    ├─ public-api  SET
+    ├─ public-api  GET
+    ├─ public-api  SET
+    ├─ public-api  pg-pool.connect
+    └─ public-api  pg.query:INSERT subscriptions
+  ⚠ spans were still arriving when the wait ended after 5.0s.
+→ blackbox capsule show c0000002 --session calm-comet-ada-000000000001
