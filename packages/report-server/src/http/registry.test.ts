@@ -1,7 +1,34 @@
 import { expect, test } from 'vitest';
+import { reportRegistrySchema } from '../index.js';
 import { listRegistry } from './registry.js';
 import { fixtureProvider } from '../test-fixtures/provider.js';
 import { startReportServer } from './server.js';
+
+function matchesExportedRegistrySchema(document: unknown): boolean {
+  if (
+    reportRegistrySchema.type !== 'object' ||
+    typeof document !== 'object' ||
+    document === null ||
+    Array.isArray(document)
+  ) {
+    return false;
+  }
+  for (const property of reportRegistrySchema.required) {
+    if (!(property in document)) {
+      return false;
+    }
+  }
+  return (
+    'kind' in document &&
+    'schemaVersion' in document &&
+    'reports' in document &&
+    'failures' in document &&
+    document.kind === reportRegistrySchema.properties.kind.const &&
+    document.schemaVersion === reportRegistrySchema.properties.schemaVersion.const &&
+    Array.isArray(document.reports) &&
+    Array.isArray(document.failures)
+  );
+}
 
 test('keeps successful providers and makes partial registry failure explicit', async () => {
   const { provider } = fixtureProvider();
@@ -49,6 +76,47 @@ test('preserves provider unavailable state rather than returning empty success',
   });
   expect(result.reports).toEqual([]);
   expect(result.failures[0].failure.code).toBe('artifact-unavailable');
+});
+
+test.fails('audit M4: validates each real registry response against exported schemas', async () => {
+  const { provider } = fixtureProvider();
+  const server = await startReportServer({
+    kind: 'start-report-server',
+    port: 0,
+    selection: { kind: 'registry' },
+    providers: [
+      {
+        ...provider,
+        list() {
+          return Promise.resolve({
+            kind: 'report-list',
+            reports: [
+              {
+                kind: 'report-summary',
+                id: 'exact-one',
+                type: 'other',
+                title: 'Wrong provider',
+                description: { kind: 'unavailable' },
+                state: 'stopped',
+                createdAt: '2026-09-25T10:00:00Z',
+              },
+            ],
+          });
+        },
+      },
+    ],
+  });
+  try {
+    const response = await fetch(`${server.url}api/reports`);
+    const document: unknown = await response.json();
+    expect(matchesExportedRegistrySchema(document)).toBe(true);
+    if (typeof document !== 'object' || document === null || !('reports' in document)) {
+      throw new Error('Expected a report registry response.');
+    }
+    expect(document.reports).toEqual([]);
+  } finally {
+    await server.close();
+  }
 });
 
 test('supports initial exact selection and reports bind conflicts', async () => {

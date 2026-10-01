@@ -61,3 +61,24 @@ it('rejects unresolved references and project-root escapes', () => {
     ]),
   );
 });
+
+it.fails('audit M1: rejects unsupported entrypoint protocol and activation version', () => {
+  const base = validCatalogSourceDocument();
+  const document = {
+    ...base,
+    catalog: {
+      ...base.catalog,
+      entries: {
+        orders: {
+          ...base.catalog.entries.orders,
+          entrypoint: { ...base.catalog.entries.orders.entrypoint, protocol: 'ftp' },
+        },
+      },
+    },
+    activations: {
+      ...base.activations,
+      'node-runtime': { ...base.activations['node-runtime'], version: 2 },
+    },
+  };
+  expect(() => validateCatalogDocument({ document, sourceName: 'unsupported.yaml' })).toThrow();
+});

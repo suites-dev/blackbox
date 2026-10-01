@@ -85,6 +85,29 @@ test('provider invalid-request failures preserve 400 status and diagnostic messa
   expect((await result.json()).message).toBe('Artifact name is not supported.');
 });
 
+test.fails('audit M6: returns a response for unknown provider failure codes', async () => {
+  const { provider } = fixtureProvider();
+  const server = await setup({
+    provider: {
+      ...provider,
+      load() {
+        return Promise.resolve(
+          JSON.parse(
+            '{"kind":"report-failure","code":"unknown-code","message":"provider detail"}',
+          ),
+        );
+      },
+    },
+  });
+  const response = await fetch(`${server.url}api/reports/capsule/exact-one`);
+  expect(response.status).toBe(500);
+  expect(await response.json()).toEqual({
+    kind: 'report-failure',
+    code: 'provider-error',
+    message: 'The report provider could not read the requested records.',
+  });
+});
+
 test('close terminates an active request even when its provider has not resolved', async () => {
   const { provider } = fixtureProvider();
   let admitted = () => {

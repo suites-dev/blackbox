@@ -1,4 +1,5 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, test } from 'vitest';
+import { runInNewContext } from 'node:vm';
 
 import { renderRegistryPage, selectionQuery } from './registry-page.js';
 import { fixtureProvider } from '../test-fixtures/provider.js';
@@ -43,4 +44,56 @@ describe('report registry UI', () => {
     expect(html).toContain('restoreFocus(focus);scrollTo(0,y)');
     expect(html).toContain("closest('[data-report-nav]')");
   });
+});
+
+test.fails('audit L8: isolates provider view syntax errors from other views', () => {
+  const first = fixtureProvider().provider;
+  const second = {
+    ...first,
+    type: 'other',
+    view: {
+      ...first.view,
+      script: "BlackboxReportViews.other={name:'other'};",
+    },
+  };
+  const html = renderRegistryPage({
+    providers: [
+      {
+        ...first,
+        view: { ...first.view, script: 'if (' },
+      },
+      second,
+    ],
+  });
+  const start = html.indexOf('<script>const BlackboxReportViews=');
+  const end = html.indexOf('</script>', start);
+  const script = html.slice(start + '<script>'.length, end);
+  const views = runInNewContext(`${script};BlackboxReportViews;`);
+  expect(views.other).toEqual({ name: 'other' });
+});
+
+test.fails("audit L8: prevents providers from overwriting each other's view entries", () => {
+  const first = fixtureProvider().provider;
+  const second = {
+    ...first,
+    type: 'other',
+    view: {
+      ...first.view,
+      script: "BlackboxReportViews.capsule={owner:'other'};",
+    },
+  };
+  const html = renderRegistryPage({
+    providers: [
+      {
+        ...first,
+        view: { ...first.view, script: "BlackboxReportViews.capsule={owner:'first'};" },
+      },
+      second,
+    ],
+  });
+  const start = html.indexOf('<script>const BlackboxReportViews=');
+  const end = html.indexOf('</script>', start);
+  const script = html.slice(start + '<script>'.length, end);
+  const views = runInNewContext(`${script};BlackboxReportViews;`);
+  expect(views.capsule).toEqual({ owner: 'first' });
 });
