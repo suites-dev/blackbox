@@ -8,8 +8,13 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
+// renderRegistryPage emits only bare lowercase script tags, so exact string
+// splitting is enough here and avoids parsing HTML with a regular expression.
 function getScriptTexts(html: string): string[] {
-  return [...html.matchAll(/<script>([\s\S]*?)<\/script>/gu)].map((match) => match[1]);
+  return html
+    .split('<script>')
+    .slice(1)
+    .map((chunk) => chunk.slice(0, chunk.indexOf('</script>')));
 }
 
 function runProviderScripts(html: string): {
@@ -238,7 +243,7 @@ test('escapes a provider type before embedding it in script text', () => {
   const postProviderScripts = scripts.filter((script) => script.includes('Object.defineProperty'));
   expect(postProviderScripts).toHaveLength(1);
   expect(postProviderScripts[0]).toContain('\\u003C/script>');
-  expect(html.match(/<\/script>/gu)).toHaveLength(4);
+  expect(html.split('</script>')).toHaveLength(5);
 });
 
 test("audit L8: prevents providers from overwriting each other's view entries", () => {
