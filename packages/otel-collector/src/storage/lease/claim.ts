@@ -31,6 +31,23 @@ async function removePublishedMarker(input: {
   }
 }
 
+async function admitOrConflict(input: {
+  readonly markerPath: string;
+  readonly record: CurrentLockRecord;
+  readonly runtime: LeaseRuntime;
+  readonly sessionId: string;
+  readonly executionId: string;
+}): Promise<void> {
+  const admitted = await admitLeaseMarker({
+    path: input.markerPath,
+    claimer: input.record,
+    runtime: input.runtime,
+  });
+  if (!admitted) {
+    throw conflict(input);
+  }
+}
+
 export async function claimLock(input: {
   readonly markerPath: string;
   readonly directory: string;
@@ -39,9 +56,7 @@ export async function claimLock(input: {
   readonly sessionId: string;
   readonly executionId: string;
 }): Promise<{ readonly ownedPath: string; readonly markerPath: string }> {
-  if (!(await admitLeaseMarker({ path: input.markerPath, runtime: input.runtime }))) {
-    throw conflict(input);
-  }
+  await admitOrConflict(input);
   await mkdir(input.directory, { recursive: true, mode: 0o700 });
   const claiming = candidatePath({
     directory: input.directory,
