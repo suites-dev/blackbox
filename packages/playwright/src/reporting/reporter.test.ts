@@ -3,31 +3,69 @@ import { createRequire } from 'node:module';
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { stripVTControlCharacters } from 'node:util';
 
 import { expect, it } from 'vitest';
 
 import type { JSONReport } from '@playwright/test/reporter';
 
-it('streams before setup can finish and retains isolated retry, failure and nested-step evidence', async () => {
+function expectNativeOutput(
+  result: { code: number; output: string },
+  options: { color: string; native: string },
+): void {
+  const output = stripVTControlCharacters(result.output);
+  expect(result.code, result.output).toBe(1);
+  expect(result.output).not.toContain('Reporter did not publish progress');
+  expect(result.output).not.toContain('Config was not resolved');
+  expect(result.output).not.toContain('synthetic-secret');
+  expect(result.output.includes('\u001b')).toBe(options.color === '1');
+  expect(output).toContain('Running 4 tests using 2 workers');
+  expect(output).toContain('2 failed');
+  expect(output).toContain('1 flaky');
+  expect(output).toContain('1 passed');
+  expect(output.match(/native-test-output/gu)).toHaveLength(1);
+  expect(output.match(/native-test-error-output/gu)).toHaveLength(1);
+  expect(output).not.toContain('Blackbox ·');
+  expect(output).not.toMatch(/^\[\d+\]\s+[·✓→]/mu);
+  if (options.native === 'list') {
+    expect(output).toContain('Given an eligible customer');
+    expect(output).toContain('When a subscription is requested');
+  }
+}
+
+it.each([
+  { lifecycle: 'on', color: '0', native: 'list' },
+  { lifecycle: 'on', color: '1', native: 'list' },
+  { lifecycle: 'off', color: '1', native: 'list' },
+  { lifecycle: 'on', color: '0', native: 'auto' },
+])('preserves native output and isolated attempt evidence (%j)', async (options) => {
   const directory = await mkdtemp(join(tmpdir(), 'blackbox-reporter-'));
   try {
-    const result = await run(directory);
-    expect(result.code, result.output).toBe(1);
-    expect(result.output).not.toContain('Reporter did not publish progress');
-    expect(result.output).not.toContain('Config was not resolved');
-    expect(result.output).not.toContain('synthetic-secret');
-    expect(result.output).not.toContain('\u001b');
-    expect(result.output).not.toContain('artifacts: ../');
-    expect(result.output).toMatch(/passed · \d+ms total/u);
-    expect(result.output).toContain(
-      'Given an eligible customer › When a subscription is requested',
-    );
-    expect(result.output).toContain('1 expected, 2 unexpected, 1 flaky, 0 skipped · 5 attempts');
+    const result = await run(directory, options);
+    const output = stripVTControlCharacters(result.output);
+    expectNativeOutput(result, options);
     const report = JSON.parse(
       await readFile(join(directory, 'results.json'), 'utf8'),
     ) as JSONReport;
     const allResults = resultsIn(report.suites);
     expect(allResults).toHaveLength(5);
+    expect(allResults.flatMap(({ stdout }) => stdout.map(stdioText)).join('')).not.toContain(
+      'containers acquired',
+    );
+    const business = allResults.find((attempt) =>
+      attempt.stdout.some((chunk) => stdioText(chunk).includes('native-test-output')),
+    )!;
+    const stdout = business.stdout.map(stdioText).join('');
+    if (options.lifecycle === 'on') {
+      expect(stdout).toMatch(
+        /Blackbox: sandbox ready for system "orders"[\s\S]*native-test-output[\s\S]*Blackbox: sandbox cleaned up for system "orders"/u,
+      );
+      expect(output.match(/Blackbox: sandbox ready for /gu)).toHaveLength(4);
+      expect(output.match(/Blackbox: sandbox cleaned up for /gu)).toHaveLength(3);
+      expect(output.match(/Blackbox: sandbox cleanup failed for /gu)).toHaveLength(1);
+    } else {
+      expect(output).not.toContain('Blackbox: sandbox');
+    }
     // Error snippets may quote the unexecuted body. Observe execution, not source text.
     expect(
       allResults.flatMap(({ attachments }) => attachments.map(({ name }) => name)),
@@ -38,6 +76,11 @@ it('streams before setup can finish and retains isolated retry, failure and nest
     expect(messages.some((message) => message.includes('synthetic setup failure'))).toBe(true);
     expect(messages.some((message) => message.includes('BODY_MUST_NOT_EXECUTE'))).toBe(false);
     const transcripts = allResults.map((attempt) => {
+      const diagnostics = attempt.attachments.find(({ name }) => name === 'blackbox-diagnostics');
+      expect(diagnostics).toBeDefined();
+      expect(Buffer.from(diagnostics!.body!, 'base64').toString('utf8')).toContain(
+        'acquisition: started',
+      );
       const retained = attempt.attachments.find(({ name }) => name === 'blackbox-attempt');
       expect(retained).toBeDefined();
       const text = Buffer.from(retained!.body!, 'base64').toString('utf8');
@@ -51,15 +94,6 @@ it('streams before setup can finish and retains isolated retry, failure and nest
       return text;
     });
     expect(transcripts.join('\n')).not.toContain('synthetic-secret');
-    const reportedDurations = [...result.output.matchAll(/· (\d+)ms total/gu)].map((match) =>
-      Number(match[1]),
-    );
-    const lastEventTimes = transcripts.map((text) => {
-      const report = JSON.parse(text) as { events: { elapsedMs: number }[] };
-      return Math.max(...report.events.map(({ elapsedMs }) => elapsedMs));
-    });
-    expect(reportedDurations).toHaveLength(5);
-    expect(Math.max(...reportedDurations)).toBeGreaterThanOrEqual(Math.max(...lastEventTimes));
     expect(transcripts.filter((text) => text.includes('"phase":"sandbox"'))).toHaveLength(4);
     expect(
       transcripts.filter((text) => text.includes('"phase":"teardown","status":"completed"')),
@@ -77,6 +111,10 @@ it('streams before setup can finish and retains isolated retry, failure and nest
   }
 });
 
+function stdioText(chunk: { text: string } | { buffer: string }): string {
+  return 'text' in chunk ? chunk.text : Buffer.from(chunk.buffer, 'base64').toString('utf8');
+}
+
 function resultsIn(
   suites: JSONReport['suites'],
 ): (JSONReport['suites'][number]['specs'][number]['tests'][number]['results'][number] & {
@@ -90,7 +128,10 @@ function resultsIn(
   ]);
 }
 
-async function run(directory: string): Promise<{ code: number; output: string }> {
+async function run(
+  directory: string,
+  options: { lifecycle: string; color: string; native: string },
+): Promise<{ code: number; output: string }> {
   const require = createRequire(import.meta.url);
   const child = spawn(
     process.execPath,
@@ -105,7 +146,10 @@ async function run(directory: string): Promise<{ code: number; output: string }>
       env: {
         ...process.env,
         BLACKBOX_PLAYWRIGHT_OUTPUT_DIR: directory,
-        FORCE_COLOR: '0',
+        BLACKBOX_TEST_LIFECYCLE: options.lifecycle,
+        BLACKBOX_TEST_NATIVE_REPORTER: options.native,
+        FORCE_COLOR: options.color,
+        PLAYWRIGHT_FORCE_TTY: options.color === '1' ? '100x30' : '0',
         NO_COLOR: undefined,
       },
       stdio: ['ignore', 'pipe', 'pipe'],
@@ -116,9 +160,9 @@ async function run(directory: string): Promise<{ code: number; output: string }>
   let released = false;
   const record = (chunk: Buffer) => {
     output += chunk.toString('utf8');
-    if (!released && output.includes('→ acquisition: waiting for reporter handshake')) {
+    if (!released && output.includes('native-test-output')) {
       released = true;
-      release = writeFile(join(directory, 'reporter-observed-startup'), 'observed');
+      release = writeFile(join(directory, 'native-stdout-observed'), 'observed');
     }
   };
   child.stdout.on('data', record);

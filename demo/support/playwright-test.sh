@@ -143,6 +143,11 @@ if [[ ! -x "$PLAYWRIGHT_BIN" ]]; then
   exit 1
 fi
 
+# tee retains evidence but must not hide an interactive terminal from Playwright.
+if [[ -t 1 && -z "${PLAYWRIGHT_FORCE_TTY:-}" ]]; then
+  export PLAYWRIGHT_FORCE_TTY="${COLUMNS:-80}"
+fi
+
 BLACKBOX_E2E_FIXTURE_TOKEN="$FIXTURE_TOKEN" \
 BLACKBOX_E2E_RESULTS_ROOT="$RUN_RESULT_ROOT" \
   "$PLAYWRIGHT_BIN" test --config "$CONSUMER_ROOT/playwright.config.ts" \

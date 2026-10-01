@@ -1,7 +1,7 @@
 import { expect } from '@playwright/test';
 
 import { createBlackboxTest } from '../../fixtures.js';
-import { runtime } from './runtime.fixture.js';
+import { runtime, waitForReporter } from './runtime.fixture.js';
 
 const test = createBlackboxTest(runtime);
 test.use({
@@ -10,6 +10,9 @@ test.use({
 });
 
 test('business steps', async () => {
+  console.log('native-test-output');
+  console.error('native-test-error-output');
+  await waitForReporter('native-stdout-observed');
   await test.step('Given an eligible customer', async () => {
     await test.step('When a subscription is requested', () => {
       expect(2 + 2).toBe(4);

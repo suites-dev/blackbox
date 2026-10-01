@@ -11,6 +11,7 @@ import {
   type AttemptProgress,
 } from './events.js';
 import { reportText } from './text.js';
+import { sandboxLifecycleEnabled } from './options.js';
 
 /** Attachments use Playwright's worker transport and remain available to other reporters. */
 export class AttemptReport implements AttemptProgress {
@@ -51,6 +52,27 @@ export class AttemptReport implements AttemptProgress {
     }
   }
 
+  lifecycle(
+    status: 'ready' | 'cleaned up' | 'cleanup failed',
+    catalog: BlackboxSandbox['catalogEntry'],
+  ): void {
+    if (sandboxLifecycleEnabled(this.testInfo.config)) {
+      // Worker stdout is attributed to this attempt by Playwright and rendered
+      // by its native reporter, including cursor handling and parallel output.
+      process.stdout.write(
+        `${this.sanitize(`Blackbox: sandbox ${status} for ${catalog.kind} ${JSON.stringify(catalog.id)}`)}\n`,
+      );
+    }
+  }
+
+  private sanitize(detail: string): string {
+    let sanitized = detail;
+    for (const value of [...this.secrets].sort((a, b) => b.length - a.length)) {
+      sanitized = sanitized.replaceAll(value, '[REDACTED]');
+    }
+    return reportText(sanitized);
+  }
+
   emit(phase: string, status: AttemptEvent['status'], detail: string): void {
     if (this.closed) {
       return;
@@ -60,17 +82,13 @@ export class AttemptReport implements AttemptProgress {
       this.dropped++;
       return;
     }
-    let sanitized = detail;
-    for (const value of [...this.secrets].sort((a, b) => b.length - a.length)) {
-      sanitized = sanitized.replaceAll(value, '[REDACTED]');
-    }
     const event = {
       schemaVersion: 1,
       sequence: this.events.length + 1,
       elapsedMs: Date.now() - this.started,
       phase,
       status,
-      detail: reportText(sanitized),
+      detail: this.sanitize(detail),
     } satisfies AttemptEvent;
     this.events.push(event);
     this.pending = this.pending

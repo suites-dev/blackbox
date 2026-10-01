@@ -162,6 +162,28 @@ async function acquireWithinTestTimeout(input: {
   });
 }
 
+async function finishAttempt(
+  attempt: RunningBlackboxAttempt,
+  report: AttemptReport,
+  reason: SandboxStopReason,
+  policy: BlackboxFixturePolicy,
+): Promise<void> {
+  try {
+    await reported(report, 'teardown', `reason=${reason}; cleanup owned resources`, () =>
+      stopWithinCleanupTimeout({
+        attempt,
+        reason,
+        cleanupTimeoutMs: policy.sandboxCleanupTimeoutMs,
+      }),
+    );
+  } catch (error) {
+    report.lifecycle('cleanup failed', attempt.sandbox.catalogEntry);
+    throw error;
+  }
+  report.lifecycle('cleaned up', attempt.sandbox.catalogEntry);
+  await reportObservations(report, attempt);
+}
+
 export function createBlackboxTest(
   runtime: BlackboxAttemptRuntime,
   policy: BlackboxFixturePolicy = {
@@ -204,18 +226,12 @@ export function createBlackboxTest(
           report.emit('execution', 'started', 'test fixtures, hooks and body');
           try {
             await report.flush();
+            report.lifecycle('ready', attempt.sandbox.catalogEntry);
             await use(attempt);
           } finally {
             const reason = stopReason(testInfo.status);
             report.emit('execution', 'info', testInfo.status ?? 'unknown');
-            await reported(report, 'teardown', `reason=${reason}; cleanup owned resources`, () =>
-              stopWithinCleanupTimeout({
-                attempt,
-                reason,
-                cleanupTimeoutMs: policy.sandboxCleanupTimeoutMs,
-              }),
-            );
-            await reportObservations(report, attempt.telemetry);
+            await finishAttempt(attempt, report, reason, policy);
           }
         } catch (error) {
           report.emit('attempt', 'failed', 'setup or teardown failed; see test error');

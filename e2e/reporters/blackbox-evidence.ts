@@ -22,6 +22,9 @@ export default class BlackboxEvidence implements Reporter {
     TestResult,
     {
       title: string;
+      file: string;
+      acquisitionStartedAt: number | null;
+      acquisitionCompletedAt: number | null;
       testId: string;
       retry: number;
       workerIndex: number;
@@ -41,6 +44,9 @@ export default class BlackboxEvidence implements Reporter {
   onTestBegin(test: TestCase, result: TestResult): void {
     this.attempts.set(result, {
       title: test.title,
+      file: test.location.file,
+      acquisitionStartedAt: null,
+      acquisitionCompletedAt: null,
       testId: test.id,
       retry: result.retry,
       workerIndex: result.workerIndex,
@@ -80,6 +86,12 @@ export default class BlackboxEvidence implements Reporter {
       }
       const event = JSON.parse(attachment.body.toString('utf8')) as Event;
       attempt.events.push(event);
+      if (event.phase === 'acquisition' && event.status === 'started') {
+        attempt.acquisitionStartedAt = performance.now();
+      }
+      if (event.phase === 'acquisition' && event.status === 'completed') {
+        attempt.acquisitionCompletedAt = performance.now();
+      }
       if (event.phase === 'sandbox' && event.status === 'completed') {
         attempt.sandboxId = event.detail.split(';')[0];
       }

@@ -4,6 +4,34 @@ function assert(value, message) {
   if (!value) throw new Error(message);
 }
 
+export function verifyParallelAcquisition({ attempts }) {
+  const overlaps = attempts.flatMap((first, index) =>
+    attempts
+      .slice(index + 1)
+      .filter(
+        (second) =>
+          first.workerIndex !== second.workerIndex &&
+          [first, second].every(
+            (attempt) =>
+              Number.isFinite(attempt.acquisitionStartedAt) &&
+              Number.isFinite(attempt.acquisitionCompletedAt) &&
+              attempt.acquisitionStartedAt < attempt.acquisitionCompletedAt,
+          ) &&
+          Math.max(first.acquisitionStartedAt, second.acquisitionStartedAt) <
+            Math.min(first.acquisitionCompletedAt, second.acquisitionCompletedAt),
+      )
+      .map((second) => [first, second]),
+  );
+  assert(
+    overlaps.some(([first, second]) => first.file === second.file),
+    'No concurrent sandbox acquisition within a test file',
+  );
+  assert(
+    overlaps.some(([first, second]) => first.file !== second.file),
+    'No concurrent sandbox acquisition across test files',
+  );
+}
+
 export function verifyAttemptReports({ attempts, records, live, text }) {
   assert(live.errors.length === 0, `Live reporting failed: ${live.errors.join('; ')}`);
   assert(live.attempts.length === attempts.length, 'Live report omitted attempts');
@@ -82,7 +110,20 @@ export function verifyAttemptReports({ attempts, records, live, text }) {
       ),
       'Report has no received telemetry',
     );
-    assert(text.includes(sandboxId), 'Text report omitted sandbox identity');
+    const stdout = (attempt.stdout ?? []).map(({ text }) => text ?? '').join('');
+    const label = `${catalogEntry.kind} ${JSON.stringify(catalogEntry.id)}`;
+    const ready = `Blackbox: sandbox ready for ${label}`;
+    const cleaned = `Blackbox: sandbox cleaned up for ${label}`;
+    assert(
+      stdout.split(ready).length === 2 &&
+        stdout.split(cleaned).length === 2 &&
+        stdout.indexOf(ready) < stdout.indexOf(cleaned),
+      'Native per-test stdout omitted or duplicated sandbox lifecycle messages',
+    );
+    assert(
+      attempt.attachments.some(({ name }) => name === 'blackbox-diagnostics'),
+      'Missing retained Blackbox diagnostics',
+    );
     identities.push({ sandboxId, sessionId, catalogEntry });
   }
   assert(
@@ -90,12 +131,15 @@ export function verifyAttemptReports({ attempts, records, live, text }) {
     'Report reused a Sandbox',
   );
   assert(text.includes('Then') && text.includes('And'), 'Text report omitted business steps');
-  assert(!text.includes('artifacts: ../'), 'Artifact paths are not readable from the project');
+  assert(/\b\d+ passed\b/u.test(text), 'Text report omitted native Playwright summary');
   assert(
-    (text.match(/passed · \d+ms total/gu) ?? []).length === attempts.length,
-    'Text report omitted total attempt durations',
+    !text.includes('Blackbox ·') && !/^\[\d+\]\s+[·✓→]/mu.test(text),
+    'Custom reporter replaced native output',
   );
-  assert(text.includes('collector: shutdown complete'), 'Text report omitted collector shutdown');
+  assert(
+    !text.includes('waiting for Compose') && !text.includes('Docker health:'),
+    'Text report streamed internal polling',
+  );
   assert(!text.includes('playwright-e2e-token'), 'Text report leaked the fixture token');
   return { kind: 'playwright-reporting-proof', attempts: identities, live: true };
 }

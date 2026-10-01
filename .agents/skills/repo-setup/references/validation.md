@@ -62,6 +62,14 @@ The consumer journey verifies live progress ordering and retains `execution.txt`
 `live-reporting.json`, and attempt attachments in `results.json`. Helper tests alone
 do not establish Docker-backed execution; preserve existing E2E evidence before
 consumer preparation or run the journey in an isolated checkout.
+The E2E config uses fully parallel tests with two workers. Its live evidence records
+acquisition start/completion times on the reporter's monotonic clock; acceptance
+requires overlapping acquisition on distinct workers within a file and across files.
+Worker counts alone do not establish concurrent sandbox execution.
+The console uses Playwright's native list reporter. Verify ready/cleanup messages
+in each attempt's captured stdout, no streamed container polling, and retained
+`blackbox-diagnostics` attachments. Lifecycle messages can be disabled using the
+Blackbox reporter's `sandboxLifecycle` option without suppressing test stdout.
 
 For documentation-only changes, check formatting, relative links, and operational
 commands against source/help. Do not run root `pnpm format` as a targeted formatter:

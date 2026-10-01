@@ -5,12 +5,12 @@ import { setTimeout as delay } from 'node:timers/promises';
 
 import type { BlackboxAttemptInput, BlackboxAttemptRuntime } from '../../runtime/acquisition.js';
 
-async function waitForReporter(): Promise<void> {
+export async function waitForReporter(file = 'reporter-observed-startup'): Promise<void> {
   // The parent launches this isolated process in its own mkdtemp directory.
   const output = process.cwd();
   for (let attempt = 0; attempt < 200; attempt++) {
     try {
-      await access(join(output, 'reporter-observed-startup'));
+      await access(join(output, file));
       return;
     } catch {
       await delay(10);

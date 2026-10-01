@@ -12,11 +12,22 @@ relative to that file; every test still selects its system or subsystem.
 
 ```ts
 import { defineConfig } from '@suites/blackbox-playwright/config';
+import type { BlackboxReporterOptions } from '@suites/blackbox-playwright/reporter';
 
 export default defineConfig({
   blackboxConfigFile: './blackbox.config.yaml',
   testDir: './tests/system',
-  reporter: [['@suites/blackbox-playwright/reporter'], ['html', { open: 'never' }]],
+  fullyParallel: true,
+  reporter: [
+    ['list', { printSteps: true }],
+    [
+      '@suites/blackbox-playwright/reporter',
+      {
+        sandboxLifecycle: true,
+      } satisfies BlackboxReporterOptions,
+    ],
+    ['html', { open: 'never' }],
+  ],
 });
 ```
 
@@ -62,19 +73,35 @@ reasons. Setup failure also attempts cleanup before surfacing the error.
 
 ## Execution reporting
 
-The text reporter prints startup events as they happen: catalog resolution,
-container states, instrumentation verification, and application readiness. It
-also displays nested `test.step()` calls and reports the final test outcome
-after teardown. Every line identifies its attempt so parallel tests and retries
-remain distinguishable.
+Playwright's native reporter owns test progress, steps, colors, errors, and the
+final summary. Blackbox adds two short messages through the test's captured
+stdout, so Playwright associates them with the right parallel attempt:
+
+```text
+Blackbox: sandbox ready for system "subscription-system"
+... native Playwright test and step output ...
+Blackbox: sandbox cleaned up for system "subscription-system"
+```
+
+Ready means acquisition, instrumentation, and application readiness have passed.
+Cleanup failure prints `sandbox cleanup failed` instead of claiming success.
+Set `sandboxLifecycle: false` to suppress these messages while retaining diagnostics.
+The option defaults to `true` when the Blackbox reporter is configured; without
+that reporter, fixtures do not print lifecycle messages. Use any native reporter
+alongside Blackbox. If no terminal reporter is configured, Playwright adds its
+default one.
 
 Fixtures attach sanitized `blackbox-progress` events and a final
 `blackbox-attempt` JSON document to Playwright results, including failures.
 Other Playwright reporters retain these attachments too. Startup observations
 are bounded; the attempt document records how many were omitted.
+The Blackbox reporter also adds a readable `blackbox-diagnostics` attachment.
+Container health polling and detailed startup events stay in these attachments,
+not the live console. Native reporters may display attachments for failed tests.
 
-The telemetry summary describes retained requests, spans, and traces. Collector
-shutdown is reported from its retained status. Neither a trace count nor a
+The retained telemetry summary reads request/span counters from the lifecycle
+record without loading raw trace fragments. Collector shutdown is reported from
+its retained status. Neither a span count nor a
 completed collector shutdown proves that a business workflow finished; the test
 must await its completion boundary before asserting behavior. Effect contract
 diagnostics will be added with the effect evaluator.

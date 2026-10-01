@@ -1,7 +1,59 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { verifyAttemptReports } from './playwright-report-proof.mjs';
+import { verifyAttemptReports, verifyParallelAcquisition } from './playwright-report-proof.mjs';
+
+function parallelAcquisitions() {
+  return {
+    attempts: [
+      {
+        file: 'payments.spec.ts',
+        workerIndex: 0,
+        acquisitionStartedAt: 0,
+        acquisitionCompletedAt: 10,
+      },
+      {
+        file: 'payments.spec.ts',
+        workerIndex: 1,
+        acquisitionStartedAt: 1,
+        acquisitionCompletedAt: 11,
+      },
+      {
+        file: 'subscriptions.spec.ts',
+        workerIndex: 0,
+        acquisitionStartedAt: 10,
+        acquisitionCompletedAt: 20,
+      },
+    ],
+  };
+}
+
+test('requires overlapping sandbox acquisition both within and across files', () => {
+  verifyParallelAcquisition(parallelAcquisitions());
+  const serial = parallelAcquisitions();
+  serial.attempts.forEach((attempt, index) => {
+    attempt.acquisitionStartedAt = index * 10;
+    attempt.acquisitionCompletedAt = (index + 1) * 10;
+  });
+  assert.throws(() => verifyParallelAcquisition(serial), /within a test file/);
+  const acrossOnly = parallelAcquisitions();
+  acrossOnly.attempts[1].file = 'orders.spec.ts';
+  assert.throws(() => verifyParallelAcquisition(acrossOnly), /within a test file/);
+  const withinOnly = parallelAcquisitions();
+  withinOnly.attempts[2].file = 'payments.spec.ts';
+  assert.throws(() => verifyParallelAcquisition(withinOnly), /across test files/);
+});
+
+test('rejects worker reuse and missing acquisition timings as parallel evidence', () => {
+  const oneWorker = parallelAcquisitions();
+  oneWorker.attempts.forEach((attempt) => {
+    attempt.workerIndex = 0;
+  });
+  assert.throws(() => verifyParallelAcquisition(oneWorker), /within a test file/);
+  const missing = parallelAcquisitions();
+  missing.attempts[0].acquisitionStartedAt = null;
+  assert.throws(() => verifyParallelAcquisition(missing), /within a test file/);
+});
 
 function fixture(suffix = 'a', testId = `test-${suffix}`, retry = 0) {
   const owner = {
@@ -43,10 +95,19 @@ function fixture(suffix = 'a', testId = `test-${suffix}`, retry = 0) {
         {
           ...owner,
           expectedCatalog: { ...document.identity.catalogEntry },
+          stdout: [
+            {
+              text: 'Blackbox: sandbox ready for system "subscription-system"\nBlackbox: sandbox cleaned up for system "subscription-system"\n',
+            },
+          ],
           attachments: [
             {
               name: 'blackbox-attempt',
               body: Buffer.from(JSON.stringify(document)).toString('base64'),
+            },
+            {
+              name: 'blackbox-diagnostics',
+              body: Buffer.from('retained lifecycle').toString('base64'),
             },
           ],
         },
@@ -58,7 +119,7 @@ function fixture(suffix = 'a', testId = `test-${suffix}`, retry = 0) {
         },
       ],
       live: { errors: [], attempts: [{ ...owner, sandboxId: `run-${suffix}` }] },
-      text: `run-${suffix} Then And collector: shutdown complete; passed · 10ms total`,
+      text: 'Then And\n1 passed (1s)',
     },
   };
 }
@@ -143,4 +204,26 @@ test('rejects delayed progress, unrelated sandboxes, and leaked fixture secrets'
   const secret = fixture().input;
   secret.text += ' playwright-e2e-token';
   assert.throws(() => verifyAttemptReports(secret), /leaked/);
+});
+
+test('rejects missing or duplicated lifecycle output and custom terminal rendering', () => {
+  const missing = fixture().input;
+  missing.attempts[0].stdout = [];
+  assert.throws(() => verifyAttemptReports(missing), /Native per-test stdout/);
+  const duplicate = fixture().input;
+  duplicate.attempts[0].stdout.push(...duplicate.attempts[0].stdout);
+  assert.throws(() => verifyAttemptReports(duplicate), /Native per-test stdout/);
+  for (const extra of [
+    'Blackbox · passed',
+    '[1]   ✓ passed',
+    'Docker health: starting',
+    'waiting for Compose',
+  ]) {
+    const verbose = fixture().input;
+    verbose.text += `\n${extra}`;
+    assert.throws(() => verifyAttemptReports(verbose), /native output|internal polling/);
+  }
+  const diagnostics = fixture().input;
+  diagnostics.attempts[0].attachments.pop();
+  assert.throws(() => verifyAttemptReports(diagnostics), /Missing retained Blackbox diagnostics/);
 });
