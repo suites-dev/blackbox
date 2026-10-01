@@ -75,6 +75,7 @@ export class RunningCollectorStore implements CollectorStore {
 
   public accept(input: FragmentAcceptance): Promise<RetainedFragment> {
     return this.enqueue(async () => {
+      this.assertAcceptingTelemetry();
       const receivedAt = new Date().toISOString();
       const fragment = this.fragment({ ...input, receivedAt });
       const retainedBytes = Buffer.byteLength(`${JSON.stringify(fragment, null, 2)}\n`, 'utf8');
@@ -111,6 +112,7 @@ export class RunningCollectorStore implements CollectorStore {
 
   public activate(input: ActivateCollectorInput): Promise<void> {
     return this.updateRun((run) => {
+      this.assertAcceptingTelemetry(run);
       const activatedAt = new Date().toISOString();
       const activation = {
         kind: 'instrumentation-activation' as const,
@@ -209,6 +211,13 @@ export class RunningCollectorStore implements CollectorStore {
       spanCount: input.spanCount,
       rawJson: input.rawJson,
     };
+  }
+
+  private assertAcceptingTelemetry(run: CollectorRunRecord | undefined = this.#record.runs.at(-1)):
+    void {
+    if (run !== undefined && run.receiver === 'failed') {
+      throw new Error('Collector has failed; telemetry intake is stopped.');
+    }
   }
 
   private enqueue<T>(operation: () => Promise<T>): Promise<T> {

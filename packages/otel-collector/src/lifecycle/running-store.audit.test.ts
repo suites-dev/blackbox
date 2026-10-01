@@ -8,7 +8,7 @@ import type { CollectorStorageLease } from '../storage/lease.js';
 import { fragmentDirectory, sessionDirectory } from '../storage/paths.js';
 import { RunningCollectorStore } from './running-store.js';
 
-test.fails('audit M2: rejects telemetry after collector failure', async () => {
+test('audit M2: rejects telemetry after collector failure', async () => {
   const storageDirectory = await mkdtemp(join(tmpdir(), 'blackbox-running-store-audit-'));
   const lease = {
     sessionId: 'audit-session',

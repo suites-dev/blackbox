@@ -32,7 +32,7 @@ test.fails('audit M3: every read rescans and parses all retained fragments', asy
   });
 });
 
-test.fails('audit M9: schema accepts empty runs but parser rejects lifecycle', () => {
+test('audit M9: schema accepts empty runs but parser rejects lifecycle', () => {
   expect(collectorLifecycleSchema.properties.runs).toMatchObject({ minItems: 1 });
 
   const lifecycle = {
