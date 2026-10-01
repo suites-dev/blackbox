@@ -1,5 +1,7 @@
 import { readFile, readdir } from 'node:fs/promises';
 import type {
+  CollectorFailure,
+  CollectorIdentity,
   CollectorSessionReadResult,
   CollectorTraceReadResult,
   CollectorLifecycleRecord,
@@ -101,6 +103,57 @@ export function assertInventory(input: {
     spans < input.lifecycle.telemetry.acceptedSpans
   ) {
     throw new Error('Retained fragment inventory is incomplete for the acknowledged telemetry.');
+  }
+}
+
+/**
+ * The lifecycle record alone: its telemetry counters change whenever spans are
+ * accepted, so a poller can watch them without reading any fragment.
+ */
+export type CollectorLifecycleReadResult =
+  | {
+      readonly kind: 'collector-lifecycle-found';
+      readonly identity: CollectorIdentity;
+      readonly lifecycle: CollectorLifecycleRecord;
+    }
+  | {
+      readonly kind: 'collector-lifecycle-missing';
+      readonly identity: CollectorIdentity;
+      readonly message: string;
+    }
+  | {
+      readonly kind: 'collector-lifecycle-corrupt';
+      readonly identity: CollectorIdentity;
+      readonly error: CollectorFailure;
+    };
+
+/**
+ * Reads only the lifecycle record (never a fragment), so polling its counters
+ * costs the same however much telemetry is retained.
+ */
+export async function readCollectorLifecycle(
+  input: ReadCollectorSessionInput,
+): Promise<CollectorLifecycleReadResult> {
+  validateIdentity(input);
+  try {
+    return {
+      kind: 'collector-lifecycle-found',
+      identity: identity(input),
+      lifecycle: await readLifecycle(input),
+    };
+  } catch (error) {
+    if (isMissing(error)) {
+      return {
+        kind: 'collector-lifecycle-missing',
+        identity: identity(input),
+        message: 'No retained collector session exists for the exact identity.',
+      };
+    }
+    return {
+      kind: 'collector-lifecycle-corrupt',
+      identity: identity(input),
+      error: recordedFailure(error),
+    };
   }
 }
 

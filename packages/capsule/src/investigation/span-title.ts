@@ -18,11 +18,19 @@ const FAMILIES = [
 ] satisfies readonly (readonly (readonly string[])[])[];
 
 /**
- * Every attribute a title or result can read. The report's allowlist stays as
- * it is; investigation projections add the route and collection alternatives.
+ * Every attribute a title or result can read, plus the `*.system` keys that
+ * mark a client span as a database, messaging or RPC call (`db.system.name`
+ * is the current semantic-convention name of `db.system`). The report's
+ * allowlist stays as it is; investigation projections add the route and
+ * collection alternatives.
  */
 export const investigationAttributeKeys = new Set<string>(
-  [...FAMILIES.flat(2), ...HTTP_STATUS].concat(['db.system', 'messaging.system']),
+  [...FAMILIES.flat(2), ...HTTP_STATUS].concat([
+    'db.system',
+    'db.system.name',
+    'messaging.system',
+    'rpc.system',
+  ]),
 );
 
 /** The first present, non-empty attribute among `keys`, in order, with its key. */

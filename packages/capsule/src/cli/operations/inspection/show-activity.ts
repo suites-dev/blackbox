@@ -11,9 +11,11 @@ import { nextSteps } from '../../cli/next-steps.js';
 import { offsetMs, rootSummary, type CapsuleInvestigation } from './investigation-model.js';
 import {
   limitationsOf,
+  NO_WAIT,
   observationDocument,
   statusDocument,
   type ActivityObservation,
+  type TelemetryWait,
 } from './show-json.js';
 import {
   contextText,
@@ -35,7 +37,7 @@ export interface ActivityViewInput {
 }
 
 /** True when a driver failed before any process existed (nothing was sent or observed). */
-function driverFailedEarly(activity: CapsuleActivityReport): boolean {
+export function driverFailedEarly(activity: CapsuleActivityReport): boolean {
   return (
     activity.kind === 'completed' &&
     (activity.outcome.kind === 'driver-prepare-failed' ||
@@ -68,11 +70,12 @@ function driverFailure(
   return null;
 }
 
-function driverOf(activity: CapsuleActivityReport): string | null {
+export function driverOf(activity: CapsuleActivityReport): string | null {
   return activity.target.kind === 'driver' ? activity.target.driverId : null;
 }
 
-function uncausedLines(input: ActivityViewInput, capsule: string): readonly string[] {
+/** `later in this capsule, no known cause:` rows and at most three causality warnings. */
+export function uncausedLines(input: ActivityViewInput, capsule: string): readonly string[] {
   const later = input.investigation.uncausedAfter(input.activity);
   if (later.length === 0) {
     return [];
@@ -127,8 +130,9 @@ function observedLines(input: ActivityViewInput, observation: ActivityObservatio
 /**
  * `show <activity>`. Never prints the activity's argv (it can hold
  * credentials); the activity is named by its short ID and its name only.
+ * `run` passes how long it waited; `show` never waits.
  */
-export function activityView(input: ActivityViewInput) {
+export function activityView(input: ActivityViewInput, wait: TelemetryWait = NO_WAIT) {
   const { activity, investigation } = input;
   const capsule = investigation.data.capsule;
   const name = activity.name.kind === 'provided' ? `  ${activity.name.value}` : '';
@@ -152,7 +156,7 @@ export function activityView(input: ActivityViewInput) {
     };
   }
   const context: ActivityContext | null = activityContext(activity);
-  const observation = observationDocument(input);
+  const observation = observationDocument(input, wait);
   const traceId = activity.telemetry.context.traceId;
   const next = observation.spans > 0 ? [nextSteps.showTraceSpans(traceId, capsule.capsule)] : [];
   const lines = [
