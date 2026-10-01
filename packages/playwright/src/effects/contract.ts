@@ -264,11 +264,12 @@ export function compileEffectContract(builder: EffectContractBuilder): EffectCon
   if (typeof builder !== 'function') {
     throw new TypeError('Use toSatisfy((effects) => [...])');
   }
-  const build: (effects: EffectContractBuilderApi) => unknown = builder;
-  const candidate = build(effectContractBuilder);
+  const candidate: unknown = builder(effectContractBuilder);
   if (!Array.isArray(candidate) || candidate.length === 0) {
     throw new TypeError('The effects callback must return a non-empty constraint array');
   }
-  const constraints = (candidate as readonly unknown[]).map(normalizeConstraint);
-  return freeze({ schemaVersion: 1, constraints: [...constraints] });
+  const constraints = Array.from(candidate, (constraint, index) =>
+    normalizeConstraint(Object.hasOwn(candidate, index) ? constraint : undefined),
+  );
+  return freeze({ schemaVersion: 1, constraints });
 }

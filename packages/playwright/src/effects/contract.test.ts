@@ -173,3 +173,11 @@ const invalidCases = [
 it.each(invalidCases)('rejects a forged %s', (_name, constraint, message) => {
   expect(() => compileUntyped([constraint])).toThrow(message);
 });
+
+it('rejects sparse constraint arrays before evaluator delegation', () => {
+  const sparse = new Array<unknown>(1);
+
+  expect(() => compileUntyped(sparse)).toThrow(
+    'The effects callback must return constraints, not selectors',
+  );
+});
