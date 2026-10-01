@@ -7,19 +7,19 @@ function serializeModuleUrl(moduleUrl: URL): string {
   return JSON.stringify(moduleUrl.href);
 }
 
-export function createNodeDriverRunnerSource(
-  input: CreateNodeDriverRunnerSourceInput,
-): string {
+export function createNodeDriverRunnerSource(input: CreateNodeDriverRunnerSourceInput): string {
   const driverUrl = serializeModuleUrl(input.driverModuleUrl);
   const runnerUrl = serializeModuleUrl(input.runnerModuleUrl);
+  const protocolFd = 'protocolFd' in input ? input.protocolFd : 1;
   return [
+    `import { writeSync } from 'node:fs';`,
     `import definition from ${driverUrl};`,
     `import { runNodeDriverProcess } from ${runnerUrl};`,
     '',
     'await runNodeDriverProcess({',
     '  definition,',
     '  input: process.stdin,',
-    '  output: process.stdout,',
+    `  output: { write: (chunk) => { writeSync(${protocolFd}, chunk); return true; } },`,
     '});',
     '',
   ].join('\n');

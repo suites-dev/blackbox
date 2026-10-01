@@ -33,6 +33,7 @@ export async function prepareNodeProjectDriver(
   const source = createNodeDriverRunnerSource({
     driverModuleUrl,
     runnerModuleUrl: pathToFileURL(require.resolve('@suites/blackbox-driver/node-runner')),
+    protocolFd: 3,
   });
   const output = await runProjectDriverProcess({
     source,

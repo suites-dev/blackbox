@@ -8,7 +8,15 @@ it('generates a static-import runner and rejects non-file modules', () => {
     runnerModuleUrl: new URL('file:///package/node-runner.js'),
   });
   expect(source).toContain('import definition from "file:///project/driver.mjs";');
+  expect(source).toContain('writeSync(1, chunk)');
   expect(source).not.toMatch(/\bimport\s*\(/);
+  expect(
+    createNodeDriverRunnerSource({
+      driverModuleUrl: new URL('file:///project/driver.mjs'),
+      runnerModuleUrl: new URL('file:///package/node-runner.js'),
+      protocolFd: 3,
+    }),
+  ).toContain('writeSync(3, chunk)');
   expect(() =>
     createNodeDriverRunnerSource({
       driverModuleUrl: new URL('https://example.test/driver.mjs'),

@@ -10,7 +10,8 @@ it.each([
   { name: 'hard preparation timeout', operation: 'while (true) {}', error: 'Driver preparation exceeded 5000ms' },
 ])('keeps target secrets out of $name failures from real subprocesses', async ({ operation, error }) => {
   const secret = 'target-stderr-private';
-  const directory = await driverProject(`export default {
+  const directory = await driverProject(`import { writeSync } from 'node:fs';
+export default {
     kind: 'project-driver', name: 'http', prepare(request) {
       process.stderr.write(request.target.environment.API_TOKEN);
       ${operation};
@@ -25,9 +26,10 @@ it.each([
 
 it('does not leak secret fragments from invalid driver protocol output', async () => {
   const secret = 'private-target-value-1234567890-abcdefghijklmnopqrstuvwxyz';
-  const directory = await driverProject(`export default {
+  const directory = await driverProject(`import { writeSync } from 'node:fs';
+export default {
     kind: 'project-driver', name: 'http', prepare(request) {
-      console.log(request.target.environment.API_TOKEN);
+      writeSync(3, request.target.environment.API_TOKEN);
       throw new Error('preparation failed');
     }
   };`);
@@ -75,9 +77,10 @@ it('treats request arguments as sensitive until preparation succeeds', async () 
 
 it('redacts request arguments from malformed runner output', async () => {
   const secret = 'request-runner-private-1234567890-abcdefghijklmnopqrstuvwxyz';
-  const directory = await driverProject(`export default {
+  const directory = await driverProject(`import { writeSync } from 'node:fs';
+export default {
     kind: 'project-driver', name: 'http', prepare(request) {
-      console.log(request.command.argv[2]);
+      writeSync(3, request.command.argv[2]);
       throw new Error('preparation failed');
     }
   };`);
