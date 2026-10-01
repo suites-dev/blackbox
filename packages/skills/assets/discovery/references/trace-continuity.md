@@ -1,4 +1,4 @@
-# Test asynchronous workflows
+# Reason about trace continuity gaps
 
 Use this reference when a request returns before a worker, queue, or scheduled task finishes, or when the claim depends on an observation window.
 
@@ -28,8 +28,7 @@ Removing a message with a destructive queue read or acknowledgement changes the
 environment. Use a dedicated test consumer and account for inspection during
 reset and cleanup. Read-only queries may also produce spans; keep them separate
 from stimulus effects. Register output subscribers before sending when needed.
-See the [queue flow](../diagrams/queue-flow.mmd) for the independent business and
-telemetry completion boundaries.
+Record business and telemetry completion as independent boundaries.
 
 A matching counterexample can refute an upper bound when its identity and scope are established. Fewer observed occurrences do not establish an exact count if relevant capture is incomplete. A closed observation window applies only to that window and the stated scope; it does not prove that a scheduled task will never run later.
 

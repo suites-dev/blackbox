@@ -1,5 +1,10 @@
 import type { APIRequestContext, APIResponse } from '@playwright/test';
-import { expect } from '@suites/blackbox-playwright';
+import {
+  expect,
+  type BlackboxEffects,
+  type BlackboxSandbox,
+  type BlackboxTelemetry,
+} from '@suites/blackbox-playwright';
 
 function requiredEnvironment(name: string): string {
   const value = process.env[name];
@@ -24,4 +29,14 @@ export async function readFixtureState<T>(request: APIRequestContext): Promise<T
     headers: { authorization: `Bearer ${blackboxEnvironment.FIXTURE_CONTROL_TOKEN}` },
   });
   return expectJson<T>(response, 200);
+}
+
+export function expectAttemptEvidenceIdentity(input: {
+  readonly effects: BlackboxEffects;
+  readonly sandbox: BlackboxSandbox;
+  readonly telemetry: BlackboxTelemetry;
+}): void {
+  expect(input.effects.executionId).toBe(input.sandbox.executionId);
+  expect(input.effects.executionId).toBe(input.telemetry.executionId);
+  expect(input.effects.sessionId).toBe(input.telemetry.sessionId);
 }

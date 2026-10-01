@@ -18,7 +18,6 @@ const runtime = {
         catalogEntry: {
           id: input.selection.id,
           kind: input.selection.kind,
-          declaredIsolation: { kind: 'per-test' },
         },
         projectName: 'timeout-project',
         artifactDirectory: input.artifactDirectory,
@@ -36,6 +35,10 @@ const runtime = {
         inspect: () => Promise.resolve({ kind: 'disabled' as const }),
         read: () => Promise.reject(new Error('not used by this fixture')),
         readTrace: () => Promise.reject(new Error('not used by this fixture')),
+      },
+      effects: {
+        sessionId: 'timeout-session',
+        executionId: 'timeout-execution',
       },
       stop: (reason) => {
         process.stdout.write(`BLACKBOX_PLAYWRIGHT_TIMEOUT_STOP ${reason}\n`);

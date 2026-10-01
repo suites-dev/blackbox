@@ -99,7 +99,6 @@ it('preserves Compose order in an explicit structural sandbox input', () => {
     },
     metadata: {
       kind: 'system',
-      isolation: { kind: 'per-test' },
       participants: config.catalog.entries.orders.participants,
       observation: config.catalog.entries.orders.observation,
       activations: { 'node-runtime': config.activations['node-runtime'] },

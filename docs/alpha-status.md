@@ -22,17 +22,17 @@ See the [CLI reference](cli.md) for command options.
 
 | Capability                                          | Current status                                                    |
 | --------------------------------------------------- | ----------------------------------------------------------------- |
-| Playwright integration                              | Preview: per-attempt Sandbox and raw telemetry fixtures only.     |
-| Effect matchers and snapshots                       | Not available yet. Raw observation queries are available.         |
+| Playwright integration                              | Preview: per-attempt Sandbox, telemetry, and effects fixtures.    |
+| Effect projection and snapshots                     | Not available yet. Raw observation queries are available.         |
 | Capsule checkpoints                                 | Not available yet.                                                |
 | Automatic project setup                             | Not available yet; `setup init` remains reserved.                 |
 | General test reports, history, and baseline updates | Not available yet. Capsule reports work through `capsule report`. |
 | Python and Java instrumentation installers          | Not supported yet. The current installer supports Node.           |
 
-Native Playwright execution now composes the shared Sandbox for each physical test attempt, including retries. A
-separate assurance stage will add normalized effects, claim qualification, matchers, and accepted-baseline
-comparisons. The current Playwright support does not imply that an assurance evaluator is available. See the
-[roadmap](roadmap.md).
+Native Playwright execution now composes the shared Sandbox for each physical test attempt, including retries. The
+effects fixture and `toSatisfy` contract boundary are present, but they fail as inconclusive until a runtime supplies
+normalized effects. A separate assurance stage will add effect projection, claim qualification, and accepted-baseline
+comparisons. See the [roadmap](roadmap.md).
 
 ODC/decision coverage, generated Gherkin or feature files, suite generation, and legacy contract-promotion workflows
 are outside the current product direction. Automated repair is not a committed product capability; developers and

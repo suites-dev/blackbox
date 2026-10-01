@@ -14,10 +14,19 @@ Choose [initial setup](skills/initial-setup/SKILL.md) when no setup exists,
 [repair](skills/repair/SKILL.md) for an observed failure. An absent executable
 does not establish that the project has no catalog.
 
+Alpha has one project-authored topology authority: root
+`blackbox.config.yaml`, referencing ordered ordinary Compose files. The
+application owns its instrumentation bootstrap under
+`.blackbox/instrumentation/`. Native Playwright supplies per-attempt Sandbox,
+telemetry, and effects-contract fixtures; effect projection and automated claim
+qualification are still in development.
+
 1. [Inventory repository evidence](skills/repository/SKILL.md).
 2. Inspect [dependencies](skills/dependencies/SKILL.md), [CI](skills/ci/SKILL.md),
    [infrastructure](skills/infrastructure/SKILL.md), and
-   [I/O and environment](skills/io-environment/SKILL.md) as relevant.
+   [I/O and environment](skills/io-environment/SKILL.md) as relevant. For an
+   asynchronous boundary, preserve the distinctions in
+   [trace continuity](references/trace-continuity.md).
 3. [Select the behavioral boundary](skills/boundary/SKILL.md). Delegate catalog
    authoring to the available `catalog` skill, preserving that boundary.
 4. [Run static preflight](skills/preflight/SKILL.md). For authorized live work,
@@ -40,6 +49,7 @@ The [audit schema](schemas/discovery-audit.v1.json),
 execution. This package does not authenticate receipts or implement a live
 discovery runner. See [audit limitations](references/audit-contract.md).
 
-Planned [Playwright authoring](references/playwright-and-authoring.md) and
-[effects baselines](references/effects-and-baselines.md) are design references;
-confirm installed capabilities before treating any described API as available.
+[Playwright authoring](references/playwright-and-authoring.md) distinguishes the
+available per-attempt fixtures from planned projection and evaluation.
+[Effects baselines](references/effects-and-baselines.md) remain design guidance.
+Confirm installed capabilities before treating any described API as available.

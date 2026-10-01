@@ -1,6 +1,11 @@
 import { expect, test } from '@suites/blackbox-playwright';
 
-import { blackboxEnvironment, expectJson, readFixtureState } from './support.js';
+import {
+  blackboxEnvironment,
+  expectAttemptEvidenceIdentity,
+  expectJson,
+  readFixtureState,
+} from './support.js';
 
 interface PaymentIntent {
   readonly id: string;
@@ -27,92 +32,107 @@ test.use({
   blackboxEnvironment,
 });
 
-test.describe('Payment service', () => {
-  test.describe('Rule: accepted payments are retained as succeeded intents', () => {
-    test('Scenario: a valid payment method creates a payment intent', async ({ request }) => {
-      await test.step('Given the payment service has no prior transactions', async () => {
-        expect(await readFixtureState<PaymentState>(request)).toEqual(emptyPaymentState);
-      });
+test.describe('Rule: accepted payments are retained as succeeded intents', () => {
+  test('Scenario: a valid payment method creates a payment intent', async ({
+    request,
+    sandbox,
+    telemetry,
+    effects,
+  }) => {
+    expectAttemptEvidenceIdentity({ effects, sandbox, telemetry });
 
-      const response = await test.step('When Alice submits a payment method', () =>
-        request.post('/v1/payment_intents', {
-          data: { paymentMethodId: 'pm_alice_primary', userId: 'alice' },
-        }));
+    await test.step('Given the payment service has no prior transactions', async () => {
+      expect(await readFixtureState<PaymentState>(request)).toEqual(emptyPaymentState);
+    });
 
-      await test.step('Then a succeeded payment intent is returned and retained', async () => {
-        const intent = {
-          id: 'pi_alice1',
-          paymentMethodId: 'pm_alice_primary',
-          status: 'succeeded',
-          userId: 'alice',
-        } as const;
-        expect(await expectJson<PaymentIntent>(response, 201)).toEqual(intent);
-        expect(await readFixtureState<PaymentState>(request)).toEqual({
-          paymentIntents: [intent],
-          refunds: [],
-        });
+    const response = await test.step('When Alice submits a payment method', () =>
+      request.post('/v1/payment_intents', {
+        data: { paymentMethodId: 'pm_alice_primary', userId: 'alice' },
+      }));
+
+    await test.step('Then a succeeded payment intent is returned and retained', async () => {
+      const intent = {
+        id: 'pi_alice1',
+        paymentMethodId: 'pm_alice_primary',
+        status: 'succeeded',
+        userId: 'alice',
+      } as const;
+      expect(await expectJson<PaymentIntent>(response, 201)).toEqual(intent);
+      expect(await readFixtureState<PaymentState>(request)).toEqual({
+        paymentIntents: [intent],
+        refunds: [],
       });
     });
   });
 });
 
-test.describe('Payment service', () => {
-  test.describe('Rule: each payment can be refunded at most once', () => {
-    test('Scenario: a second refund for the same payment is rejected', async ({ request }) => {
-      await test.step('Given Alice has one succeeded payment', async () => {
-        expect(await readFixtureState<PaymentState>(request)).toEqual(emptyPaymentState);
-        expect(
-          (
-            await request.post('/v1/payment_intents', {
-              data: { paymentMethodId: 'pm_alice_refundable', userId: 'alice' },
-            })
-          ).status(),
-        ).toBe(201);
+test.describe('Rule: each payment can be refunded at most once', () => {
+  test('Scenario: a second refund for the same payment is rejected', async ({
+    request,
+    sandbox,
+    telemetry,
+    effects,
+  }) => {
+    expectAttemptEvidenceIdentity({ effects, sandbox, telemetry });
+
+    await test.step('Given Alice has one succeeded payment', async () => {
+      expect(await readFixtureState<PaymentState>(request)).toEqual(emptyPaymentState);
+      expect(
+        (
+          await request.post('/v1/payment_intents', {
+            data: { paymentMethodId: 'pm_alice_refundable', userId: 'alice' },
+          })
+        ).status(),
+      ).toBe(201);
+    });
+
+    const firstRefund = await test.step('When the payment is refunded', () =>
+      request.post('/v1/refunds', { data: { paymentIntentId: 'pi_alice1' } }));
+    const repeatedRefund = await test.step('And the same refund is requested again', () =>
+      request.post('/v1/refunds', { data: { paymentIntentId: 'pi_alice1' } }));
+
+    await test.step('Then the first refund succeeds and the repeated refund is rejected', async () => {
+      expect(await expectJson<Refund>(firstRefund, 201)).toEqual({
+        id: 'refund_1',
+        paymentIntentId: 'pi_alice1',
+        status: 'succeeded',
+      });
+      expect(await expectJson(repeatedRefund, 409)).toMatchObject({
+        code: 'refund-already-exists',
       });
 
-      const firstRefund = await test.step('When the payment is refunded', () =>
-        request.post('/v1/refunds', { data: { paymentIntentId: 'pi_alice1' } }));
-      const repeatedRefund = await test.step('And the same refund is requested again', () =>
-        request.post('/v1/refunds', { data: { paymentIntentId: 'pi_alice1' } }));
-
-      await test.step('Then the first refund succeeds and the repeated refund is rejected', async () => {
-        expect(await expectJson<Refund>(firstRefund, 201)).toEqual({
-          id: 'refund_1',
-          paymentIntentId: 'pi_alice1',
-          status: 'succeeded',
-        });
-        expect(await expectJson(repeatedRefund, 409)).toMatchObject({
-          code: 'refund-already-exists',
-        });
-
-        await test.step('And only one refund is retained', async () => {
-          const state = await readFixtureState<PaymentState>(request);
-          expect(state.paymentIntents).toHaveLength(1);
-          expect(state.refunds).toEqual([
-            { id: 'refund_1', paymentIntentId: 'pi_alice1', status: 'succeeded' },
-          ]);
-        });
+      await test.step('And only one refund is retained', async () => {
+        const state = await readFixtureState<PaymentState>(request);
+        expect(state.paymentIntents).toHaveLength(1);
+        expect(state.refunds).toEqual([
+          { id: 'refund_1', paymentIntentId: 'pi_alice1', status: 'succeeded' },
+        ]);
       });
     });
   });
 });
 
-test.describe('Payment service', () => {
-  test.describe('Rule: only known payments can be refunded', () => {
-    test('Scenario: an unknown payment intent cannot be refunded', async ({ request }) => {
-      await test.step('Given the payment service has no prior transactions', async () => {
-        expect(await readFixtureState<PaymentState>(request)).toEqual(emptyPaymentState);
-      });
+test.describe('Rule: only known payments can be refunded', () => {
+  test('Scenario: an unknown payment intent cannot be refunded', async ({
+    request,
+    sandbox,
+    telemetry,
+    effects,
+  }) => {
+    expectAttemptEvidenceIdentity({ effects, sandbox, telemetry });
 
-      const response = await test.step('When a refund references an unknown payment', () =>
-        request.post('/v1/refunds', { data: { paymentIntentId: 'pi_missing1' } }));
+    await test.step('Given the payment service has no prior transactions', async () => {
+      expect(await readFixtureState<PaymentState>(request)).toEqual(emptyPaymentState);
+    });
 
-      await test.step('Then the refund is rejected without recording a transaction', async () => {
-        expect(await expectJson(response, 404)).toMatchObject({
-          code: 'payment-intent-not-found',
-        });
-        expect(await readFixtureState<PaymentState>(request)).toEqual(emptyPaymentState);
+    const response = await test.step('When a refund references an unknown payment', () =>
+      request.post('/v1/refunds', { data: { paymentIntentId: 'pi_missing1' } }));
+
+    await test.step('Then the refund is rejected without recording a transaction', async () => {
+      expect(await expectJson(response, 404)).toMatchObject({
+        code: 'payment-intent-not-found',
       });
+      expect(await readFixtureState<PaymentState>(request)).toEqual(emptyPaymentState);
     });
   });
 });
