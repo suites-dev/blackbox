@@ -1,7 +1,12 @@
+import { mkdir, mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
 import { expect, it } from 'vitest';
 
 import type { CapsuleActivityReport, CapsuleExecutionOutcome } from '../types.js';
 import { decodeCapsuleActivities } from './activity-decoder.js';
+import { writeCapsuleActivities } from '../records.js';
 import {
   activeTelemetry,
   completedDriverActivity,
@@ -208,4 +213,21 @@ it('decodes an activity record persisted before not-executable existed, unchange
   expect(decodeCapsuleActivities({ bytes: PHASE_ONE_ACTIVITIES })).toStrictEqual(
     JSON.parse(PHASE_ONE_ACTIVITIES),
   );
+});
+
+it.fails('audit #1: invalid activity purpose cannot brick session cleanup', async () => {
+  const projectDirectory = await mkdtemp(join(tmpdir(), 'capsule-audit-1-'));
+  try {
+    await mkdir(join(projectDirectory, '.blackbox', 'experiments', 'capsule-quiet-river-ada'), {
+      recursive: true,
+    });
+    const invalid = JSON.parse(JSON.stringify({ ...activity, purpose: 'invalid-purpose' }));
+    await expect(writeCapsuleActivities({
+      projectDirectory,
+      sessionId: 'quiet-river-ada',
+      activities: [invalid],
+    })).rejects.toThrow();
+  } finally {
+    await rm(projectDirectory, { recursive: true, force: true });
+  }
 });

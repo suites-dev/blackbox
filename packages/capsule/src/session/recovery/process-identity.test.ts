@@ -79,7 +79,35 @@ describe('Capsule manager process proof', () => {
   });
 });
 
+it.fails('audit #4: live manager missing socket must stay alive', async () => {
+  const record = runningRecord('/project');
+  const recoverSandbox = vi.fn<CapsuleManagerRecoveryPorts['recoverSandbox']>();
+  await expect(reconcileDeadCapsuleManagerWithPorts(
+    { projectDirectory: '/project', sessionId: record.sessionId },
+    {
+      now: () => completedAt,
+      signal: () => true,
+      probeManager: () => Promise.resolve({ kind: 'manager-socket-missing' }),
+      readRecord: () => Promise.resolve(record),
+      readActivities: () => Promise.resolve([]),
+      writeActivities: () => Promise.resolve(),
+      writeRecord: () => Promise.resolve(),
+      recoverSandbox,
+    },
+  )).resolves.toMatchObject({
+    kind: 'capsule-manager-reconciliation-skipped',
+    reason: 'manager-alive',
+  });
+  expect(recoverSandbox).not.toHaveBeenCalled();
+});
+
 describe('Capsule manager identity proof', () => {
+  it.fails('audit #8: unknown session fields must be rejected', () => {
+    const record = runningRecord('/project');
+    const withUnknownField = JSON.parse(JSON.stringify({ ...record, unexpected: true }));
+    expect(() => decodeCapsuleSessionRecord({ bytes: JSON.stringify(withUnknownField) })).toThrow();
+  });
+
   it.each(['manager-instance-different', 'manager-socket-missing'] as const)(
     'reconciles a reused live PID when the socket probe reports %s',
     async (kind) => {
