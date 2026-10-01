@@ -49,7 +49,7 @@ it('prepares a project driver without executing the prepared command', async () 
   });
 });
 
-it.fails('audit F11: driver logs do not corrupt protocol response', async () => {
+it('audit F11: driver logs do not corrupt protocol response', async () => {
   const projectDirectory = await mkdtemp(join(tmpdir(), 'blackbox-driver-runtime-'));
   const driverModulePath = join(projectDirectory, 'http-driver.mjs');
   await writeFile(driverModulePath, `console.log('driver diagnostic');\n${driverSource}`, 'utf8');

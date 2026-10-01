@@ -13,13 +13,14 @@ export function createNodeDriverRunnerSource(
   const driverUrl = serializeModuleUrl(input.driverModuleUrl);
   const runnerUrl = serializeModuleUrl(input.runnerModuleUrl);
   return [
+    `import { writeSync } from 'node:fs';`,
     `import definition from ${driverUrl};`,
     `import { runNodeDriverProcess } from ${runnerUrl};`,
     '',
     'await runNodeDriverProcess({',
     '  definition,',
     '  input: process.stdin,',
-    '  output: process.stdout,',
+    '  output: { write: (chunk) => { writeSync(3, chunk); return true; } },',
     '});',
     '',
   ].join('\n');

@@ -24,12 +24,23 @@ it('retains a nonzero runner exit with its stderr diagnostics', async () => {
 it('terminates a driver that exceeds the bounded protocol output', async () => {
   await expect(
     runProjectDriverProcess({
-      source: `process.stdout.write('x'.repeat(1024 * 1024 + 1));`,
+      source: `import { writeSync } from 'node:fs'; writeSync(3, 'x'.repeat(1024 * 1024 + 1));`,
       projectDirectory: await projectDirectory(),
       requestJson: '{}',
       timeoutMs: 1_000,
     }),
   ).rejects.toThrow('Driver protocol output exceeded 1 MiB');
+});
+
+it('allows more than 1 MiB of discarded driver stdout with a valid protocol response', async () => {
+  await expect(
+    runProjectDriverProcess({
+      source: `import { writeSync } from 'node:fs'; process.stdout.write('x'.repeat(1024 * 1024 + 1)); writeSync(3, '{}');`,
+      projectDirectory: await projectDirectory(),
+      requestJson: '{}',
+      timeoutMs: 1_000,
+    }),
+  ).resolves.toEqual({ stdout: '{}', stderr: '' });
 });
 
 it('includes stderr in the bounded protocol output', async () => {
@@ -133,13 +144,14 @@ it.skipIf(process.platform === 'win32')(
       const output = setInterval(() => {
         if (existsSync(${JSON.stringify(pidPath)})) {
           clearInterval(output);
-          process.stdout.write('x'.repeat(1024 * 1024 + 1));
+          writeSync(3, 'x'.repeat(1024 * 1024 + 1));
         }
       }, 5);
     `;
+    const sourceWithProtocolImport = `import { writeSync } from 'node:fs';\n${source}`;
     await expect(
       runProjectDriverProcess({
-        source,
+        source: sourceWithProtocolImport,
         projectDirectory: directory,
         requestJson: '{}',
         timeoutMs: 1_000,
