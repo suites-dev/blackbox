@@ -14,6 +14,7 @@ const feature = (name: string, dependencies: readonly string[] = []): SkillDefin
 const moduleFor = (skills: readonly SkillDefinition[]) => ({
   apiVersion: 1,
   packageName: 'fixture',
+  packageRoot: new URL('file:///fixture-package/'),
   skills,
 });
 
@@ -52,6 +53,9 @@ describe('skill composition', () => {
     }
     expect(() => createSkillRegistry([{ ...skillModule, apiVersion: 2 }])).toThrow('Invalid');
     expect(() =>
+      createSkillRegistry([{ ...skillModule, packageRoot: new URL('https://example.com') }]),
+    ).toThrow('Invalid');
+    expect(() =>
       createSkillRegistry([
         moduleFor([{ ...discoverySkill, source: new URL('https://example.com') }]),
       ]),
@@ -60,15 +64,18 @@ describe('skill composition', () => {
 
   it('snapshots contribution arrays and URL values independently of caller mutation', () => {
     const source = new URL('file:///safe/');
+    const packageRoot = new URL('file:///package/');
     const dependencies: string[] = [];
     const registry = createSkillRegistry([
-      moduleFor([{ ...feature('fixture'), source, dependencies }]),
+      { ...moduleFor([{ ...feature('fixture'), source, dependencies }]), packageRoot },
     ]);
     source.pathname = '/unsafe/';
+    packageRoot.pathname = '/unsafe-package/';
     dependencies.push('missing');
     const resolved = registry.resolve(['fixture'])[0];
     resolved.source.pathname = '/mutated/';
     expect(resolved.source.href).toBe('file:///safe/');
+    expect(resolved.packageRoot.href).toBe('file:///package/');
     expect(resolved.dependencies).toEqual([]);
   });
 

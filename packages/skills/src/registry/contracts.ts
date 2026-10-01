@@ -8,11 +8,17 @@ export interface SkillDefinition {
 export interface SkillModule {
   readonly apiVersion: 1;
   readonly packageName: string;
+  readonly packageRoot: URL;
   readonly skills: readonly SkillDefinition[];
 }
 
+export interface RegisteredSkillDefinition extends SkillDefinition {
+  readonly packageName: string;
+  readonly packageRoot: URL;
+}
+
 export interface ResolvedSkillRegistry {
-  readonly skills: readonly SkillDefinition[];
-  readonly get: (name: string) => SkillDefinition | null;
-  readonly resolve: (roots: readonly string[]) => readonly SkillDefinition[];
+  readonly skills: readonly RegisteredSkillDefinition[];
+  readonly get: (name: string) => RegisteredSkillDefinition | null;
+  readonly resolve: (roots: readonly string[]) => readonly RegisteredSkillDefinition[];
 }

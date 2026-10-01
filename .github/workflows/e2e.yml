@@ -312,6 +312,30 @@ jobs:
         if: always()
         run: docker rm --force blackbox-test-registry
 
+      # Packs the CLI, its contract and the Skills plugin itself and installs
+      # only those tarballs, so it needs neither the registry nor the consumer.
+      - name: Run the packed Skills install check
+        id: skills
+        if: always() && steps.setup.outcome == 'success'
+        timeout-minutes: 10
+        run: >-
+          node .github/scripts/ci-evidence.mjs run --lane e2e --project skills
+          --evidence-dir ci-evidence/e2e/skills -- pnpm test:e2e:skills
+
+      - name: Retain Skills evidence
+        id: skills_evidence
+        if: always()
+        uses: ./.github/actions/ci-evidence
+        with:
+          lane: e2e
+          project: skills
+          evidence-dir: ci-evidence/e2e/skills
+          setup-result: ${{ steps.setup.outcome }}
+          result: ${{ steps.skills.outcome }}
+          command: pnpm test:e2e:skills
+          expected: |
+            log=ci-evidence/e2e/skills/logs/command.log
+
       - name: Enforce lane outcomes
         if: always()
         env:
@@ -320,6 +344,7 @@ jobs:
             ${{ steps.journeys.outcome }} ${{ steps.journey_evidence.outcome }}
             ${{ steps.playwright_tests.outcome }} ${{ steps.playwright_archive.outcome }}
             ${{ steps.playwright_evidence.outcome }}
+            ${{ steps.skills.outcome }} ${{ steps.skills_evidence.outcome }}
         run: |
           for outcome in $OUTCOMES; do
             [[ "$outcome" == success ]] || exit 1

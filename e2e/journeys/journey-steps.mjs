@@ -34,14 +34,21 @@ async function waitFor({ item, session, raw, now = Date.now, pause = sleep }) {
 /**
  * Runs commands in order. `#! capture` reads the previous command's RAW output
  * (never re-running anything) and fails the journey when it does not match;
- * `#! timeout` applies to the next command only. `raw` receives each command
+ * `#! timeout` applies to the next command only; `#! volatile run-block` marks
+ * the next command, whose block the runner replaces after normalizing. `raw` receives each command
  * with its un-normalized output and status; `executed` receives every item
  * completed so far, so a journey that aborts still leaves a partial transcript.
  */
 export async function runItems({ items, session, raw, executed = [], clock = {} }) {
   let previous = null;
   let timeout = null;
+  let volatile = false;
   for (const item of items) {
+    if (item.kind === 'volatile') {
+      volatile = true;
+      executed.push(item);
+      continue;
+    }
     if (item.kind === 'timeout') {
       timeout = item.milliseconds;
       executed.push(item);
@@ -64,7 +71,8 @@ export async function runItems({ items, session, raw, executed = [], clock = {} 
     const result = await session.run(item.command, timeout ?? defaultTimeout(item.command));
     timeout = null;
     raw.push(`$ ${item.command}\n${result.output}[status ${String(result.status)}]\n`);
-    previous = { ...item, output: result.output };
+    previous = { ...item, output: result.output, ...(volatile ? { volatile: true } : {}) };
+    volatile = false;
     executed.push(previous);
   }
   return executed;

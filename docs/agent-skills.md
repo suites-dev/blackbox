@@ -33,55 +33,39 @@ shortcuts. `--yes` selects all supported hosts when no host flag is supplied, an
 `--json` returns a machine-readable result. Existing different files are conflicts;
 the installer does not overwrite them.
 
-## Choose a project location
+Each contribution is a portable `SKILL.md` directory with its supporting
+references, packed inside its owning package at that package's version. Command
+flags and output may still change while the
+[CLI vocabulary issue](https://github.com/suites-dev/blackbox/issues/24) is open.
 
-| Host        | Project location          | Discovery and invocation                                                                                                                                    |
-| ----------- | ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Codex       | `.agents/skills/<skill>/` | Scans skills from the working directory up to the repository root. Skills can be selected explicitly or used when relevant. Duplicate names are not merged. |
-| Claude Code | `.claude/skills/<skill>/` | Discovers project skills along its documented directory scope; invoke the skill or let Claude select it when relevant.                                      |
-| Cursor      | `.cursor/skills/<skill>/` | Discovers project skills for Cursor Agent. Cursor can also recognize the shared `.agents/skills/` compatibility location.                                   |
+## Install the skill
 
-When Codex and Cursor are selected together, the installer uses their shared
-`.agents/skills` compatibility location instead of publishing duplicate copies.
-Claude's project directory remains a separate target. Verify what each host
-discovers when maintaining a repository used by several agents.
-
-Project installation travels with the repository, making it suitable for teams and fresh checkouts. User-level
-installation affects only that user's environment. Cloud agents and remote workers may not receive local user skills;
-commit the project installation when the team needs it there. See the current
-[Codex](https://learn.chatgpt.com/docs/build-skills), [Claude Code](https://code.claude.com/docs/en/skills), and
-[Cursor](https://cursor.com/docs/skills) documentation for discovery, invocation, nested directories, and remote behavior.
-
-## Install a skill manually
-
-Complete [source installation](installation.md), retaining the `blackbox_checkout` variable. Enter the application
-repository you want the agent to work on. For Codex or Cursor:
+The `skills` commands come from the `@suites/blackbox-skills` plugin. Add it to your project's dependencies next to
+`@suites/blackbox-cli`; the CLI loads Blackbox plugins listed in the nearest `package.json`. Then run the command from
+your project's root directory, naming every agent your team uses:
 
 ```sh
-skill_target=.agents/skills/discovery
+blackbox skills install discovery --codex --claude
 ```
 
-For Claude Code, choose this destination instead:
+`--agent codex|claude|cursor` (repeatable) is equivalent to the per-agent flags, `--yes` selects all three, and in a
+terminal without any agent flag the command asks before installing for all three. `blackbox skill install` is an alias.
 
-```sh
-skill_target=.claude/skills/discovery
-```
+| Agent    | Destination             | Discovery and invocation                                                                                                                                                              |
+| -------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `codex`  | `.agents/skills/<name>` | Scans `.agents/skills` from the working directory up to the repository root. Invoke `$<name>` or let Codex select it when relevant. Changes are picked up without a restart.          |
+| `claude` | `.claude/skills/<name>` | Reads only `.claude/skills`, not `.agents/skills`. Invoke `/<name>` or let Claude select it. Start a new session if `.claude/skills/` did not exist when the current session started. |
+| `cursor` | `.agents/skills/<name>` | Reads `.agents/skills` and `.cursor/skills`, plus `.claude/skills` and `.codex/skills` as third-party locations. Invoke `/<name>` in Agent chat or let Cursor select it.              |
 
-Then copy the complete Discovery skill from its owning package. This example
-refuses to replace an existing destination, including a dangling symlink:
+Codex and Cursor share one `.agents/skills` copy. Choosing `claude` with either of the others writes a second,
+byte-identical copy to `.claude/skills`. Cursor still lists `discovery` once: when a skill name exists in several
+locations it keeps one, preferring `.cursor/skills`, then `.claude/skills`, then `.agents/skills`. With **Settings →
+Rules, Skills and Subagents → Include third-party Plugins, Skills, and other configs** turned off, the Cursor editor
+ignores `.claude/skills` and uses the `.agents` copy. Checked with Cursor 3.22.12 and `cursor-agent` 2026.09.28;
+older Cursor versions were reported to list such duplicates separately.
 
-```sh
-if [ -e "$skill_target" ] || [ -L "$skill_target" ]; then
-  printf 'Skill destination already exists: %s\n' "$skill_target" >&2
-else
-  mkdir -p "$(dirname "$skill_target")"
-  cp -R "$blackbox_checkout/packages/skills/assets/discovery" "$skill_target"
-fi
-```
-
-You should now have `SKILL.md` and its `references/` directory at the chosen destination. Review the copied files,
-then check that the host lists or discovers the skill; restart or reload the host if its documented behavior requires
-it. A successful copy alone does not demonstrate that the agent loaded it.
+After installing, check that each agent lists the skill; a successful copy does not by itself show that the agent
+loaded it. Commit the installed directories when the team, fresh checkouts, cloud agents, or CI workers need them.
 
 Catalog and Capsule have the same portable layout under
 `packages/catalog/assets/catalog` and `packages/capsule/assets/capsule`. Manual
@@ -99,7 +83,84 @@ With the Capsule skill also available, try:
 > the Capsule.
 
 The skill does not install Blackbox, grant execution permissions, or make planned Playwright/effect APIs available.
-Its instructions should always match the CLI version used by the project.
+
+## Results, repeats, and updates
+
+Every run reports each destination with one outcome: one `<agent>: <outcome> <path>` line per selected agent. With
+`--json`, stdout carries one `skill-install` document with `ok`, `skill`, `version`, `source` (package and version),
+`projectDirectory`, `results` (one per agent: `kind`, `agent`, absolute `path`), and `destinations` (one per directory:
+project-relative `path`, `agents`, `outcome`, `version`, `from`, `reason`, `message`, `changes`).
+
+| Destination before the run                                       | Outcome                                                            | What is written                      |
+| ---------------------------------------------------------------- | ------------------------------------------------------------------ | ------------------------------------ |
+| Absent                                                           | `installed`                                                        | The complete skill and its record    |
+| Installed by Blackbox, unmodified, same version and content      | `unchanged`                                                        | Nothing                              |
+| Installed by Blackbox, unmodified, another version or content    | `updated` (`from` the recorded version)                            | The complete skill and its record    |
+| A copy without a record whose files match this version           | `adopted`                                                          | The record; files kept byte for byte |
+| Installed by Blackbox, then a file was edited, added, or removed | `conflict`, reason `locally-modified`                              | Nothing; `changes` lists each file   |
+| Anything else already there (other files, a file, another skill) | `conflict`, reason `not-installed-by-blackbox`                     | Nothing                              |
+| Unreadable/unwritable, or reached through a symlink              | `failed`, reason `permission-denied`, `unsafe-path`, or `io-error` | Nothing                              |
+| Changed by someone else while the command was running            | `failed`, reason `changed-during-install`                          | Nothing; rerun to reassess it        |
+
+The command exits `0` when every destination is `installed`, `updated`, `unchanged`, or `adopted`, and `1` when any is
+a conflict or failed. Every destination for the current skill is processed and reported; a failed required skill stops
+later skills in the dependency chain. Blackbox never replaces a conflicting directory. Review it, move or remove it,
+and rerun.
+
+Blackbox records what it installed in `.blackbox-install.json` inside the skill directory: the installer package,
+skill name, version, and a SHA-256 hash of every file. The record has no timestamps or absolute paths, so it can be
+committed and teammates' reruns report `unchanged`. Line endings are normalized before hashing, so a Windows
+checkout that converts to CRLF is not a local edit.
+
+**Update policy:** each installed skill should match its owning Blackbox package version. After upgrading that package,
+rerun the same command. Unmodified installations update in place; edited ones are reported with the changed files and
+left alone. Nothing is updated in the background, and there is no moving remote source to track.
+
+## Installer decisions
+
+| Decision              | Choice                                                                                                                                                                                                                                             |
+| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Agent selection       | Explicit: `--codex`, `--claude`, `--cursor`, or repeated `--agent`; `--yes` or the terminal prompt selects all three. Blackbox does not guess agents from files in the repository.                                                                 |
+| Destinations          | Project scope only: `.agents/skills/<name>/` (Codex, Cursor) and `.claude/skills/<name>/` (Claude Code). No global or user-level installation.                                                                                                     |
+| Copy versus symlink   | Independent copies. Some `cursor-agent` builds skipped symlinked skills, older Cursor versions listed symlinked duplicates separately, and symlinks are unreliable on Windows checkouts. Both copies are kept byte-identical.                      |
+| Multi-host duplicates | Only the distinct directories needed by the selected agents are written, and Cursor shares Codex's `.agents/skills` copy, which it reads natively. Current Cursor lists a skill name once even when `.claude/skills` holds a second copy.          |
+| Project root          | The current working directory. The command does not search parent directories or the Git root.                                                                                                                                                     |
+| Installed name        | The selected contribution's `name`, used as the folder name as the Agent Skills specification requires.                                                                                                                                            |
+| Source                | The tree packed in the selected contributing package. Nothing is downloaded, and no skill script is executed.                                                                                                                                      |
+| Conflicts             | Never overwritten. A matching copy without a record is adopted; anything else is reported for the user to move or remove.                                                                                                                          |
+| Safety                | Every directory on the path must be a real directory inside the project; symlinks are refused, never followed. A new tree is staged beside the destination and swapped in by rename, so an interrupted install leaves the previous skill in place. |
+
+### What existing projects teach us
+
+| Maintained project                                       | Approach                                                                                                                                                                                     | Blackbox decision                                                                                                                                                                                                                                                                   |
+| -------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [Vercel skills](https://github.com/vercel-labs/skills)   | A general installer: explicit agent selection, project or global scope, a canonical copy symlinked into each agent's directory (or `--copy`), and update tooling that tracks remote sources. | Keep explicit agent selection and the same per-agent directories (`.agents/skills`, `.claude/skills`). Use copies instead of symlinks, and take content from the versioned Blackbox package rather than a remote source that moves independently of the project's Blackbox version. |
+| [Anthropic skills](https://github.com/anthropics/skills) | Portable skill directories that keep references and assets together, with plugin marketplaces as a separate distribution channel for Claude Code.                                            | Install the whole directory so relative references work, and keep plugin or marketplace distribution out of scope for the project installer.                                                                                                                                        |
+
+Blackbox ships a bounded set of package-owned skills whose instructions describe
+their package version. Installing them needs no network, and an update happens only
+when the project upgrades an owning package and reruns the command. Global
+installation, arbitrary remote skill sources, plugin marketplaces, and more hosts
+remain outside this version. These are Blackbox scope decisions, not requirements
+of the shared skill format.
+
+## Install manually
+
+To install from a source checkout instead, complete [source installation](installation.md), retaining the
+`blackbox_checkout` variable, and copy the complete directory into the destination for your agent. This example
+refuses to replace an existing destination, including a dangling symlink:
+
+```sh
+skill_target=.agents/skills/discovery   # .claude/skills/discovery for Claude Code
+if [ -e "$skill_target" ] || [ -L "$skill_target" ]; then
+  printf 'Skill destination already exists: %s\n' "$skill_target" >&2
+else
+  mkdir -p "$(dirname "$skill_target")"
+  cp -R "$blackbox_checkout/packages/skills/assets/discovery" "$skill_target"
+fi
+```
+
+A later `skills install` run adopts an unmodified manual copy of the same version by adding its record.
 
 ## Maintain one portable source
 
@@ -107,21 +168,8 @@ Keep the skill's purpose and trigger description in its frontmatter. Put longer,
 and keep links relative to the installed directory. Platform-specific metadata may improve a host's presentation or
 invocation controls, but it must not become necessary to understand the common instructions.
 The [Agent Skills specification](https://agentskills.io/specification) defines the shared format and progressive loading.
+The owning package's `assets/<name>/` directory is the only source for each skill.
 
-When updating, compare the installed directory with the version from the intended Blackbox checkout. Preserve local
-edits and review changed instructions before replacing them. Record the source revision in your update change; avoid
-silently tracking a moving branch while the project's CLI stays pinned to an older release.
-
-## What existing projects teach us
-
-| Maintained project                                       | Approach                                                                                                           | Lesson for Blackbox                                                                                                                                                              |
-| -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [Vercel skills](https://github.com/vercel-labs/skills)   | Explicit agent selection, project/global scope, canonical-copy symlinks or independent copies, and update tooling. | Separate skill content from host installation and make update ownership visible. Evaluate symlinks versus copies and duplicate discovery before choosing the installer contract. |
-| [Anthropic skills](https://github.com/anthropics/skills) | Portable skill directories, with plugin distribution for Claude Code.                                              | Keep references/assets bundled; treat plugin distribution as a distinct option, not a prerequisite for a project skill.                                                          |
-
-The current installer supports project-local Codex, Claude Code, and Cursor.
-Global installation, arbitrary remote skill sources, and plugin marketplaces are
-outside the current alpha contract. These are Blackbox scope decisions, not
-requirements of the shared skill format.
-
-Research checked on 2026-09-27. Recheck the linked primary sources when changing host support.
+See the current [Codex](https://learn.chatgpt.com/docs/build-skills), [Claude Code](https://code.claude.com/docs/en/skills),
+and [Cursor](https://cursor.com/docs/skills) documentation for discovery, invocation, nested directories, and remote
+behavior. Research checked on 2026-09-29. Recheck the linked primary sources when changing host support.

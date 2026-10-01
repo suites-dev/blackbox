@@ -1,4 +1,9 @@
-export { readCollectorSession, readCollectorTrace } from './storage/reader.js';
+export {
+  readCollectorLifecycle,
+  readCollectorSession,
+  readCollectorTrace,
+} from './storage/reader.js';
+export type { CollectorLifecycleReadResult } from './storage/reader.js';
 export { readCollectorTraces } from './storage/trace-set-reader.js';
 export { readCollectorActivity } from './storage/activity-reader.js';
 export { readCollectorSnapshot } from './storage/snapshot/snapshot-reader.js';

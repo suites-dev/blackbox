@@ -3,6 +3,12 @@
 // order of siblings that start close together varies between runs; goldens
 // assert every span, its depth and its parent, not that order. Blackbox's own
 // ordering is covered by unit tests.
+//
+// One span is optional by nature: pg-pool.connect has a pg.connect child only
+// when the pool opens a new connection (a cold pool), not when it hands out an
+// idle one. A childless pg.connect directly under the same service's
+// pg-pool.connect is therefore dropped before comparison; every other span,
+// including a pg.connect anywhere else or with children, still counts.
 
 const CONNECTOR = /^((?:│ {2}| {3})*)([├└]─ )/u;
 
@@ -21,6 +27,33 @@ function parseTree(lines) {
     stack[depth] = node;
   }
   return roots;
+}
+
+/** Removes the optional pg.connect children described above; returns how many. */
+function dropPoolConnects(nodes, parts) {
+  let dropped = 0;
+  for (const node of nodes) {
+    const parent = parts(node);
+    const kept = node.children.filter((child) => {
+      const own = parts(child);
+      const optional =
+        parent.title === 'pg-pool.connect' &&
+        own.title === 'pg.connect' &&
+        own.service === parent.service &&
+        child.children.length === 0;
+      return !optional;
+    });
+    dropped += node.children.length - kept.length;
+    node.children = kept;
+    dropped += dropPoolConnects(kept, parts);
+  }
+  return dropped;
+}
+
+/** Service and title of a tree line label (`service  title  result…`). */
+function treeLabelParts(node) {
+  const [service = '', title = ''] = node.label.split(/ {2,}/u);
+  return { service, title };
 }
 
 function sortTree(nodes, key) {
@@ -51,6 +84,7 @@ function renderTree(nodes, indent) {
 function canonicalTreeBlock(lines, indent) {
   const roots = parseTree(lines.map((line) => line.slice(indent.length)));
   if (roots === null) return lines;
+  dropPoolConnects(roots, treeLabelParts);
   sortTree(
     roots,
     subtreeKey((node) => node.label),
@@ -81,6 +115,10 @@ function canonicalSpanRows(header, rows) {
     if (parent === undefined || parent === node) roots.push(node);
     else parent.children.push(node);
   }
+  const dropped = dropPoolConnects(roots, (node) => {
+    const [service = '', , title = ''] = node.label.split('|');
+    return { service, title };
+  });
   sortTree(
     roots,
     subtreeKey((node) => node.label),
@@ -91,7 +129,7 @@ function canonicalSpanRows(header, rows) {
     node.children.forEach(walk);
   };
   roots.forEach(walk);
-  return ordered.length === rows.length ? ordered : rows;
+  return ordered.length === rows.length - dropped ? ordered : rows;
 }
 
 /**

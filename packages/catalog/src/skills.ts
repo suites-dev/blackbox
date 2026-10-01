@@ -10,6 +10,7 @@ export const catalogSkill = {
 export const skillModule = {
   apiVersion: 1,
   packageName: '@suites/blackbox-catalog',
+  packageRoot: new URL('../', import.meta.url),
   skills: [catalogSkill],
 } as const satisfies SkillModule;
 

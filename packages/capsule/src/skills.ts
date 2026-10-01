@@ -10,6 +10,7 @@ export const capsuleSkill = {
 export const skillModule = {
   apiVersion: 1,
   packageName: '@suites/blackbox-capsule',
+  packageRoot: new URL('../', import.meta.url),
   skills: [capsuleSkill],
 } as const satisfies SkillModule;
 

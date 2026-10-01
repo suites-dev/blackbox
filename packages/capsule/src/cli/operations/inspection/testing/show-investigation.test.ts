@@ -157,6 +157,9 @@ void test('show adds status, trees and limitations without changing phase 1 fiel
       spans: 0,
       tree: [],
       uncaused: [],
+      // show never waits; run reports how long it did.
+      waitedMs: 0,
+      stillArriving: false,
     });
     assert.deepEqual(activity.limitations, [
       { kind: 'observation-provisional' },

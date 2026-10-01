@@ -26,10 +26,11 @@ and generated `--help` output.
 | Agent skills      | `skills list`, `skills install <name>`                            | [`skills`](../skills/README.md) composes contributions from selected plugins and installs portable skill directories.                                                                   |
 
 The reserved `setup init` and `effects baseline update --run <id>` routes
-deliberately fail closed with exit code `3`. They are planned command contracts,
-not working integrations. The `skills install <name>` route is provided when the
-Skills plugin is installed and supports `--codex`, `--claude`, `--cursor`, repeated
-`--agent <name>`, `--yes`, and `--json`. `skill install` remains an alias.
+deliberately fail closed with exit code `3`. They are planned command contracts, not working integrations. The CLI
+must not report a successful artifact until a backend exists. The
+`skills install <name>` route is provided when the Skills plugin is installed and
+supports `--codex`, `--claude`, `--cursor`, repeated `--agent <name>`, `--yes`,
+and `--json`. `skill install` remains an alias.
 
 ## Typical flow
 

@@ -1,6 +1,7 @@
 import { Command, Flags } from '@oclif/core';
 import { readCliSkillModules } from '@suites/blackbox-cli-contract';
 import { createSkillRegistry } from '../../../registry/registry.js';
+import { skillModule } from '../../../skills.js';
 
 export default class SkillsList extends Command {
   static override description = 'List skill contributions from the selected Blackbox plugins.';
@@ -8,7 +9,8 @@ export default class SkillsList extends Command {
 
   public async run(): Promise<void> {
     const { flags } = await this.parse(SkillsList);
-    const registry = createSkillRegistry(readCliSkillModules(this.config));
+    const modules = readCliSkillModules(this.config);
+    const registry = createSkillRegistry(modules.length === 0 ? [skillModule] : modules);
     const skills = registry.skills.map(({ name, dependencies, integrations }) => ({
       name,
       dependencies,

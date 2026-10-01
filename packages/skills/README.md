@@ -51,8 +51,9 @@ Capsule work only when those skills are available.
 - `@suites/blackbox-skills/discovery` exports the Discovery definition directly.
 
 The installer validates complete skill trees, rejects unsafe paths and links,
-preflights conflicts across all selected targets, and publishes staged copies. It
-does not overwrite a different installed skill.
+records file hashes and package versions, and publishes each replacement through
+a staged atomic swap. It reports conflicts without overwriting a different or
+locally modified installed skill.
 
 ## Validate changes
 

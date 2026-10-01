@@ -2,6 +2,7 @@ import {
   readCollectorSession,
   readCollectorSnapshot,
   readCollectorTrace,
+  readCollectorLifecycle,
   readCollectorTraces,
   projectCollectorActivity,
   projectCollectorSession,
@@ -9,6 +10,7 @@ import {
   type CollectorActivityReadResult,
   type CollectorIdentity,
   type CollectorSessionReadResult,
+  type CollectorLifecycleReadResult,
   type CollectorTracesReadResult,
 } from '@suites/blackbox-otel-collector';
 import { sandboxTelemetryStorageDirectory } from '@suites/blackbox-sandbox';
@@ -95,6 +97,27 @@ export async function readCapsuleTraces(input: {
       return record;
     }
     return await readCollectorTraces(collectorIdentity({ projectDirectory, record }));
+  } catch (error) {
+    return capsuleFailure({ operation: 'observations', sessionId: input.sessionId, error });
+  }
+}
+
+/**
+ * The capsule collector's lifecycle record only, never a fragment: cheap
+ * enough to poll for its accepted-span counter while telemetry arrives.
+ */
+export async function readCapsuleLifecycle(input: {
+  readonly projectDirectory: string;
+  readonly sessionId: string;
+}): Promise<CollectorLifecycleReadResult | CapsuleOperationFailure> {
+  try {
+    validateSessionId(input.sessionId);
+    const projectDirectory = await canonicalProjectDirectory(input.projectDirectory);
+    const record = await readRecordOrNotFound({ projectDirectory, sessionId: input.sessionId });
+    if (isFailure(record)) {
+      return record;
+    }
+    return await readCollectorLifecycle(collectorIdentity({ projectDirectory, record }));
   } catch (error) {
     return capsuleFailure({ operation: 'observations', sessionId: input.sessionId, error });
   }

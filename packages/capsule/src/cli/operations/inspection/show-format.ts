@@ -57,12 +57,20 @@ export function spanLabel(node: SpanTreeNode): string {
  * Tree lines like `tree`: roots have no prefix, children get `├─ `/`└─ `,
  * and each deeper level adds `│  ` or three spaces per ancestor.
  */
-export function treeLines(roots: readonly SpanTreeNode[]): readonly string[] {
+export function treeLines(
+  roots: readonly SpanTreeNode[],
+  /** Stop after this many lines (`run`); `show` prints every span. */
+  limit: number = Number.POSITIVE_INFINITY,
+): readonly string[] {
   const lines: string[] = [];
   const stack: { node: SpanTreeNode; prefix: string; connector: string }[] = [...roots]
     .reverse()
     .map((node) => ({ node, prefix: '', connector: '' }));
-  for (let item = stack.pop(); item !== undefined; item = stack.pop()) {
+  for (
+    let item = lines.length < limit ? stack.pop() : undefined;
+    item !== undefined;
+    item = lines.length < limit ? stack.pop() : undefined
+  ) {
     lines.push(`${item.prefix}${item.connector}${spanLabel(item.node)}`);
     const continuation = item.connector === '' ? '' : item.connector === '└─ ' ? '   ' : '│  ';
     const childPrefix = `${item.prefix}${continuation}`;

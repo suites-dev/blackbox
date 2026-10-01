@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { spanResult, spanTitle } from '../span-title.js';
+import { projectInvestigationSpans } from '../spans.js';
 import { span } from './span.fixture.js';
 
 /** Titles a span with these attributes; an undefined value means the attribute is absent. */
@@ -107,5 +108,52 @@ describe('spanResult', () => {
     [{}, null, ''],
   ])('reads %j with status %s as %j', (attributes, statusCode, expected) => {
     expect(spanResult(span({ id: 'a', attributes, statusCode }))).toBe(expected);
+  });
+});
+
+describe('projectInvestigationSpans', () => {
+  it('keeps the system attributes that classify client spans, and nothing unlisted', () => {
+    const value = (stringValue: string) => ({ stringValue });
+    const [projected] = projectInvestigationSpans({
+      traceId: 't1',
+      fragments: [
+        {
+          sequence: 1,
+          receivedAt: '2026-01-01T00:00:00.000Z',
+          request: {
+            resourceSpans: [
+              {
+                resource: { attributes: [{ key: 'service.name', value: value('api') }] },
+                scopeSpans: [
+                  {
+                    spans: [
+                      {
+                        traceId: 't1',
+                        spanId: 's1',
+                        kind: 3,
+                        name: 'grpc call',
+                        attributes: [
+                          { key: 'rpc.system', value: value('grpc') },
+                          { key: 'db.system', value: value('postgresql') },
+                          { key: 'db.system.name', value: value('postgresql') },
+                          { key: 'messaging.system', value: value('kafka') },
+                          { key: 'enduser.id', value: value('alice') },
+                        ],
+                      },
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+        },
+      ],
+    });
+    expect(projected.attributes.map((attribute) => attribute.key).sort()).toEqual([
+      'db.system',
+      'db.system.name',
+      'messaging.system',
+      'rpc.system',
+    ]);
   });
 });

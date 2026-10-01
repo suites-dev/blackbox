@@ -1,20 +1,25 @@
 import { Args, Command, Flags } from '@oclif/core';
-import { createInterface } from 'node:readline/promises';
-import { stdin, stdout } from 'node:process';
 import { readCliSkillModules } from '@suites/blackbox-cli-contract';
+import { stdin, stdout } from 'node:process';
+import { createInterface } from 'node:readline/promises';
 
-import { installSkill, type SkillAgent } from '../../../installation/install.js';
+import { SKILL_AGENTS, installSkill, type SkillAgent } from '../../../installation/install.js';
 import { createSkillRegistry } from '../../../registry/registry.js';
-
-const AGENTS = ['codex', 'claude', 'cursor'] as const satisfies readonly SkillAgent[];
+import { skillModule } from '../../../skills.js';
+import {
+  skillInstallDocument,
+  skillInstallFailure,
+  skillInstallLines,
+} from '../../skill-install-output.js';
 
 export default class SkillsInstall extends Command {
-  static override description = 'Install a Blackbox workflow Skill for coding agents.';
-  static override args = {
-    name: Args.string({ required: true }),
-  };
+  static override description =
+    'Install a contributed Blackbox workflow Skill into the current directory. ' +
+    'codex and cursor read .agents/skills/, claude reads .claude/skills/. Directories that ' +
+    'Blackbox did not install, or that changed since it installed them, are left untouched.';
+  static override args = { name: Args.string({ required: true }) };
   static override flags = {
-    agent: Flags.string({ multiple: true, options: [...AGENTS] }),
+    agent: Flags.string({ multiple: true, options: [...SKILL_AGENTS] }),
     codex: Flags.boolean({ default: false }),
     claude: Flags.boolean({ default: false }),
     cursor: Flags.boolean({ default: false }),
@@ -24,6 +29,11 @@ export default class SkillsInstall extends Command {
 
   public async run(): Promise<void> {
     const { args, flags } = await this.parse(SkillsInstall);
+    const modules = readCliSkillModules(this.config);
+    const registry = createSkillRegistry(modules.length === 0 ? [skillModule] : modules);
+    if (registry.get(args.name) === null) {
+      this.error(`Skill is unavailable in the selected plugins: ${args.name}`, { exit: 2 });
+    }
     const agents = [
       ...new Set([
         ...(flags.agent ?? []),
@@ -33,42 +43,40 @@ export default class SkillsInstall extends Command {
       ]),
     ] as SkillAgent[];
     if (agents.length === 0 && flags.yes) {
-      agents.push(...AGENTS);
+      agents.push(...SKILL_AGENTS);
     }
-    if (agents.length === 0 && stdin.isTTY && stdout.isTTY) {
+    if (agents.length === 0 && !flags.json && stdin.isTTY && stdout.isTTY) {
       const prompt = createInterface({ input: stdin, output: stdout });
       const answer = await prompt.question(
         `Install ${args.name} for Codex, Claude Code, and Cursor? [Y/n] `,
       );
       prompt.close();
       if (answer.trim() === '' || /^y(es)?$/iu.test(answer.trim())) {
-        agents.push(...AGENTS);
+        agents.push(...SKILL_AGENTS);
       }
     }
     if (agents.length === 0) {
       this.error('Choose an agent with --codex, --claude, --cursor, or --agent.', { exit: 2 });
     }
-    if (agents.includes('codex') && agents.includes('cursor')) {
-      agents.splice(agents.indexOf('cursor'), 1);
-    }
-    const results = await installSkill(
-      {
-        projectDirectory: process.cwd(),
-        skillName: args.name,
-        agents,
-      },
-      createSkillRegistry(readCliSkillModules(this.config)),
+    const document = skillInstallDocument(
+      await installSkill(
+        { projectDirectory: process.cwd(), skillName: args.name, agents },
+        registry,
+      ),
     );
-    const conflict = results.find((result) => result.kind === 'conflict');
+    const failure = skillInstallFailure(document);
     if (flags.json) {
-      this.log(JSON.stringify({ kind: 'skill-install', skill: args.name, results }));
-    } else {
-      for (const result of results) {
-        this.log(`${result.agent}: ${result.kind} ${result.path}`);
+      process.stdout.write(`${JSON.stringify(document)}\n`);
+      if (failure !== null) {
+        this.exit(1);
       }
+      return;
     }
-    if (conflict !== undefined) {
-      this.error(`Skill path already contains different files: ${conflict.path}`, { exit: 1 });
+    for (const line of skillInstallLines(document)) {
+      this.log(line);
+    }
+    if (failure !== null) {
+      this.error(failure, { exit: 1 });
     }
   }
 }
