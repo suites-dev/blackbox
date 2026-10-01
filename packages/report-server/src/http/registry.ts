@@ -7,7 +7,10 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function hasOnlyProperties(value: Record<string, unknown>, properties: readonly string[]): boolean {
   const allowed = new Set(properties);
-  return Object.keys(value).every((property) => allowed.has(property));
+  return (
+    properties.every((property) => Object.hasOwn(value, property)) &&
+    Object.keys(value).every((property) => allowed.has(property))
+  );
 }
 
 function isReportSummary(value: unknown, providerType: string): value is ReportSummary {

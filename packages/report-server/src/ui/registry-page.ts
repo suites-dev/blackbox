@@ -11,13 +11,14 @@ export function renderRegistryPage(input: {
   const viewStyles = input.providers.map((provider) => provider.view.styles).join('\n');
   const viewScripts = input.providers
     .map((provider) => {
+      const script = `(()=>{${provider.view.script}\n})()`;
       try {
-        new Script(provider.view.script);
+        new Script(script);
       } catch {
         return `<script>console.error(${JSON.stringify(`Blackbox report view failed for provider type: ${provider.type}`)});</script>`;
       }
       const type = JSON.stringify(provider.type);
-      return `<script>${provider.view.script}</script><script>if(Object.hasOwn(BlackboxReportViews,${type})){Object.defineProperty(BlackboxReportViews,${type},{configurable:false,writable:false})}</script>`;
+      return `<script>${script}</script><script>if(Object.hasOwn(BlackboxReportViews,${type})){Object.defineProperty(BlackboxReportViews,${type},{configurable:false,writable:false})}</script>`;
     })
     .join('');
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="dark"><title>Blackbox experiments</title><style>${REGISTRY_STYLES}</style></head><body>

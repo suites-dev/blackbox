@@ -149,6 +149,33 @@ test('audit L8: allows provider locals that would collide with a wrapper', () =>
   expect(views.capsule).toEqual({ name: 'local' });
 });
 
+test('audit L8: isolates duplicate provider locals between providers', () => {
+  const first = fixtureProvider().provider;
+  const second = {
+    ...first,
+    type: 'other',
+    view: {
+      ...first.view,
+      script: "const view={name:'other'};BlackboxReportViews.other=view;",
+    },
+  };
+  const html = renderRegistryPage({
+    providers: [
+      {
+        ...first,
+        view: {
+          ...first.view,
+          script: "const view={name:'first'};BlackboxReportViews.first=view;",
+        },
+      },
+      second,
+    ],
+  });
+  const views = runProviderScripts(html);
+  expect(views.first).toEqual({ name: 'first' });
+  expect(views.other).toEqual({ name: 'other' });
+});
+
 test('audit L8: reports a provider view syntax error with its provider type', () => {
   const html = renderRegistryPage({
     providers: [
