@@ -5,8 +5,18 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
+function hasOnlyProperties(value: Record<string, unknown>, properties: readonly string[]): boolean {
+  const allowed = new Set(properties);
+  return Object.keys(value).every((property) => allowed.has(property));
+}
+
 function isReportSummary(value: unknown, providerType: string): value is ReportSummary {
-  if (!isRecord(value) || value.kind !== 'report-summary' || value.type !== providerType) {
+  if (
+    !isRecord(value) ||
+    !hasOnlyProperties(value, ['kind', 'id', 'type', 'title', 'description', 'state', 'createdAt']) ||
+    value.kind !== 'report-summary' ||
+    value.type !== providerType
+  ) {
     return false;
   }
   if (
@@ -18,15 +28,20 @@ function isReportSummary(value: unknown, providerType: string): value is ReportS
   ) {
     return false;
   }
+  if (value.description.kind === 'unavailable') {
+    return hasOnlyProperties(value.description, ['kind']);
+  }
   return (
-    value.description.kind === 'unavailable' ||
-    (value.description.kind === 'available' && typeof value.description.value === 'string')
+    value.description.kind === 'available' &&
+    typeof value.description.value === 'string' &&
+    hasOnlyProperties(value.description, ['kind', 'value'])
   );
 }
 
 function isReportFailure(value: unknown): value is ReportFailure {
   return (
     isRecord(value) &&
+    hasOnlyProperties(value, ['kind', 'code', 'message']) &&
     value.kind === 'report-failure' &&
     typeof value.message === 'string' &&
     (value.code === 'not-found' ||
@@ -44,6 +59,7 @@ function isReportListResult(value: unknown, providerType: string): value is
   }
   return (
     isRecord(value) &&
+    hasOnlyProperties(value, ['kind', 'reports']) &&
     value.kind === 'report-list' &&
     Array.isArray(value.reports) &&
     value.reports.every((report) => isReportSummary(report, providerType))

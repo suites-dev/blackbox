@@ -62,7 +62,7 @@ it('rejects unresolved references and project-root escapes', () => {
   );
 });
 
-it('audit M1: rejects unsupported entrypoint protocol and activation version', () => {
+it('audit M1: rejects unsupported entrypoint protocol', () => {
   const base = validCatalogSourceDocument();
   const document = {
     ...base,
@@ -75,6 +75,14 @@ it('audit M1: rejects unsupported entrypoint protocol and activation version', (
         },
       },
     },
+  };
+  expect(() => validateCatalogDocument({ document, sourceName: 'unsupported.yaml' })).toThrow();
+});
+
+it('audit M1: rejects unsupported activation version', () => {
+  const base = validCatalogSourceDocument();
+  const document = {
+    ...base,
     activations: {
       ...base.activations,
       'node-runtime': { ...base.activations['node-runtime'], version: 2 },
