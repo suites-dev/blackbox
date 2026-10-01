@@ -209,3 +209,35 @@ void test('a driver failure before any process existed: no wait, phase 1 output 
     );
   }, failure);
 });
+
+void test('run --json redacts credentials from the printed argv, keeping argv[0]', async () => {
+  const argv = [
+    'curl',
+    '-H',
+    `Authorization: ${SECRET}`,
+    'https://alice:pw-secret-42@127.0.0.1:4567/x?token=tk-secret-42',
+  ];
+  await withRecordedActivity(
+    async (fixture) => {
+      const result = await run(fixture.directory, ...runArgs('--wait', '0', '--json'));
+      assert.equal(result.status, 7);
+      const document = onlyDocument(result);
+      const outcome = document.outcome as { argv: readonly string[]; stdout: string };
+      assert.deepEqual(outcome.argv, [
+        'curl',
+        '-H',
+        'Authorization: [REDACTED]',
+        'https://[REDACTED]@127.0.0.1:4567/x?token=[REDACTED]',
+      ]);
+      // Only argv changes: the child's output is printed as captured.
+      assert.equal(outcome.stdout, 'child-out\n');
+      assert.doesNotMatch(
+        result.stdout + result.stderr,
+        /run-command-secret|pw-secret|tk-secret|alice/u,
+      );
+      // Negative control: the manager's reply did carry the credentials.
+      assert.match(JSON.stringify(argv), /run-command-secret.*pw-secret.*tk-secret/u);
+    },
+    { ...EXITED_7, argv },
+  );
+});

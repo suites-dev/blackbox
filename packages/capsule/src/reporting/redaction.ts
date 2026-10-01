@@ -151,6 +151,42 @@ function redactCompletedTelemetry(
   return telemetry;
 }
 
+/**
+ * The outcome as `capsule run --json` prints it: every argv passes through
+ * the report's argv redaction (with the positions a driver declared), and
+ * argv[0], the executable, is kept. Nothing else changes: the child's output
+ * stays as captured, and what is persisted is never touched.
+ */
+export function redactOutcomeArgv(outcome: CapsuleExecutionOutcome): CapsuleExecutionOutcome {
+  const redacted = (argv: readonly string[], explicit: DriverArgvRedaction): readonly string[] => {
+    const masked = redactArgv({
+      argv,
+      location: 'outcome.argv',
+      context: createRedactionContext(),
+      explicit,
+    });
+    return argv.length === 0 ? masked : [argv[0], ...masked.slice(1)];
+  };
+  switch (outcome.kind) {
+    case 'driver-completed':
+      return {
+        ...outcome,
+        process: {
+          ...outcome.process,
+          argv: redacted(outcome.process.argv, outcome.redaction.preparedArgv),
+        },
+      };
+    case 'driver-prepare-failed':
+    case 'driver-propagation-refused':
+      return outcome;
+    case 'executable-not-found':
+    case 'not-executable':
+    case 'exited':
+    case 'signaled':
+      return { ...outcome, argv: redacted(outcome.argv, noExplicitRedaction) };
+  }
+}
+
 export function redactActivities(input: {
   readonly activities: readonly CapsuleActivityReport[];
   readonly context: RedactionContext;

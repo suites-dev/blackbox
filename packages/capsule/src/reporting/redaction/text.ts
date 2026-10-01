@@ -22,7 +22,15 @@ function note(
 }
 
 export function redactText(input: string, location: string, context: RedactionContext): string {
-  let value = input.replace(/\b(Bearer|Basic)\s+[^\s,"'}]+/giu, (_match, scheme: string) => {
+  // `scheme://user:password@host`: the user information is a credential.
+  let value = input.replace(
+    /\b([a-z][a-z0-9+.-]*:\/\/)[^\s/?#@:]+:[^\s/?#@]*@/giu,
+    (_match, scheme: string) => {
+      note(context, 'authorization-credential', location);
+      return `${scheme}${MASK}@`;
+    },
+  );
+  value = value.replace(/\b(Bearer|Basic)\s+[^\s,"'}]+/giu, (_match, scheme: string) => {
     note(context, 'authorization-credential', location);
     return `${scheme} ${MASK}`;
   });
@@ -71,7 +79,8 @@ function redactArgument(argument: string, location: string, context: RedactionCo
   const equals = argument.indexOf('=');
   if (equals > 0 && sensitiveName.test(argument.slice(0, equals))) {
     note(context, 'sensitive-argument', location);
-    return `${argument.slice(0, equals + 1)}${MASK}`;
+    // What stays before the value can itself carry a credential (a URL's user information).
+    return `${redactText(argument.slice(0, equals + 1), location, context)}${MASK}`;
   }
   return redactText(argument, location, context);
 }

@@ -9,6 +9,7 @@ import {
   type CapsuleProcessOutcome,
 } from '@suites/blackbox-capsule';
 
+import { redactOutcomeArgv } from '../../../reporting/redaction.js';
 import { BlackboxCommand } from '../../cli/base-command.js';
 import { EXIT_CODES, type UsageExit } from '../../cli/exit-codes.js';
 import { cliFailure } from '../../cli/failure.js';
@@ -172,7 +173,15 @@ export abstract class RunCommand extends BlackboxCommand {
           });
     if (request.json) {
       // A driver that failed first keeps its phase 1 document: no context or observation.
-      this.json({ ...result, capsule, next, ...(observed === null ? {} : runDocument(observed)) });
+      // The command line can carry credentials: every argv is redacted as the
+      // report redacts it (argv[0] kept); the field keeps its place and type.
+      this.json({
+        ...result,
+        outcome: redactOutcomeArgv(result.outcome),
+        capsule,
+        next,
+        ...(observed === null ? {} : runDocument(observed)),
+      });
     } else if (observed === null) {
       this.human([runLine, ...failure, ...next.map((command) => `→ ${command}`)]);
     } else {
