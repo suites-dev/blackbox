@@ -105,18 +105,26 @@ function assertText(field: string, value: unknown): asserts value is string {
   }
 }
 
-function assertWhere(value: unknown): asserts value is Readonly<Record<string, EffectScalar>> {
+function snapshotRecord(value: unknown, message: string): Record<string, unknown> {
   if (value === null || typeof value !== 'object' || Array.isArray(value)) {
-    throw new TypeError('where must contain finite JSON scalar values');
+    throw new TypeError(message);
   }
-  for (const scalar of Object.values(value)) {
-    if (
-      !['string', 'number', 'boolean'].includes(typeof scalar) ||
-      (typeof scalar === 'number' && !Number.isFinite(scalar))
-    ) {
+  return Object.fromEntries(Object.entries(value));
+}
+
+function snapshotWhere(value: unknown): Readonly<Record<string, EffectScalar>> {
+  const source = snapshotRecord(value, 'where must contain finite JSON scalar values');
+  const entries: [string, EffectScalar][] = [];
+  for (const [field, scalar] of Object.entries(source)) {
+    if (typeof scalar === 'string' || typeof scalar === 'boolean') {
+      entries.push([field, scalar]);
+    } else if (typeof scalar === 'number' && Number.isFinite(scalar)) {
+      entries.push([field, scalar]);
+    } else {
       throw new TypeError('where must contain finite JSON scalar values');
     }
   }
+  return Object.fromEntries(entries);
 }
 
 function assertKnownFields(
@@ -137,14 +145,15 @@ function assertCount(value: unknown): asserts value is number {
 }
 
 function selector(kind: EffectKind | undefined, input: unknown = {}): EffectSelector {
-  if (input === null || typeof input !== 'object' || Array.isArray(input)) {
-    throw new TypeError('Effect selector must be an object');
-  }
-  const inputRecord = input as Readonly<Record<string, unknown>>;
+  const inputRecord = snapshotRecord(input, 'Effect selector must be an object');
   const kindAliases: Readonly<Record<string, string>> = kind === undefined ? {} : aliases[kind];
   const canonicalFields: Record<string, unknown> = {};
+  const supported = new Set(['operation', 'target', 'actor', 'outcome', 'where']);
   for (const [field, value] of Object.entries(inputRecord)) {
     const canonical = kindAliases[field] ?? field;
+    if (!supported.has(canonical)) {
+      throw new TypeError(`Unknown selector field: ${field}`);
+    }
     if (
       canonical !== field &&
       Object.hasOwn(inputRecord, canonical) &&
@@ -154,13 +163,9 @@ function selector(kind: EffectKind | undefined, input: unknown = {}): EffectSele
     }
     canonicalFields[canonical] = value;
   }
-  const supported = new Set(['operation', 'target', 'actor', 'outcome', 'where']);
   for (const [field, value] of Object.entries(canonicalFields)) {
-    if (!supported.has(field)) {
-      throw new TypeError(`Unknown selector field: ${field}`);
-    }
     if (field === 'where') {
-      assertWhere(value);
+      canonicalFields[field] = snapshotWhere(value);
     } else {
       assertText(field, value);
     }
@@ -178,47 +183,49 @@ function count(
   selected: unknown,
 ): EffectCountConstraint {
   assertCount(value);
-  assertSelector(selected, `${operator}.selector`);
-  return freeze({ node: 'constraint', operator, count: value, selector: selected });
+  const normalized = normalizeSelector(selected, `${operator}.selector`);
+  return freeze({ node: 'constraint', operator, count: value, selector: normalized });
 }
 
 function before(first: unknown, second: unknown): EffectOrderConstraint {
-  assertSelector(first, 'before.first');
-  assertSelector(second, 'before.second');
-  return freeze({ node: 'constraint', operator: 'before', first, second });
+  return freeze({
+    node: 'constraint',
+    operator: 'before',
+    first: normalizeSelector(first, 'before.first'),
+    second: normalizeSelector(second, 'before.second'),
+  });
 }
 
-function assertSelector(value: unknown, context: string): asserts value is EffectSelector {
-  if (value === null || typeof value !== 'object' || Array.isArray(value)) {
-    throw new TypeError(`${context} must be an effect selector`);
-  }
-  const record = value as Readonly<Record<string, unknown>>;
+function normalizeSelector(value: unknown, context: string): EffectSelector {
+  const record = snapshotRecord(value, `${context} must be an effect selector`);
   if (record.node !== 'selector') {
     throw new TypeError(`${context} must be an effect selector`);
   }
   assertKnownFields('effect selector', record, selectorFields);
+  const normalized: Record<string, unknown> = Object.fromEntries([['node', 'selector']]);
   if (Object.hasOwn(record, 'kind')) {
     if (typeof record.kind !== 'string' || !Object.hasOwn(aliases, record.kind)) {
       throw new TypeError(`${context}.kind must be a supported effect kind`);
     }
+    normalized.kind = record.kind;
   }
   for (const field of ['operation', 'target', 'actor', 'outcome']) {
     if (Object.hasOwn(record, field)) {
       assertText(`${context}.${field}`, record[field]);
+      normalized[field] = record[field];
     }
   }
   if (Object.hasOwn(record, 'where')) {
-    assertWhere(record.where);
+    normalized.where = snapshotWhere(record.where);
   }
+  return normalized as EffectSelector;
 }
 
-function assertConstraint(value: unknown): asserts value is EffectConstraint {
-  if (value === null || typeof value !== 'object' || Array.isArray(value)) {
-    throw new TypeError('The effects callback must return constraints, not selectors');
-  }
-  const record = value as Readonly<Record<string, unknown>>;
+function normalizeConstraint(value: unknown): EffectConstraint {
+  const message = 'The effects callback must return constraints, not selectors';
+  const record = snapshotRecord(value, message);
   if (record.node !== 'constraint') {
-    throw new TypeError('The effects callback must return constraints, not selectors');
+    throw new TypeError(message);
   }
   if (typeof record.operator !== 'string') {
     throw new TypeError('Effect constraint operator must be exactly, atLeast, atMost, or before');
@@ -226,14 +233,11 @@ function assertConstraint(value: unknown): asserts value is EffectConstraint {
   if (['exactly', 'atLeast', 'atMost'].includes(record.operator)) {
     assertKnownFields('effect count constraint', record, countConstraintFields);
     assertCount(record.count);
-    assertSelector(record.selector, `${record.operator}.selector`);
-    return;
+    return count(record.operator as EffectCountOperator, record.count, record.selector);
   }
   if (record.operator === 'before') {
     assertKnownFields('effect order constraint', record, orderConstraintFields);
-    assertSelector(record.first, 'before.first');
-    assertSelector(record.second, 'before.second');
-    return;
+    return before(record.first, record.second);
   }
   throw new TypeError('Effect constraint operator must be exactly, atLeast, atMost, or before');
 }
@@ -265,10 +269,6 @@ export function compileEffectContract(builder: EffectContractBuilder): EffectCon
   if (!Array.isArray(candidate) || candidate.length === 0) {
     throw new TypeError('The effects callback must return a non-empty constraint array');
   }
-  const constraints: EffectConstraint[] = [];
-  for (const constraint of candidate as readonly unknown[]) {
-    assertConstraint(constraint);
-    constraints.push(constraint);
-  }
+  const constraints = (candidate as readonly unknown[]).map(normalizeConstraint);
   return freeze({ schemaVersion: 1, constraints: [...constraints] });
 }

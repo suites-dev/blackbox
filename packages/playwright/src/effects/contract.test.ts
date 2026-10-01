@@ -10,6 +10,15 @@ function compileUntyped(candidate: unknown): EffectContract {
   return compileEffectContract((() => candidate) as EffectContractBuilder);
 }
 
+function inherit(
+  own: Readonly<Record<string, unknown>>,
+  inherited: Readonly<Record<string, unknown>>,
+): Record<string, unknown> {
+  const value = { ...own };
+  Object.setPrototypeOf(value, inherited);
+  return value;
+}
+
 it('compiles selectors and constraints into an immutable provider contract', () => {
   const contract = compileEffectContract((effects) => [
     effects.exactly(
@@ -53,18 +62,8 @@ it('compiles selectors and constraints into an immutable provider contract', () 
       {
         node: 'constraint',
         operator: 'before',
-        first: {
-          node: 'selector',
-          kind: 'db',
-          operation: 'INSERT',
-          target: 'orders',
-        },
-        second: {
-          node: 'selector',
-          kind: 'message',
-          operation: 'send',
-          target: 'orders',
-        },
+        first: { node: 'selector', kind: 'db', operation: 'INSERT', target: 'orders' },
+        second: { node: 'selector', kind: 'message', operation: 'send', target: 'orders' },
       },
     ],
   });
@@ -84,121 +83,93 @@ it('rejects malformed contracts before they reach an effects provider', () => {
   ).toThrow('Conflicting selector fields');
 });
 
-it.each([
-  {
-    name: 'missing operator',
-    constraint: { node: 'constraint' },
-    message: 'Effect constraint operator must be exactly, atLeast, atMost, or before',
-  },
-  {
-    name: 'unknown operator',
-    constraint: { node: 'constraint', operator: 'sometimes' },
-    message: 'Effect constraint operator must be exactly, atLeast, atMost, or before',
-  },
-  {
-    name: 'fractional count',
-    constraint: {
-      node: 'constraint',
-      operator: 'exactly',
-      count: 1.5,
-      selector: { node: 'selector' },
+const operatorError = 'Effect constraint operator must be exactly, atLeast, atMost, or before';
+const emptySelector = { node: 'selector' };
+const countConstraint = {
+  node: 'constraint',
+  operator: 'exactly',
+  count: 1,
+  selector: emptySelector,
+};
+const orderConstraint = {
+  node: 'constraint',
+  operator: 'before',
+  first: emptySelector,
+  second: emptySelector,
+};
+const invalidCases = [
+  ['missing operator', { node: 'constraint' }, operatorError],
+  ['unknown operator', { node: 'constraint', operator: 'sometimes' }, operatorError],
+  [
+    'fractional count',
+    { ...countConstraint, count: 1.5 },
+    'Effect count must be a nonnegative safe integer',
+  ],
+  [
+    'missing count',
+    { node: 'constraint', operator: 'atLeast', selector: emptySelector },
+    'Effect count must be a nonnegative safe integer',
+  ],
+  [
+    'order fields on count',
+    { ...countConstraint, first: emptySelector },
+    'Unknown effect count constraint field: first',
+  ],
+  [
+    'unsupported kind',
+    { ...countConstraint, selector: { node: 'selector', kind: 'email' } },
+    'exactly.selector.kind must be a supported effect kind',
+  ],
+  [
+    'empty selector text',
+    { ...countConstraint, selector: { ...emptySelector, operation: '' } },
+    'exactly.selector.operation must be a non-empty string',
+  ],
+  [
+    'non-finite where',
+    {
+      ...countConstraint,
+      selector: { ...emptySelector, where: { value: Number.POSITIVE_INFINITY } },
     },
-    message: 'Effect count must be a nonnegative safe integer',
-  },
-  {
-    name: 'missing count',
-    constraint: {
-      node: 'constraint',
-      operator: 'atLeast',
-      selector: { node: 'selector' },
-    },
-    message: 'Effect count must be a nonnegative safe integer',
-  },
-  {
-    name: 'order operands on a count operator',
-    constraint: {
-      node: 'constraint',
-      operator: 'atMost',
-      count: 1,
-      selector: { node: 'selector' },
-      first: { node: 'selector' },
-    },
-    message: 'Unknown effect count constraint field: first',
-  },
-])('rejects a forged constraint with $name', ({ constraint, message }) => {
+    'where must contain finite JSON scalar values',
+  ],
+  [
+    'non-canonical alias',
+    { ...countConstraint, selector: { ...emptySelector, method: 'POST' } },
+    'Unknown effect selector field: method',
+  ],
+  [
+    'missing first selector',
+    { ...orderConstraint, first: undefined },
+    'before.first must be an effect selector',
+  ],
+  [
+    'constraint as selector',
+    { ...orderConstraint, second: countConstraint },
+    'before.second must be an effect selector',
+  ],
+  [
+    'count fields on order',
+    { ...orderConstraint, count: 1 },
+    'Unknown effect order constraint field: count',
+  ],
+  [
+    'inherited operator',
+    inherit({ node: 'constraint', count: 1, selector: emptySelector }, { operator: 'exactly' }),
+    operatorError,
+  ],
+  [
+    'inherited count',
+    inherit({ node: 'constraint', operator: 'exactly', selector: emptySelector }, { count: 1 }),
+    'Effect count must be a nonnegative safe integer',
+  ],
+  [
+    'inherited selector',
+    inherit({ node: 'constraint', operator: 'exactly', count: 1 }, { selector: emptySelector }),
+    'exactly.selector must be an effect selector',
+  ],
+] satisfies readonly (readonly [string, unknown, string])[];
+
+it.each(invalidCases)('rejects a forged %s', (_name, constraint, message) => {
   expect(() => compileUntyped([constraint])).toThrow(message);
-});
-
-it.each([
-  {
-    name: 'unsupported kind',
-    selector: { node: 'selector', kind: 'email' },
-    message: 'exactly.selector.kind must be a supported effect kind',
-  },
-  {
-    name: 'empty operation',
-    selector: { node: 'selector', operation: '' },
-    message: 'exactly.selector.operation must be a non-empty string',
-  },
-  {
-    name: 'non-finite where value',
-    selector: { node: 'selector', where: { duration: Number.POSITIVE_INFINITY } },
-    message: 'where must contain finite JSON scalar values',
-  },
-  {
-    name: 'non-canonical alias',
-    selector: { node: 'selector', method: 'POST' },
-    message: 'Unknown effect selector field: method',
-  },
-])('rejects a forged selector with $name', ({ selector, message }) => {
-  expect(() =>
-    compileUntyped([{ node: 'constraint', operator: 'exactly', count: 1, selector }]),
-  ).toThrow(message);
-});
-
-it.each([
-  {
-    name: 'missing first selector',
-    constraint: {
-      node: 'constraint',
-      operator: 'before',
-      second: { node: 'selector', kind: 'message' },
-    },
-    message: 'before.first must be an effect selector',
-  },
-  {
-    name: 'constraint in place of the second selector',
-    constraint: {
-      node: 'constraint',
-      operator: 'before',
-      first: { node: 'selector', kind: 'db' },
-      second: { node: 'constraint', operator: 'exactly' },
-    },
-    message: 'before.second must be an effect selector',
-  },
-  {
-    name: 'count operands on an order operator',
-    constraint: {
-      node: 'constraint',
-      operator: 'before',
-      first: { node: 'selector', kind: 'db' },
-      second: { node: 'selector', kind: 'message' },
-      count: 1,
-    },
-    message: 'Unknown effect order constraint field: count',
-  },
-])('rejects a forged order constraint with $name', ({ constraint, message }) => {
-  expect(() => compileUntyped([constraint])).toThrow(message);
-});
-
-it('deep-freezes validated constraints returned by an untyped consumer', () => {
-  const selector = { node: 'selector', kind: 'db', operation: 'INSERT' };
-  const constraint = { node: 'constraint', operator: 'exactly', count: 1, selector };
-
-  const contract = compileUntyped([constraint]);
-
-  expect(Object.isFrozen(contract)).toBe(true);
-  expect(Object.isFrozen(contract.constraints)).toBe(true);
-  expect(Object.isFrozen(constraint)).toBe(true);
-  expect(Object.isFrozen(selector)).toBe(true);
 });
