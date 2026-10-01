@@ -194,6 +194,24 @@ it('--gitignore ignores only successful owned copies, preserves rules and is ide
   expect(await readFile(join(directory, '.gitignore'), 'utf8')).toBe(rules);
 });
 
+it('--gitignore excludes failed destinations as well as conflicting copies', async () => {
+  const directory = await project();
+  created.push(directory);
+  await mkdir(join(directory, 'user-owned'));
+  await symlink(join(directory, 'user-owned'), join(directory, '.claude'));
+  const result = await run(directory, 'discovery', '--codex', '--claude', '--gitignore', '--json');
+  expect(result.exit).toBe(1);
+  expect(JSON.parse(result.stdout)).toMatchObject({
+    ok: false,
+    destinations: [{ outcome: 'installed' }, { outcome: 'failed', reason: 'unsafe-path' }],
+    gitignore: { outcome: 'updated' },
+  });
+  expect(await readFile(join(directory, '.gitignore'), 'utf8')).toBe(
+    '\n# Blackbox installed skills\n/.agents/skills/discovery/\n',
+  );
+  expect(await readdir(join(directory, 'user-owned'))).toEqual([]);
+});
+
 it('linked .gitignore is preserved and reported as failure after a successful copy', async () => {
   const directory = await project();
   created.push(directory);
