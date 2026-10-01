@@ -8,6 +8,11 @@ const sensitiveName =
 const header = /^(authorization|proxy-authorization|cookie|set-cookie|x-api-key|api-key)\s*:/iu;
 const assignment = /^([A-Za-z_][A-Za-z0-9_]*)=(.*)$/u;
 const socketPath = /(?:\/[^\s"']+)?\.blackbox\/(?:s|tmp)\/[^\s"']+\.sock/gu;
+/** Flags whose value is a `user:password` credential (curl and alike). */
+const credentialFlags = new Set(['-u', '--user', '-U', '--proxy-user']);
+// `--user=value`, or a short flag with an attached `user:password` (`-ualice:pw`,
+// never an unrelated flag such as `-update`).
+const credentialFlagValue = /^(--user=|--proxy-user=|-[uU](?=[^\s:]*:))(.+)$/u;
 
 export interface RedactionContext {
   readonly entries: CapsuleReportRedaction[];
@@ -24,7 +29,7 @@ function note(
 export function redactText(input: string, location: string, context: RedactionContext): string {
   // `scheme://user:password@host`: the user information is a credential.
   let value = input.replace(
-    /\b([a-z][a-z0-9+.-]*:\/\/)[^\s/?#@:]+:[^\s/?#@]*@/giu,
+    /\b([a-z][a-z0-9+.-]*:\/\/)[^\s/?#@:]*:[^\s/?#@]*@/giu,
     (_match, scheme: string) => {
       note(context, 'authorization-credential', location);
       return `${scheme}${MASK}@`;
@@ -110,6 +115,16 @@ export function redactArgv(input: {
     if (argument.startsWith('--') && sensitiveName.test(argument) && !argument.includes('=')) {
       redactNext = true;
       return argument;
+    }
+    // `-u user:password`, `--user=user:password`, `-uuser:password`.
+    if (credentialFlags.has(argument)) {
+      redactNext = true;
+      return argument;
+    }
+    const attached = credentialFlagValue.exec(argument);
+    if (attached !== null) {
+      note(input.context, 'sensitive-argument', itemLocation);
+      return `${attached[1]}${MASK}`;
     }
     return redactArgument(argument, itemLocation, input.context);
   });

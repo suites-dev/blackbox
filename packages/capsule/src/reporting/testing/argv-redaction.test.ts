@@ -67,34 +67,48 @@ function argvOf(outcome: CapsuleExecutionOutcome): readonly string[] {
   throw new Error(`${outcome.kind} carries no argv`);
 }
 
+/** [name, credential arguments, as printed]. */
+const CASES = [
+  [
+    'a Bearer header value',
+    ['-H', `Authorization: Bearer ${SECRET}`],
+    ['-H', `Authorization: ${MASK}`],
+  ],
+  ['a Basic credential', [`Basic ${SECRET}`], [`Basic ${MASK}`]],
+  ['a Cookie header', ['--header', `Cookie: session=${SECRET}`], ['--header', `Cookie: ${MASK}`]],
+  ['an X-Api-Key header', [`X-Api-Key: ${SECRET}`], [`X-Api-Key: ${MASK}`]],
+  [
+    'URL user information',
+    [`https://alice:${SECRET}@api.example.test/v1`],
+    [`https://${MASK}@api.example.test/v1`],
+  ],
+  [
+    'a secret query parameter',
+    [`https://api.example.test/v1?token=${SECRET}&page=2`],
+    // As in the report: the assignment rule also takes what follows the secret.
+    [`https://api.example.test/v1?token=${MASK}`],
+  ],
+  ['a sensitive flag value', ['--password', SECRET], ['--password', MASK]],
+  ['curl -u user:password', ['-u', `alice:${SECRET}`], ['-u', MASK]],
+  ['curl --user user:password', ['--user', `alice:${SECRET}`], ['--user', MASK]],
+  ['curl --user=user:password', [`--user=alice:${SECRET}`], [`--user=${MASK}`]],
+  ['curl -uuser:password', [`-ualice:${SECRET}`], [`-u${MASK}`]],
+  ['curl --proxy-user user:password', ['--proxy-user', `alice:${SECRET}`], ['--proxy-user', MASK]],
+  ['curl -U user:password', ['-U', `alice:${SECRET}`], ['-U', MASK]],
+  [
+    'URL user information with an empty user name',
+    [`https://:${SECRET}@api.example.test/v1`],
+    [`https://${MASK}@api.example.test/v1`],
+  ],
+  [
+    'URL user information and a secret query parameter together',
+    [`https://alice:${SECRET}@api.example.test/x?token=${SECRET}`],
+    [`https://${MASK}@api.example.test/x?token=${MASK}`],
+  ],
+] satisfies readonly (readonly [string, readonly string[], readonly string[]])[];
+
 describe('redactOutcomeArgv', () => {
-  it.each([
-    [
-      'a Bearer header value',
-      ['-H', `Authorization: Bearer ${SECRET}`],
-      ['-H', `Authorization: ${MASK}`],
-    ],
-    ['a Basic credential', [`Basic ${SECRET}`], [`Basic ${MASK}`]],
-    ['a Cookie header', ['--header', `Cookie: session=${SECRET}`], ['--header', `Cookie: ${MASK}`]],
-    ['an X-Api-Key header', [`X-Api-Key: ${SECRET}`], [`X-Api-Key: ${MASK}`]],
-    [
-      'URL user information',
-      [`https://alice:${SECRET}@api.example.test/v1`],
-      [`https://${MASK}@api.example.test/v1`],
-    ],
-    [
-      'a secret query parameter',
-      [`https://api.example.test/v1?token=${SECRET}&page=2`],
-      // As in the report: the assignment rule also takes what follows the secret.
-      [`https://api.example.test/v1?token=${MASK}`],
-    ],
-    ['a sensitive flag value', ['--password', SECRET], ['--password', MASK]],
-    [
-      'URL user information and a secret query parameter together',
-      [`https://alice:${SECRET}@api.example.test/x?token=${SECRET}`],
-      [`https://${MASK}@api.example.test/x?token=${MASK}`],
-    ],
-  ])(
+  it.each(CASES)(
     'redacts %s and keeps argv[0] and harmless arguments byte for byte',
     (_name, input, expected) => {
       const harmless = ['-fsS', '-X', 'POST', '/fixture/reset', '{"profile":"fresh"}'];
@@ -114,6 +128,19 @@ describe('redactOutcomeArgv', () => {
       '--data',
       MASK,
       '/orders',
+    ]);
+  });
+
+  it('leaves flags that only start with -u untouched', () => {
+    const argv = ['go', 'test', '-update', '-u', `alice:${SECRET}`, '-run', 'TestX'];
+    expect(argvOf(redactOutcomeArgv(hostExited(argv)))).toEqual([
+      'go',
+      'test',
+      '-update',
+      '-u',
+      MASK,
+      '-run',
+      'TestX',
     ]);
   });
 
