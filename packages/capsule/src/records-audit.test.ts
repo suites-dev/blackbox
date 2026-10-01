@@ -1,4 +1,4 @@
-import { mkdtemp, rm, symlink } from 'node:fs/promises';
+import { mkdtemp, readdir, rm, symlink } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -16,6 +16,7 @@ it('audit #13: state directory creation must reject symlink traversal', async ()
       projectDirectory,
       record: runningRecord(projectDirectory),
     })).rejects.toThrow();
+    await expect(readdir(outsideDirectory)).resolves.toStrictEqual([]);
   } finally {
     await rm(projectDirectory, { recursive: true, force: true });
     await rm(outsideDirectory, { recursive: true, force: true });

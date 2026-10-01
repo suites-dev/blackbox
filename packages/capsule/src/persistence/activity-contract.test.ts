@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, rm } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -227,6 +227,13 @@ it('audit #1: invalid activity purpose cannot brick session cleanup', async () =
       sessionId: 'quiet-river-ada',
       activities: [invalid],
     })).rejects.toThrow();
+    await expect(readFile(join(
+      projectDirectory,
+      '.blackbox',
+      'experiments',
+      'capsule-quiet-river-ada',
+      'activities.json',
+    ), 'utf8')).rejects.toMatchObject({ code: 'ENOENT' });
   } finally {
     await rm(projectDirectory, { recursive: true, force: true });
   }

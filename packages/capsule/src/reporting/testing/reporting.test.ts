@@ -26,7 +26,8 @@ const roots: string[] = [];
 it('audit #12: Windows pipe paths must be redacted from reports', () => {
   const context = createRedactionContext();
   const value = redactText('manager at \\\\.\\pipe\\bb-secret-pipe', 'audit', context);
-  expect(value).toContain('[REDACTED]');
+  expect(value).toBe('manager at [REDACTED]');
+  expect(value).not.toContain('\\\\.\\pipe\\bb-secret-pipe');
 });
 
 function record(input: {
