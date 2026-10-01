@@ -23,12 +23,11 @@ and generated `--help` output.
 | Capsule lifecycle | `capsule up`, `capsule run`, `capsule down`                       | [`capsule`](../capsule/README.md) acquires resources, retains activities, and cleans up owned resources. The CLI supplies Node runtime activation adapters when starting a Capsule.     |
 | Evidence          | `observations --session <id>`                                     | `capsule` reads retained observations at session, activity, or trace scope.                                                                                                             |
 | Reports           | `capsule report`, `capsule report serve`, `capsule report export` | `capsule` projects retained records; [`report-server`](../report-server/README.md) serves the local read-only viewer.                                                                   |
+| Agent skills      | `skills install discovery` (alias `skill install`)                | [`skills`](../skills/src) installs its packaged discovery skill into the project; see [agent skill setup](../../docs/agent-skills.md).                                                  |
 
 The reserved `setup init` and `effects baseline update --run <id>` routes
-deliberately fail closed with exit code `3`. They are planned command contracts,
-not working integrations. The `skill install discovery` route is provided when
-the Skills plugin is installed and supports `--codex`, `--claude`, `--cursor`,
-repeated `--agent <name>`, `--yes`, and `--json`.
+deliberately fail closed with exit code `3`. They are planned command contracts, not working integrations. The CLI
+must not report a successful artifact until a backend exists.
 
 ## Typical flow
 

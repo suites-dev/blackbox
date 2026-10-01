@@ -42,9 +42,8 @@ Commands, configuration, and report formats may change as the first alpha takes 
 
 ## Use Blackbox with a coding agent
 
-The repository includes a portable discovery skill. Follow [agent skill setup](agent-skills.md) for
-Codex, Claude Code, or Cursor. The Skills plugin can install the complete directory and its references
-with `blackbox skill install discovery`.
+Blackbox ships a portable discovery skill in `@suites/blackbox-skills`. Install it into your project for Codex,
+Claude Code, or Cursor with `blackbox skills install discovery`; see [agent skill setup](agent-skills.md).
 Some skill references discuss capabilities still in development; use the status above to choose a working path.
 
 Try asking your agent:

@@ -27,6 +27,7 @@ blackbox capsule run --help
 | `catalog validate`                             | Validate `blackbox.config.yaml` and referenced Compose/activation files. Optional `--json`.                                                                                   |
 | `driver install --runtime node`                | Prepare `.blackbox/drivers/` and install the driver SDK. Optional `--json`. Does not install protocol tools.                                                                  |
 | `inst install --runtime node`                  | Install `.blackbox/instrumentation/` and its pinned Node dependencies.                                                                                                        |
+| `skills install discovery`                     | Install the discovery skill for `--codex`, `--claude`, `--cursor` (or `--agent`, `--yes`). Needs `@suites/blackbox-skills`; see [agent skills](agent-skills.md).              |
 
 The capsule a command acts on is, in order: a positional capsule ID, `--session`, the `BLACKBOX_CAPSULE`
 environment variable, then the current capsule in `.blackbox/state/current-capsule` (set by `capsule up` and
@@ -54,8 +55,8 @@ A child can itself exit `125`, `126` or `127`, so the exit code alone
 never proves where a failure came from: with `--json`, stdout carries exactly one JSON document for success
 and for every failure, and that document is authoritative. A capsule failure keeps the Capsule package's
 document (`capsule-not-found`, `capsule-invalid-state`, `capsule-operation-failed`) and adds the same
-`capsule` and `next` fields as the matching success document. `catalog validate`, `driver install` and
-`inst install` keep exiting `1` on failure.
+`capsule` and `next` fields as the matching success document. `catalog validate`, `driver install`,
+`inst install` and `skills install` exit `1` on failure; `skills install` reports every destination first.
 
 `capsule up` and `capsule down` never undo a capsule that started or stopped because the current-capsule file
 could not be written or cleared. They report it instead: a `blackbox:` line in human mode, a
@@ -187,9 +188,8 @@ telemetry status, not only the CLI exit code.
 
 ## Commands not available yet
 
-With valid arguments, `setup init` and `effects baseline update --run <id>` exit
-`3` with a not-implemented message. `skill install discovery` is implemented by
-the Skills plugin and accepts `--codex`, `--claude`, `--cursor`, repeated
-`--agent <name>`, `--yes`, and `--json`.
+With valid arguments, `setup init` and `effects baseline update --run <id>` exit `3` with a
+not-implemented message. These reserved commands
+are outside the [available alpha workflows](alpha-status.md).
 
 See [Capsule experiments](experiments.md) for the sequence and [reports](reports.md) for viewing and exporting results.
