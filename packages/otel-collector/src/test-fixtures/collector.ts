@@ -64,7 +64,10 @@ export interface Fixture {
   readonly collector: CollectorHandle;
 }
 
-export async function withCollector(test: (fixture: Fixture) => Promise<void>): Promise<void> {
+export async function withCollector(
+  test: (fixture: Fixture) => Promise<void>,
+  limits: Readonly<Partial<StartCollectorInput['limits']>> = {},
+): Promise<void> {
   const storageDirectory = await mkdtemp(join(tmpdir(), 'blackbox-collector-test-'));
   const input = {
     kind: 'start-collector',
@@ -90,6 +93,7 @@ export async function withCollector(test: (fixture: Fixture) => Promise<void>): 
       maxRetainedBytes: 32_768,
       maxRetainedFragments: 16,
       shutdownTimeoutMs: 100,
+      ...limits,
     },
   } satisfies StartCollectorInput;
   let collector: CollectorHandle | null = null;

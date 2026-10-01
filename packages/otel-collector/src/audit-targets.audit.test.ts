@@ -1,5 +1,6 @@
 import { expect, test, vi } from 'vitest';
 
+import packagedCollectorLifecycleSchema from '../schema/collector-lifecycle-v1.json' with { type: 'json' };
 import { collectorLifecycleSchema } from './schema/index.js';
 import { parseLifecycle } from './lifecycle/store.js';
 import { readCollectorSession } from './storage/reader.js';
@@ -24,7 +25,7 @@ test.fails('audit M3: every read rescans and parses all retained fragments', asy
       await readCollectorSession(input);
       const secondReadParses = parseSpy.mock.calls.length;
 
-      expect(firstReadParses).toBe(7);
+      expect(firstReadParses).toBeGreaterThan(0);
       expect(secondReadParses).toBe(0);
     } finally {
       parseSpy.mockRestore();
@@ -33,6 +34,7 @@ test.fails('audit M3: every read rescans and parses all retained fragments', asy
 });
 
 test('audit M9: schema accepts empty runs but parser rejects lifecycle', () => {
+  expect(packagedCollectorLifecycleSchema).toEqual(collectorLifecycleSchema);
   expect(collectorLifecycleSchema.properties.runs).toMatchObject({ minItems: 1 });
 
   const lifecycle = {

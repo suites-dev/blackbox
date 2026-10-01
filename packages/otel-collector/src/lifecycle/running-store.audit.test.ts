@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, rm } from 'node:fs/promises';
+import { mkdir, mkdtemp, readdir, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { expect, test } from 'vitest';
@@ -72,7 +72,15 @@ test('audit M2: rejects telemetry after collector failure', async () => {
     await store.fail(new Error('audit failure'));
     await expect(
       store.accept({ rawJson: '{}', contentEncoding: 'identity', spanCount: 0 }),
-    ).rejects.toThrow();
+    ).rejects.toThrow('telemetry intake is stopped');
+    expect(await readdir(fragmentDirectory(lease))).toEqual([]);
+    expect(store.status().telemetry).toEqual({
+      status: 'not-received',
+      acceptedRequests: 0,
+      acceptedSpans: 0,
+      lastReceivedAt: null,
+    });
+    expect(store.status().failure).toEqual({ name: 'Error', message: 'audit failure' });
   } finally {
     await rm(storageDirectory, { recursive: true, force: true });
   }

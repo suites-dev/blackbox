@@ -17,6 +17,13 @@ import {
   type CollectorRetentionUsage,
 } from './retention.js';
 
+export class CollectorIntakeStoppedError extends Error {
+  public constructor() {
+    super('Collector has failed; telemetry intake is stopped.');
+    this.name = 'CollectorIntakeStoppedError';
+  }
+}
+
 export interface FragmentAcceptance {
   readonly rawJson: string;
   readonly contentEncoding: 'identity' | 'gzip';
@@ -213,10 +220,11 @@ export class RunningCollectorStore implements CollectorStore {
     };
   }
 
-  private assertAcceptingTelemetry(run: CollectorRunRecord | undefined = this.#record.runs.at(-1)):
-    void {
+  private assertAcceptingTelemetry(
+    run: CollectorRunRecord | undefined = this.#record.runs.at(-1),
+  ): void {
     if (run !== undefined && run.receiver === 'failed') {
-      throw new Error('Collector has failed; telemetry intake is stopped.');
+      throw new CollectorIntakeStoppedError();
     }
   }
 
