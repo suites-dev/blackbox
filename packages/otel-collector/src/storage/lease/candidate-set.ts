@@ -19,7 +19,11 @@ async function readCandidate(input: {
   }
   const lock = await readLock(decodedName.path);
   if (lock.kind === 'lock-missing') {
-    return 'stale';
+    // A claiming candidate listed earlier may since have been promoted (renamed
+    // to owned). It is a rival until its owned form is ruled out too.
+    return decodedName.state === 'claiming'
+      ? readCandidate({ ...input, name: `${decodedName.encodedToken}.owned` })
+      : 'stale';
   }
   const decoded = lock.decoded;
   if (
@@ -55,12 +59,14 @@ async function readCandidate(input: {
   };
 }
 
-export async function readCandidateSet(input: {
+/** Reads the candidates named in a directory listing taken earlier. */
+export async function readCandidates(input: {
   readonly directory: string;
+  readonly names: readonly string[];
   readonly runtime: LeaseRuntime;
 }): Promise<CandidateSetRead> {
   const candidates: LockCandidate[] = [];
-  for (const name of await readdir(input.directory)) {
+  for (const name of input.names) {
     const candidate = await readCandidate({ ...input, name });
     if (candidate === 'foreign') {
       return { kind: 'foreign-candidate' };
@@ -70,4 +76,11 @@ export async function readCandidateSet(input: {
     }
   }
   return { kind: 'candidate-set', candidates };
+}
+
+export async function readCandidateSet(input: {
+  readonly directory: string;
+  readonly runtime: LeaseRuntime;
+}): Promise<CandidateSetRead> {
+  return readCandidates({ ...input, names: await readdir(input.directory) });
 }
