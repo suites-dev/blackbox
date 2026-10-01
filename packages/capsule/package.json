@@ -5,6 +5,7 @@
   "description": "Persistent Capsule session manager over Catalog and Sandbox.",
   "files": [
     "dist",
+    "assets",
     "schema",
     "README.md",
     "LICENSE",
@@ -28,7 +29,13 @@
     "./schema/capsule-progress-v1.json": "./schema/capsule-progress-v1.json",
     "./schema/capsule-session-v1.json": "./schema/capsule-session-v1.json",
     "./schema/capsule-activities-v1.json": "./schema/capsule-activities-v1.json",
-    "./schema/capsule-operational-report-v1.json": "./schema/capsule-operational-report-v1.json"
+    "./schema/capsule-operational-report-v1.json": "./schema/capsule-operational-report-v1.json",
+    "./skills": {
+      "blackbox-source": "./src/skills.ts",
+      "types": "./dist/skills.d.ts",
+      "import": "./dist/skills.js",
+      "default": "./dist/skills.js"
+    }
   },
   "scripts": {
     "prebuild": "rimraf dist",
@@ -42,6 +49,10 @@
       "apiVersion": 1,
       "pluginId": "capsule",
       "topic": "capsule"
+    },
+    "skills": {
+      "apiVersion": 1,
+      "export": "./skills"
     }
   },
   "oclif": {
@@ -61,6 +72,7 @@
     "@suites/blackbox-otel-collector": "workspace:*",
     "@suites/blackbox-report-server": "workspace:*",
     "@suites/blackbox-sandbox": "workspace:*",
+    "@suites/blackbox-skills": "workspace:*",
     "@suites/blackbox-telemetry": "workspace:*",
     "ajv": "8.20.0",
     "string-width": "8.3.0"

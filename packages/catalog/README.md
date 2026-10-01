@@ -7,6 +7,14 @@ contract and the code that loads, validates, selects, and resolves
 This is a public alpha package. Its export surface may change between alpha
 releases.
 
+## Agent skill
+
+Catalog owns the agent guidance for authoring and statically validating Blackbox
+catalogs under [`assets/catalog`](assets/catalog). The public
+`@suites/blackbox-catalog/skills` ESM entrypoint contributes it to the Skills
+registry when Catalog is a selected CLI plugin. Discovery can route catalog work to
+this skill when available; an unselected Catalog package contributes no skill.
+
 ## Where Catalog Fits
 
 ```text

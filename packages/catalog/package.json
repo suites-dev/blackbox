@@ -5,6 +5,7 @@
   "description": "YAML catalog schema, validation, selection, and sandbox-input resolution.",
   "files": [
     "dist",
+    "assets",
     "schema",
     "README.md",
     "LICENSE",
@@ -25,7 +26,13 @@
       "import": "./dist/index.js",
       "default": "./dist/index.js"
     },
-    "./schema/blackbox-config-v1.json": "./schema/blackbox-config-v1.json"
+    "./schema/blackbox-config-v1.json": "./schema/blackbox-config-v1.json",
+    "./skills": {
+      "blackbox-source": "./src/skills.ts",
+      "types": "./dist/skills.d.ts",
+      "import": "./dist/skills.js",
+      "default": "./dist/skills.js"
+    }
   },
   "scripts": {
     "prebuild": "rimraf dist",
@@ -39,6 +46,10 @@
       "apiVersion": 1,
       "pluginId": "catalog",
       "topic": "catalog"
+    },
+    "skills": {
+      "apiVersion": 1,
+      "export": "./skills"
     }
   },
   "oclif": {
@@ -52,6 +63,7 @@
   "dependencies": {
     "@oclif/core": "^5.1.0",
     "@suites/blackbox-cli-contract": "workspace:*",
+    "@suites/blackbox-skills": "workspace:*",
     "@suites/blackbox-telemetry": "workspace:*",
     "ajv": "8.20.0",
     "yaml": "2.9.1"

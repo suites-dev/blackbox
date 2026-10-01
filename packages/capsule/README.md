@@ -12,6 +12,16 @@ Capsule is the interactive system-test path. Native Playwright fixtures separate
 reuse the Sandbox layer underneath; this package does not provide or wrap their test
 API.
 
+## Agent skill
+
+Capsule owns the operational agent guidance for lifecycle, execution, observation,
+evidence, reports, repair, and cleanup under [`assets/capsule`](assets/capsule).
+The public `@suites/blackbox-capsule/skills` ESM entrypoint contributes it to the
+Skills registry when this package is a selected CLI plugin. Discovery may route live
+work to this skill, but neither Discovery nor the Skills registry imports or installs
+Capsule. If Capsule is not selected, its skill is unavailable and Discovery remains
+limited to static work.
+
 ## How The Pieces Fit
 
 ```mermaid

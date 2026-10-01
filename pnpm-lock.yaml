@@ -178,6 +178,9 @@ importers:
       '@suites/blackbox-sandbox':
         specifier: workspace:*
         version: link:../sandbox
+      '@suites/blackbox-skills':
+        specifier: workspace:*
+        version: link:../skills
       '@suites/blackbox-telemetry':
         specifier: workspace:*
         version: link:../telemetry
@@ -209,6 +212,9 @@ importers:
       '@suites/blackbox-cli-contract':
         specifier: workspace:*
         version: link:../cli-contract
+      '@suites/blackbox-skills':
+        specifier: workspace:*
+        version: link:../skills
       '@suites/blackbox-telemetry':
         specifier: workspace:*
         version: link:../telemetry

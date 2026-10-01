@@ -2,6 +2,10 @@ import { constants } from 'node:fs';
 import { cp, lstat, mkdir, mkdtemp, open, readdir, rename, rm } from 'node:fs/promises';
 import { basename, dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { discoverySkill } from '../discovery.js';
+import { createSkillRegistry } from '../registry/registry.js';
+import type { ResolvedSkillRegistry } from '../registry/contracts.js';
+import { validateSkillSource } from './source.js';
 
 export type SkillAgent = 'codex' | 'claude' | 'cursor';
 
@@ -16,11 +20,17 @@ const AGENT_DIRECTORIES = {
   cursor: '.cursor/skills',
 } as const satisfies Readonly<Record<SkillAgent, string>>;
 
-const skillSource = fileURLToPath(new URL('../../assets/discovery', import.meta.url));
+const defaultRegistry = createSkillRegistry([
+  { apiVersion: 1, packageName: '@suites/blackbox-skills', skills: [discoverySkill] },
+]);
 
 async function sameTree(source: string, target: string): Promise<boolean> {
-  const sourceHandle = await open(source, constants.O_RDONLY | constants.O_NOFOLLOW).catch(() => null);
-  const targetHandle = await open(target, constants.O_RDONLY | constants.O_NOFOLLOW).catch(() => null);
+  const sourceHandle = await open(source, constants.O_RDONLY | constants.O_NOFOLLOW).catch(
+    () => null,
+  );
+  const targetHandle = await open(target, constants.O_RDONLY | constants.O_NOFOLLOW).catch(
+    () => null,
+  );
   if (sourceHandle === null || targetHandle === null) {
     if (sourceHandle !== null) {
       await sourceHandle.close();
@@ -102,14 +112,46 @@ async function publishSkill(
   }
 }
 
-export async function installSkill(input: {
-  readonly projectDirectory: string;
-  readonly skillName: 'discovery';
-  readonly agents: readonly SkillAgent[];
-}): Promise<readonly InstallResult[]> {
+export async function installSkill(
+  input: {
+    readonly projectDirectory: string;
+    readonly skillName: string;
+    readonly agents: readonly SkillAgent[];
+  },
+  registry: ResolvedSkillRegistry = defaultRegistry,
+): Promise<readonly InstallResult[]> {
+  const selected = registry.resolve([input.skillName]);
+  const targets: { source: string; target: string; agent: SkillAgent }[] = [];
+  for (const skill of selected) {
+    const source = fileURLToPath(skill.source);
+    await validateSkillSource(source);
+    for (const agent of new Set(input.agents)) {
+      if (!Object.hasOwn(AGENT_DIRECTORIES, agent)) {
+        throw new Error(`Unknown skill agent: ${agent}`);
+      }
+      const target = join(input.projectDirectory, AGENT_DIRECTORIES[agent], skill.name);
+      await assertSafeParents(input.projectDirectory, target);
+      targets.push({ source, target, agent });
+    }
+  }
+  const conflicts: InstallResult[] = [];
+  for (const { source, target, agent } of targets) {
+    if ((await lstat(target).catch(() => null)) !== null && !(await sameTree(source, target))) {
+      conflicts.push({ kind: 'conflict', agent, path: target });
+    }
+  }
+  if (conflicts.length > 0) {
+    return conflicts;
+  }
+  return publishTargets(input.projectDirectory, targets);
+}
+
+async function publishTargets(
+  projectDirectory: string,
+  targets: readonly { source: string; target: string; agent: SkillAgent }[],
+): Promise<readonly InstallResult[]> {
   const results: InstallResult[] = [];
-  for (const agent of input.agents) {
-    const target = join(input.projectDirectory, AGENT_DIRECTORIES[agent], input.skillName);
+  for (const { source: skillSource, target, agent } of targets) {
     const existing = await lstat(target).catch(() => null);
     if (existing !== null) {
       results.push({
@@ -119,10 +161,13 @@ export async function installSkill(input: {
       });
       continue;
     }
-    const publication = await publishSkill(skillSource, target, input.projectDirectory);
-    const kind = publication === 'installed'
-      ? 'installed'
-      : (await sameTree(skillSource, target) ? 'unchanged' : 'conflict');
+    const publication = await publishSkill(skillSource, target, projectDirectory);
+    const kind =
+      publication === 'installed'
+        ? 'installed'
+        : (await sameTree(skillSource, target))
+          ? 'unchanged'
+          : 'conflict';
     results.push({ kind, agent, path: target });
   }
   return results;

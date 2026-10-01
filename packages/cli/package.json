@@ -45,6 +45,9 @@
       "target": "./dist/command-registry.js",
       "identifier": "COMMANDS"
     },
+    "hooks": {
+      "prerun": "./dist/hooks/prerun.js"
+    },
     "helpClass": "./dist/help.js",
     "topicSeparator": " ",
     "topics": {

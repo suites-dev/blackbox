@@ -17,6 +17,18 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "default": "./dist/index.js"
+    },
+    "./skills": {
+      "blackbox-source": "./src/skills.ts",
+      "types": "./dist/skills.d.ts",
+      "import": "./dist/skills.js",
+      "default": "./dist/skills.js"
+    },
+    "./discovery": {
+      "blackbox-source": "./src/discovery.ts",
+      "types": "./dist/discovery.d.ts",
+      "import": "./dist/discovery.js",
+      "default": "./dist/discovery.js"
     }
   },
   "scripts": {
@@ -31,6 +43,10 @@
       "apiVersion": 1,
       "pluginId": "skills",
       "topic": "skills"
+    },
+    "skills": {
+      "apiVersion": 1,
+      "export": "./skills"
     }
   },
   "oclif": {

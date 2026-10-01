@@ -24,6 +24,13 @@ For future Playwright integration, bind each terminal witness to the exact physi
 
 ## Interpret absence and counts
 
+Removing a message with a destructive queue read or acknowledgement changes the
+environment. Use a dedicated test consumer and account for inspection during
+reset and cleanup. Read-only queries may also produce spans; keep them separate
+from stimulus effects. Register output subscribers before sending when needed.
+See the [queue flow](../diagrams/queue-flow.mmd) for the independent business and
+telemetry completion boundaries.
+
 A matching counterexample can refute an upper bound when its identity and scope are established. Fewer observed occurrences do not establish an exact count if relevant capture is incomplete. A closed observation window applies only to that window and the stated scope; it does not prove that a scheduled task will never run later.
 
 Distinguish waiting for telemetry delivery from waiting for business completion. A stable effects projection says nothing about whether a remote job has finished unless the application contract makes that relationship explicit.

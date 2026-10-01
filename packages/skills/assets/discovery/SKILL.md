@@ -1,26 +1,45 @@
 ---
 name: discovery
-description: Discover an application's topology and observability, author or update its Blackbox Alpha catalog and user-owned Node instrumentation bootstrap, and validate supported setup paths.
+description: Inspect an application's behavioral boundary, reconcile existing Blackbox setup, and route catalog authoring or live validation to available package skills.
 ---
 
 # Discovery
 
-Use this skill when preparing an existing application repository for Blackbox Alpha, reviewing a setup, or validating the first supported journey. Start with the repository and the user's requested system or subsystem. Inspect before acting. Apply setup edits when they are within the requested task, keep them scoped to that application, and preserve unrelated project conventions.
+Start in the user's repository with [the operating contract](references/operating-contract.md)
+and [package routing](references/package-routing.md). Inventory, boundary selection
+and an honest audit work without any optional feature package.
 
-Alpha has one project-authored topology authority: root `blackbox.config.yaml`, referencing ordered ordinary Compose files. The application owns its instrumentation bootstrap under `.blackbox/instrumentation/`. Blackbox coordinates activation, execution-scoped OTLP intake, command execution, retention, queries, and reports. The current path is Capsule execution with Node instrumentation. Native Playwright integration, normalized-effect matching, and automated claim qualification are in development; references describing those workflows are design guidance, not available commands.
+Choose [initial setup](skills/initial-setup/SKILL.md) when no setup exists,
+[reconcile](skills/reconcile/SKILL.md) for existing or partial assets, and
+[repair](skills/repair/SKILL.md) for an observed failure. An absent executable
+does not establish that the project has no catalog.
 
-A Capsule supplies the apparatus. An experiment specifies initial conditions, stimulus, measurements, and checks; a trial executes that procedure. Execution identity defines the evidence scope. Trace correlation adds structure but is not required for evidence admission. Controlled state, isolation, and visible domain identities can support behavioral claims across separate traces; they do not manufacture direct span parentage.
+1. [Inventory repository evidence](skills/repository/SKILL.md).
+2. Inspect [dependencies](skills/dependencies/SKILL.md), [CI](skills/ci/SKILL.md),
+   [infrastructure](skills/infrastructure/SKILL.md), and
+   [I/O and environment](skills/io-environment/SKILL.md) as relevant.
+3. [Select the behavioral boundary](skills/boundary/SKILL.md). Delegate catalog
+   authoring to the available `catalog` skill, preserving that boundary.
+4. [Run static preflight](skills/preflight/SKILL.md). For authorized live work,
+   delegate the accepted procedure to the available `capsule` skill. It owns
+   acquisition, command execution, async completion, observation and cleanup.
+5. [Return the audit](skills/audit/SKILL.md), including when incomplete or blocked.
 
-Follow the workflow in this order, adapting it to the task:
+Check the host's available skills before delegating. A package dependency, CLI
+command, old installed directory or TypeScript registry name does not establish
+that its skill is currently available. If Capsule was not selected, do not load
+or invent its instructions or install it automatically. Finish static discovery
+and mark requested live stages blocked by the missing `capsule` integration.
+If the package is selected but its skill has not been installed for this host,
+report that separately. Installation is an explicit user choice.
 
-1. Read the requested behavior and inspect the existing repository. Record source-backed topology and unresolved edges before proposing a catalog boundary. See [topology and catalog](references/topology-and-catalog.md).
-2. Map required claims to application-owned instrumentation and Blackbox observation boundaries. Do not treat a configured participant or a healthy endpoint as proof of capture. See [runtime observation](references/runtime-observation.md).
-3. Validate the authored setup with the installed, supported catalog capability. Only run the application when the user’s task authorizes a live probe. Distinguish “catalog authored,” “catalog validated,” “runtime exercised,” and “observation established.”
-4. For current experiments, read [Capsule](references/capsule-experiments.md) and, when relevant, [async workflows](references/async-workflows.md). Read [Playwright design guidance](references/playwright-and-authoring.md) only when planning the upcoming integration.
-5. For current results, repair, and automation, read [evidence and reports](references/evidence-and-reports.md), [troubleshooting and repair](references/troubleshooting-and-repair.md), or [CI](references/ci.md). [Effects and baselines](references/effects-and-baselines.md) describes planned assurance, not an available evaluator.
+The [audit schema](schemas/discovery-audit.v1.json),
+[inspector schema](schemas/inspector-result.v1.json), and
+[receipt schema](schemas/receipt-bundle.v1.json) describe output contracts.
+[Example audits](examples/blocked/audit.json) are illustrative data, not proof of
+execution. This package does not authenticate receipts or implement a live
+discovery runner. See [audit limitations](references/audit-contract.md).
 
-The supported inspection commands include `blackbox catalog validate --json`, `blackbox catalog ls --json`, and `blackbox observations --session <session-id> --json`. Use `capsule up`, `capsule run`, `capsule down`, and `capsule report`, `capsule report serve|export` for the current journey. Inspect installed help for exact flags. `setup init` and `effects baseline update` remain reserved stubs. `skill install discovery` is available when the Skills plugin is installed and accepts agent flags such as `--codex`, `--claude`, and `--cursor`. Do not infer command shapes from historical proposals.
-
-The `discovery` skill itself is portable: copy this entire directory into a skill location supported by the host so its references stay with it. The command installs this directory into the selected agent skill locations and reports conflicts rather than overwriting authored skills.
-
-ODC/decision coverage, generated Gherkin/specs, suite generation, and legacy contract-promotion surfaces are outside the current product direction. Do not introduce them as setup requirements or promised follow-up capabilities.
+Planned [Playwright authoring](references/playwright-and-authoring.md) and
+[effects baselines](references/effects-and-baselines.md) are design references;
+confirm installed capabilities before treating any described API as available.
