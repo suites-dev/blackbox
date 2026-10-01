@@ -3,6 +3,9 @@
 //   $ <cmd>                       compared command (stdout and stderr combined)
 //   #! capture <VAR> <extractor>  set VAR from the previous command's RAW output
 //   #! timeout <seconds>          timeout for the next command
+//   #! volatile run-block         in the next command's (a provisional `blackbox
+//                                 capsule run`) output, replace the Blackbox block,
+//                                 `activity …` through `→ …`, with <VOLATILE>
 //   #! wait <seconds> "<text>" <cmd>
 //                                 rerun <cmd> (blackbox capsule show/ls only) every 500 ms,
 //                                 output not compared, until its raw output
@@ -89,6 +92,13 @@ function parseDirective(line) {
   }
   if (line.startsWith('#! wait ')) {
     return parseWait(line);
+  }
+  if (line.startsWith('#! volatile')) {
+    // Fixed text: no argument, no pattern.
+    if (line !== '#! volatile run-block') {
+      throw new Error(`volatile takes exactly "run-block": ${line}`);
+    }
+    return { kind: 'volatile', line };
   }
   const timeout = /^#! timeout (\d+)$/u.exec(line);
   if (timeout !== null) {
@@ -201,6 +211,47 @@ export function createNormalizer({
       if (groups.spans !== undefined || groups.traces !== undefined) return '<N>';
       return '<DUR>';
     });
+}
+
+export const VOLATILE = '<VOLATILE>';
+
+/**
+ * `#! volatile run-block`: replaces the Blackbox block of a `capsule run`
+ * output with one <VOLATILE> line. The block is found from its end: the LAST
+ * `→ blackbox capsule show <ACT_n> --session <CAPSULE_m>` suggestion, back to
+ * the nearest `activity <ACT_n> · capsule <CAPSULE_m> · ` run line with the
+ * same placeholders. Placeholders exist only for IDs the capsule retained, so
+ * a child line that merely starts with `activity ` never anchors the block.
+ * Applied to NORMALIZED output, so the child's own lines around the block are
+ * still compared. Refused when the block is missing, not provisional, or would
+ * hide a secret.
+ */
+export function replaceRunBlock(command, output) {
+  if (!/^blackbox capsule run /u.test(command)) {
+    throw new Error(`volatile run-block applies only to blackbox capsule run: ${command}`);
+  }
+  const lines = output.split('\n');
+  const suggestion = /^→ blackbox capsule show (<ACT_\d+>) --session (<CAPSULE_\d+>)$/u;
+  let last = -1;
+  for (let index = lines.length - 1; index >= 0 && last < 0; index -= 1) {
+    if (suggestion.test(lines[index])) last = index;
+  }
+  const ids = last < 0 ? null : suggestion.exec(lines[last]);
+  let first = -1;
+  for (let index = last - 1; ids !== null && index >= 0 && first < 0; index -= 1) {
+    if (lines[index].startsWith(`activity ${ids[1]} · capsule ${ids[2]} · `)) first = index;
+  }
+  if (first < 0 || last < 0) {
+    throw new Error(`volatile run-block found no Blackbox block in the output of: ${command}`);
+  }
+  const block = lines.slice(first, last + 1);
+  if (!block.some((line) => /^ {2}observed +.*· provisional \(capsule running\)$/u.test(line))) {
+    throw new Error(`volatile run-block applies only while the capsule is provisional: ${command}`);
+  }
+  if (block.some((line) => line.includes('<SECRET>'))) {
+    throw new Error(`a secret appeared in the Blackbox block of: ${command}`);
+  }
+  return [...lines.slice(0, first), VOLATILE, ...lines.slice(last + 1)].join('\n');
 }
 
 /** Renders a transcript in golden format from executed items. */

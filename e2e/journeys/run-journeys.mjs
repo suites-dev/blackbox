@@ -22,6 +22,7 @@ import {
   normalizeWhitespace,
   parseGolden,
   renderTranscript,
+  replaceRunBlock,
 } from './journey-format.mjs';
 import { runItems } from './journey-steps.mjs';
 import { canonicalizeTrees } from './journey-trees.mjs';
@@ -129,12 +130,21 @@ async function runJourney({
     traceIds,
     secrets: [fixtureToken],
   });
+  const compared = (item) => {
+    const output = normalize(canonicalizeTrees(item.output));
+    if (!item.volatile) return output;
+    try {
+      return replaceRunBlock(item.command, output);
+    } catch (error) {
+      // The block stays in the transcript, so the diff shows what was refused.
+      failure ??= error;
+      return output;
+    }
+  };
   const actual = normalizeWhitespace(
     renderTranscript(
       executed.map((item) =>
-        item.kind === 'command'
-          ? { ...item, output: normalize(canonicalizeTrees(item.output)) }
-          : item,
+        item.kind === 'command' ? { ...item, output: compared(item) } : item,
       ),
     ),
   );

@@ -1,129 +1,39 @@
-import { constants } from 'node:fs';
-import { cp, lstat, mkdir, mkdtemp, open, readdir, rename, rm } from 'node:fs/promises';
-import { basename, dirname, join, relative, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { loadBundledSkill, type BundledSkill } from './bundled-skill.js';
+import type { SkillAgent } from './hosts.js';
+import { installSkillBundle, installSucceeded, type SkillInstallResult } from './install-skill.js';
+import { nodeSkillStore } from './store/node-skill-store.js';
 
-export type SkillAgent = 'codex' | 'claude' | 'cursor';
+export { SKILL_AGENTS, type SkillAgent } from './hosts.js';
+export type { SkillDestinationResult, SkillOutcome } from './install-skill.js';
 
-type InstallResult =
-  | { readonly kind: 'installed'; readonly agent: SkillAgent; readonly path: string }
-  | { readonly kind: 'unchanged'; readonly agent: SkillAgent; readonly path: string }
-  | { readonly kind: 'conflict'; readonly agent: SkillAgent; readonly path: string };
-
-const AGENT_DIRECTORIES = {
-  codex: '.agents/skills',
-  claude: '.claude/skills',
-  cursor: '.cursor/skills',
-} as const satisfies Readonly<Record<SkillAgent, string>>;
-
-const skillSource = fileURLToPath(new URL('../../assets/discovery', import.meta.url));
-
-async function sameTree(source: string, target: string): Promise<boolean> {
-  const sourceHandle = await open(source, constants.O_RDONLY | constants.O_NOFOLLOW).catch(() => null);
-  const targetHandle = await open(target, constants.O_RDONLY | constants.O_NOFOLLOW).catch(() => null);
-  if (sourceHandle === null || targetHandle === null) {
-    if (sourceHandle !== null) {
-      await sourceHandle.close();
-    }
-    if (targetHandle !== null) {
-      await targetHandle.close();
-    }
-    return false;
-  }
-  try {
-    const [sourceStat, targetStat] = await Promise.all([sourceHandle.stat(), targetHandle.stat()]);
-    if (sourceStat.isDirectory() !== targetStat.isDirectory()) {
-      return false;
-    }
-    if (sourceStat.isDirectory()) {
-      const [sourceNames, targetNames] = await Promise.all([readdir(source), readdir(target)]);
-      if (sourceNames.length !== targetNames.length) {
-        return false;
-      }
-      for (const name of sourceNames) {
-        if (!(await sameTree(join(source, name), join(target, name)))) {
-          return false;
-        }
-      }
-      return true;
-    }
-    return (await sourceHandle.readFile()).equals(await targetHandle.readFile());
-  } finally {
-    await Promise.all([sourceHandle.close(), targetHandle.close()]);
-  }
+export interface ProjectSkillInstallation extends SkillInstallResult {
+  readonly ok: boolean;
+  readonly skill: BundledSkill;
+  readonly version: string;
+  readonly projectDirectory: string;
 }
 
-async function assertSafeParents(projectDirectory: string, target: string): Promise<void> {
-  const root = resolve(projectDirectory);
-  const targetPath = resolve(target);
-  if (relative(root, targetPath).startsWith('..')) {
-    throw new Error('skill target escapes the project directory');
-  }
-  let current = dirname(targetPath);
-  while (current !== root && current !== dirname(current)) {
-    const entry = await lstat(current).catch(() => null);
-    if (entry !== null && entry.isSymbolicLink()) {
-      throw new Error(`skill target parent is a symbolic link: ${current}`);
-    }
-    current = dirname(current);
-  }
-}
-
-/** Stage the complete tree and publish it with one rename, so no checked path is copied into. */
-async function publishSkill(
-  source: string,
-  target: string,
-  projectDirectory: string,
-): Promise<'installed' | 'occupied'> {
-  await assertSafeParents(projectDirectory, target);
-
-  const parent = dirname(target);
-  await mkdir(parent, { recursive: true });
-  const stagingDirectory = await mkdtemp(join(parent, `.${basename(target)}.tmp-`));
-  const stagedTarget = join(stagingDirectory, basename(target));
-  try {
-    await cp(source, stagedTarget, { recursive: true });
-    try {
-      await rename(stagedTarget, target);
-      return 'installed';
-    } catch (error) {
-      if (
-        typeof error === 'object' &&
-        error !== null &&
-        'code' in error &&
-        (error.code === 'EEXIST' || error.code === 'ENOTEMPTY')
-      ) {
-        return 'occupied';
-      }
-      throw error;
-    }
-  } finally {
-    await rm(stagingDirectory, { recursive: true, force: true });
-  }
-}
-
+/**
+ * Installs a skill shipped in this package into a project for the selected
+ * agents. The project root is `projectDirectory` itself; nothing searches
+ * parent directories.
+ */
 export async function installSkill(input: {
   readonly projectDirectory: string;
-  readonly skillName: 'discovery';
+  readonly skillName: BundledSkill;
   readonly agents: readonly SkillAgent[];
-}): Promise<readonly InstallResult[]> {
-  const results: InstallResult[] = [];
-  for (const agent of input.agents) {
-    const target = join(input.projectDirectory, AGENT_DIRECTORIES[agent], input.skillName);
-    const existing = await lstat(target).catch(() => null);
-    if (existing !== null) {
-      results.push({
-        kind: (await sameTree(skillSource, target)) ? 'unchanged' : 'conflict',
-        agent,
-        path: target,
-      });
-      continue;
-    }
-    const publication = await publishSkill(skillSource, target, input.projectDirectory);
-    const kind = publication === 'installed'
-      ? 'installed'
-      : (await sameTree(skillSource, target) ? 'unchanged' : 'conflict');
-    results.push({ kind, agent, path: target });
-  }
-  return results;
+}): Promise<ProjectSkillInstallation> {
+  const bundle = await loadBundledSkill(input.skillName);
+  const result = await installSkillBundle({
+    bundle,
+    agents: input.agents,
+    store: nodeSkillStore(input.projectDirectory),
+  });
+  return {
+    ok: installSucceeded(result),
+    skill: input.skillName,
+    version: bundle.version,
+    projectDirectory: input.projectDirectory,
+    ...result,
+  };
 }

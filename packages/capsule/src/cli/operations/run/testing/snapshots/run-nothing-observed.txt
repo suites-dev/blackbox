@@ -1,0 +1,4 @@
+activity c0000002 · capsule calm-comet-ada-000000000001 · stimulus · via public-api · host · exit 0 · 284ms
+  context   sent (w3c, http-headers)
+  observed  nothing yet · provisional (capsule running)
+→ blackbox capsule show c0000002 --session calm-comet-ada-000000000001

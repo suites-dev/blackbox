@@ -11,10 +11,10 @@ entrypoint: <URL>
 $ blackbox capsule ls
   CAPSULE  SYSTEM  STATE  STARTED  ACTIVITIES  TITLE
 * <CAPSULE_1>  subscription-system  running  <TIME>  0  subscription-system
+#! volatile run-block
 $ blackbox capsule run --via public-api -- curl -fsS /health
 {"status":"ready"}
-activity <ACT_1> · capsule <CAPSULE_1> · stimulus · via public-api · host · exit 0 · <DUR>
-→ blackbox capsule show <ACT_1> --session <CAPSULE_1>
+<VOLATILE>
 #! capture ACT_1 activity
 #! wait 60 "· 6 spans ·" blackbox capsule show $ACT_1
 $ blackbox capsule show $ACT_1
@@ -49,14 +49,16 @@ $ blackbox capsule ls
   <CAPSULE_1>  subscription-system  running  <TIME>  1  subscription-system
 $ blackbox capsule use $CAPSULE_1
 current capsule: <CAPSULE_1> (subscription-system, running)
+#! volatile run-block
 $ blackbox capsule run --via public-api -- curl -fsS /missing
 curl: (22) The requested URL returned error: 404
-activity <ACT_2> · capsule <CAPSULE_1> · stimulus · via public-api · host · exit 22 · <DUR>
-→ blackbox capsule show <ACT_2> --session <CAPSULE_1>
+<VOLATILE>
 $ echo $?
 22
 $ blackbox capsule run -- definitely-not-a-command
 activity <ACT_3> · capsule <CAPSULE_1> · stimulus · host · host · not found · <DUR>
+  context  untraced: no driver, so no trace context was sent
+  observed  nothing yet · provisional (capsule running)
 → blackbox capsule show <ACT_3> --session <CAPSULE_1>
 $ echo $?
 127
@@ -68,6 +70,8 @@ $ echo $?
 125
 $ blackbox capsule run -- sh -c 'exit 2'
 activity <ACT_4> · capsule <CAPSULE_1> · stimulus · host · host · exit 2 · <DUR>
+  context  untraced: no driver, so no trace context was sent
+  observed  nothing yet · provisional (capsule running)
 → blackbox capsule show <ACT_4> --session <CAPSULE_1>
 $ echo $?
 2
