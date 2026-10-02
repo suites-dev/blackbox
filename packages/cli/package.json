@@ -11,6 +11,12 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./run": {
+      "blackbox-source": "./src/run.ts",
+      "types": "./dist/run.d.ts",
+      "import": "./dist/run.js",
+      "default": "./dist/run.js"
     }
   },
   "files": [
@@ -45,9 +51,6 @@
       "strategy": "explicit",
       "target": "./dist/command-registry.js",
       "identifier": "COMMANDS"
-    },
-    "hooks": {
-      "prerun": "./dist/hooks/prerun.js"
     },
     "helpClass": "./dist/help.js",
     "topicSeparator": " ",

@@ -1,7 +1,8 @@
 # Use Blackbox with agent skills
 
-Blackbox packages contribute portable agent skills through the same selected-plugin
-composition used by the CLI. Discovery contributes `discovery`, Catalog
+The main `@suites/blackbox` package contributes the `blackbox` entry skill and
+includes Skills, Catalog, and Discovery. Packages contribute portable agent skills
+through the CLI's selected module graph. Discovery contributes `discovery`, Catalog
 contributes `catalog`, and Capsule contributes `capsule`. A package that is not in
 the CLI composition contributes no runtime skill module and therefore no
 installable skill.
@@ -23,6 +24,7 @@ Install a selected skill into the current project with `skills install` (the
 singular `skill install` spelling remains an alias):
 
 ```sh
+blackbox skills install blackbox --codex --gitignore
 blackbox skills install discovery --codex
 blackbox skills install catalog --claude
 blackbox skills install capsule --cursor
@@ -40,9 +42,14 @@ flags and output may still change while the
 
 ## Install the skill
 
-The `skills` commands come from the `@suites/blackbox-skills` plugin. Add it to your project's dependencies next to
-`@suites/blackbox-cli` and `@suites/blackbox-discovery`; the CLI loads Blackbox plugins listed in the nearest `package.json`. Add Capsule or Catalog only when needed. Then run the command from
-your project's root directory, naming every agent your team uses:
+Follow [installation](installation.md) to obtain `@suites/blackbox` and explicitly
+install `@suites/blackbox-cli`, the owner of the `blackbox` command. The main package's default
+composition provides the `skills` commands plus `blackbox`, `catalog`, and
+`discovery` contributions. Add `@suites/blackbox-capsule` separately for Capsule;
+an absent adapter has no installable skill. Packages can explicitly select their
+own declared dependencies through ESM module exports, without empty CLI plugins.
+
+Run from your project's root directory, naming every agent your team uses:
 
 ```sh
 blackbox skills install discovery --codex --claude
@@ -75,6 +82,11 @@ blackbox skills install discovery --codex --gitignore
 Existing rules remain intact; conflicting skill directories are not ignored. Copies remain locally invokable as
 `$discovery` in Codex. Ignored copies must be reinstalled in new checkouts. This flag does not untrack already committed files.
 An unsafe or unwritable `.gitignore` produces a failed result even if the skill copy succeeded.
+
+The entry skill lives in `packages/blackbox/skills/blackbox`. Install it to get
+product orientation and routing, then copy specialist skills as needed. Installing
+the `blackbox` skill does not copy its integrations, even when their packages are
+included. Agents load the project copies, not files dynamically from npm.
 
 Catalog and Capsule have the same portable layout under
 `packages/catalog/skills/catalog` and `packages/capsule/skills/capsule`. Manual
@@ -117,6 +129,11 @@ later skills in the dependency chain. A copy owned by a different source package
 Older records without source ownership are adopted only when their complete contents match the current bundle.
 Blackbox never replaces a conflicting directory. Review it, move or remove it,
 and rerun.
+
+If you tried the earlier CLI-owned `blackbox` skill, moving ownership to
+`@suites/blackbox` intentionally produces a source-package conflict. Preserve any
+local edits, move the old copy aside, and install the main package's version;
+do not rewrite the ownership record to bypass that check.
 
 Blackbox records what it installed in `.blackbox-install.json` inside the skill directory: the installer package,
 source package, skill name, version, and a SHA-256 hash of every file. The record has no timestamps or absolute paths, so it can be
