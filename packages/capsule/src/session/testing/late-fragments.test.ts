@@ -1,6 +1,6 @@
 import { afterEach, expect, it } from 'vitest';
 
-import type { CapsuleObservationsInput } from '../../execution/types.js';
+import type { CapsuleObservationsInput } from '../../model/operations.js';
 import { readCapsuleObservations } from '../observations.js';
 import { reportCapsule } from '../operations.js';
 import { renderCapsuleHtml } from '../../reporting/html.js';
