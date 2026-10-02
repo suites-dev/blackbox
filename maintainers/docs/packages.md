@@ -32,6 +32,7 @@ From the repository root after the frozen install:
 pnpm exec lerna list --all
 pnpm build
 pnpm lint
+pnpm check:deps
 pnpm typecheck
 pnpm test
 ```
@@ -51,6 +52,26 @@ Passing one lane does not imply the others passed. See
 
 Publication runs only from an immutable annotated tag on `main`. See the
 [release flow](releasing.md) for OIDC trusted publishing, provenance, and recovery.
+
+## Dependency boundaries
+
+`pnpm check:deps` runs [dependency-cruiser](../../.dependency-cruiser.cjs) over
+`packages/` and fails on any error. CI runs it as its own lane. A package may import
+only packages in a lower tier:
+
+| Tier        | Packages                                                                                     |
+| ----------- | -------------------------------------------------------------------------------------------- |
+| host        | `cli` (loads plugins at runtime; imports only `cli-contract`)                                |
+| composition | `capsule`, `playwright`                                                                      |
+| plugins     | `catalog`, `discovery`, `instrumentation-runtime-node`                                       |
+| services    | `skills`, `driver`                                                                           |
+| foundation  | `cli-contract`, `telemetry`, `instrumentation`, `otel-collector`, `report-server`, `sandbox` |
+
+The same check rejects runtime import cycles, relative or deep imports into another
+package, imports that miss the target's `exports`, and npm or workspace imports the
+importing package does not declare. Only `playwright` imports `@playwright/test` or a
+runtime adapter. A new package must be added to a tier in the config, or the check
+refuses to run.
 
 ## Public surface
 

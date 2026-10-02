@@ -15,6 +15,8 @@ mkdir -p .blackbox/tmp
 validation_run_dir=$(mktemp -d .blackbox/tmp/agent-validation.XXXXXX)
 node .github/scripts/ci-evidence.mjs run --lane lint --project workspace \
   --evidence-dir "$validation_run_dir/lint" -- pnpm lint
+node .github/scripts/ci-evidence.mjs run --lane deps --project workspace \
+  --evidence-dir "$validation_run_dir/deps" -- pnpm check:deps
 node .github/scripts/ci-evidence.mjs run --lane typecheck --project workspace \
   --evidence-dir "$validation_run_dir/typecheck" -- pnpm typecheck
 node .github/scripts/ci-evidence.mjs run --lane test --project workspace \
@@ -39,6 +41,7 @@ collect final results against the final relevant tree.
 | Command                                                                    | What it establishes                           | What it does not establish                       |
 | -------------------------------------------------------------------------- | --------------------------------------------- | ------------------------------------------------ |
 | `pnpm lint`                                                                | Source-layout rules and package ESLint checks | Type safety, behavior, Bash correctness          |
+| `pnpm check:deps`                                                          | Package layering, cycles, and declared deps   | Whether an import is used correctly at runtime   |
 | `pnpm typecheck`                                                           | Root TypeScript source/test compilation       | Runtime behavior or Docker fixture correctness   |
 | `pnpm test`                                                                | Build, then workspace package test scripts    | Separate integration scripts or Capsule Bash E2E |
 | `pnpm --filter @suites/blackbox-instrumentation test:integration` | Instrumentation integration lane              | Other packages' integration coverage             |

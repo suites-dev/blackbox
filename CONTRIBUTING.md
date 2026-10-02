@@ -16,6 +16,7 @@ Use Node.js 22.15 or newer in the Node 22 line and pnpm 9.15.4 (the pinned
 ```sh
 pnpm install --frozen-lockfile
 pnpm lint
+pnpm check:deps
 pnpm typecheck
 pnpm test
 ```
