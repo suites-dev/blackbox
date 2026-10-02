@@ -8,5 +8,5 @@ export default defineConfig({
   testMatch: 'slow-acquisition.spec.ts',
   workers: 1,
   outputDir: process.env.BLACKBOX_PLAYWRIGHT_OUTPUT_DIR,
-  reporter: [['line']],
+  reporter: [['list', { printSteps: true }]],
 });

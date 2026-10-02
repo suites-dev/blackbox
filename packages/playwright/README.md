@@ -97,6 +97,12 @@ Blackbox: sandbox cleaned up for system "subscription-system"
 ```
 
 Ready means acquisition, instrumentation, and application readiness have passed.
+
+Acquisition and cleanup run as the steps `Blackbox: acquire sandbox` and
+`Blackbox: clean up sandbox` under the test's Before and After Hooks, so the list
+reporter (with `printSteps`), the HTML report and the trace viewer show their
+durations. Playwright's own test duration excludes them, because the attempt
+fixture runs in its own time slot rather than the test's.
 Cleanup failure prints `sandbox cleanup failed` instead of claiming success.
 Set `sandboxLifecycle: false` to suppress these messages while retaining diagnostics.
 The option defaults to `true` when the Blackbox reporter is configured; without

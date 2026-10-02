@@ -99,6 +99,9 @@ async function closeReport(
   }
 }
 
+const acquisitionStep = 'Blackbox: acquire sandbox';
+const cleanupStep = 'Blackbox: clean up sandbox';
+
 async function provideTestAttempt(input: {
   readonly runtime: BlackboxAttemptRuntime;
   readonly policy: BlackboxFixturePolicy;
@@ -110,18 +113,22 @@ async function provideTestAttempt(input: {
   const report = new AttemptReport(testInfo);
   report.protect(options.blackboxEnvironment);
   try {
-    const attempt = await acquireWithinTestTimeout({
-      runtime: input.runtime,
-      testInfo,
-      cleanupTimeoutMs: policy.sandboxCleanupTimeoutMs,
-      request: {
-        selection: options.catalogEntry,
-        configFile: configFilePath(testInfo),
-        environment: options.blackboxEnvironment,
-        artifactDirectory: testInfo.outputPath('blackbox'),
-        progress: report,
-      },
-    });
+    // Steps put acquisition and cleanup time where Playwright reports durations; the
+    // test's own duration excludes this fixture because it runs in its own time slot.
+    const attempt = await playwrightTest.step(acquisitionStep, () =>
+      acquireWithinTestTimeout({
+        runtime: input.runtime,
+        testInfo,
+        cleanupTimeoutMs: policy.sandboxCleanupTimeoutMs,
+        request: {
+          selection: options.catalogEntry,
+          configFile: configFilePath(testInfo),
+          environment: options.blackboxEnvironment,
+          artifactDirectory: testInfo.outputPath('blackbox'),
+          progress: report,
+        },
+      }),
+    );
     // The sandbox is owned from here on: every exit path below stops it.
     try {
       const trace = createAttemptTraceContext();
@@ -139,7 +146,7 @@ async function provideTestAttempt(input: {
     } finally {
       const reason = stopReason(testInfo.status);
       report.emit('execution', 'info', testInfo.status ?? 'unknown');
-      await finishAttempt(attempt, report, reason, policy);
+      await playwrightTest.step(cleanupStep, () => finishAttempt(attempt, report, reason, policy));
     }
   } catch (error) {
     report.emit('attempt', 'failed', 'setup or teardown failed; see test error');

@@ -102,6 +102,27 @@ it('stops the sandbox when acquisition takes more than half the test timeout', a
   ]);
 });
 
+it('reports acquisition and cleanup as steps with their own durations', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'blackbox-playwright-steps-'));
+  directories.push(directory);
+  const result = await runPlaywright({
+    configFile: 'slow-acquisition.config.ts',
+    outputDirectory: join(directory, 'output'),
+    environment: {},
+  });
+  expect(result.exitCode, result.output).toBe(0);
+  const acquisition =
+    /Before Hooks › Fixture "_blackboxAttempt" › Blackbox: acquire sandbox \((\d+)ms\)/u.exec(
+      result.output,
+    );
+  expect(acquisition, result.output).not.toBeNull();
+  // The runtime takes 300ms to acquire; the step duration must include that time.
+  expect(Number(acquisition![1])).toBeGreaterThanOrEqual(300);
+  expect(result.output).toMatch(
+    /After Hooks › Fixture "_blackboxAttempt" › Blackbox: clean up sandbox \(\d+ms\)/u,
+  );
+});
+
 it('acquires no sandbox for beforeAll/afterAll hooks and refuses Blackbox fixtures there', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'blackbox-playwright-hooks-'));
   directories.push(directory);
