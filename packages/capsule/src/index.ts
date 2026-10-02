@@ -43,8 +43,11 @@ export {
   readCapsuleRecord,
 } from './records.js';
 export type { CapsuleSessionRecord, CapsuleSessionSelector } from './records.js';
-export type { CapsuleActivityReport } from './model/activity.js';
-export type { CapsuleActivityName, CapsuleActivityPurpose } from './model/activity-label.js';
+export type { CapsuleActivityReport } from './model/execution/activity.js';
+export type {
+  CapsuleActivityName,
+  CapsuleActivityPurpose,
+} from './model/execution/activity-label.js';
 export type {
   CapsuleAvailability,
   CapsuleCleanupReport,
@@ -61,11 +64,13 @@ export type {
   CapsuleDriverDetails,
   CapsuleDriverOutcome,
   CapsuleExecutionOutcome,
+  CapsuleRawCommandOutcome,
+} from './model/execution/outcome.js';
+export type {
   CapsuleExecutionLocation,
   CapsuleOutputRetention,
   CapsuleProcessOutcome,
-  CapsuleRawCommandOutcome,
-} from './model/outcome.js';
+} from './model/execution/process-outcome.js';
 export type {
   CapsuleExecInput,
   CapsuleInteractiveExecInput,
@@ -84,7 +89,7 @@ export type {
   CapsuleInteractiveControlResult,
   CapsuleInteractiveEvent,
   CapsuleTerminalSize,
-} from './model/interaction.js';
+} from './model/execution/interaction.js';
 export type { CapsuleOperationFailure } from './model/failure.js';
 export type {
   CapsuleProgressEvent,

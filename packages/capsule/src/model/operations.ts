@@ -6,7 +6,7 @@ import type {
 } from '@suites/blackbox-otel-collector';
 
 import type { CapsuleProgressMode } from '../progress/events.js';
-import type { CapsuleActivityName, CapsuleActivityPurpose } from './activity-label.js';
+import type { CapsuleActivityName, CapsuleActivityPurpose } from './execution/activity-label.js';
 import type {
   CapsuleContainerDetails,
   CapsuleEntrypoint,
@@ -17,9 +17,9 @@ import type {
   CapsuleInteractiveControl,
   CapsuleInteractiveEvent,
   CapsuleTerminalSize,
-} from './interaction.js';
+} from './execution/interaction.js';
 import type { CapsuleDescription } from './lifecycle.js';
-import type { CapsuleExecutionOutcome } from './outcome.js';
+import type { CapsuleExecutionOutcome } from './execution/outcome.js';
 
 export interface CapsuleStartInput {
   readonly projectDirectory: string;

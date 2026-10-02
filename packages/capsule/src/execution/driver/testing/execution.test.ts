@@ -16,7 +16,7 @@ import {
 import type {
   CapsuleInteractiveControl,
   CapsuleInteractiveEvent,
-} from '../../../model/interaction.js';
+} from '../../../model/execution/interaction.js';
 
 function participantSandbox(observed: {
   readonly requests: SandboxContainerExecutionInput[];

@@ -5,8 +5,8 @@ import {
   completedDriverActivity,
   completedHostActivity,
 } from '../../persistence/testing/record.fixture.js';
-import type { CapsuleActivityReport } from '../../model/activity.js';
-import type { CapsuleExecutionOutcome } from '../../model/outcome.js';
+import type { CapsuleActivityReport } from '../../model/execution/activity.js';
+import type { CapsuleExecutionOutcome } from '../../model/execution/outcome.js';
 import { activityContext } from '../context.js';
 
 type Propagation = Extract<CapsuleExecutionOutcome, { kind: 'driver-completed' }>['propagation'];

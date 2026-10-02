@@ -16,9 +16,9 @@ import { executeCapsuleTarget } from '../execution/target.js';
 import { sendResponse } from '../ipc/server.js';
 import type { CapsuleManagerBootstrap, CapsuleManagerRequest } from '../protocol.js';
 import { recordedError, writeCapsuleActivities } from '../records.js';
-import type { CapsuleActivityReport } from '../model/activity.js';
-import type { CapsuleExecutionInteraction } from '../model/interaction.js';
-import type { CapsuleExecutionOutcome } from '../model/outcome.js';
+import type { CapsuleActivityReport } from '../model/execution/activity.js';
+import type { CapsuleExecutionInteraction } from '../model/execution/interaction.js';
+import type { CapsuleExecutionOutcome } from '../model/execution/outcome.js';
 import type { RunningManager } from './runtime.js';
 
 interface HandleExecInput {

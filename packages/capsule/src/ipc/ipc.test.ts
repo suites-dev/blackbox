@@ -8,7 +8,7 @@ import { afterEach, expect, it } from 'vitest';
 
 import { managerInteractiveRequest, managerRequest } from './client.js';
 import { readManagerFrames, readRequest, sendEvent, sendResponse } from './server.js';
-import type { CapsuleInteractiveEvent } from '../model/interaction.js';
+import type { CapsuleInteractiveEvent } from '../model/execution/interaction.js';
 
 const resources: { server: Server; directory: string; sockets: Set<Socket> }[] = [];
 const request = { kind: 'stop-request', requestId: 'request-42', reason: 'completed' } as const;

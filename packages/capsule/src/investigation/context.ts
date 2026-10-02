@@ -1,7 +1,7 @@
 import type { TelemetryPropagationRecord } from '@suites/blackbox-telemetry';
 
 import { createRedactionContext, redactText } from '../reporting/redaction.js';
-import type { CapsuleActivityReport } from '../model/activity.js';
+import type { CapsuleActivityReport } from '../model/execution/activity.js';
 
 /** What happened to the activity's trace context, as show reports it. */
 export type ActivityContext =

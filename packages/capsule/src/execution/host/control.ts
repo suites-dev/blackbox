@@ -6,7 +6,7 @@ import type {
   CapsuleExecutionInteraction,
   CapsuleInteractiveControl,
   CapsuleInteractiveControlResult,
-} from '../../model/interaction.js';
+} from '../../model/execution/interaction.js';
 
 export interface HostControlState {
   completed: boolean;

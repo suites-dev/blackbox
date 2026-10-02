@@ -9,7 +9,7 @@ import {
 
 import { capsuleConnectionEnvironment } from '../../connection-environment.js';
 import type { CapsuleEntrypoint } from '../../model/environment.js';
-import type { CapsuleDriverOutcome } from '../../model/outcome.js';
+import type { CapsuleDriverOutcome } from '../../model/execution/outcome.js';
 import { redactValues } from '../output/value-redaction.js';
 
 export function executionEnvironment(input: {

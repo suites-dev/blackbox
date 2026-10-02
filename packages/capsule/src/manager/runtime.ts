@@ -15,7 +15,7 @@ import {
   writeCapsuleRecord,
   type CapsuleSessionRecord,
 } from '../records.js';
-import type { CapsuleActivityReport } from '../model/activity.js';
+import type { CapsuleActivityReport } from '../model/execution/activity.js';
 import type { CapsuleEntrypoint } from '../model/environment.js';
 import type { CapsuleManagerOwnership } from '../model/lifecycle.js';
 import { completePlannedSandbox, startPlannedSandbox } from './acquisition.js';

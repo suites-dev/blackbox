@@ -3,7 +3,7 @@ import { createTelemetryPropagationRecord } from '@suites/blackbox-telemetry';
 
 import { capsuleConnectionEnvironment } from '../connection-environment.js';
 import type { CapsuleExecTarget } from '../model/operations.js';
-import type { CapsuleExecutionOutcome } from '../model/outcome.js';
+import type { CapsuleExecutionOutcome } from '../model/execution/outcome.js';
 import { runHostWithInteraction } from './commands.js';
 import { runCapsuleDriver, type RunCapsuleDriverInput } from './driver-execution.js';
 

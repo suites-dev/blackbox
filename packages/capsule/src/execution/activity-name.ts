@@ -1,4 +1,4 @@
-import type { CapsuleActivityName } from '../model/activity-label.js';
+import type { CapsuleActivityName } from '../model/execution/activity-label.js';
 
 export const CAPSULE_ACTIVITY_NAME_MAX_LENGTH = 120;
 

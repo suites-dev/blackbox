@@ -3,8 +3,11 @@ import type {
   SandboxHandle,
 } from '@suites/blackbox-sandbox';
 
-import type { CapsuleExecutionInteraction } from '../../model/interaction.js';
-import type { CapsuleExecutionLocation, CapsuleProcessOutcome } from '../../model/outcome.js';
+import type { CapsuleExecutionInteraction } from '../../model/execution/interaction.js';
+import type {
+  CapsuleExecutionLocation,
+  CapsuleProcessOutcome,
+} from '../../model/execution/process-outcome.js';
 import { pumpParticipantControls } from './control.js';
 import {
   createOutputRetention,

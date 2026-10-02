@@ -4,12 +4,12 @@ import type {
   TelemetryPropagationRecord,
 } from '@suites/blackbox-telemetry';
 
-import type { CapsuleActivityReport } from '../model/activity.js';
+import type { CapsuleActivityReport } from '../model/execution/activity.js';
 import type {
   CapsuleExecutionOutcome,
-  CapsuleProcessOutcome,
   CapsuleRawCommandOutcome,
-} from '../model/outcome.js';
+} from '../model/execution/outcome.js';
+import type { CapsuleProcessOutcome } from '../model/execution/process-outcome.js';
 import type { CapsuleRecordedError } from '../model/recorded-error.js';
 import type { CapsuleReportActivity } from './types.js';
 

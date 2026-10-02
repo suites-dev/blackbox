@@ -9,7 +9,7 @@ import {
   type TelemetryPropagationRecord,
 } from '@suites/blackbox-telemetry';
 
-import type { CapsuleDriverOutcome } from '../../model/outcome.js';
+import type { CapsuleDriverOutcome } from '../../model/execution/outcome.js';
 import type { CapsuleRecordedError } from '../../model/recorded-error.js';
 import { canonicalDriverModule } from './module-path.js';
 import { failedPropagation } from './propagation.js';

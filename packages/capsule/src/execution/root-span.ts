@@ -4,7 +4,7 @@ import type {
   TelemetryScopeResult,
 } from '@suites/blackbox-telemetry';
 
-import type { CapsuleActivityPurpose } from '../model/activity-label.js';
+import type { CapsuleActivityPurpose } from '../model/execution/activity-label.js';
 
 export type RootSpanExportResult =
   | { readonly kind: 'root-span-exported' }

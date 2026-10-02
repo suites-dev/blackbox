@@ -3,7 +3,7 @@ import { afterEach, expect, it } from 'vitest';
 import type {
   CapsuleInteractiveEvent,
   CapsuleInteractiveControl,
-} from '../../model/interaction.js';
+} from '../../model/execution/interaction.js';
 import { runCapsuleDriver } from '../driver-execution.js';
 import {
   cleanDriverProjects,

@@ -5,7 +5,10 @@ import { tmpdir } from 'node:os';
 import { afterEach, expect, it } from 'vitest';
 
 import { awaitReadiness, runHost, runHostWithInteraction } from './commands.js';
-import type { CapsuleInteractiveControl, CapsuleInteractiveEvent } from '../model/interaction.js';
+import type {
+  CapsuleInteractiveControl,
+  CapsuleInteractiveEvent,
+} from '../model/execution/interaction.js';
 
 const servers: Server[] = [];
 

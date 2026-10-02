@@ -20,7 +20,7 @@ import {
   readCapsuleActivities,
   type CapsuleSessionRecord,
 } from '../records.js';
-import type { CapsuleActivityReport } from '../model/activity.js';
+import type { CapsuleActivityReport } from '../model/execution/activity.js';
 import type { CapsuleObservationsInput, CapsuleObservationsResult } from '../model/operations.js';
 import type { CapsuleOperationFailure } from '../model/failure.js';
 import {

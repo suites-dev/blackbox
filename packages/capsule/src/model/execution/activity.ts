@@ -4,7 +4,7 @@ import type {
 } from '@suites/blackbox-telemetry';
 
 import type { CapsuleActivityName, CapsuleActivityPurpose } from './activity-label.js';
-import type { CapsuleRecordedError } from './recorded-error.js';
+import type { CapsuleRecordedError } from '../recorded-error.js';
 import type { CapsuleExecutionOutcome } from './outcome.js';
 
 interface CapsuleActivityBase {

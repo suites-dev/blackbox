@@ -2,7 +2,7 @@ import { join } from 'node:path';
 
 import type { CapsuleSessionRecord } from '../../records.js';
 import { activeTelemetry } from '../../persistence/testing/record.fixture.js';
-import type { CapsuleActivityReport } from '../../model/activity.js';
+import type { CapsuleActivityReport } from '../../model/execution/activity.js';
 import type { CapsuleManagerRecoveryPorts } from './index.js';
 
 export const completedAt = '2026-09-25T10:00:00.000Z';

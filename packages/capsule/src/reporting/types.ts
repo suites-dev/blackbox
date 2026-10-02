@@ -1,4 +1,4 @@
-import type { CapsuleActivityReport } from '../model/activity.js';
+import type { CapsuleActivityReport } from '../model/execution/activity.js';
 import type {
   CapsuleAvailability,
   CapsuleCleanupReport,

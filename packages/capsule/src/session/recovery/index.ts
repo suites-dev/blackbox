@@ -1,6 +1,6 @@
 import { recoverSandbox } from '@suites/blackbox-sandbox';
 
-import type { CapsuleActivityReport } from '../../model/activity.js';
+import type { CapsuleActivityReport } from '../../model/execution/activity.js';
 import type { CapsuleRecordedError } from '../../model/recorded-error.js';
 import {
   readCapsuleActivities,

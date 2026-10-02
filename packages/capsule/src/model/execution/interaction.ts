@@ -1,4 +1,4 @@
-import type { CapsuleRecordedError } from './recorded-error.js';
+import type { CapsuleRecordedError } from '../recorded-error.js';
 
 export interface CapsuleTerminalSize {
   readonly columns: number;

@@ -4,7 +4,7 @@ import type {
   DriverPreparation,
 } from '@suites/blackbox-driver';
 
-import type { CapsuleProcessOutcome } from '../../model/outcome.js';
+import type { CapsuleProcessOutcome } from '../../model/execution/process-outcome.js';
 import type { CapsuleRecordedError } from '../../model/recorded-error.js';
 import { isUnstartedProcess } from '../unstarted-process.js';
 import { redactValues } from '../output/value-redaction.js';

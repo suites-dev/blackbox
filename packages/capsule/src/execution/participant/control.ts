@@ -6,7 +6,7 @@ import type {
 import type {
   CapsuleExecutionControl,
   CapsuleExecutionInteraction,
-} from '../../model/interaction.js';
+} from '../../model/execution/interaction.js';
 
 async function participantControl(
   execution: SandboxContainerExecution,

@@ -3,8 +3,8 @@ import type { SandboxHandle } from '@suites/blackbox-sandbox';
 import type { TelemetryExecutionScope } from '@suites/blackbox-telemetry';
 
 import type { CapsuleEntrypoint } from '../model/environment.js';
-import type { CapsuleExecutionInteraction } from '../model/interaction.js';
-import type { CapsuleDriverOutcome } from '../model/outcome.js';
+import type { CapsuleExecutionInteraction } from '../model/execution/interaction.js';
+import type { CapsuleDriverOutcome } from '../model/execution/outcome.js';
 import { prepareCapsuleDriver } from './driver/preparation.js';
 import { runPreparedCommand } from './driver/process/prepared-command.js';
 import { driverEnvironment, propagationRefused } from './driver/propagation.js';

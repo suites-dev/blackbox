@@ -2,8 +2,8 @@ import type { ResolvedCatalogDriver } from '@suites/blackbox-catalog';
 import type { DriverPreparation } from '@suites/blackbox-driver';
 import type { SandboxHandle } from '@suites/blackbox-sandbox';
 
-import type { CapsuleExecutionInteraction } from '../../../model/interaction.js';
-import type { CapsuleProcessOutcome } from '../../../model/outcome.js';
+import type { CapsuleExecutionInteraction } from '../../../model/execution/interaction.js';
+import type { CapsuleProcessOutcome } from '../../../model/execution/process-outcome.js';
 import { runHostWithRedaction } from '../../commands.js';
 import { redactValues } from '../../output/value-redaction.js';
 import {
