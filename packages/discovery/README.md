@@ -35,6 +35,10 @@ Consumers resolve content through `discoverySkill.source`, never by guessing
 package internals. The CLI loads `skillModule` only when the package is selected;
 its TypeScript augmentation alone does not register anything at runtime.
 
+The main `@suites/blackbox` package includes Discovery by default. Discovery is a
+skill/domain provider, not an empty oclif plugin. Its Catalog and Capsule skill
+integrations remain optional: listing a route does not install or activate it.
+
 ## Executable helpers
 
 ```ts

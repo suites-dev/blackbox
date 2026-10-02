@@ -1,3 +1,9 @@
+/** Explicit package-module dependencies, resolved from the contributing package. */
+export interface BlackboxModule {
+  readonly apiVersion: 1;
+  readonly dependencies: readonly string[];
+}
+
 export interface BlackboxCliPluginManifest {
   readonly apiVersion: 1;
   readonly pluginId: string;

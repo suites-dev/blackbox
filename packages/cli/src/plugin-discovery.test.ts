@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
@@ -47,8 +47,9 @@ void test('discovers only package-owned CLI plugins declared by the project', as
   assert.deepEqual(result.names, ['@suites/blackbox-zeta']);
 });
 
-void test('discovers consumer plugins above an installed CLI package', async () => {
+void test('discovers consumer plugins above an installed CLI package, not its build dependencies', async (t) => {
   const consumer = await mkdtemp(join(tmpdir(), 'blackbox-cli-installed-discovery-'));
+  t.after(async () => rm(consumer, { recursive: true, force: true }));
   const pluginDirectory = join(consumer, 'node_modules', '@suites', 'blackbox-zeta');
   const cliDirectory = join(consumer, 'node_modules', '@suites', 'blackbox-cli');
   await mkdir(pluginDirectory, { recursive: true });
@@ -73,8 +74,23 @@ void test('discovers consumer plugins above an installed CLI package', async () 
   await writeFile(join(pluginDirectory, 'index.js'), '');
   await writeFile(
     join(cliDirectory, 'package.json'),
-    `${JSON.stringify({ name: '@suites/blackbox-cli' })}\n`,
+    `${JSON.stringify({
+      name: '@suites/blackbox-cli',
+      devDependencies: { '@suites/blackbox-build-only': '1.0.0' },
+    })}\n`,
   );
+  const buildPlugin = join(cliDirectory, 'node_modules', '@suites', 'blackbox-build-only');
+  await mkdir(buildPlugin, { recursive: true });
+  await writeFile(
+    join(buildPlugin, 'package.json'),
+    JSON.stringify({
+      name: '@suites/blackbox-build-only',
+      type: 'module',
+      main: 'index.js',
+      blackbox: { cli: { apiVersion: 1, pluginId: 'build-only', topic: 'build-only' } },
+    }),
+  );
+  await writeFile(join(buildPlugin, 'index.js'), '');
   const result = await discoverProjectCliPlugins(join(consumer, 'workspace'), cliDirectory);
   if (result === null) {
     throw new Error('expected the consumer plugin result');
