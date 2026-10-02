@@ -1,7 +1,7 @@
 import { Ajv2020, type ValidateFunction } from 'ajv/dist/2020.js';
 
 import { sandboxRecordSchema } from '../schema/sandbox-record-schema.js';
-import type { SandboxRecord } from './records.js';
+import type { SandboxRecord } from './record-types.js';
 
 const ajv = new Ajv2020({ allErrors: true, strict: true });
 const validate: ValidateFunction<SandboxRecord> = ajv.compile<SandboxRecord>(sandboxRecordSchema);

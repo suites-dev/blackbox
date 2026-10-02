@@ -1,4 +1,4 @@
-import type { SandboxContainer } from '../types.js';
+import type { SandboxContainer } from './sandbox-container.js';
 
 export interface SandboxNetworkResource {
   readonly kind: 'network';

@@ -11,6 +11,13 @@ import type {
   SandboxContainerExecutionStartResult,
 } from './execution/streaming/types.js';
 import type { SandboxTelemetryActivation } from './telemetry/types.js';
+import type { SandboxContainer, SandboxMappedPortSelector } from './inspection/sandbox-container.js';
+
+export type {
+  SandboxContainer,
+  SandboxMappedPortSelector,
+  SandboxTestcontainerInspection,
+} from './inspection/sandbox-container.js';
 
 export interface SandboxEndpointRequest {
   readonly name: string;
@@ -101,10 +108,6 @@ export interface SandboxContainerSelector {
   readonly service: string;
 }
 
-export interface SandboxMappedPortSelector {
-  readonly containerPort: number;
-}
-
 export interface SandboxStopInput {
   readonly reason: SandboxStopReason;
 }
@@ -156,24 +159,6 @@ export interface SandboxEndpoint {
   readonly containerPort: number;
   readonly host: string;
   readonly port: number;
-}
-
-export interface SandboxContainer {
-  readonly service: string;
-  readonly testcontainer: SandboxTestcontainerInspection;
-}
-
-export interface SandboxTestcontainerInspection {
-  readonly id: string;
-  readonly name: string;
-  readonly host: string;
-  readonly labels: Readonly<Record<string, string>>;
-  /** Effective environment reported by Docker for this exact owned container. */
-  readonly environment: Readonly<Record<string, string>>;
-  readonly networkNames: readonly string[];
-  /** Ports explicitly requested by the caller, keyed by container port. */
-  readonly mappedPorts: ReadonlyMap<number, number>;
-  getMappedPort(input: SandboxMappedPortSelector): number;
 }
 
 export type SandboxLifecycleState =
