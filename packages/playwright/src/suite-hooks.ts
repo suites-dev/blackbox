@@ -1,8 +1,15 @@
 import type { TestInfo } from '@playwright/test';
 
 import type { RunningBlackboxAttempt } from './runtime/acquisition.js';
+import type { AttemptTraceContext } from './trace/trace-context.js';
 
 type SuiteHook = 'beforeAll' | 'afterAll';
+
+/** The sandbox of one physical test attempt and the trace its requests join. */
+export interface TestAttempt {
+  readonly attempt: RunningBlackboxAttempt;
+  readonly trace: AttemptTraceContext;
+}
 
 /** Stands in for the attempt while a beforeAll/afterAll hook resolves fixtures. */
 export interface SuiteHookScope {
@@ -25,9 +32,9 @@ export function suiteHook(testInfo: TestInfo): SuiteHook | 'none' {
 }
 
 export function testAttempt(
-  attempt: RunningBlackboxAttempt | SuiteHookScope,
+  attempt: TestAttempt | SuiteHookScope,
   fixture: 'sandbox' | 'telemetry' | 'effects',
-): RunningBlackboxAttempt {
+): TestAttempt {
   if ('suiteHook' in attempt) {
     throw new Error(
       `Blackbox fixture "${fixture}" is not available in ${attempt.suiteHook} hooks: ` +

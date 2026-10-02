@@ -125,6 +125,18 @@ it('acquires no sandbox for beforeAll/afterAll hooks and refuses Blackbox fixtur
   ]);
 });
 
+it('propagates the attempt trace through request, but not from suite hooks', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'blackbox-playwright-trace-'));
+  directories.push(directory);
+  const result = await runPlaywright({
+    configFile: 'trace-context.config.ts',
+    outputDirectory: join(directory, 'output'),
+    environment: {},
+  });
+  expect(result.exitCode, result.output).toBe(0);
+  expect(result.output).toContain('1 passed');
+});
+
 it('lets the Playwright test timeout govern sandbox acquisition', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'blackbox-playwright-timeout-'));
   directories.push(directory);

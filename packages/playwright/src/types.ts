@@ -31,6 +31,10 @@ export interface BlackboxSandbox {
 export interface BlackboxTelemetry {
   readonly sessionId: string;
   readonly executionId: string;
+  /** W3C trace ID that the `request` fixture propagates for this attempt. */
+  readonly traceId: string;
+  /** The `traceparent` header value that `request` sends with every call. */
+  readonly traceparent: string;
   inspect(): Promise<SandboxTelemetryStatus>;
   read(): Promise<CollectorSessionReadResult>;
   readTrace(traceId: string): Promise<CollectorTraceReadResult>;

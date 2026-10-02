@@ -3,12 +3,15 @@ import { sandboxTelemetryStorageDirectory, type SandboxHandle } from '@suites/bl
 
 import type { BlackboxTelemetry } from '../types.js';
 
+/** Telemetry reads owned by the runtime; the fixture adds the attempt trace context. */
+export type AttemptTelemetry = Omit<BlackboxTelemetry, 'traceId' | 'traceparent'>;
+
 export function publicTelemetry(input: {
   readonly sandbox: SandboxHandle;
   readonly recordDirectory: string;
   readonly sessionId: string;
   readonly executionId: string;
-}): BlackboxTelemetry {
+}): AttemptTelemetry {
   const identity = {
     sessionId: input.sessionId,
     executionId: input.executionId,

@@ -68,6 +68,12 @@ reasons. Setup failure also attempts cleanup before surfacing the error.
   artifact identity. Lifecycle control remains fixture-owned.
 - `telemetry` exposes the attempt identity, live collector status, and raw
   retained session or trace reads.
+- Each attempt has one W3C trace. `request` sends `telemetry.traceparent` with
+  every call (unless `extraHTTPHeaders` already sets `traceparent`), so server
+  spans it causes are children in trace `telemetry.traceId`. Pass the header
+  yourself to traffic from `page` or other clients; pages are not traced
+  automatically, because extra browser headers also reach third-party origins
+  and can trigger CORS preflights.
 - `beforeAll` and `afterAll` hooks run outside any test attempt, so they never
   acquire a sandbox. There, `baseURL` (and so `request`) keeps the configured
   value, and `sandbox`, `telemetry` and `effects` fail with an error that names

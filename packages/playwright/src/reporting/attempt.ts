@@ -2,7 +2,7 @@ import { realpathSync } from 'node:fs';
 import { relative } from 'node:path';
 
 import type { TestInfo } from '@playwright/test';
-import type { BlackboxSandbox, BlackboxTelemetry } from '../types.js';
+import type { BlackboxSandbox } from '../types.js';
 
 import {
   attemptAttachment,
@@ -30,6 +30,7 @@ export class AttemptReport implements AttemptProgress {
         readonly sandboxId: string;
         readonly executionId: string;
         readonly sessionId: string;
+        readonly traceId: string;
         readonly catalogEntry: BlackboxSandbox['catalogEntry'];
       } = { kind: 'not-ready' };
 
@@ -44,13 +45,17 @@ export class AttemptReport implements AttemptProgress {
     this.sandboxId = sandboxId;
   }
 
-  acquired(sandbox: BlackboxSandbox, telemetry: BlackboxTelemetry): void {
+  acquired(
+    sandbox: BlackboxSandbox,
+    telemetry: { readonly sessionId: string; readonly traceId: string },
+  ): void {
     this.identify(sandbox.sandboxId);
     this.identity = {
       kind: 'acquired',
       sandboxId: sandbox.sandboxId,
       executionId: sandbox.executionId,
       sessionId: telemetry.sessionId,
+      traceId: telemetry.traceId,
       catalogEntry: sandbox.catalogEntry,
     };
   }
