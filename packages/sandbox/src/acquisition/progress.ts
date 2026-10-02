@@ -1,5 +1,5 @@
 import type { ComposeAcquisitionObservation } from './observation.js';
-import type { SandboxContainer } from '../types.js';
+import type { SandboxContainer } from '../inspection/sandbox-container.js';
 import type { SandboxResourceInspectionResult } from '../inspection/resources.js';
 
 interface SandboxProgressEventBase {

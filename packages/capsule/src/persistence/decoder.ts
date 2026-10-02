@@ -1,4 +1,4 @@
-import type { CapsuleSessionRecord } from '../records.js';
+import type { CapsuleSessionRecord } from './session-record.js';
 import { capsuleSessionSchema } from '../schema/artifact-schemas.js';
 import type { CapsuleManagerOwnership } from '../types.js';
 

@@ -24,6 +24,7 @@ export class AcquisitionView {
     return this.completion.kind !== 'pending';
   }
 
+  // eslint-disable-next-line complexity -- one row update per CapsuleProgressEvent kind; the exhaustive switch grows only with that event union
   update(event: CapsuleProgressEvent): void {
     switch (event.kind) {
       case 'session-admitted':

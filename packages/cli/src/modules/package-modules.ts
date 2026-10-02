@@ -60,6 +60,31 @@ function contributes(pjson: Record<string, unknown>): boolean {
   );
 }
 
+/** Validates a package's module manifest, then loads and validates its `blackboxModule` export. */
+async function loadBlackboxModule(
+  name: string,
+  candidate: SelectedPackage,
+  declaration: unknown,
+): Promise<{ readonly dependencies: readonly string[] }> {
+  if (!isRecord(declaration) || declaration.apiVersion !== 1 || declaration.export !== './module') {
+    throw new Error(`Unsupported Blackbox module manifest: ${name}`);
+  }
+  const parent = pathToFileURL(join(candidate.root, 'package.json')).href;
+  const loaded = await ModuleLoader.load<unknown>(
+    new Plugin({ root: candidate.root }),
+    fileURLToPath(resolve(`${name}/module`, parent)),
+  );
+  const module = isRecord(loaded) ? loaded.blackboxModule : undefined;
+  if (!isRecord(module) || module.apiVersion !== 1 || !Array.isArray(module.dependencies)) {
+    throw new Error(`Invalid blackboxModule export: ${name}`);
+  }
+  const dependencies: readonly unknown[] = module.dependencies;
+  if (!dependencies.every((dependency): dependency is string => typeof dependency === 'string')) {
+    throw new Error(`Invalid blackboxModule export: ${name}`);
+  }
+  return { dependencies };
+}
+
 /** Only an explicit exported module can activate transitive package contributions. */
 export async function selectPackageModules(
   owner: string,
@@ -93,28 +118,7 @@ export async function selectPackageModules(
     visiting.add(name);
     const blackbox = candidate.pjson.blackbox as Record<string, unknown>;
     if (blackbox.module !== undefined) {
-      const declaration = blackbox.module;
-      if (
-        !isRecord(declaration) ||
-        declaration.apiVersion !== 1 ||
-        declaration.export !== './module'
-      ) {
-        throw new Error(`Unsupported Blackbox module manifest: ${name}`);
-      }
-      const parent = pathToFileURL(join(candidate.root, 'package.json')).href;
-      const loaded = await ModuleLoader.load<unknown>(
-        new Plugin({ root: candidate.root }),
-        fileURLToPath(resolve(`${name}/module`, parent)),
-      );
-      const module = isRecord(loaded) ? loaded.blackboxModule : undefined;
-      if (
-        !isRecord(module) ||
-        module.apiVersion !== 1 ||
-        !Array.isArray(module.dependencies) ||
-        !module.dependencies.every((dependency: unknown) => typeof dependency === 'string')
-      ) {
-        throw new Error(`Invalid blackboxModule export: ${name}`);
-      }
+      const module = await loadBlackboxModule(name, candidate, blackbox.module);
       const declared = isRecord(candidate.pjson.dependencies) ? candidate.pjson.dependencies : {};
       for (const dependency of module.dependencies) {
         if (!Object.hasOwn(declared, dependency)) {

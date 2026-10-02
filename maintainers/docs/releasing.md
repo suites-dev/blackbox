@@ -71,6 +71,7 @@ All packages:
    ```sh
    pnpm install --frozen-lockfile
    pnpm lint
+   pnpm check:deps
    pnpm typecheck
    pnpm test
    ```

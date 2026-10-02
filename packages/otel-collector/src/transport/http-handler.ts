@@ -151,6 +151,7 @@ async function activateInstrumentation(input: {
   writeJson({ response: input.response, status: 200, value: input.store.status() });
 }
 
+// eslint-disable-next-line complexity -- routes every collector endpoint (readiness, ingest, activation, read) with the method and storage-state checks each route needs
 export async function handleCollectorRequest(input: {
   readonly request: IncomingMessage;
   readonly response: ServerResponse;

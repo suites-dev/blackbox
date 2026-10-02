@@ -25,6 +25,7 @@ export function validateIdentity(input: {
   }
 }
 
+// eslint-disable-next-line complexity -- validates every StartCollectorInput field (identity, storage, endpoint host, port and paths) with a specific message per field
 export function validateStartInput(input: StartCollectorInput): void {
   validateIdentity(input);
   if (!isAbsolute(input.storageDirectory)) {

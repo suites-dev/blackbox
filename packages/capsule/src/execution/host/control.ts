@@ -110,6 +110,7 @@ function signalFailure(error: unknown): CapsuleInteractiveControlResult {
   };
 }
 
+// eslint-disable-next-line complexity -- dispatches every CapsuleExecutionControl kind after the completed and stdin-ended guards; each branch is a distinct host-process action
 async function hostControl(input: {
   readonly child: ChildProcessWithoutNullStreams;
   readonly state: HostControlState;

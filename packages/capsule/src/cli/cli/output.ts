@@ -18,6 +18,7 @@ type JsonFrame =
   | { readonly kind: 'object'; readonly value: Record<string, unknown>; readonly keys: readonly string[]; index: number };
 
 /** JSON.stringify's recursive walk can overflow on a deeply nested trace tree. */
+// eslint-disable-next-line complexity -- mirrors JSON.stringify's per-type cases (primitive, unsupported, circular, array, object) inside one explicit-stack loop, which is what avoids recursion
 function stackSafeJsonStringify(value: unknown): string {
   const output: string[] = [];
   const active = new Set<object>();

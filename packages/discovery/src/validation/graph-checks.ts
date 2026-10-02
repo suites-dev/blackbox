@@ -136,6 +136,7 @@ function confidenceChecks(boundary: Extract<Boundary, { kind: 'selected' }>): Di
   return errors;
 }
 
+// eslint-disable-next-line complexity -- each boundary substitution must satisfy all of its approval conditions in one predicate so a single diagnostic names the rule
 export function boundaryChecks(audit: Audit): readonly Diagnostic[] {
   const boundary = audit.boundary;
   if (boundary.kind === 'unselected') {

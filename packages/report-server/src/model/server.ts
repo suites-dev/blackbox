@@ -1,5 +1,5 @@
 import type { ReportProvider, ReportSummary, ReportFailure } from './provider.js';
-import type { ReportServerIdentity } from './identity.js';
+import type { ReportServerIdentity } from './server-identity.js';
 
 export type ReportSelection = { kind: 'registry' } | { kind: 'report'; type: string; id: string };
 
