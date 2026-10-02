@@ -1,5 +1,4 @@
 {
   "packages/capsule/src/cli/operations/run/run-command.ts": "capsule run wires the whole run flow (invocation context, output tracking, run blocks, live observation, telemetry, exit codes) in one oclif command body",
-  "packages/capsule/src/cli/operations/inspection/show-command.ts": "capsule show resolves an id, reads the session, and picks one of several views; resolution, data and rendering are each imported as a separate module",
-  "packages/capsule/src/execution/driver-execution.ts": "runCapsuleDriver composes driver preparation, propagation, secret redaction, host and participant process execution for one driver run"
+  "packages/capsule/src/cli/operations/inspection/show-command.ts": "capsule show resolves an id, reads the session, and picks one of several views; resolution, data and rendering are each imported as a separate module"
 }
