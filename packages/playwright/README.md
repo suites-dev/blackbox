@@ -54,6 +54,9 @@ the catalog-selected Compose services, installs the current Node activation
 adapter where configured, starts the collector, verifies activation, waits for
 application readiness, and then enters the test body.
 
+Acquisition is bounded by the configured test timeout but runs outside the test
+body's budget, so a slow catalog entry never shortens the time left for the body.
+
 The fixture always requests Sandbox cleanup after the test body. Assertion
 failure, timeout, skip, and interruption are retained as distinct cleanup
 reasons. Setup failure also attempts cleanup before surfacing the error.

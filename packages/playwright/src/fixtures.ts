@@ -198,8 +198,6 @@ export function createBlackboxTest(
         const report = new AttemptReport(testInfo);
         report.protect(blackboxEnvironment);
         try {
-          const configuredTimeout = testInfo.timeout;
-          const acquisitionStartedAt = Date.now();
           const attempt = await acquireWithinTestTimeout({
             runtime,
             testInfo,
@@ -212,19 +210,15 @@ export function createBlackboxTest(
               progress: report,
             },
           });
-          if (configuredTimeout > 0) {
-            testInfo.setTimeout(
-              Math.max(1, configuredTimeout - (Date.now() - acquisitionStartedAt)),
-            );
-          }
-          report.acquired(attempt.sandbox, attempt.telemetry);
-          report.emit(
-            'sandbox',
-            'completed',
-            `${attempt.sandbox.sandboxId}; ${attempt.sandbox.entrypoint.url}`,
-          );
-          report.emit('execution', 'started', 'test fixtures, hooks and body');
+          // The sandbox is owned from here on: every exit path below stops it.
           try {
+            report.acquired(attempt.sandbox, attempt.telemetry);
+            report.emit(
+              'sandbox',
+              'completed',
+              `${attempt.sandbox.sandboxId}; ${attempt.sandbox.entrypoint.url}`,
+            );
+            report.emit('execution', 'started', 'test fixtures, hooks and body');
             await report.flush();
             report.lifecycle('ready', attempt.sandbox.catalogEntry);
             await use(attempt);
@@ -241,6 +235,8 @@ export function createBlackboxTest(
         }
       },
       // The helper enforces the test deadline and bounds every sandbox cleanup wait.
+      // Setup never shortens the test timeout: Playwright applies testInfo.setTimeout()
+      // to this fixture's own slot, which would time out before cleanup is owned.
       { auto: true, timeout: 0 },
     ],
     sandbox: async ({ _blackboxAttempt }, use) => {

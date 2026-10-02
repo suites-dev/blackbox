@@ -74,6 +74,30 @@ it('owns one sandbox lifecycle per Playwright physical attempt, including a retr
   ]);
 });
 
+function playwrightEvents(output: string): Record<string, unknown>[] {
+  const marker = 'BLACKBOX_PLAYWRIGHT_EVENT ';
+  return output
+    .split('\n')
+    .filter((line) => line.startsWith(marker))
+    .map((line) => JSON.parse(line.slice(marker.length)) as Record<string, unknown>);
+}
+
+it('stops the sandbox when acquisition takes more than half the test timeout', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'blackbox-playwright-slow-'));
+  directories.push(directory);
+  const result = await runPlaywright({
+    configFile: 'slow-acquisition.config.ts',
+    outputDirectory: join(directory, 'output'),
+  });
+  expect(result.exitCode, result.output).toBe(0);
+  expect(result.output).not.toContain('exceeded during setup');
+  expect(playwrightEvents(result.output)).toEqual([
+    { kind: 'start' },
+    { kind: 'body', sandboxId: 'slow-sandbox' },
+    { kind: 'stop', reason: 'completed' },
+  ]);
+});
+
 it('lets the Playwright test timeout govern sandbox acquisition', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'blackbox-playwright-timeout-'));
   directories.push(directory);
