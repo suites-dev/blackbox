@@ -3,7 +3,8 @@
 Use the CLI to configure an experiment, run commands, inspect observations, and read reports.
 Run it from the directory containing your application's `blackbox.config.yaml`.
 
-[Install Blackbox](installation.md), then use command help to explore its options.
+[Install Blackbox and its CLI](installation.md), then use command help to explore its options.
+`@suites/blackbox-cli` owns the `blackbox` executable; the main package has no launcher.
 The main package includes `catalog` and `skills`; Capsule, driver, and runtime
 instrumentation commands require their separately selected packages:
 

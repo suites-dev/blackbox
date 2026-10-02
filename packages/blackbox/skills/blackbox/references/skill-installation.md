@@ -7,7 +7,9 @@ skills. The main package includes Catalog, Discovery, and the generic Skills ins
 
 First distinguish the missing layer:
 
-- No installed CLI: the normal installation is `@suites/blackbox`.
+- No installed CLI: explicitly install `@suites/blackbox-cli` alongside
+  `@suites/blackbox` when authorized. Only the CLI package owns the `blackbox` command;
+  the main package has no `bin`, even though CLI is one of its dependencies.
 - No `skills` command: check the main package's installation. A custom low-level
   composition needs to select `@suites/blackbox-skills` explicitly.
 - No named contribution in `blackbox skills list --json`: its provider is not

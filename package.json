@@ -57,6 +57,7 @@
     "@suites/blackbox": "workspace:*",
     "@suites/blackbox-capsule": "workspace:*",
     "@suites/blackbox-catalog": "workspace:*",
+    "@suites/blackbox-cli": "workspace:*",
     "@suites/blackbox-discovery": "workspace:*",
     "@suites/blackbox-driver": "workspace:*",
     "@suites/blackbox-inst-runtime-node": "workspace:*",

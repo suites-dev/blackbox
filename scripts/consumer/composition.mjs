@@ -1,11 +1,12 @@
 import { readFile, realpath } from 'node:fs/promises';
 import { join } from 'node:path';
 
-// The default product plus the adapters this acceptance project actually uses.
+// The default product, explicit CLI, and adapters this acceptance project uses.
 // Internal packages must arrive through their owners' dependency declarations.
 export const consumerPackages = [
   '@suites/blackbox',
   '@suites/blackbox-capsule',
+  '@suites/blackbox-cli',
   '@suites/blackbox-driver',
   '@suites/blackbox-inst-runtime-node',
   '@suites/blackbox-playwright',
@@ -16,15 +17,15 @@ export async function verifyConsumerComposition(consumerRoot) {
   const direct = Object.keys(manifest.dependencies ?? {}).sort();
   if (JSON.stringify(direct) !== JSON.stringify(consumerPackages)) {
     throw new Error(
-      'Consumer must select the main package and its adapters, not internal packages',
+      'Consumer must select the main package, CLI, and adapters, not internal packages',
     );
   }
-  const mainEntrypoint = await realpath(
-    join(consumerRoot, 'node_modules', '@suites', 'blackbox', 'bin', 'run.js'),
+  const cliEntrypoint = await realpath(
+    join(consumerRoot, 'node_modules', '@suites', 'blackbox-cli', 'bin', 'run.js'),
   );
   const executable = await realpath(join(consumerRoot, 'node_modules', '.bin', 'blackbox'));
-  if (executable !== mainEntrypoint) {
-    throw new Error('Consumer blackbox executable does not belong to @suites/blackbox');
+  if (executable !== cliEntrypoint) {
+    throw new Error('Consumer blackbox executable does not belong to @suites/blackbox-cli');
   }
-  return { directPackages: direct, mainEntrypoint };
+  return { directPackages: direct, cliEntrypoint };
 }

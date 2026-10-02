@@ -104,8 +104,10 @@ See [runtime evidence](docs/runtime-evidence.md) for observation and correlation
 
 ## Get started
 
-The default package is [`@suites/blackbox`](packages/blackbox/README.md): CLI,
-Skills, Catalog, Discovery, and the `$blackbox` agent skill. Capsule and Playwright
+The default package is [`@suites/blackbox`](packages/blackbox/README.md): core
+composition, Skills, Catalog, Discovery, and the `$blackbox` agent skill.
+Install [`@suites/blackbox-cli`](packages/cli/README.md) explicitly for the
+`blackbox` command; the main package has no launcher. Capsule and Playwright
 are separate adapters (`@suites/blackbox-capsule`, `@suites/blackbox-playwright`).
 The [installation guide](docs/installation.md) explains package selection and the
 current source-only setup; no npm release is implied.

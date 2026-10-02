@@ -4,7 +4,7 @@ import { bindCliSkillModules, isBlackboxCliPluginPackage } from '@suites/blackbo
 import { discoverProjectCliPlugins } from './plugin-discovery.js';
 import { loadCliSkillModules } from './skill-module-discovery.js';
 
-/** Shared host for the main product launcher and advanced standalone CLI installations. */
+/** Generic command host for the CLI executable and custom launchers. */
 export async function runCli(
   argv: string[],
   options: { readonly installationDirectory: URL } = {

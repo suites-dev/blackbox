@@ -64,7 +64,10 @@ async function installConsumer(input) {
     type: 'module',
     dependencies: Object.fromEntries(consumerPackages.map((name) => [name, input.version])),
   };
-  await writeFile(join(input.consumerRoot, 'package.json'), `${JSON.stringify(manifest, null, 2)}\n`);
+  await writeFile(
+    join(input.consumerRoot, 'package.json'),
+    `${JSON.stringify(manifest, null, 2)}\n`,
+  );
   await execute(
     'npm',
     [
@@ -168,11 +171,13 @@ async function main() {
   try {
     await mkdir(consumerRoot, { recursive: true });
     await mkdir(npmCache, { recursive: true });
-    process.stdout.write(`[blackbox] Installing the main package and ${consumerPackages.length - 1} adapters from ${registry}\n`);
+    process.stdout.write(
+      `[blackbox] Installing the main package, CLI, and ${consumerPackages.length - 2} adapters from ${registry}\n`,
+    );
     await installConsumer({ consumerRoot, npmCache, version });
 
     const blackboxBin = join(consumerRoot, 'node_modules', '.bin', 'blackbox');
-    const { mainEntrypoint: entrypoint } = await verifyConsumerComposition(consumerRoot);
+    const { cliEntrypoint: entrypoint } = await verifyConsumerComposition(consumerRoot);
 
     // Reset before installing generated assets: reset deliberately removes
     // generated driver state. Live sessions stop through the published CLI.

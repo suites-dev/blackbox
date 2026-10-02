@@ -5,18 +5,21 @@ import { join } from 'node:path';
 import { test } from 'node:test';
 import { verifyConsumerComposition } from './composition.mjs';
 
-async function fixture(t, { extra = [], executableOwner = 'blackbox' } = {}) {
+async function fixture(t, { extra = [], omit = [], executableOwner = 'blackbox-cli' } = {}) {
   const root = await realpath(await mkdtemp(join(tmpdir(), 'blackbox-consumer-composition-')));
   t.after(() => rm(root, { recursive: true, force: true }));
   const dependencies = Object.fromEntries(
     [
       '@suites/blackbox',
       '@suites/blackbox-capsule',
+      '@suites/blackbox-cli',
       '@suites/blackbox-driver',
       '@suites/blackbox-inst-runtime-node',
       '@suites/blackbox-playwright',
       ...extra,
-    ].map((name) => [name, '0.0.1-alpha.0']),
+    ]
+      .filter((name) => !omit.includes(name))
+      .map((name) => [name, '0.0.1-alpha.0']),
   );
   await writeFile(join(root, 'package.json'), JSON.stringify({ dependencies }));
   for (const name of ['blackbox', 'blackbox-cli']) {
@@ -32,17 +35,18 @@ async function fixture(t, { extra = [], executableOwner = 'blackbox' } = {}) {
   return root;
 }
 
-test('accepts the default package plus explicit adapters and its own executable', async (t) => {
+test('accepts the default package plus explicit CLI and adapters with the CLI executable', async (t) => {
   const root = await fixture(t);
   assert.deepEqual(await verifyConsumerComposition(root), {
     directPackages: [
       '@suites/blackbox',
       '@suites/blackbox-capsule',
+      '@suites/blackbox-cli',
       '@suites/blackbox-driver',
       '@suites/blackbox-inst-runtime-node',
       '@suites/blackbox-playwright',
     ],
-    mainEntrypoint: join(root, 'node_modules', '@suites', 'blackbox', 'bin', 'run.js'),
+    cliEntrypoint: join(root, 'node_modules', '@suites', 'blackbox-cli', 'bin', 'run.js'),
   });
 });
 
@@ -51,7 +55,15 @@ test('rejects a consumer that hides missing transitive dependencies with direct 
   await assert.rejects(verifyConsumerComposition(root), /not internal packages/u);
 });
 
-test('rejects a consumer running the standalone CLI instead of the main executable', async (t) => {
-  const root = await fixture(t, { executableOwner: 'blackbox-cli' });
-  await assert.rejects(verifyConsumerComposition(root), /does not belong to @suites\/blackbox/u);
+test('rejects a consumer running an executable from the main package instead of the CLI', async (t) => {
+  const root = await fixture(t, { executableOwner: 'blackbox' });
+  await assert.rejects(
+    verifyConsumerComposition(root),
+    /does not belong to @suites\/blackbox-cli/u,
+  );
+});
+
+test('requires an explicit CLI dependency even when its executable exists transitively', async (t) => {
+  const root = await fixture(t, { omit: ['@suites/blackbox-cli'] });
+  await assert.rejects(verifyConsumerComposition(root), /main package, CLI, and adapters/u);
 });

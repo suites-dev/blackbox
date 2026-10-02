@@ -21,6 +21,7 @@ import { blackboxSkill, skillModule } from './skills.js';
 
 const execFileAsync = promisify(execFile);
 const packageDirectory = fileURLToPath(skillModule.packageRoot);
+const cliDirectory = fileURLToPath(new URL('../', import.meta.resolve('@suites/blackbox-cli/run')));
 
 async function consumer({ onTestFinished }: TestContext): Promise<string> {
   const project = await realpath(await mkdtemp(join(tmpdir(), 'blackbox-main-consumer-')));
@@ -29,20 +30,31 @@ async function consumer({ onTestFinished }: TestContext): Promise<string> {
     join(project, 'package.json'),
     JSON.stringify({
       name: 'main-consumer',
-      dependencies: { '@suites/blackbox': '0.0.1-alpha.0' },
+      dependencies: {
+        '@suites/blackbox': '0.0.1-alpha.0',
+        '@suites/blackbox-cli': '0.0.1-alpha.0',
+      },
     }),
   );
   const main = join(project, 'node_modules/@suites/blackbox');
   await mkdir(main, { recursive: true });
-  for (const file of ['package.json', 'bin', 'dist', 'skills']) {
+  for (const file of ['package.json', 'dist', 'skills']) {
     await cp(join(packageDirectory, file), join(main, file), { recursive: true });
   }
   // Select only this consumer's modules, never the source checkout's adapters.
   await symlink(join(packageDirectory, 'node_modules'), join(main, 'node_modules'), 'dir');
-  return join(main, 'bin/run.js');
+  const cli = join(project, 'node_modules/@suites/blackbox-cli');
+  await mkdir(cli);
+  for (const file of ['package.json', 'bin', 'dist']) {
+    await cp(join(cliDirectory, file), join(cli, file), { recursive: true });
+  }
+  await symlink(join(cliDirectory, 'node_modules'), join(cli, 'node_modules'), 'dir');
+  return join(cli, 'bin/run.js');
 }
 
-test('composes default package skills through the main Blackbox executable', async (context) => {
+test('composes default package skills through the separately installed CLI', async (context) => {
+  const manifest = JSON.parse(await readFile(join(packageDirectory, 'package.json'), 'utf8'));
+  assert.equal(manifest.bin, undefined, 'the main package must not publish an executable');
   const executable = await consumer(context);
   const { stdout } = await execFileAsync(
     process.execPath,

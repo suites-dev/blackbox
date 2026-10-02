@@ -25,9 +25,9 @@ output, and the retained experiment under `e2e/.blackbox/experiments/`.
 Verify the specific assertions in the current harness, including:
 
 - Registry consumer package-boundary verification and absence of workspace imports.
-  Its direct dependencies are the main `@suites/blackbox` package plus the selected
+  Its direct dependencies are `@suites/blackbox`, `@suites/blackbox-cli`, and the selected
   Capsule, Playwright, driver, and Node instrumentation adapters. The executable
-  must belong to the main package; core internals arrive transitively.
+  must belong to the CLI package; core internals arrive transitively.
 - Fixture state changes after real HTTP/Postgres/Redis interactions, not just an
   HTTP 200 or a command invocation recorded by a mock.
 - Exact HTTP activity/trace relationships; Redis shared-state downstream work is

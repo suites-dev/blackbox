@@ -1,7 +1,7 @@
 # Install Blackbox
 
-`@suites/blackbox` is the default entry package. It includes the CLI, skill
-installer, Catalog, Discovery, and the `$blackbox` skill. Add execution adapters
+`@suites/blackbox` is the default entry package for the core modules and `$blackbox`
+skill. Install `@suites/blackbox-cli` explicitly for the `blackbox` command. Add execution adapters
 separately, then run Blackbox from the application you want to investigate.
 
 > **Alpha distribution:** The release infrastructure is prepared, but this change
@@ -13,7 +13,7 @@ separately, then run Blackbox from the application you want to investigate.
 After the alpha is published, the installation model is:
 
 ```sh
-npm install --save-dev @suites/blackbox@next
+npm install --save-dev @suites/blackbox@next @suites/blackbox-cli@next
 # Choose the execution adapters your project uses:
 npm install --save-dev @suites/blackbox-capsule@next @suites/blackbox-playwright@next
 ```
@@ -22,13 +22,18 @@ These are release commands, not a claim that the packages are available today.
 Prereleases use the `next` distribution tag. Use your existing package manager and
 compatible package versions.
 
-| Package                              | When to add it                                                 |
-| ------------------------------------ | -------------------------------------------------------------- |
-| `@suites/blackbox`                   | Default CLI, static discovery, Catalog, and skill installation |
-| `@suites/blackbox-capsule`           | Interactive execution, observations, and Capsule reports       |
-| `@suites/blackbox-playwright`        | Native Playwright system-test fixtures                         |
-| `@suites/blackbox-inst-runtime-node` | Node instrumentation installation                              |
-| `@suites/blackbox-driver`            | Project-owned driver runtime and SDK                           |
+| Package                              | When to add it                                                  |
+| ------------------------------------ | --------------------------------------------------------------- |
+| `@suites/blackbox`                   | Core composition, static discovery, Catalog, and agent skills   |
+| `@suites/blackbox-cli`               | The `blackbox` command; install explicitly for command-line use |
+| `@suites/blackbox-capsule`           | Interactive execution, observations, and Capsule reports        |
+| `@suites/blackbox-playwright`        | Native Playwright system-test fixtures                          |
+| `@suites/blackbox-inst-runtime-node` | Node instrumentation installation                               |
+| `@suites/blackbox-driver`            | Project-owned driver runtime and SDK                            |
+
+The main package depends on CLI, Skills, Catalog, and Discovery, but has no `bin`
+or launcher. Install CLI directly rather than relying on a package manager to
+expose a transitive dependency's executable.
 
 The main package does not install execution adapters. An uninstalled adapter
 contributes no commands or skills. Internal Sandbox and telemetry dependencies
@@ -82,13 +87,13 @@ From the Blackbox checkout, define a shell shortcut:
 
 ```sh
 blackbox_checkout="$PWD"
-blackbox() { node "$blackbox_checkout/packages/blackbox/bin/run.js" "$@"; }
+blackbox() { node "$blackbox_checkout/packages/cli/bin/run.js" "$@"; }
 blackbox --help
 ```
 
 You should see the CLI help, including `capsule`, `catalog`, and `skills`.
 The source checkout deliberately selects all of its declared workspace providers.
-That is broader than a consumer installing only `@suites/blackbox`.
+That is broader than a consumer installing just `@suites/blackbox` and `@suites/blackbox-cli`.
 Blackbox uses the current directory as the project root: it reads
 `blackbox.config.yaml` there and retains experiment data under `.blackbox/`.
 

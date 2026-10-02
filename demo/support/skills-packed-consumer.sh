@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
 # Packed-consumer check for `blackbox skills install`. Packs the main package and
-# its core dependencies, installs only @suites/blackbox directly into a clean
-# project outside the workspace, and drives the installed main executable there: a fresh
+# its core dependencies, installs @suites/blackbox and @suites/blackbox-cli directly
+# into a clean project outside the workspace, and drives the CLI executable there: a fresh
 # Blackbox entry skill, an unchanged rerun, the `skill install` alias, a preserved conflict,
 # and adoption of a matching manual copy. Needs no Docker and no network beyond
 # what `pnpm install --prefer-offline` may fetch for @oclif/core.
@@ -57,7 +57,7 @@ for package in "${PACKAGES[@]}"; do
   archive="$PACK_ROOT/$(echo "${name#@}" | tr / -)-$(jq -er '.version' "$directory/package.json").tgz"
   [[ -s "$archive" ]] || fail "pack did not produce $archive"
   jq --arg name "$name" --arg archive "file:$archive" \
-    '.pnpm.overrides[$name] = $archive | if $name == "@suites/blackbox" then .dependencies[$name] = $archive else . end' \
+    '.pnpm.overrides[$name] = $archive | if $name == "@suites/blackbox" or $name == "@suites/blackbox-cli" then .dependencies[$name] = $archive else . end' \
     "$PROJECT/package.json" >"$PROJECT/package.json.next"
   mv "$PROJECT/package.json.next" "$PROJECT/package.json"
 done
@@ -69,8 +69,12 @@ cd "$PROJECT"
 PACKED_BLACKBOX="$(node --input-type=module -e 'import { blackboxSkill } from "@suites/blackbox/skills/blackbox"; import { fileURLToPath } from "node:url"; console.log(fileURLToPath(blackboxSkill.source));')"
 BLACKBOX_VERSION="$(node --input-type=module -e 'import { skillModule } from "@suites/blackbox/skills"; import { readFileSync } from "node:fs"; console.log(JSON.parse(readFileSync(new URL("package.json", skillModule.packageRoot), "utf8")).version);')"
 MAIN_ROOT="$(node --input-type=module -e 'import { skillModule } from "@suites/blackbox/skills"; import { fileURLToPath } from "node:url"; console.log(fileURLToPath(skillModule.packageRoot));')"
-# pnpm emits a launcher shim; it must dispatch to the main package's executable.
-grep -F '/@suites/blackbox/bin/run.js' "$BLACKBOX" >/dev/null || fail "launcher does not belong to the main package"
+# pnpm emits a launcher shim; only the explicitly installed CLI owns this command.
+grep -F '/@suites/blackbox-cli/bin/run.js' "$BLACKBOX" >/dev/null || fail "launcher does not belong to the CLI package"
+jq -e '(.dependencies | keys) == ["@suites/blackbox", "@suites/blackbox-cli"]' package.json >/dev/null ||
+  fail "consumer must directly select only the main and CLI packages"
+jq -e 'has("bin") | not' "$MAIN_ROOT/package.json" >/dev/null || fail "main package must not publish a bin"
+[[ ! -e "$MAIN_ROOT/bin/run.js" ]] || fail "main package still ships a launcher"
 # Resolve core providers from their declaring package, without dependency hoisting.
 cd "$MAIN_ROOT"
 PACKED_SKILL="$(node --input-type=module -e 'import { discoverySkill } from "@suites/blackbox-discovery/skills/discovery"; import { fileURLToPath } from "node:url"; console.log(fileURLToPath(discoverySkill.source));')"
@@ -154,7 +158,7 @@ cp -R "$PACKED_SKILL" .claude/skills/discovery
 jq -e '.ok and ([.destinations[].outcome] == ["adopted"])' "$WORK_ROOT/adopt.json" >/dev/null ||
   fail "adoption: $(cat "$WORK_ROOT/adopt.json")"
 
-# Installing the main package alone must not pull execution adapters or Docker.
+# Installing the main package and CLI must not pull execution adapters or Docker.
 node --input-type=module -e '
   import assert from "node:assert/strict";
   import { createRequire } from "node:module";
@@ -171,15 +175,14 @@ if grep -F 'capsule up' "$WORK_ROOT/core-help.txt"; then fail "absent Capsule ex
 # Removing the main bundle from a custom composition removes its contributions,
 # while both packages and old skill copies remain on disk. Do not reinstall:
 # physical absence would mask an incorrect filesystem-based activation fallback.
-# Expose the already installed CLI and Skills packages as direct selections;
-# pnpm intentionally did not hoist these transitive dependencies for the first case.
+# Expose the already installed Skills package as a direct selection;
+# the CLI is already direct, but pnpm did not hoist Skills for the first case.
 (cd "$MAIN_ROOT" && node --input-type=module - "$PROJECT" <<'NODE'
 import assert from 'node:assert/strict';
 import { readFileSync, symlinkSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 for (const [name, specifier] of [
-  ['@suites/blackbox-cli', '@suites/blackbox-cli/run'],
   ['@suites/blackbox-skills', '@suites/blackbox-skills'],
 ]) {
   const root = fileURLToPath(new URL('../', import.meta.resolve(specifier)));
@@ -216,4 +219,4 @@ node --input-type=module -e '
   assert.throws(() => fromCli.resolve("@suites/blackbox"), {code: "MODULE_NOT_FOUND"});
 '
 
-echo "skills-packed-consumer: passed (main package only, all hosts, public exports, packed helpers, absent adapters, installed, unchanged, alias, conflict preserved, adopted, unselected bundle, standalone CLI)"
+echo "skills-packed-consumer: passed (main plus explicit CLI, CLI-owned executable, no main launcher, all hosts, public exports, packed helpers, absent adapters, installed, unchanged, alias, conflict preserved, adopted, unselected bundle, standalone CLI)"

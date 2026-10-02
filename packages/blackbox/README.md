@@ -1,7 +1,8 @@
 # `@suites/blackbox`
 
-The default Blackbox installation: the `blackbox` executable, core modules, and
-the portable `$blackbox` agent skill. Add execution adapters only when you need them.
+The default Blackbox composition: core modules and the portable `$blackbox` agent
+skill. Install `@suites/blackbox-cli` explicitly for the `blackbox` command, then
+add execution adapters only when you need them.
 
 ## Install
 
@@ -10,7 +11,7 @@ Until it is released, use the [source installation](../../docs/installation.md#b
 The release installation model is:
 
 ```sh
-npm install --save-dev @suites/blackbox@next
+npm install --save-dev @suites/blackbox@next @suites/blackbox-cli@next
 # Optional: choose either or both execution adapters.
 npm install --save-dev @suites/blackbox-capsule@next @suites/blackbox-playwright@next
 ```
@@ -27,6 +28,10 @@ choices; see [installation](../../docs/installation.md).
 | `@suites/blackbox-skills`    | Package-neutral registry and project-local skill copying |
 | `@suites/blackbox-catalog`   | Project topology, validation, and Catalog skill          |
 | `@suites/blackbox-discovery` | Discovery skill and its executable investigation helpers |
+
+This package has no `bin` or launcher. Although CLI is a runtime dependency,
+declare it directly in your project to expose its command through the package
+manager; do not depend on transitive binary hoisting.
 
 Capsule, Playwright, Sandbox, and runtime instrumentation are not dependencies of
 this package. Execution adapters own the runtime packages they need. Installing
@@ -67,8 +72,8 @@ unmodified copies; locally edited copies are preserved as conflicts. See
 ## Composition and public exports
 
 `package.json` installs the core dependencies. The `blackboxModule` ESM export
-explicitly activates Catalog, Discovery, and Skills; the launcher delegates to
-the generic CLI host. Third-party modules can use the same
+explicitly activates Catalog, Discovery, and Skills. The separately installed CLI
+discovers this composition from the consumer's dependencies. Third-party modules can use the same
 [module contract](../cli/README.md#contribute-a-module).
 
 | Public export                                   | Content                                        |
@@ -91,7 +96,7 @@ pnpm --filter @suites/blackbox test
 pnpm test:e2e:skills
 ```
 
-The packed test installs only the main package as a direct dependency and checks
-its default command/skill surface, all host destinations, and absent adapters.
-The registry-consumer E2E lanes separately exercise the main package with explicitly
-selected Capsule, Playwright, driver, and Node instrumentation adapters.
+The packed test installs the main package and CLI as direct dependencies and checks
+CLI executable ownership, the absence of a main-package launcher, default commands
+and skills, all host destinations, and absent adapters. Registry-consumer E2E lanes
+add explicitly selected Capsule, Playwright, driver, and Node instrumentation adapters.

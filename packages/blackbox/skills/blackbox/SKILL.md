@@ -27,8 +27,10 @@ directory, an unselected transitive dependency, or a TypeScript name does not es
 availability. A failed list command is an unknown inventory, not an empty one.
 
 If the CLI or `skills` command is missing, inspect the project's dependencies and
-explain that the normal entry package is `@suites/blackbox`, which includes the CLI,
-Skills, Catalog, and Discovery. Low-level custom installations may omit these.
+explain that the normal setup explicitly installs `@suites/blackbox-cli` for the
+`blackbox` command alongside `@suites/blackbox` for Skills, Catalog, Discovery, and
+this entry skill. The main package has no executable of its own; do not rely on
+transitive CLI installation to expose the command. Custom compositions may omit core modules.
 Do not install or change dependencies without authorization. Read
 [skill installation](references/skill-installation.md) when a needed skill is
 missing, stale, or not visible to the current host.

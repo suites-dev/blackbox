@@ -100,6 +100,9 @@ importers:
       '@suites/blackbox-catalog':
         specifier: workspace:*
         version: link:packages/catalog
+      '@suites/blackbox-cli':
+        specifier: workspace:*
+        version: link:packages/cli
       '@suites/blackbox-discovery':
         specifier: workspace:*
         version: link:packages/discovery

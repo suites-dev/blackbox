@@ -42,7 +42,8 @@ flags and output may still change while the
 
 ## Install the skill
 
-Follow [installation](installation.md) to obtain `@suites/blackbox`. Its default
+Follow [installation](installation.md) to obtain `@suites/blackbox` and explicitly
+install `@suites/blackbox-cli`, the owner of the `blackbox` command. The main package's default
 composition provides the `skills` commands plus `blackbox`, `catalog`, and
 `discovery` contributions. Add `@suites/blackbox-capsule` separately for Capsule;
 an absent adapter has no installable skill. Packages can explicitly select their

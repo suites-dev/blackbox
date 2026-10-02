@@ -476,8 +476,8 @@ jobs:
             [[ "$outcome" == success ]] || exit 1
           done
 
-  # Packs the main package and its core dependencies, then installs only the
-  # main package directly. No Docker, registry, or prepared consumer is needed.
+  # Packs the main package and its core dependencies, then installs the main
+  # package and CLI directly. No Docker, registry, or prepared consumer is needed.
   skills:
     name: Skills plugin packed install
     runs-on: ubuntu-24.04

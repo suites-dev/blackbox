@@ -1,9 +1,9 @@
 # `@suites/blackbox-cli`
 
-Generic oclif command host for Blackbox modules. Most users should install
-[`@suites/blackbox`](../blackbox/README.md), which owns the default composition,
-launcher, and entry skill. This lower-level package remains available for custom
-compositions; it depends on neither product features nor Skills.
+Generic oclif command host and sole owner of the `blackbox` executable. Install
+this package explicitly alongside [`@suites/blackbox`](../blackbox/README.md),
+which owns the default composition and entry skill but has no launcher.
+The CLI also supports custom compositions; it depends on neither product features nor Skills.
 
 ## Runtime composition
 
@@ -87,5 +87,5 @@ pnpm test:e2e:skills
 ```
 
 The package runner compiles tests into a temporary directory and uses Node's test
-runner. The main package tests the product executable and skill copies. The packed
+runner. The main package tests composition and skill copies through the CLI executable. The packed
 consumer lane tests public exports and dependency composition outside the workspace.

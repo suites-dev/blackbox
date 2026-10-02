@@ -2,10 +2,7 @@
   "name": "@suites/blackbox",
   "version": "0.0.1-alpha.0",
   "type": "module",
-  "description": "Blackbox system verification: core modules, CLI, and agent entry skill.",
-  "bin": {
-    "blackbox": "./bin/run.js"
-  },
+  "description": "Blackbox system verification: core module composition and agent entry skill.",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
@@ -35,7 +32,6 @@
   },
   "files": [
     "dist",
-    "bin",
     "skills",
     "README.md",
     "LICENSE",

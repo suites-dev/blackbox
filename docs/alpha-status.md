@@ -44,7 +44,8 @@ Commands, configuration, and report formats may change as the first alpha takes 
 
 The main `@suites/blackbox` package owns the entry skill and includes Discovery
 (`@suites/blackbox-discovery`) and Catalog. The generic `@suites/blackbox-skills`
-package orchestrates copying, but owns no concrete skill. Start with
+package orchestrates copying, but owns no concrete skill. Explicitly install
+`@suites/blackbox-cli` for the command, then start with
 `blackbox skills install blackbox --codex`; see [agent skill setup](agent-skills.md).
 Some skill references discuss capabilities still in development; use the status above to choose a working path.
 
