@@ -78,11 +78,52 @@ reasons. Setup failure also attempts cleanup before surfacing the error.
   acquire a sandbox. There, `baseURL` (and so `request`) keeps the configured
   value, and `sandbox`, `telemetry` and `effects` fail with an error that names
   the hook. Use `beforeEach`, `afterEach` or the test body for sandbox work.
+- `telemetry.spans(query)` and `telemetry.waitForSpan(query, options)` query
+  this attempt's retained spans, decoded from the raw OTLP/JSON fragments (see
+  [Span queries](#span-queries)).
 - `effects` exposes the attempt identity and the contract-evaluation boundary.
   `expect(effects).toSatisfy(...)` compiles and delegates an immutable contract,
   but the Alpha does not yet project raw telemetry into normalized effects. The
   matcher therefore reports an inconclusive failure unless an evaluator is
   supplied by the runtime.
+
+## Span queries
+
+`telemetry.spans(query)` returns the retained spans of the current attempt that
+match every field given in `query`; `telemetry.spans()` returns them all.
+`telemetry.waitForSpan(query, options)` reads retained telemetry until a span
+matches, and fails with the query and the spans it did see when `timeoutMs`
+(default 10000) passes. Telemetry arrives asynchronously, so wait for a span
+rather than reading once right after the request that causes it.
+
+```ts
+test('login reaches the auth service', async ({ request, telemetry }) => {
+  const response = await request.post('/api/v1/users/login', { data: credentials });
+  expect(response.ok()).toBe(true);
+
+  const span = await telemetry.waitForSpan({
+    service: 'ts-auth-service',
+    name: 'POST /api/v1/users/login',
+    kind: 'server',
+    traceId: telemetry.traceId,
+  });
+  expect(span.status).not.toBe('error');
+  expect(await telemetry.spans({ traceId: telemetry.traceId, name: /^SELECT/u })).not.toEqual([]);
+});
+```
+
+| Query field | Matches                                                                  |
+| ----------- | ------------------------------------------------------------------------ |
+| `service`   | the exporting process's `service.name`                                   |
+| `name`      | the exact span name, or a `RegExp` it must match                         |
+| `kind`      | `server`, `client`, `producer`, `consumer`, `internal` or `unspecified`  |
+| `traceId`   | one trace; `telemetry.traceId` holds the spans caused by `request` calls |
+
+Each `BlackboxSpan` carries `traceId`, `spanId`, `parentSpanId`, `service`, `name`,
+`kind`, `status` (`unset`, `ok` or `error`), the start and end time in Unix
+nanoseconds as decimal strings, and its scalar `attributes`. A span exported
+twice is returned once. Corrupt retained telemetry fails the query instead of
+returning a partial answer.
 
 ## Execution reporting
 

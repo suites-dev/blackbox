@@ -28,6 +28,44 @@ export interface BlackboxSandbox {
   readonly containers: ReadonlyMap<string, SandboxContainer>;
 }
 
+export type BlackboxSpanKind =
+  'unspecified' | 'internal' | 'server' | 'client' | 'producer' | 'consumer';
+
+export type BlackboxSpanStatus = 'unset' | 'ok' | 'error';
+
+/** One retained span, decoded from the collector's raw OTLP/JSON fragments. */
+export interface BlackboxSpan {
+  readonly traceId: string;
+  readonly spanId: string;
+  readonly parentSpanId: string | null;
+  /** The `service.name` resource attribute of the exporting process. */
+  readonly service: string | null;
+  readonly name: string;
+  readonly kind: BlackboxSpanKind;
+  readonly status: BlackboxSpanStatus;
+  readonly startTimeUnixNano: string;
+  readonly endTimeUnixNano: string;
+  readonly attributes: Readonly<Record<string, string | number | boolean>>;
+}
+
+interface BlackboxSpanFilter {
+  readonly traceId: string;
+  readonly service: string;
+  /** Exact span name, or a pattern it must match. */
+  readonly name: string | RegExp;
+  readonly kind: BlackboxSpanKind;
+}
+
+/** Every given field must match; an empty query matches every retained span. */
+export type BlackboxSpanQuery = Partial<BlackboxSpanFilter>;
+
+export type BlackboxSpanWaitOptions = Partial<{
+  /** How long to wait for a matching span. Default: 10000. */
+  readonly timeoutMs: number;
+  /** Pause between reads of retained telemetry. Default: 250. */
+  readonly intervalMs: number;
+}>;
+
 export interface BlackboxTelemetry {
   readonly sessionId: string;
   readonly executionId: string;
@@ -38,6 +76,10 @@ export interface BlackboxTelemetry {
   inspect(): Promise<SandboxTelemetryStatus>;
   read(): Promise<CollectorSessionReadResult>;
   readTrace(traceId: string): Promise<CollectorTraceReadResult>;
+  /** Retained spans of this attempt that match the query. */
+  spans(query?: BlackboxSpanQuery): Promise<readonly BlackboxSpan[]>;
+  /** Wait until a retained span matches the query, and return it. */
+  waitForSpan(query: BlackboxSpanQuery, options?: BlackboxSpanWaitOptions): Promise<BlackboxSpan>;
 }
 
 /** Attempt-scoped handle evaluated by the configured effects provider. */

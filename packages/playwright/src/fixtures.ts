@@ -20,6 +20,7 @@ import { reported } from './reporting/events.js';
 import { reportObservations } from './reporting/observations.js';
 import { retainAttempt, retainedAttemptDirectory } from './retention/retention.js';
 import { createAttemptTraceContext, tracedHeaders } from './trace/trace-context.js';
+import { spanQueries } from './telemetry/span-query.js';
 import { suiteHook, testAttempt, type SuiteHookScope, type TestAttempt } from './suite-hooks.js';
 
 interface PrivateFixtures {
@@ -191,7 +192,9 @@ export function createBlackboxTest(
     },
     telemetry: async ({ _blackboxAttempt }, use) => {
       const { attempt, trace } = testAttempt(_blackboxAttempt, 'telemetry');
-      await use(Object.freeze({ ...attempt.telemetry, ...trace }));
+      await use(
+        Object.freeze({ ...attempt.telemetry, ...trace, ...spanQueries(attempt.telemetry) }),
+      );
     },
     effects: async ({ _blackboxAttempt }, use) => {
       await use(testAttempt(_blackboxAttempt, 'effects').attempt.effects);

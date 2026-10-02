@@ -4,7 +4,10 @@ import { sandboxTelemetryStorageDirectory, type SandboxHandle } from '@suites/bl
 import type { BlackboxTelemetry } from '../types.js';
 
 /** Telemetry reads owned by the runtime; the fixture adds the attempt trace context. */
-export type AttemptTelemetry = Omit<BlackboxTelemetry, 'traceId' | 'traceparent'>;
+export type AttemptTelemetry = Omit<
+  BlackboxTelemetry,
+  'traceId' | 'traceparent' | 'spans' | 'waitForSpan'
+>;
 
 export function publicTelemetry(input: {
   readonly sandbox: SandboxHandle;
