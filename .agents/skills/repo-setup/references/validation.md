@@ -38,15 +38,15 @@ collect final results against the final relevant tree.
 
 ## Select the actual test lane
 
-| Command                                                                    | What it establishes                           | What it does not establish                       |
-| -------------------------------------------------------------------------- | --------------------------------------------- | ------------------------------------------------ |
-| `pnpm lint`                                                                | Source-layout rules and package ESLint checks | Type safety, behavior, Bash correctness          |
-| `pnpm check:deps`                                                          | Package layering, cycles, and declared deps   | Whether an import is used correctly at runtime   |
-| `pnpm typecheck`                                                           | Root TypeScript source/test compilation       | Runtime behavior or Docker fixture correctness   |
-| `pnpm test`                                                                | Build, then workspace package test scripts    | Separate integration scripts or Capsule Bash E2E |
-| `pnpm --filter @suites/blackbox-instrumentation test:integration` | Instrumentation integration lane              | Other packages' integration coverage             |
-| `pnpm --filter @suites/blackbox-inst-runtime-node test:integration`        | Node runtime instrumentation integration lane | Full registry consumer acceptance                |
-| `pnpm run test:demo </dev/null`                                            | Published CLI and Docker-backed Capsule journey | Independent review or all unit-test branches   |
+| Command                                                             | What it establishes                               | What it does not establish                       |
+| ------------------------------------------------------------------- | ------------------------------------------------- | ------------------------------------------------ |
+| `pnpm lint`                                                         | Source-layout rules and package ESLint checks     | Type safety, behavior, Bash correctness          |
+| `pnpm check:deps`                                                   | Package layering, cycles, declared deps, coupling | Whether an import is used correctly at runtime   |
+| `pnpm typecheck`                                                    | Root TypeScript source/test compilation           | Runtime behavior or Docker fixture correctness   |
+| `pnpm test`                                                         | Build, then workspace package test scripts        | Separate integration scripts or Capsule Bash E2E |
+| `pnpm --filter @suites/blackbox-instrumentation test:integration`   | Instrumentation integration lane                  | Other packages' integration coverage             |
+| `pnpm --filter @suites/blackbox-inst-runtime-node test:integration` | Node runtime instrumentation integration lane     | Full registry consumer acceptance                |
+| `pnpm run test:demo </dev/null`                                     | Published CLI and Docker-backed Capsule journey   | Independent review or all unit-test branches     |
 
 Inspect changed packages' scripts and runner configs before selecting targeted
 commands. Instrumentation default Vitest configs exclude `*.integration.test.ts`.
@@ -54,6 +54,14 @@ The CLI uses `packages/cli/scripts/run-tests.mjs`, compiles tests, and invokes
 Node's test runner; do not send it Vitest flags. Build before targeted CLI tests
 that exercise generated executable output. A filename alone does not establish
 which lane discovers it.
+
+For package skill exports, assets, or CLI composition changes, also run
+`pnpm test:e2e:skills`. It packs the main package and its core dependency closure
+into an isolated consumer declaring `@suites/blackbox` and `@suites/blackbox-cli`, and exercises public
+exports and copy commands without Docker. The lane covers the main-owned
+`blackbox` skill for all three hosts, default core contributions, optional adapter
+absence, CLI-owned executable and no root-package launcher, and a standalone CLI with no Skills dependency. Package
+tests alone do not prove that the portable files were included in npm archives.
 
 `e2e/` is not a pnpm workspace package; do not substitute its older Playwright
 scripts for the active Bash CI acceptance lane. Read the Capsule skill before

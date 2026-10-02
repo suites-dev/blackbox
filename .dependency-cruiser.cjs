@@ -170,6 +170,11 @@ const TIERS = [
     why: 'the CLI binary, which loads plugins at runtime instead of importing them',
     packages: ['cli'],
   },
+  {
+    name: 'distribution',
+    why: 'the main package that a user installs, declaring the default product composition',
+    packages: ['blackbox'],
+  },
 ];
 
 const tiered = TIERS.flatMap((tier) => tier.packages);

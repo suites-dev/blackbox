@@ -1,6 +1,6 @@
 # Workspace packages
 
-All thirteen workspace packages are public alpha packages with one fixed Lerna version.
+All fifteen workspace packages are public alpha packages with one fixed Lerna version.
 `pnpm exec lerna list --all` is the package source of truth, and Lerna determines
 their publication order. Alpha exports may change between releases.
 
@@ -59,13 +59,14 @@ Publication runs only from an immutable annotated tag on `main`. See the
 `packages/` and fails on any error. CI runs it as its own lane. A package may import
 only packages in a lower tier:
 
-| Tier        | Packages                                                                                     |
-| ----------- | -------------------------------------------------------------------------------------------- |
-| host        | `cli` (loads plugins at runtime; imports only `cli-contract`)                                |
-| composition | `capsule`, `playwright`                                                                      |
-| plugins     | `catalog`, `discovery`, `instrumentation-runtime-node`                                       |
-| services    | `skills`, `driver`                                                                           |
-| foundation  | `cli-contract`, `telemetry`, `instrumentation`, `otel-collector`, `report-server`, `sandbox` |
+| Tier         | Packages                                                                                     |
+| ------------ | -------------------------------------------------------------------------------------------- |
+| distribution | `blackbox` (the main package a user installs; declares the default composition)              |
+| host         | `cli` (loads plugins at runtime; imports only `cli-contract`)                                |
+| composition  | `capsule`, `playwright`                                                                      |
+| plugins      | `catalog`, `discovery`, `instrumentation-runtime-node`                                       |
+| services     | `skills`, `driver`                                                                           |
+| foundation   | `cli-contract`, `telemetry`, `instrumentation`, `otel-collector`, `report-server`, `sandbox` |
 
 The same check rejects import cycles (type-only ones included), relative or deep imports into another
 package, imports that miss the target's `exports`, and npm or workspace imports the
