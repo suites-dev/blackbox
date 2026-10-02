@@ -46,7 +46,7 @@ export class AttemptReport implements AttemptProgress {
   }
 
   acquired(
-    sandbox: BlackboxSandbox,
+    sandbox: Pick<BlackboxSandbox, 'sandboxId' | 'executionId' | 'catalogEntry'>,
     telemetry: { readonly sessionId: string; readonly traceId: string },
   ): void {
     this.identify(sandbox.sandboxId);

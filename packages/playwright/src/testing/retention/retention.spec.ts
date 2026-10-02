@@ -41,6 +41,7 @@ const runtime = {
         readTrace: () => Promise.reject(new Error('not used by this fixture')),
       },
       effects: { sessionId: sandboxId, executionId: sandboxId },
+      runActivity: () => Promise.reject(new Error('not used by this fixture')),
       stop: () => Promise.resolve(),
     };
   },

@@ -15,6 +15,7 @@ import {
   type BlackboxFixturePolicy,
 } from './attempt/deadlines.js';
 import type { BlackboxTestFixtures, BlackboxTestOptions } from './types.js';
+import { participantExec } from './activity/exec.js';
 import { AttemptReport } from './reporting/attempt.js';
 import { reported } from './reporting/events.js';
 import { reportObservations } from './reporting/observations.js';
@@ -143,7 +144,7 @@ async function provideTestAttempt(input: {
       report.emit('execution', 'started', 'test fixtures, hooks and body');
       await report.flush();
       report.lifecycle('ready', attempt.sandbox.catalogEntry);
-      await input.use(Object.freeze({ attempt, trace }));
+      await input.use(Object.freeze({ attempt, trace, exec: participantExec(attempt, report) }));
     } finally {
       const reason = stopReason(testInfo.status);
       report.emit('execution', 'info', testInfo.status ?? 'unknown');
@@ -188,7 +189,8 @@ export function createBlackboxTest(
       { auto: true, timeout: 0 },
     ],
     sandbox: async ({ _blackboxAttempt }, use) => {
-      await use(testAttempt(_blackboxAttempt, 'sandbox').attempt.sandbox);
+      const { attempt, exec } = testAttempt(_blackboxAttempt, 'sandbox');
+      await use(Object.freeze({ ...attempt.sandbox, exec }));
     },
     telemetry: async ({ _blackboxAttempt }, use) => {
       const { attempt, trace } = testAttempt(_blackboxAttempt, 'telemetry');

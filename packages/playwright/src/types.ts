@@ -26,6 +26,33 @@ export interface BlackboxSandbox {
   readonly artifactDirectory: string;
   readonly entrypoint: BlackboxEntrypoint;
   readonly containers: ReadonlyMap<string, SandboxContainer>;
+  /**
+   * Run a setup command inside a participant container and record it as a linked
+   * activity: the command gets its own trace through TRACEPARENT, and a root span
+   * carrying `blackbox.activity.id` is exported to this attempt's collector.
+   * `participant` is the catalog participant key; the command runs in its Compose service.
+   */
+  exec(participant: string, argv: readonly [string, ...string[]]): Promise<BlackboxActivity>;
+}
+
+/** A setup command that ran inside a participant during this attempt. */
+export interface BlackboxActivity {
+  readonly activityId: string;
+  readonly purpose: 'setup';
+  readonly participant: string;
+  readonly argv: readonly [string, ...string[]];
+  /** Trace of the activity; instrumented processes it starts join it. */
+  readonly traceId: string;
+  readonly traceparent: string;
+  readonly exitCode: number;
+  /** Captured output, at most 1 MiB per stream. */
+  readonly stdout: string;
+  readonly stderr: string;
+  readonly startedAt: string;
+  readonly completedAt: string;
+  readonly rootSpan:
+    | { readonly kind: 'root-span-exported' }
+    | { readonly kind: 'root-span-export-failed'; readonly message: string };
 }
 
 export type BlackboxSpanKind =

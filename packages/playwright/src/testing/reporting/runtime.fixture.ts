@@ -34,6 +34,7 @@ function runningAttempt(input: BlackboxAttemptInput, executionId: string) {
       containers: new Map(),
     },
     effects: { sessionId: executionId, executionId },
+    runActivity: () => Promise.reject(new Error('not used by this fixture')),
     telemetry: {
       sessionId: executionId,
       executionId,

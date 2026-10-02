@@ -42,6 +42,7 @@ const runtime = {
         readTrace: () => Promise.reject(new Error('not used by this fixture')),
       },
       effects: { sessionId: 'trace-session', executionId: 'trace-execution' },
+      runActivity: () => Promise.reject(new Error('not used by this fixture')),
       stop: () => Promise.resolve(),
     };
   },

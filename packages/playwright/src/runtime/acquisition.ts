@@ -22,6 +22,10 @@ import { awaitReadiness } from './readiness.js';
 import { startAttemptSandbox } from './sandbox-start.js';
 import { createSandboxTelemetry, type TelemetryAuthorization } from './telemetry.js';
 import { publicTelemetry, type AttemptTelemetry } from './telemetry-handle.js';
+import {
+  participantActivities,
+  type ParticipantActivityRunner,
+} from '../activity/participant-activity.js';
 
 export interface BlackboxAttemptInput {
   readonly selection: BlackboxCatalogSelection;
@@ -31,11 +35,16 @@ export interface BlackboxAttemptInput {
   readonly progress: AttemptProgress;
 }
 
+/** Sandbox identity owned by the runtime; the fixture adds `exec`. */
+export type AttemptSandbox = Omit<BlackboxSandbox, 'exec'>;
+
 export interface RunningBlackboxAttempt {
-  readonly sandbox: BlackboxSandbox;
+  readonly sandbox: AttemptSandbox;
   readonly telemetry: AttemptTelemetry;
   readonly effects: BlackboxEffects;
   stop(reason: SandboxStopReason): Promise<void>;
+  /** Run one setup command in a participant and export its activity root span. */
+  readonly runActivity: ParticipantActivityRunner;
 }
 
 export interface BlackboxAttemptRuntime {
@@ -224,7 +233,7 @@ export async function acquireBlackboxAttempt(
       artifactDirectory: input.artifactDirectory,
       entrypoint: Object.freeze(selectedEntrypoint),
       containers: sandbox.containers,
-    }) satisfies BlackboxSandbox;
+    }) satisfies AttemptSandbox;
     const exposedTelemetry = publicTelemetry({
       sandbox,
       recordDirectory,
@@ -238,6 +247,7 @@ export async function acquireBlackboxAttempt(
       async stop(reason): Promise<void> {
         await sandbox.stop({ reason });
       },
+      ...participantActivities({ sandbox, sessionId, plan, authorization: collectorAuthorization }),
     };
   } catch (cause) {
     return cleanupAfterSetupFailure({ sandbox, cause, progress: input.progress });

@@ -8,6 +8,7 @@ export type {
   EffectSelector,
 } from './effects/contract.js';
 export type {
+  BlackboxActivity,
   BlackboxCatalogSelection,
   BlackboxEffects,
   BlackboxEntrypoint,

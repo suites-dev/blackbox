@@ -34,6 +34,7 @@ const runtime = {
         readTrace: () => Promise.reject(new Error('not used by this fixture')),
       },
       effects: { sessionId: sandboxId, executionId: sandboxId },
+      runActivity: () => Promise.reject(new Error('not used by this fixture')),
       stop: (reason) => {
         record({ kind: 'stop', sandboxId, reason });
         return Promise.resolve();

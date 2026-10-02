@@ -2,6 +2,7 @@ import type { TestInfo } from '@playwright/test';
 
 import type { RunningBlackboxAttempt } from './runtime/acquisition.js';
 import type { AttemptTraceContext } from './trace/trace-context.js';
+import type { BlackboxSandbox } from './types.js';
 
 type SuiteHook = 'beforeAll' | 'afterAll';
 
@@ -9,6 +10,7 @@ type SuiteHook = 'beforeAll' | 'afterAll';
 export interface TestAttempt {
   readonly attempt: RunningBlackboxAttempt;
   readonly trace: AttemptTraceContext;
+  readonly exec: BlackboxSandbox['exec'];
 }
 
 /** Stands in for the attempt while a beforeAll/afterAll hook resolves fixtures. */

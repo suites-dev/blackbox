@@ -35,6 +35,7 @@ const runtime = {
         readTrace: () => Promise.reject(new Error('not used by this fixture')),
       },
       effects: { sessionId: 'slow-session', executionId: 'slow-execution' },
+      runActivity: () => Promise.reject(new Error('not used by this fixture')),
       stop: (reason) => {
         record({ kind: 'stop', reason });
         return Promise.resolve();
