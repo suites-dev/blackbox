@@ -19,6 +19,7 @@
     "lint:fix": "eslint packages --cache --fix",
     "check:packages": "manypkg check",
     "check:deps": "depcruise packages --config .dependency-cruiser.cjs --output-type err-long",
+    "report:deps-metrics": "depcruise packages --config .dependency-cruiser.cjs --metrics --output-type metrics --include-only '^packages/[^/]+/src/' --exclude '\\.(test|spec|fixture)\\.[cm]?[jt]s$|/(testing|test-fixtures|__tests__)/'",
     "typecheck": "tsc --project tsconfig.json --noEmit && tsc --project e2e/tsconfig.json",
     "format": "prettier --write \"packages/**/*.{ts,tsx,js,jsx,json,md,yaml,yml}\" package.json pnpm-workspace.yaml",
     "prepare": "husky"

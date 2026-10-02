@@ -96,6 +96,12 @@ jobs:
         timeout-minutes: 5
         run: pnpm run check:deps
 
+      # Report only: coupling (Ca, Ce, instability) and size per production
+      # module and folder, for choosing metric thresholds. Nothing gates on it.
+      - name: Report coupling metrics
+        timeout-minutes: 5
+        run: pnpm run report:deps-metrics
+
   test:
     name: Package Tests
     runs-on: ubuntu-24.04
