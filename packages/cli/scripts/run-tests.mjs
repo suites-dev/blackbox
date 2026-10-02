@@ -58,6 +58,9 @@ async function testsIn(directory) {
 
 try {
   await symlink(join(packageDirectory, 'node_modules'), join(output, 'node_modules'), 'dir');
+  // Self-referencing public exports resolve from the copied package manifest.
+  // Point them at the built package, keeping tests on the same entrypoints as consumers.
+  await symlink(join(packageDirectory, 'dist'), join(output, 'dist'), 'dir');
   const packageManifest = await readFile(join(packageDirectory, 'package.json'), 'utf8');
   await writeFile(join(output, 'package.json'), packageManifest);
   const compile = await run('pnpm', [

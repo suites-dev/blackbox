@@ -2,12 +2,11 @@ import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { mkdtemp, readFile, readdir, realpath, rm } from 'node:fs/promises';
-import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
 import test from 'node:test';
-import type { SkillDefinition } from '@suites/blackbox-skills';
+import { blackboxSkill } from '@suites/blackbox-cli/skills/blackbox';
 
 const execFileAsync = promisify(execFile);
 
@@ -56,9 +55,6 @@ void test('copies the CLI-owned Blackbox skill for all hosts without copying opt
   }
   const project = await realpath(await mkdtemp(join(tmpdir(), 'blackbox-entry-skill-')));
   t.after(async () => rm(project, { recursive: true, force: true }));
-  const { blackboxSkill } = createRequire(join(packageDirectory, 'package.json'))(
-    '@suites/blackbox-cli/skills/blackbox',
-  ) as { readonly blackboxSkill: SkillDefinition };
   const manifest = JSON.parse(await readFile(join(packageDirectory, 'package.json'), 'utf8'));
   const { stdout } = await execFileAsync(
     process.execPath,
