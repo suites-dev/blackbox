@@ -35,7 +35,6 @@ function run(command, args) {
       cwd: packageDirectory,
       stdio: 'inherit',
       detached: process.platform !== 'win32',
-      env: { ...process.env, BLACKBOX_CLI_TEST_PACKAGE_DIRECTORY: packageDirectory },
     });
     currentChild = child;
     child.once('error', reject);

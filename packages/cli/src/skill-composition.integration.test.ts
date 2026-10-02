@@ -4,18 +4,15 @@ import { createHash } from 'node:crypto';
 import { mkdtemp, readFile, readdir, realpath, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 import test from 'node:test';
-import { blackboxSkill } from '@suites/blackbox-cli/skills/blackbox';
+import { blackboxSkill, skillModule } from '@suites/blackbox-cli/skills/blackbox';
 
 const execFileAsync = promisify(execFile);
+const packageDirectory = fileURLToPath(skillModule.packageRoot);
 
 void test('composes selected package skills through the real CLI lifecycle', async () => {
-  const packageDirectory = process.env.BLACKBOX_CLI_TEST_PACKAGE_DIRECTORY;
-  if (packageDirectory === undefined) {
-    throw new Error('BLACKBOX_CLI_TEST_PACKAGE_DIRECTORY is required');
-  }
-
   const { stdout } = await execFileAsync(
     process.execPath,
     [join(packageDirectory, 'bin/run.js'), 'skills', 'list', '--json'],
@@ -49,10 +46,6 @@ void test('composes selected package skills through the real CLI lifecycle', asy
 });
 
 void test('copies the CLI-owned Blackbox skill for all hosts without copying optional skills', async (t) => {
-  const packageDirectory = process.env.BLACKBOX_CLI_TEST_PACKAGE_DIRECTORY;
-  if (packageDirectory === undefined) {
-    throw new Error('BLACKBOX_CLI_TEST_PACKAGE_DIRECTORY is required');
-  }
   const project = await realpath(await mkdtemp(join(tmpdir(), 'blackbox-entry-skill-')));
   t.after(async () => rm(project, { recursive: true, force: true }));
   const manifest = JSON.parse(await readFile(join(packageDirectory, 'package.json'), 'utf8'));
