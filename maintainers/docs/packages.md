@@ -73,6 +73,17 @@ importing package does not declare. Only `playwright` imports `@playwright/test`
 runtime adapter. A new package must be added to a tier in the config, or the check
 refuses to run.
 
+Fan-in is bounded too: at most 15 production modules (tests, fixtures and barrels
+are not counted) may import one module. Existing hubs are recorded in
+`.dependency-cruiser-known-violations.json` and ignored. That list may only shrink:
+to drop a fixed hub, run `pnpm check:deps:baseline` and commit the result; the diff
+must only delete entries. The config refuses a baseline that records any rule other
+than `no-high-fan-in`.
+
+ESLint enforces the function-level limits: `complexity` 15, `max-depth` 4,
+`max-params` 4, `max-lines-per-function` 80 and `max-lines` 250. A function locked
+above a limit carries an `eslint-disable-next-line` with its own reason.
+
 ## Public surface
 
 Every package supports only the export paths declared in its `package.json`.

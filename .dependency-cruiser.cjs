@@ -19,6 +19,20 @@ const PACKAGES = readdirSync(join(__dirname, 'packages'), { withFileTypes: true 
     return { dir: entry.name, manifest };
   });
 
+// check:deps ignores the violations recorded here. Only fan-in hubs may be
+// recorded: a baseline that also held, say, a cycle would hide it for good.
+const KNOWN_VIOLATIONS = join(__dirname, '.dependency-cruiser-known-violations.json');
+if (existsSync(KNOWN_VIOLATIONS)) {
+  const foreign = JSON.parse(readFileSync(KNOWN_VIOLATIONS, 'utf8')).filter(
+    (violation) => violation.rule.name !== 'no-high-fan-in',
+  );
+  if (foreign.length > 0) {
+    throw new Error(
+      `.dependency-cruiser.cjs: known violations may only hold no-high-fan-in, found ${foreign.map((violation) => violation.rule.name).join(', ')}`,
+    );
+  }
+}
+
 const DIR_BY_NAME = new Map(PACKAGES.map(({ dir, manifest }) => [manifest.name, dir]));
 
 // Test files and the fixtures/helpers only tests load. Mirrors the exclude
@@ -293,6 +307,18 @@ module.exports = {
         'Each oclif command module is a leaf that delegates to its package functions. Commands chaining into each other hide behavior behind another command surface.',
       from: { path: '/cli/commands/', pathNot: TEST_SUPPORT },
       to: { path: '/cli/commands/' },
+    },
+    {
+      name: 'no-high-fan-in',
+      severity: 'error',
+      comment:
+        "A production module that more than 15 production modules import is a hub: every change to it ripples through all of them. Split it by consumer. Barrels are exempt because re-exporting is their job. Today's hubs are locked in .dependency-cruiser-known-violations.json, which may only shrink.",
+      module: {
+        path: '^packages/[^/]+/src/',
+        pathNot: [...NON_PRODUCTION, '/index\\.ts$'],
+        numberOfDependentsMoreThan: 15,
+      },
+      from: { pathNot: NON_PRODUCTION },
     },
     ...declaredWorkspaceRules,
     {
