@@ -1,4 +1,4 @@
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdtemp, readdir, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawn } from 'node:child_process';
@@ -15,6 +15,7 @@ afterEach(async () => {
 async function runPlaywright(input: {
   readonly configFile: string;
   readonly outputDirectory: string;
+  readonly environment: Readonly<Record<string, string>>;
 }): Promise<{ readonly exitCode: number; readonly output: string }> {
   const require = createRequire(import.meta.url);
   const cli = require.resolve('@playwright/test/cli');
@@ -23,6 +24,7 @@ async function runPlaywright(input: {
     cwd: join(import.meta.dirname, '..'),
     env: {
       ...process.env,
+      ...input.environment,
       BLACKBOX_PLAYWRIGHT_OUTPUT_DIR: input.outputDirectory,
       FORCE_COLOR: '0',
       NO_COLOR: undefined,
@@ -53,6 +55,7 @@ it('owns one sandbox lifecycle per Playwright physical attempt, including a retr
   const result = await runPlaywright({
     configFile: 'playwright.config.ts',
     outputDirectory: join(directory, 'output'),
+    environment: {},
   });
   expect(result.exitCode, result.output).toBe(0);
   const marker = 'BLACKBOX_PLAYWRIGHT_EVENT ';
@@ -88,6 +91,7 @@ it('stops the sandbox when acquisition takes more than half the test timeout', a
   const result = await runPlaywright({
     configFile: 'slow-acquisition.config.ts',
     outputDirectory: join(directory, 'output'),
+    environment: {},
   });
   expect(result.exitCode, result.output).toBe(0);
   expect(result.output).not.toContain('exceeded during setup');
@@ -104,6 +108,7 @@ it('acquires no sandbox for beforeAll/afterAll hooks and refuses Blackbox fixtur
   const result = await runPlaywright({
     configFile: 'suite-hooks.config.ts',
     outputDirectory: join(directory, 'output'),
+    environment: {},
   });
   expect(result.exitCode, result.output).toBe(1);
   expect(result.output).toContain('1 passed');
@@ -126,6 +131,7 @@ it('lets the Playwright test timeout govern sandbox acquisition', async () => {
   const result = await runPlaywright({
     configFile: 'fixture-timeout.config.ts',
     outputDirectory: join(directory, 'output'),
+    environment: {},
   });
   expect(result.exitCode, result.output).toBe(1);
   expect(result.output).toContain('3 failed');
@@ -140,3 +146,39 @@ it('lets the Playwright test timeout govern sandbox acquisition', async () => {
     'Blackbox sandbox cleanup did not settle within 30ms after completed',
   );
 });
+
+it('retains each attempt beyond the next run only when asked to', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'blackbox-playwright-retention-'));
+  directories.push(directory);
+  const run = async (retain: 'on' | 'off') => {
+    // Playwright clears its output directory on every run, as in a real project.
+    const result = await runPlaywright({
+      configFile: 'retention.config.ts',
+      outputDirectory: join(directory, 'output'),
+      environment: { BLACKBOX_TEST_PROJECT: directory, BLACKBOX_TEST_RETAIN: retain },
+    });
+    expect(result.exitCode, result.output).toBe(0);
+    const [start] = playwrightEvents(result.output);
+    return String(start.sandboxId);
+  };
+  const experiments = join(directory, '.blackbox', 'experiments');
+
+  await run('off');
+  await expect(readdir(directory)).resolves.not.toContain('.blackbox');
+
+  const first = await run('on');
+  const second = await run('on');
+  expect((await readdir(experiments)).sort()).toEqual([first, second].sort());
+  await expect(
+    readFile(join(experiments, first, 'sandbox', `${first}.json`), 'utf8'),
+  ).resolves.toBe(JSON.stringify({ sandboxId: first }));
+  const document = JSON.parse(await readFile(join(experiments, first, 'attempt.json'), 'utf8')) as {
+    identity: { sandboxId: string };
+    events: { phase: string; status: string }[];
+  };
+  expect(document.identity.sandboxId).toBe(first);
+  expect(document.events).toContainEqual(
+    expect.objectContaining({ phase: 'teardown', status: 'completed' }),
+  );
+  // Three Playwright runs: leave room for a loaded machine running every package's tests.
+}, 120_000);

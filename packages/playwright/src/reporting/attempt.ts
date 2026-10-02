@@ -35,6 +35,11 @@ export class AttemptReport implements AttemptProgress {
 
   constructor(private readonly testInfo: TestInfo) {}
 
+  /** The sandbox that owns this attempt, once acquisition has named it. */
+  owner(): string | null {
+    return this.sandboxId;
+  }
+
   identify(sandboxId: string): void {
     this.sandboxId = sandboxId;
   }
@@ -117,27 +122,30 @@ export class AttemptReport implements AttemptProgress {
     }
   }
 
-  async finish(): Promise<void> {
+  /** Attach the final attempt document and return the attached body. */
+  async finish(): Promise<string> {
     const output = realpathSync(this.testInfo.outputPath());
     const path = relative(realpathSync(process.cwd()), output);
     this.emit('artifacts', 'info', path.startsWith('..') ? output : path);
     this.closed = true;
     await this.flush();
+    const document = JSON.stringify({
+      schemaVersion: 1,
+      owner: {
+        testId: this.testInfo.testId,
+        retry: this.testInfo.retry,
+        workerIndex: this.testInfo.workerIndex,
+        parallelIndex: this.testInfo.parallelIndex,
+        outputDirectory: output,
+      },
+      identity: this.identity,
+      events: this.events,
+      omittedObservations: this.dropped,
+    });
     await this.testInfo.attach(attemptAttachment, {
       contentType: 'application/json',
-      body: JSON.stringify({
-        schemaVersion: 1,
-        owner: {
-          testId: this.testInfo.testId,
-          retry: this.testInfo.retry,
-          workerIndex: this.testInfo.workerIndex,
-          parallelIndex: this.testInfo.parallelIndex,
-          outputDirectory: output,
-        },
-        identity: this.identity,
-        events: this.events,
-        omittedObservations: this.dropped,
-      }),
+      body: document,
     });
+    return document;
   }
 }
