@@ -33,9 +33,18 @@ fail() {
   exit 1
 }
 
+run_setup() {
+  local status=0
+  "$@" >"$WORK_ROOT/setup.log" 2>&1 || status=$?
+  if [[ "$status" -ne 0 ]]; then
+    cat "$WORK_ROOT/setup.log" >&2
+    return "$status"
+  fi
+}
+
 cd "$REPO_ROOT"
 for package in "${PACKAGES[@]}"; do
-  pnpm --dir "packages/$package" run build >/dev/null
+  run_setup pnpm --dir "packages/$package" run build
 done
 
 jq '{name: "skills-packed-consumer", private: true, type: "module",
@@ -44,7 +53,7 @@ jq '{name: "skills-packed-consumer", private: true, type: "module",
 for package in "${PACKAGES[@]}"; do
   directory="$REPO_ROOT/packages/$package"
   name="$(jq -er '.name' "$directory/package.json")"
-  pnpm --config.ignore-scripts=true --dir "$directory" pack --pack-destination "$PACK_ROOT" >/dev/null
+  run_setup pnpm --config.ignore-scripts=true --dir "$directory" pack --pack-destination "$PACK_ROOT"
   archive="$PACK_ROOT/$(echo "${name#@}" | tr / -)-$(jq -er '.version' "$directory/package.json").tgz"
   [[ -s "$archive" ]] || fail "pack did not produce $archive"
   jq --arg name "$name" --arg archive "file:$archive" \
@@ -53,8 +62,8 @@ for package in "${PACKAGES[@]}"; do
   mv "$PROJECT/package.json.next" "$PROJECT/package.json"
 done
 
-pnpm --dir "$PROJECT" install --ignore-workspace --prefer-offline --ignore-scripts \
-  ${PNPM_STORE_DIR:+--store-dir "$PNPM_STORE_DIR"} >/dev/null
+run_setup pnpm --dir "$PROJECT" install --ignore-workspace --prefer-offline --ignore-scripts \
+  ${PNPM_STORE_DIR:+--store-dir "$PNPM_STORE_DIR"}
 BLACKBOX="$PROJECT/node_modules/.bin/blackbox"
 cd "$PROJECT"
 PACKED_BLACKBOX="$(node --input-type=module -e 'import { blackboxSkill } from "@suites/blackbox/skills/blackbox"; import { fileURLToPath } from "node:url"; console.log(fileURLToPath(blackboxSkill.source));')"
@@ -160,11 +169,28 @@ grep -F 'catalog validate' "$WORK_ROOT/core-help.txt" >/dev/null || fail "core c
 if grep -F 'capsule up' "$WORK_ROOT/core-help.txt"; then fail "absent Capsule exposed commands"; fi
 
 # Removing the main bundle from a custom composition removes its contributions,
-# even when old copies remain. Only explicitly selected low-level modules remain.
+# while both packages and old skill copies remain on disk. Do not reinstall:
+# physical absence would mask an incorrect filesystem-based activation fallback.
+# Expose the already installed CLI and Skills packages as direct selections;
+# pnpm intentionally did not hoist these transitive dependencies for the first case.
+(cd "$MAIN_ROOT" && node --input-type=module - "$PROJECT" <<'NODE'
+import assert from 'node:assert/strict';
+import { readFileSync, symlinkSync } from 'node:fs';
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+for (const [name, specifier] of [
+  ['@suites/blackbox-cli', '@suites/blackbox-cli/run'],
+  ['@suites/blackbox-skills', '@suites/blackbox-skills'],
+]) {
+  const root = fileURLToPath(new URL('../', import.meta.resolve(specifier)));
+  assert.equal(JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')).name, name);
+  symlinkSync(root, join(process.argv[2], 'node_modules', name), 'dir');
+}
+NODE
+)
 jq '.dependencies = {"@suites/blackbox-cli": .pnpm.overrides["@suites/blackbox-cli"], "@suites/blackbox-skills": .pnpm.overrides["@suites/blackbox-skills"]}' package.json >package.json.next
 mv package.json.next package.json
-pnpm install --ignore-workspace --prefer-offline --ignore-scripts \
-  ${PNPM_STORE_DIR:+--store-dir "$PNPM_STORE_DIR"} >/dev/null
+[[ -f "$MAIN_ROOT/package.json" && -f "$PACKED_SKILL/SKILL.md" ]] || fail "unselected packages disappeared from the fixture"
 "$BLACKBOX" skills list --json >"$WORK_ROOT/unselected.json"
 jq -e '.skills == []' "$WORK_ROOT/unselected.json" >/dev/null || fail "unselected core modules remained registered"
 status=0
