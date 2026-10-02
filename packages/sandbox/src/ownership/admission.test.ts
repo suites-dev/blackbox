@@ -1,5 +1,6 @@
 import { expect, it } from 'vitest';
-import type { ComposeSandboxDriver, SandboxHandle } from '../types.js';
+import type { ComposeSandboxDriver } from '../model/compose.js';
+import type { SandboxHandle } from '../model/handle.js';
 import {
   deterministicClock,
   sandboxFixture,

@@ -1,6 +1,6 @@
 import { expect, it, vi } from 'vitest';
 import { readSandboxRecord } from '../ownership/records.js';
-import type { ComposeSandboxDriver } from '../types.js';
+import type { ComposeSandboxDriver } from '../model/compose.js';
 import { SandboxStopError } from './errors.js';
 import {
   deterministicClock,

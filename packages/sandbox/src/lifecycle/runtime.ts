@@ -1,30 +1,26 @@
-import { immutableMap, inspectableContainer } from '../inspection/container.js';
+import {
+  immutableMap,
+  requestedEndpoints,
+  selectedContainers,
+} from '../inspection/container.js';
 import { immutableResources } from '../inspection/resources.js';
 import {
   emitProgress,
   progressCoordinates,
   type SandboxProgressMode,
 } from '../acquisition/progress.js';
-import { asError, type CleanupOutcome } from './errors.js';
 import { composeProjectName, emitLifecycle } from './helpers.js';
 import {
   admitSandboxRecord,
   writeSandboxRecord,
   type ActiveSandboxRecord,
 } from '../ownership/records.js';
-import type {
-  SandboxContainer,
-  SandboxEndpoint,
-  SandboxHandle,
-  SandboxInput,
-  SandboxRuntimeDependencies,
-  SandboxStartInput,
-  StartedComposeSandbox,
-} from '../types.js';
+import type { SandboxHandle } from '../model/handle.js';
+import type { SandboxInput, SandboxStartInput } from '../model/input.js';
+import type { SandboxRuntimeDependencies, StartedComposeSandbox } from '../model/compose.js';
 import { validateSandboxInput } from '../validation/input.js';
 import { RunningSandbox } from './running-sandbox.js';
-import { failSandboxStart } from './start-failure.js';
-import { cleanupCompose } from './cleanup/compose.js';
+import { failSandboxStart, failStartedSandbox } from './start-failure.js';
 import { sandboxGeneratedComposeDirectory } from '../telemetry/storage.js';
 
 export class SandboxRuntime {
@@ -84,12 +80,11 @@ export class SandboxRuntime {
     try {
       return await this.finishStart({ input, record, compose, progress: request.progress });
     } catch (cause) {
-      const cleanup = await this.cleanupAfterStartFailure({ input, compose });
-      return failSandboxStart({
+      return failStartedSandbox({
         sandbox: input,
         record,
         cause,
-        cleanup,
+        compose,
         progress: request.progress,
         now: this.dependencies.now,
         onEvent: this.dependencies.onEvent,
@@ -121,7 +116,7 @@ export class SandboxRuntime {
     readonly compose: StartedComposeSandbox;
     readonly progress: SandboxProgressMode;
   }): Promise<SandboxHandle> {
-    const containers = this.buildContainers(input);
+    const containers = selectedContainers(input);
     emitProgress({
       mode: input.progress,
       event: {
@@ -130,7 +125,7 @@ export class SandboxRuntime {
         containers: Object.freeze([...containers.values()]),
       },
     });
-    const endpoints = this.buildEndpoints(input);
+    const endpoints = requestedEndpoints(input);
     const observed = await input.compose.inspectResources({
       kind: 'owned-compose-resources',
       projectName: input.record.projectName,
@@ -165,61 +160,6 @@ export class SandboxRuntime {
       telemetry,
       record,
     });
-  }
-
-  private buildEndpoints(input: {
-    readonly input: SandboxInput;
-    readonly compose: StartedComposeSandbox;
-  }): ReadonlyMap<string, SandboxEndpoint> {
-    const endpoints = new Map<string, SandboxEndpoint>();
-    for (const request of input.input.endpoints) {
-      const container = input.compose.getContainer({ service: request.service });
-      endpoints.set(
-        request.name,
-        Object.freeze({
-          ...request,
-          host: container.host,
-          port: container.getMappedPort({ containerPort: request.containerPort }),
-        }),
-      );
-    }
-    return endpoints;
-  }
-
-  private buildContainers(input: {
-    readonly input: SandboxInput;
-    readonly compose: StartedComposeSandbox;
-  }): ReadonlyMap<string, SandboxContainer> {
-    const selection = input.input.serviceSelection;
-    const services =
-      selection.kind === 'selected' ? selection.services : selection.declaredServices;
-    const containers = new Map<string, SandboxContainer>();
-    for (const service of services) {
-      containers.set(
-        service,
-        inspectableContainer({
-          service,
-          container: input.compose.getContainer({ service }),
-          endpoints: input.input.endpoints,
-        }),
-      );
-    }
-    return containers;
-  }
-
-  private async cleanupAfterStartFailure(input: {
-    readonly input: SandboxInput;
-    readonly compose: StartedComposeSandbox;
-  }): Promise<CleanupOutcome> {
-    try {
-      await cleanupCompose({
-        compose: input.compose,
-        timeoutMs: input.input.stopTimeoutMs,
-      });
-      return { kind: 'complete' };
-    } catch (cause) {
-      return { kind: 'failed', error: asError(cause) };
-    }
   }
 
   private async transition(input: {

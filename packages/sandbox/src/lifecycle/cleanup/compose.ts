@@ -1,4 +1,5 @@
-import type { StartedComposeSandbox } from '../../types.js';
+import type { StartedComposeSandbox } from '../../model/compose.js';
+import { asError, type CleanupOutcome } from '../errors.js';
 import { withTimeout } from '../helpers.js';
 
 type CleanupStep =
@@ -48,4 +49,17 @@ export async function cleanupCompose(input: {
     throw cleanup.error;
   }
   throw new Error('Unreachable cleanup outcome');
+}
+
+/** Runs cleanupCompose and reports its outcome instead of throwing. */
+export async function attemptComposeCleanup(input: {
+  readonly compose: StartedComposeSandbox;
+  readonly timeoutMs: number;
+}): Promise<Exclude<CleanupOutcome, { readonly kind: 'not-attempted' }>> {
+  try {
+    await cleanupCompose(input);
+    return { kind: 'complete' };
+  } catch (cause) {
+    return { kind: 'failed', error: asError(cause) };
+  }
 }

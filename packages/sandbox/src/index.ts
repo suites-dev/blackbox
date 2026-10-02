@@ -66,37 +66,44 @@ export type {
   ComposeContainer,
   ComposeSandboxDriver,
   ComposeStartRequest,
+  SandboxRuntimeDependencies,
+  StartedComposeSandbox,
+} from './model/compose.js';
+export type {
   SandboxContainer,
+  SandboxMappedPortSelector,
+  SandboxTestcontainerInspection,
+} from './inspection/sandbox-container.js';
+export type {
   SandboxContainerSelector,
   SandboxEndpoint,
-  SandboxEndpointRequest,
   SandboxContainerExecInput,
   SandboxExecuteInput,
   SandboxExecuteResult,
   SandboxExecutionFailure,
   SandboxExecutionOutput,
   SandboxHandle,
-  SandboxInput,
-  SandboxLifecycleEvent,
-  SandboxLifecycleState,
-  SandboxMappedPortSelector,
-  SandboxRuntimeDependencies,
-  SandboxServiceSelection,
-  SandboxStartInput,
   SandboxStopInput,
   SandboxStopReason,
   SandboxStopResult,
-  SandboxTestcontainerInspection,
-  StartedComposeSandbox,
+  SandboxTelemetryEndpoints,
+  SandboxTelemetryStatus,
+} from './model/handle.js';
+export type {
+  SandboxEndpointRequest,
+  SandboxInput,
+  SandboxServiceSelection,
+  SandboxStartInput,
+} from './model/input.js';
+export type { SandboxLifecycleEvent, SandboxLifecycleState } from './model/lifecycle.js';
+export type {
   SandboxCollectorInput,
   SandboxCollectorRuntime,
   SandboxTelemetryEnabledInput,
-  SandboxTelemetryEndpoints,
   SandboxTelemetryInput,
   SandboxTelemetryMount,
   SandboxTelemetryParticipant,
-  SandboxTelemetryStatus,
-} from './types.js';
+} from './model/telemetry.js';
 export type {
   SandboxContainerControlResult,
   SandboxContainerExecution,

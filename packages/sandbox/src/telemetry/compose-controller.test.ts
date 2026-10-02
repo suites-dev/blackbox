@@ -1,6 +1,6 @@
 import { expect, it, vi } from 'vitest';
 
-import type { SandboxTelemetryEnabledInput } from '../types.js';
+import type { SandboxTelemetryEnabledInput } from '../model/telemetry.js';
 import { composeTelemetryController, stopGrace } from './compose-controller.js';
 
 function telemetry(): SandboxTelemetryEnabledInput {

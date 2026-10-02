@@ -1,6 +1,6 @@
 import { expect, it, vi } from 'vitest';
 
-import type { ComposeStartRequest } from '../../types.js';
+import type { ComposeStartRequest } from '../../model/compose.js';
 import { inspectEffectiveParticipantEnvironmentsWithPorts } from './effective.js';
 
 function request(): ComposeStartRequest {

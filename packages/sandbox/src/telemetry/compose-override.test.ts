@@ -2,7 +2,7 @@ import { mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { expect, it } from 'vitest';
-import type { SandboxTelemetryEnabledInput } from '../types.js';
+import type { SandboxTelemetryEnabledInput } from '../model/telemetry.js';
 import { writeTelemetryComposeOverride } from './compose-override.js';
 import { collectorEnvironment, participantEnvironment } from './environment.js';
 import { sandboxTelemetryStorageDirectory } from './storage.js';

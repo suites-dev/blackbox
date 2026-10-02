@@ -7,14 +7,5 @@
       "severity": "error",
       "name": "no-high-fan-in"
     }
-  },
-  {
-    "type": "module",
-    "from": "packages/sandbox/src/types.ts",
-    "to": "packages/sandbox/src/types.ts",
-    "rule": {
-      "severity": "error",
-      "name": "no-high-fan-in"
-    }
   }
 ]

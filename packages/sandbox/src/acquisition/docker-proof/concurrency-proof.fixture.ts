@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import assert from 'node:assert/strict';
 import { composeProjectName } from '../../lifecycle/helpers.js';
 import { startSandbox } from '../../sandbox.js';
-import type { SandboxEndpoint, SandboxHandle } from '../../types.js';
+import type { SandboxEndpoint, SandboxHandle } from '../../model/handle.js';
 import type { SandboxProgressEvent } from '../progress.js';
 import {
   inspectContainers,

@@ -9,7 +9,9 @@ import {
   type ActiveSandboxRecord,
   type FailedSandboxRecord,
 } from '../ownership/records.js';
-import type { SandboxInput, SandboxLifecycleEvent } from '../types.js';
+import type { StartedComposeSandbox } from '../model/compose.js';
+import type { SandboxInput } from '../model/input.js';
+import type { SandboxLifecycleEvent } from '../model/lifecycle.js';
 import {
   asError,
   SandboxStartError,
@@ -17,6 +19,7 @@ import {
   type RecordWriteOutcome,
 } from './errors.js';
 import { cleanupRecord, emitLifecycle } from './helpers.js';
+import { attemptComposeCleanup } from './cleanup/compose.js';
 
 export async function failSandboxStart(input: {
   readonly sandbox: SandboxInput;
@@ -53,6 +56,20 @@ export async function failSandboxStart(input: {
       record: recordOutcome,
     },
   });
+}
+
+/** Cleans up a Compose project that started, then fails the start with that cleanup. */
+export async function failStartedSandbox(
+  input: Omit<Parameters<typeof failSandboxStart>[0], 'cleanup'> & {
+    readonly compose: StartedComposeSandbox;
+  },
+): Promise<never> {
+  const { compose, ...failure } = input;
+  const cleanup = await attemptComposeCleanup({
+    compose,
+    timeoutMs: input.sandbox.stopTimeoutMs,
+  });
+  return failSandboxStart({ ...failure, cleanup });
 }
 
 function failedRecord(input: {

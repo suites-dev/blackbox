@@ -4,7 +4,7 @@ import type {
   SandboxContainerExecutionInput,
   SandboxContainerExecutionStartResult,
 } from './types.js';
-import type { SandboxContainer } from '../../types.js';
+import type { SandboxContainer } from '../../inspection/sandbox-container.js';
 
 export async function startContainerExecution(input: {
   readonly request: SandboxContainerExecutionInput;

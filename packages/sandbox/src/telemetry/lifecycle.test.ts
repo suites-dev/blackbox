@@ -1,12 +1,9 @@
 import { writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { expect, it, vi } from 'vitest';
-import type {
-  ComposeSandboxDriver,
-  SandboxInput,
-  SandboxTelemetryStatus,
-  StartedComposeSandbox,
-} from '../types.js';
+import type { ComposeSandboxDriver, StartedComposeSandbox } from '../model/compose.js';
+import type { SandboxInput } from '../model/input.js';
+import type { SandboxTelemetryStatus } from '../model/handle.js';
 import {
   deterministicClock,
   sandboxFixture,

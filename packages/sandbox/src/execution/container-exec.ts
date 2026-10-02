@@ -1,11 +1,11 @@
 import { asError } from '../lifecycle/errors.js';
+import type { SandboxContainer } from '../inspection/sandbox-container.js';
 import type {
-  SandboxContainer,
   SandboxExecuteInput,
   SandboxExecuteResult,
   SandboxExecutionOutput,
-  StartedComposeSandbox,
-} from '../types.js';
+} from '../model/handle.js';
+import type { StartedComposeSandbox } from '../model/compose.js';
 
 export async function executeInSandbox(input: {
   readonly request: SandboxExecuteInput;

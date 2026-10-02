@@ -2,7 +2,8 @@ import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { expect, it } from 'vitest';
 import { readSandboxRecord } from '../ownership/records.js';
-import type { ComposeSandboxDriver, ComposeStartRequest, SandboxHandle } from '../types.js';
+import type { ComposeSandboxDriver, ComposeStartRequest } from '../model/compose.js';
+import type { SandboxHandle } from '../model/handle.js';
 import { SandboxStartError } from './errors.js';
 import {
   deterministicClock,

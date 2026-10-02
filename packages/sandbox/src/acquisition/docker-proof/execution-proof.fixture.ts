@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import type { SandboxHandle } from '../../types.js';
+import type { SandboxHandle } from '../../model/handle.js';
 
 /** Real Docker execution must preserve argument boundaries, stream identity, and failure status. */
 export async function verifyExecutionOutcomes(handles: readonly SandboxHandle[]): Promise<void> {

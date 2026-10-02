@@ -4,7 +4,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterEach, describe, expect, it } from 'vitest';
 import { startSandbox } from '../sandbox.js';
-import type { SandboxHandle } from '../types.js';
+import type { SandboxHandle } from '../model/handle.js';
 
 const fixtureDirectory = join(dirname(fileURLToPath(import.meta.url)), '../../test-fixtures');
 let active: SandboxHandle | null = null;
