@@ -4,7 +4,6 @@ import { join } from 'node:path';
 import { afterEach, expect, it } from 'vitest';
 
 import { readCapsuleObservations, readCapsuleTraces } from './observations.js';
-import { readCapsuleActivityObservations } from './activity-observations.js';
 import {
   cleanObservationFixtures,
   collectorFixture,
@@ -80,16 +79,17 @@ it('reads the exact activity trace including descendants without an activity att
   const fixture = await sessionFixture('calm-river-ada', 'activity-7');
   const collector = await collectorFixture(fixture);
   await postTrace(collector, 'activity-7');
-  const expanded = await readCapsuleActivityObservations({ ...fixture, activityId: 'activity-7' });
-  expect(expanded.kind).toBe('collector-activity-found');
-  expect(JSON.stringify(expanded)).toContain('downstream-api');
-  const direct = await readCapsuleObservations({
+  const expanded = await readCapsuleObservations({
     ...fixture,
     selection: { kind: 'activity', activityId: 'activity-7' },
   });
-  expect(JSON.stringify(direct)).toContain('downstream-api');
+  expect(expanded.kind).toBe('collector-activity-found');
+  expect(JSON.stringify(expanded)).toContain('downstream-api');
   await expect(
-    readCapsuleActivityObservations({ ...fixture, activityId: 'activity-8' }),
+    readCapsuleObservations({
+      ...fixture,
+      selection: { kind: 'activity', activityId: 'activity-8' },
+    }),
   ).resolves.toMatchObject({ kind: 'collector-activity-missing' });
 });
 
