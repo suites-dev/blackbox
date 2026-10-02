@@ -169,13 +169,14 @@ async function swapIn(input: {
   await rm(retired, { recursive: true, force: true });
 }
 
-async function replaceTree(
-  projectDirectory: string,
-  hooks: ReplaceHooks,
-  path: string,
-  files: ReadonlyMap<string, Uint8Array>,
-  expected: StoredSkill,
-): Promise<void> {
+async function replaceTree(input: {
+  readonly projectDirectory: string;
+  readonly hooks: ReplaceHooks;
+  readonly path: string;
+  readonly files: ReadonlyMap<string, Uint8Array>;
+  readonly expected: StoredSkill;
+}): Promise<void> {
+  const { projectDirectory, hooks, path, files, expected } = input;
   let staged: string | null = null;
   try {
     const parts = segments(path);
@@ -220,7 +221,7 @@ export function nodeSkillStore(
     read: storeErrors((path: string) => readStored(projectDirectory, path)),
     replace: storeErrors(
       (path: string, files: ReadonlyMap<string, Uint8Array>, expected: StoredSkill) =>
-        replaceTree(projectDirectory, hooks, path, files, expected),
+        replaceTree({ projectDirectory, hooks, path, files, expected }),
     ),
   };
 }

@@ -7,6 +7,7 @@ import { treeLines } from '../../inspection/show-format.js';
 import { filterRunTree, isRunTreeSpan, runTreeLines, runTreeSize } from '../run-tree.js';
 
 /** One span; attributes and a parent only where a test needs them. */
+// eslint-disable-next-line max-params -- span fixture builder whose positional defaults keep each test's span table to one line per span
 function span(
   id: string,
   kind: CapsuleReportSpan['spanKind'],
