@@ -12,7 +12,8 @@ import {
   traceA,
   traceRequest,
 } from '../test-fixtures/collector.js';
-import type { CollectorHandle, StartCollectorInput } from '../model/types.js';
+import type { CollectorHandle } from '../model/handle.js';
+import type { StartCollectorInput } from '../model/config.js';
 
 function collectorInput(storageDirectory: string, identity: string): StartCollectorInput {
   return {

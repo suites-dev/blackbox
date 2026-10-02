@@ -1,11 +1,10 @@
+import type { CollectorLifecycleRecord } from '../../model/lifecycle.js';
+import type { CollectorSnapshotReadResult, ReadCollectorSessionInput } from '../../model/reads.js';
 import type {
-  CollectorLifecycleRecord,
-  CollectorSnapshotReadResult,
-  ReadCollectorSessionInput,
   RetainedFragment,
   RetainedFragmentSummary,
   TraceFragment,
-} from '../../model/types.js';
+} from '../../model/fragments.js';
 import { recordedFailure, validateIdentity } from '../../model/validation.js';
 import { partitionTraceRequest } from '../../otlp/json.js';
 import { assertInventory, identity, isMissing, readFragments, readLifecycle } from '../reader.js';

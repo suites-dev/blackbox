@@ -1,4 +1,5 @@
-import type { SandboxLifecycleState, SandboxStopReason } from '../types.js';
+import type { SandboxLifecycleState } from '../model/lifecycle.js';
+import type { SandboxStopReason } from '../model/handle.js';
 
 export interface RecordedError {
   readonly name: string;

@@ -1,9 +1,6 @@
 import { readFile, readdir } from 'node:fs/promises';
-import type {
-  CollectorEndpoint,
-  CollectorLifecycleRecord,
-  CollectorRunRecord,
-} from '../model/types.js';
+import type { CollectorEndpoint } from '../model/endpoint.js';
+import type { CollectorLifecycleRecord, CollectorRunRecord } from '../model/lifecycle.js';
 import type { CollectorStorageLease } from '../storage/lease.js';
 import { fragmentDirectory, lifecyclePath } from '../storage/paths.js';
 import { RunningCollectorStore, type CollectorStore } from './running-store.js';

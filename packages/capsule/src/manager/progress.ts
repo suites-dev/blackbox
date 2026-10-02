@@ -1,6 +1,6 @@
 import type { CapsuleManagerBootstrap } from '../protocol.js';
 import { appendCapsuleProgress, type CapsuleProgressEmission } from '../progress/store.js';
-import type { CapsuleStartFailureStage } from '../types.js';
+import type { CapsuleStartFailureStage } from '../progress/events.js';
 
 export class CapsuleStageError extends Error {
   constructor(

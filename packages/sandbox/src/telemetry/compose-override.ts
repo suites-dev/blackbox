@@ -1,6 +1,6 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import type { SandboxTelemetryEnabledInput } from '../types.js';
+import type { SandboxTelemetryEnabledInput } from '../model/telemetry.js';
 import { collectorEnvironment, participantEnvironment } from './environment.js';
 
 interface ComposeServiceBase {

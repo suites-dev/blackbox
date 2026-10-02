@@ -1,12 +1,8 @@
 import { mkdtemp, mkdir, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import type {
-  ComposeContainer,
-  SandboxInput,
-  SandboxStartInput,
-  StartedComposeSandbox,
-} from '../types.js';
+import type { ComposeContainer, StartedComposeSandbox } from '../model/compose.js';
+import type { SandboxInput, SandboxStartInput } from '../model/input.js';
 
 export interface SandboxFixture {
   readonly root: string;

@@ -1,6 +1,7 @@
 import { recoverSandbox } from '@suites/blackbox-sandbox';
 
-import type { CapsuleActivityReport, CapsuleRecordedError } from '../../types.js';
+import type { CapsuleActivityReport } from '../../model/execution/activity.js';
+import type { CapsuleRecordedError } from '../../model/recorded-error.js';
 import {
   readCapsuleActivities,
   readCapsuleRecord,
@@ -10,10 +11,7 @@ import {
   type CapsuleSessionRecord,
 } from '../../records.js';
 import { cleanupAfterManagerDeath } from './sandbox-cleanup.js';
-import {
-  probeManagerInstance,
-  type ManagerInstanceProbe,
-} from './manager-instance.js';
+import { probeManagerInstance, type ManagerInstanceProbe } from './manager-instance.js';
 
 export interface ReconcileDeadCapsuleManagerInput {
   readonly projectDirectory: string;

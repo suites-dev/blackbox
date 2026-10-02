@@ -2,7 +2,7 @@ import { tmpdir } from 'node:os';
 
 import { expect, it, vi } from 'vitest';
 
-import type { CapsuleInteractiveControl } from '../types.js';
+import type { CapsuleInteractiveControl } from '../../model/execution/interaction.js';
 import { runHostWithInteraction } from './process.js';
 
 async function* noControls(): AsyncGenerator<CapsuleInteractiveControl> {

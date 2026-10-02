@@ -6,7 +6,8 @@ import { join } from 'node:path';
 import { promisify } from 'node:util';
 import { describe, expect, it } from 'vitest';
 import { composeProjectName, startSandbox } from '../../sandbox.js';
-import type { SandboxHandle, SandboxInput } from '../../types.js';
+import type { SandboxHandle } from '../../model/handle.js';
+import type { SandboxInput } from '../../model/input.js';
 import type { SandboxProgressEvent } from '../progress.js';
 import { resourcesForProjects } from './docker-inspection.fixture.js';
 

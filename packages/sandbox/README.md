@@ -41,7 +41,7 @@ physical Playwright attempt. Sandbox itself remains test-framework neutral.
 [`SandboxRuntime.start()`](src/lifecycle/runtime.ts) validates input and persists an
 admission record before touching Docker. It then starts the selected Compose
 services, resolves explicitly requested endpoints, snapshots owned resources, and
-returns a [`SandboxHandle`](src/types.ts).
+returns a [`SandboxHandle`](src/model/handle.ts).
 
 ```text
 validate -> admit -> start Compose -> inspect -> running -> stop -> completed

@@ -16,7 +16,7 @@ import type {
   CapsuleReportInput,
   CapsuleStopInput,
   CapsuleStopResult,
-} from '../types.js';
+} from '../model/operations.js';
 import {
   canonicalProjectDirectory,
   capsuleFailure,

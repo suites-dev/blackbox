@@ -1,10 +1,11 @@
+import type { ComposeContainer, StartedComposeSandbox } from '../model/compose.js';
+import type { SandboxEndpoint } from '../model/handle.js';
 import type {
-  ComposeContainer,
   SandboxContainer,
-  SandboxEndpointRequest,
   SandboxMappedPortSelector,
   SandboxTestcontainerInspection,
-} from '../types.js';
+} from './sandbox-container.js';
+import type { SandboxEndpointRequest, SandboxInput } from '../model/input.js';
 
 class ImmutableMapView<Key, Value> implements ReadonlyMap<Key, Value> {
   readonly [Symbol.toStringTag] = 'ReadonlyMap';
@@ -85,4 +86,48 @@ function createInspection(input: {
     mappedPorts: immutableMap(input.mappedPorts),
     getMappedPort: (selector: SandboxMappedPortSelector) => input.container.getMappedPort(selector),
   });
+}
+
+interface StartedSandboxInput {
+  readonly input: SandboxInput;
+  readonly compose: StartedComposeSandbox;
+}
+
+/** Resolves every requested endpoint to the host and port Compose mapped it to. */
+export function requestedEndpoints(
+  input: StartedSandboxInput,
+): ReadonlyMap<string, SandboxEndpoint> {
+  const endpoints = new Map<string, SandboxEndpoint>();
+  for (const request of input.input.endpoints) {
+    const container = input.compose.getContainer({ service: request.service });
+    endpoints.set(
+      request.name,
+      Object.freeze({
+        ...request,
+        host: container.host,
+        port: container.getMappedPort({ containerPort: request.containerPort }),
+      }),
+    );
+  }
+  return endpoints;
+}
+
+/** Inspects the container of every selected service. */
+export function selectedContainers(
+  input: StartedSandboxInput,
+): ReadonlyMap<string, SandboxContainer> {
+  const selection = input.input.serviceSelection;
+  const services = selection.kind === 'selected' ? selection.services : selection.declaredServices;
+  const containers = new Map<string, SandboxContainer>();
+  for (const service of services) {
+    containers.set(
+      service,
+      inspectableContainer({
+        service,
+        container: input.compose.getContainer({ service }),
+        endpoints: input.input.endpoints,
+      }),
+    );
+  }
+  return containers;
 }

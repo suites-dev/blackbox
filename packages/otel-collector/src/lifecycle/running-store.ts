@@ -1,13 +1,13 @@
 import { join } from 'node:path';
 import type { CollectorStorageLease } from '../storage/lease.js';
+import type { CollectorFailure } from '../model/failure.js';
 import type {
-  CollectorFailure,
   CollectorLifecycleRecord,
   CollectorRunRecord,
-  CollectorStatus,
   ActivateCollectorInput,
-  RetainedFragment,
-} from '../model/types.js';
+} from '../model/lifecycle.js';
+import type { CollectorStatus } from '../model/handle.js';
+import type { RetainedFragment } from '../model/fragments.js';
 import { durableJsonWrite } from '../storage/durable-json.js';
 import { fragmentDirectory, fragmentName, lifecyclePath } from '../storage/paths.js';
 import { recordedFailure } from '../model/validation.js';

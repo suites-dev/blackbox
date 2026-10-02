@@ -1,6 +1,6 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import type { SandboxEndpointRequest } from '../types.js';
+import type { SandboxEndpointRequest } from '../model/input.js';
 
 export async function writeEndpointComposeOverride(input: {
   readonly endpoints: readonly SandboxEndpointRequest[];

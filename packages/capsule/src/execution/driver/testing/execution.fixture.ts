@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import type { ResolvedCatalogDriver } from '@suites/blackbox-catalog';
 import type { SandboxHandle } from '@suites/blackbox-sandbox';
 import { createTelemetryExecutionScope } from '@suites/blackbox-telemetry';
-import type { CapsuleExecutionControl } from '../../types.js';
+import type { CapsuleExecutionControl } from '../../../model/execution/interaction.js';
 
 const roots: string[] = [];
 async function* noControls(): AsyncGenerator<CapsuleExecutionControl> {

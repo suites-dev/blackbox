@@ -5,7 +5,7 @@ import {
   startedSandbox,
 } from '../lifecycle/runtime.fixture.js';
 import { SandboxRuntime } from '../lifecycle/runtime.js';
-import type { ComposeSandboxDriver } from '../types.js';
+import type { ComposeSandboxDriver } from '../model/compose.js';
 import type { SandboxProgressEvent } from './progress.js';
 
 it('reports only established acquisition milestones and owned resources', async () => {

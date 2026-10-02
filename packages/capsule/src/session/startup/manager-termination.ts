@@ -1,6 +1,6 @@
 import type { ChildProcess } from 'node:child_process';
 
-import type { CapsuleRecordedError } from '../../types.js';
+import type { CapsuleRecordedError } from '../../model/recorded-error.js';
 
 export type ManagerTermination =
   | { readonly kind: 'manager-running' }

@@ -1,35 +1,15 @@
 import type { ResolvedCatalogDriver } from '@suites/blackbox-catalog';
-import type { DriverPreparation } from '@suites/blackbox-driver';
 import type { SandboxHandle } from '@suites/blackbox-sandbox';
-import type {
-  TelemetryExecutionScope,
-  TelemetryPropagationRecord,
-} from '@suites/blackbox-telemetry';
+import type { TelemetryExecutionScope } from '@suites/blackbox-telemetry';
 
-import { capsuleConnectionEnvironment } from '../connection-environment.js';
-import type {
-  CapsuleEntrypoint,
-  CapsuleDriverOutcome,
-  CapsuleExecutionInteraction,
-  CapsuleProcessOutcome,
-} from '../types.js';
-import { runHostWithRedaction } from './commands.js';
-import { isUnstartedProcess } from './unstarted-process.js';
+import type { CapsuleEntrypoint } from '../model/environment.js';
+import type { CapsuleExecutionInteraction } from '../model/execution/interaction.js';
+import type { CapsuleDriverOutcome } from '../model/execution/outcome.js';
 import { prepareCapsuleDriver } from './driver/preparation.js';
-import { executionEnvironment, failedPropagation } from './driver/propagation.js';
+import { runPreparedCommand } from './driver/process/prepared-command.js';
+import { driverEnvironment, propagationRefused } from './driver/propagation.js';
 import { createDriverPrepareRequest } from './driver/request.js';
-import { createRedactedInteraction } from './driver/interactive-redaction.js';
-import {
-  createRedactedError,
-  redactProcessMetadata,
-  selectedArgvValues,
-  selectedValues,
-} from './driver/secrets.js';
-import {
-  runParticipantCaptured,
-  runParticipantInteractive,
-} from './participant/process.js';
-import { redactValues } from './output/value-redaction.js';
+import { executionSecrets } from './driver/secrets.js';
 
 export interface RunCapsuleDriverInput {
   readonly projectDirectory: string;
@@ -57,84 +37,6 @@ function executableArgv(argv: readonly string[]): [string, ...string[]] {
   return [executable, ...arguments_];
 }
 
-function executionSecrets(input: {
-  readonly command: DriverPreparation;
-  readonly argv: readonly string[];
-  readonly targetEnvironment: Readonly<Record<string, string>>;
-}) {
-  const argv = selectedArgvValues({
-    argv: input.argv,
-    selection: input.command.redaction.preparedArgv,
-  });
-  const environment = input.command.redaction.environment.kind === 'none'
-    ? []
-    : selectedValues({
-        environment: input.command.environment,
-        selection: input.command.redaction.environment,
-      });
-  return {
-    argv,
-    retained: [...new Set([...environment, ...argv])]
-      .sort((left, right) => right.length - left.length),
-    diagnostic: [
-      ...Object.values(input.targetEnvironment),
-      ...Object.values(input.command.environment),
-      ...argv,
-    ],
-  } as const;
-}
-
-function driverEnvironment(input: {
-  readonly request: RunCapsuleDriverInput;
-  readonly command: DriverPreparation;
-  readonly propagation: TelemetryPropagationRecord;
-}): Readonly<Record<string, string>> {
-  return executionEnvironment({
-    base: input.request.driver.execution.kind === 'host'
-      ? capsuleConnectionEnvironment({
-          sessionId: input.request.sessionId,
-          entrypoint: input.request.entrypoint,
-        })
-      : {},
-    prepared: input.command.environment,
-    propagation: input.propagation,
-    scope: input.request.scope,
-  });
-}
-
-function redactProcess(
-  process: CapsuleProcessOutcome,
-  positions: readonly number[],
-  values: readonly string[],
-): CapsuleProcessOutcome {
-  const argv = process.argv.map((value, index) =>
-    positions.includes(index) ? '[REDACTED]' : value,
-  );
-  return isUnstartedProcess(process)
-    ? { ...process, argv, remediation: redactValues(process.remediation, values) }
-    : { ...process, argv };
-}
-
-function runDriverProcess(input: {
-  readonly driverInput: RunCapsuleDriverInput;
-  readonly argv: readonly [string, ...string[]];
-  readonly environment: Readonly<Record<string, string>>;
-  readonly interaction: CapsuleExecutionInteraction;
-  readonly secrets: readonly string[];
-}): Promise<CapsuleProcessOutcome> {
-  const { driverInput, argv, environment, interaction, secrets } = input;
-  if (driverInput.driver.execution.kind === 'host') {
-    return runHostWithRedaction({
-      argv, cwd: driverInput.projectDirectory, environment, interaction, secrets,
-    });
-  }
-  const shared = { sandbox: driverInput.sandbox, location: driverInput.driver.execution,
-    argv, environment, secrets };
-  return interaction.kind === 'interactive'
-    ? runParticipantInteractive({ ...shared, interaction })
-    : runParticipantCaptured({ ...shared, interaction });
-}
-
 export async function runCapsuleDriver(
   input: RunCapsuleDriverInput): Promise<CapsuleDriverOutcome> {
   const request = createDriverPrepareRequest(input);
@@ -157,61 +59,30 @@ export async function runCapsuleDriver(
   let environment: Readonly<Record<string, string>>;
   try {
     environment = driverEnvironment({
-      request: input,
-      command: prepared.command,
+      execution: input.driver.execution,
+      connection: { sessionId: input.sessionId, entrypoint: input.entrypoint },
+      prepared: prepared.command.environment,
       propagation,
+      scope: input.scope,
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    return {
-      kind: 'driver-propagation-refused',
-      driverId: input.driver.id,
-      propagation: failedPropagation(
-        input.driver.propagation,
-        redactValues(message, secrets.diagnostic),
-      ),
-    };
+    return propagationRefused({ driver: input.driver, error, secrets: secrets.diagnostic });
   }
-  let process: CapsuleProcessOutcome;
-  const redactedInteraction = createRedactedInteraction({
+  const process = await runPreparedCommand({
+    projectDirectory: input.projectDirectory,
+    sandbox: input.sandbox,
+    execution: input.driver.execution,
     interaction: input.interaction,
-    values: secrets.retained,
-  });
-  const { interaction } = redactedInteraction;
-  try {
-    process = await runDriverProcess({
-      driverInput: input,
-      argv,
-      environment,
-      interaction,
-      secrets: secrets.retained,
-    });
-  } catch (error) {
-    throw createRedactedError({
-      error,
-      values: secrets.diagnostic,
-    });
-  } finally {
-    await redactedInteraction.finish();
-  }
-  const argvRedacted =
-    prepared.command.redaction.preparedArgv.kind === 'positions'
-      ? redactProcess(
-          process,
-          prepared.command.redaction.preparedArgv.positions,
-          secrets.argv,
-        )
-      : process;
-  const redacted = redactProcessMetadata({
-    process: argvRedacted,
-    environment: prepared.command.environment,
-    redaction: prepared.command.redaction.environment,
+    command: prepared.command,
+    argv,
+    environment,
+    secrets,
   });
   return {
     kind: 'driver-completed',
     driver: driverDetails(input.driver),
     propagation,
     redaction: prepared.command.redaction,
-    process: redacted,
+    process,
   };
 }

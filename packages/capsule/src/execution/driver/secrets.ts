@@ -1,9 +1,11 @@
 import type {
   DriverArgvRedaction,
   DriverEnvironmentRedaction,
+  DriverPreparation,
 } from '@suites/blackbox-driver';
 
-import type { CapsuleProcessOutcome, CapsuleRecordedError } from '../../types.js';
+import type { CapsuleProcessOutcome } from '../../model/execution/process-outcome.js';
+import type { CapsuleRecordedError } from '../../model/recorded-error.js';
 import { isUnstartedProcess } from '../unstarted-process.js';
 import { redactValues } from '../output/value-redaction.js';
 
@@ -92,4 +94,32 @@ export function redactProcessMetadata(input: {
     ...input.process,
     argv,
   };
+}
+
+/** The secret values one prepared driver command must keep out of artifacts. */
+export function executionSecrets(input: {
+  readonly command: DriverPreparation;
+  readonly argv: readonly string[];
+  readonly targetEnvironment: Readonly<Record<string, string>>;
+}) {
+  const argv = selectedArgvValues({
+    argv: input.argv,
+    selection: input.command.redaction.preparedArgv,
+  });
+  const environment = input.command.redaction.environment.kind === 'none'
+    ? []
+    : selectedValues({
+        environment: input.command.environment,
+        selection: input.command.redaction.environment,
+      });
+  return {
+    argv,
+    retained: [...new Set([...environment, ...argv])]
+      .sort((left, right) => right.length - left.length),
+    diagnostic: [
+      ...Object.values(input.targetEnvironment),
+      ...Object.values(input.command.environment),
+      ...argv,
+    ],
+  } as const;
 }

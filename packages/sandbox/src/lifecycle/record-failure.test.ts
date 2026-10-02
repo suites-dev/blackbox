@@ -1,6 +1,6 @@
 import { rm, writeFile } from 'node:fs/promises';
 import { expect, it } from 'vitest';
-import type { ComposeSandboxDriver } from '../types.js';
+import type { ComposeSandboxDriver } from '../model/compose.js';
 import {
   deterministicClock,
   sandboxFixture,

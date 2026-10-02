@@ -1,4 +1,4 @@
-import type { CapsuleEntrypoint } from './types.js';
+import type { CapsuleEntrypoint } from './model/environment.js';
 
 export interface CapsuleConnectionEnvironmentInput {
   readonly sessionId: string;

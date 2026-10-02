@@ -1,6 +1,7 @@
+import type { CapsuleSummary } from '../../context/project-index.js';
 import { LiveRunBlock, type RunBlockInput } from './run-block.js';
-import { acceptedSpans, type RunTelemetry, type RunSnapshot } from './run-telemetry.js';
-import { waitForTelemetry, type WaitClock } from './run-wait.js';
+import { acceptedSpans, RunTelemetry, type RunSnapshot } from './run-telemetry.js';
+import { systemClock, waitForTelemetry, type WaitClock } from './run-wait.js';
 
 /** Stops the telemetry wait on Ctrl-C instead of letting the signal end the process. */
 export function interruptOnSigint(): {
@@ -71,4 +72,44 @@ export async function observeRun(input: {
     snapshot = (await input.telemetry.snapshot(await input.telemetry.session())) ?? snapshot;
   }
   return { snapshot, wait };
+}
+
+/**
+ * Observes one completed activity: draws the live block while its telemetry
+ * arrives and returns the final run block, or null when nothing can be shown.
+ */
+export async function observeActivity(input: {
+  readonly json: boolean;
+  readonly waitMs: number;
+  readonly summary: CapsuleSummary;
+  readonly activityId: string;
+  readonly runLine: string;
+  readonly activity: string;
+  readonly next: readonly string[];
+  readonly signal: AbortSignal;
+}): Promise<(RunBlockInput & { readonly live: LiveRunBlock | null }) | null> {
+  const live = liveBlock(input.json);
+  const block = (snapshot: RunSnapshot, wait: RunBlockInput['wait']): RunBlockInput => ({
+    runLine: input.runLine,
+    short: input.activity,
+    snapshot,
+    wait,
+    next: input.next,
+  });
+  const observed = await observeRun({
+    telemetry: new RunTelemetry({
+      projectDirectory: process.cwd(),
+      capsule: input.summary,
+      activityId: input.activityId,
+    }),
+    capMs: input.waitMs,
+    clock: systemClock,
+    signal: input.signal,
+    draw: (snapshot, wait) => {
+      if (live !== null) {
+        live.draw(block(snapshot, wait));
+      }
+    },
+  });
+  return observed === null ? null : { ...block(observed.snapshot, observed.wait), live };
 }

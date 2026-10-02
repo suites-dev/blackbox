@@ -11,7 +11,7 @@ import type {
   CapsuleExecutionInteraction,
   CapsuleInteractiveControl,
   CapsuleInteractiveEvent,
-} from '../../types.js';
+} from '../../model/execution/interaction.js';
 
 type ExecRequest = Extract<
   CapsuleManagerRequest,

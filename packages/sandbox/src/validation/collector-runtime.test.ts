@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { expect, it } from 'vitest';
 
 import { sandboxFixture } from '../lifecycle/runtime.fixture.js';
-import type { SandboxInput } from '../types.js';
+import type { SandboxInput } from '../model/input.js';
 import { validateSandboxInput } from './input.js';
 
 function mountedInput(input: SandboxInput, sourceDirectory: string): SandboxInput {

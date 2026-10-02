@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { expect, it } from 'vitest';
 import { readCollectorSession } from '../index.js';
 import { traceRequest } from '../test-fixtures/collector.js';
-import type { CollectorEndpoint } from '../model/types.js';
+import type { CollectorEndpoint } from '../model/endpoint.js';
 
 function startProcess(storageDirectory: string): {
   readonly process: ChildProcess;

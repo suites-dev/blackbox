@@ -2,7 +2,8 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { startCollector } from '../index.js';
-import type { CollectorHandle, StartCollectorInput } from '../model/types.js';
+import type { CollectorHandle } from '../model/handle.js';
+import type { StartCollectorInput } from '../model/config.js';
 
 export const traceA = '11111111111111111111111111111111';
 export const traceB = '22222222222222222222222222222222';

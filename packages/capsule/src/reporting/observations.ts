@@ -1,4 +1,4 @@
-import type { CapsuleActivityReport } from '../types.js';
+import type { CapsuleActivityReport } from '../model/execution/activity.js';
 import { redactError } from './redaction.js';
 import type { RedactionContext } from './redaction/text.js';
 import { projectTraceSpans } from './telemetry.js';
