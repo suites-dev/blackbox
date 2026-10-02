@@ -124,7 +124,7 @@ and report layers may present these facts; they must preserve those limits.
 
 | Area               | Start here                                                                 | Responsibility                                                        |
 | ------------------ | -------------------------------------------------------------------------- | --------------------------------------------------------------------- |
-| Exported contract  | [`src/index.ts`](src/index.ts), [`src/model/types.ts`](src/model/types.ts) | Internal API, lifecycle states, tagged read results, and schemas      |
+| Exported contract  | [`src/index.ts`](src/index.ts), [`src/model/`](src/model/)                 | Internal API, lifecycle states, tagged read results, and schemas      |
 | Process entrypoint | [`src/main.ts`](src/main.ts), [`src/runtime.ts`](src/runtime.ts)           | Environment decoding, packaged runtime, signal-driven shutdown        |
 | HTTP boundary      | [`src/transport/`](src/transport/)                                         | Routing, split authorization, bounded decoding, responses, live reads |
 | OTLP JSON handling | [`src/otlp/json.ts`](src/otlp/json.ts)                                     | Validation, trace/activity filtering, trace partitioning              |

@@ -1,7 +1,5 @@
-export interface CapsuleRecordedError {
-  readonly name: string;
-  readonly message: string;
-}
+import type { CapsuleRecordedError } from './recorded-error.js';
+import type { CapsuleSessionState } from './session-state.js';
 
 export type CapsuleOperationFailure =
   | {
@@ -21,14 +19,3 @@ export type CapsuleOperationFailure =
       readonly sessionId: string;
       readonly error: CapsuleRecordedError;
     };
-
-export type CapsuleSessionState =
-  | 'admitted'
-  | 'manager-starting'
-  | 'sandbox-starting'
-  | 'running'
-  | 'stopping'
-  | 'stopped'
-  | 'start-failed'
-  | 'stop-failed'
-  | 'manager-failed';

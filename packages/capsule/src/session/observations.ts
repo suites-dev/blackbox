@@ -20,12 +20,9 @@ import {
   readCapsuleActivities,
   type CapsuleSessionRecord,
 } from '../records.js';
-import type {
-  CapsuleActivityReport,
-  CapsuleObservationsInput,
-  CapsuleObservationsResult,
-  CapsuleOperationFailure,
-} from '../types.js';
+import type { CapsuleActivityReport } from '../model/execution/activity.js';
+import type { CapsuleObservationsInput, CapsuleObservationsResult } from '../model/operations.js';
+import type { CapsuleOperationFailure } from '../model/failure.js';
 import {
   canonicalProjectDirectory,
   capsuleFailure,

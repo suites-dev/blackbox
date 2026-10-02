@@ -11,7 +11,8 @@ import {
   type CapsuleSessionRecord,
 } from '../../records.js';
 import { reportCapsule } from '../../session/operations.js';
-import type { CapsuleActivityReport, CapsuleSessionState } from '../../types.js';
+import type { CapsuleActivityReport } from '../../model/execution/activity.js';
+import type { CapsuleSessionState } from '../../model/session-state.js';
 import { createRedactionContext, redactText } from '../redaction.js';
 import {
   completeOutputRetention,

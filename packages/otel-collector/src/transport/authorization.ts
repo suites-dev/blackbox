@@ -1,6 +1,6 @@
 import { timingSafeEqual } from 'node:crypto';
 import type { IncomingMessage } from 'node:http';
-import type { CollectorAuthorization } from '../model/types.js';
+import type { CollectorAuthorization } from '../model/config.js';
 import { RequestFailure } from './response.js';
 
 export type CollectorAuthorizationScope =

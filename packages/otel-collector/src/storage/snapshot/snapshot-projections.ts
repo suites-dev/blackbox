@@ -4,7 +4,7 @@ import type {
   CollectorSnapshotReadResult,
   CollectorTraceReadResult,
   CollectorTracesReadResult,
-} from '../../model/types.js';
+} from '../../model/reads.js';
 import { validateTraceId } from '../../model/validation.js';
 
 export function projectCollectorSession(

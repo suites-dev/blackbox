@@ -6,7 +6,8 @@ import {
   startedSandbox,
 } from '../lifecycle/runtime.fixture.js';
 import { SandboxRuntime } from '../lifecycle/runtime.js';
-import type { ComposeSandboxDriver, SandboxExecuteInput } from '../types.js';
+import type { ComposeSandboxDriver } from '../model/compose.js';
+import type { SandboxExecuteInput } from '../model/handle.js';
 
 it('executes exact argv through the private container capability', async () => {
   const { input } = await sandboxFixture();

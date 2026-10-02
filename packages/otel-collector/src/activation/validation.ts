@@ -1,4 +1,4 @@
-import type { ActivateCollectorInput } from '../model/types.js';
+import type { ActivateCollectorInput } from '../model/lifecycle.js';
 import {
   recordedFailure,
   validateIdentity,

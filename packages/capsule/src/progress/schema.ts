@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { Ajv2020 } from 'ajv/dist/2020.js';
-import type { CapsuleProgressEvent } from '../types.js';
+import type { CapsuleProgressEvent } from './events.js';
 
 export const capsuleProgressSchemaUrl = new URL(
   '../../schema/capsule-progress-v1.json',

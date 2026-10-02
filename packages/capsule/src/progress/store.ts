@@ -2,7 +2,7 @@ import { readFile } from 'node:fs/promises';
 
 import { capsuleSessionDirectory, writeJsonArtifact } from '../records.js';
 import { decodeCapsuleProgress, type CapsuleProgressDocument } from './schema.js';
-import type { CapsuleProgressEvent } from '../types.js';
+import type { CapsuleProgressEvent } from './events.js';
 
 type WithoutProgressEnvelope<Event> = Event extends CapsuleProgressEvent
   ? Event extends { readonly kind: 'capsule-start-failed' }

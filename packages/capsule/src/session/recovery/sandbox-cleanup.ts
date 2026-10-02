@@ -11,11 +11,10 @@ import {
   type CapsuleSessionRecord,
   type CapsuleSessionSelector,
 } from '../../records.js';
-import type { CapsuleRecordedError } from '../../types.js';
+import type { CapsuleCleanupReport } from '../../model/lifecycle.js';
 
-type CapsuleCleanup =
-  | { readonly kind: 'complete' }
-  | { readonly kind: 'failed'; readonly error: CapsuleRecordedError };
+// The cleanup report of an attempted cleanup, the shape the record stores.
+type CapsuleCleanup = Exclude<CapsuleCleanupReport, { readonly kind: 'not-attempted' }>;
 
 export interface CapsuleCleanupRecoveryPorts {
   readonly readRecord: typeof readCapsuleRecord;

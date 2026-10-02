@@ -1,7 +1,7 @@
 import type { CollectorLifecycleRecord } from '@suites/blackbox-otel-collector';
 import { describe, expect, it } from 'vitest';
 
-import type { CapsuleSessionState } from '../../types.js';
+import type { CapsuleSessionState } from '../../model/session-state.js';
 import { observationCompleteness } from '../completeness.js';
 
 type CollectorRunRecord = CollectorLifecycleRecord['runs'][number];

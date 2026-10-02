@@ -1,8 +1,5 @@
-import type {
-  SandboxTelemetryEnabledInput,
-  SandboxTelemetryEndpoints,
-  SandboxTelemetryStatus,
-} from '../types.js';
+import type { SandboxTelemetryEnabledInput } from '../model/telemetry.js';
+import type { SandboxTelemetryEndpoints, SandboxTelemetryStatus } from '../model/handle.js';
 import {
   COLLECTOR_ACTIVATION_PATH,
   COLLECTOR_STATUS_PATH,

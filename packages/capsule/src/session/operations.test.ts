@@ -14,7 +14,7 @@ import {
   writeCapsuleRecord,
   type CapsuleSessionRecord,
 } from '../records.js';
-import type { CapsuleManagerOwnership } from '../types.js';
+import type { CapsuleManagerOwnership } from '../model/lifecycle.js';
 import { execCapsule, reportCapsule, stopCapsule } from './operations.js';
 
 const roots: string[] = [];

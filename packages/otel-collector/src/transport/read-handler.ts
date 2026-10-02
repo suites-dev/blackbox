@@ -1,6 +1,6 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { CollectorStore } from '../lifecycle/store.js';
-import type { StartCollectorInput } from '../model/types.js';
+import type { StartCollectorInput } from '../model/config.js';
 import { recordedFailure } from '../model/validation.js';
 import {
   readCollectorSession,

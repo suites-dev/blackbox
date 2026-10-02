@@ -1,5 +1,5 @@
 import { isAbsolute } from 'node:path';
-import type { StartCollectorInput } from './types.js';
+import type { StartCollectorInput } from './config.js';
 
 const IDENTITY_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/u;
 const PATH_PATTERN = /^\/[A-Za-z0-9._~!$&'()*+,;=:@/-]*$/u;

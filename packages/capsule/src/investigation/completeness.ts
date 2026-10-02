@@ -1,6 +1,6 @@
 import type { CollectorLifecycleRecord } from '@suites/blackbox-otel-collector';
 
-import type { CapsuleSessionState } from '../types.js';
+import type { CapsuleSessionState } from '../model/session-state.js';
 
 /**
  * Whether a capsule's retained observations can be treated as everything the

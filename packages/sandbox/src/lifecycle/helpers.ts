@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { recordedError, type FailedSandboxRecord } from '../ownership/records.js';
 import type { CleanupOutcome } from './errors.js';
-import type { SandboxLifecycleEvent } from '../types.js';
+import type { SandboxLifecycleEvent } from '../model/lifecycle.js';
 
 export function composeProjectName(input: { readonly sandboxId: string }): string {
   const slug = input.sandboxId

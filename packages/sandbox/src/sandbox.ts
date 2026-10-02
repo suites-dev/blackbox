@@ -1,6 +1,7 @@
 import { TestcontainersComposeDriver } from './acquisition/testcontainers-driver.js';
 import { SandboxRuntime } from './lifecycle/runtime.js';
-import type { SandboxHandle, SandboxStartInput } from './types.js';
+import type { SandboxHandle } from './model/handle.js';
+import type { SandboxStartInput } from './model/input.js';
 
 export {
   SandboxStartError,

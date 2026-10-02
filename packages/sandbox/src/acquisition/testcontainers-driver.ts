@@ -4,7 +4,7 @@ import type {
   ComposeSandboxDriver,
   ComposeStartRequest,
   StartedComposeSandbox,
-} from '../types.js';
+} from '../model/compose.js';
 import {
   composeObservationClient,
   inspectComposeStartup,

@@ -1,17 +1,19 @@
+import type { CapsuleActivityReport } from '../model/execution/activity.js';
 import type {
-  CapsuleActivityReport,
   CapsuleAvailability,
   CapsuleCleanupReport,
-  CapsuleContainerDetails,
   CapsuleDescription,
-  CapsuleEntrypoint,
   CapsuleFailureRecord,
-  CapsuleOperationFailure,
-  CapsuleProgressEvent,
+} from '../model/lifecycle.js';
+import type {
+  CapsuleContainerDetails,
+  CapsuleEntrypoint,
   CapsuleReadinessDetails,
-  CapsuleRecordedError,
-  CapsuleSessionState,
-} from '../types.js';
+} from '../model/environment.js';
+import type { CapsuleOperationFailure } from '../model/failure.js';
+import type { CapsuleProgressEvent } from '../progress/events.js';
+import type { CapsuleRecordedError } from '../model/recorded-error.js';
+import type { CapsuleSessionState } from '../model/session-state.js';
 import type { CapsuleSessionRecord } from '../records.js';
 import type { CapsuleActivityTelemetry, CapsuleReportSpan } from './telemetry-types.js';
 import type {

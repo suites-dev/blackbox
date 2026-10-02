@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import type { SandboxHandle } from '../../types.js';
+import type { SandboxHandle } from '../../model/handle.js';
 import type { SandboxProgressEvent } from '../progress.js';
 import { resourcesForProjects } from './docker-inspection.fixture.js';
 

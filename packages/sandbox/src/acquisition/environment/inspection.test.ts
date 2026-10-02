@@ -4,7 +4,7 @@ import { join } from 'node:path';
 
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 
-import type { ComposeStartRequest } from '../../types.js';
+import type { ComposeStartRequest } from '../../model/compose.js';
 import { TestcontainersComposeDriver } from '../testcontainers-driver.js';
 
 const docker = vi.hoisted(() => {

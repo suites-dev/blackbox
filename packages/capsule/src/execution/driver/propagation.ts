@@ -1,3 +1,4 @@
+import type { ResolvedCatalogDriver } from '@suites/blackbox-catalog';
 import {
   createTelemetryPropagationRecord,
   injectW3CProcessEnvironment,
@@ -5,6 +6,11 @@ import {
   type TelemetryExecutionScope,
   type TelemetryPropagationRecord,
 } from '@suites/blackbox-telemetry';
+
+import { capsuleConnectionEnvironment } from '../../connection-environment.js';
+import type { CapsuleEntrypoint } from '../../model/environment.js';
+import type { CapsuleDriverOutcome } from '../../model/execution/outcome.js';
+import { redactValues } from '../output/value-redaction.js';
 
 export function executionEnvironment(input: {
   readonly base: Readonly<Record<string, string>>;
@@ -63,4 +69,43 @@ export function failedPropagation(
       message,
     },
   });
+}
+
+/**
+ * The environment a prepared driver command runs with: the Capsule connection
+ * variables when it runs on the host, then the prepared variables and the
+ * propagated trace context.
+ */
+export function driverEnvironment(input: {
+  readonly execution: ResolvedCatalogDriver['execution'];
+  readonly connection: { readonly sessionId: string; readonly entrypoint: CapsuleEntrypoint };
+  readonly prepared: Readonly<Record<string, string>>;
+  readonly propagation: TelemetryPropagationRecord;
+  readonly scope: TelemetryExecutionScope;
+}): Readonly<Record<string, string>> {
+  return executionEnvironment({
+    base: input.execution.kind === 'host'
+      ? capsuleConnectionEnvironment(input.connection)
+      : {},
+    prepared: input.prepared,
+    propagation: input.propagation,
+    scope: input.scope,
+  });
+}
+
+/** The outcome of a driver whose environment refused propagation, with secrets redacted. */
+export function propagationRefused(input: {
+  readonly driver: ResolvedCatalogDriver;
+  readonly error: unknown;
+  readonly secrets: readonly string[];
+}): Extract<CapsuleDriverOutcome, { readonly kind: 'driver-propagation-refused' }> {
+  const message = input.error instanceof Error ? input.error.message : String(input.error);
+  return {
+    kind: 'driver-propagation-refused',
+    driverId: input.driver.id,
+    propagation: failedPropagation(
+      input.driver.propagation,
+      redactValues(message, input.secrets),
+    ),
+  };
 }

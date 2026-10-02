@@ -1,4 +1,4 @@
-import type { CollectorIdentity } from '../../model/types.js';
+import type { CollectorIdentity } from '../../model/identity.js';
 
 export interface LinuxProcessOwner {
   readonly kind: 'linux-process-instance';

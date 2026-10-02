@@ -1,11 +1,13 @@
 import type {
   CapsuleActivityName,
   CapsuleActivityPurpose,
-  CapsuleExecutionOutcome,
-  CapsuleExecTarget,
+} from './model/execution/activity-label.js';
+import type { CapsuleExecutionOutcome } from './model/execution/outcome.js';
+import type { CapsuleExecTarget } from './model/operations.js';
+import type {
   CapsuleInteractiveControlResult,
   CapsuleTerminalSize,
-} from './types.js';
+} from './model/execution/interaction.js';
 import type { RuntimeActivationAdapter } from '@suites/blackbox-instrumentation';
 
 export type CapsuleManagerRequest =

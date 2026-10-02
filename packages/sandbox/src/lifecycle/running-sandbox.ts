@@ -1,5 +1,5 @@
 import { asError, SandboxStopError, type RecordWriteOutcome } from './errors.js';
-import { cleanupCompose } from './cleanup/compose.js';
+import { attemptComposeCleanup } from './cleanup/compose.js';
 import { executeInSandbox } from '../execution/container-exec.js';
 import { startContainerExecution } from '../execution/streaming/start.js';
 import type {
@@ -17,26 +17,23 @@ import {
   type ActiveSandboxRecord,
   type FailedSandboxRecord,
 } from '../ownership/records.js';
+import type { SandboxContainer } from '../inspection/sandbox-container.js';
 import type {
-  SandboxContainer,
   SandboxContainerSelector,
   SandboxEndpoint,
   SandboxExecuteInput,
   SandboxExecuteResult,
   SandboxHandle,
-  SandboxInput,
-  SandboxLifecycleEvent,
   SandboxTelemetryStatus,
   SandboxStopInput,
   SandboxStopResult,
-  StartedComposeSandbox,
-} from '../types.js';
+} from '../model/handle.js';
+import type { SandboxInput } from '../model/input.js';
+import type { SandboxRuntimeDependencies, StartedComposeSandbox } from '../model/compose.js';
 
-interface RunningSandboxInput {
+interface RunningSandboxInput extends Pick<SandboxRuntimeDependencies, 'now' | 'onEvent'> {
   readonly input: SandboxInput;
   readonly compose: StartedComposeSandbox;
-  readonly now: () => Date;
-  readonly onEvent: (event: SandboxLifecycleEvent) => void;
   readonly projectName: string;
   readonly endpoints: ReadonlyMap<string, SandboxEndpoint>;
   readonly containers: ReadonlyMap<string, SandboxContainer>;
@@ -123,7 +120,10 @@ export class RunningSandbox implements SandboxHandle {
   private async performStop(input: SandboxStopInput): Promise<SandboxStopResult> {
     this.#state = 'stopping';
     await this.recordStoppingBestEffort();
-    const cleanup = await this.cleanup();
+    const cleanup = await attemptComposeCleanup({
+      compose: this.options.compose,
+      timeoutMs: this.options.input.stopTimeoutMs,
+    });
     if (cleanup.kind === 'complete') {
       return this.completeStop(input);
     }
@@ -135,20 +135,6 @@ export class RunningSandbox implements SandboxHandle {
       await this.transition({ state: 'stopping' });
     } catch {
       // The earlier durable record stays discoverable while cleanup proceeds.
-    }
-  }
-
-  private async cleanup(): Promise<
-    { readonly kind: 'complete' } | { readonly kind: 'failed'; readonly error: Error }
-  > {
-    try {
-      await cleanupCompose({
-        compose: this.options.compose,
-        timeoutMs: this.options.input.stopTimeoutMs,
-      });
-      return { kind: 'complete' };
-    } catch (cause) {
-      return { kind: 'failed', error: asError(cause) };
     }
   }
 

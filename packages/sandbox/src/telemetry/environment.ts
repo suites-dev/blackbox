@@ -1,4 +1,7 @@
-import type { SandboxTelemetryEnabledInput, SandboxTelemetryParticipant } from '../types.js';
+import type {
+  SandboxTelemetryEnabledInput,
+  SandboxTelemetryParticipant,
+} from '../model/telemetry.js';
 
 export const COLLECTOR_TRACES_PATH = '/v1/traces';
 export const COLLECTOR_ACTIVATION_PATH = '/v1/activation';

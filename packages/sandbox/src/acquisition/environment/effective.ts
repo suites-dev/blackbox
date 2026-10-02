@@ -1,7 +1,7 @@
 import dockerCompose, { type IDockerComposeOptions } from 'docker-compose';
 import type { getContainerRuntimeClient } from 'testcontainers';
 
-import type { ComposeStartRequest } from '../../types.js';
+import type { ComposeStartRequest } from '../../model/compose.js';
 import { snapshotContainerEnvironment } from '../container-environment.js';
 
 type Dockerode = Awaited<

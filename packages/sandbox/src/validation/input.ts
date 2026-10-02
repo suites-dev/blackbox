@@ -1,6 +1,7 @@
 import { access, realpath } from 'node:fs/promises';
 import { isAbsolute, relative, resolve, sep } from 'node:path';
-import type { SandboxCollectorRuntime, SandboxInput } from '../types.js';
+import type { SandboxCollectorRuntime } from '../model/telemetry.js';
+import type { SandboxInput } from '../model/input.js';
 
 const ID_PATTERN = /^[a-zA-Z0-9][a-zA-Z0-9._-]{0,127}$/;
 const SERVICE_PATTERN = /^[a-zA-Z0-9][a-zA-Z0-9._-]*$/;
