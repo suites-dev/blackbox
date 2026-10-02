@@ -1,6 +1,13 @@
 import type { RuntimeActivationAdapter } from '@suites/blackbox-instrumentation';
 
 import type { CapsuleAcquisitionObservation } from './progress/acquisition.js';
+import type { CapsuleOperationFailure, CapsuleRecordedError } from './model/failure.js';
+
+export type {
+  CapsuleOperationFailure,
+  CapsuleRecordedError,
+  CapsuleSessionState,
+} from './model/failure.js';
 
 export interface CapsuleStartInput {
   readonly projectDirectory: string;
@@ -218,38 +225,3 @@ export type CapsuleCleanupReport =
   | { readonly kind: 'not-attempted' }
   | { readonly kind: 'complete' }
   | { readonly kind: 'failed'; readonly error: CapsuleRecordedError };
-
-export interface CapsuleRecordedError {
-  readonly name: string;
-  readonly message: string;
-}
-
-export type CapsuleOperationFailure =
-  | {
-      readonly kind: 'capsule-not-found';
-      readonly sessionId: string;
-      readonly message: string;
-    }
-  | {
-      readonly kind: 'capsule-invalid-state';
-      readonly sessionId: string;
-      readonly state: CapsuleSessionState;
-      readonly message: string;
-    }
-  | {
-      readonly kind: 'capsule-operation-failed';
-      readonly operation: 'start' | 'exec' | 'stop' | 'report' | 'observations';
-      readonly sessionId: string;
-      readonly error: CapsuleRecordedError;
-    };
-
-export type CapsuleSessionState =
-  | 'admitted'
-  | 'manager-starting'
-  | 'sandbox-starting'
-  | 'running'
-  | 'stopping'
-  | 'stopped'
-  | 'start-failed'
-  | 'stop-failed'
-  | 'manager-failed';

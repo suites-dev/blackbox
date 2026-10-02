@@ -3,46 +3,12 @@ import { createHash } from 'node:crypto';
 import { isAbsolute, join, relative, resolve } from 'node:path';
 import { replaceFile } from '@suites/blackbox-sandbox';
 
-import type {
-  CapsuleActivityReport,
-  CapsuleAvailability,
-  CapsuleCleanupReport,
-  CapsuleContainerDetails,
-  CapsuleDescription,
-  CapsuleEntrypoint,
-  CapsuleFailureRecord,
-  CapsuleManagerOwnership,
-  CapsuleReadinessDetails,
-  CapsuleRecordedError,
-  CapsuleSessionState,
-} from './types.js';
+import type { CapsuleActivityReport, CapsuleRecordedError } from './types.js';
 import { decodeCapsuleActivities } from './persistence/activity-decoder.js';
 import { decodeCapsuleSessionRecord } from './persistence/decoder.js';
+import type { CapsuleSessionRecord } from './persistence/session-record.js';
 
-export interface CapsuleSessionRecord {
-  readonly schemaVersion: 1;
-  readonly sessionId: string;
-  /** Internal resource identity. It is retained but omitted from public results. */
-  readonly executionId: string;
-  readonly system: string;
-  readonly title: string;
-  readonly description: CapsuleDescription;
-  readonly state: CapsuleSessionState;
-  readonly revision: number;
-  readonly admittedAt: string;
-  readonly updatedAt: string;
-  readonly manager: CapsuleManagerOwnership;
-  readonly socketPath: string;
-  readonly entrypoint: CapsuleAvailability<CapsuleEntrypoint>;
-  readonly containers: readonly CapsuleContainerDetails[];
-  readonly cleanup: CapsuleCleanupReport;
-  readonly failure: CapsuleFailureRecord;
-  readonly composeProject: CapsuleAvailability<string>;
-  readonly artifactRoot: string;
-  readonly networks: readonly string[];
-  readonly volumes: readonly string[];
-  readonly readiness: CapsuleAvailability<CapsuleReadinessDetails>;
-}
+export type { CapsuleSessionRecord } from './persistence/session-record.js';
 
 export interface CapsuleSessionSelector {
   readonly projectDirectory: string;
