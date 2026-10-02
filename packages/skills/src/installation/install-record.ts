@@ -52,6 +52,7 @@ export function encodeInstallRecord(record: InstallRecord): Uint8Array {
 }
 
 /** The record, or null when it is not a well-formed Blackbox record. */
+// eslint-disable-next-line complexity -- decodes an install record from untrusted JSON on disk; each condition rejects one malformed field
 export function decodeInstallRecord(content: Uint8Array): InstallRecord | null {
   let value: unknown;
   try {

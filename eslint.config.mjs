@@ -390,9 +390,10 @@ export default [
         'error',
         { max: 80, skipBlankLines: true, skipComments: true, IIFEs: true },
       ],
-      // Nesting and signature limits. Existing functions over a limit carry
-      // an eslint-disable-next-line with a reason specific to that function;
-      // that list may only shrink.
+      // Branching, nesting and signature limits. Existing functions over a
+      // limit carry an eslint-disable-next-line with a reason specific to that
+      // function; that list may only shrink.
+      complexity: ['error', 15],
       'max-depth': ['error', 4],
       'max-params': ['error', 4],
     },

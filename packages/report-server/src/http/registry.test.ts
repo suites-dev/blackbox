@@ -8,6 +8,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
+// eslint-disable-next-line complexity -- test oracle that hand-checks the exported registry JSON schema field by field, independent of the validator under test
 function matchesExportedRegistrySchema(document: unknown): boolean {
   if (
     reportRegistrySchema.type !== 'object' ||
