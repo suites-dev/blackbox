@@ -8,7 +8,7 @@ import type {
   CapsuleContainerDetails,
   CapsuleEntrypoint,
   CapsuleReadinessDetails,
-} from '../types.js';
+} from '../model/environment.js';
 import { CapsuleStageError, emitProgress, runStartStage } from './progress.js';
 import type { CapsuleManagerPorts } from './ports.js';
 import { sandboxProgressBridge } from './sandbox-progress.js';

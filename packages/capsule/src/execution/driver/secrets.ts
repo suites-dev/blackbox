@@ -3,7 +3,8 @@ import type {
   DriverEnvironmentRedaction,
 } from '@suites/blackbox-driver';
 
-import type { CapsuleProcessOutcome, CapsuleRecordedError } from '../../types.js';
+import type { CapsuleProcessOutcome } from '../../model/outcome.js';
+import type { CapsuleRecordedError } from '../../model/recorded-error.js';
 import { isUnstartedProcess } from '../unstarted-process.js';
 import { redactValues } from '../output/value-redaction.js';
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import type { CapsuleExecutionOutcome } from '../../types.js';
+import type { CapsuleExecutionOutcome } from '../../model/outcome.js';
 import { redactOutcomeArgv } from '../redaction.js';
 
 const MASK = '[REDACTED]';

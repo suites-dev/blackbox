@@ -3,7 +3,8 @@ import { createHash } from 'node:crypto';
 import { isAbsolute, join, relative, resolve } from 'node:path';
 import { replaceFile } from '@suites/blackbox-sandbox';
 
-import type { CapsuleActivityReport, CapsuleRecordedError } from './types.js';
+import type { CapsuleActivityReport } from './model/activity.js';
+import type { CapsuleRecordedError } from './model/recorded-error.js';
 import { decodeCapsuleActivities } from './persistence/activity-decoder.js';
 import { decodeCapsuleSessionRecord } from './persistence/decoder.js';
 import type { CapsuleSessionRecord } from './persistence/session-record.js';

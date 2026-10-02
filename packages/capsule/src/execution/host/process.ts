@@ -4,8 +4,8 @@ import type { Readable } from 'node:stream';
 import type {
   CapsuleExecutionControl,
   CapsuleExecutionInteraction,
-  CapsuleProcessOutcome,
-} from '../types.js';
+} from '../../model/interaction.js';
+import type { CapsuleProcessOutcome } from '../../model/outcome.js';
 import {
   createOutputRetention,
   retainedOutputMetadata,

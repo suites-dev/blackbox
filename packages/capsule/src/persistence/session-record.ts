@@ -1,14 +1,16 @@
 import type {
   CapsuleAvailability,
   CapsuleCleanupReport,
-  CapsuleContainerDetails,
   CapsuleDescription,
-  CapsuleEntrypoint,
   CapsuleFailureRecord,
   CapsuleManagerOwnership,
+} from '../model/lifecycle.js';
+import type {
+  CapsuleContainerDetails,
+  CapsuleEntrypoint,
   CapsuleReadinessDetails,
-  CapsuleSessionState,
-} from '../types.js';
+} from '../model/environment.js';
+import type { CapsuleSessionState } from '../model/session-state.js';
 
 export interface CapsuleSessionRecord {
   readonly schemaVersion: 1;

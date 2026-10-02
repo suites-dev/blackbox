@@ -1,4 +1,4 @@
-import type { CapsuleProcessOutcome } from './types.js';
+import type { CapsuleProcessOutcome } from '../model/outcome.js';
 
 /** The process outcomes that never started a process, so carry no output. */
 export type CapsuleUnstartedProcessOutcome = Extract<

@@ -2,7 +2,7 @@ import { access, realpath } from 'node:fs/promises';
 import { isAbsolute, join } from 'node:path';
 
 import { recordedError, type CapsuleSessionRecord } from '../records.js';
-import type { CapsuleOperationFailure } from '../types.js';
+import type { CapsuleOperationFailure } from '../model/failure.js';
 import { reconcileDeadCapsuleManager } from './recovery/index.js';
 
 const SESSION_PATTERN =

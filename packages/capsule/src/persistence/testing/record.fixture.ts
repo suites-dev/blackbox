@@ -1,5 +1,5 @@
 import { capsuleSessionDirectory, type CapsuleSessionRecord } from '../../records.js';
-import type { CapsuleActivityReport } from '../../types.js';
+import type { CapsuleActivityReport } from '../../model/activity.js';
 
 export const traceId = '11111111111111111111111111111111';
 const spanId = '2222222222222222';

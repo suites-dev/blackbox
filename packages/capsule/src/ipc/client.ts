@@ -1,7 +1,7 @@
 import { once } from 'node:events';
 import { connect, type Socket } from 'node:net';
 
-import type { CapsuleInteractiveControl, CapsuleInteractiveEvent } from '../types.js';
+import type { CapsuleInteractiveControl, CapsuleInteractiveEvent } from '../model/interaction.js';
 import type {
   CapsuleManagerClientFrame,
   CapsuleManagerOperationResponse,

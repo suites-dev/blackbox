@@ -12,7 +12,8 @@ import {
   capsuleSessionDirectory,
   type CapsuleSessionRecord,
 } from '../records.js';
-import type { CapsuleProgressMode, CapsuleStartInput, CapsuleStartResult } from '../types.js';
+import type { CapsuleProgressMode } from '../progress/events.js';
+import type { CapsuleStartInput, CapsuleStartResult } from '../model/operations.js';
 import { generateCapsuleIdentity } from './identity.js';
 import { reconcileDeadCapsuleManager } from './recovery/index.js';
 import { managerTermination } from './startup/manager-termination.js';

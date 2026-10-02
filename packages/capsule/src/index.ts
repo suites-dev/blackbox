@@ -43,48 +43,57 @@ export {
   readCapsuleRecord,
 } from './records.js';
 export type { CapsuleSessionRecord, CapsuleSessionSelector } from './records.js';
+export type { CapsuleActivityReport } from './model/activity.js';
+export type { CapsuleActivityName, CapsuleActivityPurpose } from './model/activity-label.js';
 export type {
-  CapsuleActivityReport,
-  CapsuleActivityName,
-  CapsuleActivityPurpose,
   CapsuleAvailability,
   CapsuleCleanupReport,
-  CapsuleContainerDetails,
   CapsuleDescription,
-  CapsuleDriverDetails,
-  CapsuleDriverOutcome,
-  CapsuleEntrypoint,
-  CapsuleExecutionOutcome,
-  CapsuleExecutionLocation,
-  CapsuleExecInput,
-  CapsuleInteractiveControl,
-  CapsuleInteractiveControlResult,
-  CapsuleInteractiveEvent,
-  CapsuleInteractiveExecInput,
-  CapsuleExecResult,
-  CapsuleExecTarget,
   CapsuleFailureRecord,
   CapsuleManagerOwnership,
-  CapsuleOperationFailure,
-  CapsuleObservationsInput,
-  CapsuleObservationsResult,
+} from './model/lifecycle.js';
+export type {
+  CapsuleContainerDetails,
+  CapsuleEntrypoint,
+  CapsuleReadinessDetails,
+} from './model/environment.js';
+export type {
+  CapsuleDriverDetails,
+  CapsuleDriverOutcome,
+  CapsuleExecutionOutcome,
+  CapsuleExecutionLocation,
   CapsuleOutputRetention,
   CapsuleProcessOutcome,
   CapsuleRawCommandOutcome,
-  CapsuleProgressEvent,
-  CapsuleProgressMode,
-  CapsuleProgressStage,
-  CapsuleReadinessDetails,
-  CapsuleRecordedError,
+} from './model/outcome.js';
+export type {
+  CapsuleExecInput,
+  CapsuleInteractiveExecInput,
+  CapsuleExecResult,
+  CapsuleExecTarget,
+  CapsuleObservationsInput,
+  CapsuleObservationsResult,
   CapsuleReportInput,
-  CapsuleSessionState,
   CapsuleStartInput,
-  CapsuleStartFailureStage,
   CapsuleStartResult,
   CapsuleStopInput,
   CapsuleStopResult,
+} from './model/operations.js';
+export type {
+  CapsuleInteractiveControl,
+  CapsuleInteractiveControlResult,
+  CapsuleInteractiveEvent,
   CapsuleTerminalSize,
-} from './types.js';
+} from './model/interaction.js';
+export type { CapsuleOperationFailure } from './model/failure.js';
+export type {
+  CapsuleProgressEvent,
+  CapsuleProgressMode,
+  CapsuleProgressStage,
+  CapsuleStartFailureStage,
+} from './progress/events.js';
+export type { CapsuleRecordedError } from './model/recorded-error.js';
+export type { CapsuleSessionState } from './model/session-state.js';
 export type {
   CapsuleReportActivity,
   CapsuleReportArtifact,

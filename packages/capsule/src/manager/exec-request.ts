@@ -2,28 +2,23 @@ import { randomUUID } from 'node:crypto';
 import type { Socket } from 'node:net';
 
 import {
-  createTelemetryPropagationRecord,
   createTelemetryExecutionScope,
   type TelemetryScopeResult,
 } from '@suites/blackbox-telemetry';
 import type { DriverArgvRedaction } from '@suites/blackbox-driver';
 
-import { capsuleConnectionEnvironment } from '../connection-environment.js';
 import { normalizeCapsuleActivityName } from '../execution/activity-name.js';
-import { runHostWithInteraction } from '../execution/commands.js';
-import { runCapsuleDriver } from '../execution/driver-execution.js';
 import {
   exportActivityRootSpan,
   type RootSpanExportResult,
 } from '../execution/root-span.js';
+import { executeCapsuleTarget } from '../execution/target.js';
 import { sendResponse } from '../ipc/server.js';
 import type { CapsuleManagerBootstrap, CapsuleManagerRequest } from '../protocol.js';
 import { recordedError, writeCapsuleActivities } from '../records.js';
-import type {
-  CapsuleActivityReport,
-  CapsuleExecutionInteraction,
-  CapsuleExecutionOutcome,
-} from '../types.js';
+import type { CapsuleActivityReport } from '../model/activity.js';
+import type { CapsuleExecutionInteraction } from '../model/interaction.js';
+import type { CapsuleExecutionOutcome } from '../model/outcome.js';
 import type { RunningManager } from './runtime.js';
 
 interface HandleExecInput {
@@ -45,39 +40,17 @@ interface ExecutionContext {
 }
 
 async function executeTarget(input: ExecutionContext): Promise<CapsuleExecutionOutcome> {
-  const { target } = input.input.request;
-  if (target.kind === 'host') {
-    const process = await runHostWithInteraction({
-      argv: target.argv,
-      cwd: input.input.bootstrap.projectDirectory,
-      environment: capsuleConnectionEnvironment({
-        sessionId: input.input.bootstrap.sessionId,
-        entrypoint: input.input.manager.entrypoint,
-      }),
-      interaction: input.input.interaction,
-    });
-    return {
-      ...process,
-      propagation: createTelemetryPropagationRecord({
-        expectation: { kind: 'propagation-not-requested' },
-        outcome: { kind: 'context-not-injected', reason: 'raw-command' },
-      }),
-    };
-  }
-  if (!Object.hasOwn(input.input.manager.drivers, target.driverId)) {
-    throw new Error(`Unknown driver ${JSON.stringify(target.driverId)}`);
-  }
-  return runCapsuleDriver({
-    projectDirectory: input.input.bootstrap.projectDirectory,
-    sessionId: input.input.bootstrap.sessionId,
+  const { bootstrap, manager, request, interaction } = input.input;
+  return executeCapsuleTarget({
+    target: request.target,
+    drivers: manager.drivers,
+    projectDirectory: bootstrap.projectDirectory,
+    sessionId: bootstrap.sessionId,
     activityId: input.activityId,
-    entrypoint: input.input.manager.entrypoint,
-    driver: input.input.manager.drivers[target.driverId],
-    argv: target.argv,
-    untraced: target.untraced,
-    sandbox: input.input.manager.sandbox,
+    entrypoint: manager.entrypoint,
+    sandbox: manager.sandbox,
     scope: input.scope,
-    interaction: input.input.interaction,
+    interaction,
   });
 }
 

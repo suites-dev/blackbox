@@ -7,12 +7,9 @@ import type {
 } from '@suites/blackbox-telemetry';
 
 import { capsuleConnectionEnvironment } from '../connection-environment.js';
-import type {
-  CapsuleEntrypoint,
-  CapsuleDriverOutcome,
-  CapsuleExecutionInteraction,
-  CapsuleProcessOutcome,
-} from '../types.js';
+import type { CapsuleEntrypoint } from '../model/environment.js';
+import type { CapsuleDriverOutcome, CapsuleProcessOutcome } from '../model/outcome.js';
+import type { CapsuleExecutionInteraction } from '../model/interaction.js';
 import { runHostWithRedaction } from './commands.js';
 import { isUnstartedProcess } from './unstarted-process.js';
 import { prepareCapsuleDriver } from './driver/preparation.js';

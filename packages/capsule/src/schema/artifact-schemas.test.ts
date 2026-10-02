@@ -3,7 +3,7 @@ import { Ajv2020 } from 'ajv/dist/2020.js';
 import type { ValidateFunction } from 'ajv';
 
 import type { CapsuleSessionRecord } from '../records.js';
-import type { CapsuleActivityReport } from '../types.js';
+import type { CapsuleActivityReport } from '../model/activity.js';
 import type { CapsuleReportDocument } from '../reporting/types.js';
 import { activeTelemetry, completedDriverActivity } from '../persistence/testing/record.fixture.js';
 import { capsuleProgressSchema } from '../progress/schema.js';

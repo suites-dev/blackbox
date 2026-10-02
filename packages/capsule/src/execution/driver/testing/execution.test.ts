@@ -13,7 +13,10 @@ import {
   driverSandbox,
   httpDriver,
 } from './execution.fixture.js';
-import type { CapsuleInteractiveControl, CapsuleInteractiveEvent } from '../../types.js';
+import type {
+  CapsuleInteractiveControl,
+  CapsuleInteractiveEvent,
+} from '../../../model/interaction.js';
 
 function participantSandbox(observed: {
   readonly requests: SandboxContainerExecutionInput[];

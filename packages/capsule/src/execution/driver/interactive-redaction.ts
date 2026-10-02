@@ -1,6 +1,9 @@
 import { StringDecoder } from 'node:string_decoder';
 
-import type { CapsuleExecutionInteraction, CapsuleInteractiveEvent } from '../types.js';
+import type {
+  CapsuleExecutionInteraction,
+  CapsuleInteractiveEvent,
+} from '../../model/interaction.js';
 import { createStreamingValueRedactor, redactValues } from '../output/value-redaction.js';
 
 type OutputEvent = Extract<CapsuleInteractiveEvent, { readonly kind: 'output' }>;

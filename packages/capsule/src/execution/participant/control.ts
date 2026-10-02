@@ -3,7 +3,10 @@ import type {
   SandboxContainerExecution,
 } from '@suites/blackbox-sandbox';
 
-import type { CapsuleExecutionControl, CapsuleExecutionInteraction } from '../types.js';
+import type {
+  CapsuleExecutionControl,
+  CapsuleExecutionInteraction,
+} from '../../model/interaction.js';
 
 async function participantControl(
   execution: SandboxContainerExecution,

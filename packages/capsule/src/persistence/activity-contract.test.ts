@@ -4,7 +4,8 @@ import { join } from 'node:path';
 
 import { expect, it } from 'vitest';
 
-import type { CapsuleActivityReport, CapsuleExecutionOutcome } from '../types.js';
+import type { CapsuleActivityReport } from '../model/activity.js';
+import type { CapsuleExecutionOutcome } from '../model/outcome.js';
 import { decodeCapsuleActivities } from './activity-decoder.js';
 import { writeCapsuleActivities } from '../records.js';
 import {

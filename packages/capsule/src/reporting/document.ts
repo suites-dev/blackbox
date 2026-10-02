@@ -1,6 +1,7 @@
 import { projectActivityTelemetry } from './telemetry.js';
 import { projectObservations } from './observations.js';
-import type { CapsuleProgressEvent, CapsuleSessionState } from '../types.js';
+import type { CapsuleProgressEvent } from '../progress/events.js';
+import type { CapsuleSessionState } from '../model/session-state.js';
 import { createRedactionContext, redactActivities, redactError, redactText } from './redaction.js';
 import type {
   CapsuleReportDocument,

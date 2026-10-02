@@ -1,6 +1,6 @@
 import type { CapsuleSessionRecord } from './session-record.js';
 import { capsuleSessionSchema } from '../schema/artifact-schemas.js';
-import type { CapsuleManagerOwnership } from '../types.js';
+import type { CapsuleManagerOwnership } from '../model/lifecycle.js';
 
 type JsonObject = Record<string, unknown>;
 type ValidatedSessionRecord = JsonObject & Omit<CapsuleSessionRecord, 'manager'>;

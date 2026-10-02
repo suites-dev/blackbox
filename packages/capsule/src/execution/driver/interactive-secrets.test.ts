@@ -1,6 +1,9 @@
 import { afterEach, expect, it } from 'vitest';
 
-import type { CapsuleInteractiveEvent, CapsuleInteractiveControl } from '../types.js';
+import type {
+  CapsuleInteractiveEvent,
+  CapsuleInteractiveControl,
+} from '../../model/interaction.js';
 import { runCapsuleDriver } from '../driver-execution.js';
 import {
   cleanDriverProjects,

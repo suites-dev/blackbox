@@ -1,6 +1,6 @@
 import { Ajv2020 } from 'ajv/dist/2020.js';
 
-import type { CapsuleActivityReport } from '../types.js';
+import type { CapsuleActivityReport } from '../model/activity.js';
 import { capsuleActivitiesSchema } from '../schema/artifact-schemas.js';
 
 const ajv = new Ajv2020({ allErrors: true, strict: true });

@@ -1,9 +1,6 @@
-import type {
-  CapsuleCleanupReport,
-  CapsuleDescription,
-  CapsuleRecordedError,
-  CapsuleSessionState,
-} from '../types.js';
+import type { CapsuleCleanupReport, CapsuleDescription } from '../model/lifecycle.js';
+import type { CapsuleRecordedError } from '../model/recorded-error.js';
+import type { CapsuleSessionState } from '../model/session-state.js';
 
 export interface CapsuleRegistryInput {
   readonly projectDirectory: string;
