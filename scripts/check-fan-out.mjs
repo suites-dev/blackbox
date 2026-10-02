@@ -7,7 +7,9 @@ import { fileURLToPath } from 'node:url';
 // this script counts it: a production module may depend on at most LIMIT
 // distinct production modules of the workspace. Usage:
 //   depcruise packages --config .dependency-cruiser.cjs --output-type json |
-//     node scripts/check-fan-out.mjs [allowlist.json]
+//     node scripts/check-fan-out.mjs
+// The allowlist is always scripts/fan-out-allowlist.json; tests pass their own
+// to checkFanOut instead.
 
 export const LIMIT = 12;
 
@@ -78,8 +80,9 @@ async function readStdin() {
 }
 
 if (argv[1] === fileURLToPath(import.meta.url)) {
-  const allowlistPath = argv[2] ?? new URL('fan-out-allowlist.json', import.meta.url);
-  const allowlist = JSON.parse(readFileSync(allowlistPath, 'utf8'));
+  const allowlist = JSON.parse(
+    readFileSync(new URL('fan-out-allowlist.json', import.meta.url), 'utf8'),
+  );
   const problems = checkFanOut({ cruise: JSON.parse(await readStdin()), allowlist });
   for (const problem of problems) {
     console.error(`error fan-out: ${problem}`);
