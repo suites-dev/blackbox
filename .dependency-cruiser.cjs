@@ -222,15 +222,7 @@ module.exports = {
       name: 'no-circular',
       severity: 'error',
       comment:
-        'A runtime cycle between modules: load order then decides which side sees the other half-initialized. The layer rules cover the package-level case that has no module cycle.',
-      from: {},
-      to: { circular: true, viaOnly: { dependencyTypesNot: ['type-only'] } },
-    },
-    {
-      name: 'no-circular-through-types',
-      severity: 'warn',
-      comment:
-        'A cycle that closes only through a type-only import. It is erased at compile time, so it cannot misorder module loading, but it still couples the two modules. Nine exist in capsule, sandbox and report-server (2026-10-02); move the shared types to a leaf module, then raise this to error.',
+        'A cycle between modules, type-only edges included. A runtime cycle lets load order decide which side sees the other half-initialized; a type-only one still ties two modules together. Move the shared declarations into a leaf module. The layer rules cover the package-level case that has no module cycle.',
       from: {},
       to: { circular: true },
     },

@@ -67,7 +67,7 @@ only packages in a lower tier:
 | services    | `skills`, `driver`                                                                           |
 | foundation  | `cli-contract`, `telemetry`, `instrumentation`, `otel-collector`, `report-server`, `sandbox` |
 
-The same check rejects runtime import cycles, relative or deep imports into another
+The same check rejects import cycles (type-only ones included), relative or deep imports into another
 package, imports that miss the target's `exports`, and npm or workspace imports the
 importing package does not declare. Only `playwright` imports `@playwright/test` or a
 runtime adapter. A new package must be added to a tier in the config, or the check
