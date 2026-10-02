@@ -24,6 +24,7 @@ export function observationDetail(observation: CapsuleAcquisitionObservation): s
   }
 }
 
+// eslint-disable-next-line complexity -- one return per CapsuleProgressEvent kind; the exhaustive switch grows only with that event union
 export function progressDetail(event: CapsuleProgressEvent): string {
   switch (event.kind) {
     case 'session-admitted':

@@ -1,24 +1,10 @@
 import { StringDecoder } from 'node:string_decoder';
 
+import type { RetainedOutput } from './output/retained-output.js';
 import { redactRetainedOutput } from './output/retained-redaction.js';
 
 const RETAINED_BYTES = 1_048_576;
 const RETAINED_EDGE_BYTES = RETAINED_BYTES / 2;
-
-export type RetainedOutput =
-  | {
-      readonly kind: 'complete';
-      readonly text: string;
-      readonly originalBytes: number;
-    }
-  | {
-      readonly kind: 'truncated';
-      readonly head: string;
-      readonly tail: string;
-      readonly originalBytes: number;
-      readonly retainedBytes: number;
-      readonly omittedBytes: number;
-    };
 
 export interface OutputRetention {
   append(chunk: Buffer): void;

@@ -1,4 +1,4 @@
-import type { RetainedOutput } from '../output-retention.js';
+import type { RetainedOutput } from './retained-output.js';
 import { redactValues } from './value-redaction.js';
 
 function redactEdge(input: {

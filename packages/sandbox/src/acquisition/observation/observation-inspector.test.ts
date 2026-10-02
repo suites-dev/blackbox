@@ -104,6 +104,7 @@ it.each([
   ['surprise', { kind: 'reported', status: 'surprise' }, 'unknown', 'unknown', { kind: 'none' }],
 ])(
   'preserves %s failure/unknown states without exposing logs or environment',
+  // eslint-disable-next-line max-params -- it.each callback receives one parameter per table column (state, health, expected state, expected health, termination)
   async (state, health, expectedState, expectedHealth, termination) => {
     const fixture = inspectorFixture();
     fixture.inspect.mockResolvedValue({

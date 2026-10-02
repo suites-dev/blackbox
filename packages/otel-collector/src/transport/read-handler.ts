@@ -9,6 +9,7 @@ import {
 import { readCollectorActivity } from '../storage/activity-reader.js';
 import { RequestFailure, writeJson } from './response.js';
 
+// eslint-disable-next-line complexity -- routes the read sub-endpoints (session, traces, activities) with path, method and identifier checks per route
 export async function serveCollectorRead(input: {
   readonly request: IncomingMessage;
   readonly response: ServerResponse;

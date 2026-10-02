@@ -44,6 +44,7 @@ export async function validateSandboxInput(input: SandboxInput): Promise<void> {
   await validateTelemetry(input);
 }
 
+// eslint-disable-next-line complexity -- validates every telemetry activation field (identifiers, token pair, collector service, endpoint) with a distinct error per field
 async function validateTelemetry(input: SandboxInput): Promise<void> {
   if (input.telemetry.kind === 'disabled') {
     return;

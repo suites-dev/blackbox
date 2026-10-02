@@ -49,6 +49,7 @@ function claimChecks(audit: Audit): readonly Diagnostic[] {
   return errors;
 }
 
+// eslint-disable-next-line complexity -- one diagnostic per runtime-outcome invariant of the audit (execution identity, stage results, claims)
 export function outcomeChecks(audit: Audit): readonly Diagnostic[] {
   const errors = [...claimChecks(audit)];
   if (

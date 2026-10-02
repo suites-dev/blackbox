@@ -38,6 +38,7 @@ function commonFields(value: object): value is object & CommonLockFields {
   );
 }
 
+// eslint-disable-next-line complexity -- decodes both ProcessOwner variants with per-field type guards; the Linux process-instance variant alone carries four checked fields
 function decodeOwner(value: unknown): ProcessOwner | null {
   if (typeof value !== 'object' || value === null || !('kind' in value) || !('pid' in value)) {
     return null;

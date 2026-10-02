@@ -1,14 +1,9 @@
 import type { ReportProvider } from './provider.js';
 import type { ReportSelection, ReportServer } from './server.js';
 
-export const DEFAULT_REPORT_PORT = 4310;
+export type { ReportServerIdentity } from './server-identity.js';
 
-export interface ReportServerIdentity {
-  readonly kind: 'report-server-identity';
-  readonly schemaVersion: 1;
-  readonly scopeId: string;
-  readonly providerTypes: readonly string[];
-}
+export const DEFAULT_REPORT_PORT = 4310;
 
 export interface EnsureReportServerInput {
   readonly kind: 'ensure-report-server';

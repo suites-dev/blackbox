@@ -58,6 +58,7 @@ function terminal(value: unknown): void {
   }
 }
 
+// eslint-disable-next-line complexity -- validates every CapsuleManagerClientFrame kind at the IPC trust boundary, one case per frame kind with its field checks inline
 function validateFrame(value: unknown): CapsuleManagerClientFrame {
   const item = record(value);
   text(item.kind, 'kind');

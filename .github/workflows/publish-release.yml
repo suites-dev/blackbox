@@ -110,6 +110,7 @@ jobs:
       - name: Validate source
         run: |
           pnpm run lint
+          pnpm run check:deps
           pnpm run typecheck
           pnpm run test
 

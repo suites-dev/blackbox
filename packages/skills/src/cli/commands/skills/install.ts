@@ -30,6 +30,7 @@ export default class SkillsInstall extends Command {
     }),
   };
 
+  // eslint-disable-next-line complexity -- oclif command body that resolves target agents from four flags, the --yes default and the interactive prompt before delegating
   public async run(): Promise<void> {
     const { args, flags } = await this.parse(SkillsInstall);
     const modules = readCliSkillModules(this.config);

@@ -47,11 +47,11 @@
   "dependencies": {
     "@suites/blackbox-catalog": "workspace:*",
     "@suites/blackbox-cli": "workspace:*",
+    "@suites/blackbox-cli-contract": "workspace:*",
     "@suites/blackbox-discovery": "workspace:*",
     "@suites/blackbox-skills": "workspace:*"
   },
   "devDependencies": {
-    "@suites/blackbox-cli-contract": "workspace:*",
     "@types/node": "catalog:",
     "rimraf": "catalog:",
     "typescript": "catalog:",

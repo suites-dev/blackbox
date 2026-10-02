@@ -161,6 +161,7 @@ it.each([
   ['GET', '/v1/traces', 'application/json', undefined, 405],
   ['GET', '/missing', 'application/json', undefined, 404],
   ['GET', '/status/traces/%zz', 'application/json', undefined, 400],
+// eslint-disable-next-line max-params -- it.each callback receives one parameter per table column (method, path, content type, body, status)
 ] as const)('rejects malformed %s %s safely', async (method, path, contentType, body, status) => {
   await withCollector(async ({ collector }) => {
     const response = await fetch(`${collector.endpoint.baseUrl}${path}`, {

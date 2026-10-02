@@ -1,8 +1,7 @@
 import { inspectedHostPort, type ContainerInspection } from './docker-inspection.fixture.js';
-import type { ProofContext } from './concurrency-proof.fixture.js';
 
 export function logProof(input: {
-  readonly context: ProofContext;
+  readonly context: { readonly proofToken: string; readonly projectNames: readonly string[] };
   readonly containers: readonly ContainerInspection[];
   readonly ports: readonly number[];
   readonly identities: readonly string[];

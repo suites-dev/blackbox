@@ -113,6 +113,7 @@ function validTelemetry(value: unknown): boolean {
   );
 }
 
+// eslint-disable-next-line complexity -- field-by-field decode of a retained lifecycle record read from disk; each condition rejects one malformed or mismatched field
 export function parseLifecycle(input: {
   readonly text: string;
   readonly identity: { readonly sessionId: string; readonly executionId: string };

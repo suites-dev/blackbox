@@ -76,6 +76,37 @@ jobs:
         timeout-minutes: 15
         run: pnpm run lint
 
+  # Package boundaries from .dependency-cruiser.cjs (layering, cycles, exports,
+  # declared dependencies, fan-in) plus the fan-out check in scripts/. It reads
+  # sources only, so it needs no build.
+  deps:
+    name: Dependency boundaries (dependency-cruiser)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup toolchain
+        uses: ./.github/actions/setup
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          pnpm-version: ${{ env.PNPM_VERSION }}
+
+      - name: Test the fan-out check
+        timeout-minutes: 5
+        run: node --test scripts/check-fan-out.test.mjs
+
+      - name: Check dependency boundaries
+        timeout-minutes: 5
+        run: pnpm run check:deps
+
+      # Report only: coupling (Ca, Ce, instability) and size per production
+      # module and folder, for choosing metric thresholds. Nothing gates on it.
+      - name: Report coupling metrics
+        timeout-minutes: 5
+        run: pnpm run report:deps-metrics
+
   test:
     name: Package Tests
     runs-on: ubuntu-24.04
@@ -106,7 +137,7 @@ jobs:
   # diagnosable result; this job only folds them into a single verdict.
   gate:
     name: CI Gate
-    needs: [build, lint, test]
+    needs: [build, lint, deps, test]
     if: always()
     runs-on: ubuntu-24.04
     timeout-minutes: 5
@@ -115,12 +146,14 @@ jobs:
         env:
           BUILD_RESULT: ${{ needs.build.result }}
           LINT_RESULT: ${{ needs.lint.result }}
+          DEPS_RESULT: ${{ needs.deps.result }}
           TEST_RESULT: ${{ needs.test.result }}
         run: |
           status=0
           for lane in \
             "build=$BUILD_RESULT" \
             "lint=$LINT_RESULT" \
+            "deps=$DEPS_RESULT" \
             "test=$TEST_RESULT"; do
             printf '%s\n' "$lane"
             [[ "${lane#*=}" == success ]] || status=1

@@ -10,7 +10,7 @@ import type {
   TelemetryPropagationRecord,
 } from '@suites/blackbox-telemetry';
 
-import type { CapsuleOperationFailure, CapsuleRecordedError } from '../types.js';
+import type { CapsuleOperationFailure, CapsuleRecordedError } from '../model/failure.js';
 
 export type CapsuleActivityPurpose = 'setup' | 'stimulus' | 'inspection';
 

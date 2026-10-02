@@ -15,6 +15,8 @@ mkdir -p .blackbox/tmp
 validation_run_dir=$(mktemp -d .blackbox/tmp/agent-validation.XXXXXX)
 node .github/scripts/ci-evidence.mjs run --lane lint --project workspace \
   --evidence-dir "$validation_run_dir/lint" -- pnpm lint
+node .github/scripts/ci-evidence.mjs run --lane deps --project workspace \
+  --evidence-dir "$validation_run_dir/deps" -- pnpm check:deps
 node .github/scripts/ci-evidence.mjs run --lane typecheck --project workspace \
   --evidence-dir "$validation_run_dir/typecheck" -- pnpm typecheck
 node .github/scripts/ci-evidence.mjs run --lane test --project workspace \
@@ -36,14 +38,15 @@ collect final results against the final relevant tree.
 
 ## Select the actual test lane
 
-| Command                                                             | What it establishes                             | What it does not establish                       |
-| ------------------------------------------------------------------- | ----------------------------------------------- | ------------------------------------------------ |
-| `pnpm lint`                                                         | Source-layout rules and package ESLint checks   | Type safety, behavior, Bash correctness          |
-| `pnpm typecheck`                                                    | Root TypeScript source/test compilation         | Runtime behavior or Docker fixture correctness   |
-| `pnpm test`                                                         | Build, then workspace package test scripts      | Separate integration scripts or Capsule Bash E2E |
-| `pnpm --filter @suites/blackbox-instrumentation test:integration`   | Instrumentation integration lane                | Other packages' integration coverage             |
-| `pnpm --filter @suites/blackbox-inst-runtime-node test:integration` | Node runtime instrumentation integration lane   | Full registry consumer acceptance                |
-| `pnpm run test:demo </dev/null`                                     | Published CLI and Docker-backed Capsule journey | Independent review or all unit-test branches     |
+| Command                                                             | What it establishes                               | What it does not establish                       |
+| ------------------------------------------------------------------- | ------------------------------------------------- | ------------------------------------------------ |
+| `pnpm lint`                                                         | Source-layout rules and package ESLint checks     | Type safety, behavior, Bash correctness          |
+| `pnpm check:deps`                                                   | Package layering, cycles, declared deps, coupling | Whether an import is used correctly at runtime   |
+| `pnpm typecheck`                                                    | Root TypeScript source/test compilation           | Runtime behavior or Docker fixture correctness   |
+| `pnpm test`                                                         | Build, then workspace package test scripts        | Separate integration scripts or Capsule Bash E2E |
+| `pnpm --filter @suites/blackbox-instrumentation test:integration`   | Instrumentation integration lane                  | Other packages' integration coverage             |
+| `pnpm --filter @suites/blackbox-inst-runtime-node test:integration` | Node runtime instrumentation integration lane     | Full registry consumer acceptance                |
+| `pnpm run test:demo </dev/null`                                     | Published CLI and Docker-backed Capsule journey   | Independent review or all unit-test branches     |
 
 Inspect changed packages' scripts and runner configs before selecting targeted
 commands. Instrumentation default Vitest configs exclude `*.integration.test.ts`.

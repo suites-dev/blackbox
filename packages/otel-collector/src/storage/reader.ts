@@ -20,6 +20,7 @@ export function isMissing(error: unknown): boolean {
   return error instanceof Error && 'code' in error && error.code === 'ENOENT';
 }
 
+// eslint-disable-next-line complexity -- one shape guard over every field of a retained fragment, so a mismatched session, execution or sequence is rejected in one place
 function parseFragment(input: {
   readonly text: string;
   readonly identity: ReadCollectorSessionInput;
