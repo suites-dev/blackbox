@@ -34,6 +34,32 @@ and `--json`. `skill install` remains an alias.
 
 ## Typical flow
 
+For agent-guided adoption, install the CLI-owned `blackbox` entry skill using the
+selected Skills plugin:
+
+```sh
+blackbox skills list --json
+blackbox skills install blackbox --codex --gitignore
+```
+
+This copies the skill and its reference into `.agents/skills/blackbox/`. Use
+`--cursor` for the same destination or `--claude` for `.claude/skills/blackbox/`.
+Once the host discovers the copy, invoke `$blackbox` there. The command does not
+start or refresh the agent. `--gitignore` is optional and ignores only successful
+skill destinations.
+
+The entry skill explains Blackbox and routes to available Discovery, Catalog, or
+Capsule skills. Those are optional integrations: installing `blackbox` does not
+install their packages or copy their skills. The project must select
+`@suites/blackbox-skills` for the installation command, plus whichever providers
+it needs. Missing providers are reported, not installed automatically.
+
+The CLI exports `skillModule` from `@suites/blackbox-cli/skills` and `blackboxSkill`
+from `@suites/blackbox-cli/skills/blackbox`; use the descriptor's `source` URL to
+locate the portable content. The generic Skills package owns no concrete skills.
+
+For an already configured project, the command-level flow is:
+
 ```text
 blackbox inst install --runtime node
 blackbox catalog validate --json

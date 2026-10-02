@@ -24,6 +24,7 @@ or imports packages.
 
 This separation is intentional:
 
+- `@suites/blackbox-cli` contributes the `blackbox` entry skill from the root plugin.
 - `@suites/blackbox-discovery` contributes `discovery` and owns its executable helpers.
 - `@suites/blackbox-catalog` contributes `catalog`.
 - `@suites/blackbox-capsule` contributes `capsule`.

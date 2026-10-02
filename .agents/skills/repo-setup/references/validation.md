@@ -52,6 +52,13 @@ Node's test runner; do not send it Vitest flags. Build before targeted CLI tests
 that exercise generated executable output. A filename alone does not establish
 which lane discovers it.
 
+For package skill exports, assets, or CLI composition changes, also run
+`pnpm test:e2e:skills`. It packs the CLI, contracts, Skills, and Discovery into an
+isolated consumer and exercises their public exports and copy commands without
+Docker. The lane covers the CLI-owned `blackbox` skill for all three hosts, optional
+provider absence, and loading the CLI without the optional Skills peer. Package
+tests alone do not prove that the portable files were included in npm archives.
+
 `e2e/` is not a pnpm workspace package; do not substitute its older Playwright
 scripts for the active Bash CI acceptance lane. Read the Capsule skill before
 running that lane because asset preparation resets local E2E state.

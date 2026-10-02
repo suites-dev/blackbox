@@ -5,6 +5,7 @@ import { createRequire } from 'node:module';
 import { isBlackboxCliPluginPackage } from '@suites/blackbox-cli-contract';
 
 interface ProjectManifest {
+  readonly name: unknown;
   readonly dependencies: Record<string, string>;
   readonly devDependencies: Record<string, string>;
 }
@@ -82,6 +83,10 @@ async function pluginsFromManifest(
   projectPath: string,
   manifest: ProjectManifest,
 ): Promise<readonly string[]> {
+  // A published CLI's own build/peer dependencies do not select consumer plugins.
+  if (manifest.name === '@suites/blackbox-cli') {
+    return [];
+  }
   const names = Object.keys({ ...manifest.dependencies, ...manifest.devDependencies }).sort();
   const requireFromProject = createRequire(join(projectPath, 'package.json'));
   const plugins: string[] = [];
@@ -115,6 +120,7 @@ async function discoverFromAncestors(startDirectory: string): Promise<CliPluginD
       const manifestPath = join(current, 'package.json');
       const manifest = JSON.parse(await readFile(manifestPath, 'utf8')) as Record<string, unknown>;
       const plugins = await pluginsFromManifest(current, {
+        name: manifest.name,
         dependencies: dependencyMap(manifest.dependencies),
         devDependencies: dependencyMap(manifest.devDependencies),
       });
@@ -147,6 +153,7 @@ export async function discoverProjectCliPlugins(
       await readFile(join(sourceRoot, 'package.json'), 'utf8'),
     ) as Record<string, unknown>;
     const plugins = await pluginsFromManifest(sourceRoot, {
+      name: rootManifest.name,
       dependencies: dependencyMap(rootManifest.dependencies),
       devDependencies: dependencyMap(rootManifest.devDependencies),
     });
@@ -162,6 +169,7 @@ export async function discoverProjectCliPlugins(
       await readFile(join(projectPath, 'package.json'), 'utf8'),
     ) as Record<string, unknown>;
     const plugins = await pluginsFromManifest(projectPath, {
+      name: projectManifest.name,
       dependencies: dependencyMap(projectManifest.dependencies),
       devDependencies: dependencyMap(projectManifest.devDependencies),
     });
@@ -191,6 +199,7 @@ export async function discoverProjectCliPlugins(
     unknown
   >;
   const plugins = await pluginsFromManifest(root, {
+    name: rootManifest.name,
     dependencies: dependencyMap(rootManifest.dependencies),
     devDependencies: dependencyMap(rootManifest.devDependencies),
   });

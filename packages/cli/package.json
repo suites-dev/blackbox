@@ -11,11 +11,24 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./skills": {
+      "blackbox-source": "./src/skills.ts",
+      "types": "./dist/skills.d.ts",
+      "import": "./dist/skills.js",
+      "default": "./dist/skills.js"
+    },
+    "./skills/blackbox": {
+      "blackbox-source": "./src/skills.ts",
+      "types": "./dist/skills.d.ts",
+      "import": "./dist/skills.js",
+      "default": "./dist/skills.js"
     }
   },
   "files": [
     "dist",
     "bin",
+    "skills",
     "README.md",
     "LICENSE",
     "NOTICE"
@@ -34,9 +47,24 @@
     "string-width": "8.3.0"
   },
   "devDependencies": {
+    "@suites/blackbox-skills": "workspace:*",
     "@types/node": "catalog:",
     "rimraf": "catalog:",
     "typescript": "catalog:"
+  },
+  "peerDependencies": {
+    "@suites/blackbox-skills": "workspace:*"
+  },
+  "peerDependenciesMeta": {
+    "@suites/blackbox-skills": {
+      "optional": true
+    }
+  },
+  "blackbox": {
+    "skills": {
+      "apiVersion": 1,
+      "export": "./skills"
+    }
   },
   "oclif": {
     "bin": "blackbox",

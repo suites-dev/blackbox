@@ -256,6 +256,9 @@ importers:
         specifier: 8.3.0
         version: 8.3.0
     devDependencies:
+      '@suites/blackbox-skills':
+        specifier: workspace:*
+        version: link:../skills
       '@types/node':
         specifier: 'catalog:'
         version: 26.6.3
