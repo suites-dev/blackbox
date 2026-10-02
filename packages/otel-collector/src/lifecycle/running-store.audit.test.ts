@@ -3,7 +3,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { expect, test } from 'vitest';
 
-import type { CollectorEndpoint, CollectorLifecycleRecord } from '../model/types.js';
+import type { CollectorEndpoint } from '../model/endpoint.js';
+import type { CollectorLifecycleRecord } from '../model/lifecycle.js';
 import type { CollectorStorageLease } from '../storage/lease.js';
 import { fragmentDirectory, sessionDirectory } from '../storage/paths.js';
 import { RunningCollectorStore } from './running-store.js';

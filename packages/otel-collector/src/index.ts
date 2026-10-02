@@ -21,26 +21,26 @@ export {
 export { startCollector } from './transport/server.js';
 export { packagedCollectorRuntime } from './runtime.js';
 export type { PackagedCollectorRuntime } from './runtime.js';
+export type { CollectorCloseResult, CollectorHandle, CollectorStatus } from './model/handle.js';
 export type {
-  CollectorCloseResult,
   ActivateCollectorInput,
   CollectorActivationRecord,
-  CollectorActivityReadResult,
-  CollectorEndpoint,
-  CollectorFailure,
-  CollectorHandle,
-  CollectorIdentity,
   CollectorLifecycleRecord,
   CollectorInstrumentationStatus,
+  CollectorTelemetryStatus,
+} from './model/lifecycle.js';
+export type {
+  CollectorActivityReadResult,
   CollectorSessionReadResult,
   CollectorSnapshotReadResult,
-  CollectorStatus,
-  CollectorTelemetryStatus,
   CollectorTraceReadResult,
   CollectorTracesReadResult,
   ReadCollectorSessionInput,
   ReadCollectorActivityInput,
   ReadCollectorTraceInput,
-  StartCollectorInput,
-  TraceFragment,
-} from './model/types.js';
+} from './model/reads.js';
+export type { CollectorEndpoint } from './model/endpoint.js';
+export type { CollectorFailure } from './model/failure.js';
+export type { CollectorIdentity } from './model/identity.js';
+export type { StartCollectorInput } from './model/config.js';
+export type { TraceFragment } from './model/fragments.js';

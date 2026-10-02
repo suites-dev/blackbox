@@ -1,8 +1,5 @@
-import type {
-  CollectorLifecycleRecord,
-  CollectorTracesReadResult,
-  ReadCollectorSessionInput,
-} from '../model/types.js';
+import type { CollectorLifecycleRecord } from '../model/lifecycle.js';
+import type { CollectorTracesReadResult, ReadCollectorSessionInput } from '../model/reads.js';
 import { recordedFailure, validateIdentity } from '../model/validation.js';
 import { filterTraceRequest, traceIdsInRequest } from '../otlp/json.js';
 import { assertInventory, identity, isMissing, readFragments, readLifecycle } from './reader.js';

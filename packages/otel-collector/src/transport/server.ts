@@ -1,11 +1,8 @@
 import { createServer, type Server } from 'node:http';
 import { randomUUID } from 'node:crypto';
-import type {
-  CollectorCloseResult,
-  CollectorEndpoint,
-  CollectorHandle,
-  StartCollectorInput,
-} from '../model/types.js';
+import type { CollectorCloseResult, CollectorHandle } from '../model/handle.js';
+import type { CollectorEndpoint } from '../model/endpoint.js';
+import type { StartCollectorInput } from '../model/config.js';
 import { type CollectorStore, createCollectorStore } from '../lifecycle/store.js';
 import { acquireStorageLease, type CollectorStorageLease } from '../storage/lease.js';
 import { handleCollectorRequest } from './http-handler.js';

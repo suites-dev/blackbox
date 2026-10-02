@@ -1,16 +1,18 @@
 import { readFile, readdir } from 'node:fs/promises';
+import type { CollectorFailure } from '../model/failure.js';
+import type { CollectorIdentity } from '../model/identity.js';
 import type {
-  CollectorFailure,
-  CollectorIdentity,
   CollectorSessionReadResult,
   CollectorTraceReadResult,
-  CollectorLifecycleRecord,
   ReadCollectorSessionInput,
   ReadCollectorTraceInput,
+} from '../model/reads.js';
+import type { CollectorLifecycleRecord } from '../model/lifecycle.js';
+import type {
   RetainedFragment,
   RetainedFragmentSummary,
   TraceFragment,
-} from '../model/types.js';
+} from '../model/fragments.js';
 import { fragmentDirectory, lifecyclePath } from './paths.js';
 import { parseLifecycle } from '../lifecycle/store.js';
 import { filterTraceRequest, traceIdsInRequest, validateOtlpTraceRequest } from '../otlp/json.js';

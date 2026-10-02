@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { expect, it } from 'vitest';
 import { startCollector } from '../index.js';
-import type { StartCollectorInput } from './types.js';
+import type { StartCollectorInput } from './config.js';
 
 function validInput(storageDirectory: string): StartCollectorInput {
   return {

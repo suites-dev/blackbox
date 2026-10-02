@@ -1,5 +1,5 @@
 import { join } from 'node:path';
-import type { CollectorIdentity } from '../model/types.js';
+import type { CollectorIdentity } from '../model/identity.js';
 
 export function sessionDirectory(
   input: CollectorIdentity & { readonly storageDirectory: string },

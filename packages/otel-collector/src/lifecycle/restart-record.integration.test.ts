@@ -6,7 +6,8 @@ import { expect, it } from 'vitest';
 import { readCollectorSession, startCollector } from '../index.js';
 import { lifecyclePath } from '../storage/paths.js';
 import { collectorControlToken, collectorToken } from '../test-fixtures/collector.js';
-import type { CollectorHandle, StartCollectorInput } from '../model/types.js';
+import type { CollectorHandle } from '../model/handle.js';
+import type { StartCollectorInput } from '../model/config.js';
 
 function input(storageDirectory: string): StartCollectorInput {
   return {

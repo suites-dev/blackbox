@@ -1,8 +1,5 @@
-import type {
-  CollectorActivityReadResult,
-  ReadCollectorActivityInput,
-  TraceFragment,
-} from '../model/types.js';
+import type { CollectorActivityReadResult, ReadCollectorActivityInput } from '../model/reads.js';
+import type { TraceFragment } from '../model/fragments.js';
 import { recordedFailure, validateIdentity, validateNonBlankField } from '../model/validation.js';
 import { filterActivityRequest, traceIdsInRequest } from '../otlp/json.js';
 import {

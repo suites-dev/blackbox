@@ -1,11 +1,1 @@
-[
-  {
-    "type": "module",
-    "from": "packages/otel-collector/src/model/types.ts",
-    "to": "packages/otel-collector/src/model/types.ts",
-    "rule": {
-      "severity": "error",
-      "name": "no-high-fan-in"
-    }
-  }
-]
+[]
