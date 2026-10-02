@@ -1,15 +1,21 @@
 import { join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { ModuleLoader, type Interfaces } from '@oclif/core';
 import { resolve } from 'import-meta-resolve';
+import { ModuleLoader, Plugin } from '@oclif/core';
 
-type SkillModuleLoader = (specifier: string, plugin: Interfaces.Plugin) => unknown;
+interface SkillSource {
+  readonly name: string;
+  readonly root: string;
+  readonly pjson: unknown;
+}
+
+type SkillModuleLoader = (specifier: string, plugin: SkillSource) => unknown;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-function skillModuleExport(plugin: Interfaces.Plugin): string | null {
+function skillModuleExport(plugin: SkillSource): string | null {
   const manifest = plugin.pjson;
   if (!isRecord(manifest)) {
     throw new Error(`Blackbox plugin ${plugin.name} has an invalid package manifest.`);
@@ -28,13 +34,16 @@ function skillModuleExport(plugin: Interfaces.Plugin): string | null {
 
 const loadModule: SkillModuleLoader = (specifier, plugin) => {
   const parent = pathToFileURL(join(plugin.root, 'package.json')).href;
-  const entrypoint = fileURLToPath(resolve(specifier, parent));
-  return ModuleLoader.load<unknown>(plugin, entrypoint);
+  // Resolve ESM conditions from the provider first; oclif only loads the exact file.
+  return ModuleLoader.load<unknown>(
+    new Plugin({ root: plugin.root }),
+    fileURLToPath(resolve(specifier, parent)),
+  );
 };
 
-/** Load skill contributions only from the plugin set selected by the CLI composition root. */
+/** Skill-only packages do not need an oclif plugin or an empty command registry. */
 export async function loadCliSkillModules(
-  plugins: ReadonlyMap<string, Interfaces.Plugin>,
+  plugins: ReadonlyMap<string, SkillSource>,
   loader: SkillModuleLoader = loadModule,
 ): Promise<readonly unknown[]> {
   const contributions: unknown[] = [];

@@ -6,7 +6,10 @@ several service boundaries.
 
 ## 1. Open the example project
 
-Complete [installation](installation.md) first, including the `blackbox` shell shortcut. In the same terminal:
+Complete [source installation](installation.md#build-from-source) first, including
+the `blackbox` shell shortcut through the main package. The checkout selects the
+Capsule and Node instrumentation providers used by this tutorial; those are
+separate package choices in a consumer installation. In the same terminal:
 
 ```sh
 cd "$blackbox_checkout/e2e"

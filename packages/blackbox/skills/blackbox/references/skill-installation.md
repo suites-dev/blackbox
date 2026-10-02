@@ -2,15 +2,18 @@
 
 Skills are copied into the project, not loaded dynamically from npm by the agent.
 The generic Skills installer obtains their content through package contributions.
-The CLI package owns `blackbox`; each optional feature package owns its own skill.
+The main `@suites/blackbox` package owns `blackbox`; feature packages own their own
+skills. The main package includes Catalog, Discovery, and the generic Skills installer.
 
 First distinguish the missing layer:
 
-- No installed CLI: the project needs `@suites/blackbox-cli`.
-- No `skills` command: select `@suites/blackbox-skills` in the project's dependencies.
+- No installed CLI: the normal installation is `@suites/blackbox`.
+- No `skills` command: check the main package's installation. A custom low-level
+  composition needs to select `@suites/blackbox-skills` explicitly.
 - No named contribution in `blackbox skills list --json`: its provider is not
-  available in the selected plugin set. Check the project's declared and installed
-  dependencies. A transitive package or an old agent copy is not sufficient.
+  available in the selected module graph. Check the project's declared and installed
+  dependencies and its bundles' module exports. An unselected transitive package
+  or an old agent copy is not sufficient.
 - Contribution listed but host skill unavailable: it needs a project-local copy
   for that host, or the host needs to rediscover an existing copy.
 

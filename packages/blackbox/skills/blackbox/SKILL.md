@@ -23,11 +23,12 @@ blackbox skills list --json
 
 The list describes skills contributed by the selected packages, not skills loaded
 by the agent. Also check the host's available skills before routing. An old copied
-directory, a transitive dependency, or a TypeScript name does not establish current
+directory, an unselected transitive dependency, or a TypeScript name does not establish current
 availability. A failed list command is an unknown inventory, not an empty one.
 
 If the CLI or `skills` command is missing, inspect the project's dependencies and
-explain the missing package (`@suites/blackbox-cli` or `@suites/blackbox-skills`).
+explain that the normal entry package is `@suites/blackbox`, which includes the CLI,
+Skills, Catalog, and Discovery. Low-level custom installations may omit these.
 Do not install or change dependencies without authorization. Read
 [skill installation](references/skill-installation.md) when a needed skill is
 missing, stale, or not visible to the current host.

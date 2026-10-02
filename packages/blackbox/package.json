@@ -1,15 +1,11 @@
 {
-  "name": "@suites/blackbox-discovery",
+  "name": "@suites/blackbox",
   "version": "0.0.1-alpha.0",
   "type": "module",
-  "description": "Discovery audit contracts, validation, boundary planning, and agent skill.",
-  "files": [
-    "dist",
-    "skills",
-    "README.md",
-    "LICENSE",
-    "NOTICE"
-  ],
+  "description": "Blackbox system verification: core modules, CLI, and agent entry skill.",
+  "bin": {
+    "blackbox": "./bin/run.js"
+  },
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
@@ -18,19 +14,33 @@
       "import": "./dist/index.js",
       "default": "./dist/index.js"
     },
+    "./module": {
+      "blackbox-source": "./src/module.ts",
+      "types": "./dist/module.d.ts",
+      "import": "./dist/module.js",
+      "default": "./dist/module.js"
+    },
     "./skills": {
       "blackbox-source": "./src/skills.ts",
       "types": "./dist/skills.d.ts",
       "import": "./dist/skills.js",
       "default": "./dist/skills.js"
     },
-    "./skills/discovery": {
+    "./skills/blackbox": {
       "blackbox-source": "./src/skills.ts",
       "types": "./dist/skills.d.ts",
       "import": "./dist/skills.js",
       "default": "./dist/skills.js"
     }
   },
+  "files": [
+    "dist",
+    "bin",
+    "skills",
+    "README.md",
+    "LICENSE",
+    "NOTICE"
+  ],
   "scripts": {
     "prebuild": "rimraf dist",
     "build": "tsc --project tsconfig.build.json",
@@ -38,20 +48,28 @@
     "lint": "eslint .",
     "test": "vitest run --config vitest.config.ts"
   },
-  "blackbox": {
-    "skills": {
-      "apiVersion": 1,
-      "export": "./skills"
-    }
-  },
   "dependencies": {
+    "@suites/blackbox-catalog": "workspace:*",
+    "@suites/blackbox-cli": "workspace:*",
+    "@suites/blackbox-discovery": "workspace:*",
     "@suites/blackbox-skills": "workspace:*"
   },
   "devDependencies": {
+    "@suites/blackbox-cli-contract": "workspace:*",
     "@types/node": "catalog:",
     "rimraf": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
+  },
+  "blackbox": {
+    "module": {
+      "apiVersion": 1,
+      "export": "./module"
+    },
+    "skills": {
+      "apiVersion": 1,
+      "export": "./skills"
+    }
   },
   "license": "Apache-2.0",
   "engines": {
@@ -64,9 +82,9 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/suites-dev/blackbox.git",
-    "directory": "packages/discovery"
+    "directory": "packages/blackbox"
   },
-  "homepage": "https://github.com/suites-dev/blackbox/tree/main/packages/discovery#readme",
+  "homepage": "https://github.com/suites-dev/blackbox/tree/main/packages/blackbox#readme",
   "bugs": {
     "url": "https://github.com/suites-dev/blackbox/issues"
   },

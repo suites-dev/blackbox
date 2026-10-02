@@ -104,6 +104,12 @@ See [runtime evidence](docs/runtime-evidence.md) for observation and correlation
 
 ## Get started
 
+The default package is [`@suites/blackbox`](packages/blackbox/README.md): CLI,
+Skills, Catalog, Discovery, and the `$blackbox` agent skill. Capsule and Playwright
+are separate adapters (`@suites/blackbox-capsule`, `@suites/blackbox-playwright`).
+The [installation guide](docs/installation.md) explains package selection and the
+current source-only setup; no npm release is implied.
+
 [Install Blackbox](docs/installation.md), then follow [your first Capsule](docs/getting-started.md).
 The tutorial uses an included subscription application with Node services, PostgreSQL, Redis, and LocalStack.
 A guided demo also walks through HTTP and database drivers, observations, and reports.

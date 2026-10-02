@@ -1,8 +1,6 @@
 import { access, readFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
-import { createRequire } from 'node:module';
-
-import { isBlackboxCliPluginPackage } from '@suites/blackbox-cli-contract';
+import { selectPackageModules, type SelectedPackage } from './modules/package-modules.js';
 
 interface ProjectManifest {
   readonly name: unknown;
@@ -17,11 +15,13 @@ export type CliPluginDiscovery =
       readonly kind: 'source-checkout';
       readonly path: string;
       readonly names: readonly string[];
+      readonly packages: readonly SelectedPackage[];
     }
   | {
       readonly kind: 'installed-consumer';
       readonly path: string;
       readonly names: readonly string[];
+      readonly packages: readonly SelectedPackage[];
     };
 
 function dependencyMap(value: unknown): Record<string, string> {
@@ -82,53 +82,43 @@ async function isBlackboxSourceRoot(directory: string): Promise<boolean> {
 async function pluginsFromManifest(
   projectPath: string,
   manifest: ProjectManifest,
-): Promise<readonly string[]> {
+): Promise<readonly SelectedPackage[]> {
   // A published CLI's own build/peer dependencies do not select consumer plugins.
   if (manifest.name === '@suites/blackbox-cli') {
     return [];
   }
   const names = Object.keys({ ...manifest.dependencies, ...manifest.devDependencies }).sort();
-  const requireFromProject = createRequire(join(projectPath, 'package.json'));
-  const plugins: string[] = [];
-  for (const name of names) {
-    if (!name.startsWith('@suites/blackbox-')) {
-      continue;
-    }
-    try {
-      const entry = requireFromProject.resolve(name);
-      const packageDirectory = await nearestPackageDirectory(dirname(entry));
-      if (packageDirectory === null) {
-        continue;
-      }
-      const packageManifest = JSON.parse(
-        await readFile(join(packageDirectory, 'package.json'), 'utf8'),
-      ) as unknown;
-      if (isBlackboxCliPluginPackage(packageManifest)) {
-        plugins.push(name);
-      }
-    } catch {
-      // An unresolved optional package is absent, not a host failure.
-    }
-  }
-  return plugins;
+  return selectPackageModules(projectPath, names);
 }
 
 async function discoverFromAncestors(startDirectory: string): Promise<CliPluginDiscovery | null> {
   let current = startDirectory;
   for (;;) {
+    let manifest: Record<string, unknown> | undefined;
     try {
       const manifestPath = join(current, 'package.json');
-      const manifest = JSON.parse(await readFile(manifestPath, 'utf8')) as Record<string, unknown>;
+      manifest = JSON.parse(await readFile(manifestPath, 'utf8')) as Record<string, unknown>;
+    } catch (error) {
+      if (!(error instanceof Error && 'code' in error && error.code === 'ENOENT')) {
+        throw error;
+      }
+    }
+    // Package contributions are not consumer roots. Their build dependencies
+    // must never replace the application's explicit module selection.
+    if (manifest !== undefined && manifest.blackbox === undefined) {
       const plugins = await pluginsFromManifest(current, {
         name: manifest.name,
         dependencies: dependencyMap(manifest.dependencies),
         devDependencies: dependencyMap(manifest.devDependencies),
       });
       if (plugins.length > 0) {
-        return { kind: 'installed-consumer', path: current, names: plugins };
+        return {
+          kind: 'installed-consumer',
+          path: current,
+          names: plugins.map(({ name }) => name),
+          packages: plugins,
+        };
       }
-    } catch {
-      // An ancestor without a readable manifest is not a composition root.
     }
     const parent = dirname(current);
     if (parent === current) {
@@ -158,12 +148,23 @@ export async function discoverProjectCliPlugins(
       devDependencies: dependencyMap(rootManifest.devDependencies),
     });
     if (plugins.length > 0) {
-      return { kind: 'source-checkout', path: sourceRoot, names: plugins };
+      return {
+        kind: 'source-checkout',
+        path: sourceRoot,
+        names: plugins.map(({ name }) => name),
+        packages: plugins,
+      };
     }
   }
 
+  // Choose the installed consumer before importing any working-directory
+  // contributions. An unrelated project's modules must not execute speculatively.
+  const installed = await discoverFromAncestors(installationDirectory);
+  if (installed !== null) {
+    return installed;
+  }
+
   const projectPath = await nearestPackageDirectory(startDirectory);
-  let projectResult: CliPluginDiscovery | null = null;
   if (projectPath !== null) {
     const projectManifest = JSON.parse(
       await readFile(join(projectPath, 'package.json'), 'utf8'),
@@ -174,20 +175,13 @@ export async function discoverProjectCliPlugins(
       devDependencies: dependencyMap(projectManifest.devDependencies),
     });
     if (plugins.length > 0) {
-      projectResult = { kind: 'installed-consumer', path: projectPath, names: plugins };
+      return {
+        kind: 'installed-consumer',
+        path: projectPath,
+        names: plugins.map(({ name }) => name),
+        packages: plugins,
+      };
     }
-  }
-
-  // A packed CLI is installed below the consumer's node_modules directory.
-  // The consumer manifest, rather than the CLI package manifest, owns the
-  // feature dependencies that compose its command surface.
-  const installed = await discoverFromAncestors(installationDirectory);
-  if (installed !== null) {
-    return installed;
-  }
-
-  if (projectResult !== null) {
-    return projectResult;
   }
 
   const root = await workspaceRoot(installationDirectory);
@@ -203,5 +197,12 @@ export async function discoverProjectCliPlugins(
     dependencies: dependencyMap(rootManifest.dependencies),
     devDependencies: dependencyMap(rootManifest.devDependencies),
   });
-  return plugins.length === 0 ? null : { kind: 'source-checkout', path: root, names: plugins };
+  return plugins.length === 0
+    ? null
+    : {
+        kind: 'source-checkout',
+        path: root,
+        names: plugins.map(({ name }) => name),
+        packages: plugins,
+      };
 }

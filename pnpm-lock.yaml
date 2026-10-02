@@ -91,6 +91,9 @@ importers:
       '@manypkg/cli':
         specifier: ^0.25.1
         version: 0.25.1
+      '@suites/blackbox':
+        specifier: workspace:*
+        version: link:packages/blackbox
       '@suites/blackbox-capsule':
         specifier: workspace:*
         version: link:packages/capsule
@@ -151,6 +154,37 @@ importers:
       typescript-eslint:
         specifier: 'catalog:'
         version: 8.59.1(eslint@10.11.0(jiti@2.6.1))(typescript@5.7.3)
+      vitest:
+        specifier: 'catalog:'
+        version: 5.0.1(@types/node@26.6.3)(@vitest/coverage-v8@5.0.1)(vite@7.3.6(@types/node@26.6.3)(jiti@2.6.1)(tsx@4.23.13)(yaml@2.9.1))
+
+  packages/blackbox:
+    dependencies:
+      '@suites/blackbox-catalog':
+        specifier: workspace:*
+        version: link:../catalog
+      '@suites/blackbox-cli':
+        specifier: workspace:*
+        version: link:../cli
+      '@suites/blackbox-discovery':
+        specifier: workspace:*
+        version: link:../discovery
+      '@suites/blackbox-skills':
+        specifier: workspace:*
+        version: link:../skills
+    devDependencies:
+      '@suites/blackbox-cli-contract':
+        specifier: workspace:*
+        version: link:../cli-contract
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.6.3
+      rimraf:
+        specifier: 'catalog:'
+        version: 6.1.3
+      typescript:
+        specifier: 'catalog:'
+        version: 5.7.3
       vitest:
         specifier: 'catalog:'
         version: 5.0.1(@types/node@26.6.3)(@vitest/coverage-v8@5.0.1)(vite@7.3.6(@types/node@26.6.3)(jiti@2.6.1)(tsx@4.23.13)(yaml@2.9.1))
@@ -256,9 +290,6 @@ importers:
         specifier: 8.3.0
         version: 8.3.0
     devDependencies:
-      '@suites/blackbox-skills':
-        specifier: workspace:*
-        version: link:../skills
       '@types/node':
         specifier: 'catalog:'
         version: 26.6.3

@@ -1,16 +1,55 @@
 # Install Blackbox
 
-Build the Blackbox CLI from source, then use it from the directory of the
-application you want to investigate.
+`@suites/blackbox` is the default entry package. It includes the CLI, skill
+installer, Catalog, Discovery, and the `$blackbox` skill. Add execution adapters
+separately, then run Blackbox from the application you want to investigate.
 
 > **Alpha distribution:** The release infrastructure is prepared, but this change
 > does not publish packages to npm. Use the source installation until an alpha is
 > explicitly released.
 
-## Prerequisites
+## Choose packages
+
+After the alpha is published, the installation model is:
+
+```sh
+npm install --save-dev @suites/blackbox@next
+# Choose the execution adapters your project uses:
+npm install --save-dev @suites/blackbox-capsule@next @suites/blackbox-playwright@next
+```
+
+These are release commands, not a claim that the packages are available today.
+Prereleases use the `next` distribution tag. Use your existing package manager and
+compatible package versions.
+
+| Package                              | When to add it                                                 |
+| ------------------------------------ | -------------------------------------------------------------- |
+| `@suites/blackbox`                   | Default CLI, static discovery, Catalog, and skill installation |
+| `@suites/blackbox-capsule`           | Interactive execution, observations, and Capsule reports       |
+| `@suites/blackbox-playwright`        | Native Playwright system-test fixtures                         |
+| `@suites/blackbox-inst-runtime-node` | Node instrumentation installation                              |
+| `@suites/blackbox-driver`            | Project-owned driver runtime and SDK                           |
+
+The main package does not install execution adapters. An uninstalled adapter
+contributes no commands or skills. Internal Sandbox and telemetry dependencies
+are installed by the adapters that need them.
+
+After installation, use the project-local executable, for example
+`pnpm exec blackbox --help`. To copy the entry skill for Codex:
+
+```sh
+pnpm exec blackbox skills install blackbox --codex --gitignore
+```
+
+This copies instructions, not packages. Use `--cursor` or `--claude` for those
+hosts; see [agent skills](agent-skills.md).
+
+## Build from source
+
+### Prerequisites
 
 - Git, Node.js 22.15 or newer in the Node 22 line, and pnpm 9.15.4.
-- Docker with Compose for running Capsule environments.
+- Docker with Compose for execution adapters; not needed for static skill use.
 - Bash or Zsh, plus `jq` and `curl` for the tutorials.
 - Network access to download dependencies and container images.
 
@@ -26,7 +65,7 @@ On Windows, use Docker Desktop and Git Bash, and keep two host limits in mind:
   paths. Run `export MSYS_NO_PATHCONV=1` and define the shortcut below with `blackbox_checkout="$(pwd -W)"` so
   the checkout path is already in Windows form.
 
-## Build the CLI
+### Build and select the executable
 
 ```sh
 git clone https://github.com/suites-dev/blackbox.git
@@ -43,11 +82,13 @@ From the Blackbox checkout, define a shell shortcut:
 
 ```sh
 blackbox_checkout="$PWD"
-blackbox() { node "$blackbox_checkout/packages/cli/bin/run.js" "$@"; }
+blackbox() { node "$blackbox_checkout/packages/blackbox/bin/run.js" "$@"; }
 blackbox --help
 ```
 
-You should see the CLI help, including `capsule`, `catalog`, and `observations`.
+You should see the CLI help, including `capsule`, `catalog`, and `skills`.
+The source checkout deliberately selects all of its declared workspace providers.
+That is broader than a consumer installing only `@suites/blackbox`.
 Blackbox uses the current directory as the project root: it reads
 `blackbox.config.yaml` there and retains experiment data under `.blackbox/`.
 

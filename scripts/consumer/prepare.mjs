@@ -18,6 +18,7 @@ import { promisify } from 'node:util';
 
 import { cleanupCapsuleAssets, verifyCapsuleAssetBoundary } from './capsule-asset-boundary.mjs';
 import { resetCapsuleDemo } from './capsule-reset.mjs';
+import { consumerPackages, verifyConsumerComposition } from './composition.mjs';
 
 const execute = promisify(execFile);
 const scriptDirectory = dirname(fileURLToPath(import.meta.url));
@@ -61,7 +62,7 @@ async function installConsumer(input) {
     name: 'blackbox-registry-consumer',
     private: true,
     type: 'module',
-    dependencies: Object.fromEntries(input.packages.map((name) => [name, input.version])),
+    dependencies: Object.fromEntries(consumerPackages.map((name) => [name, input.version])),
   };
   await writeFile(join(input.consumerRoot, 'package.json'), `${JSON.stringify(manifest, null, 2)}\n`);
   await execute(
@@ -167,12 +168,11 @@ async function main() {
   try {
     await mkdir(consumerRoot, { recursive: true });
     await mkdir(npmCache, { recursive: true });
-    process.stdout.write(`[blackbox] Installing ${packages.length} packages from ${registry}\n`);
-    await installConsumer({ consumerRoot, npmCache, packages, version });
+    process.stdout.write(`[blackbox] Installing the main package and ${consumerPackages.length - 1} adapters from ${registry}\n`);
+    await installConsumer({ consumerRoot, npmCache, version });
 
     const blackboxBin = join(consumerRoot, 'node_modules', '.bin', 'blackbox');
-    const entrypoint = join(consumerRoot, 'node_modules', '@suites', 'blackbox-cli', 'bin', 'run.js');
-    await readFile(entrypoint);
+    const { mainEntrypoint: entrypoint } = await verifyConsumerComposition(consumerRoot);
 
     // Reset before installing generated assets: reset deliberately removes
     // generated driver state. Live sessions stop through the published CLI.
@@ -231,6 +231,7 @@ async function main() {
         `registry=${registry}`,
         `version=${version}`,
         `packages=${packages.length}`,
+        `direct-packages=${consumerPackages.join(',')}`,
         `consumer=${consumerRoot}`,
         `blackbox-bin=${blackboxBin}`,
         'project-drivers=validated',

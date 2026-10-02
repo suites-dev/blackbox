@@ -11,7 +11,7 @@ parts are available in this alpha.
 - Start a configured application or subsystem with Docker Compose.
 - Run host commands or use configured drivers, recording each activity and its result.
 - Install Node instrumentation and inspect raw runtime observations by session, activity, or trace.
-- Install the project-local Discovery skill for Codex, Claude Code, or Cursor.
+- Install project-local Blackbox, Discovery, Catalog, and selected adapter skills for Codex, Claude Code, or Cursor.
 - Open a local Capsule report or export JSON and HTML snapshots.
 - Stop the application and keep its experiment records for later inspection.
 
@@ -42,8 +42,10 @@ Commands, configuration, and report formats may change as the first alpha takes 
 
 ## Use Blackbox with a coding agent
 
-Blackbox ships a portable discovery skill in `@suites/blackbox-skills`. Install it into your project for Codex,
-Claude Code, or Cursor with `blackbox skills install discovery`; see [agent skill setup](agent-skills.md).
+The main `@suites/blackbox` package owns the entry skill and includes Discovery
+(`@suites/blackbox-discovery`) and Catalog. The generic `@suites/blackbox-skills`
+package orchestrates copying, but owns no concrete skill. Start with
+`blackbox skills install blackbox --codex`; see [agent skill setup](agent-skills.md).
 Some skill references discuss capabilities still in development; use the status above to choose a working path.
 
 Try asking your agent:

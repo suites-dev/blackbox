@@ -9,7 +9,7 @@ export const blackboxSkill = {
 
 export const skillModule = {
   apiVersion: 1,
-  packageName: '@suites/blackbox-cli',
+  packageName: '@suites/blackbox',
   packageRoot: new URL('../', import.meta.url),
   skills: [blackboxSkill],
 } as const satisfies SkillModule;

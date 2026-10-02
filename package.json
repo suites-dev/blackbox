@@ -54,6 +54,7 @@
     "@commitlint/config-conventional": "catalog:",
     "@eslint/js": "catalog:",
     "@manypkg/cli": "^0.25.1",
+    "@suites/blackbox": "workspace:*",
     "@suites/blackbox-capsule": "workspace:*",
     "@suites/blackbox-catalog": "workspace:*",
     "@suites/blackbox-discovery": "workspace:*",

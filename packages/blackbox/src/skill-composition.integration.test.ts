@@ -1,58 +1,89 @@
 import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { mkdtemp, readFile, readdir, realpath, rm } from 'node:fs/promises';
+import {
+  cp,
+  mkdir,
+  mkdtemp,
+  readFile,
+  readdir,
+  realpath,
+  rm,
+  symlink,
+  writeFile,
+} from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
-import test from 'node:test';
-import { blackboxSkill, skillModule } from '@suites/blackbox-cli/skills/blackbox';
+import { test, type TestContext } from 'vitest';
+import { blackboxSkill, skillModule } from './skills.js';
 
 const execFileAsync = promisify(execFile);
 const packageDirectory = fileURLToPath(skillModule.packageRoot);
 
-void test('composes selected package skills through the real CLI lifecycle', async () => {
+async function consumer({ onTestFinished }: TestContext): Promise<string> {
+  const project = await realpath(await mkdtemp(join(tmpdir(), 'blackbox-main-consumer-')));
+  onTestFinished(async () => rm(project, { recursive: true, force: true }));
+  await writeFile(
+    join(project, 'package.json'),
+    JSON.stringify({
+      name: 'main-consumer',
+      dependencies: { '@suites/blackbox': '0.0.1-alpha.0' },
+    }),
+  );
+  const main = join(project, 'node_modules/@suites/blackbox');
+  await mkdir(main, { recursive: true });
+  for (const file of ['package.json', 'bin', 'dist', 'skills']) {
+    await cp(join(packageDirectory, file), join(main, file), { recursive: true });
+  }
+  // Select only this consumer's modules, never the source checkout's adapters.
+  await symlink(join(packageDirectory, 'node_modules'), join(main, 'node_modules'), 'dir');
+  return join(main, 'bin/run.js');
+}
+
+test('composes default package skills through the main Blackbox executable', async (context) => {
+  const executable = await consumer(context);
   const { stdout } = await execFileAsync(
     process.execPath,
-    [join(packageDirectory, 'bin/run.js'), 'skills', 'list', '--json'],
-    { cwd: packageDirectory, encoding: 'utf8' },
+    [executable, 'skills', 'list', '--json'],
+    { cwd: tmpdir(), encoding: 'utf8' },
   );
 
   assert.deepEqual(JSON.parse(stdout), {
     kind: 'skill-list',
     skills: [
-      { name: 'capsule', dependencies: [], integrations: [] },
-      { name: 'catalog', dependencies: [], integrations: [] },
       {
         name: 'blackbox',
         dependencies: [],
         integrations: [
           { name: 'discovery', available: true },
           { name: 'catalog', available: true },
-          { name: 'capsule', available: true },
+          { name: 'capsule', available: false },
         ],
       },
+      { name: 'catalog', dependencies: [], integrations: [] },
       {
         name: 'discovery',
         dependencies: [],
         integrations: [
           { name: 'catalog', available: true },
-          { name: 'capsule', available: true },
+          { name: 'capsule', available: false },
         ],
       },
     ],
   });
 });
 
-void test('copies the CLI-owned Blackbox skill for all hosts without copying optional skills', async (t) => {
+test('copies the main package skill for all hosts without copying other skills', async (context) => {
+  const executable = await consumer(context);
   const project = await realpath(await mkdtemp(join(tmpdir(), 'blackbox-entry-skill-')));
-  t.after(async () => rm(project, { recursive: true, force: true }));
+  context.onTestFinished(async () => rm(project, { recursive: true, force: true }));
   const manifest = JSON.parse(await readFile(join(packageDirectory, 'package.json'), 'utf8'));
   const { stdout } = await execFileAsync(
     process.execPath,
     [
-      join(packageDirectory, 'bin/run.js'),
+      executable,
       'skills',
       'install',
       'blackbox',
@@ -66,7 +97,7 @@ void test('copies the CLI-owned Blackbox skill for all hosts without copying opt
   );
   const result = JSON.parse(stdout);
   assert.equal(result.ok, true);
-  assert.deepEqual(result.source, { package: '@suites/blackbox-cli', version: manifest.version });
+  assert.deepEqual(result.source, { package: '@suites/blackbox', version: manifest.version });
   assert.deepEqual(result.results, [
     { agent: 'codex', kind: 'installed', path: join(project, '.agents/skills/blackbox') },
     { agent: 'cursor', kind: 'installed', path: join(project, '.agents/skills/blackbox') },
@@ -82,7 +113,7 @@ void test('copies the CLI-owned Blackbox skill for all hosts without copying opt
       readonly version: string;
       readonly files: Readonly<Record<string, string>>;
     };
-    assert.equal(record.sourcePackage, '@suites/blackbox-cli');
+    assert.equal(record.sourcePackage, '@suites/blackbox');
     assert.equal(record.version, manifest.version);
     const expectedFiles = ['SKILL.md', 'references/skill-installation.md'];
     assert.deepEqual(Object.keys(record.files).sort(), expectedFiles);

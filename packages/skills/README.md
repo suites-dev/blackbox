@@ -17,14 +17,15 @@ subpath and declares that export in `package.json`:
 }
 ```
 
-The CLI composition root loads this entrypoint only from the oclif plugins selected
-for that invocation. It passes those contributions to the Skills commands through
+The CLI composition root loads this entrypoint only from the packages selected
+for that invocation, including explicit ESM module dependencies. A skill provider
+does not need an oclif command. It passes those contributions to the Skills commands through
 the CLI contract's per-config context. The registry itself never scans, downloads,
 or imports packages.
 
 This separation is intentional:
 
-- `@suites/blackbox-cli` contributes the `blackbox` entry skill from the root plugin.
+- `@suites/blackbox` contributes the `blackbox` entry skill and selects the default core modules.
 - `@suites/blackbox-discovery` contributes `discovery` and owns its executable helpers.
 - `@suites/blackbox-catalog` contributes `catalog`.
 - `@suites/blackbox-capsule` contributes `capsule`.
@@ -32,7 +33,7 @@ This separation is intentional:
 
 Feature packages augment `SkillRegistry` from their ESM entrypoints so consumers
 can see their known skill names at compile time. Module augmentation does not make a
-skill available at runtime; the selected plugin contribution remains authoritative.
+skill available at runtime; the selected package contribution remains authoritative.
 
 ## Dependencies and integrations
 

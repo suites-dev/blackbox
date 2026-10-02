@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
+import { verifyConsumerComposition } from './composition.mjs';
 
 const scriptDirectory = dirname(fileURLToPath(import.meta.url));
 const workspacePath = resolve(scriptDirectory, '..', '..');
@@ -12,6 +13,7 @@ const workspacePath = resolve(scriptDirectory, '..', '..');
 const projectRoot = join(workspacePath, 'e2e');
 const statePath = join(projectRoot, '.blackbox', 'capsule-assets.json');
 const packedPackages = [
+  '@suites/blackbox',
   '@suites/blackbox-capsule',
   '@suites/blackbox-catalog',
   '@suites/blackbox-cli',
@@ -135,6 +137,7 @@ export async function verifyCapsuleAssetBoundary() {
   assertWithin(blackboxBin, consumerRoot, 'blackbox executable');
   assertOutside(blackboxBin, workspaceRoot, 'blackbox executable');
   await access(blackboxBin, constants.X_OK);
+  const composition = await verifyConsumerComposition(consumerRoot);
 
   const packages = [];
   for (const name of state.packages) {
@@ -160,6 +163,7 @@ export async function verifyCapsuleAssetBoundary() {
     assetRoot,
     consumerRoot,
     blackboxBin,
+    composition,
     driverSdk,
     drivers,
     packages,

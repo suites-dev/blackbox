@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-# Packed-consumer check for `blackbox skills install`. Packs the CLI, its
-# contract, generic skills plugin and Discovery, installs only those tarballs into a clean
-# project outside the workspace, and drives the installed CLI there: a fresh
+# Packed-consumer check for `blackbox skills install`. Packs the main package and
+# its core dependencies, installs only @suites/blackbox directly into a clean
+# project outside the workspace, and drives the installed main executable there: a fresh
 # Blackbox entry skill, an unchanged rerun, the `skill install` alias, a preserved conflict,
 # and adoption of a matching manual copy. Needs no Docker and no network beyond
 # what `pnpm install --prefer-offline` may fetch for @oclif/core.
@@ -11,7 +11,7 @@ set -Eeuo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd -- "$SCRIPT_DIR/../.." && pwd)"
-PACKAGES=(cli-contract skills cli discovery)
+PACKAGES=(cli-contract telemetry skills cli catalog discovery blackbox)
 
 for command in pnpm jq node diff; do
   command -v "$command" >/dev/null 2>&1 || {
@@ -48,7 +48,7 @@ for package in "${PACKAGES[@]}"; do
   archive="$PACK_ROOT/$(echo "${name#@}" | tr / -)-$(jq -er '.version' "$directory/package.json").tgz"
   [[ -s "$archive" ]] || fail "pack did not produce $archive"
   jq --arg name "$name" --arg archive "file:$archive" \
-    '.dependencies[$name] = $archive | .pnpm.overrides[$name] = $archive' \
+    '.pnpm.overrides[$name] = $archive | if $name == "@suites/blackbox" then .dependencies[$name] = $archive else . end' \
     "$PROJECT/package.json" >"$PROJECT/package.json.next"
   mv "$PROJECT/package.json.next" "$PROJECT/package.json"
 done
@@ -57,10 +57,15 @@ pnpm --dir "$PROJECT" install --ignore-workspace --prefer-offline --ignore-scrip
   ${PNPM_STORE_DIR:+--store-dir "$PNPM_STORE_DIR"} >/dev/null
 BLACKBOX="$PROJECT/node_modules/.bin/blackbox"
 cd "$PROJECT"
+PACKED_BLACKBOX="$(node --input-type=module -e 'import { blackboxSkill } from "@suites/blackbox/skills/blackbox"; import { fileURLToPath } from "node:url"; console.log(fileURLToPath(blackboxSkill.source));')"
+BLACKBOX_VERSION="$(node --input-type=module -e 'import { skillModule } from "@suites/blackbox/skills"; import { readFileSync } from "node:fs"; console.log(JSON.parse(readFileSync(new URL("package.json", skillModule.packageRoot), "utf8")).version);')"
+MAIN_ROOT="$(node --input-type=module -e 'import { skillModule } from "@suites/blackbox/skills"; import { fileURLToPath } from "node:url"; console.log(fileURLToPath(skillModule.packageRoot));')"
+# pnpm emits a launcher shim; it must dispatch to the main package's executable.
+grep -F '/@suites/blackbox/bin/run.js' "$BLACKBOX" >/dev/null || fail "launcher does not belong to the main package"
+# Resolve core providers from their declaring package, without dependency hoisting.
+cd "$MAIN_ROOT"
 PACKED_SKILL="$(node --input-type=module -e 'import { discoverySkill } from "@suites/blackbox-discovery/skills/discovery"; import { fileURLToPath } from "node:url"; console.log(fileURLToPath(discoverySkill.source));')"
 PACKED_VERSION="$(node --input-type=module -e 'import { skillModule } from "@suites/blackbox-discovery/skills"; import { readFileSync } from "node:fs"; console.log(JSON.parse(readFileSync(new URL("package.json", skillModule.packageRoot), "utf8")).version);')"
-PACKED_BLACKBOX="$(node --input-type=module -e 'import { blackboxSkill } from "@suites/blackbox-cli/skills/blackbox"; import { fileURLToPath } from "node:url"; console.log(fileURLToPath(blackboxSkill.source));')"
-BLACKBOX_VERSION="$(node --input-type=module -e 'import { skillModule } from "@suites/blackbox-cli/skills"; import { readFileSync } from "node:fs"; console.log(JSON.parse(readFileSync(new URL("package.json", skillModule.packageRoot), "utf8")).version);')"
 [[ -f "$PACKED_SKILL/SKILL.md" ]] || fail "the Discovery public export has no SKILL.md"
 [[ -f "$PACKED_BLACKBOX/SKILL.md" ]] || fail "the Blackbox public export has no SKILL.md"
 [[ -f "$PACKED_BLACKBOX/references/skill-installation.md" ]] || fail "the Blackbox installation reference was not packed"
@@ -73,20 +78,21 @@ case "$PACKED_BLACKBOX" in
 esac
 
 cd "$PROJECT"
-"$BLACKBOX" skills list --json >"$WORK_ROOT/list.json"
+NODE_ENV=production "$BLACKBOX" skills list --json >"$WORK_ROOT/list.json"
 jq -e '.skills == [
   {name: "blackbox", dependencies: [], integrations: [
-    {name: "discovery", available: true}, {name: "catalog", available: false}, {name: "capsule", available: false}
+    {name: "discovery", available: true}, {name: "catalog", available: true}, {name: "capsule", available: false}
   ]},
+  {name: "catalog", dependencies: [], integrations: []},
   {name: "discovery", dependencies: [], integrations: [
-    {name: "catalog", available: false}, {name: "capsule", available: false}
+    {name: "catalog", available: true}, {name: "capsule", available: false}
   ]}
 ]' "$WORK_ROOT/list.json" >/dev/null ||
   fail "absent packages contributed skills: $(cat "$WORK_ROOT/list.json")"
 
 "$BLACKBOX" skills install blackbox --codex --cursor --claude --gitignore --json >"$WORK_ROOT/blackbox.json"
 jq -e --arg version "$BLACKBOX_VERSION" '.ok and
-  .source == {package: "@suites/blackbox-cli", version: $version} and
+  .source == {package: "@suites/blackbox", version: $version} and
   ([.destinations[].outcome] == ["installed", "installed"]) and
   ([.results[].agent] == ["codex", "cursor", "claude"])' "$WORK_ROOT/blackbox.json" >/dev/null ||
   fail "entry skill install: $(cat "$WORK_ROOT/blackbox.json")"
@@ -94,7 +100,7 @@ for destination in .agents/skills/blackbox .claude/skills/blackbox; do
   diff -r -x .blackbox-install.json "$PACKED_BLACKBOX" "$destination" >/dev/null ||
     fail "$destination differs from the packed entry skill"
   jq -e --arg version "$BLACKBOX_VERSION" \
-    '.installer == "@suites/blackbox-skills" and .sourcePackage == "@suites/blackbox-cli" and .version == $version' \
+    '.installer == "@suites/blackbox-skills" and .sourcePackage == "@suites/blackbox" and .version == $version' \
     "$destination/.blackbox-install.json" >/dev/null || fail "$destination has a wrong record"
   grep -Fxq "/$destination/" .gitignore || fail "$destination was not ignored"
 done
@@ -106,7 +112,7 @@ done
 jq -e '.ok and ([.destinations[].outcome] == ["unchanged", "unchanged"]) and .gitignore.outcome == "unchanged"' \
   "$WORK_ROOT/blackbox-repeat.json" >/dev/null || fail "entry skill rerun changed the copy"
 
-node --input-type=module -e 'import { readFileSync } from "node:fs"; import { discoverySkill } from "@suites/blackbox-discovery/skills/discovery"; import { validateAudit } from "@suites/blackbox-discovery"; const read = (name) => JSON.parse(readFileSync(new URL(`examples/http/${name}.json`, discoverySkill.source), "utf8")); if (validateAudit(read("audit"), read("receipts")).kind !== "accepted") throw new Error("packed audit validation failed");'
+(cd "$MAIN_ROOT" && node --input-type=module -e 'import { readFileSync } from "node:fs"; import { discoverySkill } from "@suites/blackbox-discovery/skills/discovery"; import { validateAudit } from "@suites/blackbox-discovery"; const read = (name) => JSON.parse(readFileSync(new URL(`examples/http/${name}.json`, discoverySkill.source), "utf8")); if (validateAudit(read("audit"), read("receipts")).kind !== "accepted") throw new Error("packed audit validation failed");')
 "$BLACKBOX" skills install discovery --codex --claude --gitignore --json >"$WORK_ROOT/first.json"
 jq -e '.ok and ([.destinations[].outcome] == ["installed", "installed"])' "$WORK_ROOT/first.json" >/dev/null ||
   fail "fresh install: $(cat "$WORK_ROOT/first.json")"
@@ -139,30 +145,34 @@ cp -R "$PACKED_SKILL" .claude/skills/discovery
 jq -e '.ok and ([.destinations[].outcome] == ["adopted"])' "$WORK_ROOT/adopt.json" >/dev/null ||
   fail "adoption: $(cat "$WORK_ROOT/adopt.json")"
 
-# The module remains on disk but removing it from the selected project plugins
-# must remove its contribution, even when an old agent copy remains installed.
-jq 'del(.dependencies["@suites/blackbox-discovery"])' package.json >package.json.next
+# Installing the main package alone must not pull execution adapters or Docker.
+node --input-type=module -e '
+  import assert from "node:assert/strict";
+  import { createRequire } from "node:module";
+  const fromMain = createRequire(import.meta.resolve("@suites/blackbox"));
+  for (const name of ["@suites/blackbox-capsule", "@suites/blackbox-playwright", "@suites/blackbox-inst-runtime-node", "@suites/blackbox-sandbox"]) {
+    assert.throws(() => fromMain.resolve(name), {code: "MODULE_NOT_FOUND"});
+  }
+'
+"$BLACKBOX" --help >"$WORK_ROOT/core-help.txt"
+grep -F 'skills install' "$WORK_ROOT/core-help.txt" >/dev/null || fail "core skills command missing"
+grep -F 'catalog validate' "$WORK_ROOT/core-help.txt" >/dev/null || fail "core catalog command missing"
+if grep -F 'capsule up' "$WORK_ROOT/core-help.txt"; then fail "absent Capsule exposed commands"; fi
+
+# Removing the main bundle from a custom composition removes its contributions,
+# even when old copies remain. Only explicitly selected low-level modules remain.
+jq '.dependencies = {"@suites/blackbox-cli": .pnpm.overrides["@suites/blackbox-cli"], "@suites/blackbox-skills": .pnpm.overrides["@suites/blackbox-skills"]}' package.json >package.json.next
 mv package.json.next package.json
+pnpm install --ignore-workspace --prefer-offline --ignore-scripts \
+  ${PNPM_STORE_DIR:+--store-dir "$PNPM_STORE_DIR"} >/dev/null
 "$BLACKBOX" skills list --json >"$WORK_ROOT/unselected.json"
-jq -e '.skills == [{name: "blackbox", dependencies: [], integrations: [
-  {name: "discovery", available: false}, {name: "catalog", available: false}, {name: "capsule", available: false}
-]}]' "$WORK_ROOT/unselected.json" >/dev/null || fail "unselected Discovery remained registered"
+jq -e '.skills == []' "$WORK_ROOT/unselected.json" >/dev/null || fail "unselected core modules remained registered"
 status=0
 "$BLACKBOX" skills install discovery --codex >"$WORK_ROOT/unavailable.out" 2>&1 || status=$?
 [[ "$status" -eq 2 ]] || fail "unselected Discovery exited $status, expected 2"
 grep -q 'Skill is unavailable' "$WORK_ROOT/unavailable.out" || fail "missing skill was not explained"
 
-# The CLI's entrypoint must be installable with no optional provider selected.
-mkdir "$PROJECT/empty-project"
-cd "$PROJECT/empty-project"
-"$BLACKBOX" skills install blackbox --cursor --json >"$WORK_ROOT/blackbox-only.json"
-jq -e '.ok and ([.destinations[].outcome] == ["installed"])' "$WORK_ROOT/blackbox-only.json" >/dev/null ||
-  fail "entry skill requires an optional provider"
-diff -r -x .blackbox-install.json "$PACKED_BLACKBOX" .agents/skills/blackbox >/dev/null ||
-  fail "standalone entry skill copy differs"
-
-# The optional Skills peer must not become a runtime requirement of the CLI or
-# its data-only ESM contribution. Install a separate CLI-only consumer.
+# The generic CLI must remain usable without the product package or Skills.
 CLI_ONLY="$WORK_ROOT/cli-only"
 mkdir "$CLI_ONLY"
 jq 'del(.dependencies["@suites/blackbox-skills"])' "$PROJECT/package.json" >"$CLI_ONLY/package.json"
@@ -173,11 +183,11 @@ node_modules/.bin/blackbox --help >"$WORK_ROOT/cli-only-help.txt"
 node --input-type=module -e '
   import assert from "node:assert/strict";
   import { createRequire } from "node:module";
-  import { blackboxSkill } from "@suites/blackbox-cli/skills/blackbox";
-  assert.equal(blackboxSkill.name, "blackbox");
-  assert.throws(() => createRequire(import.meta.url).resolve("@suites/blackbox-skills"), {code: "MODULE_NOT_FOUND"});
-  const fromCli = createRequire(import.meta.resolve("@suites/blackbox-cli/skills/blackbox"));
+  import { runCli } from "@suites/blackbox-cli/run";
+  assert.equal(typeof runCli, "function");
+  const fromCli = createRequire(import.meta.resolve("@suites/blackbox-cli/run"));
   assert.throws(() => fromCli.resolve("@suites/blackbox-skills"), {code: "MODULE_NOT_FOUND"});
+  assert.throws(() => fromCli.resolve("@suites/blackbox"), {code: "MODULE_NOT_FOUND"});
 '
 
-echo "skills-packed-consumer: passed (Blackbox entrypoint, all hosts, CLI-only export, public exports, packed helpers, absent integrations, installed, unchanged, alias, conflict preserved, adopted, unselected provider)"
+echo "skills-packed-consumer: passed (main package only, all hosts, public exports, packed helpers, absent adapters, installed, unchanged, alias, conflict preserved, adopted, unselected bundle, standalone CLI)"

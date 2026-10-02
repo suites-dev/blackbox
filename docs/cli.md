@@ -3,7 +3,9 @@
 Use the CLI to configure an experiment, run commands, inspect observations, and read reports.
 Run it from the directory containing your application's `blackbox.config.yaml`.
 
-[Install the CLI](installation.md), then use command help to explore its options:
+[Install Blackbox](installation.md), then use command help to explore its options.
+The main package includes `catalog` and `skills`; Capsule, driver, and runtime
+instrumentation commands require their separately selected packages:
 
 ```sh
 blackbox --help
@@ -208,11 +210,12 @@ skill dependencies are included; optional integrations are reported by
 `skill install <name>` spelling remains an alias.
 
 Start with `blackbox skills install blackbox --codex --gitignore` to copy the
-CLI-owned entry skill into `.agents/skills/blackbox/`. Use `--cursor` for the same
+main package's entry skill into `.agents/skills/blackbox/`. Use `--cursor` for the same
 destination or `--claude` for `.claude/skills/blackbox/`. The optional `--gitignore`
 flag ignores successful copies. After host discovery, `$blackbox` provides
 orientation and routes to available package skills; it does not auto-install its
-optional Discovery, Catalog, or Capsule integrations. The Skills plugin must be
-selected for these commands. See [agent-guided adoption](../packages/cli/README.md#typical-flow).
+optional Discovery, Catalog, or Capsule skill copies. The main package selects the
+Skills installer, Discovery, and Catalog by default; Capsule stays separate.
+See [agent-guided adoption](../packages/blackbox/README.md#start-with-the-agent-skill).
 
 See [Capsule experiments](experiments.md) for the sequence and [reports](reports.md) for viewing and exporting results.

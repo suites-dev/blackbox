@@ -2,13 +2,13 @@
 
 ## Know which layer failed
 
-| Layer               | Source                                                              | Required distinction                                    |
-| ------------------- | --------------------------------------------------------------------- | ------------------------------------------------------- |
+| Layer               | Source                                                                      | Required distinction                                         |
+| ------------------- | --------------------------------------------------------------------------- | ------------------------------------------------------------ |
 | Registry consumer   | `scripts/consumer/prepare.mjs`, `scripts/consumer/capsule-asset-verify.mjs` | Registry-installed dependency closure, not workspace imports |
-| Public CLI journey  | `demo/acceptance/capsule-test.sh`                                      | Real commands and assertions, not a narrated demo       |
-| Runtime and cleanup | `demo/acceptance/capsule-test-support.sh`                              | Exact session/PID ownership; reused viewers survive     |
-| Telemetry oracle    | `demo/support/capsule-telemetry-proof.mjs`                             | Activity-correlated versus session-only observations    |
-| CI retention        | `.github/scripts/e2e-evidence.mjs`, `.github/workflows/e2e.yml`       | Test, archive, and retention must all succeed           |
+| Public CLI journey  | `demo/acceptance/capsule-test.sh`                                           | Real commands and assertions, not a narrated demo            |
+| Runtime and cleanup | `demo/acceptance/capsule-test-support.sh`                                   | Exact session/PID ownership; reused viewers survive          |
+| Telemetry oracle    | `demo/support/capsule-telemetry-proof.mjs`                                  | Activity-correlated versus session-only observations         |
+| CI retention        | `.github/scripts/e2e-evidence.mjs`, `.github/workflows/e2e.yml`             | Test, archive, and retention must all succeed                |
 
 Resolve paths relative to the repo root. Read only the source/helper relevant to
 the failure, but inspect both the assertion and its production behavior before
@@ -25,6 +25,9 @@ output, and the retained experiment under `e2e/.blackbox/experiments/`.
 Verify the specific assertions in the current harness, including:
 
 - Registry consumer package-boundary verification and absence of workspace imports.
+  Its direct dependencies are the main `@suites/blackbox` package plus the selected
+  Capsule, Playwright, driver, and Node instrumentation adapters. The executable
+  must belong to the main package; core internals arrive transitively.
 - Fixture state changes after real HTTP/Postgres/Redis interactions, not just an
   HTTP 200 or a command invocation recorded by a mock.
 - Exact HTTP activity/trace relationships; Redis shared-state downstream work is

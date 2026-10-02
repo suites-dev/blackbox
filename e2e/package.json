@@ -6,6 +6,6 @@
   "description": "Project fixture for the CLI journeys and the demo: the YAML catalog, the project-authored drivers, and the Compose system under test.",
   "dependencies": {
     "@suites/blackbox-catalog": "workspace:*",
-    "@suites/blackbox-cli": "workspace:*"
+    "@suites/blackbox": "workspace:*"
   }
 }
