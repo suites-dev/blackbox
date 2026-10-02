@@ -1,6 +1,7 @@
 import { afterEach, expect, it } from 'vitest';
 
-import { readCapsuleActivityObservations } from '../activity-observations.js';
+import type { CapsuleObservationsInput } from '../../execution/types.js';
+import { readCapsuleObservations } from '../observations.js';
 import { reportCapsule } from '../operations.js';
 import { renderCapsuleHtml } from '../../reporting/html.js';
 import { serializeCapsuleReportDocument } from '../../reporting/serialization.js';
@@ -32,8 +33,11 @@ it('incorporates late descendants while keeping an independent shared-state trac
     { traceId, spanId: 'aaaaaaaaaaaaaaaa', name: 'capsule-root' },
     { traceId: independent, spanId: 'cccccccccccccccc', name: 'independent-consumer' },
   ]);
-  const selector = { ...fixture, activityId: 'activity-late' };
-  const first = await readCapsuleActivityObservations(selector);
+  const selector = {
+    ...fixture,
+    selection: { kind: 'activity', activityId: 'activity-late' },
+  } satisfies CapsuleObservationsInput;
+  const first = await readCapsuleObservations(selector);
   expect(first).toMatchObject({
     kind: 'collector-activity-found',
     traceIds: [traceId],
@@ -50,7 +54,7 @@ it('incorporates late descendants while keeping an independent shared-state trac
       name: 'late-descendant-without-activity-attribute',
     },
   ]);
-  const latest = await readCapsuleActivityObservations(selector);
+  const latest = await readCapsuleObservations(selector);
   expect(latest).toMatchObject({
     kind: 'collector-activity-found',
     traceIds: [traceId],
