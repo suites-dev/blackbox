@@ -18,7 +18,7 @@
     "lint": "node scripts/check-source-layout.mjs && pnpm check:packages && eslint packages --cache",
     "lint:fix": "eslint packages --cache --fix",
     "check:packages": "manypkg check",
-    "check:deps": "depcruise packages --config .dependency-cruiser.cjs --ignore-known --output-type err-long",
+    "check:deps": "depcruise packages --config .dependency-cruiser.cjs --ignore-known --output-type err-long && depcruise packages --config .dependency-cruiser.cjs --ignore-known --output-type json | node scripts/check-fan-out.mjs",
     "check:deps:baseline": "depcruise packages --config .dependency-cruiser.cjs --baseline",
     "report:deps-metrics": "depcruise packages --config .dependency-cruiser.cjs --metrics --output-type metrics --include-only '^packages/[^/]+/src/' --exclude '\\.(test|spec|fixture)\\.[cm]?[jt]s$|/(testing|test-fixtures|__tests__)/'",
     "typecheck": "tsc --project tsconfig.json --noEmit && tsc --project e2e/tsconfig.json",

@@ -73,12 +73,20 @@ importing package does not declare. Only `playwright` imports `@playwright/test`
 runtime adapter. A new package must be added to a tier in the config, or the check
 refuses to run.
 
-Fan-in is bounded too: at most 15 production modules (tests, fixtures and barrels
-are not counted) may import one module. Existing hubs are recorded in
-`.dependency-cruiser-known-violations.json` and ignored. That list may only shrink:
-to drop a fixed hub, run `pnpm check:deps:baseline` and commit the result; the diff
-must only delete entries. The config refuses a baseline that records any rule other
-than `no-high-fan-in`.
+It also bounds coupling of production modules (tests, fixtures and barrels are not
+measured):
+
+- **Fan-in:** at most 15 production modules may import one module. Existing hubs are
+  recorded in `.dependency-cruiser-known-violations.json` and ignored.
+- **Fan-out:** a module may depend on at most 12 workspace modules
+  ([`scripts/check-fan-out.mjs`](../../scripts/check-fan-out.mjs); command registries
+  are also exempt). Existing violators are listed with a reason in
+  [`scripts/fan-out-allowlist.json`](../../scripts/fan-out-allowlist.json).
+
+Both lists may only shrink. The fan-out check fails on an allowlist entry that is back
+under the limit. To drop a fixed fan-in hub, run `pnpm check:deps:baseline` and commit
+the result; the diff must only delete entries. The config refuses a baseline that
+records any rule other than `no-high-fan-in`.
 
 ESLint enforces the function-level limits: `complexity` 15, `max-depth` 4,
 `max-params` 4, `max-lines-per-function` 80 and `max-lines` 250. A function locked

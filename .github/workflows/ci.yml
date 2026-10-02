@@ -76,9 +76,9 @@ jobs:
         timeout-minutes: 15
         run: pnpm run lint
 
-  # Package boundaries from .dependency-cruiser.cjs: layering, cycles, exports,
-  # declared dependencies and fan-in. It reads sources only, so it needs no
-  # build.
+  # Package boundaries from .dependency-cruiser.cjs (layering, cycles, exports,
+  # declared dependencies, fan-in) plus the fan-out check in scripts/. It reads
+  # sources only, so it needs no build.
   deps:
     name: Dependency boundaries (dependency-cruiser)
     runs-on: ubuntu-24.04
@@ -92,6 +92,10 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           pnpm-version: ${{ env.PNPM_VERSION }}
+
+      - name: Test the fan-out check
+        timeout-minutes: 5
+        run: node --test scripts/check-fan-out.test.mjs
 
       - name: Check dependency boundaries
         timeout-minutes: 5
