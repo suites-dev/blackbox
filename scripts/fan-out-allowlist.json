@@ -1,4 +1,3 @@
 {
-  "packages/capsule/src/cli/operations/run/run-command.ts": "capsule run wires the whole run flow (invocation context, output tracking, run blocks, live observation, telemetry, exit codes) in one oclif command body",
   "packages/capsule/src/cli/operations/inspection/show-command.ts": "capsule show resolves an id, reads the session, and picks one of several views; resolution, data and rendering are each imported as a separate module"
 }
