@@ -185,6 +185,8 @@ export async function acquireBlackboxAttempt(
   input.progress.protect(plan.environment);
   const sessionId = `playwright-${ports.randomId()}`;
   const executionId = `playwright-${ports.randomId()}`;
+  // startAttemptSandbox names the sandbox after its execution.
+  input.progress.identify(executionId);
   const recordDirectory = input.artifactDirectory;
   const collectorAuthorization = authorization(ports);
   const sandbox = await reported(input.progress, 'acquisition', plan.services.join(', '), () =>

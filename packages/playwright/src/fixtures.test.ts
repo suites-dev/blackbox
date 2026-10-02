@@ -98,6 +98,28 @@ it('stops the sandbox when acquisition takes more than half the test timeout', a
   ]);
 });
 
+it('acquires no sandbox for beforeAll/afterAll hooks and refuses Blackbox fixtures there', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'blackbox-playwright-hooks-'));
+  directories.push(directory);
+  const result = await runPlaywright({
+    configFile: 'suite-hooks.config.ts',
+    outputDirectory: join(directory, 'output'),
+  });
+  expect(result.exitCode, result.output).toBe(1);
+  expect(result.output).toContain('1 passed');
+  expect(result.output).toContain(
+    'Blackbox fixture "sandbox" is not available in beforeAll hooks: each test attempt owns its own sandbox.',
+  );
+  expect(playwrightEvents(result.output)).toEqual([
+    { kind: 'beforeAll', baseURL: null, request: 'object' },
+    { kind: 'start', sandboxId: 'hook-sandbox-1' },
+    { kind: 'beforeEach', sandboxId: 'hook-sandbox-1' },
+    { kind: 'body', sandboxId: 'hook-sandbox-1', baseURL: 'http://127.0.0.1:1' },
+    { kind: 'stop', sandboxId: 'hook-sandbox-1', reason: 'completed' },
+    { kind: 'afterAll', baseURL: null },
+  ]);
+});
+
 it('lets the Playwright test timeout govern sandbox acquisition', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'blackbox-playwright-timeout-'));
   directories.push(directory);

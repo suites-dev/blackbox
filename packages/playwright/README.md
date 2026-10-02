@@ -68,6 +68,10 @@ reasons. Setup failure also attempts cleanup before surfacing the error.
   artifact identity. Lifecycle control remains fixture-owned.
 - `telemetry` exposes the attempt identity, live collector status, and raw
   retained session or trace reads.
+- `beforeAll` and `afterAll` hooks run outside any test attempt, so they never
+  acquire a sandbox. There, `baseURL` (and so `request`) keeps the configured
+  value, and `sandbox`, `telemetry` and `effects` fail with an error that names
+  the hook. Use `beforeEach`, `afterEach` or the test body for sandbox work.
 - `effects` exposes the attempt identity and the contract-evaluation boundary.
   `expect(effects).toSatisfy(...)` compiles and delegates an immutable contract,
   but the Alpha does not yet project raw telemetry into normalized effects. The
@@ -96,6 +100,8 @@ default one.
 
 Fixtures attach sanitized `blackbox-progress` events and a final
 `blackbox-attempt` JSON document to Playwright results, including failures.
+Each event carries the `sandboxId` that owns it once the sandbox identity exists,
+and `blackbox-diagnostics` prefixes those lines with `[<sandboxId>]`.
 Other Playwright reporters retain these attachments too. Startup observations
 are bounded; the attempt document records how many were omitted.
 The Blackbox reporter also adds a readable `blackbox-diagnostics` attachment.

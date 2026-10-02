@@ -78,13 +78,21 @@ it.each([
     const transcripts = allResults.map((attempt) => {
       const diagnostics = attempt.attachments.find(({ name }) => name === 'blackbox-diagnostics');
       expect(diagnostics).toBeDefined();
-      expect(Buffer.from(diagnostics!.body!, 'base64').toString('utf8')).toContain(
-        'acquisition: started',
-      );
       const retained = attempt.attachments.find(({ name }) => name === 'blackbox-attempt');
       expect(retained).toBeDefined();
       const text = Buffer.from(retained!.body!, 'base64').toString('utf8');
-      const document = JSON.parse(text) as { owner: Record<string, unknown> };
+      const document = JSON.parse(text) as {
+        owner: Record<string, unknown>;
+        events: { phase: string; sandboxId: string | null }[];
+      };
+      // Every event names the one sandbox that owns it, so attempts stay distinguishable.
+      const owners = new Set(document.events.map(({ sandboxId }) => sandboxId));
+      expect(owners.size).toBe(1);
+      const [sandboxId] = owners;
+      expect(sandboxId).toMatch(/^[a-f0-9-]{36}$/u);
+      expect(Buffer.from(diagnostics!.body!, 'base64').toString('utf8')).toContain(
+        `[${sandboxId}] acquisition: started`,
+      );
       expect(document.owner).toMatchObject({
         testId: attempt.testId,
         retry: attempt.retry,

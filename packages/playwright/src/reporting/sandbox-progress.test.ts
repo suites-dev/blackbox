@@ -8,6 +8,7 @@ it('reports Docker state without confusing it with application readiness or expo
   reportSandboxProgress(
     {
       protect: () => undefined,
+      identify: () => undefined,
       emit: (phase, status, detail) => {
         details.push(`${phase}:${status}:${detail}`);
       },
@@ -33,9 +34,29 @@ it('reports Docker state without confusing it with application readiness or expo
   expect(details).toEqual(['container:info:api: exited; Docker health: unhealthy; exit 7']);
 });
 
-it.each(['{}', '{broken', JSON.stringify({ schemaVersion: 2 }), 'x'.repeat(20_000)])(
-  'rejects malformed progress without interpreting it as success',
-  (body) => {
-    expect(decodeEvent(Buffer.from(body))).toBeNull();
-  },
-);
+const wellFormed = {
+  schemaVersion: 1,
+  sequence: 1,
+  elapsedMs: 0,
+  phase: 'sandbox',
+  status: 'info',
+  detail: 'sandbox-1',
+  sandboxId: null,
+};
+
+it('decodes events before and after their owning sandbox is known', () => {
+  expect(decodeEvent(Buffer.from(JSON.stringify(wellFormed)))).toEqual(wellFormed);
+  const tagged = { ...wellFormed, sandboxId: 'sandbox-1' };
+  expect(decodeEvent(Buffer.from(JSON.stringify(tagged)))).toEqual(tagged);
+});
+
+it.each([
+  '{}',
+  '{broken',
+  JSON.stringify({ schemaVersion: 2 }),
+  JSON.stringify({ ...wellFormed, sandboxId: 7 }),
+  JSON.stringify({ ...wellFormed, sandboxId: undefined }),
+  'x'.repeat(20_000),
+])('rejects malformed progress without interpreting it as success', (body) => {
+  expect(decodeEvent(Buffer.from(body))).toBeNull();
+});

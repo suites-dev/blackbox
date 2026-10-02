@@ -39,7 +39,7 @@ it('reports retained counters without reading fragments and diagnoses missing or
   const session = join(storageDirectory, identity.sessionId, identity.executionId);
   const attempt = attemptFixture(root, identity);
   const emit = vi.fn();
-  const progress = { emit, protect: () => undefined };
+  const progress = { emit, protect: () => undefined, identify: () => undefined };
   try {
     await reportObservations(progress, attempt);
     expect(emit).toHaveBeenLastCalledWith('observations', 'info', 'collector-lifecycle-missing');

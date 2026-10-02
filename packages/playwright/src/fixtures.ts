@@ -12,9 +12,10 @@ import type { BlackboxTestFixtures, BlackboxTestOptions } from './types.js';
 import { AttemptReport } from './reporting/attempt.js';
 import { reported } from './reporting/events.js';
 import { reportObservations } from './reporting/observations.js';
+import { suiteHook, testAttempt, type SuiteHookScope } from './suite-hooks.js';
 
 interface PrivateFixtures {
-  readonly _blackboxAttempt: RunningBlackboxAttempt;
+  readonly _blackboxAttempt: RunningBlackboxAttempt | SuiteHookScope;
 }
 
 type BlackboxFixtures = BlackboxTestOptions & BlackboxTestFixtures & PrivateFixtures;
@@ -195,6 +196,11 @@ export function createBlackboxTest(
     blackboxEnvironment: [Object.freeze({}), { option: true }],
     _blackboxAttempt: [
       async ({ catalogEntry, blackboxEnvironment }, use, testInfo) => {
+        const hook = suiteHook(testInfo);
+        if (hook !== 'none') {
+          await use({ suiteHook: hook });
+          return;
+        }
         const report = new AttemptReport(testInfo);
         report.protect(blackboxEnvironment);
         try {
@@ -240,16 +246,19 @@ export function createBlackboxTest(
       { auto: true, timeout: 0 },
     ],
     sandbox: async ({ _blackboxAttempt }, use) => {
-      await use(_blackboxAttempt.sandbox);
+      await use(testAttempt(_blackboxAttempt, 'sandbox').sandbox);
     },
     telemetry: async ({ _blackboxAttempt }, use) => {
-      await use(_blackboxAttempt.telemetry);
+      await use(testAttempt(_blackboxAttempt, 'telemetry').telemetry);
     },
     effects: async ({ _blackboxAttempt }, use) => {
-      await use(_blackboxAttempt.effects);
+      await use(testAttempt(_blackboxAttempt, 'effects').effects);
     },
-    baseURL: async ({ _blackboxAttempt }, use) => {
-      await use(_blackboxAttempt.sandbox.entrypoint.url);
+    // Suite hooks keep the configured baseURL; only a test attempt has a sandbox entrypoint.
+    baseURL: async ({ _blackboxAttempt, baseURL }, use) => {
+      await use(
+        'suiteHook' in _blackboxAttempt ? baseURL : _blackboxAttempt.sandbox.entrypoint.url,
+      );
     },
   });
 }

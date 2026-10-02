@@ -19,11 +19,10 @@ export async function waitForReporter(file = 'reporter-observed-startup'): Promi
   throw new Error('Reporter did not publish progress while acquisition was blocked');
 }
 
-function runningAttempt(input: BlackboxAttemptInput) {
+function runningAttempt(input: BlackboxAttemptInput, executionId: string) {
   if (input.selection.kind === 'unselected') {
     throw new Error('Missing selection');
   }
-  const executionId = randomUUID();
   return {
     sandbox: {
       sandboxId: executionId,
@@ -76,6 +75,8 @@ export const runtime = {
         `Config was not resolved relative to playwright.config.ts: ${input.configFile}`,
       );
     }
+    const executionId = randomUUID();
+    input.progress.identify(executionId);
     input.progress.emit('acquisition', 'started', 'waiting for reporter handshake');
     input.progress.emit('container', 'info', 'api\u001b[2J: starting; token=synthetic-secret');
     await waitForReporter();
@@ -83,6 +84,6 @@ export const runtime = {
       throw new Error('synthetic setup failure');
     }
     input.progress.emit('acquisition', 'completed', 'containers acquired');
-    return runningAttempt(input);
+    return runningAttempt(input, executionId);
   },
 } satisfies BlackboxAttemptRuntime;

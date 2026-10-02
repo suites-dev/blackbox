@@ -22,6 +22,7 @@ export class AttemptReport implements AttemptProgress {
   private attachmentFailure: unknown = null;
   private dropped = 0;
   private closed = false;
+  private sandboxId: string | null = null;
   private identity:
     | { readonly kind: 'not-ready' }
     | {
@@ -34,7 +35,12 @@ export class AttemptReport implements AttemptProgress {
 
   constructor(private readonly testInfo: TestInfo) {}
 
+  identify(sandboxId: string): void {
+    this.sandboxId = sandboxId;
+  }
+
   acquired(sandbox: BlackboxSandbox, telemetry: BlackboxTelemetry): void {
+    this.identify(sandbox.sandboxId);
     this.identity = {
       kind: 'acquired',
       sandboxId: sandbox.sandboxId,
@@ -89,6 +95,7 @@ export class AttemptReport implements AttemptProgress {
       phase,
       status,
       detail: this.sanitize(detail),
+      sandboxId: this.sandboxId === null ? null : this.sanitize(this.sandboxId),
     } satisfies AttemptEvent;
     this.events.push(event);
     this.pending = this.pending

@@ -36,7 +36,10 @@ export default class BlackboxReporter implements Reporter {
       body: Buffer.from(
         events
           .map((event) =>
-            reportText(`${event.phase}: ${event.status}; ${event.detail} (+${event.elapsedMs}ms)`),
+            reportText(
+              (event.sandboxId === null ? '' : `[${event.sandboxId}] `) +
+                `${event.phase}: ${event.status}; ${event.detail} (+${event.elapsedMs}ms)`,
+            ),
           )
           .join('\n'),
       ),
