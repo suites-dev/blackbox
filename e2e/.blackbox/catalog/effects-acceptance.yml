@@ -50,7 +50,9 @@ services:
       RABBITMQ_DEFAULT_PASS: acceptance
       RABBITMQ_DEFAULT_USER: acceptance
     healthcheck:
-      test: ['CMD', 'rabbitmq-diagnostics', '-q', 'ping']
+      # Use the image entrypoint so diagnostics drops to the rabbitmq account
+      # instead of racing the server by creating a root-owned Erlang cookie.
+      test: ['CMD', 'docker-entrypoint.sh', 'rabbitmq-diagnostics', '-q', 'ping']
       interval: 1s
       timeout: 5s
       retries: 60
