@@ -1,6 +1,11 @@
 import { evaluateEffects, projectEffects, type EffectAssessment } from '@suites/blackbox-effects';
 
-import type { EffectContractEvaluator, EffectEvaluation } from '../runtime.js';
+import {
+  retainEffectEvidence,
+  type EffectContractEvaluator,
+  type EffectEvaluation,
+} from '../runtime.js';
+import { createEffectEvidenceArtifact } from './artifact.js';
 import type { EffectObservationSource } from './source.js';
 
 function evaluation(assessment: EffectAssessment, reasons: readonly string[]): EffectEvaluation {
@@ -35,7 +40,11 @@ export function createEffectContractEvaluator(
           payloads: read.payloads,
         });
         const reasons = [...new Set([...read.diagnostics, ...graph.quality.reasons])];
-        return evaluation(evaluateEffects(graph, contract), reasons);
+        const result = evaluateEffects(graph, contract);
+        return retainEffectEvidence(
+          evaluation(result, reasons),
+          createEffectEvidenceArtifact({ read, graph, assessment: result }),
+        );
       } catch (error) {
         if (!(error instanceof TypeError)) {
           throw error;

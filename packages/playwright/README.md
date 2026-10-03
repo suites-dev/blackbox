@@ -139,6 +139,18 @@ await activities.stimulus.browser('submit subscription form', page, async (scope
 });
 ```
 
+Configure the Playwright project with `use: { serviceWorkers: 'block' }` before
+using scoped browser activities. Public Playwright routes do not reliably
+intercept service-worker traffic or the follow-up hops of a redirect, so a
+scoped browser action rejects any redirect response instead of losing activity
+ownership. Start a new scoped action at the final URL when that behavior is part
+of the test.
+
+Only one Blackbox activity may own a given `Page` at a time. Nested or concurrent
+scoped actions on the same page are rejected; independent pages can run separate
+activities. Page work outside `activities.*.browser(...)` remains ordinary
+native Playwright behavior and has no Blackbox activity propagation.
+
 Use `activities.inspection.request(...)` for fixture state endpoints and other
 authoritative reads. A successful state read remains a separate result; observed
 attempt effects do not prove that state is durable.
@@ -226,13 +238,35 @@ The Blackbox reporter also adds a readable `blackbox-diagnostics` attachment.
 Container health polling and detailed startup events stay in these attachments,
 not the live console. Native reporters may display attachments for failed tests.
 
+Every final `expect(effects).toSatisfy(...)` decision also attaches a
+`blackbox-effects` JSON document, whether the assertion passes, fails, or stays
+inconclusive. Open the test in Playwright's HTML report to inspect the attachment,
+or read it from the result's `attachments` array when using Playwright's JSON
+reporter. Repeated assertions have an attempt-local sequence number.
+
+The document keeps the compiled contract beside its finding indexes, projected
+effects and relations, and activity ownership. Admitted observations include
+bounded excerpts with trace/span IDs, service, span kind/status, and supported
+HTTP, RPC, database, cache, and messaging operation fields. Arbitrary attributes,
+headers, bodies, SQL text, and span names are not attached. Protected environment
+values and common credential forms are redacted before Playwright stores the
+document.
+
+`evidence.omitted` reports entries excluded by the attachment's display bounds,
+and `display.truncatedStrings` reports shortened strings. These are presentation
+limits only. They do not make capture complete or change the matcher result. Use
+`projection.quality` and the contract assessment to understand admitted coverage
+and uncertainty. When no observation was admitted, `evidence.kind` is
+`not-admitted` and the assertion diagnostic explains why; negating the matcher
+does not turn that inconclusive result into a pass.
+
 The retained telemetry summary reads request/span counters from the lifecycle
 record without loading raw trace fragments. Collector shutdown is reported from
 its retained status. Neither a span count nor a
 completed collector shutdown proves that a business workflow finished; the test
 must await its completion boundary before asserting behavior. The internal effect
-evaluator returns scope, witness, and uncertainty diagnostics; fixture attachment
-of these diagnostics remains part of the pending integration.
+evaluator returns scope, witness, and uncertainty diagnostics in the
+`blackbox-effects` attachment.
 
 Accepted baselines, drivers, and shared worker sandboxes remain outside this
 package's current surface.

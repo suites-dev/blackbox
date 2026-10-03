@@ -19,7 +19,13 @@ export interface BlackboxActivityActions {
     request: BlackboxScopedRequest,
     action: (request: BlackboxScopedRequest) => Promise<T>,
   ): Promise<T>;
-  /** Run same-origin browser traffic with canonical propagation on the supplied page. */
+  /**
+   * Run same-origin browser traffic with canonical propagation on the supplied page.
+   * Redirects are rejected before the follow-up request because Playwright cannot preserve the
+   * activity boundary across native redirect handling. Navigate directly or split the navigation.
+   * Concurrent or nested activities on one Page are rejected; separate pages remain independent.
+   * Requests owned by a service worker cannot be intercepted, so use a context with service workers blocked.
+   */
   browser<T>(name: string, page: Page, action: (page: Page) => Promise<T>): Promise<T>;
 }
 

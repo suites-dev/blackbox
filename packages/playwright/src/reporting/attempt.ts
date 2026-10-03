@@ -2,8 +2,10 @@ import { realpathSync } from 'node:fs';
 import { relative } from 'node:path';
 
 import type { TestInfo } from '@playwright/test';
+import type { EffectAssertionReport, EffectAssertionReporter } from '../effects/runtime.js';
 import type { BlackboxSandbox, BlackboxTelemetry } from '../types.js';
 
+import { effectAttachment, effectAttachmentBody } from './effects/attachment.js';
 import {
   attemptAttachment,
   progressAttachment,
@@ -14,13 +16,14 @@ import { reportText } from './text.js';
 import { sandboxLifecycleEnabled } from './options.js';
 
 /** Attachments use Playwright's worker transport and remain available to other reporters. */
-export class AttemptReport implements AttemptProgress {
+export class AttemptReport implements AttemptProgress, EffectAssertionReporter {
   private readonly started = Date.now();
   private readonly events: AttemptEvent[] = [];
   private readonly secrets = new Set<string>();
   private pending = Promise.resolve();
   private attachmentFailure: unknown = null;
   private dropped = 0;
+  private effectAssertions = 0;
   private closed = false;
   private identity:
     | { readonly kind: 'not-ready' }
@@ -101,6 +104,18 @@ export class AttemptReport implements AttemptProgress {
       .catch((error: unknown) => {
         this.attachmentFailure = error;
       });
+  }
+
+  async effectAssertion(report: EffectAssertionReport): Promise<void> {
+    this.effectAssertions++;
+    await this.testInfo.attach(effectAttachment, {
+      contentType: 'application/json',
+      body: effectAttachmentBody({
+        sequence: this.effectAssertions,
+        report,
+        sanitize: (value) => this.sanitize(value),
+      }),
+    });
   }
 
   async flush(): Promise<void> {

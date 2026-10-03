@@ -3,7 +3,11 @@ import { setTimeout as delay } from 'node:timers/promises';
 
 import type { BlackboxEffects } from '../types.js';
 import { compileEffectContract, type EffectContractBuilder } from './contract.js';
-import { evaluateBlackboxEffects, isLiveBlackboxEffects } from './runtime.js';
+import {
+  evaluateBlackboxEffects,
+  isLiveBlackboxEffects,
+  reportEffectAssertion,
+} from './runtime.js';
 
 export const expect = playwrightExpect.extend({
   async toSatisfy(received: BlackboxEffects, builder: EffectContractBuilder) {
@@ -22,9 +26,16 @@ export const expect = playwrightExpect.extend({
       evaluation = await evaluateBlackboxEffects(received, contract);
     }
     if (evaluation.kind === 'inconclusive') {
+      await reportEffectAssertion({
+        effects: received,
+        contract,
+        evaluation,
+        negated: this.isNot,
+      });
       throw new Error(evaluation.message);
     }
     const pass = evaluation.kind === 'satisfied';
+    await reportEffectAssertion({ effects: received, contract, evaluation, negated: this.isNot });
     return {
       pass,
       message: () =>

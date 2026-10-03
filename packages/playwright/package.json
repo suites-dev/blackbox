@@ -42,7 +42,8 @@
     "build": "tsc --project tsconfig.build.json",
     "prepack": "pnpm build",
     "lint": "eslint .",
-    "test": "vitest run --config vitest.config.ts"
+    "test": "vitest run --config vitest.config.ts",
+    "test:browser": "vitest run --config vitest.integration.config.ts"
   },
   "dependencies": {
     "@suites/blackbox-catalog": "workspace:*",
