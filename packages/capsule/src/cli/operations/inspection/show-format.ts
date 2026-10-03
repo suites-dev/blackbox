@@ -1,5 +1,6 @@
 import {
   spanFailure,
+  walkSpanTree,
   spanResult,
   spanTitle,
   type ActivityContext,
@@ -93,6 +94,83 @@ export function treeLines(
     }
   }
   return lines;
+}
+
+/** Spans above which `show <activity>` summarizes its tree unless `--full`. */
+export const SUMMARY_SPAN_LIMIT = 40;
+
+/**
+ * One small ID per distinct subtree shape (its label and its children's
+ * shapes), computed children first and without recursion.
+ */
+function subtreeShapes(roots: readonly SpanTreeNode[]): ReadonlyMap<SpanTreeNode, number> {
+  const ids = new Map<string, number>();
+  const shapes = new Map<SpanTreeNode, number>();
+  for (const { node } of [...walkSpanTree(roots)].reverse()) {
+    const key = `${spanLabel(node)}|${node.children.map((child) => shapes.get(child)).join(',')}`;
+    const id = ids.get(key) ?? ids.size;
+    ids.set(key, id);
+    shapes.set(node, id);
+  }
+  return shapes;
+}
+
+/** Consecutive siblings with the same shape, as one node and how many times it repeats. */
+function repeatedRuns(
+  nodes: readonly SpanTreeNode[],
+  shapes: ReadonlyMap<SpanTreeNode, number>,
+): readonly { readonly node: SpanTreeNode; readonly count: number }[] {
+  const runs: { node: SpanTreeNode; count: number }[] = [];
+  for (const node of nodes) {
+    const last = runs.at(-1);
+    if (last !== undefined && shapes.get(last.node) === shapes.get(node)) {
+      last.count += 1;
+    } else {
+      runs.push({ node, count: 1 });
+    }
+  }
+  return runs;
+}
+
+/**
+ * Tree lines like {@link treeLines}, folded: a run of identical sibling subtrees
+ * (same titles, results and structure) prints once, its root marked `×N`, and a
+ * subtree identical to one already printed shows only its root, marked as such.
+ */
+export function summarizedTreeLines(roots: readonly SpanTreeNode[]): readonly string[] {
+  const shapes = subtreeShapes(roots);
+  const printed = new Set<number>();
+  const lines: string[] = [];
+  const stack = [...repeatedRuns(roots, shapes)]
+    .reverse()
+    .map((run) => ({ ...run, prefix: '', connector: '' }));
+  for (let item = stack.pop(); item !== undefined; item = stack.pop()) {
+    const repeat = item.count > 1 ? `  ×${String(item.count)}` : '';
+    const shape = shapes.get(item.node) ?? -1;
+    const seen = item.node.children.length > 0 && printed.has(shape);
+    const label = `${spanLabel(item.node)}${repeat}${seen ? '  (same subtree as above)' : ''}`;
+    lines.push(`${item.prefix}${item.connector}${label}`);
+    printed.add(shape);
+    const continuation = item.connector === '' ? '' : item.connector === '└─ ' ? '   ' : '│  ';
+    const children = seen ? [] : repeatedRuns(item.node.children, shapes);
+    for (let index = children.length - 1; index >= 0; index -= 1) {
+      stack.push({
+        ...children[index],
+        prefix: `${item.prefix}${continuation}`,
+        connector: index === children.length - 1 ? '└─ ' : '├─ ',
+      });
+    }
+  }
+  return lines;
+}
+
+/** `ts-travel-service 25, ts-route-service 30, …`: spans per service, in tree order. */
+export function serviceCounts(roots: readonly SpanTreeNode[]): string {
+  const counts = new Map<string, number>();
+  for (const { node } of walkSpanTree(roots)) {
+    counts.set(node.span.service, (counts.get(node.span.service) ?? 0) + 1);
+  }
+  return [...counts].map(([service, count]) => `${service} ${String(count)}`).join(', ');
 }
 
 export function contextText(context: ActivityContext, driver: string | null): string {

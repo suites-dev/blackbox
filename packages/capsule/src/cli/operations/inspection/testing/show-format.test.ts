@@ -3,7 +3,14 @@ import test from 'node:test';
 
 import type { CapsuleReportSpan, SpanTreeNode } from '@suites/blackbox-capsule';
 
-import { contextText, showDuration, statusText, treeLines } from '../show-format.js';
+import {
+  contextText,
+  serviceCounts,
+  showDuration,
+  statusText,
+  summarizedTreeLines,
+  treeLines,
+} from '../show-format.js';
 import { treeDocument } from '../show-json.js';
 
 function node(
@@ -131,4 +138,29 @@ void test('an error span prints its exception type after the result, in lines an
   const [plain] = treeDocument([node('b')]);
   assert.equal(failed.failure, 'java.net.NoRouteToHostException');
   assert.equal(plain.failure, null);
+});
+
+void test('a folded tree prints identical sibling subtrees once with ×N, later repeats as one line', () => {
+  const named = (spanId: string, operation: string, children: readonly SpanTreeNode[] = []) => {
+    const base = node(spanId, children);
+    return { ...base, span: { ...base.span, operation } };
+  };
+  const lookup = (id: string) =>
+    named(`get-${id}`, 'GET route', [named(`find-${id}`, 'find route')]);
+  const root = named('root', 'POST search', [
+    lookup('1'),
+    lookup('2'),
+    lookup('3'),
+    named('save', 'save trip'),
+    lookup('4'),
+  ]);
+  assert.deepEqual(summarizedTreeLines([root]), [
+    'svc  POST search',
+    '├─ svc  GET route  ×3',
+    '│  └─ svc  find route',
+    '├─ svc  save trip',
+    '└─ svc  GET route  (same subtree as above)',
+  ]);
+  assert.equal(treeLines([root]).length, 10);
+  assert.equal(serviceCounts([root]), 'svc 10');
 });

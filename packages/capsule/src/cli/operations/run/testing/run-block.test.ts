@@ -5,6 +5,7 @@ import test from 'node:test';
 import type { CapsuleActivityReport } from '@suites/blackbox-capsule';
 
 import { activityView } from '../../inspection/show-activity.js';
+import { NO_WAIT } from '../../inspection/show-json.js';
 import { LiveRunBlock, runBlockLines, runDocument } from '../run-block.js';
 import {
   SNAPSHOTS,
@@ -175,11 +176,13 @@ void test('run block: at most 40 tree lines, then how many more', async (t) => {
   const tree = lines.slice(lines.findIndex((line) => line.startsWith('  observed')) + 1);
   const more = tree.findIndex((line) => /^ {4}… \d+ more spans$/u.test(line));
   assert.equal(more, 40);
-  // show keeps printing every span.
-  const shown = activityView({
-    short: short(activity.activityId),
-    activity,
-    investigation: investigation(many),
-  }).lines;
-  assert.ok(shown.filter((line) => line.startsWith('    ')).length > 60);
+  // show folds a tree this large by default, and prints every span with --full.
+  const input = { short: short(activity.activityId), activity, investigation: investigation(many) };
+  const spanLines = (lines: readonly string[]) => lines.filter((line) => line.startsWith('    '));
+  const full = activityView(input, NO_WAIT, 'full').lines;
+  const folded = activityView(input).lines;
+  assert.ok(spanLines(full).length > 60);
+  assert.ok(spanLines(folded).length < spanLines(full).length);
+  assert.ok(folded.some((line) => line.startsWith('  services  ')));
+  assert.ok(folded.includes('  --full prints every span'));
 });

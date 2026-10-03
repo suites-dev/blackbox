@@ -98,6 +98,39 @@ describe('spanTitle', () => {
   });
 });
 
+describe('client span targets (#111)', () => {
+  const client = (attributes: Readonly<Record<string, string>>, spanKind = 'client' as const) =>
+    spanTitle({ ...span({ id: 'a', name: 'GET', attributes }), spanKind });
+
+  it('adds where a client span went', () => {
+    expect(client({ 'http.request.method': 'GET', 'server.address': 'ts-price-service' })).toBe(
+      'GET → ts-price-service',
+    );
+    expect(
+      client({
+        'db.operation': 'find',
+        'db.mongodb.collection': 'config',
+        'server.address': 'ts-config-mongo',
+      }),
+    ).toBe('find config → ts-config-mongo');
+    expect(client({ 'http.request.method': 'GET', 'peer.service': 'billing' })).toBe(
+      'GET → billing',
+    );
+  });
+
+  it('adds no target to a server span or a client span without one', () => {
+    const server = {
+      'http.request.method': 'GET',
+      'url.path': '/health',
+      'server.address': 'localhost',
+    };
+    expect(spanTitle({ ...span({ id: 'a', attributes: server }), spanKind: 'server' })).toBe(
+      'GET /health',
+    );
+    expect(client({ 'http.request.method': 'GET' })).toBe('GET');
+  });
+});
+
 describe('spanResult', () => {
   it.each([
     [{ 'http.response.status_code': 201 }, null, '201'],

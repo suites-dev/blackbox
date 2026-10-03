@@ -9,6 +9,7 @@ import type { Resolved } from '../../context/resolver.js';
 import { completenessOf, loadInvestigation, readSession } from './investigation-data.js';
 import { CapsuleInvestigation } from './investigation-model.js';
 import { activityView, capsuleView, timelineView, traceView } from './show-output.js';
+import { NO_WAIT } from './show-json.js';
 
 export interface ShowRequest {
   readonly id: string;
@@ -18,6 +19,8 @@ export interface ShowRequest {
   readonly spans: boolean;
   /** `show <capsule> --timeline`. */
   readonly timeline: boolean;
+  /** `show <activity> --full`: every span, never a folded tree. */
+  readonly full: boolean;
 }
 
 /** A trace ID retained nowhere, named with an explicit capsule that is still running. */
@@ -142,16 +145,20 @@ export async function showView(input: {
   switch (resolved.kind) {
     case 'activity':
       return withParticipantWarnings(
-        activityView({
-          short: display.short(resolved.activity.activityId),
-          activity: resolved.activity,
-          investigation: await investigate({
-            projectDirectory,
-            capsule,
-            activities: activities ?? [resolved.activity],
-            traceIds: 'all',
-          }),
-        }),
+        activityView(
+          {
+            short: display.short(resolved.activity.activityId),
+            activity: resolved.activity,
+            investigation: await investigate({
+              projectDirectory,
+              capsule,
+              activities: activities ?? [resolved.activity],
+              traceIds: 'all',
+            }),
+          },
+          NO_WAIT,
+          input.request.full ? 'full' : 'summary',
+        ),
         capsule,
       );
     case 'capsule':
