@@ -54,6 +54,8 @@ export function progressDetail(event: CapsuleProgressEvent): string {
       return `catalog selected: ${event.system}`;
     case 'catalog-resolved':
       return `catalog resolved: ${event.services.join(', ')}`;
+    case 'observation-policy-resolved':
+      return `observation policy ${event.policy.policyId}: required boundaries ${event.policy.requiredBoundaries.join(', ') || 'none'}`;
     case 'compose-configured':
       return `Compose configured: ${event.projectName}`;
     case 'acquisition-started':
@@ -78,5 +80,11 @@ export function progressDetail(event: CapsuleProgressEvent): string {
       return `start failed at ${event.stage}: ${event.cause.name}: ${event.cause.message}`;
     case 'participant-exited':
       return participantExitText(event);
+    case 'capsule-stop-requested':
+      return `stop requested (${event.reason})`;
+    case 'capsule-stopped':
+      return `capsule stopped · cleanup ${event.cleanup}`;
+    case 'capsule-stop-failed':
+      return `stop failed: ${event.error.name}: ${event.error.message}`;
   }
 }

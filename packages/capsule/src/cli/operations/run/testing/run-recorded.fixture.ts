@@ -103,6 +103,26 @@ export function investigation(recorded: RecordedFixture): CapsuleInvestigation {
 
 export const short = (activityId: string) => activityId.slice(0, 8);
 
+/**
+ * The capsule as `run` sees it when its child exits: no later activity has
+ * started yet, so no later activity can hold a later trace in its window.
+ */
+function atChildExit(recorded: RecordedFixture, activity: CapsuleActivityReport): RecordedFixture {
+  const started = (item: CapsuleActivityReport) =>
+    Date.parse(item.startedAt) <= Date.parse(activity.startedAt);
+  const later = new Set(
+    recorded.activities
+      .filter((item) => !started(item))
+      .map((item) => item.telemetry.context.traceId),
+  );
+  return {
+    ...recorded,
+    activities: recorded.activities.filter(started),
+    // A later activity's own trace does not exist yet either.
+    traces: recorded.traces.filter((trace) => !later.has(trace.traceId)),
+  };
+}
+
 export function block(
   recorded: RecordedFixture,
   activity: CapsuleActivityReport,
@@ -124,7 +144,7 @@ export function block(
   return {
     runLine,
     short: short(activity.activityId),
-    snapshot: { activity, investigation: investigation(recorded) },
+    snapshot: { activity, investigation: investigation(atChildExit(recorded, activity)) },
     wait,
     next: [`blackbox capsule show ${short(activity.activityId)} --session ${capsule}`],
   };

@@ -46,5 +46,24 @@ Exports are snapshots. An HTML export made while running stays a running snapsho
 capture the stopped state, choosing a different output path if you want to retain both versions. Serving and exporting
 read retained evidence without changing the experiment.
 
+## What a report records
+
+- **When it was written.** `generatedAt` is the snapshot time, and the HTML names it. A report written
+  while the capsule ran says it was running when the snapshot was generated. A report written after
+  `capsule down` includes the stop in its progress (`capsule-stop-requested`, `capsule-stopped`), and each
+  participant that `ls`, `show`, `run` or `down` saw exit (`participant-exited`, with its exit code).
+  `session.updatedAt` is the latest retained change: the record, an activity, or a progress event.
+- **The observation policy.** `observationPolicy` keeps the catalog entry's policy ID, boundaries,
+  required boundaries, terminal observation window and redaction policy. Every boundary's status is
+  `not-evaluated`: Capsule records observations, but does not decide whether a boundary was satisfied.
+  Capsules started before the policy was recorded report `not-recorded`.
+- **Activity windows.** A trace with no trace-context link to any activity is placed in a stimulus's time
+  window (`association.kind: activity-window`) only when it started after that activity started, before
+  the next activity started, and no more than 5 seconds after the activity completed. Other traces are
+  `session-only`. A window is temporal placement, never a cause.
+- **System spans.** An activity's span count in the HTML includes only the system's spans. Blackbox's own
+  activity span (service `blackbox-capsule`) is counted apart, so an untraced command shows
+  `0 system spans`.
+
 See [runtime evidence](runtime-evidence.md) for interpreting observations in a report.
 Playwright reporting is still in development.

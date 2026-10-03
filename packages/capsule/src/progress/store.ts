@@ -15,7 +15,7 @@ function progressStage(kind: CapsuleProgressEvent['kind']): CapsuleProgressEvent
   if (kind === 'session-admitted') {
     return 'admission';
   }
-  if (kind.startsWith('catalog-')) {
+  if (kind.startsWith('catalog-') || kind === 'observation-policy-resolved') {
     return 'catalog';
   }
   if (kind.startsWith('manager-')) {
@@ -32,6 +32,9 @@ function progressStage(kind: CapsuleProgressEvent['kind']): CapsuleProgressEvent
   }
   if (kind === 'participant-exited') {
     return 'running';
+  }
+  if (kind.startsWith('capsule-stop')) {
+    return 'stop';
   }
   return 'acquisition';
 }

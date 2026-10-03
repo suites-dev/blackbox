@@ -1,3 +1,5 @@
+import type { ObservationPolicy } from '@suites/blackbox-catalog';
+
 import type { CapsuleEntrypoint } from '../model/environment.js';
 import type { CapsuleRecordedError } from '../model/recorded-error.js';
 import type { CapsuleAcquisitionObservation } from './acquisition.js';
@@ -19,7 +21,8 @@ export type CapsuleProgressStage =
   | 'manager-spawn'
   | 'manager-handshake'
   | 'persistence'
-  | 'running';
+  | 'running'
+  | 'stop';
 
 interface CapsuleProgressBase {
   readonly sessionId: string;
@@ -58,6 +61,11 @@ export type CapsuleProgressEvent =
       readonly projectDirectory: string;
       readonly composeFiles: readonly string[];
       readonly services: readonly string[];
+    })
+  | (CapsuleProgressBase & {
+      /** The catalog entry's observation block, as resolved when the capsule started. */
+      readonly kind: 'observation-policy-resolved';
+      readonly policy: ObservationPolicy;
     })
   | (CapsuleProgressBase & { readonly kind: 'compose-configured'; readonly projectName: string })
   | (CapsuleProgressBase & { readonly kind: 'acquisition-started'; readonly projectName: string })
@@ -113,6 +121,12 @@ export type CapsuleProgressEvent =
       readonly state: 'exited' | 'dead' | 'missing';
       /** Null when the container is gone and its exit code is unknown. */
       readonly exitCode: number | null;
+    })
+  | (CapsuleProgressBase & { readonly kind: 'capsule-stop-requested'; readonly reason: string })
+  | (CapsuleProgressBase & { readonly kind: 'capsule-stopped'; readonly cleanup: 'complete' })
+  | (CapsuleProgressBase & {
+      readonly kind: 'capsule-stop-failed';
+      readonly error: CapsuleRecordedError;
     })
   | (CapsuleProgressBase & {
       readonly kind: 'capsule-start-failed';

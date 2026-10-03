@@ -123,7 +123,7 @@ function activityRow(a, open, d, root) {
       n('small', '', supporting),
     ),
     add(n('span', 'activity-badges'), purposeBadge(a.purpose), durationBadge(a),
-      activityBadge(a), telemetryBadge(d, a)),
+      activityBadge(a), ...telemetryBadges(d, a)),
   );
   const body = n('div', 'activity-body');
   add(

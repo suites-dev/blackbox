@@ -172,11 +172,13 @@ trace ID, nested only by each span's recorded parent. A root whose parent is abs
 Siblings are ordered by start time, then service, then title, then span ID. `capsule show <trace> --spans`
 lists the same spans as rows with their span and parent IDs.
 
-Only trace context links an activity to what it caused. Every other trace in the capsule whose
-first span started at or after the activity started is listed under `later in this capsule, no known
-cause`, with a `⚠ Blackbox cannot prove that …` line: it happened in the same capsule, but no trace
-context connects it to the activity. Earlier traces, and traces without a start time, are not listed
-there. `capsule show <capsule> --timeline` places each uncaused trace after the latest activity that
+Only trace context links an activity to what it caused. Every other trace whose first span started in
+the activity's time window is listed under `later in this capsule, no known cause`, with a
+`⚠ Blackbox cannot prove that …` line: it happened in the same capsule, but no trace context connects
+it to the activity. The window opens when the activity starts and closes when the next activity starts
+or 5 seconds after the activity completed, whichever comes first, so a later activity's traces are
+never listed under an earlier one. Earlier traces, later traces, and traces without a start time are
+not listed there. `capsule show <capsule> --timeline` places each uncaused trace after the latest activity that
 started at or before its first span, or before every activity when none did (`┈┈`), and marks
 traces an activity caused with `──`. Placement is display order only, never a cause. Traces from
 before the first activity (instrumentation start-up, readiness probes) are summarized in one row; the

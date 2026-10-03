@@ -1,6 +1,7 @@
 import { expect, it, vi } from 'vitest';
 
 import { managerRequest } from '../../ipc/client.js';
+import { readCapsuleProgress } from '../../progress/store.js';
 import { readCapsuleActivities, readCapsuleRecord } from '../../records.js';
 import { requestFixture } from './request.fixture.js';
 
@@ -213,6 +214,11 @@ it('stop forwards the reason and persists cleanup before acknowledgement', async
       cleanup: { kind: 'complete' },
       revision: 3,
     });
+    const stops = (await readCapsuleProgress(fixture)).filter((event) => event.stage === 'stop');
+    expect(stops).toMatchObject([
+      { kind: 'capsule-stop-requested', reason: 'cancelled' },
+      { kind: 'capsule-stopped', cleanup: 'complete' },
+    ]);
   } finally {
     await fixture.close();
   }
@@ -236,6 +242,11 @@ it('records failed cleanup truthfully when sandbox stop rejects', async () => {
       state: 'stop-failed',
       cleanup: { kind: 'failed', error: { message: 'owned container is still running' } },
     });
+    const stops = (await readCapsuleProgress(fixture)).filter((event) => event.stage === 'stop');
+    expect(stops).toMatchObject([
+      { kind: 'capsule-stop-requested', reason: 'failed' },
+      { kind: 'capsule-stop-failed', error: { message: 'owned container is still running' } },
+    ]);
   } finally {
     await fixture.close();
   }

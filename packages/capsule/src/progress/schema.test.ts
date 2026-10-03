@@ -59,7 +59,7 @@ it('reads legacy arrays and writes the versioned artifact without changing earli
   }
 });
 
-it('accepts the start-up phase, named awaited endpoints and participant exits', () => {
+it('accepts the start-up phase, awaited endpoints, participant exits, stop steps and the policy', () => {
   const base = { sessionId: 'test', at: 'now' };
   const events = [
     {
@@ -90,6 +90,21 @@ it('accepts the start-up phase, named awaited endpoints and participant exits', 
       containerId: 'db-id',
       state: 'missing',
       exitCode: null,
+    },
+    { ...base, sequence: 4, stage: 'stop', kind: 'capsule-stop-requested', reason: 'completed' },
+    { ...base, sequence: 5, stage: 'stop', kind: 'capsule-stopped', cleanup: 'complete' },
+    {
+      ...base,
+      sequence: 6,
+      stage: 'catalog',
+      kind: 'observation-policy-resolved',
+      policy: {
+        policyId: 'orders-v1',
+        boundaries: [{ id: 'effects.http', kind: 'http', authoritativeFor: ['HTTP'] }],
+        requiredBoundaries: ['effects.http'],
+        terminalObservationWindowMs: 5000,
+        redaction: { requestBodies: 'not-captured', headers: [], dynamicIdentifiers: 'kept' },
+      },
     },
   ];
   const progress = { ...document, events };

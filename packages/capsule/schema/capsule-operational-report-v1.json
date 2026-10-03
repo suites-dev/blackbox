@@ -28,11 +28,65 @@
     "kind": {
       "const": "capsule-operational-report"
     },
+    "generatedAt": { "type": "string", "minLength": 1 },
     "session": {
       "$ref": "#/$defs/reportSession"
     },
     "lifecycle": {
       "$ref": "#/$defs/lifecycle"
+    },
+    "observationPolicy": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind"],
+          "properties": { "kind": { "const": "not-recorded" } }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "policyId",
+            "terminalObservationWindowMs",
+            "redaction",
+            "requiredBoundaries",
+            "boundaries"
+          ],
+          "properties": {
+            "kind": { "const": "recorded" },
+            "policyId": { "type": "string" },
+            "terminalObservationWindowMs": { "type": "number", "minimum": 0 },
+            "redaction": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["requestBodies", "headers", "dynamicIdentifiers"],
+              "properties": {
+                "requestBodies": { "type": "string" },
+                "headers": { "type": "array", "items": { "type": "string" } },
+                "dynamicIdentifiers": { "type": "string" }
+              }
+            },
+            "requiredBoundaries": { "type": "array", "items": { "type": "string" } },
+            "boundaries": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["id", "kind", "authoritativeFor", "required", "status"],
+                "properties": {
+                  "id": { "type": "string" },
+                  "kind": { "type": "string" },
+                  "authoritativeFor": { "type": "array", "items": { "type": "string" } },
+                  "required": { "type": "boolean" },
+                  "status": { "const": "not-evaluated" }
+                }
+              }
+            }
+          }
+        }
+      ]
     },
     "composeProject": {
       "$ref": "#/$defs/stringAvailability"

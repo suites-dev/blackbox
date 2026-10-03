@@ -917,6 +917,104 @@
               "durationMs": { "type": "integer", "minimum": 0 },
               "startupTimeoutMs": { "type": "integer", "minimum": 0 }
             }
+          },
+          {
+            "type": "object",
+            "required": ["sessionId", "sequence", "at", "stage", "kind", "policy"],
+            "additionalProperties": false,
+            "properties": {
+              "sessionId": { "type": "string" },
+              "sequence": { "type": "integer", "minimum": 1 },
+              "at": { "type": "string" },
+              "stage": { "const": "catalog" },
+              "kind": { "const": "observation-policy-resolved" },
+              "policy": {
+                "type": "object",
+                "required": [
+                  "policyId",
+                  "boundaries",
+                  "requiredBoundaries",
+                  "terminalObservationWindowMs",
+                  "redaction"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "policyId": { "type": "string" },
+                  "boundaries": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": ["id", "kind", "authoritativeFor"],
+                      "additionalProperties": false,
+                      "properties": {
+                        "id": { "type": "string" },
+                        "kind": { "type": "string" },
+                        "authoritativeFor": { "type": "array", "items": { "type": "string" } }
+                      }
+                    }
+                  },
+                  "requiredBoundaries": { "type": "array", "items": { "type": "string" } },
+                  "terminalObservationWindowMs": { "type": "number", "minimum": 0 },
+                  "redaction": {
+                    "type": "object",
+                    "required": ["requestBodies", "headers", "dynamicIdentifiers"],
+                    "additionalProperties": false,
+                    "properties": {
+                      "requestBodies": { "type": "string" },
+                      "headers": { "type": "array", "items": { "type": "string" } },
+                      "dynamicIdentifiers": { "type": "string" }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": ["sessionId", "sequence", "at", "stage", "kind", "reason"],
+            "additionalProperties": false,
+            "properties": {
+              "sessionId": { "type": "string" },
+              "sequence": { "type": "integer", "minimum": 1 },
+              "at": { "type": "string" },
+              "stage": { "const": "stop" },
+              "kind": { "const": "capsule-stop-requested" },
+              "reason": { "type": "string" }
+            }
+          },
+          {
+            "type": "object",
+            "required": ["sessionId", "sequence", "at", "stage", "kind", "cleanup"],
+            "additionalProperties": false,
+            "properties": {
+              "sessionId": { "type": "string" },
+              "sequence": { "type": "integer", "minimum": 1 },
+              "at": { "type": "string" },
+              "stage": { "const": "stop" },
+              "kind": { "const": "capsule-stopped" },
+              "cleanup": { "const": "complete" }
+            }
+          },
+          {
+            "type": "object",
+            "required": ["sessionId", "sequence", "at", "stage", "kind", "error"],
+            "additionalProperties": false,
+            "properties": {
+              "sessionId": { "type": "string" },
+              "sequence": { "type": "integer", "minimum": 1 },
+              "at": { "type": "string" },
+              "stage": { "const": "stop" },
+              "kind": { "const": "capsule-stop-failed" },
+              "error": {
+                "type": "object",
+                "required": ["name", "message"],
+                "additionalProperties": false,
+                "properties": {
+                  "name": { "type": "string" },
+                  "message": { "type": "string" }
+                }
+              }
+            }
           }
         ]
       }

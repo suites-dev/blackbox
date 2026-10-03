@@ -7,6 +7,8 @@ export {
   type SpanTreeNode,
 } from './span-tree.js';
 export {
+  ACTIVITY_WINDOW_GRACE_MS,
+  activityWindowEndMs,
   earliestStart,
   isoToUnixNano,
   placeTraces,

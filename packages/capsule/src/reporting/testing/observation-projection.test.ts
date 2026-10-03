@@ -34,7 +34,10 @@ const record = {
   readiness: { kind: 'unavailable' },
 } satisfies CapsuleSessionRecord;
 
-function project(observations: CollectorSessionReadResult) {
+function project(
+  observations: CollectorSessionReadResult,
+  traceStart = '2026-09-23T12:00:00.500Z',
+) {
   const traceObservations = {
     kind: 'collector-traces-found',
     identity: { sessionId, executionId },
@@ -58,9 +61,7 @@ function project(observations: CollectorSessionReadResult) {
                           traceId: '99999999999999999999999999999999',
                           spanId: 'aaaaaaaaaaaaaaaa',
                           name: 'consume job',
-                          startTimeUnixNano: String(
-                            BigInt(Date.parse('2026-09-23T12:00:00.500Z')) * 1_000_000n,
-                          ),
+                          startTimeUnixNano: String(BigInt(Date.parse(traceStart)) * 1_000_000n),
                         },
                       ],
                     },
@@ -74,6 +75,7 @@ function project(observations: CollectorSessionReadResult) {
     ],
   } satisfies CollectorTracesReadResult;
   return projectCapsuleReport({
+    generatedAt: '2026-09-23T12:05:00.000Z',
     record,
     activities: [completedHostActivity()],
     progress: [],
@@ -207,3 +209,20 @@ it.each([
     expect(projected).not.toHaveProperty('identity');
   },
 );
+
+it('bounds the activity window at the completion plus the grace (#111)', () => {
+  // The activity ran 12:00:00–12:00:01; nothing started after it.
+  const association = (traceStart: string) => {
+    const report = project(found(), traceStart);
+    if (report.observations.kind !== 'collector-session-found') {
+      throw new Error('expected a collector session');
+    }
+    const [trace] = report.observations.traces.sessionOnly;
+    return trace.association;
+  };
+  expect(association('2026-09-23T12:00:05.900Z')).toEqual({
+    kind: 'activity-window',
+    activityId: completedHostActivity().activityId,
+  });
+  expect(association('2026-09-23T12:00:06.100Z')).toEqual({ kind: 'session-only' });
+});

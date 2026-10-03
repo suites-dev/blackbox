@@ -8,6 +8,7 @@ function report(): CapsuleReportDocument {
   return {
     schemaVersion: 1,
     kind: 'capsule-operational-report',
+    generatedAt: '2026-09-23T12:02:00.000Z',
     session: {
       sessionId: 'bright-river-ada',
       system: 'orders',
@@ -19,6 +20,7 @@ function report(): CapsuleReportDocument {
       artifactRoot: '[REDACTED]',
     },
     lifecycle: { kind: 'stopped', retainedState: 'stopped' },
+    observationPolicy: { kind: 'not-recorded' },
     composeProject: { kind: 'unavailable' },
     entrypoint: { kind: 'unavailable' },
     readiness: { kind: 'unavailable' },

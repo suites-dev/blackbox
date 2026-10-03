@@ -28,12 +28,21 @@ function durationBadge(a) {
 function activityTelemetry(d, a) {
   return d.activityTelemetry.find((item) => item.activityId === a.activityId);
 }
-function telemetryBadge(d, a) {
-  const telemetry = activityTelemetry(d, a);
-  if (telemetry && telemetry.kind === 'available')
-    return badge(telemetry.spans.length + ' spans', 'good');
-  if (telemetry && telemetry.reason === 'corrupt') return badge('telemetry unreadable', 'bad');
-  return null;
+function windowTraceCount(d, a) {
+  if (d.observations.kind !== 'collector-session-found') return 0;
+  return d.observations.traces.sessionOnly.filter((trace) =>
+    trace.association.kind === 'activity-window' && trace.association.activityId === a.activityId).length;
+}
+function telemetryBadges(d, a) {
+  const telemetry = activityTelemetry(d, a), badges = [];
+  if (telemetry && telemetry.kind === 'available') {
+    // Blackbox's own activity span is not system evidence: only the system's spans count.
+    const system = telemetry.spans.filter((span) => span.service !== 'blackbox-capsule').length;
+    badges.push(badge(system + (system === 1 ? ' system span' : ' system spans'), system > 0 ? 'good' : 'warn'));
+  } else if (telemetry && telemetry.reason === 'corrupt') badges.push(badge('telemetry unreadable', 'bad'));
+  const window = windowTraceCount(d, a);
+  if (window > 0) badges.push(badge(window + (window === 1 ? ' trace' : ' traces') + ' in its time window'));
+  return badges;
 }
 function defaultOpenActivity(d, open) {
   if (open.length) return open;
