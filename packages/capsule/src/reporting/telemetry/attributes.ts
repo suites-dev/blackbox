@@ -20,7 +20,17 @@ const allowedAttributes = new Set([
   'messaging.operation',
   'messaging.destination.name',
   'rpc.method',
+  // Failure causes and client targets.
+  'error.type',
+  'url.full',
+  'db.namespace',
+  'db.collection.name',
 ]);
+
+/** A full URL keeps its scheme, host and path; its query and fragment can carry credentials. */
+function withoutQuery(key: string, value: string): string {
+  return key === 'url.full' ? (value.split(/[?#]/u, 1)[0] ?? '') : value;
+}
 
 export function attributes(
   value: unknown,
@@ -38,6 +48,11 @@ export function attributes(
     if (typeof value !== 'string' && typeof value !== 'number' && typeof value !== 'boolean') {
       return [];
     }
-    return [{ key, value: typeof value === 'string' ? safeText(value, context) : value }];
+    return [
+      {
+        key,
+        value: typeof value === 'string' ? safeText(withoutQuery(key, value), context) : value,
+      },
+    ];
   });
 }

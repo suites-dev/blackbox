@@ -58,3 +58,45 @@ it('reads legacy arrays and writes the versioned artifact without changing earli
     await rm(projectDirectory, { recursive: true, force: true });
   }
 });
+
+it('accepts the start-up phase, named awaited endpoints and participant exits', () => {
+  const base = { sessionId: 'test', at: 'now' };
+  const events = [
+    {
+      ...base,
+      ...event,
+      observation: {
+        kind: 'waiting-for-endpoints',
+        elapsedMs: 5000,
+        awaiting: [{ service: 'api', containerPort: 8080 }],
+      },
+    },
+    {
+      ...base,
+      sequence: 2,
+      stage: 'acquisition',
+      kind: 'acquisition-completed',
+      durationMs: 4200,
+      startupTimeoutMs: 120000,
+    },
+    {
+      ...base,
+      sequence: 3,
+      stage: 'running',
+      kind: 'participant-exited',
+      participant: 'db',
+      service: 'orders-db',
+      containerName: 'orders-db-1',
+      containerId: 'db-id',
+      state: 'missing',
+      exitCode: null,
+    },
+  ];
+  const progress = { ...document, events };
+  expect(decodeCapsuleProgress({ document: progress, sessionId: 'test' })).toEqual(events);
+  const wrongStage = {
+    ...progress,
+    events: [events[0], events[1], { ...events[2], stage: 'ready' }],
+  };
+  expect(() => decodeCapsuleProgress({ document: wrongStage, sessionId: 'test' })).toThrow();
+});

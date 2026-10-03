@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { spanResult, spanTitle } from '../span-title.js';
+import { spanFailure, spanResult, spanTitle } from '../span-title.js';
 import { projectInvestigationSpans } from '../spans.js';
 import { span } from './span.fixture.js';
 
@@ -108,6 +108,26 @@ describe('spanResult', () => {
     [{}, null, ''],
   ])('reads %j with status %s as %j', (attributes, statusCode, expected) => {
     expect(spanResult(span({ id: 'a', attributes, statusCode }))).toBe(expected);
+  });
+});
+
+describe('spanFailure', () => {
+  const failing = { id: 'a', statusCode: 2 };
+  it('names the first exception type of an error span', () => {
+    const exceptions = [
+      { type: '', message: 'untyped' },
+      { type: 'java.net.UnknownHostException', message: 'price' },
+    ];
+    expect(spanFailure({ ...span(failing), exceptions })).toBe('java.net.UnknownHostException');
+  });
+
+  it.each([
+    [{ 'error.type': 'java.net.NoRouteToHostException' }, 2, 'java.net.NoRouteToHostException'],
+    [{ 'error.type': '500' }, 2, ''],
+    [{ 'error.type': 'java.io.IOException' }, 1, ''],
+    [{}, 2, ''],
+  ])('reads %j with status %s as %j', (attributes, statusCode, expected) => {
+    expect(spanFailure(span({ id: 'a', attributes, statusCode }))).toBe(expected);
   });
 });
 

@@ -21,6 +21,8 @@ function node(
     startTimeUnixNano: '1',
     endTimeUnixNano: '2',
     statusCode: null,
+    statusMessage: null,
+    exceptions: [],
     attributes: [],
     links: [],
   } satisfies CapsuleReportSpan;
@@ -114,4 +116,19 @@ void test('context text for every propagation outcome', () => {
     contextText({ kind: 'injection-failed', carrier: 'http-headers', message: 'no header' }, 'api'),
     'injection failed: no header',
   );
+});
+
+void test('an error span prints its exception type after the result, in lines and JSON', () => {
+  const failing = node('a');
+  const span = {
+    ...failing.span,
+    statusCode: 2,
+    exceptions: [{ type: 'java.net.NoRouteToHostException', message: 'No route to host' }],
+  };
+  const root = { ...failing, span };
+  assert.deepEqual(treeLines([root]), ['svc  op a  error  java.net.NoRouteToHostException']);
+  const [failed] = treeDocument([root]);
+  const [plain] = treeDocument([node('b')]);
+  assert.equal(failed.failure, 'java.net.NoRouteToHostException');
+  assert.equal(plain.failure, null);
 });

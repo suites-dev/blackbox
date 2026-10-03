@@ -644,6 +644,19 @@
                   "statusCode": {
                     "type": ["number", "null"]
                   },
+                  "statusMessage": { "type": ["string", "null"] },
+                  "exceptions": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["type", "message"],
+                      "properties": {
+                        "type": { "type": "string" },
+                        "message": { "type": "string" }
+                      }
+                    }
+                  },
                   "attributes": {
                     "type": "array",
                     "items": {

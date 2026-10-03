@@ -30,6 +30,9 @@ function progressStage(kind: CapsuleProgressEvent['kind']): CapsuleProgressEvent
   if (kind === 'capsule-start-failed') {
     return 'persistence';
   }
+  if (kind === 'participant-exited') {
+    return 'running';
+  }
   return 'acquisition';
 }
 

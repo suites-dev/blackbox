@@ -18,7 +18,8 @@ export type CapsuleProgressStage =
   | 'catalog-resolution'
   | 'manager-spawn'
   | 'manager-handshake'
-  | 'persistence';
+  | 'persistence'
+  | 'running';
 
 interface CapsuleProgressBase {
   readonly sessionId: string;
@@ -73,6 +74,15 @@ export type CapsuleProgressEvent =
       readonly networkNames: readonly string[];
     })
   | (CapsuleProgressBase & {
+      /**
+       * Compose start-up and the Testcontainers port checks finished. Their budget
+       * is separate from the HTTP readiness timeout that follows.
+       */
+      readonly kind: 'acquisition-completed';
+      readonly durationMs: number;
+      readonly startupTimeoutMs: number;
+    })
+  | (CapsuleProgressBase & {
       readonly kind: 'endpoint-mapped';
       readonly endpoint: CapsuleEntrypoint;
     })
@@ -93,6 +103,17 @@ export type CapsuleProgressEvent =
       readonly durationMs: number;
     })
   | (CapsuleProgressBase & { readonly kind: 'capsule-ready'; readonly durationMs: number })
+  | (CapsuleProgressBase & {
+      /** A participant container stopped or disappeared while the capsule was running. */
+      readonly kind: 'participant-exited';
+      readonly participant: string;
+      readonly service: string;
+      readonly containerName: string;
+      readonly containerId: string;
+      readonly state: 'exited' | 'dead' | 'missing';
+      /** Null when the container is gone and its exit code is unknown. */
+      readonly exitCode: number | null;
+    })
   | (CapsuleProgressBase & {
       readonly kind: 'capsule-start-failed';
       readonly stage: CapsuleStartFailureStage;

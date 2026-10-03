@@ -5,6 +5,7 @@ type Attributes = CapsuleReportSpan['attributes'];
 const HTTP_METHOD = ['http.request.method', 'http.method'];
 const HTTP_ROUTE = ['http.route', 'url.path', 'http.target'];
 const HTTP_STATUS = ['http.response.status_code', 'http.status_code'];
+const ERROR_TYPE = ['error.type'];
 const DB_OPERATION = ['db.operation.name', 'db.operation'];
 const DB_COLLECTION = ['db.collection.name', 'db.sql.table'];
 const MESSAGING_OPERATION = ['messaging.operation.type', 'messaging.operation'];
@@ -25,7 +26,7 @@ const FAMILIES = [
  * collection alternatives.
  */
 export const investigationAttributeKeys = new Set<string>(
-  [...FAMILIES.flat(2), ...HTTP_STATUS].concat([
+  [...FAMILIES.flat(2), ...HTTP_STATUS, ...ERROR_TYPE].concat([
     'db.system',
     'db.system.name',
     'messaging.system',
@@ -110,4 +111,20 @@ export function spanResult(span: CapsuleReportSpan): string {
     return status;
   }
   return span.statusCode === 2 ? 'error' : '';
+}
+
+/**
+ * Why an error span failed: its first exception type, else an `error.type`
+ * that names a type rather than a bare status code. Empty for other spans.
+ */
+export function spanFailure(span: CapsuleReportSpan): string {
+  if (span.statusCode !== 2) {
+    return '';
+  }
+  const exception = span.exceptions.find((item) => item.type !== '');
+  if (exception !== undefined) {
+    return exception.type;
+  }
+  const errorType = first(span.attributes, ERROR_TYPE);
+  return errorType === null || /^\d+$/u.test(errorType) ? '' : errorType;
 }

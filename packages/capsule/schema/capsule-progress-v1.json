@@ -487,6 +487,32 @@
                   },
                   {
                     "type": "object",
+                    "required": ["kind", "elapsedMs", "awaiting"],
+                    "additionalProperties": false,
+                    "properties": {
+                      "kind": {
+                        "const": "waiting-for-endpoints"
+                      },
+                      "elapsedMs": {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      "awaiting": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "required": ["service", "containerPort"],
+                          "additionalProperties": false,
+                          "properties": {
+                            "service": { "type": "string" },
+                            "containerPort": { "type": "integer", "minimum": 1 }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "type": "object",
                     "required": ["kind", "status"],
                     "additionalProperties": false,
                     "properties": {
@@ -838,6 +864,58 @@
                   }
                 }
               }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "sessionId",
+              "sequence",
+              "at",
+              "stage",
+              "kind",
+              "participant",
+              "service",
+              "containerName",
+              "containerId",
+              "state",
+              "exitCode"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "sessionId": { "type": "string" },
+              "sequence": { "type": "integer", "minimum": 1 },
+              "at": { "type": "string" },
+              "stage": { "const": "running" },
+              "kind": { "const": "participant-exited" },
+              "participant": { "type": "string" },
+              "service": { "type": "string" },
+              "containerName": { "type": "string" },
+              "containerId": { "type": "string" },
+              "state": { "enum": ["exited", "dead", "missing"] },
+              "exitCode": { "type": ["integer", "null"] }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "sessionId",
+              "sequence",
+              "at",
+              "stage",
+              "kind",
+              "durationMs",
+              "startupTimeoutMs"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "sessionId": { "type": "string" },
+              "sequence": { "type": "integer", "minimum": 1 },
+              "at": { "type": "string" },
+              "stage": { "const": "acquisition" },
+              "kind": { "const": "acquisition-completed" },
+              "durationMs": { "type": "integer", "minimum": 0 },
+              "startupTimeoutMs": { "type": "integer", "minimum": 0 }
             }
           }
         ]

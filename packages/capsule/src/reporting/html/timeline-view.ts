@@ -2,7 +2,7 @@
 export const capsuleTimelineScript = `
 function timelinePhase(stage){
   if(['admission','catalog','manager','catalog-load','catalog-resolution','manager-spawn','manager-handshake'].includes(stage))return 'Preparation';
-  return ({acquisition:'Acquisition',readiness:'Application readiness',ready:'Capsule ready',persistence:'Recording'})[stage]||stage;
+  return ({acquisition:'Acquisition',readiness:'Application readiness',ready:'Capsule ready',persistence:'Recording',running:'While running'})[stage]||stage;
 }
 function timelineGroups(events){
   const groups=[];

@@ -1,4 +1,5 @@
 import {
+  spanFailure,
   spanResult,
   spanTitle,
   type ActivityContext,
@@ -44,9 +45,17 @@ const ORPHAN_TEXT = {
   'not-retained': '(parent not retained)',
 } as const;
 
-/** `<service>  <title>  <result>` (two spaces apart) with missing parts left out. */
+/**
+ * `<service>  <title>  <result>  <failure>` (two spaces apart) with missing parts
+ * left out; the failure is an error span's exception or error type.
+ */
 export function spanLabel(node: SpanTreeNode): string {
-  const parts = [node.span.service, spanTitle(node.span), spanResult(node.span)];
+  const parts = [
+    node.span.service,
+    spanTitle(node.span),
+    spanResult(node.span),
+    spanFailure(node.span),
+  ];
   if (node.orphan !== null) {
     parts.push(ORPHAN_TEXT[node.orphan]);
   }

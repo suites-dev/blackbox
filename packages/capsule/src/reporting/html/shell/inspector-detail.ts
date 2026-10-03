@@ -1,4 +1,11 @@
 export const capsuleInspectorDetailScript = `
+function exceptionRows(span) {
+  const exceptions = span.exceptions || [];
+  if (!exceptions.length) return [];
+  const list = n('dl', 'inspector-fields');
+  for (const item of exceptions) add(list, n('dt', '', item.type || 'Exception'), n('dd', '', item.message || '(no message)'));
+  return [n('h4', '', 'Exceptions'), list];
+}
 function inspectSpan(root, span, selection, presentation) {
   const aside = root.querySelector('.report-inspector');
   resetInspector(aside);
@@ -30,12 +37,14 @@ function inspectSpan(root, span, selection, presentation) {
     ['End · Unix ns', span.endTimeUnixNano || 'Unavailable'],
     ['OTEL status code', span.statusCode === null ? 'Unavailable' : String(span.statusCode)],
   ];
+  if (span.statusMessage) rows.push(['OTEL status message', span.statusMessage]);
   if (selection.kind !== 'exact-activity') rows.splice(1, 0, ['Session trace', selection.traceId]);
   const fields = n('dl', 'inspector-fields');
   for (const [key, value] of rows) add(fields, n('dt', '', key), n('dd', '', value));
   add(
     body,
     fields,
+    ...exceptionRows(span),
     n('h4', '', 'Retained attributes'),
     n('pre', '', JSON.stringify(span.attributes, null, 2)),
     n('h4', '', 'Trace links'),

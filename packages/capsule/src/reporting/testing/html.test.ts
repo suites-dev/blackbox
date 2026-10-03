@@ -120,6 +120,8 @@ function hostileDocument(): CapsuleReportDocument {
             startTimeUnixNano: null,
             endTimeUnixNano: null,
             statusCode: null,
+            statusMessage: null,
+            exceptions: [],
             attributes: [{ key: 'http.method', value: hostile }],
             links: [],
           },

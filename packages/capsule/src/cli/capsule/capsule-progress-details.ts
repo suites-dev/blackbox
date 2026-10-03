@@ -3,6 +3,21 @@ import type {
   CapsuleProgressEvent,
 } from '@suites/blackbox-capsule';
 
+import { participantExitText } from '../operations/lifecycle/participant-warnings.js';
+
+/** `ts-travel-service:12346, …`: the published endpoints start-up waits on. */
+function awaitingText(
+  awaiting: readonly { readonly service: string; readonly containerPort: number }[],
+): string {
+  return awaiting
+    .map(({ service, containerPort }) => `${service}:${String(containerPort)}`)
+    .join(', ');
+}
+
+function seconds(milliseconds: number): string {
+  return `${(milliseconds / 1000).toFixed(1)}s`;
+}
+
 export function observationDetail(observation: CapsuleAcquisitionObservation): string {
   switch (observation.kind) {
     case 'service-state': {
@@ -17,6 +32,8 @@ export function observationDetail(observation: CapsuleAcquisitionObservation): s
       return `${observation.resource.kind} available: ${observation.resource.name}`;
     case 'waiting':
       return `waiting for Compose startup and Testcontainers checks (${Math.floor(observation.elapsedMs / 1000)}s elapsed)`;
+    case 'waiting-for-endpoints':
+      return `waiting for Compose startup and Testcontainers checks: ${awaitingText(observation.awaiting)} accepting connections (${Math.floor(observation.elapsedMs / 1000)}s elapsed)`;
     case 'observation-status':
       return observation.status === 'available'
         ? 'Docker progress observation resumed'
@@ -49,13 +66,17 @@ export function progressDetail(event: CapsuleProgressEvent): string {
       return `endpoint mapped: ${event.endpoint.url}`;
     case 'resource-owned':
       return `${event.resource.kind} owned: ${event.resource.name}`;
+    case 'acquisition-completed':
+      return `Compose start-up finished after ${seconds(event.durationMs)} (start-up budget ${String(event.startupTimeoutMs)}ms; readiness has its own timeout)`;
     case 'readiness-started':
-      return `application readiness checking: ${event.url}`;
+      return `application readiness checking: ${event.url} (timeout ${String(event.timeoutMs)}ms)`;
     case 'readiness-succeeded':
       return `application ready: ${event.url} (${event.durationMs}ms)`;
     case 'capsule-ready':
       return `Capsule ready (${event.durationMs}ms)`;
     case 'capsule-start-failed':
       return `start failed at ${event.stage}: ${event.cause.name}: ${event.cause.message}`;
+    case 'participant-exited':
+      return participantExitText(event);
   }
 }

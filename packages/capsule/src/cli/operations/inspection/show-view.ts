@@ -3,6 +3,7 @@ import type { CapsuleActivityReport, CapsuleObservationsResult } from '@suites/b
 import { CliFailure } from '../../cli/failure.js';
 import { nextSteps } from '../../cli/next-steps.js';
 import { ActivityDisplay } from '../../context/display.js';
+import { participantWarnings } from '../lifecycle/participant-warnings.js';
 import type { CapsuleSummary, ProjectIndex } from '../../context/project-index.js';
 import type { Resolved } from '../../context/resolver.js';
 import { completenessOf, loadInvestigation, readSession } from './investigation-data.js';
@@ -101,6 +102,29 @@ async function capsuleShow(input: {
   });
 }
 
+/**
+ * A running capsule's exited participants, as warnings under the view's first
+ * line and as `exitedParticipants` in JSON. Other states are not checked.
+ */
+async function withParticipantWarnings(view: ShowView, capsule: CapsuleSummary): Promise<ShowView> {
+  if (capsule.state !== 'running') {
+    return view;
+  }
+  const warnings = await participantWarnings(capsule.capsule);
+  if (warnings.exited.length === 0) {
+    return view;
+  }
+  return {
+    ...view,
+    lines: [
+      ...view.lines.slice(0, 1),
+      ...warnings.lines.map((line) => `  ${line}`),
+      ...view.lines.slice(1),
+    ],
+    document: { ...view.document, exitedParticipants: warnings.exited },
+  };
+}
+
 /** The human lines, suggestions and JSON additions for one resolved ID. */
 export async function showView(input: {
   readonly projectDirectory: string;
@@ -117,25 +141,31 @@ export async function showView(input: {
   const capsule = resolved.capsule;
   switch (resolved.kind) {
     case 'activity':
-      return activityView({
-        short: display.short(resolved.activity.activityId),
-        activity: resolved.activity,
-        investigation: await investigate({
+      return withParticipantWarnings(
+        activityView({
+          short: display.short(resolved.activity.activityId),
+          activity: resolved.activity,
+          investigation: await investigate({
+            projectDirectory,
+            capsule,
+            activities: activities ?? [resolved.activity],
+            traceIds: 'all',
+          }),
+        }),
+        capsule,
+      );
+    case 'capsule':
+      return withParticipantWarnings(
+        await capsuleShow({
           projectDirectory,
           capsule,
-          activities: activities ?? [resolved.activity],
-          traceIds: 'all',
+          result: input.result,
+          activities,
+          display,
+          timeline: input.request.timeline,
         }),
-      });
-    case 'capsule':
-      return capsuleShow({
-        projectDirectory,
         capsule,
-        result: input.result,
-        activities,
-        display,
-        timeline: input.request.timeline,
-      });
+      );
     case 'trace':
     case 'pending-trace': {
       if (activities === null) {

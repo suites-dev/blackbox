@@ -30,6 +30,8 @@ export function span(input: Pick<SpanInput, 'id'> & Partial<SpanInput>): Capsule
     startTimeUnixNano: input.start === undefined ? '1000' : input.start,
     endTimeUnixNano: input.end ?? null,
     statusCode: input.statusCode ?? null,
+    statusMessage: null,
+    exceptions: [],
     attributes: Object.entries(input.attributes ?? {}).map(([key, value]) => ({ key, value })),
     links: [],
   };

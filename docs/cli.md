@@ -66,6 +66,18 @@ document (`capsule-not-found`, `capsule-invalid-state`, `capsule-operation-faile
 could not be written or cleared. They report it instead: a `blackbox:` line in human mode, a
 `current-capsule-write-failed` entry in the JSON document's `warnings`, and exit `125`.
 
+While a capsule runs, `capsule ls`, `capsule show`, `capsule run` and `capsule down` check its participant
+containers in Docker. A participant that exited, died, or whose container is gone is reported as a
+`⚠ participant … exited with code N` line in human mode and as `exitedParticipants` in the JSON document
+(`down` also adds a `participant-exited` entry to `warnings`). The first check that sees it records a
+`participant-exited` event in the capsule's progress, so the report keeps it. The check never changes an exit
+code, and a Docker query that fails adds no warning.
+
+While Compose and Testcontainers start the containers, `capsule up` names the published ports it waits on,
+then reports when that start-up phase finished. Start-up has its own budget, the largest readiness `timeoutMs`
+but at least 120000 ms; HTTP readiness then gets the full `timeoutMs` again, so a slow start can take up to
+both budgets before `up` fails.
+
 In human mode, Blackbox writes its own lines to stderr only. `capsule run` passes the child's stdout to
 stdout and its stderr to stderr. A captured (non-terminal) run prints the retained output, which is
 redacted and, above 1 MiB per stream, truncated to its first and last 512 KiB; the JSON envelope records

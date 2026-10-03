@@ -67,6 +67,8 @@ function report(): CapsuleReportDocument {
                 startTimeUnixNano: '1789819200500000000',
                 endTimeUnixNano: '1789819200600000000',
                 statusCode: 1,
+                statusMessage: null,
+                exceptions: [],
                 attributes: [],
                 links: [],
               },
