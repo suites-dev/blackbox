@@ -1,17 +1,42 @@
 import { createServer, type Server } from 'node:http';
-import { setTimeout as delay } from 'node:timers/promises';
 
 import { expect as playwrightExpect } from '@playwright/test';
 
 import { createBlackboxSystemTest } from '../../fixtures.js';
 import { test as publicTest } from '../../index.js';
-import { record, systemSandboxRuntime } from './runtime.fixture.js';
+import type { BlackboxAttemptRuntime } from '../../runtime/acquisition.js';
+import { record, startRespondingAttempt } from './runtime.fixture.js';
 
 interface AuditFixtures {
   readonly auditAttempt: string;
 }
 
-const test = createBlackboxSystemTest(systemSandboxRuntime);
+let workerJoinedParallelBarrier = false;
+const rendezvousRuntime = {
+  async start(input) {
+    const attempt = await startRespondingAttempt(input);
+    if (workerJoinedParallelBarrier) {
+      return attempt;
+    }
+    try {
+      const url = process.env.BLACKBOX_PARALLEL_BARRIER_URL;
+      if (url === undefined) {
+        throw new Error('Parallel rendezvous URL was not configured');
+      }
+      const response = await fetch(`${url}/arrive`);
+      if (response.status !== 204) {
+        throw new Error(`Parallel rendezvous failed with HTTP ${response.status}`);
+      }
+      workerJoinedParallelBarrier = true;
+      return attempt;
+    } catch (error) {
+      await attempt.stop('failed');
+      throw error;
+    }
+  },
+} satisfies BlackboxAttemptRuntime;
+
+const test = createBlackboxSystemTest(rendezvousRuntime);
 const extendedTest = test.extend<AuditFixtures>({
   auditAttempt: [
     async ({ sandbox }, use) => {
@@ -88,8 +113,7 @@ test.system('orders', (system) => {
     suite.describe('nested checkout flow', () => {
       suite.test('fixtureless acquisition keeps native steps', async () => {
         await test.step('outer user step', async () => {
-          await test.step('nested user step', async () => {
-            await delay(100);
+          await test.step('nested user step', () => {
             playwrightExpect(true).toBe(true);
           });
         });
@@ -166,8 +190,7 @@ test.system({ kind: 'system', id: 'billing' }, (system) => {
     'fixtureless group',
     { environment: { PROBE: 'fixtureless' } },
     (suite) => {
-      suite.test('acquires without any Blackbox fixture dependency', async () => {
-        await delay(100);
+      suite.test('acquires without any Blackbox fixture dependency', () => {
         playwrightExpect(true).toBe(true);
       });
       suite.test.skip('native skip modifier remains available', () => {

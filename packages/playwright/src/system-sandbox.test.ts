@@ -23,6 +23,27 @@ it('maps system sandbox declarations to isolated native Playwright attempts', as
   assertHappyRun(run);
 });
 
+it('fails the parallel rendezvous under single-worker serialized scheduling', async () => {
+  const run = await runPlaywright({
+    configFile: 'system-sandbox.config.ts',
+    testFile: 'happy.spec.ts',
+    jsonReport: false,
+    scenario: 'serialized-control',
+  });
+  expect(run.code, run.output).toBe(1);
+  expect(run.output).toMatch(/Parallel rendezvous failed with HTTP (?:408|409)/u);
+  const starts = eventsOf(run, 'start');
+  const stops = eventsOf(run, 'stop');
+  expect(starts).toHaveLength(2);
+  expect(stops).toHaveLength(2);
+  for (const start of starts) {
+    const id = eventString(start, 'executionId');
+    const ownedStops = stops.filter((stop) => eventString(stop, 'executionId') === id);
+    expect(ownedStops).toHaveLength(1);
+    expect(eventString(ownedStops[0], 'reason')).toBe('failed');
+  }
+});
+
 it('cleans up exactly once after hook setup and body failures', async () => {
   const run = await runPlaywright({
     configFile: 'system-sandbox-failures.config.ts',

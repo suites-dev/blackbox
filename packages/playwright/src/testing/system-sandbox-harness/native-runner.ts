@@ -7,6 +7,7 @@ import { join } from 'node:path';
 import type { JSONReport } from '@playwright/test/reporter';
 
 import { eventMarker } from '../system-sandbox/runtime.fixture.js';
+import { startParallelBarrier } from './barrier.fixture.js';
 
 export interface NativeEvent {
   readonly kind: string;
@@ -102,7 +103,7 @@ function parseEvents(output: string): readonly NativeEvent[] {
   });
 }
 
-export async function runPlaywright(input: RunInput): Promise<NativeRun> {
+async function executePlaywright(input: RunInput, barrierUrl: string): Promise<NativeRun> {
   const directory = await mkdtemp(join(tmpdir(), 'blackbox-system-sandbox-'));
   directories.push(directory);
   const reportFile = join(directory, 'results.json');
@@ -122,6 +123,7 @@ export async function runPlaywright(input: RunInput): Promise<NativeRun> {
         ...process.env,
         BLACKBOX_PLAYWRIGHT_OUTPUT_DIR: join(directory, 'output'),
         BLACKBOX_PLAYWRIGHT_JSON_REPORT: reportFile,
+        BLACKBOX_PARALLEL_BARRIER_URL: barrierUrl,
         BLACKBOX_SYSTEM_SANDBOX_SCENARIO: input.scenario,
         FORCE_COLOR: '0',
         NO_COLOR: undefined,
@@ -154,4 +156,14 @@ export async function runPlaywright(input: RunInput): Promise<NativeRun> {
   }
   const report = JSON.parse(await readFile(reportFile, 'utf8')) as JSONReport;
   return { code, output, events, reportKind: 'json', report };
+}
+
+export async function runPlaywright(input: RunInput): Promise<NativeRun> {
+  const timeoutMs = input.scenario === 'serialized-control' ? 500 : 15_000;
+  const barrier = await startParallelBarrier(timeoutMs);
+  try {
+    return await executePlaywright(input, barrier.url);
+  } finally {
+    await barrier.close();
+  }
 }
