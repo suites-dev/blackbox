@@ -4,6 +4,8 @@ import type { startSandbox, SandboxHandle } from '@suites/blackbox-sandbox';
 
 import type { resolveCollectorRuntime } from './collector-runtime.js';
 import type { createSandboxTelemetry, TelemetryAuthorization } from './telemetry.js';
+import type { AttemptProgress } from '../reporting/events.js';
+import { reportSandboxProgress } from '../reporting/sandbox-progress.js';
 
 interface SandboxStartPorts {
   readonly resolveCollectorRuntime: typeof resolveCollectorRuntime;
@@ -19,6 +21,7 @@ export async function startAttemptSandbox(input: {
   readonly recordDirectory: string;
   readonly environment: Readonly<Record<string, string>>;
   readonly ports: SandboxStartPorts;
+  readonly progress: AttemptProgress;
 }): Promise<SandboxHandle> {
   const collectorRuntime = await input.ports.resolveCollectorRuntime();
   const telemetry = await input.ports.createTelemetry({
@@ -49,6 +52,13 @@ export async function startAttemptSandbox(input: {
       stopTimeoutMs: 60_000,
       telemetry,
     },
-    progress: { kind: 'silent' },
+    progress: {
+      kind: 'events',
+      sink: {
+        emit: (event) => {
+          reportSandboxProgress(input.progress, event);
+        },
+      },
+    },
   });
 }

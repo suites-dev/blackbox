@@ -1,6 +1,7 @@
-import { defineConfig } from '@playwright/test';
+import { defineConfig } from '../config.js';
 
 export default defineConfig({
+  blackboxConfigFile: './blackbox.config.yaml',
   testDir: import.meta.dirname,
   testMatch: 'fixture-timeout.spec.ts',
   workers: 1,
