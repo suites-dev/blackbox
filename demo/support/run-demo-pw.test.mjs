@@ -74,7 +74,10 @@ test('launcher streams tests, publishes locally and removes only its owned regis
   assert.equal(result.code, 0, result.output);
   assert.match(result.output, /Blackbox live execution/);
   assert.match(result.calls, /pnpm install --frozen-lockfile/);
-  assert.match(result.calls, /pnpm exec playwright install chromium --only-shell/);
+  assert.match(
+    result.calls,
+    /pnpm --filter @suites\/blackbox-playwright exec playwright install chromium --only-shell/,
+  );
   assert.match(result.calls, /--publish 127\.0\.0\.1::4873/);
   assert.match(
     result.calls,

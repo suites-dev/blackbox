@@ -76,7 +76,8 @@ git ls-files -z -- e2e scripts/consumer demo/support .github/scripts \
   | xargs -0 shasum -a 256 >"$RUN_ROOT/source-files.sha256"
 echo '[run-demo-pw] Installing the pinned workspace dependencies and building packages...'
 pnpm install --frozen-lockfile >"$RUN_ROOT/setup.log" 2>&1
-pnpm exec playwright install chromium --only-shell >>"$RUN_ROOT/setup.log" 2>&1
+pnpm --filter @suites/blackbox-playwright exec playwright install chromium --only-shell \
+  >>"$RUN_ROOT/setup.log" 2>&1
 pnpm build >>"$RUN_ROOT/setup.log" 2>&1
 
 echo '[run-demo-pw] Starting a fresh local registry on an available loopback port...'

@@ -49,15 +49,16 @@ lane runs:
 
 ```sh
 export PLAYWRIGHT_BROWSERS_PATH="$PWD/.blackbox/tmp/playwright-browsers"
-pnpm exec playwright install --with-deps chromium --only-shell
+pnpm --filter @suites/blackbox-playwright exec playwright install --with-deps chromium --only-shell
 pnpm --filter @suites/blackbox-playwright test:browser
 pnpm run test:e2e:playwright
 ```
 
 The `--with-deps` form is intended for the Ubuntu CI runner. On a developer machine with the Chromium operating-system
-dependencies already installed, use `pnpm exec playwright install chromium --only-shell`; `run-demo-pw.sh` follows that
-local form. The package browser lane checks real Chromium propagation and cleanup before the system tests run. The
-system-test lane also retains a headless browser preflight receipt and an inspectable native report at
+dependencies already installed, use
+`pnpm --filter @suites/blackbox-playwright exec playwright install chromium --only-shell`; `run-demo-pw.sh` follows
+that local form. The package browser lane checks real Chromium propagation and cleanup before the system tests run.
+The system-test lane also retains a headless browser preflight receipt and an inspectable native report at
 `e2e/test-results/html/index.html` alongside its JSON and JUnit evidence.
 
 Package and source checks run in

@@ -421,7 +421,9 @@ jobs:
 
       - name: Prepare pinned Chromium
         id: browser_setup
-        run: pnpm exec playwright install --with-deps chromium --only-shell
+        run: >-
+          pnpm --filter @suites/blackbox-playwright exec playwright install
+          --with-deps chromium --only-shell
 
       - name: Test browser propagation
         id: browser_tests
