@@ -75,6 +75,11 @@ overrides:
   undici: 6.28.1
   uuid: 11.1.1
 
+patchedDependencies:
+  http-cache-semantics@4.2.0:
+    hash: dce6abgyqlqehjvesc45gjiwfy
+    path: patches/http-cache-semantics@4.2.0.patch
+
 importers:
 
   .:
@@ -6392,7 +6397,7 @@ snapshots:
     dependencies:
       lru-cache: 11.5.2
 
-  http-cache-semantics@4.2.0: {}
+  http-cache-semantics@4.2.0(patch_hash=dce6abgyqlqehjvesc45gjiwfy): {}
 
   http-proxy-agent@7.0.2:
     dependencies:
@@ -6763,7 +6768,7 @@ snapshots:
     dependencies:
       '@npmcli/agent': 4.0.2
       cacache: 20.0.4
-      http-cache-semantics: 4.2.0
+      http-cache-semantics: 4.2.0(patch_hash=dce6abgyqlqehjvesc45gjiwfy)
       minipass: 7.1.3
       minipass-fetch: 4.0.1
       minipass-flush: 1.0.7
@@ -6781,7 +6786,7 @@ snapshots:
       '@npmcli/agent': 4.0.2
       '@npmcli/redact': 4.0.0
       cacache: 20.0.4
-      http-cache-semantics: 4.2.0
+      http-cache-semantics: 4.2.0(patch_hash=dce6abgyqlqehjvesc45gjiwfy)
       minipass: 7.1.3
       minipass-fetch: 5.0.2
       minipass-flush: 1.0.7

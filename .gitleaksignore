@@ -11,3 +11,15 @@
 31970117abbec51d0e9673c1bee9fcaf1afdd347:new-plan.md:generic-api-key:74
 aeff10ae84ea49bda2d9adbe477096426efecf65:e2e/bash/capsule-demo.yaml:curl-auth-header:46
 aeff10ae84ea49bda2d9adbe477096426efecf65:new-plan.md:generic-api-key:74
+
+# Audit record: GL-FP-2026-10-03-01
+# Evidence: the const TOKEN fixture exercises report redaction with synthetic
+# data. Its JWT header declares HS256, but its 15-byte signature is structurally
+# invalid for HS256, which requires a 32-byte signature.
+# Affected commit: a2470c25532354506965dafd89b459af58a128c5 on remote PR #120
+# (fix/capsule-evidence-reports-111); it is not in PR #122 ancestry.
+# Owner: @omermorad
+# Review date: 2026-10-03
+# Independent approval: PENDING on the final head of PR #122. This entry may not
+# merge until another maintainer approves that exact head under branch rules.
+a2470c25532354506965dafd89b459af58a128c5:packages/capsule/src/reporting/testing/run-output.test.ts:jwt:6

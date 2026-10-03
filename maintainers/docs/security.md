@@ -9,15 +9,15 @@ reporting route. The table below describes the checks once their setup is publis
 
 ## Checks and enforcement
 
-| Control                                        | Runs where                                                                          | Blocks on                                                                                      |
-| ---------------------------------------------- | ----------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| GitHub CodeQL, extended query suite            | GitHub-managed default setup; protected/default branches, PRs to them, weekly scans | Medium-or-higher security alerts and errors through the code-scanning ruleset                  |
-| Dependency audit                               | Every PR; pushes to `main`/`release/**`; daily on the default branch                | Any known advisory in workspace or `e2e/sut` lockfiles, including development dependencies     |
-| GitHub dependency review                       | Every PR                                                                            | Newly introduced vulnerable dependencies, low severity and above                               |
-| Semgrep community engine with repository rules | Every PR; protected-branch pushes; daily                                            | Explicit wildcard listeners, shell execution patterns, disabled TLS checks, dynamic evaluation |
-| Gitleaks                                       | Every PR; protected-branch pushes; daily                                            | Secrets in reachable Git history; output is redacted                                           |
-| GitHub secret push protection                  | Pushes                                                                              | Supported credential patterns before they enter the repository                                 |
-| Snyk Code and Snyk Open Source                 | Native GitHub integration after enrollment below                                    | Source-code vulnerabilities and dependency vulnerabilities                                     |
+| Control                                        | Runs where                                                                          | Blocks on                                                                                            |
+| ---------------------------------------------- | ----------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| GitHub CodeQL, extended query suite            | GitHub-managed default setup; protected/default branches, PRs to them, weekly scans | Medium-or-higher security alerts and errors through the code-scanning ruleset                        |
+| Dependency audit                               | Every PR; pushes to `main`/`release/**`; daily on the default branch                | Any undispositioned advisory in workspace or `e2e/sut` lockfiles, including development dependencies |
+| GitHub dependency review                       | Every PR                                                                            | Newly introduced vulnerable dependencies, low severity and above                                     |
+| Semgrep community engine with repository rules | Every PR; protected-branch pushes; daily                                            | Explicit wildcard listeners, shell execution patterns, disabled TLS checks, dynamic evaluation       |
+| Gitleaks                                       | Every PR; protected-branch pushes; daily                                            | Secrets in reachable Git history; output is redacted                                                 |
+| GitHub secret push protection                  | Pushes                                                                              | Supported credential patterns before they enter the repository                                       |
+| Snyk Code and Snyk Open Source                 | Native GitHub integration after enrollment below                                    | Source-code vulnerabilities and dependency vulnerabilities                                           |
 
 Snyk is selected but is not connected yet. Do not describe it as active until its
 checks have run on a real PR. GitHub CodeQL is already configured with extended
@@ -116,6 +116,15 @@ on the active release branch as well, including its local composite actions and
 evidence scripts. Do not disable checks to conceal a missing application baseline.
 
 ## Handle findings and keep scanners current
+
+The workspace audit fails closed on scanner errors, malformed output, unknown
+advisories, and disposition drift. A temporary local patch disposition records one
+exact advisory, package version, patch digest, owner, review date, expiry, evidence,
+and removal condition under `.github/security/audit-dispositions.json`. The audit
+accepts it only while the registry still reports no fixed release and the mandatory
+semantic regression passes first. A clean scan makes a remaining disposition fail
+as stale. Adding or broadening a disposition requires independent maintainer review
+under the protected-branch rules; CI acceptance is not that approval.
 
 The initial workspace audit on 2026-09-26, before adding release tooling, found
 55 advisories: 2 low, 20 moderate, and 33 high. This is a baseline observation,
