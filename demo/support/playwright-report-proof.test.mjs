@@ -243,9 +243,47 @@ function fixture(suffix = 'a', testId = `test-${suffix}`, retry = 0) {
   };
 }
 
+function withheldFixture() {
+  const result = fixture('withheld', 'withheld-test');
+  const { document, input } = result;
+  document.identity.catalogEntry = { kind: 'system', id: 'effects-withheld' };
+  document.events.find(({ phase }) => phase === 'observations').detail = '0 requests; 0 spans';
+  input.attempts[0].title =
+    '@withheld successful action stays inconclusive under positive and negated matchers';
+  input.attempts[0].expectedCatalog = { ...document.identity.catalogEntry };
+  input.attempts[0].stdout[0].text =
+    'Blackbox: sandbox ready for system "effects-withheld"\nBlackbox: sandbox cleaned up for system "effects-withheld"\n';
+  input.attempts[0].attachments[0].body = Buffer.from(JSON.stringify(document)).toString('base64');
+  return result;
+}
+
 test('accepts matched live, retained and Docker cleanup evidence', () => {
   const { input } = fixture();
   assert.equal(verifyAttemptReports(input).attempts.length, 1);
+});
+
+test('accepts zero received telemetry only for the withheld scenario', () => {
+  assert.equal(verifyAttemptReports(withheldFixture().input).attempts.length, 1);
+
+  const received = withheldFixture();
+  received.document.events.find(({ phase }) => phase === 'observations').detail =
+    '1 requests; 1 spans; 1 traces';
+  received.input.attempts[0].attachments[0].body = Buffer.from(
+    JSON.stringify(received.document),
+  ).toString('base64');
+  assert.throws(() => verifyAttemptReports(received.input), /claimed received telemetry/);
+
+  const missing = fixture();
+  missing.document.events.find(({ phase }) => phase === 'observations').detail =
+    '0 requests; 0 spans';
+  missing.input.attempts[0].attachments[0].body = Buffer.from(
+    JSON.stringify(missing.document),
+  ).toString('base64');
+  assert.throws(() => verifyAttemptReports(missing.input), /no received telemetry/);
+
+  const mismatched = withheldFixture().input;
+  mismatched.attempts[0].title = 'ordinary case';
+  assert.throws(() => verifyAttemptReports(mismatched), /title and catalog/);
 });
 
 function pair(sameTest = false) {
@@ -505,6 +543,79 @@ function admittedEvidence(suffix, evaluation, selector = { kind: 'db', operation
   };
 }
 
+function withheldEvidence(suffix) {
+  const scopeId = `scope-${suffix}`;
+  const activityId = `activity-${suffix}`;
+  const traceId = suffix.padEnd(32, '0').slice(0, 32);
+  const missingTrace = `activity-trace-not-received:${activityId}:${traceId}`;
+  return {
+    kind: 'admitted',
+    observations: {
+      scopeId,
+      payloadCount: 0,
+      diagnostics: [
+        'explicit-activity-trace-admission',
+        'trusted-manifest-not-authenticated',
+        missingTrace,
+      ],
+      excerpts: [],
+    },
+    selection: {
+      scopeId,
+      sessionId: `session-${suffix}`,
+      executionId: `run-${suffix}`,
+      kind: 'stimulus',
+      activities: [{ activityId, purpose: 'stimulus', traceIds: [traceId] }],
+    },
+    projection: {
+      schemaVersion: '0.1.1',
+      scope: { id: scopeId, closed: false },
+      quality: {
+        coverage: 'unknown',
+        orderCoverage: 'unknown',
+        reasons: ['no-harness-completeness-attestation'],
+        attestation: 'none',
+      },
+      effects: [],
+      relations: [],
+    },
+    assessment: {
+      status: 'inconclusive',
+      findings: [
+        {
+          index: 0,
+          status: 'inconclusive',
+          reason: 'atLeast 1; observed lower=0, upper=unbounded',
+          evidence: [],
+        },
+      ],
+      scope: scopeId,
+      semanticsVersion: '0.1.0',
+    },
+    ownership: [],
+    omitted: Object.fromEntries(
+      [
+        'activities',
+        'activityTraces',
+        'diagnostics',
+        'observations',
+        'effects',
+        'effectSources',
+        'relations',
+        'qualityReasons',
+        'findings',
+        'findingEvidence',
+        'ownership',
+        'owners',
+      ].map((name) => [name, 0]),
+    ),
+  };
+}
+
+function withheldDiagnostic(evidence) {
+  return `Scope ${evidence.selection.scopeId}: inconclusive [0] inconclusive: atLeast 1; observed lower=0, upper=unbounded; evidence= ${evidence.observations.diagnostics.join(' ')} no-harness-completeness-attestation`;
+}
+
 function effectContract(title, index) {
   let selector = { node: 'selector', kind: 'db', operation: 'INSERT' };
   let operator = 'atLeast';
@@ -567,27 +678,32 @@ function effectAttempts() {
         encoded('blackbox-attempt', {
           identity: { sessionId: `session-${suffix}`, executionId: `run-${suffix}` },
         }),
-        ...assertions.map(([evaluation, outcome, negated], assertionIndex) =>
-          encoded('blackbox-effects', {
+        ...assertions.map(([evaluation, outcome, negated], assertionIndex) => {
+          const evidence = title.startsWith('@withheld ')
+            ? withheldEvidence(suffix)
+            : admittedEvidence(
+                suffix,
+                evaluation,
+                effectContract(title, assertionIndex).constraints[0].selector,
+              );
+          return encoded('blackbox-effects', {
             schemaVersion: 1,
             assertion: {
               sequence: assertionIndex + 1,
               negated,
               outcome,
               evaluation,
-              diagnostic: evaluation === 'satisfied' ? '' : 'bounded diagnostic',
+              diagnostic: title.startsWith('@withheld ')
+                ? withheldDiagnostic(evidence)
+                : evaluation === 'satisfied'
+                  ? ''
+                  : 'bounded diagnostic',
               contract: effectContract(title, assertionIndex),
             },
             display: { stringLimit: 1000, truncatedStrings: 0 },
-            evidence: title.startsWith('@withheld ')
-              ? { kind: 'not-admitted' }
-              : admittedEvidence(
-                  suffix,
-                  evaluation,
-                  effectContract(title, assertionIndex).constraints[0].selector,
-                ),
-          }),
-        ),
+            evidence,
+          });
+        }),
       ],
     };
   });
@@ -664,16 +780,84 @@ test('rejects invented unknown effects and finding evidence outside its selector
   assert.throws(() => verifyEffectReports(finding), /does not satisfy its reported selector/);
 });
 
-test('rejects verdict drift and admitted evidence for withheld telemetry', () => {
+test('rejects verdict drift', () => {
   const verdict = effectAttempts();
   rewriteAttachment(verdict[3].attachments[1], (document) => {
     document.assertion.outcome = 'passed';
   });
   assert.throws(() => verifyEffectReports(verdict), /Unexpected effects outcome/);
+});
 
-  const withheld = effectAttempts();
-  rewriteAttachment(withheld.at(-1).attachments[1], (document) => {
-    document.evidence = admittedEvidence('11', 'inconclusive');
+test('rejects fabricated observations and effects in withheld evidence', () => {
+  const observation = effectAttempts();
+  rewriteAttachment(observation.at(-1).attachments[1], (document) => {
+    document.evidence.observations.excerpts.push({ traceId: 'fabricated', spanId: 'fabricated' });
   });
-  assert.throws(() => verifyEffectReports(withheld), /Withheld effects evidence/);
+  assert.throws(() => verifyEffectReports(observation), /fabricated telemetry observations/);
+
+  const effect = effectAttempts();
+  rewriteAttachment(effect.at(-1).attachments[1], (document) => {
+    document.evidence.projection.effects.push({ id: 'fabricated-effect' });
+  });
+  assert.throws(() => verifyEffectReports(effect), /fabricated projected evidence/);
+});
+
+test('rejects foreign identity and missing trace diagnostics in withheld evidence', () => {
+  const identity = effectAttempts();
+  rewriteAttachment(identity.at(-1).attachments[1], (document) => {
+    document.evidence.selection.sessionId = 'foreign-session';
+  });
+  assert.throws(() => verifyEffectReports(identity), /attempt identity/);
+
+  const evidenceDiagnostic = effectAttempts();
+  rewriteAttachment(evidenceDiagnostic.at(-1).attachments[1], (document) => {
+    document.evidence.observations.diagnostics = ['explicit-activity-trace-admission'];
+  });
+  assert.throws(() => verifyEffectReports(evidenceDiagnostic), /selected-trace diagnostic/);
+
+  const assertionDiagnostic = effectAttempts();
+  rewriteAttachment(assertionDiagnostic.at(-1).attachments[1], (document) => {
+    document.assertion.diagnostic = 'inconclusive without trace identity';
+  });
+  assert.throws(() => verifyEffectReports(assertionDiagnostic), /selected-trace diagnostic/);
+});
+
+test('rejects false completeness and definite withheld verdicts', () => {
+  const closed = effectAttempts();
+  rewriteAttachment(closed.at(-1).attachments[1], (document) => {
+    document.evidence.projection.scope.closed = true;
+  });
+  assert.throws(() => verifyEffectReports(closed), /graph completeness/);
+
+  const complete = effectAttempts();
+  rewriteAttachment(complete.at(-1).attachments[1], (document) => {
+    document.evidence.projection.quality.coverage = 'complete';
+  });
+  assert.throws(() => verifyEffectReports(complete), /graph completeness/);
+
+  const passed = effectAttempts();
+  rewriteAttachment(passed.at(-1).attachments[1], (document) => {
+    document.assertion.outcome = 'passed';
+  });
+  assert.throws(() => verifyEffectReports(passed), /Unexpected effects outcome/);
+
+  const negated = effectAttempts();
+  rewriteAttachment(negated.at(-1).attachments[2], (document) => {
+    document.assertion.negated = false;
+  });
+  assert.throws(() => verifyEffectReports(negated), /Unexpected effects negated/);
+});
+
+test('rejects finding evidence and omitted data for a withheld trace', () => {
+  const finding = effectAttempts();
+  rewriteAttachment(finding.at(-1).attachments[1], (document) => {
+    document.evidence.assessment.findings[0].evidence = ['fabricated-effect'];
+  });
+  assert.throws(() => verifyEffectReports(finding), /fabricated a definite result/);
+
+  const omitted = effectAttempts();
+  rewriteAttachment(omitted.at(-1).attachments[1], (document) => {
+    document.evidence.omitted.observations = 1;
+  });
+  assert.throws(() => verifyEffectReports(omitted), /omitted report data/);
 });

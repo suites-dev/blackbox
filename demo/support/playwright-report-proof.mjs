@@ -187,6 +187,21 @@ const semanticFields = new Set([
   'rpc.service',
 ]);
 
+const omissionNames = [
+  'activities',
+  'activityTraces',
+  'diagnostics',
+  'observations',
+  'effects',
+  'effectSources',
+  'relations',
+  'qualityReasons',
+  'findings',
+  'findingEvidence',
+  'ownership',
+  'owners',
+];
+
 function observationKey({ traceId, spanId }) {
   return `${traceId}:${spanId}`;
 }
@@ -206,6 +221,113 @@ function witnessedOperation(excerpt, selector) {
   return excerpt.fields.some(
     ({ key, value }) =>
       keys?.has(key) && typeof value === 'string' && values.has(value.toLowerCase()),
+  );
+}
+
+function verifyWithheldEvidence(evidence, identity, assertionDiagnostic) {
+  exactKeys(
+    evidence,
+    ['kind', 'observations', 'selection', 'projection', 'assessment', 'ownership', 'omitted'],
+    'Withheld effects evidence',
+  );
+  assert(evidence.kind === 'admitted', 'Withheld effects scope was not admitted');
+  const { observations, selection, projection, assessment, ownership, omitted } = evidence;
+  exactKeys(
+    observations,
+    ['scopeId', 'payloadCount', 'diagnostics', 'excerpts'],
+    'Withheld observations',
+  );
+  exactKeys(
+    selection,
+    ['scopeId', 'sessionId', 'executionId', 'kind', 'activities'],
+    'Withheld selection',
+  );
+  assert(
+    selection.sessionId === identity.sessionId && selection.executionId === identity.executionId,
+    'Withheld effects evidence changed its attempt identity',
+  );
+  assert(
+    selection.kind === 'stimulus' && selection.activities.length === 1,
+    'Withheld effects evidence changed its stimulus selection',
+  );
+  const [activity] = selection.activities;
+  exactKeys(activity, ['activityId', 'purpose', 'traceIds'], 'Withheld activity');
+  assert(
+    typeof activity.activityId === 'string' &&
+      activity.activityId.length > 0 &&
+      activity.purpose === 'stimulus' &&
+      activity.traceIds.length === 1 &&
+      typeof activity.traceIds[0] === 'string' &&
+      activity.traceIds[0].length > 0,
+    'Withheld effects evidence changed its owned trace',
+  );
+  const missingTrace = `activity-trace-not-received:${activity.activityId}:${activity.traceIds[0]}`;
+  const missingTraceDiagnostics = observations.diagnostics.filter((diagnostic) =>
+    diagnostic.startsWith('activity-trace-not-received:'),
+  );
+  assert(
+    observations.diagnostics.includes('explicit-activity-trace-admission') &&
+      missingTraceDiagnostics.length === 1 &&
+      missingTraceDiagnostics[0] === missingTrace &&
+      assertionDiagnostic.includes(missingTrace),
+    'Withheld effects evidence omitted its exact selected-trace diagnostic',
+  );
+  assert(
+    observations.scopeId === selection.scopeId &&
+      projection.scope?.id === selection.scopeId &&
+      assessment.scope === selection.scopeId,
+    'Withheld effects evidence combined different scopes',
+  );
+  assert(
+    observations.payloadCount === 0 && observations.excerpts.length === 0,
+    'Withheld effects evidence fabricated telemetry observations',
+  );
+  exactKeys(
+    projection,
+    ['schemaVersion', 'scope', 'quality', 'effects', 'relations'],
+    'Withheld projection',
+  );
+  exactKeys(projection.scope, ['id', 'closed'], 'Withheld projection scope');
+  exactKeys(
+    projection.quality,
+    ['coverage', 'orderCoverage', 'reasons', 'attestation'],
+    'Withheld projection quality',
+  );
+  assert(projection.schemaVersion === '0.1.1', 'Unexpected withheld projection schema');
+  assert(
+    projection.scope.closed === false &&
+      projection.quality.coverage === 'unknown' &&
+      projection.quality.orderCoverage === 'unknown' &&
+      projection.quality.attestation === 'none' &&
+      projection.quality.reasons.length === 1 &&
+      projection.quality.reasons[0] === 'no-harness-completeness-attestation',
+    'Withheld effects evidence falsely claimed graph completeness',
+  );
+  assert(
+    projection.effects.length === 0 && projection.relations.length === 0 && ownership.length === 0,
+    'Withheld effects evidence fabricated projected evidence',
+  );
+  exactKeys(assessment, ['status', 'findings', 'scope', 'semanticsVersion'], 'Withheld assessment');
+  assert(
+    assessment.status === 'inconclusive' &&
+      assessment.semanticsVersion === '0.1.0' &&
+      assessment.findings.length === 1,
+    'Withheld effects assessment was not inconclusive',
+  );
+  const [finding] = assessment.findings;
+  exactKeys(finding, ['index', 'status', 'reason', 'evidence'], 'Withheld finding');
+  assert(
+    finding.index === 0 &&
+      finding.status === 'inconclusive' &&
+      typeof finding.reason === 'string' &&
+      finding.reason.length > 0 &&
+      finding.evidence.length === 0,
+    'Withheld effects finding fabricated a definite result',
+  );
+  exactKeys(omitted, omissionNames, 'Withheld omission counts');
+  assert(
+    omissionNames.every((name) => omitted[name] === 0),
+    'Withheld effects evidence omitted report data',
   );
 }
 
@@ -316,23 +438,9 @@ function verifyAdmittedEvidence(evidence, identity, contract) {
     ),
     'Effects ownership references an unselected activity',
   );
-  const allowedOmissions = [
-    'activities',
-    'activityTraces',
-    'diagnostics',
-    'observations',
-    'effects',
-    'effectSources',
-    'relations',
-    'qualityReasons',
-    'findings',
-    'findingEvidence',
-    'ownership',
-    'owners',
-  ];
-  exactKeys(omitted, allowedOmissions, 'Effects omission counts');
+  exactKeys(omitted, omissionNames, 'Effects omission counts');
   assert(
-    allowedOmissions.every((name) => Number.isInteger(omitted[name]) && omitted[name] >= 0),
+    omissionNames.every((name) => Number.isInteger(omitted[name]) && omitted[name] >= 0),
     'Effects omission counts are invalid',
   );
 }
@@ -376,8 +484,7 @@ export function verifyEffectReports(attempts) {
         'Effects report omitted bounded display evidence',
       );
       if (attempt.title.startsWith('@withheld ')) {
-        exactKeys(document.evidence, ['kind'], 'Withheld effects evidence');
-        assert(document.evidence.kind === 'not-admitted', 'Withheld telemetry was admitted');
+        verifyWithheldEvidence(document.evidence, identity, document.assertion.diagnostic);
       } else {
         verifyAdmittedEvidence(document.evidence, identity, contract);
       }
@@ -499,12 +606,29 @@ export function verifyAttemptReports({ attempts, records, live, text }) {
       !events.some((event) => event.status === 'failed'),
       'Passed attempt has failed report phase',
     );
+    const withheldTitle = attempt.title?.startsWith('@withheld ') ?? false;
+    const withheldCatalog =
+      attempt.expectedCatalog.kind === 'system' &&
+      attempt.expectedCatalog.id === 'effects-withheld';
     assert(
-      events.some(
-        (event) => event.phase === 'observations' && /[1-9]\d* spans/u.test(event.detail),
-      ),
-      'Report has no received telemetry',
+      withheldTitle === withheldCatalog,
+      'Withheld attempt title and catalog do not identify the same scenario',
     );
+    const observationEvents = events.filter(
+      (event) => event.phase === 'observations' && event.status === 'info',
+    );
+    assert(observationEvents.length === 1, 'Report has an unexpected observations summary');
+    if (withheldCatalog) {
+      assert(
+        observationEvents[0].detail === '0 requests; 0 spans',
+        'Withheld report claimed received telemetry',
+      );
+    } else {
+      assert(
+        /[1-9]\d* spans/u.test(observationEvents[0].detail),
+        'Report has no received telemetry',
+      );
+    }
     const stdout = (attempt.stdout ?? []).map(({ text }) => text ?? '').join('');
     const label = `${catalogEntry.kind} ${JSON.stringify(catalogEntry.id)}`;
     const ready = `Blackbox: sandbox ready for ${label}`;
