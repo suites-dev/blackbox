@@ -30,6 +30,10 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: 22.x
+      - name: Install workspace dependencies without lifecycle scripts
+        run: pnpm install --frozen-lockfile --ignore-scripts
+      - name: Verify patched HTTP cache reuse semantics
+        run: node --test scripts/security/http-cache-semantics.test.mjs
       - name: Audit workspace dependencies, including development tools
         run: pnpm audit --audit-level=low
       - name: Audit the standalone test application
