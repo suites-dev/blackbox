@@ -26,13 +26,22 @@ function addPropagation(body, propagation) {
     p('Actual · ' + propagationOutcome(propagation.outcome), 'muted'),
   );
 }
-function retentionText(value) {
-  return value.kind === 'complete'
+function retentionText(value, redactions) {
+  const redacted = redactions === 0 ? '' :
+    ' · rewritten by ' + redactions + (redactions === 1 ? ' redaction' : ' redactions');
+  if (value.kind !== 'complete')
+    return value.retainedBytes + ' of ' + value.originalBytes + ' bytes retained; ' +
+      value.omittedBytes + ' bytes omitted from the middle' + redacted;
+  return redactions === 0
     ? value.originalBytes + ' bytes retained completely'
-    : value.retainedBytes + ' of ' + value.originalBytes + ' bytes retained; ' +
-      value.omittedBytes + ' bytes omitted from the middle';
+    : value.originalBytes + ' original bytes retained' + redacted;
 }
-function addProcess(body, outcome) {
+function streamRedactions(d, a, stream) {
+  const outcome = 'activities[' + d.activities.indexOf(a) + '].outcome.';
+  return d.redactions.entries.filter((entry) =>
+    entry.location === outcome + stream || entry.location === outcome + 'process.' + stream).length;
+}
+function addProcess(body, outcome, redactions) {
   add(body, n('h4', '', 'Execution location'), p(executionLocation(outcome.location)));
   if (outcome.kind === 'executable-not-found') {
     add(body, n('h4', '', 'Executable unavailable'), n('pre', '', outcome.remediation));
@@ -42,14 +51,14 @@ function addProcess(body, outcome) {
     add(body, n('h4', '', 'Executable not runnable'), n('pre', '', outcome.remediation));
     return;
   }
-  for (const [label, value, retention] of [
-    ['Standard output', outcome.stdout || '(no standard output)', outcome.retention.stdout],
-    ['Standard error', outcome.stderr || '(no standard error)', outcome.retention.stderr],
+  for (const [label, value, retention, count] of [
+    ['Standard output', outcome.stdout || '(no standard output)', outcome.retention.stdout, redactions.stdout],
+    ['Standard error', outcome.stderr || '(no standard error)', outcome.retention.stderr, redactions.stderr],
   ]) {
-    add(body, n('h4', '', label), n('pre', '', value), p(retentionText(retention), 'muted'));
+    add(body, n('h4', '', label), n('pre', '', value), p(retentionText(retention, count), 'muted'));
   }
 }
-function addDriver(body, outcome) {
+function addDriver(body, outcome, redactions) {
   add(
     body,
     n('h4', '', 'Driver'),
@@ -58,10 +67,10 @@ function addDriver(body, outcome) {
     p('Execution · ' + executionLocation(outcome.driver.execution), 'muted'),
   );
   addPropagation(body, outcome.propagation);
-  addProcess(body, outcome.process);
+  addProcess(body, outcome.process, redactions);
 }
-function addOutcome(body, outcome) {
-  if (outcome.kind === 'driver-completed') return addDriver(body, outcome);
+function addOutcome(body, outcome, redactions) {
+  if (outcome.kind === 'driver-completed') return addDriver(body, outcome, redactions);
   if (outcome.kind === 'driver-prepare-failed') {
     addPropagation(body, outcome.propagation);
     add(body, n('h4', '', 'Driver preparation failed'),
@@ -77,7 +86,7 @@ function addOutcome(body, outcome) {
     return;
   }
   addPropagation(body, outcome.propagation);
-  addProcess(body, outcome);
+  addProcess(body, outcome, redactions);
 }
 function addTelemetryScope(body, telemetry) {
   add(
@@ -132,7 +141,8 @@ function activityRow(a, open, d, root) {
   if (a.kind === 'failed' || a.kind === 'interrupted')
     add(body, n('h4', '', a.kind === 'interrupted' ? 'Interruption' : 'Failure'),
       n('pre', '', a.error.name + ': ' + a.error.message));
-  if (a.kind === 'completed') addOutcome(body, a.outcome);
+  if (a.kind === 'completed') addOutcome(body, a.outcome,
+    { stdout: streamRedactions(d, a, 'stdout'), stderr: streamRedactions(d, a, 'stderr') });
   addTelemetryScope(body, a.telemetry);
   const telemetry = rawTelemetry(d, a, root);
   if (telemetry) add(body, telemetry);

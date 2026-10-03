@@ -39,6 +39,9 @@ Default exports go to `.blackbox/reports/capsule-<session-id>/capsule-report.htm
 The command prints the file path. `--output <path>` overrides it; JSON `--output -` writes the document itself to
 stdout. Format is required.
 
+Exports redact credentials when they are written; the experiment directory they are made from does not (see
+[Reading `capsule run`](cli.md#reading-capsule-run)), so share exports rather than `.blackbox/experiments/`.
+
 Exports are snapshots. An HTML export made while running stays a running snapshot after stop. Export again to
 capture the stopped state, choosing a different output path if you want to retain both versions. Serving and exporting
 read retained evidence without changing the experiment.

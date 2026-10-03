@@ -136,10 +136,21 @@ The command line can carry credentials, so the argv in the document (`outcome.ar
 `outcome.process.argv` for a driver) is redacted exactly as the report redacts it: `Bearer`/`Basic`
 credentials, `Authorization`, `Proxy-Authorization`, `Cookie`, `Set-Cookie`, `X-Api-Key` and `Api-Key`
 header values, `user:password@` in URLs, secret query parameters (`token`, `secret`, `password`,
-`api_key`, …), `NAME=value` assignments, the value after a sensitive flag (`--token value`), and every
-position the driver declares become `[REDACTED]`. `argv[0]`, the executable, is always kept, and the
-field keeps its name, place and type (a string array). Only what is printed changes: the retained
-activity record keeps the command as run, and the report redacts it when rendered.
+`api_key`, …), `NAME=value` assignments to an environment variable name (`API_URL=…`) or a sensitive name
+(`api_token=…`), the value after a sensitive flag (`--token value`), and every position the driver declares
+become `[REDACTED]`. Other `name=value` pairs, such as query parameters or `curl -w` metrics, are kept.
+`argv[0]`, the executable, is always kept, and the field keeps its name, place and type (a string array).
+
+The child's stdout and stderr in the document (`outcome.stdout`, or `outcome.process.stdout` for a driver)
+pass through the same text redaction, so a response's bearer token or `"password"` field prints as
+`[REDACTED]`. `--raw-output` prints them as captured. In human mode the child's own output is passed through
+unchanged.
+
+Only what is printed changes. The activity record keeps each command line and its captured output
+unredacted in `.blackbox/experiments/capsule-<id>/activities.json`, credentials included, apart from values a
+driver declared for redaction. The file is readable only by its owner (mode `0600`), and
+`.blackbox/experiments/` belongs in `.gitignore`. Reports, exports and `capsule run --json` redact when they
+render: share those, not the experiment directory.
 
 ## Reading `capsule show`
 

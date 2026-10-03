@@ -7,6 +7,8 @@ const sensitiveName =
   /(?:authorization|proxy-authorization|cookie|set-cookie|token|secret|password|passwd|api[-_]?key)/iu;
 const header = /^(authorization|proxy-authorization|cookie|set-cookie|x-api-key|api-key)\s*:/iu;
 const assignment = /^([A-Za-z_][A-Za-z0-9_]*)=(.*)$/u;
+/** An environment variable name (`API_URL`, `PGPASSWORD`): upper case, digits and `_`. */
+const environmentName = /^[A-Z_][A-Z0-9_]*$/u;
 const socketPath = /(?:\/[^\s"']+)?\.blackbox\/(?:s|tmp)\/[^\s"']+\.sock/gu;
 const windowsPipePath = /\\\\\.\\pipe\\bb-[^\s"']+/gu;
 /** Flags whose value is always a secret (curl's OAuth token and key pass phrases). */
@@ -41,7 +43,11 @@ function followingValue(flag: string, next: string | undefined): FollowingValue 
 
 /** A credential flag with its value attached, redacted; null when it is not one. */
 function redactAttachedFlag(argument: string): string | null {
-  // `--oauth2-bearer=token` needs nothing here: every `name=value` is redacted below.
+  // `--oauth2-bearer=token`, `--pass=phrase`: the whole value is the secret.
+  const equals = argument.indexOf('=');
+  if (equals > 0 && secretValueFlags.has(argument.slice(0, equals))) {
+    return `${argument.slice(0, equals + 1)}${MASK}`;
+  }
   const secret = attachedUserPassword.exec(argument);
   if (secret !== null) {
     return `${secret[1]}${MASK}`;
@@ -104,17 +110,36 @@ export function redactText(input: string, location: string, context: RedactionCo
       return `${prefix}${MASK}`;
     },
   );
-  value = value.replace(/\b([A-Za-z_][A-Za-z0-9_]*=)[^\s,;]+/gu, (_match, prefix: string) => {
-    note(context, 'environment-value', location);
-    return `${prefix}${MASK}`;
-  });
+  // `name=value` in free text: only a sensitive name or an environment variable name.
+  // Other pairs (query strings, `curl -w` metrics, `key=value` logs) are not secrets.
+  value = value.replace(
+    /\b([A-Za-z_][A-Za-z0-9_]*)=[^\s,;&#]+/gu,
+    (match: string, name: string) => {
+      const kind = assignmentKind(name);
+      // A value an earlier rule already masked is not a second redaction.
+      if (kind === null || match.endsWith(`=${MASK}`)) {
+        return match;
+      }
+      note(context, kind, location);
+      return `${name}=${MASK}`;
+    },
+  );
   return value;
+}
+
+/** How a `name=value` pair is redacted, by its name; null when it is kept. */
+function assignmentKind(name: string): CapsuleReportRedaction['kind'] | null {
+  if (sensitiveName.test(name)) {
+    return 'sensitive-output';
+  }
+  return environmentName.test(name) ? 'environment-value' : null;
 }
 
 function redactArgument(argument: string, location: string, context: RedactionContext): string {
   const env = assignment.exec(argument);
-  if (env !== null) {
-    note(context, 'environment-value', location);
+  const envKind = env === null ? null : assignmentKind(env[1]);
+  if (env !== null && envKind !== null) {
+    note(context, envKind, location);
     return `${env[1]}=${MASK}`;
   }
   if (header.test(argument)) {
