@@ -17,7 +17,24 @@ import type {
   EffectSelectorFields,
 } from './contracts/model.js';
 
-export type * from './contracts/model.js';
+export type {
+  EffectScalar,
+  EffectKind,
+  EffectSelectorFields,
+  HttpEffectSelectorFields,
+  RpcEffectSelectorFields,
+  DatabaseEffectSelectorFields,
+  CacheEffectSelectorFields,
+  MessageEffectSelectorFields,
+  EffectSelector,
+  EffectCountOperator,
+  EffectCountConstraint,
+  EffectOrderConstraint,
+  EffectConstraint,
+  EffectContract,
+  EffectContractBuilderApi,
+  EffectContractBuilder,
+} from './contracts/model.js';
 
 const aliases = {
   http: { method: 'operation', route: 'target' },
