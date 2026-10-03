@@ -22,6 +22,9 @@ const allowedAttributes = new Set([
   'rpc.method',
   // Failure causes and client targets.
   'error.type',
+  // The user agent tells Blackbox's own readiness probes from application traffic.
+  'user_agent.original',
+  'http.user_agent',
   'url.full',
   'db.namespace',
   'db.collection.name',

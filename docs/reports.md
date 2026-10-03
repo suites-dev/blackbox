@@ -61,6 +61,15 @@ read retained evidence without changing the experiment.
   window (`association.kind: activity-window`) only when it started after that activity started, before
   the next activity started, and no more than 5 seconds after the activity completed. Other traces are
   `session-only`. A window is temporal placement, never a cause.
+- **Span trees.** The HTML lists each trace's spans as a tree, each parent before its children and siblings
+  by start time, with every span's offset from the trace start and its duration. Traces are ordered by start
+  time. Selecting a span shows its start time, duration, parent (`None (root span)` for a root) and status
+  (`UNSET` when the span recorded none), plus any exception events.
+- **Readiness probes.** Blackbox's readiness probes send `User-Agent: blackbox-readiness/1` and back off from
+  200 ms to one probe per second. The HTML collapses the traces they cause into one
+  `readiness probe traces` row.
+- **Infrastructure.** `resources.infrastructure` lists containers the capsule started besides its
+  participants, such as Blackbox's telemetry collector, with the last state Docker reported for them.
 - **System spans.** An activity's span count in the HTML includes only the system's spans. Blackbox's own
   activity span (service `blackbox-capsule`) is counted apart, so an untraced command shows
   `0 system spans`.

@@ -24,7 +24,7 @@ function report(): CapsuleReportDocument {
     composeProject: { kind: 'unavailable' },
     entrypoint: { kind: 'unavailable' },
     readiness: { kind: 'unavailable' },
-    resources: { containers: [], networks: [], volumes: [] },
+    resources: { containers: [], infrastructure: [], networks: [], volumes: [] },
     activities: [completedHostActivity()],
     activityTelemetry: [{ kind: 'unavailable', activityId: 'activity-1', reason: 'not-retained' }],
     progress: [],

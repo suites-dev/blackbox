@@ -21,7 +21,7 @@ export function report(): CapsuleReportDocument {
     observationPolicy: { kind: 'not-recorded' },
     composeProject: { kind: 'available', value: 'orders' },
     entrypoint: { kind: 'unavailable' },
-    resources: { containers: [], networks: [], volumes: [] },
+    resources: { containers: [], infrastructure: [], networks: [], volumes: [] },
     readiness: { kind: 'unavailable' },
     activities: [completedDriverActivity()],
     activityTelemetry: [],

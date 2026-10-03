@@ -3,6 +3,7 @@ import { projectObservations } from './observations.js';
 import type { CapsuleProgressEvent } from '../progress/events.js';
 import type { CapsuleSessionState } from '../model/session-state.js';
 import { evidenceUpdatedAt, projectObservationPolicy } from './policy.js';
+import { infrastructureContainers } from './resources.js';
 import { createRedactionContext, redactActivities, redactError, redactText } from './redaction.js';
 import type {
   CapsuleReportDocument,
@@ -160,6 +161,10 @@ export function projectCapsuleReport(input: CapsuleReportProjectionInput): Capsu
           },
     resources: {
       containers: input.record.containers,
+      infrastructure: infrastructureContainers({
+        containers: input.record.containers,
+        progress: input.progress,
+      }),
       networks: input.record.networks,
       volumes: input.record.volumes,
     },

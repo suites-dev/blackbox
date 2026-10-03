@@ -127,6 +127,15 @@ export type CapsuleReportObservations =
       readonly error: { readonly name: string; readonly message: string };
     };
 
+/** A container the capsule started that is not a participant, such as the telemetry collector. */
+export interface CapsuleReportInfrastructureContainer {
+  readonly service: string;
+  readonly containerName: string;
+  readonly containerId: string;
+  /** The last state Docker reported for it during start-up. */
+  readonly state: string;
+}
+
 /** A boundary of the observation policy; Capsule never evaluates it. */
 export interface CapsuleReportPolicyBoundary {
   readonly id: string;
@@ -173,6 +182,8 @@ export interface CapsuleReportDocument {
   readonly entrypoint: CapsuleReportAvailability<CapsuleEntrypoint>;
   readonly resources: {
     readonly containers: readonly CapsuleContainerDetails[];
+    /** Containers started besides the participants (absent from earlier reports). */
+    readonly infrastructure: readonly CapsuleReportInfrastructureContainer[];
     readonly networks: readonly string[];
     readonly volumes: readonly string[];
   };

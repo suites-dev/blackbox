@@ -322,6 +322,20 @@
             "$ref": "https://suites.dev/blackbox/schemas/capsule-session-v1.json#/$defs/container"
           }
         },
+        "infrastructure": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["service", "containerName", "containerId", "state"],
+            "properties": {
+              "service": { "type": "string" },
+              "containerName": { "type": "string" },
+              "containerId": { "type": "string" },
+              "state": { "type": "string" }
+            }
+          }
+        },
         "networks": {
           "$ref": "https://suites.dev/blackbox/schemas/capsule-session-v1.json#/$defs/stringArray"
         },

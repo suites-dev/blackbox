@@ -32,7 +32,7 @@ function document(): CapsuleReportDocument {
     composeProject: { kind: 'unavailable' },
     entrypoint: { kind: 'unavailable' },
     readiness: { kind: 'unavailable' },
-    resources: { containers: [], networks: [], volumes: [] },
+    resources: { containers: [], infrastructure: [], networks: [], volumes: [] },
     activities: [],
     activityTelemetry: [],
     progress: [],
@@ -92,6 +92,9 @@ function hostileDocument(): CapsuleReportDocument {
           host: 'localhost',
           networkNames: [],
         },
+      ],
+      infrastructure: [
+        { service: hostile, containerName: hostile, containerId: hostile, state: 'running' },
       ],
       networks: [hostile],
       volumes: [hostile],
