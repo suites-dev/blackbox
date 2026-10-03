@@ -6,6 +6,9 @@ import { evaluateBlackboxEffects } from './runtime.js';
 
 export const expect = playwrightExpect.extend({
   async toSatisfy(received: BlackboxEffects, builder: EffectContractBuilder) {
+    if (typeof builder !== 'function') {
+      throw new TypeError('Use toSatisfy((effects) => [...])');
+    }
     const contract = compileEffectContract(builder);
     const evaluation = await evaluateBlackboxEffects(received, contract);
     if (evaluation.kind === 'inconclusive') {

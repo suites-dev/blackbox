@@ -9,6 +9,7 @@
   "scripts": {
     "build": "pnpm --recursive --sort run build",
     "test": "pnpm run build && pnpm --recursive run test",
+    "test:effects:consumer": "node scripts/consumer/effects-packed-consumer.mjs",
     "prepare:consumer": "node scripts/consumer/prepare.mjs",
     "test:demo": "bash demo/acceptance/capsule-test.sh",
     "test:demo:storyboard": "bash demo/storyboard/capsule-player.sh --no-pause --no-color --no-browser",
@@ -62,6 +63,7 @@
     "@suites/blackbox-cli": "workspace:*",
     "@suites/blackbox-discovery": "workspace:*",
     "@suites/blackbox-driver": "workspace:*",
+    "@suites/blackbox-effects": "workspace:*",
     "@suites/blackbox-inst-runtime-node": "workspace:*",
     "@suites/blackbox-skills": "workspace:*",
     "@types/node": "catalog:",

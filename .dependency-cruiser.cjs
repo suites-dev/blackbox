@@ -147,6 +147,7 @@ const TIERS = [
     why: 'contracts and standalone runtimes with no workspace dependencies',
     packages: [
       'cli-contract',
+      'effects',
       'telemetry',
       'instrumentation',
       'otel-collector',

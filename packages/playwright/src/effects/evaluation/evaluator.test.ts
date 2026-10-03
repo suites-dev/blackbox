@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest';
 import { compileEffectContract } from '../contract.js';
-import { attribute, payload, span } from '../normalization/test-fixtures/otlp.js';
+import { attribute, payload, span } from '../testing/observations.fixture.js';
 import { createEffectContractEvaluator } from './evaluator.js';
 import type { EffectObservationReadResult } from './source.js';
 

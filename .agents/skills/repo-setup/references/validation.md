@@ -55,6 +55,17 @@ Node's test runner; do not send it Vitest flags. Build before targeted CLI tests
 that exercise generated executable output. A filename alone does not establish
 which lane discovers it.
 
+For the standalone effects package boundary, build the current candidate with
+`pnpm --filter @suites/blackbox-effects build`, then run
+`pnpm test:effects:consumer`. This lane packs the candidate without publishing,
+installs it outside the workspace with only the effects package, and checks plain
+Node behavior plus TypeScript declarations without Playwright or source aliases.
+It also runs disposable packaging and semantic controls and retains evidence
+under `.blackbox/tmp/effects-consumer.*`. Its synthetic OTLP fixture establishes
+the candidate package boundary, not live-system or released-registry acceptance.
+Run it separately from builds because it verifies that the packed input stays
+unchanged. No Docker services are started.
+
 For package skill exports, assets, or CLI composition changes, also run
 `pnpm test:e2e:skills`. It packs the main package and its core dependency closure
 into an isolated consumer declaring `@suites/blackbox` and `@suites/blackbox-cli`, and exercises public

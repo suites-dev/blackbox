@@ -1,8 +1,8 @@
 {
-  "name": "@suites/blackbox-playwright",
+  "name": "@suites/blackbox-effects",
   "version": "0.0.1-alpha.0",
   "type": "module",
-  "description": "Native Playwright fixtures for catalog-selected, per-attempt Blackbox sandboxes.",
+  "description": "Framework-neutral OTLP projection, effect contracts, and behavioral verification.",
   "files": [
     "dist",
     "README.md",
@@ -18,18 +18,6 @@
   ],
   "types": "./dist/index.d.ts",
   "exports": {
-    "./config": {
-      "blackbox-source": "./src/config.ts",
-      "types": "./dist/config.d.ts",
-      "import": "./dist/config.js",
-      "default": "./dist/config.js"
-    },
-    "./reporter": {
-      "blackbox-source": "./src/reporter.ts",
-      "types": "./dist/reporter.d.ts",
-      "import": "./dist/reporter.js",
-      "default": "./dist/reporter.js"
-    },
     ".": {
       "blackbox-source": "./src/index.ts",
       "types": "./dist/index.d.ts",
@@ -44,20 +32,7 @@
     "lint": "eslint .",
     "test": "vitest run --config vitest.config.ts"
   },
-  "dependencies": {
-    "@suites/blackbox-catalog": "workspace:*",
-    "@suites/blackbox-effects": "workspace:*",
-    "@suites/blackbox-inst-runtime-node": "workspace:*",
-    "@suites/blackbox-instrumentation": "workspace:*",
-    "@suites/blackbox-otel-collector": "workspace:*",
-    "@suites/blackbox-sandbox": "workspace:*",
-    "@suites/blackbox-telemetry": "workspace:*"
-  },
-  "peerDependencies": {
-    "@playwright/test": ">=1.61.0 <2"
-  },
   "devDependencies": {
-    "@playwright/test": "1.63.0",
     "@types/node": "catalog:",
     "rimraf": "catalog:",
     "typescript": "catalog:",
@@ -74,9 +49,9 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/suites-dev/blackbox.git",
-    "directory": "packages/playwright"
+    "directory": "packages/effects"
   },
-  "homepage": "https://github.com/suites-dev/blackbox/tree/main/packages/playwright#readme",
+  "homepage": "https://github.com/suites-dev/blackbox/tree/main/packages/effects#readme",
   "bugs": {
     "url": "https://github.com/suites-dev/blackbox/issues"
   },

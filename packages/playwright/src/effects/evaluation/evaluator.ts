@@ -1,14 +1,9 @@
+import { evaluateEffects, projectEffects, type EffectAssessment } from '@suites/blackbox-effects';
+
 import type { EffectContractEvaluator, EffectEvaluation } from '../runtime.js';
-import { projectObservations } from '../normalization/project.js';
-import type { VerificationAssessment } from '../verification/model.js';
-import { verify } from '../verification/verify.js';
-import { adaptContract } from './contract-adapter.js';
 import type { EffectObservationSource } from './source.js';
 
-function evaluation(
-  assessment: VerificationAssessment,
-  reasons: readonly string[],
-): EffectEvaluation {
+function evaluation(assessment: EffectAssessment, reasons: readonly string[]): EffectEvaluation {
   if (assessment.status === 'pass') {
     return { kind: 'satisfied' };
   }
@@ -34,8 +29,13 @@ export function createEffectContractEvaluator(
         return { kind: 'inconclusive', message: read.message };
       }
       try {
-        const graph = projectObservations(read.payloads, read.scopeId, read.diagnostics);
-        return evaluation(verify(graph, adaptContract(contract)), graph.quality.reasons);
+        const graph = projectEffects({
+          format: 'otlp-json',
+          scopeId: read.scopeId,
+          payloads: read.payloads,
+        });
+        const reasons = [...new Set([...read.diagnostics, ...graph.quality.reasons])];
+        return evaluation(evaluateEffects(graph, contract), reasons);
       } catch (error) {
         if (!(error instanceof TypeError)) {
           throw error;

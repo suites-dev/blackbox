@@ -73,8 +73,10 @@ reasons. Setup failure also attempts cleanup before surfacing the error.
 
 ## Validate the internal effects pipeline
 
-The package now owns an internal path from explicitly selected activities to
-retained OTLP, normalized effects, and the existing `toSatisfy` matcher. The
+Playwright owns activity selection, collector reads, effects handles and the
+`toSatisfy` matcher. It delegates OTLP projection, contract compilation and
+evaluation to the standalone [`@suites/blackbox-effects`](../effects/README.md)
+package through its public entrypoint. The
 [pipeline tests](src/effects/testing/pipeline.test.ts) exercise this path through
 a real loopback collector with synthetic OTLP inputs, including nested cases and
 their assertions. They do not replace a released-package Playwright acceptance run.
