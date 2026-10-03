@@ -1,7 +1,7 @@
 import { createServer, type ServerResponse } from 'node:http';
 
 export interface ParallelBarrier {
-  readonly url: string;
+  readonly port: number;
   close(): Promise<void>;
 }
 
@@ -63,7 +63,7 @@ export async function startParallelBarrier(timeoutMs: number): Promise<ParallelB
   }
 
   return {
-    url: `http://127.0.0.1:${address.port}`,
+    port: address.port,
     async close() {
       failed = true;
       finish(503, 'parallel rendezvous owner closed');

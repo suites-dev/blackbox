@@ -5,6 +5,7 @@ import { expect as playwrightExpect } from '@playwright/test';
 import { createBlackboxSystemTest } from '../../fixtures.js';
 import { test as publicTest } from '../../index.js';
 import type { BlackboxAttemptRuntime } from '../../runtime/acquisition.js';
+import { joinParallelBarrier } from '../system-sandbox-harness/barrier-client.fixture.js';
 import { record, startRespondingAttempt } from './runtime.fixture.js';
 
 interface AuditFixtures {
@@ -19,14 +20,7 @@ const rendezvousRuntime = {
       return attempt;
     }
     try {
-      const url = process.env.BLACKBOX_PARALLEL_BARRIER_URL;
-      if (url === undefined) {
-        throw new Error('Parallel rendezvous URL was not configured');
-      }
-      const response = await fetch(`${url}/arrive`);
-      if (response.status !== 204) {
-        throw new Error(`Parallel rendezvous failed with HTTP ${response.status}`);
-      }
+      await joinParallelBarrier();
       workerJoinedParallelBarrier = true;
       return attempt;
     } catch (error) {

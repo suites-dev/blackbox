@@ -4,6 +4,7 @@ import {
   assertFailureRun,
   assertHappyRun,
 } from './testing/system-sandbox-harness/assertions.spec.js';
+import { parseParallelBarrierPort } from './testing/system-sandbox-harness/barrier-client.fixture.js';
 import {
   cleanupNativeRuns,
   eventsOf,
@@ -12,6 +13,15 @@ import {
 } from './testing/system-sandbox-harness/native-runner.js';
 
 afterEach(cleanupNativeRuns);
+
+it.each(['', 'not-a-port', '0', '65536', '12.5'])(
+  'rejects invalid parallel rendezvous port %j',
+  (value) => {
+    expect(() => parseParallelBarrierPort(value)).toThrow(
+      'Parallel rendezvous port must be an integer from 1 through 65535',
+    );
+  },
+);
 
 it('maps system sandbox declarations to isolated native Playwright attempts', async () => {
   const run = await runPlaywright({

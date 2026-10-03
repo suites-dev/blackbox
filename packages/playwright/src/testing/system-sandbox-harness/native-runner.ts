@@ -103,7 +103,7 @@ function parseEvents(output: string): readonly NativeEvent[] {
   });
 }
 
-async function executePlaywright(input: RunInput, barrierUrl: string): Promise<NativeRun> {
+async function executePlaywright(input: RunInput, barrierPort: number): Promise<NativeRun> {
   const directory = await mkdtemp(join(tmpdir(), 'blackbox-system-sandbox-'));
   directories.push(directory);
   const reportFile = join(directory, 'results.json');
@@ -123,7 +123,7 @@ async function executePlaywright(input: RunInput, barrierUrl: string): Promise<N
         ...process.env,
         BLACKBOX_PLAYWRIGHT_OUTPUT_DIR: join(directory, 'output'),
         BLACKBOX_PLAYWRIGHT_JSON_REPORT: reportFile,
-        BLACKBOX_PARALLEL_BARRIER_URL: barrierUrl,
+        BLACKBOX_PARALLEL_BARRIER_PORT: barrierPort.toString(10),
         BLACKBOX_SYSTEM_SANDBOX_SCENARIO: input.scenario,
         FORCE_COLOR: '0',
         NO_COLOR: undefined,
@@ -162,7 +162,7 @@ export async function runPlaywright(input: RunInput): Promise<NativeRun> {
   const timeoutMs = input.scenario === 'serialized-control' ? 500 : 15_000;
   const barrier = await startParallelBarrier(timeoutMs);
   try {
-    return await executePlaywright(input, barrier.url);
+    return await executePlaywright(input, barrier.port);
   } finally {
     await barrier.close();
   }
