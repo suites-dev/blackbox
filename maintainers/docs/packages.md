@@ -43,6 +43,24 @@ drivers, the system under test, and the golden CLI journeys. `pnpm run test:demo
 are active entrypoints. `pnpm run test:e2e:playwright` runs the system tests against the same project fixture.
 Every lane consumes packages installed from a disposable registry.
 
+The Playwright lane requires a prepared Chromium cache. Set `PLAYWRIGHT_BROWSERS_PATH` to an isolated writable
+directory, then install the browser and its operating-system dependencies with the pinned workspace CLI before the
+lane runs:
+
+```sh
+export PLAYWRIGHT_BROWSERS_PATH="$PWD/.blackbox/tmp/playwright-browsers"
+pnpm --filter @suites/blackbox-playwright exec playwright install --with-deps chromium --only-shell
+pnpm --filter @suites/blackbox-playwright test:browser
+pnpm run test:e2e:playwright
+```
+
+The `--with-deps` form is intended for the Ubuntu CI runner. On a developer machine with the Chromium operating-system
+dependencies already installed, use
+`pnpm --filter @suites/blackbox-playwright exec playwright install chromium --only-shell`; `run-demo-pw.sh` follows
+that local form. The package browser lane checks real Chromium propagation and cleanup before the system tests run.
+The system-test lane also retains a headless browser preflight receipt and an inspectable native report at
+`e2e/test-results/html/index.html` alongside its JSON and JUnit evidence.
+
 Package and source checks run in
 [Continuous Integration](../../.github/workflows/ci.yml). The separate
 [E2E workflow](../../.github/workflows/e2e.yml) builds once, then runs the demo, the journeys, and the Playwright

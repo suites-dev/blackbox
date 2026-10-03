@@ -19,6 +19,7 @@ import { promisify } from 'node:util';
 import { cleanupCapsuleAssets, verifyCapsuleAssetBoundary } from './capsule-asset-boundary.mjs';
 import { resetCapsuleDemo } from './capsule-reset.mjs';
 import { consumerPackages, verifyConsumerComposition } from './composition.mjs';
+import { canonicalNpmInstallLocation } from './npm-prefix.mjs';
 
 const execute = promisify(execFile);
 const scriptDirectory = dirname(fileURLToPath(import.meta.url));
@@ -58,22 +59,20 @@ async function readVersion() {
 }
 
 async function installConsumer(input) {
+  const install = await canonicalNpmInstallLocation(input.consumerRoot);
   const manifest = {
     name: 'blackbox-registry-consumer',
     private: true,
     type: 'module',
     dependencies: Object.fromEntries(consumerPackages.map((name) => [name, input.version])),
   };
-  await writeFile(
-    join(input.consumerRoot, 'package.json'),
-    `${JSON.stringify(manifest, null, 2)}\n`,
-  );
+  await writeFile(join(install.prefix, 'package.json'), `${JSON.stringify(manifest, null, 2)}\n`);
   await execute(
     'npm',
     [
       'install',
       '--prefix',
-      input.consumerRoot,
+      install.prefix,
       '--registry',
       registry,
       '--cache',
@@ -84,7 +83,7 @@ async function installConsumer(input) {
       '--loglevel',
       'warn',
     ],
-    { cwd: input.consumerRoot },
+    { cwd: install.cwd },
   );
 }
 

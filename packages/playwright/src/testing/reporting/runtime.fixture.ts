@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 
 import type { BlackboxAttemptInput, BlackboxAttemptRuntime } from '../../runtime/acquisition.js';
+import { createUnavailableBlackboxActivities } from '../../effects/attempt-effects.js';
 
 export async function waitForReporter(file = 'reporter-observed-startup'): Promise<void> {
   // The parent launches this isolated process in its own mkdtemp directory.
@@ -35,6 +36,7 @@ function runningAttempt(input: BlackboxAttemptInput) {
       containers: new Map(),
     },
     effects: { sessionId: executionId, executionId },
+    activities: createUnavailableBlackboxActivities(),
     telemetry: {
       sessionId: executionId,
       executionId,

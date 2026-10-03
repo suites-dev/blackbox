@@ -15,14 +15,15 @@ import type {
   BlackboxSandbox,
   BlackboxTelemetry,
 } from '../types.js';
-import { createUnavailableBlackboxEffects } from '../effects/runtime.js';
+import type { BlackboxActivities } from '../activities/public-types.js';
+import { createAttemptEffects } from '../effects/attempt-effects.js';
 import { reported, type AttemptProgress } from '../reporting/events.js';
 import { verifyRequiredActivations } from './activation.js';
 import { resolveCollectorRuntime } from './collector-runtime.js';
 import { awaitReadiness } from './readiness.js';
 import { startAttemptSandbox } from './sandbox-start.js';
 import { createSandboxTelemetry, type TelemetryAuthorization } from './telemetry.js';
-import { publicTelemetry } from './telemetry-handle.js';
+import { publicAttempt } from './telemetry-handle.js';
 
 export interface BlackboxAttemptInput {
   readonly selection: BlackboxCatalogSelection;
@@ -36,6 +37,7 @@ export interface RunningBlackboxAttempt {
   readonly sandbox: BlackboxSandbox;
   readonly telemetry: BlackboxTelemetry;
   readonly effects: BlackboxEffects;
+  readonly activities: BlackboxActivities;
   stop(reason: SandboxStopReason): Promise<void>;
 }
 
@@ -56,8 +58,9 @@ export interface BlackboxAcquisitionPorts {
   readonly createEffects: (input: {
     readonly sessionId: string;
     readonly executionId: string;
-    readonly telemetry: BlackboxTelemetry;
-  }) => BlackboxEffects;
+    readonly storageDirectory: string;
+    readonly entrypointUrl: string;
+  }) => { readonly effects: BlackboxEffects; readonly activities: BlackboxActivities };
 }
 
 const productionPorts = {
@@ -70,7 +73,7 @@ const productionPorts = {
   awaitReadiness,
   randomId: randomUUID,
   randomToken: () => randomBytes(32).toString('base64url'),
-  createEffects: createUnavailableBlackboxEffects,
+  createEffects: createAttemptEffects,
 } satisfies BlackboxAcquisitionPorts;
 
 function selectedPlan(input: {
@@ -212,32 +215,15 @@ export async function acquireBlackboxAttempt(
     );
     await verifyReadiness({ plan, sandbox, ports, progress: input.progress });
     const selectedEntrypoint = entrypoint({ plan, sandbox });
-    const publicSandbox = Object.freeze({
-      sandboxId: sandbox.sandboxId,
-      executionId,
-      catalogEntry: Object.freeze({
-        id: plan.catalogEntryId,
-        kind: plan.metadata.kind,
-      }),
-      projectName: sandbox.projectName,
-      artifactDirectory: input.artifactDirectory,
-      entrypoint: Object.freeze(selectedEntrypoint),
-      containers: sandbox.containers,
-    }) satisfies BlackboxSandbox;
-    const exposedTelemetry = publicTelemetry({
+    return publicAttempt({
+      plan,
       sandbox,
-      recordDirectory,
+      artifactDirectory: recordDirectory,
       sessionId,
       executionId,
+      createEffects: ports.createEffects,
+      entrypoint: selectedEntrypoint,
     });
-    return {
-      sandbox: publicSandbox,
-      telemetry: exposedTelemetry,
-      effects: ports.createEffects({ sessionId, executionId, telemetry: exposedTelemetry }),
-      async stop(reason): Promise<void> {
-        await sandbox.stop({ reason });
-      },
-    };
   } catch (cause) {
     return cleanupAfterSetupFailure({ sandbox, cause, progress: input.progress });
   }

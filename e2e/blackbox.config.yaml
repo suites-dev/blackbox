@@ -161,6 +161,71 @@ catalog:
           activation: sut-node-factory
       drivers: {}
       observation: *observation
+    effects-acceptance:
+      kind: system
+      acquisition: &effects-acquisition
+        adapter: docker-compose@1
+        files:
+          - .blackbox/catalog/effects-acceptance.yml
+      entrypoint: &effects-entrypoint
+        participant: app
+        protocol: http
+        containerPort: 8080
+        readiness:
+          path: /health
+          timeoutMs: 120000
+      participants:
+        app:
+          service: app
+          role: entrypoint
+          runtime: node
+          activation: sut-node-factory
+        postgres:
+          service: postgres
+          role: dependency
+          runtime: infra
+        rabbitmq:
+          service: rabbitmq
+          role: dependency
+          runtime: infra
+      drivers: {}
+      observation: &effects-observation
+        policyId: effects-acceptance-v1
+        boundaries:
+          - id: effects.http
+            kind: http
+            authoritativeFor: [normalized HTTP operations]
+          - id: effects.postgres
+            kind: postgres
+            authoritativeFor: [normalized PostgreSQL operations]
+          - id: effects.rabbitmq
+            kind: rabbitmq
+            authoritativeFor: [normalized RabbitMQ operations]
+        requiredBoundaries: [effects.http, effects.postgres, effects.rabbitmq]
+        terminalObservationWindowMs: 2000
+        redaction:
+          requestBodies: not-captured
+          headers: [authorization, cookie, set-cookie]
+          dynamicIdentifiers: normalized in effect identities and paths
+    effects-withheld:
+      kind: system
+      acquisition: *effects-acquisition
+      entrypoint: *effects-entrypoint
+      participants:
+        app:
+          service: app
+          role: entrypoint
+          runtime: infra
+        postgres:
+          service: postgres
+          role: dependency
+          runtime: infra
+        rabbitmq:
+          service: rabbitmq
+          role: dependency
+          runtime: infra
+      drivers: {}
+      observation: *effects-observation
 activations:
   sut-node-factory:
     ref: .blackbox/instrumentation/instrumentation.js

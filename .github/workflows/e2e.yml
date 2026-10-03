@@ -403,6 +403,8 @@ jobs:
     needs: build
     runs-on: ubuntu-24.04
     timeout-minutes: 45
+    env:
+      PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/playwright-browsers
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -416,6 +418,16 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           pnpm-version: ${{ env.PNPM_VERSION }}
+
+      - name: Prepare pinned Chromium
+        id: browser_setup
+        run: >-
+          pnpm --filter @suites/blackbox-playwright exec playwright install
+          --with-deps chromium --only-shell
+
+      - name: Test browser propagation
+        id: browser_tests
+        run: pnpm --filter @suites/blackbox-playwright test:browser
 
       - name: Download the test registry storage
         uses: actions/download-artifact@v5
@@ -469,7 +481,8 @@ jobs:
         if: always()
         env:
           OUTCOMES: >-
-            ${{ steps.setup.outcome }} ${{ steps.playwright_tests.outcome }}
+            ${{ steps.setup.outcome }} ${{ steps.browser_setup.outcome }}
+            ${{ steps.browser_tests.outcome }} ${{ steps.playwright_tests.outcome }}
             ${{ steps.playwright_archive.outcome }} ${{ steps.playwright_evidence.outcome }}
         run: |
           for outcome in $OUTCOMES; do

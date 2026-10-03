@@ -1,9 +1,14 @@
 import { execFile } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { lstat, readFile, readdir, realpath } from 'node:fs/promises';
 import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
-import { verifyAttemptReports, verifyParallelAcquisition } from './playwright-report-proof.mjs';
+import {
+  verifyAttemptReports,
+  verifyEffectReports,
+  verifyParallelAcquisition,
+} from './playwright-report-proof.mjs';
 
 const execute = promisify(execFile);
 const supportDirectory = dirname(fileURLToPath(import.meta.url));
@@ -17,6 +22,16 @@ const expectedSpecs = [
   'Scenario: an unknown payment intent cannot be refunded',
   'Scenario: an unknown user is rejected without side effects',
   'Scenario: concurrent requests create exactly one subscription',
+  'PostgreSQL INSERT is observed and persisted state is checked separately',
+  'RabbitMQ send is observed and broker delivery is checked separately',
+  'an observed forbidden INSERT produces a definite matcher failure',
+  'inspection SELECT cannot satisfy a stimulus SELECT contract',
+  '@isolation alpha attempt cannot use the other destination',
+  '@isolation beta attempt cannot use the other destination',
+  'a rolled-back INSERT remains an observed operation while state is absent',
+  'browser stimulus propagates ownership to a PostgreSQL INSERT',
+  'plain browser work cannot satisfy a later stimulus contract',
+  '@withheld successful action stays inconclusive under positive and negated matchers',
 ].sort();
 
 function assert(value, message) {
@@ -84,6 +99,7 @@ async function dockerResources(projectName) {
 export async function boundary(consumerRootValue) {
   const consumerRoot = resolve(await realpath(consumerRootValue));
   const consumerManifest = JSON.parse(await readFile(join(consumerRoot, 'package.json'), 'utf8'));
+  const consumerLock = JSON.parse(await readFile(join(consumerRoot, 'package-lock.json'), 'utf8'));
   const registryPackages = Object.keys(consumerManifest.dependencies ?? {})
     .filter((name) => name.startsWith('@suites/blackbox-'))
     .sort();
@@ -99,19 +115,52 @@ export async function boundary(consumerRootValue) {
     assert(isWithin(packageRoot, consumerRoot), `${name} escaped the registry consumer`);
     const manifest = JSON.parse(await readFile(join(packageRoot, 'package.json'), 'utf8'));
     assert(manifest.name === name, `Registry package identity mismatch: ${name}`);
-    packages.push({ name, packageRoot });
+    assert(typeof manifest.version === 'string', `Registry package version is missing: ${name}`);
+    const resolution = consumerLock.packages?.[`node_modules/${name}`];
+    assert(
+      typeof resolution?.integrity === 'string' && typeof resolution?.resolved === 'string',
+      `Registry package lock provenance is missing: ${name}`,
+    );
+    packages.push({
+      name,
+      version: manifest.version,
+      packageRoot,
+      resolved: resolution.resolved,
+      integrity: resolution.integrity,
+    });
   }
   const projectFiles = [
     'blackbox.config.yaml',
+    '.blackbox/catalog/effects-acceptance.yml',
     '.blackbox/catalog/subscription-system.yml',
     '.blackbox/instrumentation/instrumentation.js',
     '.blackbox/instrumentation/package.json',
     'playwright.config.ts',
+    'sut/effects-acceptance/Dockerfile',
+    'sut/effects-acceptance/app.cjs',
+    'sut/effects-acceptance/init.sql',
+    'sut/effects-acceptance/package-lock.json',
+    'sut/effects-acceptance/package.json',
+    'tests/playwright/effects-acceptance-browser.ts',
+    'tests/playwright/effects-acceptance-database.ts',
+    'tests/playwright/effects-acceptance-messaging.ts',
+    'tests/playwright/effects-acceptance.spec.ts',
+    'tests/playwright/effects-acceptance.support.ts',
   ];
   for (const name of projectFiles) {
     const path = resolve(await realpath(join(consumerRoot, name)));
     assert(isWithin(path, consumerRoot), `Project file escaped the registry consumer: ${name}`);
   }
+  const projectFileHashes = Object.fromEntries(
+    await Promise.all(
+      projectFiles.map(async (name) => [
+        name,
+        createHash('sha256')
+          .update(await readFile(join(consumerRoot, name)))
+          .digest('hex'),
+      ]),
+    ),
+  );
   const instrumentationDependencies = resolve(
     await realpath(join(consumerRoot, '.blackbox', 'instrumentation', 'node_modules')),
   );
@@ -124,6 +173,7 @@ export async function boundary(consumerRootValue) {
     consumerRoot,
     packages,
     projectFiles,
+    projectFileHashes,
     instrumentationDependencies,
   };
 }
@@ -147,6 +197,27 @@ function collectSpecs(suite, result = []) {
   result.push(...(suite.specs ?? []));
   for (const child of suite.suites ?? []) collectSpecs(child, result);
   return result;
+}
+
+export function expectedCatalogForSpec(file, title) {
+  const name = file.split(/[/\\]/u).at(-1);
+  if (
+    [
+      'effects-acceptance.spec.ts',
+      'effects-acceptance-browser.ts',
+      'effects-acceptance-database.ts',
+      'effects-acceptance-messaging.ts',
+    ].includes(name)
+  ) {
+    return {
+      kind: 'system',
+      id: title.startsWith('@withheld ') ? 'effects-withheld' : 'effects-acceptance',
+    };
+  }
+  return {
+    'payment-service.spec.ts': { kind: 'subsystem', id: 'payment-mock' },
+    'subscription-system.spec.ts': { kind: 'system', id: 'subscription-system' },
+  }[name];
 }
 
 export async function verify() {
@@ -195,14 +266,15 @@ export async function verify() {
     `Unexpected Playwright specs: ${JSON.stringify(discoveredSpecs)}`,
   );
   const attempts = specs.flatMap((spec) => {
-    const catalogByFile = {
-      'payment-service.spec.ts': { kind: 'subsystem', id: 'payment-mock' },
-      'subscription-system.spec.ts': { kind: 'system', id: 'subscription-system' },
-    };
-    const expectedCatalog = catalogByFile[spec.file.split('/').at(-1)];
+    const expectedCatalog = expectedCatalogForSpec(spec.file, spec.title);
     assert(expectedCatalog !== undefined, `Unexpected scenario file: ${spec.file}`);
     return spec.tests.flatMap((test) =>
-      test.results.map((result) => ({ ...result, testId: spec.id, expectedCatalog })),
+      test.results.map((result) => ({
+        ...result,
+        title: spec.title,
+        testId: spec.id,
+        expectedCatalog,
+      })),
     );
   });
   assert(
@@ -217,8 +289,10 @@ export async function verify() {
   );
   const live = JSON.parse(await readFile(join(resultsRoot, 'live-reporting.json'), 'utf8'));
   verifyParallelAcquisition(live);
+  const effects = verifyEffectReports(attempts);
   return {
     kind: 'playwright-e2e-proof',
+    effects,
     reporting: verifyAttemptReports({
       attempts,
       records,

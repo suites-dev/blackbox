@@ -85,6 +85,15 @@ instrumentations and an async-local-storage context manager. In Blackbox mode it
 posts an authenticated activation record, exports traces over OTLP HTTP/JSON, and
 continues an optional W3C `TRACEPARENT` inherited through the process environment.
 
+Newly generated bootstraps keep the full automatic instrumentation set and add two
+producer hooks. PostgreSQL single-result `command` metadata supplies
+`db.operation.name`; errors and multi-result arrays receive no inferred operation.
+The amqplib pre-publish hook supplies `messaging.operation.type=send` and
+`messaging.operation.name=publish`. Neither hook parses SQL, span names, message
+bodies, table names, or keys. These attributes describe observed operations, not
+durable database state or successful consumer processing. Existing installed
+bootstrap files are not changed by upgrading this package alone.
+
 [`createNodeTelemetryEnvironment()`](src/runtime/bootstrap/environment.ts) produces
 the complete standalone environment contract:
 

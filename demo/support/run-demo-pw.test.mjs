@@ -22,6 +22,7 @@ case "$tool:$1" in
   npm:publish)
     [[ "$*" == *'--registry http://127.0.0.1:34987/'* ]] || exit 99 ;;
   git:ls-files) printf 'package.json\\0' ;;
+  git:rev-parse) echo test-revision ;;
 esac
 `;
 
@@ -43,6 +44,7 @@ async function run(failure) {
         PATH: `${join(root, 'bin')}:${process.env.PATH}`,
         DEMO_TEST_LOG: log,
         DEMO_TEST_FAIL: failure,
+        PLAYWRIGHT_BROWSERS_PATH: join(root, 'browser-cache'),
       },
       stdio: ['ignore', 'pipe', 'pipe'],
     });
@@ -72,8 +74,15 @@ test('launcher streams tests, publishes locally and removes only its owned regis
   assert.equal(result.code, 0, result.output);
   assert.match(result.output, /Blackbox live execution/);
   assert.match(result.calls, /pnpm install --frozen-lockfile/);
+  assert.match(
+    result.calls,
+    /pnpm --filter @suites\/blackbox-playwright exec playwright install chromium --only-shell/,
+  );
   assert.match(result.calls, /--publish 127\.0\.0\.1::4873/);
-  assert.match(result.calls, /npm publish .*--registry http:\/\/127\.0\.0\.1:34987\//);
+  assert.match(
+    result.calls,
+    /npm publish .*--registry http:\/\/127\.0\.0\.1:34987\/ --tag candidate/,
+  );
   assert.match(result.calls, /docker rm --force owned-registry-id/);
 });
 

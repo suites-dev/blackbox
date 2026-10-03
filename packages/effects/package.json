@@ -1,0 +1,59 @@
+{
+  "name": "@suites/blackbox-effects",
+  "version": "0.0.1-alpha.0",
+  "type": "module",
+  "description": "Framework-neutral OTLP projection, effect contracts, and behavioral verification.",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "NOTICE",
+    "src",
+    "!src/**/*.test.*",
+    "!src/**/*.spec.*",
+    "!src/**/*.fixture.*",
+    "!src/**/testing/**",
+    "!src/**/test-fixtures/**",
+    "!src/**/__tests__/**"
+  ],
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "blackbox-source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "prebuild": "rimraf dist",
+    "build": "tsc --project tsconfig.build.json",
+    "prepack": "pnpm build",
+    "lint": "eslint .",
+    "test": "vitest run --config vitest.config.ts"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "rimraf": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=22.15"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/suites-dev/blackbox.git",
+    "directory": "packages/effects"
+  },
+  "homepage": "https://github.com/suites-dev/blackbox/tree/main/packages/effects#readme",
+  "bugs": {
+    "url": "https://github.com/suites-dev/blackbox/issues"
+  },
+  "author": "Suites"
+}

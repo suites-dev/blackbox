@@ -124,9 +124,9 @@ See [instrumentation](instrumentation.md) and [drivers](drivers.md) for setup an
 Keep the observed flow, accepted expectations, and claim assessment separate. Exploring what happened does not
 implicitly approve it as correct. Assess previously chosen expectations against fresh evidence when confirming behavior.
 
-The alpha provides raw observations and command results for inspection and explicit checks. Playwright exposes an
-effects contract matcher, but normalized-effect projection and automated qualification are still in development; the
-matcher is inconclusive without that projection. Report projections do not create new verdicts.
+The alpha provides raw observations and command results for inspection and explicit checks. Playwright can project
+explicitly propagated stimulus activities into normalized effects and evaluate three-valued contracts. Unsupported or
+missing observations stay inconclusive. Report projections do not create new verdicts.
 Use “insufficient evidence” when the available observations cannot answer the claim, rather than forcing pass or fail.
 
 Keep findings bounded to the tested conditions and execution. Review telemetry and delegated output before sharing:

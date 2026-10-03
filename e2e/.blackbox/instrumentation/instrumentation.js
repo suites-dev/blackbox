@@ -46,7 +46,26 @@ class ProcessContextManager extends AsyncLocalStorageContextManager {
 const contextManager = new ProcessContextManager();
 const sdkOptions = {
   contextManager,
-  instrumentations: [getNodeAutoInstrumentations()],
+  instrumentations: [getNodeAutoInstrumentations({
+    '@opentelemetry/instrumentation-pg': {
+      responseHook(span, info) {
+        // CommandComplete metadata identifies the operation, not durable state.
+        // Errors and multi-result arrays do not provide one command here.
+        if (!Array.isArray(info.data) && typeof info.data?.command === 'string' && info.data.command.length > 0) {
+          span.setAttribute('db.operation.name', info.data.command);
+        }
+      },
+    },
+    '@opentelemetry/instrumentation-amqplib': {
+      publishHook(span) {
+        // The pre-publish action establishes send, not consumer processing.
+        span.setAttributes({
+          'messaging.operation.type': 'send',
+          'messaging.operation.name': 'publish',
+        });
+      },
+    },
+  })],
 };
 
 if (blackboxEnabled) {

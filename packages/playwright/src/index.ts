@@ -1,6 +1,12 @@
 export { expect } from './effects/expect.js';
 export { test } from './fixtures.js';
 export type {
+  BlackboxActivities,
+  BlackboxActivityActions,
+  BlackboxActivityContext,
+  BlackboxScopedRequest,
+} from './activities/public-types.js';
+export type {
   EffectConstraint,
   EffectContract,
   EffectContractBuilder,

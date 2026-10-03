@@ -38,11 +38,13 @@ import { expect, test } from '@suites/blackbox-playwright';
 test.system('subscription-system', (system) => {
   system.sandbox('default', { environment: { FEATURE_MODE: 'stable' } }, (suite) => {
     suite.describe('health', () => {
-      suite.test('reports ready', async ({ request, sandbox, telemetry, effects }) => {
+      suite.test('reports ready', async ({ activities, request, sandbox, telemetry, effects }) => {
         const url = new URL('/health', sandbox.entrypoint.url).href;
-        const response = await test.step('When health is requested', () => request.get(url));
+        const response = await test.step('When health is requested', () =>
+          activities.stimulus.request('request health', request, (scoped) => scoped.get(url)));
 
         expect(response.ok()).toBe(true);
+        await expect(effects).toSatisfy((e) => [e.exists(e.http({ method: 'GET' }))]);
         expect(sandbox.catalogEntry.id).toBe('subscription-system');
         expect(telemetry.executionId).toBe(sandbox.executionId);
         expect(effects.executionId).toBe(sandbox.executionId);
@@ -106,10 +108,95 @@ reasons. Setup failure also attempts cleanup before surfacing the error.
 - `telemetry` exposes the attempt identity, live collector status, and raw
   retained session or trace reads.
 - `effects` exposes the attempt identity and the contract-evaluation boundary.
-  `expect(effects).toSatisfy(...)` compiles and delegates an immutable contract,
-  but the Alpha does not yet project raw telemetry into normalized effects. The
-  matcher therefore reports an inconclusive failure unless an evaluator is
-  supplied by the runtime.
+  `expect(effects).toSatisfy(...)` evaluates an immutable contract against the
+  attempt's completed stimulus activities. It retries only while retained
+  activity telemetry is still inconclusive; elapsed time never turns missing
+  evidence into a pass or a definite absence.
+- `activities` records explicitly named `setup`, `stimulus`, and `inspection`
+  actions. Each purpose supports `request`, `browser`, and custom `run` actions.
+  Only stimuli feed the default `effects` selection, so fixture setup and state
+  inspection cannot silently satisfy a behavior assertion.
+
+Direct HTTP calls receive canonical W3C propagation without changing the native
+Playwright request fixture:
+
+```ts
+const response = await activities.stimulus.request('create subscription', request, (scoped) =>
+  scoped.post(new URL('/subscriptions', sandbox.entrypoint.url).href, {
+    data: { userId: 'alice' },
+  }),
+);
+```
+
+Browser actions install a temporary route on the supplied page. The route adds
+the activity context only to the Sandbox entrypoint origin and is removed when
+the callback settles:
+
+```ts
+await activities.stimulus.browser('submit subscription form', page, async (scopedPage) => {
+  await scopedPage.goto(new URL('/subscribe', sandbox.entrypoint.url).href);
+  await scopedPage.getByRole('button', { name: 'Subscribe' }).click();
+});
+```
+
+Configure the Playwright project with `use: { serviceWorkers: 'block' }` before
+using scoped browser activities. Public Playwright routes do not reliably
+intercept service-worker traffic or the follow-up hops of a redirect, so a
+scoped browser action rejects any redirect response instead of losing activity
+ownership. Start a new scoped action at the final URL when that behavior is part
+of the test.
+
+Only one Blackbox activity may own a given `Page` at a time. Nested or concurrent
+scoped actions on the same page are rejected; independent pages can run separate
+activities. Page work outside `activities.*.browser(...)` remains ordinary
+native Playwright behavior and has no Blackbox activity propagation.
+
+Use `activities.inspection.request(...)` for fixture state endpoints and other
+authoritative reads. A successful state read remains a separate result; observed
+attempt effects do not prove that state is durable.
+
+## Validate the internal effects pipeline
+
+Playwright owns activity selection, collector reads, effects handles and the
+`toSatisfy` matcher. It delegates OTLP projection, contract compilation and
+evaluation to the standalone [`@suites/blackbox-effects`](../effects/README.md)
+package through its public entrypoint. The
+[pipeline tests](src/effects/testing/pipeline.test.ts) exercise this path through
+a real loopback collector with synthetic OTLP inputs, including nested cases and
+their assertions. They do not replace a released-package Playwright acceptance run.
+
+From the repository root, after installing and building workspace dependencies:
+
+```sh
+pnpm --filter @suites/blackbox-playwright test
+```
+
+[The composition factory](src/effects/scoped-effects.ts) takes an immutable,
+registry-owned selection. Stimulus selections exclude setup and inspection;
+combining purposes requires an explicit procedure selection. Collector shutdown
+and activity completion never establish telemetry completeness. Observed positive
+evidence can satisfy a contract, definite contradictions can fail it, and missing
+evidence stays inconclusive under both positive and negated assertions.
+
+The initial projection recognizes structured HTTP, RPC, database, cache, and
+messaging operations. A database namespace is not a table; Redis keys remain
+unknown without a supported key convention. SQL text, span names, `lab.*`
+annotations, parent links, and timestamps do not supply missing semantics.
+Effects describe observed operations, not durable state; state inspection remains
+a separate activity. With no completeness or ordering attestation, absence,
+exact counts, and universal ordering generally remain inconclusive.
+
+The internal admission boundary rejects oversized selections rather than sampling:
+eight selected traces, 256 distinct span identities, 256 KiB of selected payloads
+including repeated arrivals, and 32 KiB per record. Each registry permits 256
+activity registrations. [The named limits](src/activities/limits.ts) apply to this
+initial integration and do not establish production load capacity.
+
+The public activity fixture connects request and browser execution to the trusted
+registry within each system/sandbox attempt. The internal factory remains outside
+the authoring API. Shared sandboxes must not imply shared effects selections.
+Published-release acceptance still requires the selected registry and version;
+local packed candidates establish only candidate behavior.
 
 ## Execution reporting
 
@@ -151,12 +238,35 @@ The Blackbox reporter also adds a readable `blackbox-diagnostics` attachment.
 Container health polling and detailed startup events stay in these attachments,
 not the live console. Native reporters may display attachments for failed tests.
 
+Every final `expect(effects).toSatisfy(...)` decision also attaches a
+`blackbox-effects` JSON document, whether the assertion passes, fails, or stays
+inconclusive. Open the test in Playwright's HTML report to inspect the attachment,
+or read it from the result's `attachments` array when using Playwright's JSON
+reporter. Repeated assertions have an attempt-local sequence number.
+
+The document keeps the compiled contract beside its finding indexes, projected
+effects and relations, and activity ownership. Admitted observations include
+bounded excerpts with trace/span IDs, service, span kind/status, and supported
+HTTP, RPC, database, cache, and messaging operation fields. Arbitrary attributes,
+headers, bodies, SQL text, and span names are not attached. Protected environment
+values and common credential forms are redacted before Playwright stores the
+document.
+
+`evidence.omitted` reports entries excluded by the attachment's display bounds,
+and `display.truncatedStrings` reports shortened strings. These are presentation
+limits only. They do not make capture complete or change the matcher result. Use
+`projection.quality` and the contract assessment to understand admitted coverage
+and uncertainty. When no observation was admitted, `evidence.kind` is
+`not-admitted` and the assertion diagnostic explains why; negating the matcher
+does not turn that inconclusive result into a pass.
+
 The retained telemetry summary reads request/span counters from the lifecycle
 record without loading raw trace fragments. Collector shutdown is reported from
 its retained status. Neither a span count nor a
 completed collector shutdown proves that a business workflow finished; the test
-must await its completion boundary before asserting behavior. Effect contract
-diagnostics will be added with the effect evaluator.
+must await its completion boundary before asserting behavior. The internal effect
+evaluator returns scope, witness, and uncertainty diagnostics in the
+`blackbox-effects` attachment.
 
-Effect projection, accepted baselines, drivers, and shared worker
-sandboxes are intentionally outside this package's current surface.
+Accepted baselines, drivers, and shared worker sandboxes remain outside this
+package's current surface.
