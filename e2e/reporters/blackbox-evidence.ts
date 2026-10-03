@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import type {
   FullResult,
   Reporter,
+  Suite,
   TestCase,
   TestResult,
   TestStep,
@@ -16,6 +17,21 @@ interface Event {
   readonly detail: string;
 }
 
+function entrypointFile(test: TestCase): string {
+  let suite: Suite | undefined = test.parent;
+  while (suite !== undefined && suite.type !== 'file') {
+    suite = suite.parent;
+  }
+  if (suite === undefined) {
+    throw new Error(`Missing native file suite for ${test.title}`);
+  }
+  return suite.title;
+}
+
+function isEffectsSource(file: string): boolean {
+  return /[/\\]effects-acceptance(?:\.spec|-(?:browser|database|messaging))\.ts$/u.test(file);
+}
+
 /** Acceptance oracle: observe worker events before the test result is finalized. */
 export default class BlackboxEvidence implements Reporter {
   private readonly attempts = new Map<
@@ -23,6 +39,7 @@ export default class BlackboxEvidence implements Reporter {
     {
       title: string;
       file: string;
+      sourceFile: string;
       acquisitionStartedAt: number | null;
       acquisitionCompletedAt: number | null;
       testId: string;
@@ -33,6 +50,7 @@ export default class BlackboxEvidence implements Reporter {
       events: Event[];
       businessSteps: number;
       nestedSteps: number;
+      effectsAssertions: number;
       errors: string[];
     }
   >();
@@ -44,7 +62,8 @@ export default class BlackboxEvidence implements Reporter {
   onTestBegin(test: TestCase, result: TestResult): void {
     this.attempts.set(result, {
       title: test.title,
-      file: test.location.file,
+      file: entrypointFile(test),
+      sourceFile: test.location.file,
       acquisitionStartedAt: null,
       acquisitionCompletedAt: null,
       testId: test.id,
@@ -55,6 +74,7 @@ export default class BlackboxEvidence implements Reporter {
       events: [],
       businessSteps: 0,
       nestedSteps: 0,
+      effectsAssertions: 0,
       errors: [],
     });
   }
@@ -119,7 +139,13 @@ export default class BlackboxEvidence implements Reporter {
         attempt.errors.push(`Missing live completion: ${phase}`);
       }
     }
-    if (attempt.businessSteps < 3) {
+    attempt.effectsAssertions = result.attachments.filter(
+      (attachment) => attachment.name === 'blackbox-effects',
+    ).length;
+    if (isEffectsSource(attempt.sourceFile) && attempt.effectsAssertions === 0) {
+      attempt.errors.push('Missing live effects assertion evidence');
+    }
+    if (!isEffectsSource(attempt.sourceFile) && attempt.businessSteps < 3) {
       attempt.errors.push('Missing business steps');
     }
   }
@@ -129,8 +155,8 @@ export default class BlackboxEvidence implements Reporter {
     const errors = attempts.flatMap(({ title, errors }) =>
       errors.map((error) => `${title}: ${error}`),
     );
-    if (attempts.length !== 8) {
-      errors.push(`Expected 8 attempts, received ${attempts.length}`);
+    if (attempts.length !== 18) {
+      errors.push(`Expected 18 attempts, received ${attempts.length}`);
     }
     if (!attempts.some(({ nestedSteps }) => nestedSteps > 0)) {
       errors.push('No nested business steps');

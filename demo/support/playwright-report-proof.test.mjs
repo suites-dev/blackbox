@@ -1,7 +1,12 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { verifyAttemptReports, verifyParallelAcquisition } from './playwright-report-proof.mjs';
+import { expectedCatalogForSpec } from './playwright-evidence.mjs';
+import {
+  verifyAttemptReports,
+  verifyEffectReports,
+  verifyParallelAcquisition,
+} from './playwright-report-proof.mjs';
 
 function parallelAcquisitions() {
   return {
@@ -53,6 +58,36 @@ test('rejects worker reuse and missing acquisition timings as parallel evidence'
   const missing = parallelAcquisitions();
   missing.attempts[0].acquisitionStartedAt = null;
   assert.throws(() => verifyParallelAcquisition(missing), /within a test file/);
+});
+
+test('attributes helper callsites to their catalog without treating helpers as entry files', () => {
+  for (const helper of ['browser', 'database', 'messaging']) {
+    assert.deepEqual(
+      expectedCatalogForSpec(
+        `/consumer/tests/playwright/effects-acceptance-${helper}.ts`,
+        'candidate case',
+      ),
+      { kind: 'system', id: 'effects-acceptance' },
+    );
+  }
+  assert.deepEqual(
+    expectedCatalogForSpec(
+      '/consumer/tests/playwright/effects-acceptance-database.ts',
+      '@withheld successful action stays inconclusive under positive and negated matchers',
+    ),
+    { kind: 'system', id: 'effects-withheld' },
+  );
+
+  const helpersOnly = parallelAcquisitions();
+  helpersOnly.attempts.forEach((attempt, index) => {
+    attempt.file = 'effects-acceptance.spec.ts';
+    attempt.sourceFile = `effects-acceptance-${['browser', 'database', 'messaging'][index]}.ts`;
+  });
+  assert.throws(
+    () => verifyParallelAcquisition(helpersOnly),
+    /across test files/,
+    'Helper source locations must not manufacture entry-file parallelism',
+  );
 });
 
 function fixture(suffix = 'a', testId = `test-${suffix}`, retry = 0) {
@@ -226,4 +261,335 @@ test('rejects missing or duplicated lifecycle output and custom terminal renderi
   const diagnostics = fixture().input;
   diagnostics.attempts[0].attachments.pop();
   assert.throws(() => verifyAttemptReports(diagnostics), /Missing retained Blackbox diagnostics/);
+});
+
+const effectCases = [
+  ['Scenario: a valid payment method creates a payment intent', [['satisfied', 'passed', false]]],
+  [
+    'PostgreSQL INSERT is observed and persisted state is checked separately',
+    [['satisfied', 'passed', false]],
+  ],
+  [
+    'RabbitMQ send is observed and broker delivery is checked separately',
+    [['satisfied', 'passed', false]],
+  ],
+  [
+    'an observed forbidden INSERT produces a definite matcher failure',
+    [['unsatisfied', 'failed', false]],
+  ],
+  [
+    'inspection SELECT cannot satisfy a stimulus SELECT contract',
+    [
+      ['satisfied', 'passed', false],
+      ['inconclusive', 'inconclusive', false],
+    ],
+  ],
+  ...['alpha', 'beta'].map((destination) => [
+    `@isolation ${destination} attempt cannot use the other destination`,
+    [
+      ['satisfied', 'passed', false],
+      ['inconclusive', 'inconclusive', false],
+    ],
+  ]),
+  [
+    'a rolled-back INSERT remains an observed operation while state is absent',
+    [['satisfied', 'passed', false]],
+  ],
+  [
+    'browser stimulus propagates ownership to a PostgreSQL INSERT',
+    [['satisfied', 'passed', false]],
+  ],
+  [
+    'plain browser work cannot satisfy a later stimulus contract',
+    [
+      ['satisfied', 'passed', false],
+      ['inconclusive', 'inconclusive', false],
+    ],
+  ],
+  [
+    '@withheld successful action stays inconclusive under positive and negated matchers',
+    [
+      ['inconclusive', 'inconclusive', false],
+      ['inconclusive', 'inconclusive', true],
+    ],
+  ],
+];
+
+function encoded(name, document) {
+  return { name, body: Buffer.from(JSON.stringify(document)).toString('base64') };
+}
+
+function admittedEvidence(suffix, evaluation, selector = { kind: 'db', operation: 'INSERT' }) {
+  const scopeId = `scope-${suffix}`;
+  const activityId = `activity-${suffix}`;
+  const effectId = `effect-${suffix}`;
+  const traceId = suffix.padEnd(32, '0').slice(0, 32);
+  const spanId = suffix.padEnd(16, '0').slice(0, 16);
+  const operationField = {
+    db: { key: 'db.operation.name', value: selector.operation },
+    http: { key: 'http.request.method', value: selector.operation },
+    message: {
+      key: 'messaging.operation.type',
+      value: selector.operation === 'send' ? 'publish' : selector.operation,
+    },
+  }[selector.kind];
+  return {
+    kind: 'admitted',
+    observations: {
+      scopeId,
+      payloadCount: 1,
+      diagnostics: [],
+      excerpts: [
+        {
+          traceId,
+          spanId,
+          service: 'fixture',
+          kind: 'client',
+          status: 'ok',
+          fields: [operationField],
+        },
+      ],
+    },
+    selection: {
+      scopeId,
+      sessionId: `session-${suffix}`,
+      executionId: `run-${suffix}`,
+      kind: 'stimulus',
+      activities: [{ activityId, purpose: 'stimulus', traceIds: [traceId] }],
+    },
+    projection: {
+      schemaVersion: '0.1.1',
+      scope: { id: scopeId, closed: true },
+      quality: {
+        coverage: 'complete',
+        orderCoverage: 'complete',
+        reasons: [],
+        attestation: 'fixture',
+      },
+      effects: [
+        {
+          id: effectId,
+          kind: selector.kind,
+          operation: selector.operation,
+          target: selector.target ?? 'records',
+          actor: 'app',
+          outcome: 'success',
+          source: [{ traceId, spanId }],
+        },
+      ],
+      relations: [],
+    },
+    assessment: {
+      status: { satisfied: 'pass', unsatisfied: 'fail', inconclusive: 'inconclusive' }[evaluation],
+      scope: scopeId,
+      semanticsVersion: '0.1.1',
+      findings: [
+        {
+          index: 0,
+          status: {
+            satisfied: 'pass',
+            unsatisfied: 'fail',
+            inconclusive: 'inconclusive',
+          }[evaluation],
+          reason: 'fixture finding',
+          evidence: evaluation === 'inconclusive' ? [] : [effectId],
+        },
+      ],
+    },
+    ownership: [
+      {
+        effectId,
+        observations: [{ traceId, spanId, owners: [{ activityId, purpose: 'stimulus' }] }],
+      },
+    ],
+    omitted: Object.fromEntries(
+      [
+        'activities',
+        'activityTraces',
+        'diagnostics',
+        'observations',
+        'effects',
+        'effectSources',
+        'relations',
+        'qualityReasons',
+        'findings',
+        'findingEvidence',
+        'ownership',
+        'owners',
+      ].map((name) => [name, 0]),
+    ),
+  };
+}
+
+function effectContract(title, index) {
+  let selector = { node: 'selector', kind: 'db', operation: 'INSERT' };
+  let operator = 'atLeast';
+  let count = 1;
+  if (title === 'Scenario: a valid payment method creates a payment intent') {
+    selector = { node: 'selector', kind: 'http', operation: 'POST' };
+  } else if (title === 'RabbitMQ send is observed and broker delivery is checked separately') {
+    selector = {
+      node: 'selector',
+      kind: 'message',
+      operation: 'send',
+      target: 'acceptance.alpha',
+    };
+  } else if (title === 'an observed forbidden INSERT produces a definite matcher failure') {
+    operator = 'exactly';
+    count = 0;
+  } else if (title === 'inspection SELECT cannot satisfy a stimulus SELECT contract') {
+    selector =
+      index === 0
+        ? {
+            node: 'selector',
+            kind: 'message',
+            operation: 'send',
+            target: 'acceptance.alpha',
+          }
+        : { node: 'selector', kind: 'db', operation: 'SELECT' };
+  } else if (title.startsWith('@isolation ')) {
+    const own = title.includes(' alpha ') ? 'alpha' : 'beta';
+    const target = index === 0 ? own : own === 'alpha' ? 'beta' : 'alpha';
+    selector = {
+      node: 'selector',
+      kind: 'message',
+      operation: 'send',
+      target: `acceptance.${target}`,
+    };
+  } else if (
+    title === 'plain browser work cannot satisfy a later stimulus contract' &&
+    index === 0
+  ) {
+    selector = {
+      node: 'selector',
+      kind: 'message',
+      operation: 'send',
+      target: 'acceptance.beta',
+    };
+  }
+  return {
+    schemaVersion: 1,
+    constraints: [{ node: 'constraint', operator, count, selector }],
+    omitted: { constraints: 0, selectorWhereEntries: 0 },
+  };
+}
+
+function effectAttempts() {
+  return effectCases.map(([title, assertions], caseIndex) => {
+    const suffix = String(caseIndex + 1);
+    return {
+      title,
+      attachments: [
+        encoded('blackbox-attempt', {
+          identity: { sessionId: `session-${suffix}`, executionId: `run-${suffix}` },
+        }),
+        ...assertions.map(([evaluation, outcome, negated], assertionIndex) =>
+          encoded('blackbox-effects', {
+            schemaVersion: 1,
+            assertion: {
+              sequence: assertionIndex + 1,
+              negated,
+              outcome,
+              evaluation,
+              diagnostic: evaluation === 'satisfied' ? '' : 'bounded diagnostic',
+              contract: effectContract(title, assertionIndex),
+            },
+            display: { stringLimit: 1000, truncatedStrings: 0 },
+            evidence: title.startsWith('@withheld ')
+              ? { kind: 'not-admitted' }
+              : admittedEvidence(
+                  suffix,
+                  evaluation,
+                  effectContract(title, assertionIndex).constraints[0].selector,
+                ),
+          }),
+        ),
+      ],
+    };
+  });
+}
+
+function rewriteAttachment(attachment, update) {
+  const document = JSON.parse(Buffer.from(attachment.body, 'base64').toString('utf8'));
+  update(document);
+  attachment.body = Buffer.from(JSON.stringify(document)).toString('base64');
+}
+
+test('accepts complete, owned and bounded effects attachment evidence', () => {
+  assert.equal(verifyEffectReports(effectAttempts()).assertions, 16);
+});
+
+test('rejects missing effects evidence and unstable assertion sequences', () => {
+  const missing = effectAttempts();
+  missing[0].attachments.pop();
+  assert.throws(() => verifyEffectReports(missing), /Expected 1 effects assertions/);
+
+  const sequence = effectAttempts();
+  const effectAttachment = sequence[4].attachments[2];
+  rewriteAttachment(effectAttachment, (document) => {
+    document.assertion.sequence = 1;
+  });
+  assert.throws(() => verifyEffectReports(sequence), /sequence is not stable/);
+});
+
+test('rejects swapped identities and fabricated ownership', () => {
+  const identity = effectAttempts();
+  rewriteAttachment(identity[1].attachments[1], (document) => {
+    document.evidence.selection.executionId = 'another-run';
+  });
+  assert.throws(() => verifyEffectReports(identity), /execution identity/);
+
+  const ownership = effectAttempts();
+  rewriteAttachment(ownership[1].attachments[1], (document) => {
+    document.evidence.ownership[0].effectId = 'invented-effect';
+  });
+  assert.throws(() => verifyEffectReports(ownership), /unprojected effect/);
+});
+
+test('rejects missing raw observations and broken source joins', () => {
+  const missing = effectAttempts();
+  rewriteAttachment(missing[1].attachments[1], (document) => {
+    document.evidence.observations.excerpts = [];
+  });
+  assert.throws(() => verifyEffectReports(missing), /raw observation excerpts/);
+
+  const source = effectAttempts();
+  rewriteAttachment(source[1].attachments[1], (document) => {
+    document.evidence.projection.effects[0].source[0].spanId = 'another-span';
+  });
+  assert.throws(() => verifyEffectReports(source), /join to raw observation excerpts/);
+
+  const ownership = effectAttempts();
+  rewriteAttachment(ownership[1].attachments[1], (document) => {
+    document.evidence.ownership[0].observations[0].traceId = 'another-trace';
+  });
+  assert.throws(() => verifyEffectReports(ownership), /selected raw observations/);
+});
+
+test('rejects invented unknown effects and finding evidence outside its selector', () => {
+  const unknown = effectAttempts();
+  rewriteAttachment(unknown[1].attachments[1], (document) => {
+    document.evidence.projection.effects[0].kind = 'unknown';
+  });
+  assert.throws(() => verifyEffectReports(unknown), /invented an unknown effect/);
+
+  const finding = effectAttempts();
+  rewriteAttachment(finding[2].attachments[1], (document) => {
+    document.evidence.projection.effects[0].target = 'acceptance.other';
+  });
+  assert.throws(() => verifyEffectReports(finding), /does not satisfy its reported selector/);
+});
+
+test('rejects verdict drift and admitted evidence for withheld telemetry', () => {
+  const verdict = effectAttempts();
+  rewriteAttachment(verdict[3].attachments[1], (document) => {
+    document.assertion.outcome = 'passed';
+  });
+  assert.throws(() => verifyEffectReports(verdict), /Unexpected effects outcome/);
+
+  const withheld = effectAttempts();
+  rewriteAttachment(withheld.at(-1).attachments[1], (document) => {
+    document.evidence = admittedEvidence('11', 'inconclusive');
+  });
+  assert.throws(() => verifyEffectReports(withheld), /Withheld effects evidence/);
 });

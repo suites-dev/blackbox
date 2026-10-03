@@ -10,11 +10,15 @@ case "${1:-}" in
     printf '%s\n' \
       'Usage: ./run-demo-pw.sh' \
       '' \
-      'Requires Node 22+, pinned pnpm, npm, Docker, curl, git, tar and jq.' \
-      'Builds this checkout and publishes ONLY to a fresh loopback registry.' \
-      'Runs eight real system/subsystem tests with native Playwright reporting.' \
+      'Requires Node 22+, pinned pnpm, npm, Docker, curl, git, tar, jq, shasum and xargs.' \
+      'Set PLAYWRIGHT_BROWSERS_PATH to an isolated writable browser cache.' \
+      'Install the Chromium OS dependencies before running this script.' \
+      'Builds a candidate and publishes ONLY to a fresh loopback registry.' \
+      'Installs the pinned Chromium headless shell into that cache.' \
+      'Runs 18 real system/subsystem tests with native Playwright reporting.' \
       'Test files: e2e/tests/playwright/payment-service.spec.ts' \
       '            e2e/tests/playwright/subscription-system.spec.ts' \
+      '            e2e/tests/playwright/effects-acceptance.spec.ts' \
       'Uses an isolated fixture copy; existing e2e evidence is left untouched.' \
       'Stops its registry on exit and retains logs/artifacts under .blackbox/tmp/.'
     exit 0 ;;
@@ -26,7 +30,7 @@ if [[ $# -ne 0 ]]; then
   exit 2
 fi
 
-for tool in node pnpm npm docker curl git tar jq; do
+for tool in node pnpm npm docker curl git tar jq shasum xargs; do
   command -v "$tool" >/dev/null || { echo "run-demo-pw: $tool is required" >&2; exit 1; }
 done
 EXPECTED_PNPM="$(node -p 'require("./package.json").packageManager.replace("pnpm@", "")')"
@@ -35,6 +39,11 @@ EXPECTED_PNPM="$(node -p 'require("./package.json").packageManager.replace("pnpm
   exit 1
 }
 docker info >/dev/null
+[[ "${PLAYWRIGHT_BROWSERS_PATH:-}" == /* ]] || {
+  echo 'run-demo-pw: PLAYWRIGHT_BROWSERS_PATH must be an absolute isolated browser cache' >&2
+  exit 1
+}
+mkdir -p "$PLAYWRIGHT_BROWSERS_PATH"
 
 mkdir -p "$REPO_ROOT/.blackbox/tmp"
 RUN_ROOT="$(mktemp -d "$REPO_ROOT/.blackbox/tmp/playwright-demo.XXXXXX")"
@@ -57,8 +66,17 @@ trap 'exit 130' INT
 trap 'exit 143' TERM
 
 mkdir -p "$RUN_ROOT/registry" "$RUN_ROOT/tarballs" "$RUN_ROOT/project"
+printf '%s\n' \
+  'kind=local-packed-candidate' \
+  "head=$(git rev-parse HEAD)" \
+  'published-externally=false' \
+  >"$RUN_ROOT/candidate-input.txt"
+git ls-files -z -- e2e scripts/consumer demo/support .github/scripts \
+  package.json lerna.json 'packages/*/package.json' \
+  | xargs -0 shasum -a 256 >"$RUN_ROOT/source-files.sha256"
 echo '[run-demo-pw] Installing the pinned workspace dependencies and building packages...'
 pnpm install --frozen-lockfile >"$RUN_ROOT/setup.log" 2>&1
+pnpm exec playwright install chromium --only-shell >>"$RUN_ROOT/setup.log" 2>&1
 pnpm build >>"$RUN_ROOT/setup.log" 2>&1
 
 echo '[run-demo-pw] Starting a fresh local registry on an available loopback port...'
@@ -69,18 +87,23 @@ REGISTRY_ID="$(docker run --detach \
   --volume "$REPO_ROOT/.github/verdaccio/config.yaml:/verdaccio/conf/config.yaml:ro" \
   --volume "$RUN_ROOT/registry:/verdaccio/storage" \
   verdaccio/verdaccio:6.10.3)"
+printf '%s\n' \
+  'declared=verdaccio/verdaccio:6.10.3' \
+  "image-id=$(docker inspect --format '{{.Image}}' "$REGISTRY_ID")" \
+  >"$RUN_ROOT/registry-image.txt"
 PORT="$(docker inspect --format '{{(index (index .NetworkSettings.Ports "4873/tcp") 0).HostPort}}' "$REGISTRY_ID")"
 [[ "$PORT" =~ ^[0-9]+$ ]] || { echo 'run-demo-pw: invalid registry port' >&2; exit 1; }
 REGISTRY="http://127.0.0.1:${PORT}/"
 curl --retry 60 --retry-all-errors --retry-delay 1 --max-time 3 \
   --fail --silent "${REGISTRY}-/ping" >>"$RUN_ROOT/setup.log" 2>&1
 
-echo '[run-demo-pw] Packing and publishing this build to the local registry...'
+echo '[run-demo-pw] Packing and publishing this candidate to the local registry...'
 pnpm --recursive --filter './packages/*' exec pnpm pack \
   --pack-destination "$RUN_ROOT/tarballs" >>"$RUN_ROOT/setup.log" 2>&1
+shasum -a 256 "$RUN_ROOT/tarballs/"*.tgz >"$RUN_ROOT/tarballs.sha256"
 for tarball in "$RUN_ROOT/tarballs/"*.tgz; do
   env "npm_config_//127.0.0.1:${PORT}/:_authToken=blackbox-e2e" \
-    npm publish "$tarball" --registry "$REGISTRY" --tag e2e \
+    npm publish "$tarball" --registry "$REGISTRY" --tag candidate \
       --provenance=false >>"$RUN_ROOT/setup.log" 2>&1
 done
 
@@ -90,10 +113,11 @@ git ls-files -z -- e2e scripts/consumer demo/support .github/scripts \
   package.json lerna.json 'packages/*/package.json' \
   | tar -c --null -T - | tar -x -C "$RUN_ROOT/project"
 
-echo '[run-demo-pw] Installing the consumer, then running eight real Playwright tests...'
+echo '[run-demo-pw] Installing the consumer, then running 18 real Playwright tests...'
 printf '%s\n' \
   '[run-demo-pw] Source: e2e/tests/playwright/payment-service.spec.ts' \
   '[run-demo-pw] Source: e2e/tests/playwright/subscription-system.spec.ts' \
+  '[run-demo-pw] Source: e2e/tests/playwright/effects-acceptance.spec.ts' \
   '[run-demo-pw] Runner: playwright test --config playwright.config.ts (inside the installed consumer)'
 echo '[run-demo-pw] Each test starts its own sandbox. Native steps and ready/cleanup messages appear live.'
 cd "$RUN_ROOT/project"

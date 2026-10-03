@@ -1,0 +1,13 @@
+{
+  "name": "blackbox-effects-acceptance-fixture",
+  "version": "1.0.0",
+  "private": true,
+  "type": "commonjs",
+  "engines": {
+    "node": ">=22.15"
+  },
+  "dependencies": {
+    "amqplib": "0.10.9",
+    "pg": "8.12.0"
+  }
+}

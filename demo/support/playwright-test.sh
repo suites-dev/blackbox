@@ -18,6 +18,7 @@ ASSET_ROOT=""
 CONSUMER_ROOT=""
 BLACKBOX_BIN=""
 RECOVERY_RECORDED=0
+IMAGE_INPUTS_RECORDED=0
 
 require_command() {
   command -v "$1" >/dev/null 2>&1 || {
@@ -37,6 +38,13 @@ recover_sandboxes() {
   fi
 }
 
+record_image_inputs() {
+  if [[ -n "$RUN_RESULT_ROOT" && -d "$RUN_RESULT_ROOT" && -f "$CONSUMER_ROOT/playwright-image-inputs.mjs" ]]; then
+    node "$CONSUMER_ROOT/playwright-image-inputs.mjs" "$@" >"$RUN_RESULT_ROOT/image-inputs.json"
+    IMAGE_INPUTS_RECORDED=1
+  fi
+}
+
 retain_results() {
   if [[ -n "$RUN_RESULT_ROOT" && -d "$RUN_RESULT_ROOT" ]]; then
     rm -rf "$RESULT_ROOT"
@@ -49,6 +57,10 @@ cleanup() {
   local final_status=$original_status
   trap - EXIT INT TERM
 
+  if [[ "$IMAGE_INPUTS_RECORDED" -eq 0 ]] && ! record_image_inputs; then
+    echo 'playwright-test: retaining immutable image inputs failed' >&2
+    final_status=1
+  fi
   if [[ "$RECOVERY_RECORDED" -eq 0 ]] && ! recover_sandboxes; then
     echo 'playwright-test: interrupted Sandbox recovery failed' >&2
     final_status=1
@@ -72,6 +84,10 @@ trap 'exit 143' TERM
 require_command docker
 require_command jq
 require_command node
+[[ -n "${PLAYWRIGHT_BROWSERS_PATH:-}" && -d "$PLAYWRIGHT_BROWSERS_PATH" ]] || {
+  echo 'playwright-test: PLAYWRIGHT_BROWSERS_PATH must name the prepared browser cache' >&2
+  exit 1
+}
 node --test "$SCRIPT_DIR/playwright-report-proof.test.mjs"
 docker info >/dev/null
 
@@ -114,7 +130,9 @@ cp "$E2E_ROOT/playwright.config.ts" "$CONSUMER_ROOT/playwright.config.ts"
 cp "$E2E_ROOT/reporters/"*.ts "$CONSUMER_ROOT/reporters/"
 cp "$E2E_ROOT/tests/playwright/"*.ts "$CONSUMER_ROOT/tests/playwright/"
 cp "$SCRIPT_DIR/playwright-boundary.mjs" "$CONSUMER_ROOT/playwright-boundary.mjs"
+cp "$SCRIPT_DIR/playwright-browser-preflight.mjs" "$CONSUMER_ROOT/playwright-browser-preflight.mjs"
 cp "$SCRIPT_DIR/playwright-evidence.mjs" "$CONSUMER_ROOT/playwright-evidence.mjs"
+cp "$SCRIPT_DIR/playwright-image-inputs.mjs" "$CONSUMER_ROOT/playwright-image-inputs.mjs"
 cp "$SCRIPT_DIR/playwright-report-proof.mjs" "$CONSUMER_ROOT/playwright-report-proof.mjs"
 cp "$SCRIPT_DIR/playwright-recover.mjs" "$CONSUMER_ROOT/playwright-recover.mjs"
 cp "$SCRIPT_DIR/playwright-verify.mjs" "$CONSUMER_ROOT/playwright-verify.mjs"
@@ -132,10 +150,14 @@ jq -e '.ok == true' "$RUN_RESULT_ROOT/catalog-validate.json" >/dev/null
 "$BLACKBOX_BIN" catalog ls --json >"$RUN_RESULT_ROOT/catalog.json"
 jq -e '
   (.entries | any(.id == "subscription-system" and .kind == "system")) and
-  (.entries | any(.id == "payment-mock" and .kind == "subsystem"))
+  (.entries | any(.id == "payment-mock" and .kind == "subsystem")) and
+  (.entries | any(.id == "effects-acceptance" and .kind == "system")) and
+  (.entries | any(.id == "effects-withheld" and .kind == "system"))
 ' "$RUN_RESULT_ROOT/catalog.json" >/dev/null
 
 node "$CONSUMER_ROOT/playwright-boundary.mjs" >"$RUN_RESULT_ROOT/package-boundary.json"
+node "$CONSUMER_ROOT/playwright-browser-preflight.mjs" >"$RUN_RESULT_ROOT/browser-preflight.json"
+record_image_inputs --pull
 
 PLAYWRIGHT_BIN="$CONSUMER_ROOT/node_modules/.bin/playwright"
 if [[ ! -x "$PLAYWRIGHT_BIN" ]]; then

@@ -23,6 +23,7 @@ export default defineConfig({
   retries: 1,
   timeout: 180_000,
   expect: { timeout: 15_000 },
+  use: { serviceWorkers: 'block', trace: 'retain-on-failure' },
   preserveOutput: 'always',
   outputDir: join(resultsRoot, 'output'),
   reporter: [
@@ -34,5 +35,6 @@ export default defineConfig({
     [join(import.meta.dirname, 'reporters', 'blackbox-evidence.ts')],
     ['junit', { outputFile: join(resultsRoot, 'junit.xml') }],
     ['json', { outputFile: join(resultsRoot, 'results.json') }],
+    ['html', { outputFolder: join(resultsRoot, 'html'), open: 'never' }],
   ],
 });
