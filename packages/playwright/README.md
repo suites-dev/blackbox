@@ -54,6 +54,9 @@ the catalog-selected Compose services, installs the current Node activation
 adapter where configured, starts the collector, verifies activation, waits for
 application readiness, and then enters the test body.
 
+Acquisition is bounded by the configured test timeout but runs outside the test
+body's budget, so a slow catalog entry never shortens the time left for the body.
+
 The fixture always requests Sandbox cleanup after the test body. Assertion
 failure, timeout, skip, and interruption are retained as distinct cleanup
 reasons. Setup failure also attempts cleanup before surfacing the error.
@@ -65,11 +68,65 @@ reasons. Setup failure also attempts cleanup before surfacing the error.
   artifact identity. Lifecycle control remains fixture-owned.
 - `telemetry` exposes the attempt identity, live collector status, and raw
   retained session or trace reads.
+- Each attempt has one W3C trace. `request` sends `telemetry.traceparent` with
+  every call (unless `extraHTTPHeaders` already sets `traceparent`), so server
+  spans it causes are children in trace `telemetry.traceId`. Pass the header
+  yourself to traffic from `page` or other clients; pages are not traced
+  automatically, because extra browser headers also reach third-party origins
+  and can trigger CORS preflights.
+- `sandbox.exec(participant, argv)` runs a setup command inside a participant
+  container and records it as a linked activity (see
+  [Setup commands](#setup-commands)).
+- `beforeAll` and `afterAll` hooks run outside any test attempt, so they never
+  acquire a sandbox. There, `baseURL` (and so `request`) keeps the configured
+  value, and `sandbox`, `telemetry` and `effects` fail with an error that names
+  the hook. Use `beforeEach`, `afterEach` or the test body for sandbox work.
+- `telemetry.spans(query)` and `telemetry.waitForSpan(query, options)` query
+  this attempt's retained spans, decoded from the raw OTLP/JSON fragments (see
+  [Span queries](#span-queries)).
 - `effects` exposes the attempt identity and the contract-evaluation boundary.
   `expect(effects).toSatisfy(...)` compiles and delegates an immutable contract,
   but the Alpha does not yet project raw telemetry into normalized effects. The
   matcher therefore reports an inconclusive failure unless an evaluator is
   supplied by the runtime.
+
+## Span queries
+
+`telemetry.spans(query)` returns the retained spans of the current attempt that
+match every field given in `query`; `telemetry.spans()` returns them all.
+`telemetry.waitForSpan(query, options)` reads retained telemetry until a span
+matches, and fails with the query and the spans it did see when `timeoutMs`
+(default 10000) passes. Telemetry arrives asynchronously, so wait for a span
+rather than reading once right after the request that causes it.
+
+```ts
+test('login reaches the auth service', async ({ request, telemetry }) => {
+  const response = await request.post('/api/v1/users/login', { data: credentials });
+  expect(response.ok()).toBe(true);
+
+  const span = await telemetry.waitForSpan({
+    service: 'ts-auth-service',
+    name: 'POST /api/v1/users/login',
+    kind: 'server',
+    traceId: telemetry.traceId,
+  });
+  expect(span.status).not.toBe('error');
+  expect(await telemetry.spans({ traceId: telemetry.traceId, name: /^SELECT/u })).not.toEqual([]);
+});
+```
+
+| Query field | Matches                                                                  |
+| ----------- | ------------------------------------------------------------------------ |
+| `service`   | the exporting process's `service.name`                                   |
+| `name`      | the exact span name, or a `RegExp` it must match                         |
+| `kind`      | `server`, `client`, `producer`, `consumer`, `internal` or `unspecified`  |
+| `traceId`   | one trace; `telemetry.traceId` holds the spans caused by `request` calls |
+
+Each `BlackboxSpan` carries `traceId`, `spanId`, `parentSpanId`, `service`, `name`,
+`kind`, `status` (`unset`, `ok` or `error`), the start and end time in Unix
+nanoseconds as decimal strings, and its scalar `attributes`. A span exported
+twice is returned once. Corrupt retained telemetry fails the query instead of
+returning a partial answer.
 
 ## Execution reporting
 
@@ -84,6 +141,12 @@ Blackbox: sandbox cleaned up for system "subscription-system"
 ```
 
 Ready means acquisition, instrumentation, and application readiness have passed.
+
+Acquisition and cleanup run as the steps `Blackbox: acquire sandbox` and
+`Blackbox: clean up sandbox` under the test's Before and After Hooks, so the list
+reporter (with `printSteps`), the HTML report and the trace viewer show their
+durations. Playwright's own test duration excludes them, because the attempt
+fixture runs in its own time slot rather than the test's.
 Cleanup failure prints `sandbox cleanup failed` instead of claiming success.
 Set `sandboxLifecycle: false` to suppress these messages while retaining diagnostics.
 The option defaults to `true` when the Blackbox reporter is configured; without
@@ -93,11 +156,30 @@ default one.
 
 Fixtures attach sanitized `blackbox-progress` events and a final
 `blackbox-attempt` JSON document to Playwright results, including failures.
+Each event carries the `sandboxId` that owns it once the sandbox identity exists,
+and `blackbox-diagnostics` prefixes those lines with `[<sandboxId>]`.
 Other Playwright reporters retain these attachments too. Startup observations
 are bounded; the attempt document records how many were omitted.
 The Blackbox reporter also adds a readable `blackbox-diagnostics` attachment.
 Container health polling and detailed startup events stay in these attachments,
 not the live console. Native reporters may display attachments for failed tests.
+
+Playwright clears `test-results/` and its HTML report on every run. To keep
+attempt evidence across runs, enable retention in the Playwright configuration:
+
+```ts
+export default defineConfig({
+  blackboxConfigFile: './blackbox.config.yaml',
+  use: { blackboxRetainAttempts: true },
+});
+```
+
+After cleanup, each attempt is copied to
+`.blackbox/experiments/<sandboxId>/` (a `playwright-<uuid>` directory) beside
+`blackbox.config.yaml`: `attempt.json` holds the final attempt document and
+`sandbox/` the sandbox record and retained telemetry. Retention is off by default,
+never overwrites an existing directory, and fails the attempt if it cannot write.
+`capsule report` does not read these directories yet.
 
 The retained telemetry summary reads request/span counters from the lifecycle
 record without loading raw trace fragments. Collector shutdown is reported from
@@ -108,3 +190,33 @@ diagnostics will be added with the effect evaluator.
 
 Effect projection, accepted baselines, drivers, and shared worker
 sandboxes are intentionally outside this package's current surface.
+
+## Setup commands
+
+`sandbox.exec(participant, argv)` runs `argv` in the Compose service of the
+catalog participant `participant` (its key under `participants`, as in a driver
+target), with stdin closed, and resolves when the command exits. Like `capsule run`, every command is an activity with its own ID
+and W3C trace:
+
+- the command receives that trace as `TRACEPARENT`, so instrumented processes it
+  starts join the trace;
+- a `playwright.exec` root span with `blackbox.activity.id`,
+  `blackbox.activity.purpose` (`setup`) and `blackbox.participant` is exported to
+  the attempt's collector, and `rootSpan` says whether the collector accepted it;
+- the attempt document records `activity` events with the activity ID,
+  participant, executable, argument count, trace ID and exit code. Arguments are
+  not recorded, because setup arguments often carry credentials.
+
+```ts
+test('seeds a user before logging in', async ({ sandbox, telemetry }) => {
+  const seeded = await sandbox.exec('user', ['sh', '-c', './seed-user.sh']);
+  expect(seeded.exitCode, seeded.stderr).toBe(0);
+  await telemetry.waitForSpan({ traceId: seeded.traceId, name: 'playwright.exec' });
+});
+```
+
+The result also carries `stdout` and `stderr` (at most 1 MiB each). A non-zero
+exit code is returned, not thrown; a command that cannot start (an undeclared
+participant, a missing executable) rejects. Commands are not routed through
+catalog drivers: `capsule run --via <driver>` driver preparation is not available
+to Playwright tests yet.

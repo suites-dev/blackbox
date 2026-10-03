@@ -8,13 +8,24 @@ import {
   type BlackboxAttemptRuntime,
   type RunningBlackboxAttempt,
 } from './runtime/acquisition.js';
+import {
+  acquireWithinTestTimeout,
+  defaultSandboxCleanupTimeoutMs,
+  stopWithinCleanupTimeout,
+  type BlackboxFixturePolicy,
+} from './attempt/deadlines.js';
 import type { BlackboxTestFixtures, BlackboxTestOptions } from './types.js';
+import { participantExec } from './activity/exec.js';
 import { AttemptReport } from './reporting/attempt.js';
 import { reported } from './reporting/events.js';
 import { reportObservations } from './reporting/observations.js';
+import { retainAttempt, retainedAttemptDirectory } from './retention/retention.js';
+import { createAttemptTraceContext, tracedHeaders } from './trace/trace-context.js';
+import { spanQueries } from './telemetry/span-query.js';
+import { suiteHook, testAttempt, type SuiteHookScope, type TestAttempt } from './suite-hooks.js';
 
 interface PrivateFixtures {
-  readonly _blackboxAttempt: RunningBlackboxAttempt;
+  readonly _blackboxAttempt: TestAttempt | SuiteHookScope;
 }
 
 type BlackboxFixtures = BlackboxTestOptions & BlackboxTestFixtures & PrivateFixtures;
@@ -52,116 +63,6 @@ function stopReason(status: TestInfo['status']): SandboxStopReason {
   }
 }
 
-const acquisitionTimedOut = Symbol('acquisitionTimedOut');
-
-const defaultSandboxCleanupTimeoutMs = 30_000;
-
-const cleanupCompleted = Symbol('cleanupCompleted');
-const cleanupTimedOut = Symbol('cleanupTimedOut');
-
-interface BlackboxFixturePolicy {
-  /** Maximum time to wait for any sandbox cleanup operation. */
-  readonly sandboxCleanupTimeoutMs: number;
-}
-
-async function cleanupSettledWithin(cleanup: Promise<void>, timeoutMs: number): Promise<boolean> {
-  // If the bounded wait expires, retain a rejection handler without awaiting
-  // this continuation in fixture teardown.
-  void cleanup.catch(() => undefined);
-
-  let timer: ReturnType<typeof setTimeout> | undefined;
-  const deadline = new Promise<typeof cleanupTimedOut>((resolveTimeout) => {
-    timer = setTimeout(() => {
-      resolveTimeout(cleanupTimedOut);
-    }, timeoutMs);
-  });
-  const outcome = await Promise.race([cleanup.then(() => cleanupCompleted), deadline]).finally(
-    () => {
-      if (timer !== undefined) {
-        clearTimeout(timer);
-      }
-    },
-  );
-  return outcome === cleanupCompleted;
-}
-
-async function awaitLateAcquisitionCleanup(input: {
-  readonly acquisition: Promise<RunningBlackboxAttempt>;
-  readonly timeoutError: Error;
-  readonly cleanupTimeoutMs: number;
-}): Promise<never> {
-  const cleanup = input.acquisition.then(
-    async (attempt) => {
-      try {
-        await attempt.stop('failed');
-      } catch (cleanupError) {
-        throw new AggregateError(
-          [input.timeoutError, cleanupError],
-          'Blackbox sandbox acquisition timed out and cleanup failed',
-        );
-      }
-    },
-    (cause: unknown) => {
-      throw new Error(input.timeoutError.message, { cause });
-    },
-  );
-  if (!(await cleanupSettledWithin(cleanup, input.cleanupTimeoutMs))) {
-    throw new AggregateError(
-      [input.timeoutError],
-      `Blackbox sandbox acquisition cleanup did not settle within ${input.cleanupTimeoutMs}ms`,
-    );
-  }
-  throw input.timeoutError;
-}
-
-async function stopWithinCleanupTimeout(input: {
-  readonly attempt: RunningBlackboxAttempt;
-  readonly reason: SandboxStopReason;
-  readonly cleanupTimeoutMs: number;
-}): Promise<void> {
-  if (!(await cleanupSettledWithin(input.attempt.stop(input.reason), input.cleanupTimeoutMs))) {
-    throw new Error(
-      `Blackbox sandbox cleanup did not settle within ${input.cleanupTimeoutMs}ms after ${input.reason}`,
-    );
-  }
-}
-
-async function acquireWithinTestTimeout(input: {
-  readonly runtime: BlackboxAttemptRuntime;
-  readonly request: Parameters<BlackboxAttemptRuntime['start']>[0];
-  readonly testInfo: TestInfo;
-  readonly cleanupTimeoutMs: number;
-}): Promise<RunningBlackboxAttempt> {
-  const acquisition = input.runtime.start(input.request);
-  if (input.testInfo.timeout === 0) {
-    return acquisition;
-  }
-
-  let timer: ReturnType<typeof setTimeout> | undefined;
-  const deadline = new Promise<typeof acquisitionTimedOut>((resolveTimeout) => {
-    timer = setTimeout(() => {
-      resolveTimeout(acquisitionTimedOut);
-    }, input.testInfo.timeout);
-  });
-  const outcome = await Promise.race([acquisition, deadline]).finally(() => {
-    if (timer !== undefined) {
-      clearTimeout(timer);
-    }
-  });
-  if (outcome !== acquisitionTimedOut) {
-    return outcome;
-  }
-
-  const timeoutError = new Error(
-    `Blackbox sandbox acquisition exceeded the Playwright test timeout of ${input.testInfo.timeout}ms`,
-  );
-  return awaitLateAcquisitionCleanup({
-    acquisition,
-    timeoutError,
-    cleanupTimeoutMs: input.cleanupTimeoutMs,
-  });
-}
-
 async function finishAttempt(
   attempt: RunningBlackboxAttempt,
   report: AttemptReport,
@@ -184,6 +85,79 @@ async function finishAttempt(
   await reportObservations(report, attempt);
 }
 
+async function closeReport(
+  report: AttemptReport,
+  testInfo: TestInfo,
+  retainAttempts: boolean,
+): Promise<void> {
+  const document = await report.finish();
+  const sandboxId = report.owner();
+  if (retainAttempts && sandboxId !== null) {
+    await retainAttempt({
+      directory: retainedAttemptDirectory(configFilePath(testInfo), sandboxId),
+      recordDirectory: testInfo.outputPath('blackbox'),
+      document,
+    });
+  }
+}
+
+const acquisitionStep = 'Blackbox: acquire sandbox';
+const cleanupStep = 'Blackbox: clean up sandbox';
+
+async function provideTestAttempt(input: {
+  readonly runtime: BlackboxAttemptRuntime;
+  readonly policy: BlackboxFixturePolicy;
+  readonly options: BlackboxTestOptions;
+  readonly testInfo: TestInfo;
+  readonly use: (attempt: TestAttempt) => Promise<void>;
+}): Promise<void> {
+  const { options, policy, testInfo } = input;
+  const report = new AttemptReport(testInfo);
+  report.protect(options.blackboxEnvironment);
+  try {
+    // Steps put acquisition and cleanup time where Playwright reports durations; the
+    // test's own duration excludes this fixture because it runs in its own time slot.
+    const attempt = await playwrightTest.step(acquisitionStep, () =>
+      acquireWithinTestTimeout({
+        runtime: input.runtime,
+        testInfo,
+        cleanupTimeoutMs: policy.sandboxCleanupTimeoutMs,
+        request: {
+          selection: options.catalogEntry,
+          configFile: configFilePath(testInfo),
+          environment: options.blackboxEnvironment,
+          artifactDirectory: testInfo.outputPath('blackbox'),
+          progress: report,
+        },
+      }),
+    );
+    // The sandbox is owned from here on: every exit path below stops it.
+    try {
+      const trace = createAttemptTraceContext();
+      report.acquired(attempt.sandbox, { ...attempt.telemetry, traceId: trace.traceId });
+      report.emit(
+        'sandbox',
+        'completed',
+        `${attempt.sandbox.sandboxId}; ${attempt.sandbox.entrypoint.url}`,
+      );
+      report.emit('trace', 'info', `request traceparent ${trace.traceparent}`);
+      report.emit('execution', 'started', 'test fixtures, hooks and body');
+      await report.flush();
+      report.lifecycle('ready', attempt.sandbox.catalogEntry);
+      await input.use(Object.freeze({ attempt, trace, exec: participantExec(attempt, report) }));
+    } finally {
+      const reason = stopReason(testInfo.status);
+      report.emit('execution', 'info', testInfo.status ?? 'unknown');
+      await playwrightTest.step(cleanupStep, () => finishAttempt(attempt, report, reason, policy));
+    }
+  } catch (error) {
+    report.emit('attempt', 'failed', 'setup or teardown failed; see test error');
+    throw error;
+  } finally {
+    await closeReport(report, testInfo, options.blackboxRetainAttempts);
+  }
+}
+
 export function createBlackboxTest(
   runtime: BlackboxAttemptRuntime,
   policy: BlackboxFixturePolicy = {
@@ -193,67 +167,56 @@ export function createBlackboxTest(
   return playwrightTest.extend<BlackboxFixtures>({
     catalogEntry: [{ kind: 'unselected' }, { option: true }],
     blackboxEnvironment: [Object.freeze({}), { option: true }],
+    blackboxRetainAttempts: [false, { option: true }],
     _blackboxAttempt: [
-      async ({ catalogEntry, blackboxEnvironment }, use, testInfo) => {
-        const report = new AttemptReport(testInfo);
-        report.protect(blackboxEnvironment);
-        try {
-          const configuredTimeout = testInfo.timeout;
-          const acquisitionStartedAt = Date.now();
-          const attempt = await acquireWithinTestTimeout({
-            runtime,
-            testInfo,
-            cleanupTimeoutMs: policy.sandboxCleanupTimeoutMs,
-            request: {
-              selection: catalogEntry,
-              configFile: configFilePath(testInfo),
-              environment: blackboxEnvironment,
-              artifactDirectory: testInfo.outputPath('blackbox'),
-              progress: report,
-            },
-          });
-          if (configuredTimeout > 0) {
-            testInfo.setTimeout(
-              Math.max(1, configuredTimeout - (Date.now() - acquisitionStartedAt)),
-            );
-          }
-          report.acquired(attempt.sandbox, attempt.telemetry);
-          report.emit(
-            'sandbox',
-            'completed',
-            `${attempt.sandbox.sandboxId}; ${attempt.sandbox.entrypoint.url}`,
-          );
-          report.emit('execution', 'started', 'test fixtures, hooks and body');
-          try {
-            await report.flush();
-            report.lifecycle('ready', attempt.sandbox.catalogEntry);
-            await use(attempt);
-          } finally {
-            const reason = stopReason(testInfo.status);
-            report.emit('execution', 'info', testInfo.status ?? 'unknown');
-            await finishAttempt(attempt, report, reason, policy);
-          }
-        } catch (error) {
-          report.emit('attempt', 'failed', 'setup or teardown failed; see test error');
-          throw error;
-        } finally {
-          await report.finish();
+      async ({ catalogEntry, blackboxEnvironment, blackboxRetainAttempts }, use, testInfo) => {
+        const hook = suiteHook(testInfo);
+        if (hook !== 'none') {
+          await use({ suiteHook: hook });
+          return;
         }
+        await provideTestAttempt({
+          runtime,
+          policy,
+          options: { catalogEntry, blackboxEnvironment, blackboxRetainAttempts },
+          testInfo,
+          use,
+        });
       },
       // The helper enforces the test deadline and bounds every sandbox cleanup wait.
+      // Setup never shortens the test timeout: Playwright applies testInfo.setTimeout()
+      // to this fixture's own slot, which would time out before cleanup is owned.
       { auto: true, timeout: 0 },
     ],
     sandbox: async ({ _blackboxAttempt }, use) => {
-      await use(_blackboxAttempt.sandbox);
+      const { attempt, exec } = testAttempt(_blackboxAttempt, 'sandbox');
+      await use(Object.freeze({ ...attempt.sandbox, exec }));
     },
     telemetry: async ({ _blackboxAttempt }, use) => {
-      await use(_blackboxAttempt.telemetry);
+      const { attempt, trace } = testAttempt(_blackboxAttempt, 'telemetry');
+      await use(
+        Object.freeze({ ...attempt.telemetry, ...trace, ...spanQueries(attempt.telemetry) }),
+      );
     },
     effects: async ({ _blackboxAttempt }, use) => {
-      await use(_blackboxAttempt.effects);
+      await use(testAttempt(_blackboxAttempt, 'effects').attempt.effects);
     },
-    baseURL: async ({ _blackboxAttempt }, use) => {
-      await use(_blackboxAttempt.sandbox.entrypoint.url);
+    // Suite hooks keep the configured baseURL; only a test attempt has a sandbox entrypoint.
+    baseURL: async ({ _blackboxAttempt, baseURL }, use) => {
+      await use(
+        'suiteHook' in _blackboxAttempt ? baseURL : _blackboxAttempt.attempt.sandbox.entrypoint.url,
+      );
+    },
+    // Only `request` joins the attempt trace. Browser pages are left alone: extra
+    // headers on page traffic reach third-party origins and can trigger CORS preflights.
+    request: async ({ playwright, extraHTTPHeaders, _blackboxAttempt }, use) => {
+      const request = await playwright.request.newContext(
+        'suiteHook' in _blackboxAttempt
+          ? {}
+          : { extraHTTPHeaders: tracedHeaders(extraHTTPHeaders, _blackboxAttempt.trace) },
+      );
+      await use(request);
+      await request.dispose();
     },
   });
 }

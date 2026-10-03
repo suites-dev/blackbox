@@ -8,16 +8,21 @@ export interface AttemptEvent {
   readonly phase: string;
   readonly status: 'started' | 'completed' | 'failed' | 'info';
   readonly detail: string;
+  /** Sandbox that owns this event; null before the sandbox identity exists. */
+  readonly sandboxId: string | null;
 }
 
 export interface AttemptProgress {
   emit(phase: string, status: AttemptEvent['status'], detail: string): void;
   protect(values: Readonly<Record<string, string>>): void;
+  /** Tag every later event with the sandbox that owns it. */
+  identify(sandboxId: string): void;
 }
 
 export const silentProgress = {
   emit: () => undefined,
   protect: () => undefined,
+  identify: () => undefined,
 } satisfies AttemptProgress;
 
 export async function reported<Value>(
@@ -37,27 +42,23 @@ export async function reported<Value>(
   }
 }
 
-function hasValidTiming(value: object): boolean {
+const eventStatuses = new Set<unknown>(['started', 'completed', 'failed', 'info']);
+
+function hasProgressPosition(value: Readonly<Record<string, unknown>>): boolean {
   return (
-    'schemaVersion' in value &&
     value.schemaVersion === 1 &&
-    'sequence' in value &&
     Number.isSafeInteger(value.sequence) &&
-    'elapsedMs' in value &&
     typeof value.elapsedMs === 'number' &&
-    Number.isFinite(value.elapsedMs)
+    Number.isFinite(value.elapsedMs) &&
+    typeof value.phase === 'string'
   );
 }
 
-function hasValidDescription(value: object): boolean {
+function hasProgressOutcome(value: Readonly<Record<string, unknown>>): boolean {
   return (
-    'phase' in value &&
-    typeof value.phase === 'string' &&
-    'status' in value &&
-    typeof value.status === 'string' &&
-    ['started', 'completed', 'failed', 'info'].includes(value.status) &&
-    'detail' in value &&
-    typeof value.detail === 'string'
+    eventStatuses.has(value.status) &&
+    typeof value.detail === 'string' &&
+    (value.sandboxId === null || typeof value.sandboxId === 'string')
   );
 }
 
@@ -67,13 +68,13 @@ export function decodeEvent(body: Buffer): AttemptEvent | null {
   }
   try {
     const value: unknown = JSON.parse(body.toString('utf8'));
-    if (typeof value !== 'object' || value === null) {
+    if (typeof value !== 'object' || value === null || Array.isArray(value)) {
       return null;
     }
-    if (!hasValidTiming(value) || !hasValidDescription(value)) {
-      return null;
-    }
-    return value as AttemptEvent;
+    const fields = value as Readonly<Record<string, unknown>>;
+    return hasProgressPosition(fields) && hasProgressOutcome(fields)
+      ? (value as AttemptEvent)
+      : null;
   } catch {
     return null;
   }

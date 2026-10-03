@@ -50,6 +50,7 @@ const runtime = {
         sessionId: `session-${executionId}`,
         executionId,
       },
+      runActivity: () => Promise.reject(new Error('not used by this fixture')),
       stop: (reason) => {
         record({ kind: 'stop', executionId, reason });
         return Promise.resolve();

@@ -2,7 +2,7 @@ import { realpathSync } from 'node:fs';
 import { relative } from 'node:path';
 
 import type { TestInfo } from '@playwright/test';
-import type { BlackboxSandbox, BlackboxTelemetry } from '../types.js';
+import type { BlackboxSandbox } from '../types.js';
 
 import {
   attemptAttachment,
@@ -22,6 +22,7 @@ export class AttemptReport implements AttemptProgress {
   private attachmentFailure: unknown = null;
   private dropped = 0;
   private closed = false;
+  private sandboxId: string | null = null;
   private identity:
     | { readonly kind: 'not-ready' }
     | {
@@ -29,17 +30,32 @@ export class AttemptReport implements AttemptProgress {
         readonly sandboxId: string;
         readonly executionId: string;
         readonly sessionId: string;
+        readonly traceId: string;
         readonly catalogEntry: BlackboxSandbox['catalogEntry'];
       } = { kind: 'not-ready' };
 
   constructor(private readonly testInfo: TestInfo) {}
 
-  acquired(sandbox: BlackboxSandbox, telemetry: BlackboxTelemetry): void {
+  /** The sandbox that owns this attempt, once acquisition has named it. */
+  owner(): string | null {
+    return this.sandboxId;
+  }
+
+  identify(sandboxId: string): void {
+    this.sandboxId = sandboxId;
+  }
+
+  acquired(
+    sandbox: Pick<BlackboxSandbox, 'sandboxId' | 'executionId' | 'catalogEntry'>,
+    telemetry: { readonly sessionId: string; readonly traceId: string },
+  ): void {
+    this.identify(sandbox.sandboxId);
     this.identity = {
       kind: 'acquired',
       sandboxId: sandbox.sandboxId,
       executionId: sandbox.executionId,
       sessionId: telemetry.sessionId,
+      traceId: telemetry.traceId,
       catalogEntry: sandbox.catalogEntry,
     };
   }
@@ -89,6 +105,7 @@ export class AttemptReport implements AttemptProgress {
       phase,
       status,
       detail: this.sanitize(detail),
+      sandboxId: this.sandboxId === null ? null : this.sanitize(this.sandboxId),
     } satisfies AttemptEvent;
     this.events.push(event);
     this.pending = this.pending
@@ -110,27 +127,30 @@ export class AttemptReport implements AttemptProgress {
     }
   }
 
-  async finish(): Promise<void> {
+  /** Attach the final attempt document and return the attached body. */
+  async finish(): Promise<string> {
     const output = realpathSync(this.testInfo.outputPath());
     const path = relative(realpathSync(process.cwd()), output);
     this.emit('artifacts', 'info', path.startsWith('..') ? output : path);
     this.closed = true;
     await this.flush();
+    const document = JSON.stringify({
+      schemaVersion: 1,
+      owner: {
+        testId: this.testInfo.testId,
+        retry: this.testInfo.retry,
+        workerIndex: this.testInfo.workerIndex,
+        parallelIndex: this.testInfo.parallelIndex,
+        outputDirectory: output,
+      },
+      identity: this.identity,
+      events: this.events,
+      omittedObservations: this.dropped,
+    });
     await this.testInfo.attach(attemptAttachment, {
       contentType: 'application/json',
-      body: JSON.stringify({
-        schemaVersion: 1,
-        owner: {
-          testId: this.testInfo.testId,
-          retry: this.testInfo.retry,
-          workerIndex: this.testInfo.workerIndex,
-          parallelIndex: this.testInfo.parallelIndex,
-          outputDirectory: output,
-        },
-        identity: this.identity,
-        events: this.events,
-        omittedObservations: this.dropped,
-      }),
+      body: document,
     });
+    return document;
   }
 }

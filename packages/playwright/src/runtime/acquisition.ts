@@ -13,7 +13,6 @@ import type {
   BlackboxEffects,
   BlackboxEntrypoint,
   BlackboxSandbox,
-  BlackboxTelemetry,
 } from '../types.js';
 import { createUnavailableBlackboxEffects } from '../effects/runtime.js';
 import { reported, type AttemptProgress } from '../reporting/events.js';
@@ -22,7 +21,11 @@ import { resolveCollectorRuntime } from './collector-runtime.js';
 import { awaitReadiness } from './readiness.js';
 import { startAttemptSandbox } from './sandbox-start.js';
 import { createSandboxTelemetry, type TelemetryAuthorization } from './telemetry.js';
-import { publicTelemetry } from './telemetry-handle.js';
+import { publicTelemetry, type AttemptTelemetry } from './telemetry-handle.js';
+import {
+  participantActivities,
+  type ParticipantActivityRunner,
+} from '../activity/participant-activity.js';
 
 export interface BlackboxAttemptInput {
   readonly selection: BlackboxCatalogSelection;
@@ -32,11 +35,16 @@ export interface BlackboxAttemptInput {
   readonly progress: AttemptProgress;
 }
 
+/** Sandbox identity owned by the runtime; the fixture adds `exec`. */
+export type AttemptSandbox = Omit<BlackboxSandbox, 'exec'>;
+
 export interface RunningBlackboxAttempt {
-  readonly sandbox: BlackboxSandbox;
-  readonly telemetry: BlackboxTelemetry;
+  readonly sandbox: AttemptSandbox;
+  readonly telemetry: AttemptTelemetry;
   readonly effects: BlackboxEffects;
   stop(reason: SandboxStopReason): Promise<void>;
+  /** Run one setup command in a participant and export its activity root span. */
+  readonly runActivity: ParticipantActivityRunner;
 }
 
 export interface BlackboxAttemptRuntime {
@@ -56,7 +64,7 @@ export interface BlackboxAcquisitionPorts {
   readonly createEffects: (input: {
     readonly sessionId: string;
     readonly executionId: string;
-    readonly telemetry: BlackboxTelemetry;
+    readonly telemetry: AttemptTelemetry;
   }) => BlackboxEffects;
 }
 
@@ -185,6 +193,8 @@ export async function acquireBlackboxAttempt(
   input.progress.protect(plan.environment);
   const sessionId = `playwright-${ports.randomId()}`;
   const executionId = `playwright-${ports.randomId()}`;
+  // startAttemptSandbox names the sandbox after its execution.
+  input.progress.identify(executionId);
   const recordDirectory = input.artifactDirectory;
   const collectorAuthorization = authorization(ports);
   const sandbox = await reported(input.progress, 'acquisition', plan.services.join(', '), () =>
@@ -223,7 +233,7 @@ export async function acquireBlackboxAttempt(
       artifactDirectory: input.artifactDirectory,
       entrypoint: Object.freeze(selectedEntrypoint),
       containers: sandbox.containers,
-    }) satisfies BlackboxSandbox;
+    }) satisfies AttemptSandbox;
     const exposedTelemetry = publicTelemetry({
       sandbox,
       recordDirectory,
@@ -237,6 +247,7 @@ export async function acquireBlackboxAttempt(
       async stop(reason): Promise<void> {
         await sandbox.stop({ reason });
       },
+      ...participantActivities({ sandbox, sessionId, plan, authorization: collectorAuthorization }),
     };
   } catch (cause) {
     return cleanupAfterSetupFailure({ sandbox, cause, progress: input.progress });

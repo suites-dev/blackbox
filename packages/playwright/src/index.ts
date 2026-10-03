@@ -8,10 +8,16 @@ export type {
   EffectSelector,
 } from './effects/contract.js';
 export type {
+  BlackboxActivity,
   BlackboxCatalogSelection,
   BlackboxEffects,
   BlackboxEntrypoint,
   BlackboxSandbox,
+  BlackboxSpan,
+  BlackboxSpanKind,
+  BlackboxSpanQuery,
+  BlackboxSpanStatus,
+  BlackboxSpanWaitOptions,
   BlackboxTelemetry,
   BlackboxTestFixtures,
   BlackboxTestOptions,

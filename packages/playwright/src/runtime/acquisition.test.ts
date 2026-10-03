@@ -180,6 +180,9 @@ it('reports real acquisition milestones in order and reports cleanup when readin
     ...attemptInput({ kind: 'system', id: 'orders' }),
     progress: {
       protect: () => undefined,
+      identify: (sandboxId: string) => {
+        events.push(`identify:${sandboxId}`);
+      },
       emit: (phase: string, status: string) => {
         events.push(`${phase}:${status}`);
       },
@@ -189,6 +192,7 @@ it('reports real acquisition milestones in order and reports cleanup when readin
   expect(events).toEqual([
     'catalog:started',
     'catalog:completed',
+    `identify:${fixture.starts[0].sandbox.sandboxId}`,
     'acquisition:started',
     'acquisition:completed',
     'instrumentation:started',

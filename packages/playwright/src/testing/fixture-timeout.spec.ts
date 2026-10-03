@@ -40,6 +40,7 @@ const runtime = {
         sessionId: 'timeout-session',
         executionId: 'timeout-execution',
       },
+      runActivity: () => Promise.reject(new Error('not used by this fixture')),
       stop: (reason) => {
         process.stdout.write(`BLACKBOX_PLAYWRIGHT_TIMEOUT_STOP ${reason}\n`);
         return Promise.resolve();

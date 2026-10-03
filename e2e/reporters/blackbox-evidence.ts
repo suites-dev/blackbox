@@ -16,6 +16,22 @@ interface Event {
   readonly detail: string;
 }
 
+/**
+ * Business steps are the test's own steps. Blackbox reports sandbox acquisition and
+ * cleanup as steps too, but inside its fixture under the Before and After Hooks.
+ */
+function isBusinessStep(step: TestStep): boolean {
+  if (step.category !== 'test.step') {
+    return false;
+  }
+  for (let parent = step.parent; parent !== undefined; parent = parent.parent) {
+    if (parent.category === 'hook' || parent.category === 'fixture') {
+      return false;
+    }
+  }
+  return true;
+}
+
 /** Acceptance oracle: observe worker events before the test result is finalized. */
 export default class BlackboxEvidence implements Reporter {
   private readonly attempts = new Map<
@@ -61,7 +77,7 @@ export default class BlackboxEvidence implements Reporter {
 
   onStepBegin(_test: TestCase, result: TestResult, step: TestStep): void {
     const attempt = this.attempts.get(result);
-    if (attempt === undefined || step.category !== 'test.step') {
+    if (attempt === undefined || !isBusinessStep(step)) {
       return;
     }
     attempt.businessSteps++;
