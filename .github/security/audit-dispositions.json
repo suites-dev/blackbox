@@ -1,0 +1,25 @@
+{
+  "dispositions": [
+    {
+      "advisory": "GHSA-ch52-4w7c-c8xp",
+      "auditId": 1240991,
+      "package": "http-cache-semantics",
+      "affectedVersion": "4.2.0",
+      "severity": "high",
+      "cve": "CVE-2026-93748",
+      "status": "locally-patched",
+      "patchPath": "patches/http-cache-semantics@4.2.0.patch",
+      "patchSha256": "bfcf00566a3fdf00a595f838b4fb57e05aed93d48de2192d046459540f4fb98a",
+      "upstreamFix": {
+        "url": "https://github.com/kornelski/http-cache-semantics/pull/58",
+        "commit": "14a8c2ad51740dc39bf3e8f1a11c845a5003f217"
+      },
+      "owner": "@omermorad",
+      "reviewDate": "2026-10-03",
+      "expires": "2026-10-17",
+      "approval": "Requires independent maintainer approval of PR #122 under the release branch ruleset",
+      "evidence": "scripts/security/http-cache-semantics.test.mjs",
+      "removalCondition": "Remove this disposition and local patch when the registry publishes a verified fixed release"
+    }
+  ]
+}
