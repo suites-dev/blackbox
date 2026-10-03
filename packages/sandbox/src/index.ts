@@ -121,6 +121,9 @@ export type {
 
 export type {
   ComposeAcquisitionObservation,
+  ComposeAwaitedEndpoint,
   ComposeServiceObservation,
   ComposeObservationMode,
+  ComposeObservationSnapshot,
 } from './acquisition/observation.js';
+export { inspectComposeProject } from './acquisition/observation/project-inspection.js';

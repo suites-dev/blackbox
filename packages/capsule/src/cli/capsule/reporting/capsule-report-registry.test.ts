@@ -5,7 +5,12 @@ import { createServer } from 'node:http';
 import { join } from 'node:path';
 import test from 'node:test';
 import { capsuleSessionDirectory } from '@suites/blackbox-capsule';
-import { commandFixture, removeFixture, runCli } from './capsule-command.fixture.js';
+import {
+  commandFixture,
+  removeFixture,
+  runCli,
+  withoutSnapshotTime,
+} from './capsule-command.fixture.js';
 import { runningReportCli } from '../../reporting/serve.fixture.js';
 
 void test('served registry discovers newly retained sessions without changing exact selection', async () => {
@@ -85,7 +90,10 @@ void test('served artifact exports match JSON reports and deny raw retained file
       ],
     });
     assert.equal(snapshot.status, 0, snapshot.stderr);
-    assert.deepEqual(artifact.document, JSON.parse(snapshot.stdout));
+    assert.equal(
+      withoutSnapshotTime(JSON.stringify(artifact.document)),
+      withoutSnapshotTime(JSON.stringify(JSON.parse(snapshot.stdout))),
+    );
     assert.doesNotMatch(JSON.stringify(artifact), /manager\.sock/u);
     for (const name of ['session.json', 'activities.json', 'progress.json']) {
       const response = await fetch(`${path}/${name}`);

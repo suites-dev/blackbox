@@ -168,6 +168,7 @@ export class AcquisitionView {
   private observe(observation: CapsuleAcquisitionObservation): void {
     switch (observation.kind) {
       case 'waiting':
+      case 'waiting-for-endpoints':
         this.elapsedMs = observation.elapsedMs;
         break;
       case 'observation-status':

@@ -8,9 +8,11 @@ import type {
   CapsuleManagerControlFrame,
   CapsuleManagerRequest,
 } from '../protocol.js';
+import type { CapsuleProgressEmission } from '../progress/store.js';
 import { recordedError } from '../records.js';
 import { handleExec } from './exec-request.js';
 import { ManagerExecutionCoordinator } from './transport/execution.js';
+import { emitProgress } from './progress.js';
 import { persist, transition, type RunningManager } from './runtime.js';
 
 function assertNever(value: never): never {
@@ -19,6 +21,17 @@ function assertNever(value: never): never {
 
 function isControl(frame: CapsuleManagerClientFrame): frame is CapsuleManagerControlFrame {
   return frame.kind.startsWith('exec-') && frame.kind !== 'exec-request';
+}
+
+/** Records a stop step in progress. Stopping never fails because its record could not be written. */
+async function recordStop(
+  bootstrap: CapsuleManagerBootstrap,
+  event: Extract<
+    CapsuleProgressEmission,
+    { readonly kind: 'capsule-stop-requested' | 'capsule-stopped' | 'capsule-stop-failed' }
+  >,
+): Promise<void> {
+  await emitProgress(bootstrap, event).catch(() => undefined);
 }
 
 async function handleStop(input: {
@@ -31,9 +44,19 @@ async function handleStop(input: {
     input.bootstrap.projectDirectory,
     transition(input.manager.record, 'stopping'),
   );
+  await recordStop(input.bootstrap, {
+    kind: 'capsule-stop-requested',
+    sessionId: input.bootstrap.sessionId,
+    reason: input.request.reason,
+  });
   try {
     await input.manager.sandbox.stop({ reason: input.request.reason });
   } catch (error) {
+    await recordStop(input.bootstrap, {
+      kind: 'capsule-stop-failed',
+      sessionId: input.bootstrap.sessionId,
+      error: recordedError(error),
+    });
     input.manager.record = await persist(
       input.bootstrap.projectDirectory,
       transition(input.manager.record, 'stop-failed', {
@@ -47,6 +70,11 @@ async function handleStop(input: {
     input.bootstrap.projectDirectory,
     transition(input.manager.record, 'stopped', { cleanup: { kind: 'complete' } }),
   );
+  await recordStop(input.bootstrap, {
+    kind: 'capsule-stopped',
+    sessionId: input.bootstrap.sessionId,
+    cleanup: 'complete',
+  });
   try {
     await sendResponse(input.socket, {
       kind: 'stop-response',

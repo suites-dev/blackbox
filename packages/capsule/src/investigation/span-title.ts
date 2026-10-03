@@ -5,10 +5,13 @@ type Attributes = CapsuleReportSpan['attributes'];
 const HTTP_METHOD = ['http.request.method', 'http.method'];
 const HTTP_ROUTE = ['http.route', 'url.path', 'http.target'];
 const HTTP_STATUS = ['http.response.status_code', 'http.status_code'];
+const ERROR_TYPE = ['error.type'];
 const DB_OPERATION = ['db.operation.name', 'db.operation'];
-const DB_COLLECTION = ['db.collection.name', 'db.sql.table'];
+const DB_COLLECTION = ['db.collection.name', 'db.mongodb.collection', 'db.sql.table'];
 const MESSAGING_OPERATION = ['messaging.operation.type', 'messaging.operation'];
 const MESSAGING_DESTINATION = ['messaging.destination.name'];
+/** Where a client span went: its server, else the peer service name. */
+const PEER = ['server.address', 'peer.service', 'net.peer.name'];
 
 /** Title parts per span family, in precedence order: HTTP, database, messaging. */
 const FAMILIES = [
@@ -25,7 +28,7 @@ const FAMILIES = [
  * collection alternatives.
  */
 export const investigationAttributeKeys = new Set<string>(
-  [...FAMILIES.flat(2), ...HTTP_STATUS].concat([
+  [...FAMILIES.flat(2), ...HTTP_STATUS, ...ERROR_TYPE, ...PEER].concat([
     'db.system',
     'db.system.name',
     'messaging.system',
@@ -84,9 +87,19 @@ function routeText(entry: { readonly key: string; readonly value: string }): str
 /**
  * `<method> <route>`, `<operation> <collection>` or `<operation> <destination>`
  * for HTTP, database and messaging spans, else the span name. Missing parts are
- * omitted; a family with no part present does not apply.
+ * omitted; a family with no part present does not apply. A client or producer
+ * span adds where it went: `GET → ts-price-service`, `find config → config-db`.
  */
 export function spanTitle(span: CapsuleReportSpan): string {
+  const target =
+    span.spanKind === 'client' || span.spanKind === 'producer'
+      ? first(span.attributes, PEER)
+      : null;
+  const title = familyTitle(span);
+  return target === null ? title : `${title} → ${target}`;
+}
+
+function familyTitle(span: CapsuleReportSpan): string {
   for (const family of FAMILIES) {
     const parts = family.flatMap((keys) => {
       const entry = firstEntry(span.attributes, keys);
@@ -110,4 +123,20 @@ export function spanResult(span: CapsuleReportSpan): string {
     return status;
   }
   return span.statusCode === 2 ? 'error' : '';
+}
+
+/**
+ * Why an error span failed: its first exception type, else an `error.type`
+ * that names a type rather than a bare status code. Empty for other spans.
+ */
+export function spanFailure(span: CapsuleReportSpan): string {
+  if (span.statusCode !== 2) {
+    return '';
+  }
+  const exception = span.exceptions.find((item) => item.type !== '');
+  if (exception !== undefined) {
+    return exception.type;
+  }
+  const errorType = first(span.attributes, ERROR_TYPE);
+  return errorType === null || /^\d+$/u.test(errorType) ? '' : errorType;
 }

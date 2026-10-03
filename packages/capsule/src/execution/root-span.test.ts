@@ -41,6 +41,7 @@ afterEach(() => {
 
 it('exports the owned root span with an error status for failed execution', async () => {
   const tracesUrl = 'http://collector.test/v1/traces';
+  const endedAt = '2026-01-01T00:00:01.234Z';
   const fetch = vi.fn((...parameters: Parameters<typeof globalThis.fetch>) => {
     const request = parameters[1];
     if (request === undefined) {
@@ -59,6 +60,8 @@ it('exports the owned root span with an error status for failed execution', asyn
               spans: [
                 {
                   name: 'capsule.driver',
+                  // Exactly the end the activity records as telemetry.endedAt.
+                  endTimeUnixNano: String(BigInt(Date.parse(endedAt)) * 1_000_000n),
                   status: { code: 2, message: 'command failed' },
                 },
               ],
@@ -92,6 +95,7 @@ it('exports the owned root span with an error status for failed execution', asyn
       purpose: 'stimulus',
       scope: scope.active,
       result: { kind: 'telemetry-scope-failed', message: 'command failed' },
+      endedAt,
     }),
   ).resolves.toEqual({ kind: 'root-span-exported' });
   expect(fetch).toHaveBeenCalledOnce();
@@ -111,6 +115,7 @@ it('returns an explicit failure when the collector is unavailable', async () => 
       purpose: 'inspection',
       scope: scope.active,
       result: { kind: 'telemetry-scope-succeeded' },
+      endedAt: '2026-01-01T00:00:01.000Z',
     }),
   ).resolves.toEqual({
     kind: 'root-span-export-failed',

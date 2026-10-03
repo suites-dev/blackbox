@@ -207,7 +207,8 @@ describe('Capsule operational report', () => {
           outcome: { kind: 'context-not-supported', boundary: 'shared-state' },
         },
         process: {
-          argv: ['psql', '--set', 'trace=[REDACTED]', '--password', '[REDACTED]'],
+          // A lower-case `name=value` setting is not a credential (#111): kept as recorded.
+          argv: ['psql', '--set', 'trace=present', '--password', '[REDACTED]'],
           location: { kind: 'participant', participantId: 'postgres' },
           retention: { stdout: { kind: 'truncated', omittedBytes: 951_424 } },
         },

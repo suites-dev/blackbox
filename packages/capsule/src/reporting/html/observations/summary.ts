@@ -19,7 +19,18 @@ function addCollectorRun(card, run, index) {
     add(card, p(run.failure.error.name + ': ' + run.failure.error.message, 'muted'));
   }
 }
-function observationSummary(card, observations) {
+function correlatedSpanCounts(d) {
+  let system = 0, blackbox = 0;
+  for (const item of d ? d.activityTelemetry : []) {
+    if (item.kind !== 'available') continue;
+    for (const span of item.spans) {
+      if (span.service === 'blackbox-capsule') blackbox += 1;
+      else system += 1;
+    }
+  }
+  return { system, blackbox };
+}
+function observationSummary(card, observations, d) {
   if (observations.kind === 'collector-session-corrupt') {
     add(card, badge('corrupt', 'bad'),
       p(observations.error.name + ': ' + observations.error.message));
@@ -33,8 +44,10 @@ function observationSummary(card, observations) {
   add(
     card,
     badge(received ? 'received' : 'not received', received ? 'good' : 'warn'),
-    p(observations.telemetry.acceptedSpans + ' spans · ' +
-      observations.traces.activityCorrelated.length + ' activity-correlated traces'),
+    p(observations.telemetry.acceptedSpans + ' spans received'),
+    p(observations.traces.activityCorrelated.length + ' activity traces: ' +
+      correlatedSpanCounts(d).system + ' system spans, ' +
+      correlatedSpanCounts(d).blackbox + ' Blackbox spans (its own activity spans)'),
     p(observations.traces.sessionOnly.length + ' session-only observed traces'),
   );
   if (observations.traces.sessionOnly.length > 0) {

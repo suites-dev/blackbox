@@ -7,6 +7,8 @@ export {
   type SpanTreeNode,
 } from './span-tree.js';
 export {
+  ACTIVITY_WINDOW_GRACE_MS,
+  activityWindowEndMs,
   earliestStart,
   isoToUnixNano,
   placeTraces,
@@ -14,7 +16,7 @@ export {
   type CausalityTrace,
   type TracePlacement,
 } from './causality.js';
-export { investigationAttributeKeys, spanResult, spanTitle } from './span-title.js';
+export { investigationAttributeKeys, spanFailure, spanResult, spanTitle } from './span-title.js';
 export { projectInvestigationSpans } from './spans.js';
 export type { CapsuleReportSpan } from '../reporting/telemetry-types.js';
 export { activityContext, type ActivityContext } from './context.js';

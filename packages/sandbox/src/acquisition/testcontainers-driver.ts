@@ -159,6 +159,7 @@ export class TestcontainersComposeDriver implements ComposeSandboxDriver {
       mode: request.observation,
       now: Date.now,
       intervalMs: 500,
+      awaiting: request.endpoints.map(({ service, containerPort }) => ({ service, containerPort })),
       inspect: ({ signal }) =>
         inspectComposeStartup({
           docker: composeObservationClient(client.container.dockerode),

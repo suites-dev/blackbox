@@ -1,7 +1,8 @@
 export const capsuleTelemetryRowsScript = `
-function telemetrySpanRow(span, spans, selection, root) {
+function telemetrySpanRow(span, spans, selection, root, layout) {
   const presentation = spanPresentation(span, spans), button = n('button', 'span-row');
   button.type = 'button';
+  button.style.setProperty('--span-depth', String(layout.depth.get(span.spanId) || 0));
   add(
     button,
     icon('branch'),
@@ -9,6 +10,7 @@ function telemetrySpanRow(span, spans, selection, root) {
       n('span', 'span-summary'),
       n('strong', 'span-operation', presentation.title),
       n('small', 'span-direction', presentation.direction),
+      n('small', 'span-timing', spanTimingText(span, layout.origin)),
     ),
     icon('chevron'),
   );
@@ -17,8 +19,8 @@ function telemetrySpanRow(span, spans, selection, root) {
   );
   return button;
 }
-function telemetryResourceRun(run, spans, selection, root) {
-  if (run.spans.length === 1) return telemetrySpanRow(run.spans[0], spans, selection, root);
+function telemetryResourceRun(run, spans, selection, root, layout) {
+  if (run.spans.length === 1) return telemetrySpanRow(run.spans[0], spans, selection, root, layout);
   const details = n('details', 'telemetry-resource-group'), summary = n('summary'), rows = n('div');
   add(
     summary,
@@ -31,7 +33,7 @@ function telemetryResourceRun(run, spans, selection, root) {
     badge(run.spans.length + ' operations'),
     icon('chevron'),
   );
-  for (const span of run.spans) add(rows, telemetrySpanRow(span, spans, selection, root));
+  for (const span of run.spans) add(rows, telemetrySpanRow(span, spans, selection, root, layout));
   add(details, summary, rows);
   return details;
 }
@@ -49,14 +51,14 @@ function rawTelemetry(d, a, root) {
     );
     return block;
   }
-  for (const run of telemetryRuns(retained.spans)) {
+  const layout = spanLayout(retained.spans);
+  const selection = { kind: 'exact-activity', activityId: a.activityId };
+  for (const run of telemetryRuns(layout.spans)) {
     add(
       block,
       run.kind === 'resource-run'
-        ? telemetryResourceRun(run, retained.spans,
-            { kind: 'exact-activity', activityId: a.activityId }, root)
-        : telemetrySpanRow(run.span, retained.spans,
-            { kind: 'exact-activity', activityId: a.activityId }, root),
+        ? telemetryResourceRun(run, retained.spans, selection, root, layout)
+        : telemetrySpanRow(run.span, retained.spans, selection, root, layout),
     );
   }
   add(
@@ -83,10 +85,11 @@ function sessionTraceTelemetry(trace, root, context) {
     add(block, p('Telemetry ' + trace.reason + '.', 'telemetry-empty'));
     return block;
   }
-  for (const run of telemetryRuns(trace.spans)) {
+  const layout = spanLayout(trace.spans);
+  for (const run of telemetryRuns(layout.spans)) {
     add(block, run.kind === 'resource-run'
-      ? telemetryResourceRun(run, trace.spans, association, root)
-      : telemetrySpanRow(run.span, trace.spans, association, root));
+      ? telemetryResourceRun(run, trace.spans, association, root, layout)
+      : telemetrySpanRow(run.span, trace.spans, association, root, layout));
   }
   return block;
 }
@@ -100,8 +103,24 @@ function activityWindowTelemetry(d, a, root) {
   add(block, n('h4', '', 'Observed after this activity'),
     p('Same activity time window · temporal only · no causal relationship established.',
       'telemetry-caption'));
-  for (const trace of traces) add(block, sessionTraceTelemetry(trace, root, trace.association));
+  for (const trace of [...traces].sort(compareTraceStarts))
+    add(block, sessionTraceTelemetry(trace, root, trace.association));
   return block;
+}
+function isReadinessProbe(trace) {
+  return trace.kind === 'available' && trace.spans.some((span) =>
+    ['user_agent.original', 'http.user_agent'].some((key) =>
+      spanAttribute(span, key).startsWith('blackbox-readiness/')));
+}
+function readinessProbes(probes, root) {
+  const details = n('details', 'session-trace readiness-probes'), summary = n('summary');
+  add(summary, n('strong', '', probes.length + ' readiness probe traces'),
+    badge('Blackbox readiness probes', 'neutral'));
+  add(details, summary,
+    p('Requests Blackbox sent to the entrypoint while it waited for readiness, collapsed into one row.',
+      'telemetry-caption'));
+  for (const trace of probes) add(details, sessionTraceTelemetry(trace, root, trace.association));
+  return details;
 }
 function sessionObservations(d, root) {
   const section = n('section', 'section');
@@ -112,7 +131,10 @@ function sessionObservations(d, root) {
   const traces = d.observations.kind === 'collector-session-found'
     ? d.observations.traces.sessionOnly : [];
   if (!traces.length) add(panel, p('No session-only traces were retained.', 'empty'));
-  for (const trace of traces) add(panel, sessionTraceTelemetry(trace, root, trace.association));
+  const probes = traces.filter(isReadinessProbe);
+  if (probes.length) add(panel, readinessProbes([...probes].sort(compareTraceStarts), root));
+  for (const trace of [...traces].filter((trace) => !isReadinessProbe(trace)).sort(compareTraceStarts))
+    add(panel, sessionTraceTelemetry(trace, root, trace.association));
   add(section, panel);
   return section;
 }

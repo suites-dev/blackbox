@@ -1,6 +1,7 @@
 import { setTimeout as delay } from 'node:timers/promises';
 import type {
   ComposeAcquisitionObservation,
+  ComposeAwaitedEndpoint,
   ComposeObservationMode,
   ComposeObservationSnapshot,
 } from '../observation.js';
@@ -12,6 +13,8 @@ interface StartupObserverInput {
   }) => Promise<ComposeObservationSnapshot>;
   readonly now: () => number;
   readonly intervalMs: number;
+  /** Named in every `waiting` event, so a slow start says what it waits for. */
+  readonly awaiting: readonly ComposeAwaitedEndpoint[];
 }
 
 /** Observe alongside up(); stopping aborts both the HTTP requests and the polling delay. */
@@ -53,7 +56,12 @@ export function observeComposeStartup(input: StartupObserverInput): {
       available = false;
     }
     if (input.now() - lastWaiting >= 5_000) {
-      emit({ kind: 'waiting', elapsedMs: Math.max(0, input.now() - started) });
+      const elapsedMs = Math.max(0, input.now() - started);
+      emit(
+        input.awaiting.length === 0
+          ? { kind: 'waiting', elapsedMs }
+          : { kind: 'waiting-for-endpoints', elapsedMs, awaiting: input.awaiting },
+      );
       lastWaiting = input.now();
     }
   };

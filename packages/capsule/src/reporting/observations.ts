@@ -1,3 +1,4 @@
+import { activityWindowEndMs } from '../investigation/causality.js';
 import type { CapsuleActivityReport } from '../model/execution/activity.js';
 import { redactError } from './redaction.js';
 import type { RedactionContext } from './redaction/text.js';
@@ -37,13 +38,16 @@ function association(
   );
   for (let index = ordered.length - 1; index >= 0; index -= 1) {
     const activity = ordered[index];
-    const nextStartedAt =
-      ordered.slice(index + 1, index + 2).map((item) => Date.parse(item.startedAt))[0] ??
-      Number.POSITIVE_INFINITY;
+    // Bounded: a trace that starts after the next activity, or more than the
+    // grace after this one completed, is in no activity's window.
+    const windowEnd = activityWindowEndMs({
+      completedAt: activity.kind === 'running' ? null : activity.completedAt,
+      nextStartedAt: ordered.slice(index + 1, index + 2).map((item) => item.startedAt)[0] ?? null,
+    });
     if (
       activity.purpose === 'stimulus' &&
       Date.parse(activity.startedAt) <= startedAt &&
-      startedAt < nextStartedAt
+      startedAt < windowEnd
     ) {
       return { kind: 'activity-window', activityId: activity.activityId };
     }
