@@ -116,6 +116,10 @@ export function createBlackboxTest(
     effects: async ({ _blackboxAttempt }, use) => {
       await use(selectedAttempt(_blackboxAttempt, 'effects').effects);
     },
+    activities: async ({ _blackboxAttempt }, use) => {
+      const attempt = selectedAttempt(_blackboxAttempt, 'activities');
+      await use(attempt.activities);
+    },
   });
 }
 

@@ -11,6 +11,7 @@ export interface EffectContractEvaluator {
 }
 
 const evaluators = new WeakMap<BlackboxEffects, EffectContractEvaluator>();
+const liveEffects = new WeakSet<BlackboxEffects>();
 
 export function createBlackboxEffects(input: {
   readonly sessionId: string;
@@ -37,6 +38,14 @@ export function evaluateBlackboxEffects(
     });
   }
   return evaluator.evaluate(contract);
+}
+
+export function markBlackboxEffectsLive(effects: BlackboxEffects): void {
+  liveEffects.add(effects);
+}
+
+export function isLiveBlackboxEffects(effects: BlackboxEffects): boolean {
+  return liveEffects.has(effects);
 }
 
 export function createUnavailableBlackboxEffects(input: {

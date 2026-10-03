@@ -38,11 +38,13 @@ import { expect, test } from '@suites/blackbox-playwright';
 test.system('subscription-system', (system) => {
   system.sandbox('default', { environment: { FEATURE_MODE: 'stable' } }, (suite) => {
     suite.describe('health', () => {
-      suite.test('reports ready', async ({ request, sandbox, telemetry, effects }) => {
+      suite.test('reports ready', async ({ activities, request, sandbox, telemetry, effects }) => {
         const url = new URL('/health', sandbox.entrypoint.url).href;
-        const response = await test.step('When health is requested', () => request.get(url));
+        const response = await test.step('When health is requested', () =>
+          activities.stimulus.request('request health', request, (scoped) => scoped.get(url)));
 
         expect(response.ok()).toBe(true);
+        await expect(effects).toSatisfy((e) => [e.exists(e.http({ method: 'GET' }))]);
         expect(sandbox.catalogEntry.id).toBe('subscription-system');
         expect(telemetry.executionId).toBe(sandbox.executionId);
         expect(effects.executionId).toBe(sandbox.executionId);
@@ -106,10 +108,40 @@ reasons. Setup failure also attempts cleanup before surfacing the error.
 - `telemetry` exposes the attempt identity, live collector status, and raw
   retained session or trace reads.
 - `effects` exposes the attempt identity and the contract-evaluation boundary.
-  `expect(effects).toSatisfy(...)` compiles and delegates an immutable contract,
-  but the default fixture has not yet connected requests to trusted activity
-  selections. It therefore reports an inconclusive failure. The internal
-  projection pipeline below prepares that integration.
+  `expect(effects).toSatisfy(...)` evaluates an immutable contract against the
+  attempt's completed stimulus activities. It retries only while retained
+  activity telemetry is still inconclusive; elapsed time never turns missing
+  evidence into a pass or a definite absence.
+- `activities` records explicitly named `setup`, `stimulus`, and `inspection`
+  actions. Each purpose supports `request`, `browser`, and custom `run` actions.
+  Only stimuli feed the default `effects` selection, so fixture setup and state
+  inspection cannot silently satisfy a behavior assertion.
+
+Direct HTTP calls receive canonical W3C propagation without changing the native
+Playwright request fixture:
+
+```ts
+const response = await activities.stimulus.request('create subscription', request, (scoped) =>
+  scoped.post(new URL('/subscriptions', sandbox.entrypoint.url).href, {
+    data: { userId: 'alice' },
+  }),
+);
+```
+
+Browser actions install a temporary route on the supplied page. The route adds
+the activity context only to the Sandbox entrypoint origin and is removed when
+the callback settles:
+
+```ts
+await activities.stimulus.browser('submit subscription form', page, async (scopedPage) => {
+  await scopedPage.goto(new URL('/subscribe', sandbox.entrypoint.url).href);
+  await scopedPage.getByRole('button', { name: 'Subscribe' }).click();
+});
+```
+
+Use `activities.inspection.request(...)` for fixture state endpoints and other
+authoritative reads. A successful state read remains a separate result; observed
+attempt effects do not prove that state is durable.
 
 ## Validate the internal effects pipeline
 
@@ -148,10 +180,11 @@ including repeated arrivals, and 32 KiB per record. Each registry permits 256
 activity registrations. [The named limits](src/activities/limits.ts) apply to this
 initial integration and do not establish production load capacity.
 
-The remaining integration work is to connect public request/browser execution and
-inspection to this registry within system/sandbox groups, then run consumer
-tests against the selected published release. The internal factory is not a
-public authoring API. Shared sandboxes must not imply shared effects selections.
+The public activity fixture connects request and browser execution to the trusted
+registry within each system/sandbox attempt. The internal factory remains outside
+the authoring API. Shared sandboxes must not imply shared effects selections.
+Published-release acceptance still requires the selected registry and version;
+local packed candidates establish only candidate behavior.
 
 ## Execution reporting
 
@@ -201,5 +234,5 @@ must await its completion boundary before asserting behavior. The internal effec
 evaluator returns scope, witness, and uncertainty diagnostics; fixture attachment
 of these diagnostics remains part of the pending integration.
 
-Public activity-scoped projection, accepted baselines, drivers, and shared worker
-sandboxes remain outside this package's current surface.
+Accepted baselines, drivers, and shared worker sandboxes remain outside this
+package's current surface.

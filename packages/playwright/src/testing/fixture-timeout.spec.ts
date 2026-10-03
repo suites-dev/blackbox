@@ -3,6 +3,7 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { expect as playwrightExpect } from '@playwright/test';
 
 import { createBlackboxTest } from '../fixtures.js';
+import { createUnavailableBlackboxActivities } from '../effects/attempt-effects.js';
 import type { BlackboxAttemptRuntime } from '../runtime/acquisition.js';
 
 const runtime = {
@@ -40,6 +41,7 @@ const runtime = {
         sessionId: 'timeout-session',
         executionId: 'timeout-execution',
       },
+      activities: createUnavailableBlackboxActivities(),
       stop: (reason) => {
         process.stdout.write(`BLACKBOX_PLAYWRIGHT_TIMEOUT_STOP ${reason}\n`);
         return Promise.resolve();

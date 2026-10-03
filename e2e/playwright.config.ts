@@ -22,6 +22,7 @@ export default defineConfig({
   workers: 2,
   retries: 1,
   timeout: 180_000,
+  expect: { timeout: 15_000 },
   preserveOutput: 'always',
   outputDir: join(resultsRoot, 'output'),
   reporter: [

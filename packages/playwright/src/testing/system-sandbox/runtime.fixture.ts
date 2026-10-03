@@ -6,6 +6,7 @@ import type {
   BlackboxAttemptRuntime,
   RunningBlackboxAttempt,
 } from '../../runtime/acquisition.js';
+import { createUnavailableBlackboxActivities } from '../../effects/attempt-effects.js';
 
 export const eventMarker = 'BLACKBOX_SYSTEM_SANDBOX_EVENT ';
 
@@ -83,6 +84,7 @@ export async function startRespondingAttempt(
       sessionId: `session-${executionId}`,
       executionId,
     },
+    activities: createUnavailableBlackboxActivities(),
     async stop(reason) {
       record({ kind: 'stop', executionId, reason });
       await new Promise<void>((resolveClose, rejectClose) => {
