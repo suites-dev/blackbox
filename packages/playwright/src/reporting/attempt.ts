@@ -12,7 +12,7 @@ import {
   type AttemptEvent,
   type AttemptProgress,
 } from './events.js';
-import { reportText } from './text.js';
+import { reportTextResult } from './text.js';
 import { sandboxLifecycleEnabled } from './options.js';
 
 /** Attachments use Playwright's worker transport and remain available to other reporters. */
@@ -68,12 +68,16 @@ export class AttemptReport implements AttemptProgress, EffectAssertionReporter {
     }
   }
 
-  private sanitize(detail: string): string {
+  private sanitizeResult(detail: string): ReturnType<typeof reportTextResult> {
     let sanitized = detail;
     for (const value of [...this.secrets].sort((a, b) => b.length - a.length)) {
       sanitized = sanitized.replaceAll(value, '[REDACTED]');
     }
-    return reportText(sanitized);
+    return reportTextResult(sanitized);
+  }
+
+  private sanitize(detail: string): string {
+    return this.sanitizeResult(detail).text;
   }
 
   emit(phase: string, status: AttemptEvent['status'], detail: string): void {
@@ -113,7 +117,7 @@ export class AttemptReport implements AttemptProgress, EffectAssertionReporter {
       body: effectAttachmentBody({
         sequence: this.effectAssertions,
         report,
-        sanitize: (value) => this.sanitize(value),
+        sanitize: (value) => this.sanitizeResult(value),
       }),
     });
   }

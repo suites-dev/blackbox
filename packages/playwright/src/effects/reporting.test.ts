@@ -12,7 +12,9 @@ import {
   type EffectEvaluation,
 } from './runtime.js';
 
-function evidence(): EffectEvidenceArtifact {
+const longProtectedSecret = 'q'.repeat(1200);
+
+function evidence(input: { readonly service: string; readonly route: string }): EffectEvidenceArtifact {
   return {
     kind: 'admitted',
     observations: {
@@ -23,10 +25,10 @@ function evidence(): EffectEvidenceArtifact {
         {
           traceId: '1'.repeat(32),
           spanId: '2'.repeat(16),
-          service: 'p'.repeat(1200),
+          service: input.service,
           kind: '3',
           status: '1',
-          fields: [{ key: 'http.route', value: '/synthetic-secret' }],
+          fields: [{ key: 'http.route', value: input.route }],
         },
       ],
     },
@@ -73,6 +75,29 @@ function evidence(): EffectEvidenceArtifact {
   };
 }
 
+function expectReportedContract(document: Record<string, unknown> | undefined): void {
+  check(document).toMatchObject({
+    assertion: {
+      contract: {
+        schemaVersion: 1,
+        constraints: [
+          {
+            operator: 'atLeast',
+            count: 1,
+            selector: { kind: 'http', operation: 'POST', target: '/payments' },
+          },
+          {
+            operator: 'exactly',
+            count: 0,
+            selector: { kind: 'db', operation: 'DELETE', target: 'payments' },
+          },
+        ],
+        omitted: { constraints: 0, selectorWhereEntries: 0 },
+      },
+    },
+  });
+}
+
 it('attaches each final positive, negative, failed, and inconclusive assertion decision', async () => {
   const attachments: { readonly name: string; readonly body: string }[] = [];
   const testInfo = {
@@ -82,14 +107,23 @@ it('attaches each final positive, negative, failed, and inconclusive assertion d
     },
   } as TestInfo;
   const reporter = new AttemptReport(testInfo);
-  reporter.protect({ token: 'synthetic-secret' });
+  reporter.protect({ token: 'synthetic-secret', longToken: longProtectedSecret });
   const admittedDecisions = [
-    { kind: 'satisfied' },
-    { kind: 'unsatisfied', message: 'missing effect' },
-    { kind: 'unsatisfied', message: 'missing effect' },
+    retainEffectEvidence(
+      { kind: 'satisfied' },
+      evidence({ service: '🙂'.repeat(600), route: '/payments' }),
+    ),
+    retainEffectEvidence(
+      { kind: 'unsatisfied', message: 'missing effect' },
+      evidence({ service: 'payments', route: `/private/${longProtectedSecret}` }),
+    ),
+    retainEffectEvidence(
+      { kind: 'unsatisfied', message: 'missing effect' },
+      evidence({ service: 'payments', route: '/payments' }),
+    ),
   ] satisfies EffectEvaluation[];
   const decisions = [
-    ...admittedDecisions.map((evaluation) => retainEffectEvidence(evaluation, evidence())),
+    ...admittedDecisions,
     { kind: 'inconclusive', message: 'No completed stimulus activity is available.' },
     { kind: 'inconclusive', message: 'No completed stimulus activity is available.' },
   ] satisfies EffectEvaluation[];
@@ -122,6 +156,7 @@ it('attaches each final positive, negative, failed, and inconclusive assertion d
     check.objectContaining({ sequence: 5, negated: true, outcome: 'inconclusive' }),
   ]);
   check(attachments.map(({ body }) => body).join('\n')).not.toContain('synthetic-secret');
+  check(attachments.map(({ body }) => body).join('\n')).not.toContain(longProtectedSecret);
   const inconclusiveAttachment = attachments.at(3);
   check(inconclusiveAttachment).toBeDefined();
   if (inconclusiveAttachment === undefined) {
@@ -129,25 +164,7 @@ it('attaches each final positive, negative, failed, and inconclusive assertion d
   }
   check(inconclusiveAttachment.body).toContain('No completed stimulus activity');
   check(documents.at(0)).toMatchObject({ display: { stringLimit: 1000, truncatedStrings: 1 } });
+  check(documents.at(1)).toMatchObject({ display: { stringLimit: 1000, truncatedStrings: 0 } });
   check(documents.at(3)).toMatchObject({ evidence: { kind: 'not-admitted' } });
-  check(documents.at(0)).toMatchObject({
-    assertion: {
-      contract: {
-        schemaVersion: 1,
-        constraints: [
-          {
-            operator: 'atLeast',
-            count: 1,
-            selector: { kind: 'http', operation: 'POST', target: '/payments' },
-          },
-          {
-            operator: 'exactly',
-            count: 0,
-            selector: { kind: 'db', operation: 'DELETE', target: 'payments' },
-          },
-        ],
-        omitted: { constraints: 0, selectorWhereEntries: 0 },
-      },
-    },
-  });
+  expectReportedContract(documents.at(0));
 });

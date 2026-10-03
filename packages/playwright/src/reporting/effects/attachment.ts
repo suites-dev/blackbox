@@ -19,7 +19,9 @@ function diagnostic(evaluation: EffectEvaluation): string {
 export function effectAttachmentBody(input: {
   readonly sequence: number;
   readonly report: EffectAssertionReport;
-  readonly sanitize: (value: string) => string;
+  readonly sanitize: (
+    value: string,
+  ) => { readonly text: string; readonly truncated: boolean };
 }): string {
   let truncatedStrings = 0;
   const artifact = {
@@ -42,13 +44,14 @@ export function effectAttachmentBody(input: {
     if (typeof value !== 'string') {
       return value;
     }
-    if (Array.from(value).length > reportTextLimit) {
+    const sanitized = input.sanitize(value);
+    if (sanitized.truncated) {
       truncatedStrings++;
     }
-    return input.sanitize(value);
+    return sanitized.text;
   });
   artifact.display.truncatedStrings = truncatedStrings;
-  return JSON.stringify(artifact, (_key, value: unknown) =>
-    typeof value === 'string' ? input.sanitize(value) : value,
-  );
+  return JSON.stringify(artifact, (_key, value: unknown) => {
+    return typeof value === 'string' ? input.sanitize(value).text : value;
+  });
 }
