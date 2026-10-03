@@ -24,8 +24,11 @@ export async function expectJson<T>(response: APIResponse, status: number): Prom
   return (await response.json()) as T;
 }
 
-export async function readFixtureState<T>(request: APIRequestContext): Promise<T> {
-  const response = await request.get('/fixture/state', {
+export async function readFixtureState<T>(
+  request: APIRequestContext,
+  entrypointUrl: string,
+): Promise<T> {
+  const response = await request.get(new URL('/fixture/state', entrypointUrl).href, {
     headers: { authorization: `Bearer ${blackboxEnvironment.FIXTURE_CONTROL_TOKEN}` },
   });
   return expectJson<T>(response, 200);

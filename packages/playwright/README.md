@@ -1,14 +1,15 @@
 # Blackbox Playwright
 
-`@suites/blackbox-playwright` runs each physical Playwright test attempt in a
-fresh Sandbox selected from the project's Blackbox catalog. It composes native
-Playwright fixtures; it does not wrap the Playwright runner or share application
-state between tests.
+`@suites/blackbox-playwright` groups native Playwright tests by a catalog system
+and Sandbox configuration. Every physical test attempt, including a retry, runs
+in a fresh Sandbox. Tests keep their native Playwright callbacks, hooks, steps,
+reporters, and parallel scheduling.
 
 ## Use
 
 Configure the catalog once in `playwright.config.ts`. The path is resolved
-relative to that file; every test still selects its system or subsystem.
+relative to that file. Test files then select a system or subsystem and declare
+one or more named Sandbox configurations.
 
 ```ts
 import { defineConfig } from '@suites/blackbox-playwright/config';
@@ -34,25 +35,63 @@ export default defineConfig({
 ```ts
 import { expect, test } from '@suites/blackbox-playwright';
 
-test.use({
-  catalogEntry: { kind: 'system', id: 'subscription-system' },
-});
+test.system('subscription-system', (system) => {
+  system.sandbox('default', { environment: { FEATURE_MODE: 'stable' } }, (suite) => {
+    suite.describe('health', () => {
+      suite.test('reports ready', async ({ request, sandbox, telemetry, effects }) => {
+        const url = new URL('/health', sandbox.entrypoint.url).href;
+        const response = await test.step('When health is requested', () => request.get(url));
 
-test('reports ready', async ({ request, sandbox, telemetry, effects }) => {
-  const response = await request.get('/health');
-  expect(response.ok()).toBe(true);
-  expect(sandbox.catalogEntry.id).toBe('subscription-system');
-  expect(telemetry.executionId).toBe(sandbox.executionId);
-  expect(effects.executionId).toBe(sandbox.executionId);
+        expect(response.ok()).toBe(true);
+        expect(sandbox.catalogEntry.id).toBe('subscription-system');
+        expect(telemetry.executionId).toBe(sandbox.executionId);
+        expect(effects.executionId).toBe(sandbox.executionId);
+      });
+    });
+  });
+});
+```
+
+This is a breaking migration from the flat fixture API. Replace
+`test.use({ catalogEntry, blackboxEnvironment })` plus root `test(...)` calls with
+`test.system(...).sandbox(...)` groups, and pass `blackboxEnvironment` as the
+Sandbox option `{ environment: blackboxEnvironment }`. Relative `request` and
+`page` URLs no longer target the Sandbox automatically; resolve them explicitly
+against `sandbox.entrypoint.url`. Playwright's root `baseURL` remains whatever the
+project configured.
+
+A string passed to `test.system(...)` selects a catalog entry with kind `system`.
+Use an object to select either kind explicitly:
+
+```ts
+test.system({ kind: 'subsystem', id: 'payment-mock' }, (system) => {
+  system.sandbox('default', (suite) => {
+    suite.test('accepts a payment', async ({ request, sandbox }) => {
+      const url = new URL('/v1/payment_intents', sandbox.entrypoint.url).href;
+      const response = await request.post(url, {
+        data: { paymentMethodId: 'pm_primary', userId: 'alice' },
+      });
+      expect(response.status()).toBe(201);
+    });
+  });
 });
 ```
 
 The selected ID must exist in `blackbox.config.yaml`, and its declared kind must
-match `system` or `subsystem`. The catalog is resolved for every physical
-attempt, including retries. Setup starts
-the catalog-selected Compose services, installs the current Node activation
-adapter where configured, starts the collector, verifies activation, waits for
-application readiness, and then enters the test body.
+match the selection. `system.sandbox(...)` creates a configuration group, not a
+live shared resource. Blackbox resolves the catalog and creates a separate
+Sandbox for each physical test attempt. Setup starts the selected Compose
+services, installs the current Node activation adapter where configured, starts
+the collector, verifies activation, waits for application readiness, and then
+enters the native test callback.
+
+The Sandbox declaration callback is synchronous. Use `suite.describe`,
+`suite.test`, `suite.beforeEach`, and `suite.afterEach` inside it. Test and
+per-test hook callbacks receive the normal Playwright fixtures plus `sandbox`,
+`telemetry`, and `effects`. Continue to use `test.step(...)` for native steps.
+Sandbox-scoped `beforeAll` and `afterAll` hooks are unavailable because there is
+no group-level live Sandbox. Root Playwright `beforeAll` and `afterAll` hooks can
+still perform setup unrelated to a Sandbox.
 
 The fixture always requests Sandbox cleanup after the test body. Assertion
 failure, timeout, skip, and interruption are retained as distinct cleanup
@@ -60,7 +99,8 @@ reasons. Setup failure also attempts cleanup before surfacing the error.
 
 ## Fixtures
 
-- Playwright's `request` and `page` use the selected entrypoint as `baseURL`.
+- Playwright's configured `baseURL` remains unchanged. Build request and page
+  URLs explicitly with `new URL(path, sandbox.entrypoint.url).href`.
 - `sandbox` exposes read-only attempt, catalog, entrypoint, container, and
   artifact identity. Lifecycle control remains fixture-owned.
 - `telemetry` exposes the attempt identity, live collector status, and raw
@@ -109,15 +149,27 @@ activity registrations. [The named limits](src/activities/limits.ts) apply to th
 initial integration and do not establish production load capacity.
 
 The remaining integration work is to connect public request/browser execution and
-inspection to this registry using the upcoming grouping API, then run consumer
+inspection to this registry within system/sandbox groups, then run consumer
 tests against the selected published release. The internal factory is not a
 public authoring API. Shared sandboxes must not imply shared effects selections.
 
 ## Execution reporting
 
 Playwright's native reporter owns test progress, steps, colors, errors, and the
-final summary. Blackbox adds two short messages through the test's captured
-stdout, so Playwright associates them with the right parallel attempt:
+final summary. The example above has this native title hierarchy:
+
+```text
+system "subscription-system"
+└─ sandbox "default"
+   └─ health
+      └─ reports ready
+         └─ When health is requested
+```
+
+The grouping does not change the existing `blackbox-progress`,
+`blackbox-attempt`, or `blackbox-diagnostics` attachments. Blackbox also adds two
+short messages through the test's captured stdout, so Playwright associates them
+with the right parallel attempt:
 
 ```text
 Blackbox: sandbox ready for system "subscription-system"
