@@ -67,9 +67,49 @@ reasons. Setup failure also attempts cleanup before surfacing the error.
   retained session or trace reads.
 - `effects` exposes the attempt identity and the contract-evaluation boundary.
   `expect(effects).toSatisfy(...)` compiles and delegates an immutable contract,
-  but the Alpha does not yet project raw telemetry into normalized effects. The
-  matcher therefore reports an inconclusive failure unless an evaluator is
-  supplied by the runtime.
+  but the default fixture has not yet connected requests to trusted activity
+  selections. It therefore reports an inconclusive failure. The internal
+  projection pipeline below prepares that integration.
+
+## Validate the internal effects pipeline
+
+The package now owns an internal path from explicitly selected activities to
+retained OTLP, normalized effects, and the existing `toSatisfy` matcher. The
+[pipeline tests](src/effects/testing/pipeline.test.ts) exercise this path through
+a real loopback collector with synthetic OTLP inputs, including nested cases and
+their assertions. They do not replace a released-package Playwright acceptance run.
+
+From the repository root, after installing and building workspace dependencies:
+
+```sh
+pnpm --filter @suites/blackbox-playwright test
+```
+
+[The composition factory](src/effects/scoped-effects.ts) takes an immutable,
+registry-owned selection. Stimulus selections exclude setup and inspection;
+combining purposes requires an explicit procedure selection. Collector shutdown
+and activity completion never establish telemetry completeness. Observed positive
+evidence can satisfy a contract, definite contradictions can fail it, and missing
+evidence stays inconclusive under both positive and negated assertions.
+
+The initial projection recognizes structured HTTP, RPC, database, cache, and
+messaging operations. A database namespace is not a table; Redis keys remain
+unknown without a supported key convention. SQL text, span names, `lab.*`
+annotations, parent links, and timestamps do not supply missing semantics.
+Effects describe observed operations, not durable state; state inspection remains
+a separate activity. With no completeness or ordering attestation, absence,
+exact counts, and universal ordering generally remain inconclusive.
+
+The internal admission boundary rejects oversized selections rather than sampling:
+eight selected traces, 256 distinct span identities, 256 KiB of selected payloads
+including repeated arrivals, and 32 KiB per record. Each registry permits 256
+activity registrations. [The named limits](src/activities/limits.ts) apply to this
+initial integration and do not establish production load capacity.
+
+The remaining integration work is to connect public request/browser execution and
+inspection to this registry using the upcoming grouping API, then run consumer
+tests against the selected published release. The internal factory is not a
+public authoring API. Shared sandboxes must not imply shared effects selections.
 
 ## Execution reporting
 
@@ -103,8 +143,9 @@ The retained telemetry summary reads request/span counters from the lifecycle
 record without loading raw trace fragments. Collector shutdown is reported from
 its retained status. Neither a span count nor a
 completed collector shutdown proves that a business workflow finished; the test
-must await its completion boundary before asserting behavior. Effect contract
-diagnostics will be added with the effect evaluator.
+must await its completion boundary before asserting behavior. The internal effect
+evaluator returns scope, witness, and uncertainty diagnostics; fixture attachment
+of these diagnostics remains part of the pending integration.
 
-Effect projection, accepted baselines, drivers, and shared worker
-sandboxes are intentionally outside this package's current surface.
+Public activity-scoped projection, accepted baselines, drivers, and shared worker
+sandboxes remain outside this package's current surface.

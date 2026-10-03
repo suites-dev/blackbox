@@ -434,6 +434,9 @@ importers:
       '@suites/blackbox-sandbox':
         specifier: workspace:*
         version: link:../sandbox
+      '@suites/blackbox-telemetry':
+        specifier: workspace:*
+        version: link:../telemetry
     devDependencies:
       '@playwright/test':
         specifier: 1.63.0
