@@ -18,6 +18,7 @@ import {
 import { createSystemTestFacade } from './system-test.js';
 import type {
   BlackboxNativeTestArgs,
+  BlackboxSandbox,
   BlackboxNativeWorkerArgs,
   BlackboxSystemTest,
   BlackboxTestFixtures,
@@ -31,6 +32,7 @@ interface UnselectedAttemptFixture {
 interface SelectedAttemptFixture {
   readonly kind: 'selected';
   readonly attempt: RunningBlackboxAttempt;
+  readonly exec: BlackboxSandbox['exec'];
 }
 
 type AttemptFixture = UnselectedAttemptFixture | SelectedAttemptFixture;
@@ -54,13 +56,13 @@ const defaultPolicy: BlackboxFixturePolicy = Object.freeze({
 function selectedAttempt(
   fixture: AttemptFixture,
   name: keyof BlackboxTestFixtures,
-): RunningBlackboxAttempt {
+): SelectedAttemptFixture {
   if (fixture.kind === 'unselected') {
     throw new Error(
       `Blackbox fixture ${JSON.stringify(name)} is only available inside a test.system(...).sandbox(...) group`,
     );
   }
-  return fixture.attempt;
+  return fixture;
 }
 
 export function createBlackboxTest(
@@ -99,8 +101,8 @@ export function createBlackboxTest(
           testInfo,
           catalogEntry,
           blackboxEnvironment,
-          use: async (attempt) => {
-            await use({ kind: 'selected', attempt });
+          use: async (attempt, exec) => {
+            await use({ kind: 'selected', attempt, exec });
           },
         });
       },
@@ -108,13 +110,14 @@ export function createBlackboxTest(
       { auto: true, timeout: 0 },
     ],
     sandbox: async ({ _blackboxAttempt }, use) => {
-      await use(selectedAttempt(_blackboxAttempt, 'sandbox').sandbox);
+      const { attempt, exec } = selectedAttempt(_blackboxAttempt, 'sandbox');
+      await use(Object.freeze({ ...attempt.sandbox, exec }));
     },
     telemetry: async ({ _blackboxAttempt }, use) => {
-      await use(selectedAttempt(_blackboxAttempt, 'telemetry').telemetry);
+      await use(selectedAttempt(_blackboxAttempt, 'telemetry').attempt.telemetry);
     },
     effects: async ({ _blackboxAttempt }, use) => {
-      await use(selectedAttempt(_blackboxAttempt, 'effects').effects);
+      await use(selectedAttempt(_blackboxAttempt, 'effects').attempt.effects);
     },
   });
 }

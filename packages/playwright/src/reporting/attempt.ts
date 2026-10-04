@@ -34,7 +34,10 @@ export class AttemptReport implements AttemptProgress {
 
   constructor(private readonly testInfo: TestInfo) {}
 
-  acquired(sandbox: BlackboxSandbox, telemetry: BlackboxTelemetry): void {
+  acquired(
+    sandbox: Pick<BlackboxSandbox, 'sandboxId' | 'executionId' | 'catalogEntry'>,
+    telemetry: Pick<BlackboxTelemetry, 'sessionId'>,
+  ): void {
     this.identity = {
       kind: 'acquired',
       sandboxId: sandbox.sandboxId,
@@ -116,21 +119,22 @@ export class AttemptReport implements AttemptProgress {
     this.emit('artifacts', 'info', path.startsWith('..') ? output : path);
     this.closed = true;
     await this.flush();
+    const document = JSON.stringify({
+      schemaVersion: 1,
+      owner: {
+        testId: this.testInfo.testId,
+        retry: this.testInfo.retry,
+        workerIndex: this.testInfo.workerIndex,
+        parallelIndex: this.testInfo.parallelIndex,
+        outputDirectory: output,
+      },
+      identity: this.identity,
+      events: this.events,
+      omittedObservations: this.dropped,
+    });
     await this.testInfo.attach(attemptAttachment, {
       contentType: 'application/json',
-      body: JSON.stringify({
-        schemaVersion: 1,
-        owner: {
-          testId: this.testInfo.testId,
-          retry: this.testInfo.retry,
-          workerIndex: this.testInfo.workerIndex,
-          parallelIndex: this.testInfo.parallelIndex,
-          outputDirectory: output,
-        },
-        identity: this.identity,
-        events: this.events,
-        omittedObservations: this.dropped,
-      }),
+      body: document,
     });
   }
 }

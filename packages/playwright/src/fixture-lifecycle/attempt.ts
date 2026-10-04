@@ -3,11 +3,12 @@ import { dirname, isAbsolute, resolve } from 'node:path';
 import type { TestInfo } from '@playwright/test';
 import type { SandboxStopReason } from '@suites/blackbox-sandbox';
 
+import { participantExec } from '../activity/exec.js';
 import { AttemptReport } from '../reporting/attempt.js';
 import { reported } from '../reporting/events.js';
 import { reportObservations } from '../reporting/observations.js';
 import type { BlackboxAttemptRuntime, RunningBlackboxAttempt } from '../runtime/acquisition.js';
-import type { BlackboxTestOptions } from '../types.js';
+import type { BlackboxSandbox, BlackboxTestOptions } from '../types.js';
 import {
   acquireWithinTestTimeout,
   stopWithinCleanupTimeout,
@@ -18,7 +19,7 @@ interface AttemptFixtureInput extends BlackboxTestOptions {
   readonly runtime: BlackboxAttemptRuntime;
   readonly policy: BlackboxFixturePolicy;
   readonly testInfo: TestInfo;
-  readonly use: (attempt: RunningBlackboxAttempt) => Promise<void>;
+  readonly use: (attempt: RunningBlackboxAttempt, exec: BlackboxSandbox['exec']) => Promise<void>;
 }
 
 function configFilePath(testInfo: TestInfo): string {
@@ -102,7 +103,7 @@ export async function runAttemptFixture(input: AttemptFixtureInput): Promise<voi
     try {
       await report.flush();
       report.lifecycle('ready', attempt.sandbox.catalogEntry);
-      await input.use(attempt);
+      await input.use(attempt, participantExec(attempt, report));
     } finally {
       const reason = stopReason(input.testInfo.status);
       report.emit('execution', 'info', input.testInfo.status ?? 'unknown');

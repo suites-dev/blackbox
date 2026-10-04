@@ -15,6 +15,7 @@ import type {
   CollectorTraceReadResult,
 } from '@suites/blackbox-otel-collector';
 import type { SandboxContainer, SandboxTelemetryStatus } from '@suites/blackbox-sandbox';
+import type { BlackboxActivity } from './activity/activity-types.js';
 
 export type BlackboxCatalogSelection =
   { readonly kind: 'unselected' } | { readonly kind: CatalogEntryKind; readonly id: string };
@@ -37,6 +38,13 @@ export interface BlackboxSandbox {
   readonly artifactDirectory: string;
   readonly entrypoint: BlackboxEntrypoint;
   readonly containers: ReadonlyMap<string, SandboxContainer>;
+  /**
+   * Run a setup command inside a participant container and record it as a linked
+   * activity: the command gets its own trace through TRACEPARENT, and a root span
+   * carrying `blackbox.activity.id` is exported to this attempt's collector.
+   * `participant` is the catalog participant key; the command runs in its Compose service.
+   */
+  exec(participant: string, argv: readonly [string, ...string[]]): Promise<BlackboxActivity>;
 }
 
 export interface BlackboxTelemetry {
@@ -183,3 +191,5 @@ export interface BlackboxSystemTest<
     fixtures: Fixtures<T, W, TestArgs, WorkerArgs>,
   ): BlackboxSystemTest<TestArgs & T, WorkerArgs & W>;
 }
+
+export type { BlackboxActivity };

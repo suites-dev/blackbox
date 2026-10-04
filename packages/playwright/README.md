@@ -103,6 +103,8 @@ reasons. Setup failure also attempts cleanup before surfacing the error.
   URLs explicitly with `new URL(path, sandbox.entrypoint.url).href`.
 - `sandbox` exposes read-only attempt, catalog, entrypoint, container, and
   artifact identity. Lifecycle control remains fixture-owned.
+  `sandbox.exec(participant, argv)` runs a setup command inside a participant
+  container and records it as a linked activity (see [Setup commands](#setup-commands)).
 - `telemetry` exposes the attempt identity, live collector status, and raw
   retained session or trace reads.
 - `effects` exposes the attempt identity and the contract-evaluation boundary.
@@ -110,6 +112,37 @@ reasons. Setup failure also attempts cleanup before surfacing the error.
   but the Alpha does not yet project raw telemetry into normalized effects. The
   matcher therefore reports an inconclusive failure unless an evaluator is
   supplied by the runtime.
+
+## Setup commands
+
+`sandbox.exec(participant, argv)` runs `argv` in the Compose service of the
+catalog participant `participant` (its key under `participants`, as in a driver
+target), with stdin closed, and resolves when the command exits. Like
+`capsule run`, every command is an activity with its own ID and W3C trace:
+
+- the command receives that trace as `TRACEPARENT`, so instrumented processes it
+  starts join the trace;
+- a `playwright.exec` root span with `blackbox.activity.id`,
+  `blackbox.activity.purpose` (`setup`) and `blackbox.participant` is exported to
+  the attempt's collector, and `rootSpan` says whether the collector accepted it;
+- the attempt document records `activity` events with the activity ID,
+  participant, executable, argument count, trace ID and exit code. Arguments are
+  not recorded, because setup arguments often carry credentials.
+
+```ts
+suite.test('seeds a user before logging in', async ({ sandbox, telemetry }) => {
+  const seeded = await sandbox.exec('user', ['sh', '-c', './seed-user.sh']);
+  expect(seeded.exitCode, seeded.stderr).toBe(0);
+  const trace = await telemetry.readTrace(seeded.traceId);
+  // ...
+});
+```
+
+The result also carries `stdout` and `stderr` (at most 1 MiB each). A non-zero
+exit code is returned, not thrown; a command that cannot start (an undeclared
+participant, a missing executable) rejects. Commands are not routed through
+catalog drivers: `capsule run --via <driver>` driver preparation is not available
+to Playwright tests yet.
 
 ## Execution reporting
 
