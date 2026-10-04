@@ -5,7 +5,8 @@
 This is a public alpha authoring package. Its contract may change between alpha
 releases. For the end-user workflow, read
 [Drivers and command execution](../../docs/drivers.md); this page describes the
-maintainer boundary.
+maintainer boundary. Until the alpha is published, install the SDK into a project from
+source as described in [installation](../../docs/installation.md#install-the-sdk-for-project-drivers).
 
 ```text
 CLI + catalog + Capsule context

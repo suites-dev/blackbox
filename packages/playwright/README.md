@@ -5,6 +5,9 @@ fresh Sandbox selected from the project's Blackbox catalog. It composes native
 Playwright fixtures; it does not wrap the Playwright runner or share application
 state between tests.
 
+Until the alpha is published, install it and its Blackbox dependencies from source as
+described in [installation](../../docs/installation.md#install-the-playwright-package-from-source).
+
 ## Use
 
 ```ts
