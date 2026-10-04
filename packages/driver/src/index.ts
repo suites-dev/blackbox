@@ -37,7 +37,7 @@ export type {
   DriverPrepareRequest,
   DriverTarget,
 } from './model/driver-context.js';
-export type { DriverDefinition, DriverPrepare } from './model/definition.js';
+export type { DriverDefinition, DriverPrepare, NamedDriverDefinition } from './model/definition.js';
 export type {
   DriverArgvRedaction,
   DriverEnvironmentRedaction,

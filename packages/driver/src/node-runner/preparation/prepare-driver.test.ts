@@ -44,3 +44,22 @@ it('refuses an authored preparation that removes the executable', async () => {
     'argv must not be empty',
   );
 });
+
+it('lets a definition without a name serve every catalog key, passing each key to prepare()', async () => {
+  const keys: string[] = [];
+  const driver = defineDriver({
+    kind: 'project-driver',
+    prepare: (request) => {
+      keys.push(request.driverId);
+      return driverPreparation();
+    },
+  });
+  for (const driverId of ['auth', 'Travel_HTTP.v2']) {
+    await expect(
+      prepareDriver({ definition: driver, request: { ...driverPrepareRequest(), driverId } }),
+    ).resolves.toMatchObject({
+      response: { kind: 'driver-prepare-succeeded', driver: { kind: 'available', name: driverId } },
+    });
+  }
+  expect(keys).toEqual(['auth', 'Travel_HTTP.v2']);
+});

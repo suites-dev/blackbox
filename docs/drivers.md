@@ -195,6 +195,10 @@ receives the command, resolved target, execution location, and available telemet
 - a `propagation` outcome describing the context actually supplied;
 - `redaction` declarations for sensitive argument positions and environment keys.
 
+A definition with a `name` serves only the catalog driver key of the same name. To reuse one module, for example a
+generic HTTP driver, under several catalog keys, leave `name` out and reference the same `ref` from each key;
+`request.driverId` carries the selected key.
+
 Blackbox validates the preparation and runs the command. Start from the example
 [HTTP driver](../e2e/.blackbox/drivers/public-api.mjs),
 [PostgreSQL driver](../e2e/.blackbox/drivers/postgres.mjs), or

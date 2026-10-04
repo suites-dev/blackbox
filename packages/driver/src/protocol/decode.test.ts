@@ -41,3 +41,13 @@ it.each([decodeDriverPrepareRequest, decodeDriverPrepareResponse])(
     throw new Error('Expected invalid protocol input to fail');
   },
 );
+
+it('decodes a response naming a catalog key that is not a driver-name slug', () => {
+  const response = {
+    kind: 'driver-prepare-succeeded',
+    protocolVersion: 1,
+    driver: { kind: 'available', name: 'Travel_HTTP.v2' },
+    preparation: driverPreparation(),
+  };
+  expect(decodeDriverPrepareResponse(JSON.stringify(response))).toEqual(response);
+});
