@@ -1,9 +1,22 @@
 # Blackbox Playwright
 
-`@suites/blackbox-playwright` groups native Playwright tests by a catalog system
+`@suites/blackbox/playwright` groups native Playwright tests by a catalog system
 and Sandbox configuration. Every physical test attempt, including a retry, runs
 in a fresh Sandbox. Tests keep their native Playwright callbacks, hooks, steps,
 reporters, and parallel scheduling.
+
+## Install
+
+Install Playwright with the main Blackbox package and its optional physical
+Playwright adapter:
+
+```sh
+npm install --save-dev @suites/blackbox@next @suites/blackbox-playwright@next @playwright/test
+```
+
+Application code imports the adapter through the `@suites/blackbox/playwright`
+paths below. Installing `@suites/blackbox` alone does not install or load the
+optional adapter.
 
 ## Use
 
@@ -12,8 +25,7 @@ relative to that file. Test files then select a system or subsystem and declare
 one or more named Sandbox configurations.
 
 ```ts
-import { defineConfig } from '@suites/blackbox-playwright/config';
-import type { BlackboxReporterOptions } from '@suites/blackbox-playwright/reporter';
+import { defineConfig } from '@suites/blackbox/playwright/config';
 
 export default defineConfig({
   blackboxConfigFile: './blackbox.config.yaml',
@@ -22,10 +34,10 @@ export default defineConfig({
   reporter: [
     ['list', { printSteps: true }],
     [
-      '@suites/blackbox-playwright/reporter',
+      '@suites/blackbox/playwright/reporter',
       {
         sandboxLifecycle: true,
-      } satisfies BlackboxReporterOptions,
+      },
     ],
     ['html', { open: 'never' }],
   ],
@@ -33,7 +45,7 @@ export default defineConfig({
 ```
 
 ```ts
-import { expect, test } from '@suites/blackbox-playwright';
+import { expect, test } from '@suites/blackbox/playwright';
 
 test.system('subscription-system', (system) => {
   system.sandbox('default', { environment: { FEATURE_MODE: 'stable' } }, (suite) => {
