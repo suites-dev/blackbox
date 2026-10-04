@@ -54,10 +54,17 @@ the enforced gates and [CONTRIBUTING.md](CONTRIBUTING.md) for review requirement
 
 ## Triage and releases
 
-Known dependency advisories of any severity block the dependency audit. CodeQL
-security findings at medium or higher and correctness errors block merging;
-custom Semgrep findings and detected secrets also block. Scanner errors must fail
-closed. No blanket ignore files, automatic dismissals, or permanent bypasses.
+Known dependency advisories of any severity block the dependency audit. When no
+fixed upstream release exists, an exact installed artifact may use a temporary
+local-patch disposition that binds one advisory and version to a patch digest,
+semantic regression, owner, review date, expiry, and removal condition. The audit
+must fail on any other advisory, scanner error, metadata or patch drift, expiry, a
+new fixed release, or a stale disposition after the advisory clears. Adding or
+broadening a disposition requires independent maintainer approval; a green CI run
+is not that approval. CodeQL security findings at medium or higher and correctness
+errors block merging; custom Semgrep findings and detected secrets also block.
+Scanner errors must fail closed. No blanket ignore files, automatic dismissals, or
+permanent bypasses.
 
 Fix confirmed findings before release. For a false positive, record evidence,
 affected versions, an owner, a review date, and approval by another maintainer;
