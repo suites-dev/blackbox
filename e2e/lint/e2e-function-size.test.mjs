@@ -23,16 +23,25 @@ function messages(source) {
 }
 
 test('allows long direct synchronous Blackbox suite declaration callbacks', () => {
-  for (const declaration of ['test.system', 'system.sandbox', 'sandbox.describe']) {
-    assert.deepEqual(messages(`${declaration}('suite', ${callback(100)});`), []);
+  const sources = [
+    `test.system('suite', ${callback(100)});`,
+    `system.sandbox('suite', ${callback(100)});`,
+    `system.sandbox('suite', {}, ${callback(100)});`,
+    `sandbox.describe('suite', ${callback(100)});`,
+  ];
+  for (const source of sources) {
+    assert.deepEqual(messages(source), []);
   }
 });
 
 test('rejects oversized tests, steps, hooks, and helper functions', () => {
   const sources = [
     `test('journey', ${callback(81, { async: true })});`,
+    `sandbox.test('journey', ${callback(81, { async: true })});`,
     `test.step('action', ${callback(81, { async: true })});`,
     `test.beforeEach(${callback(81, { async: true })});`,
+    `sandbox.beforeEach(${callback(81, { async: true })});`,
+    `sandbox.afterEach(${callback(81, { async: true })});`,
     `function helper() {\n${'value;\n'.repeat(79)}}`,
   ];
   for (const source of sources) {
@@ -41,14 +50,18 @@ test('rejects oversized tests, steps, hooks, and helper functions', () => {
 });
 
 test('still rejects an oversized test nested inside an exempt suite callback', () => {
-  const source = `test.system('orders', () => {\ntest('journey', ${callback(81)});\n});`;
-  assert.equal(messages(source).filter(({ ruleId }) => ruleId === 'e2e/function-size').length, 1);
+  for (const declaration of ['test', 'sandbox.test']) {
+    const source = `test.system('orders', () => {\n${declaration}('journey', ${callback(81)});\n});`;
+    assert.equal(messages(source).filter(({ ruleId }) => ruleId === 'e2e/function-size').length, 1);
+  }
 });
 
 test('rejects unrelated describe, async suite, and callback in the wrong position', () => {
   const sources = [
     `test.describe('suite', ${callback(81)});`,
     `test.system('suite', ${callback(81, { async: true })});`,
+    `system.sandbox('suite', ${callback(81, { async: true })});`,
+    `sandbox.describe('suite', ${callback(81, { async: true })});`,
     `test.system(${callback(81)}, 'suite');`,
   ];
   for (const source of sources) {

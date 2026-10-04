@@ -11,6 +11,24 @@
       "import": "./dist/index.js",
       "default": "./dist/index.js"
     },
+    "./playwright": {
+      "blackbox-source": "./src/playwright/index.ts",
+      "types": "./dist/playwright/index.d.ts",
+      "import": "./dist/playwright/index.js",
+      "default": "./dist/playwright/index.js"
+    },
+    "./playwright/config": {
+      "blackbox-source": "./src/playwright/config.ts",
+      "types": "./dist/playwright/config.d.ts",
+      "import": "./dist/playwright/config.js",
+      "default": "./dist/playwright/config.js"
+    },
+    "./playwright/reporter": {
+      "blackbox-source": "./src/playwright/reporter.ts",
+      "types": "./dist/playwright/reporter.d.ts",
+      "import": "./dist/playwright/reporter.js",
+      "default": "./dist/playwright/reporter.js"
+    },
     "./module": {
       "blackbox-source": "./src/module.ts",
       "types": "./dist/module.d.ts",
@@ -51,7 +69,16 @@
     "@suites/blackbox-discovery": "workspace:*",
     "@suites/blackbox-skills": "workspace:*"
   },
+  "peerDependencies": {
+    "@suites/blackbox-playwright": "workspace:*"
+  },
+  "peerDependenciesMeta": {
+    "@suites/blackbox-playwright": {
+      "optional": true
+    }
+  },
   "devDependencies": {
+    "@suites/blackbox-playwright": "workspace:*",
     "@types/node": "catalog:",
     "rimraf": "catalog:",
     "typescript": "catalog:",

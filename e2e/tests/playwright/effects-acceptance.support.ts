@@ -1,4 +1,4 @@
-import { expect } from '@suites/blackbox-playwright';
+import { expect } from '@suites/blackbox/playwright';
 
 export async function json<T>(
   response: { status(): number; json(): Promise<unknown> },

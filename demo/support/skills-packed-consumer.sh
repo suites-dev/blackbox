@@ -43,9 +43,9 @@ run_setup() {
 }
 
 cd "$REPO_ROOT"
-for package in "${PACKAGES[@]}"; do
-  run_setup pnpm --dir "packages/$package" run build
-done
+# The optional Playwright forwarding exports need adapter declarations at build time;
+# PACKAGES still limits the packed consumer to the core-only archive set.
+run_setup pnpm --filter '@suites/blackbox...' run build
 
 jq '{name: "skills-packed-consumer", private: true, type: "module",
   packageManager: .packageManager, dependencies: {}, pnpm: {overrides: {}}}' \
