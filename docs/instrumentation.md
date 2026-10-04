@@ -44,7 +44,8 @@ any application containers.
 
 ## Connect a participant to an activation
 
-Declare an activation at the root of `blackbox.config.yaml`:
+Declare an activation at the root of `blackbox.config.yaml`. The root `activations` key is optional: a catalog with no
+instrumented participant can leave it out.
 
 ```yaml
 activations:
