@@ -13,7 +13,6 @@ one or more named Sandbox configurations.
 
 ```ts
 import { defineConfig } from '@suites/blackbox-playwright/config';
-import type { BlackboxReporterOptions } from '@suites/blackbox-playwright/reporter';
 
 export default defineConfig({
   blackboxConfigFile: './blackbox.config.yaml',
@@ -21,12 +20,7 @@ export default defineConfig({
   fullyParallel: true,
   reporter: [
     ['list', { printSteps: true }],
-    [
-      '@suites/blackbox-playwright/reporter',
-      {
-        sandboxLifecycle: true,
-      } satisfies BlackboxReporterOptions,
-    ],
+    ['@suites/blackbox-playwright/reporter'],
     ['html', { open: 'never' }],
   ],
 });
@@ -201,34 +195,33 @@ local packed candidates establish only candidate behavior.
 ## Execution reporting
 
 Playwright's native reporter owns test progress, steps, colors, errors, and the
-final summary. The example above has this native title hierarchy:
+final summary. The fixture emits Sandbox setup and cleanup through Playwright's
+public `test.step` API, so lifecycle duration and failure appear with the same
+attempt as the test's business steps. The example above has this native title
+hierarchy:
 
 ```text
 system "subscription-system"
 └─ sandbox "default"
    └─ health
       └─ reports ready
-         └─ When health is requested
+         ├─ Before Hooks
+         │  └─ Fixture "Blackbox sandbox"
+         │     └─ Start sandbox
+         ├─ When health is requested
+         └─ After Hooks
+            └─ Fixture "Blackbox sandbox"
+               └─ Clean up sandbox
 ```
 
 The grouping does not change the existing `blackbox-progress`,
-`blackbox-attempt`, or `blackbox-diagnostics` attachments. Blackbox also adds two
-short messages through the test's captured stdout, so Playwright associates them
-with the right parallel attempt:
-
-```text
-Blackbox: sandbox ready for system "subscription-system"
-... native Playwright test and step output ...
-Blackbox: sandbox cleaned up for system "subscription-system"
-```
-
-Ready means acquisition, instrumentation, and application readiness have passed.
-Cleanup failure prints `sandbox cleanup failed` instead of claiming success.
-Set `sandboxLifecycle: false` to suppress these messages while retaining diagnostics.
-The option defaults to `true` when the Blackbox reporter is configured; without
-that reporter, fixtures do not print lifecycle messages. Use any native reporter
-alongside Blackbox. If no terminal reporter is configured, Playwright adds its
-default one.
+`blackbox-attempt`, or `blackbox-diagnostics` attachments. `Start sandbox`
+completes only after acquisition, instrumentation, activation, and application
+readiness pass. `Clean up sandbox` covers fixture-owned teardown. Playwright
+records each step's duration and associates any setup or cleanup error with that
+step. Native lifecycle reporting does not depend on the Blackbox reporter. Use
+any native reporter alongside Blackbox; if no terminal reporter is configured,
+Playwright adds its default one.
 
 Fixtures attach sanitized `blackbox-progress` events and a final
 `blackbox-attempt` JSON document to Playwright results, including failures.

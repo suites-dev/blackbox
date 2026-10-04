@@ -136,6 +136,8 @@ export async function boundary(consumerRootValue) {
     '.blackbox/instrumentation/instrumentation.js',
     '.blackbox/instrumentation/package.json',
     'playwright.config.ts',
+    'reporters/blackbox-evidence.ts',
+    'reporters/native-lifecycle.ts',
     'sut/effects-acceptance/Dockerfile',
     'sut/effects-acceptance/app.cjs',
     'sut/effects-acceptance/init.sql',

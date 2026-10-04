@@ -120,6 +120,6 @@ printf '%s\n' \
   '[run-demo-pw] Source: e2e/tests/playwright/subscription-system.spec.ts' \
   '[run-demo-pw] Source: e2e/tests/playwright/effects-acceptance.spec.ts' \
   '[run-demo-pw] Runner: playwright test --config playwright.config.ts (inside the installed consumer)'
-echo '[run-demo-pw] Each test starts its own sandbox. Native steps and ready/cleanup messages appear live.'
+echo '[run-demo-pw] Each test starts its own sandbox. Native Start sandbox and Clean up sandbox steps appear live.'
 cd "$RUN_ROOT/project"
 BLACKBOX_TEST_REGISTRY="$REGISTRY" pnpm test:e2e:playwright

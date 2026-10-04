@@ -19,12 +19,7 @@ export default defineConfig({
     ...(process.env.BLACKBOX_TEST_NATIVE_REPORTER === 'auto'
       ? []
       : [['list', { printSteps: true }] as const]),
-    [
-      join(import.meta.dirname, '../../reporter.ts'),
-      {
-        sandboxLifecycle: process.env.BLACKBOX_TEST_LIFECYCLE === 'off' ? false : undefined,
-      },
-    ],
+    [join(import.meta.dirname, '../../reporter.ts')],
     [join(import.meta.dirname, 'progress-observer.ts')],
     ['json', { outputFile: join(output, 'results.json') }],
   ],

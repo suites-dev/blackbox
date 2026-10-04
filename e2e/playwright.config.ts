@@ -1,7 +1,6 @@
 import { join } from 'node:path';
 
 import { defineConfig } from '@suites/blackbox-playwright/config';
-import type { BlackboxReporterOptions } from '@suites/blackbox-playwright/reporter';
 
 function requiredEnvironment(name: string): string {
   const value = process.env[name];
@@ -28,10 +27,10 @@ export default defineConfig({
   outputDir: join(resultsRoot, 'output'),
   reporter: [
     ['list', { printSteps: true }],
-    [
-      '@suites/blackbox-playwright/reporter',
-      { sandboxLifecycle: true } satisfies BlackboxReporterOptions,
-    ],
+    // Adds retained, readable Blackbox diagnostics.
+    ['@suites/blackbox-playwright/reporter'],
+    // Maintainer-only recorder for Blackbox's 18-test acceptance journey;
+    // ordinary consumers do not need to add it.
     [join(import.meta.dirname, 'reporters', 'blackbox-evidence.ts')],
     ['junit', { outputFile: join(resultsRoot, 'junit.xml') }],
     ['json', { outputFile: join(resultsRoot, 'results.json') }],

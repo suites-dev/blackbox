@@ -10,6 +10,8 @@ import type {
   TestStep,
 } from '@playwright/test/reporter';
 
+import { NativeLifecycleObserver, type NativeLifecycleStep } from './native-lifecycle.js';
+
 interface Event {
   readonly phase: string;
   readonly status: string;
@@ -29,7 +31,7 @@ function entrypointFile(test: TestCase): string {
 }
 
 function isEffectsSource(file: string): boolean {
-  return /[/\\]effects-acceptance(?:\.spec|-(?:browser|database|messaging))\.ts$/u.test(file);
+  return /[/\\]effects-acceptance\.spec\.ts$/u.test(file);
 }
 
 /** Acceptance oracle: observe worker events before the test result is finalized. */
@@ -48,12 +50,14 @@ export default class BlackboxEvidence implements Reporter {
       parallelIndex: number;
       sandboxId: string | null;
       events: Event[];
+      lifecycleSteps: NativeLifecycleStep[];
       businessSteps: number;
       nestedSteps: number;
       effectsAssertions: number;
       errors: string[];
     }
   >();
+  private readonly lifecycle = new NativeLifecycleObserver();
 
   printsToStdio(): boolean {
     return false;
@@ -72,19 +76,23 @@ export default class BlackboxEvidence implements Reporter {
       parallelIndex: result.parallelIndex,
       sandboxId: null,
       events: [],
+      lifecycleSteps: [],
       businessSteps: 0,
       nestedSteps: 0,
       effectsAssertions: 0,
       errors: [],
     });
+    this.lifecycle.beginAttempt(result);
   }
 
   onStepBegin(_test: TestCase, result: TestResult, step: TestStep): void {
     const attempt = this.attempts.get(result);
-    if (attempt === undefined || step.category !== 'test.step') {
+    if (attempt === undefined) {
       return;
     }
-    attempt.businessSteps++;
+    if (this.lifecycle.beginStep(result, step, attempt) !== 'business') {
+      return;
+    }
     if (step.parent !== undefined && step.parent.category === 'test.step') {
       attempt.nestedSteps++;
     }
@@ -100,6 +108,7 @@ export default class BlackboxEvidence implements Reporter {
     if (attempt === undefined) {
       return;
     }
+    this.lifecycle.endStep(result, step);
     for (const attachment of step.attachments) {
       if (attachment.name !== 'blackbox-progress' || attachment.body === undefined) {
         continue;
@@ -126,6 +135,7 @@ export default class BlackboxEvidence implements Reporter {
     if (attempt === undefined) {
       return;
     }
+    this.lifecycle.validate(attempt);
     for (const phase of [
       'catalog',
       'acquisition',

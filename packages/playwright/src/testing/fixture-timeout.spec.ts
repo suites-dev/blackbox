@@ -8,7 +8,8 @@ import type { BlackboxAttemptRuntime } from '../runtime/acquisition.js';
 
 const runtime = {
   async start(input) {
-    if (input.selection.kind === 'unselected') {
+    const selection = input.selection;
+    if (selection.kind === 'unselected') {
       throw new Error('test fixture did not select a catalog entry');
     }
     await delay(100);
@@ -17,8 +18,8 @@ const runtime = {
         sandboxId: 'timeout-sandbox',
         executionId: 'timeout-execution',
         catalogEntry: {
-          id: input.selection.id,
-          kind: input.selection.kind,
+          id: selection.id,
+          kind: selection.kind,
         },
         projectName: 'timeout-project',
         artifactDirectory: input.artifactDirectory,
@@ -43,7 +44,7 @@ const runtime = {
       },
       activities: createUnavailableBlackboxActivities(),
       stop: (reason) => {
-        process.stdout.write(`BLACKBOX_PLAYWRIGHT_TIMEOUT_STOP ${reason}\n`);
+        process.stdout.write(`BLACKBOX_PLAYWRIGHT_TIMEOUT_STOP ${selection.id} ${reason}\n`);
         return Promise.resolve();
       },
     };
@@ -69,6 +70,7 @@ const verySlowStopRuntime = {
     return {
       ...attempt,
       async stop() {
+        process.stdout.write('BLACKBOX_PLAYWRIGHT_SLOW_STOP_INVOKED\n');
         await delay(500);
       },
     };
@@ -79,12 +81,56 @@ const boundedStopTest = createBlackboxTest(verySlowStopRuntime, {
   sandboxCleanupTimeoutMs: 30,
 });
 
+const fastRuntime = {
+  start(input) {
+    if (input.selection.kind === 'unselected') {
+      return Promise.reject(new Error('test fixture did not select a catalog entry'));
+    }
+    return Promise.resolve({
+      sandbox: {
+        sandboxId: 'body-timeout-sandbox',
+        executionId: 'body-timeout-execution',
+        catalogEntry: input.selection,
+        projectName: 'body-timeout-project',
+        artifactDirectory: input.artifactDirectory,
+        entrypoint: {
+          url: 'http://127.0.0.1:1',
+          host: '127.0.0.1',
+          port: 1,
+          protocol: 'http' as const,
+        },
+        containers: new Map(),
+      },
+      telemetry: {
+        sessionId: 'body-timeout-session',
+        executionId: 'body-timeout-execution',
+        inspect: () => Promise.resolve({ kind: 'disabled' as const }),
+        read: () => Promise.reject(new Error('not used by this fixture')),
+        readTrace: () => Promise.reject(new Error('not used by this fixture')),
+      },
+      effects: {
+        sessionId: 'body-timeout-session',
+        executionId: 'body-timeout-execution',
+      },
+      activities: createUnavailableBlackboxActivities(),
+      stop: (reason) => {
+        process.stdout.write(`BLACKBOX_PLAYWRIGHT_BODY_TIMEOUT_STOP ${reason}\n`);
+        return Promise.resolve();
+      },
+    });
+  },
+} satisfies BlackboxAttemptRuntime;
+
+const bodyTimeoutTest = createBlackboxTest(fastRuntime, {
+  sandboxCleanupTimeoutMs: 30,
+});
+
 test.describe('fixture acquisition timeout', () => {
   test.use({ catalogEntry: { kind: 'system', id: 'orders' } });
   test.setTimeout(20);
 
   test('times out before a slow acquisition reaches the test body', () => {
-    playwrightExpect(true).toBe(true);
+    process.stdout.write('BLACKBOX_PLAYWRIGHT_ACQUISITION_BODY_ENTERED\n');
   });
 });
 
@@ -93,7 +139,7 @@ boundedTest.describe('bounded fixture acquisition cleanup', () => {
   boundedTest.setTimeout(20);
 
   boundedTest('reports when late acquisition cleanup does not settle', () => {
-    playwrightExpect(true).toBe(true);
+    process.stdout.write('BLACKBOX_PLAYWRIGHT_LATE_BODY_ENTERED\n');
   });
 });
 
@@ -103,5 +149,15 @@ boundedStopTest.describe('bounded fixture teardown', () => {
 
   boundedStopTest('reports when sandbox teardown does not settle', () => {
     playwrightExpect(true).toBe(true);
+  });
+});
+
+bodyTimeoutTest.describe('timed out test body cleanup', () => {
+  bodyTimeoutTest.use({ catalogEntry: { kind: 'system', id: 'body-timeout' } });
+  bodyTimeoutTest.setTimeout(50);
+
+  bodyTimeoutTest('completes its native cleanup step after the body times out', async () => {
+    process.stdout.write('BLACKBOX_PLAYWRIGHT_BODY_ENTERED\n');
+    await delay(200);
   });
 });

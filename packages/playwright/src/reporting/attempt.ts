@@ -13,7 +13,6 @@ import {
   type AttemptProgress,
 } from './events.js';
 import { reportTextResult } from './text.js';
-import { sandboxLifecycleEnabled } from './options.js';
 
 /** Attachments use Playwright's worker transport and remain available to other reporters. */
 export class AttemptReport implements AttemptProgress, EffectAssertionReporter {
@@ -52,19 +51,6 @@ export class AttemptReport implements AttemptProgress, EffectAssertionReporter {
       if (value.length > 0) {
         this.secrets.add(value);
       }
-    }
-  }
-
-  lifecycle(
-    status: 'ready' | 'cleaned up' | 'cleanup failed',
-    catalog: BlackboxSandbox['catalogEntry'],
-  ): void {
-    if (sandboxLifecycleEnabled(this.testInfo.config)) {
-      // Worker stdout is attributed to this attempt by Playwright and rendered
-      // by its native reporter, including cursor handling and parallel output.
-      process.stdout.write(
-        `${this.sanitize(`Blackbox: sandbox ${status} for ${catalog.kind} ${JSON.stringify(catalog.id)}`)}\n`,
-      );
     }
   }
 

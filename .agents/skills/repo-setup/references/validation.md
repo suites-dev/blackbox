@@ -88,6 +88,10 @@ The E2E config uses fully parallel tests with two workers. Its live evidence rec
 acquisition start/completion times on the reporter's monotonic clock; acceptance
 requires overlapping acquisition on distinct workers within a file and across files.
 Worker counts alone do not establish concurrent sandbox execution.
+The maintainer-only live recorder also observes the native `Start sandbox` and
+`Clean up sandbox` steps for every physical attempt. Acceptance requires one
+successful, ordered pair with native start times, durations, errors, and reporter
+callback chronology. These lifecycle steps do not count as business steps.
 Keep consumer journeys explicit in their `.spec.ts` files. E2E inherits the
 repository ESLint configuration. Playwright spec files replace the general file
 and function line limits with an 80 code-token-line executable-function limit.
@@ -100,10 +104,10 @@ Run `pnpm --dir e2e run test:lint` to verify the local rule and
 `pnpm --dir e2e run lint` for consumer test/config/reporter/lint sources. Keep
 both separate from the repository's `pnpm lint`; CI runs all three as separate
 named steps in the lint job.
-The console uses Playwright's native list reporter. Verify ready/cleanup messages
-in each attempt's captured stdout, no streamed container polling, and retained
-`blackbox-diagnostics` attachments. Lifecycle messages can be disabled using the
-Blackbox reporter's `sandboxLifecycle` option without suppressing test stdout.
+The console uses Playwright's native list reporter with step printing. Verify the
+native `Start sandbox` and `Clean up sandbox` steps, no legacy Blackbox lifecycle
+stdout, no streamed container polling, and retained `blackbox-diagnostics`
+attachments. User and application stdout remains ordinary Playwright output.
 
 For documentation-only changes, check formatting, relative links, and operational
 commands against source/help. Do not run root `pnpm format` as a targeted formatter:

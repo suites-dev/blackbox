@@ -1,4 +1,4 @@
-import { access } from 'node:fs/promises';
+import { access, writeFile } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
 import { join } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
@@ -78,7 +78,9 @@ export const runtime = {
         `Config was not resolved relative to playwright.config.ts: ${input.configFile}`,
       );
     }
-    input.progress.emit('acquisition', 'started', 'waiting for reporter handshake');
+    await waitForReporter('native-start-step-observed');
+    await writeFile(join(process.cwd(), 'runtime-observed-native-step'), 'observed');
+    input.progress.emit('acquisition', 'started', 'waiting for reporter attachment handshake');
     input.progress.emit('container', 'info', 'api\u001b[2J: starting; token=synthetic-secret');
     await waitForReporter();
     if (input.selection.kind !== 'unselected' && input.selection.id === 'setup-failure') {
