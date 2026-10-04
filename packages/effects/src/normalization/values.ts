@@ -24,7 +24,7 @@ export function identifier(value: unknown, length: number): string {
   return value.toLowerCase();
 }
 
-/** Canonical record comparison, retaining all raw span fields and array ordering. */
+/** Canonical comparison of known OTLP fields, preserving array ordering. */
 export function stable(value: unknown): string {
   if (value === undefined) {
     return 'undefined';

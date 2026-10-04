@@ -81,7 +81,7 @@ test('malformed operation evidence is rejected instead of becoming a passing gra
   const malformed = structuredClone(observation);
   malformed.resourceSpans[0].scopeSpans[0].spans[0].attributes[1].value = { intValue: 42 };
   assert.throws(() => project([malformed]), TypeError);
-  assert.throws(() => project([{}]), TypeError);
+  assert.throws(() => project([{ resourceSpans: {} }]), TypeError);
 });
 
 test('consumer mutation cannot change the compiled contract', () => {
