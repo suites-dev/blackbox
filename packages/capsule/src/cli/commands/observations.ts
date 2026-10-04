@@ -28,6 +28,7 @@ export default class Observations extends ShowCommand {
       json: flags.json,
       spans: false,
       timeline: false,
+      full: false,
     });
   }
 }

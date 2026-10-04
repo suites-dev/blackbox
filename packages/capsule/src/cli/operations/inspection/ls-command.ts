@@ -4,6 +4,10 @@ import { BlackboxCommand } from '../../cli/base-command.js';
 import { EXIT_CODES } from '../../cli/exit-codes.js';
 import { formatColumns } from '../../cli/output.js';
 import { InvocationContext } from '../../context/invocation.js';
+import {
+  participantWarnings,
+  type ParticipantWarnings,
+} from '../lifecycle/participant-warnings.js';
 
 const ACTIVE_STATES = new Set<CapsuleSessionState>([
   'admitted',
@@ -47,6 +51,11 @@ export function lsLines(input: {
   return [`  ${head}`, ...marked];
 }
 
+/** Participant warnings for a running capsule; other states are not checked. */
+async function runningWarnings(row: CapsuleRow): Promise<ParticipantWarnings> {
+  return row.state === 'running' ? participantWarnings(row.capsule) : { lines: [], exited: [] };
+}
+
 /** `ls` and its `history` alias. Never needs a current capsule. */
 export abstract class LsCommand extends BlackboxCommand {
   protected async executeLs(input: { readonly all: boolean; readonly json: boolean }) {
@@ -59,7 +68,7 @@ export abstract class LsCommand extends BlackboxCommand {
     const rows = await Promise.all(
       summaries.map(async (summary) => {
         const activities = await index.activities(summary.capsule);
-        return {
+        const row = {
           capsule: summary.capsule,
           system: summary.system,
           state: summary.state,
@@ -67,6 +76,7 @@ export abstract class LsCommand extends BlackboxCommand {
           activities: activities === null ? null : activities.length,
           title: summary.title,
         } satisfies CapsuleRow;
+        return { row, warnings: await runningWarnings(row) };
       }),
     );
     if (input.json) {
@@ -74,11 +84,18 @@ export abstract class LsCommand extends BlackboxCommand {
         kind: 'capsule-list',
         scope: input.all ? 'all' : 'active',
         current,
-        capsules: rows,
+        capsules: rows.map(({ row, warnings }) =>
+          warnings.exited.length === 0 ? row : { ...row, exitedParticipants: warnings.exited },
+        ),
         next: [],
       });
     } else {
-      this.human(lsLines({ rows, current, all: input.all }));
+      this.human([
+        ...lsLines({ rows: rows.map(({ row }) => row), current, all: input.all }),
+        ...rows.flatMap(({ row, warnings }) =>
+          warnings.lines.map((line) => `${line} in capsule ${row.capsule}`),
+        ),
+      ]);
     }
     this.finish(EXIT_CODES.success);
   }

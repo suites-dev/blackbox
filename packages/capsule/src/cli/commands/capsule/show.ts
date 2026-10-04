@@ -13,6 +13,10 @@ export default class Show extends ShowCommand {
   static override flags = {
     session: Flags.string({ description: 'Search only this capsule' }),
     spans: Flags.boolean({ default: false, description: 'For a trace: one row per span' }),
+    full: Flags.boolean({
+      default: false,
+      description: 'For an activity: print every span instead of folding a large tree',
+    }),
     timeline: Flags.boolean({
       default: false,
       description: 'For a capsule: activities and traces in time order',
@@ -28,6 +32,7 @@ export default class Show extends ShowCommand {
       json: flags.json,
       spans: flags.spans,
       timeline: flags.timeline,
+      full: flags.full,
     });
   }
 }

@@ -25,6 +25,7 @@ it('reports unavailable inventory until inspection establishes an explicit empty
     inspect: ({ signal }) => inspectComposeStartup({ docker, projectName: 'owned', signal }),
     now: () => 0,
     intervalMs: 1,
+    awaiting: [],
   });
   try {
     await vi.waitFor(() => {

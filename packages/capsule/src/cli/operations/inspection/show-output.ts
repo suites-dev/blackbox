@@ -1,5 +1,6 @@
 import {
   isoToUnixNano,
+  spanFailure,
   spanResult,
   spanTitle,
   walkSpanTree,
@@ -28,7 +29,7 @@ function spanDuration(start: string | null, end: string | null): string {
   return showDuration(Number((BigInt(end) - BigInt(start)) / 1_000n) / 1000);
 }
 
-/** `SPAN PARENT SERVICE KIND TITLE RESULT DURATION` rows in tree order. */
+/** `SPAN PARENT SERVICE KIND TITLE RESULT DURATION FAILURE` rows in tree order. */
 function spanRows(investigation: CapsuleInvestigation, traceId: string): readonly string[] {
   const rows = walkSpanTree(investigation.tree(traceId).roots).map(({ node }) => [
     node.span.spanId,
@@ -38,9 +39,10 @@ function spanRows(investigation: CapsuleInvestigation, traceId: string): readonl
     spanTitle(node.span),
     spanResult(node.span),
     spanDuration(node.span.startTimeUnixNano, node.span.endTimeUnixNano),
+    spanFailure(node.span),
   ]);
   return formatColumns([
-    ['SPAN', 'PARENT', 'SERVICE', 'KIND', 'TITLE', 'RESULT', 'DURATION'],
+    ['SPAN', 'PARENT', 'SERVICE', 'KIND', 'TITLE', 'RESULT', 'DURATION', 'FAILURE'],
     ...rows,
   ]);
 }

@@ -3,7 +3,12 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import test from 'node:test';
 import { renderCapsuleHtml, reportCapsule } from '@suites/blackbox-capsule';
-import { commandFixture, removeFixture, runCli } from './capsule-command.fixture.js';
+import {
+  commandFixture,
+  removeFixture,
+  runCli,
+  withoutSnapshotTime,
+} from './capsule-command.fixture.js';
 import { runningReportCli } from '../../reporting/serve.fixture.js';
 
 void test('served registry selects an exact session, shares static renderer, and shuts down', async () => {
@@ -28,7 +33,10 @@ void test('served registry selects an exact session, shares static renderer, and
       sessionId: fixture.sessionId,
     });
     assert.equal(capsuleReport.kind, 'capsule-report');
-    assert.equal(html, renderCapsuleHtml({ report: capsuleReport.document }));
+    assert.equal(
+      withoutSnapshotTime(html),
+      withoutSnapshotTime(renderCapsuleHtml({ report: capsuleReport.document })),
+    );
     const htmlPath = join(fixture.directory, 'snapshot.html');
     const exported = await runCli({
       directory: fixture.directory,
@@ -45,7 +53,7 @@ void test('served registry selects an exact session, shares static renderer, and
       ],
     });
     assert.equal(exported.status, 0, exported.stderr);
-    assert.equal(html, await readFile(htmlPath, 'utf8'));
+    assert.equal(withoutSnapshotTime(html), withoutSnapshotTime(await readFile(htmlPath, 'utf8')));
     assert.equal(await readFile(path, 'utf8'), before);
   } finally {
     assert.equal(await child.stop(), 0);

@@ -80,6 +80,7 @@ async function persistActivity(
 async function exportRoot(
   context: ExecutionContext,
   result: TelemetryScopeResult,
+  endedAt: string,
 ): Promise<TelemetryScopeResult> {
   const { input } = context;
   const exported: RootSpanExportResult = await exportActivityRootSpan({
@@ -90,10 +91,20 @@ async function exportRoot(
     purpose: input.request.purpose,
     scope: context.scope.active,
     result,
+    endedAt,
   });
   return exported.kind === 'root-span-exported'
     ? result
     : { kind: 'telemetry-scope-failed', message: exported.message };
+}
+
+/**
+ * Exports the activity's root span and completes its telemetry scope with one
+ * end time, so the span's end and the recorded `telemetry.endedAt` agree.
+ */
+async function completeTelemetry(context: ExecutionContext, result: TelemetryScopeResult) {
+  const endedAt = new Date().toISOString();
+  return { ...context.scope.complete(await exportRoot(context, result, endedAt)), endedAt };
 }
 
 async function recordFailedExecution(
@@ -108,7 +119,7 @@ async function recordFailedExecution(
   await persistActivity(context, {
     ...context.admitted,
     kind: 'failed',
-    telemetry: context.scope.complete(await exportRoot(context, result)),
+    telemetry: await completeTelemetry(context, result),
     error: failure,
     completedAt: new Date().toISOString(),
   });
@@ -123,7 +134,7 @@ async function recordCompletedExecution(
     ...context.admitted,
     argv: completedActivityArgv(context, outcome),
     kind: 'completed',
-    telemetry: context.scope.complete(await exportRoot(context, result)),
+    telemetry: await completeTelemetry(context, result),
     outcome,
     completedAt: new Date().toISOString(),
   });

@@ -7,6 +7,7 @@ import { nextSteps } from '../../cli/next-steps.js';
 import { capsulePackageFailure } from '../../capsule/capsule-output.js';
 import { clearCurrentCapsuleIf, type ClearResult } from '../../context/current-capsule.js';
 import { InvocationContext } from '../../context/invocation.js';
+import { participantExitText, participantWarnings } from './participant-warnings.js';
 import { resolveId } from '../../context/resolver.js';
 
 export interface DownRequest {
@@ -30,6 +31,8 @@ export abstract class DownCommand extends BlackboxCommand {
   protected async executeDown(request: DownRequest): Promise<void> {
     const context = new InvocationContext(process.cwd());
     const capsule = await this.target(context, request);
+    // Checked before the stop removes the containers; recorded in the capsule's progress.
+    const participants = await participantWarnings(capsule);
     const result = await stopCapsule({
       projectDirectory: process.cwd(),
       sessionId: capsule,
@@ -49,11 +52,24 @@ export abstract class DownCommand extends BlackboxCommand {
       }),
     );
     const next = [nextSteps.report(capsule)];
+    const exitWarnings = participants.exited.map((exit) =>
+      cliErrorDocument({
+        code: 'participant-exited',
+        message: `${participantExitText(exit)} before the capsule was stopped`,
+        details: [],
+        candidates: [],
+        next: [],
+      }),
+    );
     if (request.json) {
       this.json({
         ...result,
         capsule,
-        warnings: cleared.kind === 'failed' ? [cliErrorDocument(cleared.warning)] : [],
+        warnings: [
+          ...exitWarnings,
+          ...(cleared.kind === 'failed' ? [cliErrorDocument(cleared.warning)] : []),
+        ],
+        ...(participants.exited.length === 0 ? {} : { exitedParticipants: participants.exited }),
         next,
       });
     } else {
@@ -61,6 +77,7 @@ export abstract class DownCommand extends BlackboxCommand {
         result.alreadyStopped
           ? `capsule ${capsule} was already stopped · evidence kept`
           : `capsule ${capsule} stopped · evidence kept`,
+        ...participants.lines.map((line) => `${line} before the capsule was stopped`),
         ...(cleared.kind === 'ok' && cleared.outcome === 'cleared'
           ? ['current capsule: none']
           : []),

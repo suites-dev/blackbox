@@ -8,7 +8,12 @@ import { createRedactionContext, redactText } from '../../../reporting/redaction
 
 import { formatColumns } from '../../cli/output.js';
 import { nextSteps } from '../../cli/next-steps.js';
-import { offsetMs, rootSummary, type CapsuleInvestigation } from './investigation-model.js';
+import {
+  offsetMs,
+  rootSummary,
+  type CapsuleInvestigation,
+  type TraceTree,
+} from './investigation-model.js';
 import {
   limitationsOf,
   NO_WAIT,
@@ -21,12 +26,18 @@ import {
   contextText,
   field,
   processText,
+  serviceCounts,
   showDuration,
   statusText,
+  summarizedTreeLines,
+  SUMMARY_SPAN_LIMIT,
   traceShort,
   treeLines,
   viaText,
 } from './show-format.js';
+
+/** `summary` folds a large tree (identical sibling subtrees once); `full` prints every span. */
+export type TreeDetail = 'summary' | 'full';
 
 const MAX_CAUSALITY_WARNINGS = 3;
 
@@ -106,7 +117,25 @@ export function uncausedLines(input: ActivityViewInput, capsule: string): readon
   ];
 }
 
-function observedLines(input: ActivityViewInput, observation: ActivityObservation) {
+/** The SPANS block: every span, or above the limit a per-service count and a folded tree. */
+function spanLines(roots: TraceTree['roots'], spans: number, detail: TreeDetail) {
+  if (detail === 'full' || spans <= SUMMARY_SPAN_LIMIT) {
+    return ['  SPANS', ...treeLines(roots).map((line) => `    ${line}`)];
+  }
+  const folded = summarizedTreeLines(roots);
+  return [
+    field('services', serviceCounts(roots)),
+    `  SPANS (${String(spans)} spans in ${String(folded.length)} lines: identical sibling subtrees shown once, ×N)`,
+    ...folded.map((line) => `    ${line}`),
+    '  --full prints every span',
+  ];
+}
+
+function observedLines(
+  input: ActivityViewInput,
+  observation: ActivityObservation,
+  detail: TreeDetail,
+) {
   const status = statusText(input.investigation.data.completeness);
   if (observation.spans === 0) {
     // "yet" only while more telemetry can still arrive.
@@ -122,8 +151,7 @@ function observedLines(input: ActivityViewInput, observation: ActivityObservatio
       'observed',
       `${String(observation.traces.length)} traces · ${String(observation.services.length)} services · ${String(observation.spans)} spans · ${status}`,
     ),
-    '  SPANS',
-    ...treeLines(tree.roots).map((line) => `    ${line}`),
+    ...spanLines(tree.roots, tree.spanCount, detail),
   ];
 }
 
@@ -132,7 +160,11 @@ function observedLines(input: ActivityViewInput, observation: ActivityObservatio
  * credentials); the activity is named by its short ID and its name only.
  * `run` passes how long it waited; `show` never waits.
  */
-export function activityView(input: ActivityViewInput, wait: TelemetryWait = NO_WAIT) {
+export function activityView(
+  input: ActivityViewInput,
+  wait: TelemetryWait = NO_WAIT,
+  detail: TreeDetail = 'summary',
+) {
   const { activity, investigation } = input;
   const capsule = investigation.data.capsule;
   const name = activity.name.kind === 'provided' ? `  ${activity.name.value}` : '';
@@ -162,7 +194,7 @@ export function activityView(input: ActivityViewInput, wait: TelemetryWait = NO_
   const lines = [
     ...head,
     ...(context === null ? [] : [field('context', contextText(context, driverOf(activity)))]),
-    ...observedLines(input, observation),
+    ...observedLines(input, observation, detail),
     ...uncausedLines(input, capsule.capsule),
   ];
   return {
