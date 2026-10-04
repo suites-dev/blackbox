@@ -1,7 +1,6 @@
 import { join } from 'node:path';
 
-import { defineConfig } from '@suites/blackbox-playwright/config';
-import type { BlackboxReporterOptions } from '@suites/blackbox-playwright/reporter';
+import { defineConfig } from '@suites/blackbox/playwright/config';
 
 function requiredEnvironment(name: string): string {
   const value = process.env[name];
@@ -26,10 +25,7 @@ export default defineConfig({
   outputDir: join(resultsRoot, 'output'),
   reporter: [
     ['list', { printSteps: true }],
-    [
-      '@suites/blackbox-playwright/reporter',
-      { sandboxLifecycle: true } satisfies BlackboxReporterOptions,
-    ],
+    ['@suites/blackbox/playwright/reporter', { sandboxLifecycle: true }],
     [join(import.meta.dirname, 'reporters', 'blackbox-evidence.ts')],
     ['junit', { outputFile: join(resultsRoot, 'junit.xml') }],
     ['json', { outputFile: join(resultsRoot, 'results.json') }],

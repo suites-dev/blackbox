@@ -34,3 +34,5 @@ export type {
   BlackboxTestFixtures,
   BlackboxTestOptions,
 } from './types.js';
+export type { EffectContractBuilder } from './effects/contract.js';
+export type { BlackboxEffects, BlackboxSandbox, BlackboxTelemetry } from './types.js';

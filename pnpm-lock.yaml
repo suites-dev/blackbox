@@ -184,6 +184,9 @@ importers:
         specifier: workspace:*
         version: link:../skills
     devDependencies:
+      '@suites/blackbox-playwright':
+        specifier: workspace:*
+        version: link:../playwright
       '@types/node':
         specifier: 'catalog:'
         version: 26.6.3

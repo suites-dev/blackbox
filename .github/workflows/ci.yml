@@ -76,6 +76,12 @@ jobs:
         timeout-minutes: 15
         run: pnpm run lint
 
+      - name: Check E2E lint rules
+        run: pnpm --dir e2e run test:lint
+
+      - name: Lint E2E consumer journeys
+        run: pnpm --dir e2e run lint
+
   # Package boundaries from .dependency-cruiser.cjs (layering, cycles, exports,
   # declared dependencies, fan-in) plus the fan-out check in scripts/. It reads
   # sources only, so it needs no build.

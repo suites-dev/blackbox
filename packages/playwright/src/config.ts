@@ -1,8 +1,8 @@
 import { defineConfig as playwrightConfig, type PlaywrightTestConfig } from '@playwright/test';
 
-import type { BlackboxTestOptions } from './types.js';
+import { sandboxLifecycleConfigured, sandboxLifecycleMetadataKey } from './reporting/options.js';
 
-export type BlackboxPlaywrightConfig = PlaywrightTestConfig<BlackboxTestOptions> & {
+export type BlackboxPlaywrightConfig = PlaywrightTestConfig & {
   readonly blackboxConfigFile: string;
 };
 
@@ -12,8 +12,12 @@ export function defineConfig(input: BlackboxPlaywrightConfig) {
   if (typeof blackboxConfigFile !== 'string' || blackboxConfigFile.trim().length === 0) {
     throw new Error('blackboxConfigFile must name the project Blackbox configuration file');
   }
-  return playwrightConfig<BlackboxTestOptions>({
+  return playwrightConfig({
     ...config,
-    metadata: { ...config.metadata, blackboxConfigFile },
+    metadata: {
+      ...config.metadata,
+      blackboxConfigFile,
+      [sandboxLifecycleMetadataKey]: sandboxLifecycleConfigured(config.reporter),
+    },
   });
 }
