@@ -73,6 +73,7 @@ export function createBlackboxTest(
   return playwrightTest.extend<BlackboxFixtures>({
     catalogEntry: [{ kind: 'unselected' }, { option: true }],
     blackboxEnvironment: [Object.freeze({}), { option: true }],
+    blackboxRetainAttempts: [false, { option: true }],
     _blackboxTestScope: [
       async ({ catalogEntry: _catalogEntry }, use, testInfo) => {
         testScopes.add(testInfo);
@@ -85,7 +86,7 @@ export function createBlackboxTest(
       { auto: true, timeout: 0 },
     ],
     _blackboxAttempt: [
-      async ({ catalogEntry, blackboxEnvironment }, use, testInfo) => {
+      async ({ catalogEntry, blackboxEnvironment, blackboxRetainAttempts }, use, testInfo) => {
         if (catalogEntry.kind === 'unselected') {
           await use({ kind: 'unselected' });
           return;
@@ -101,6 +102,7 @@ export function createBlackboxTest(
           testInfo,
           catalogEntry,
           blackboxEnvironment,
+          blackboxRetainAttempts,
           use: async (attempt, exec) => {
             await use({ kind: 'selected', attempt, exec });
           },

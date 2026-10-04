@@ -47,6 +47,11 @@ export class AttemptReport implements AttemptProgress {
     };
   }
 
+  /** The sandbox that owns this attempt, once acquisition has named it. */
+  sandboxId(): string | null {
+    return this.identity.kind === 'acquired' ? this.identity.sandboxId : null;
+  }
+
   protect(values: Readonly<Record<string, string>>): void {
     for (const value of Object.values(values)) {
       if (value.length > 0) {
@@ -113,7 +118,8 @@ export class AttemptReport implements AttemptProgress {
     }
   }
 
-  async finish(): Promise<void> {
+  /** Attach the final attempt document and return the attached body. */
+  async finish(): Promise<string> {
     const output = realpathSync(this.testInfo.outputPath());
     const path = relative(realpathSync(process.cwd()), output);
     this.emit('artifacts', 'info', path.startsWith('..') ? output : path);
@@ -136,5 +142,6 @@ export class AttemptReport implements AttemptProgress {
       contentType: 'application/json',
       body: document,
     });
+    return document;
   }
 }
