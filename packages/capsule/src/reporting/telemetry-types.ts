@@ -1,4 +1,13 @@
-/** Bounded raw OTEL projection. No events, payloads, process or host resource attributes. */
+/** One `exception` span event: its type and a redacted, truncated message. */
+export interface CapsuleReportException {
+  readonly type: string;
+  readonly message: string;
+}
+
+/**
+ * Bounded raw OTEL projection. No payloads, process or host resource attributes;
+ * of the span events only `exception` events are kept (type and message, no stack).
+ */
 export interface CapsuleReportSpan {
   readonly traceId: string;
   readonly spanId: string;
@@ -15,6 +24,10 @@ export interface CapsuleReportSpan {
   readonly startTimeUnixNano: string | null;
   readonly endTimeUnixNano: string | null;
   readonly statusCode: number | null;
+  /** The OTEL status message; null when the span recorded none. */
+  readonly statusMessage: string | null;
+  /** The span's `exception` events (absent from reports written before they were kept). */
+  readonly exceptions: readonly CapsuleReportException[];
   readonly attributes: readonly {
     readonly key: string;
     readonly value: string | number | boolean;

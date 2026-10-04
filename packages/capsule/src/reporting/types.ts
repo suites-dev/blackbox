@@ -127,9 +127,44 @@ export type CapsuleReportObservations =
       readonly error: { readonly name: string; readonly message: string };
     };
 
+/** A container the capsule started that is not a participant, such as the telemetry collector. */
+export interface CapsuleReportInfrastructureContainer {
+  readonly service: string;
+  readonly containerName: string;
+  readonly containerId: string;
+  /** The last state Docker reported for it during start-up. */
+  readonly state: string;
+}
+
+/** A boundary of the observation policy; Capsule never evaluates it. */
+export interface CapsuleReportPolicyBoundary {
+  readonly id: string;
+  readonly kind: string;
+  readonly authoritativeFor: readonly string[];
+  readonly required: boolean;
+  readonly status: 'not-evaluated';
+}
+
+export type CapsuleReportObservationPolicy =
+  | { readonly kind: 'not-recorded' }
+  | {
+      readonly kind: 'recorded';
+      readonly policyId: string;
+      readonly terminalObservationWindowMs: number;
+      readonly redaction: {
+        readonly requestBodies: string;
+        readonly headers: readonly string[];
+        readonly dynamicIdentifiers: string;
+      };
+      readonly requiredBoundaries: readonly string[];
+      readonly boundaries: readonly CapsuleReportPolicyBoundary[];
+    };
+
 export interface CapsuleReportDocument {
   readonly schemaVersion: 1;
   readonly kind: 'capsule-operational-report';
+  /** When this snapshot was written; absent from reports written before it was recorded. */
+  readonly generatedAt: string;
   readonly session: {
     readonly sessionId: string;
     readonly system: string;
@@ -137,14 +172,18 @@ export interface CapsuleReportDocument {
     readonly description: CapsuleDescription;
     readonly retainedState: CapsuleSessionState;
     readonly admittedAt: string;
+    /** The latest retained change: the record, an activity or a progress event. */
     readonly updatedAt: string;
     readonly artifactRoot: string;
   };
   readonly lifecycle: CapsuleReportLifecycle;
+  readonly observationPolicy: CapsuleReportObservationPolicy;
   readonly composeProject: CapsuleReportAvailability<string>;
   readonly entrypoint: CapsuleReportAvailability<CapsuleEntrypoint>;
   readonly resources: {
     readonly containers: readonly CapsuleContainerDetails[];
+    /** Containers started besides the participants (absent from earlier reports). */
+    readonly infrastructure: readonly CapsuleReportInfrastructureContainer[];
     readonly networks: readonly string[];
     readonly volumes: readonly string[];
   };
@@ -177,6 +216,7 @@ export type CapsuleReportResult =
     };
 
 export interface CapsuleReportProjectionInput {
+  readonly generatedAt: string;
   readonly record: CapsuleSessionRecord;
   readonly activities: readonly CapsuleActivityReport[];
   readonly progress: readonly CapsuleProgressEvent[];

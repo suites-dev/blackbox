@@ -153,3 +153,70 @@ describe('bounded activity trace projection', () => {
     expect(result).toMatchObject({ kind: 'available', activityId });
   });
 });
+
+describe('failure causes in the span projection', () => {
+  it('keeps exception events, the status message, error.type and url.full without its query', () => {
+    const failed = {
+      traceId,
+      spanId: '6666666666666666',
+      kind: 3,
+      name: 'GET',
+      status: { code: 2, message: 'refused by /Users/private-person/app' },
+      attributes: [
+        attr('error.type', 'java.net.NoRouteToHostException'),
+        attr('url.full', 'http://price:16579/prices/1?token=secret-query#frag'),
+      ],
+      events: [
+        { name: 'log', attributes: [attr('message', 'not an exception')] },
+        {
+          name: 'exception',
+          attributes: [
+            attr('exception.type', 'java.net.NoRouteToHostException'),
+            attr('exception.message', `No route to host ${'x'.repeat(300)}`),
+            attr('exception.stacktrace', 'at private.Stack(Frame.java:1)'),
+          ],
+        },
+      ],
+    };
+    const result = projectActivityTelemetry(
+      {
+        ...found(),
+        fragments: [
+          {
+            sequence: 1,
+            receivedAt: '',
+            request: { resourceSpans: [{ scopeSpans: [{ spans: [failed] }] }] },
+          },
+        ],
+      },
+      createRedactionContext(),
+      traceId,
+    );
+    if (result.kind !== 'available') {
+      throw new Error('expected available');
+    }
+    const [span] = result.spans;
+    expect(span.statusMessage).toBe('refused by [REDACTED]');
+    expect(span.exceptions).toEqual([
+      { type: 'java.net.NoRouteToHostException', message: `No route to host ${'x'.repeat(183)}` },
+    ]);
+    expect(span.attributes).toEqual([
+      { key: 'error.type', value: 'java.net.NoRouteToHostException' },
+      { key: 'url.full', value: 'http://price:16579/prices/1' },
+    ]);
+    const json = JSON.stringify(result);
+    for (const secret of ['secret-query', 'frag', 'private.Stack', 'not an exception']) {
+      expect(json).not.toContain(secret);
+    }
+  });
+
+  it('records no failure for a span that recorded none', () => {
+    const result = projectActivityTelemetry(found(), createRedactionContext(), traceId);
+    if (result.kind !== 'available') {
+      throw new Error('expected available');
+    }
+    for (const span of result.spans) {
+      expect(span).toMatchObject({ statusMessage: null, exceptions: [] });
+    }
+  });
+});

@@ -11,19 +11,16 @@ type CommandResult =
   | { readonly kind: 'success'; readonly stdout: string; readonly stderr: string }
   | { readonly kind: 'failure'; readonly stdout: string; readonly stderr: string };
 
-const mainPackage = fileURLToPath(new URL('../', import.meta.url));
-const playwrightPackage = fileURLToPath(
-  new URL('../', import.meta.resolve('@suites/blackbox-playwright')),
-);
+const playwrightPackage = fileURLToPath(new URL('../', import.meta.url));
 const playwrightTestPackage = join(playwrightPackage, 'node_modules/@playwright/test');
 const playwrightCli = join(playwrightTestPackage, 'cli.js');
 const typescriptCli = fileURLToPath(new URL('../bin/tsc', import.meta.resolve('typescript')));
 
 const validSpec = `
-import { expect, test } from '@suites/blackbox/playwright';
+import { expect, test } from '@suites/blackbox-playwright';
 import type {
   BlackboxActivities, BlackboxActivityActions, BlackboxActivityContext, BlackboxScopedRequest,
-} from '@suites/blackbox/playwright';
+} from '@suites/blackbox-playwright';
 
 const stimulus = (activities: BlackboxActivities): BlackboxActivityActions => activities.stimulus;
 const createOrder = (request: BlackboxScopedRequest) => request.post('/orders');
@@ -46,7 +43,7 @@ extended.system('orders', (system) => {
     sandbox.afterEach(({ effects, telemetry }) => {
       expect(effects.executionId).toBe(telemetry.executionId);
     });
-    sandbox.describe('Rule: canonical facade', () => {
+    sandbox.describe('Rule: independent Playwright consumer', () => {
       sandbox.test('Scenario: inferred fixtures are available', async ({ activities, effects, request, sandbox }) => {
         await test.step('use native and Blackbox fixtures', async () => {
           expect(request).toBeDefined();
@@ -64,8 +61,8 @@ extended.system('orders', (system) => {
 `;
 
 const negativeTypes = `
-import { test } from '@suites/blackbox/playwright';
-import { defineConfig } from '@suites/blackbox/playwright/config';
+import { test } from '@suites/blackbox-playwright';
+import { defineConfig } from '@suites/blackbox-playwright/config';
 
 const extended = test.extend<{ readonly tenant: string }>({
   tenant: async ({}, use) => use('alpha'),
@@ -86,8 +83,8 @@ defineConfig({ blackboxConfigFile: 123 });
 `;
 
 const validConfig = `
-import BlackboxReporter from '@suites/blackbox/playwright/reporter';
-import { defineConfig } from '@suites/blackbox/playwright/config';
+import BlackboxReporter from '@suites/blackbox-playwright/reporter';
+import { defineConfig } from '@suites/blackbox-playwright/config';
 
 void BlackboxReporter;
 export default defineConfig({
@@ -96,18 +93,18 @@ export default defineConfig({
   testMatch: 'journey.spec.ts',
   reporter: [
     ['line'],
-    ['@suites/blackbox/playwright/reporter'],
+    ['@suites/blackbox-playwright/reporter'],
   ],
 });
 `;
 
 const invalidCatalogConfig = `
-import { defineConfig } from '@suites/blackbox/playwright/config';
+import { defineConfig } from '@suites/blackbox-playwright/config';
 
 export default defineConfig({
   blackboxConfigFile: ' ',
   testDir: '.',
-  reporter: [['@suites/blackbox/playwright/reporter']],
+  reporter: [['@suites/blackbox-playwright/reporter']],
 });
 `;
 
@@ -134,13 +131,12 @@ function run(executable: string, args: readonly string[], cwd: string): Promise<
 }
 
 async function createConsumer(context: TestContext): Promise<string> {
-  const project = await mkdtemp(join(tmpdir(), 'blackbox-playwright-facade-'));
+  const project = await mkdtemp(join(tmpdir(), 'blackbox-playwright-consumer-'));
   context.onTestFinished(async () => rm(project, { recursive: true, force: true }));
   const suites = join(project, 'node_modules/@suites');
   const playwright = join(project, 'node_modules/@playwright');
   await Promise.all([mkdir(suites, { recursive: true }), mkdir(playwright, { recursive: true })]);
   await Promise.all([
-    symlink(mainPackage, join(suites, 'blackbox'), 'dir'),
     symlink(playwrightPackage, join(suites, 'blackbox-playwright'), 'dir'),
     symlink(playwrightTestPackage, join(playwright, 'test'), 'dir'),
     writeFile(join(project, 'package.json'), JSON.stringify({ name: 'consumer', type: 'module' })),
@@ -169,7 +165,7 @@ async function createConsumer(context: TestContext): Promise<string> {
   return project;
 }
 
-test('canonical Playwright facade compiles and discovers a consumer journey', async (context) => {
+test('independent Playwright consumer compiles and discovers a journey', async (context) => {
   const project = await createConsumer(context);
   const compiled = await run(
     process.execPath,
@@ -186,16 +182,19 @@ test('canonical Playwright facade compiles and discovers a consumer journey', as
   assert.equal(listed.kind, 'success', `${listed.stdout}\n${listed.stderr}`);
   assert.match(
     listed.stdout,
-    /system "orders" › sandbox "isolated" › Rule: canonical facade › Scenario: inferred fixtures are available/u,
+    /system "orders" › sandbox "isolated" › Rule: independent Playwright consumer › Scenario: inferred fixtures are available/u,
   );
   assert.match(listed.stdout, /Total: 1 test in 1 file/u);
 
   const consumerSources = await Promise.all(
-    ['journey.spec.ts', 'types-negative.ts', 'playwright.config.ts'].map((file) =>
-      readFile(join(project, file), 'utf8'),
-    ),
+    [
+      'journey.spec.ts',
+      'types-negative.ts',
+      'playwright.config.ts',
+      'invalid-catalog.config.ts',
+    ].map((file) => readFile(join(project, file), 'utf8')),
   );
-  assert.doesNotMatch(consumerSources.join('\n'), /@suites\/blackbox-playwright/u);
+  assert.doesNotMatch(consumerSources.join('\n'), /@suites\/blackbox\/playwright/u);
 
   const invalid = await run(
     process.execPath,

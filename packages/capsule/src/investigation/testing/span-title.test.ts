@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { spanResult, spanTitle } from '../span-title.js';
+import { spanFailure, spanResult, spanTitle } from '../span-title.js';
 import { projectInvestigationSpans } from '../spans.js';
 import { span } from './span.fixture.js';
 
@@ -98,6 +98,39 @@ describe('spanTitle', () => {
   });
 });
 
+describe('client span targets (#111)', () => {
+  const client = (attributes: Readonly<Record<string, string>>, spanKind = 'client' as const) =>
+    spanTitle({ ...span({ id: 'a', name: 'GET', attributes }), spanKind });
+
+  it('adds where a client span went', () => {
+    expect(client({ 'http.request.method': 'GET', 'server.address': 'ts-price-service' })).toBe(
+      'GET → ts-price-service',
+    );
+    expect(
+      client({
+        'db.operation': 'find',
+        'db.mongodb.collection': 'config',
+        'server.address': 'ts-config-mongo',
+      }),
+    ).toBe('find config → ts-config-mongo');
+    expect(client({ 'http.request.method': 'GET', 'peer.service': 'billing' })).toBe(
+      'GET → billing',
+    );
+  });
+
+  it('adds no target to a server span or a client span without one', () => {
+    const server = {
+      'http.request.method': 'GET',
+      'url.path': '/health',
+      'server.address': 'localhost',
+    };
+    expect(spanTitle({ ...span({ id: 'a', attributes: server }), spanKind: 'server' })).toBe(
+      'GET /health',
+    );
+    expect(client({ 'http.request.method': 'GET' })).toBe('GET');
+  });
+});
+
 describe('spanResult', () => {
   it.each([
     [{ 'http.response.status_code': 201 }, null, '201'],
@@ -108,6 +141,26 @@ describe('spanResult', () => {
     [{}, null, ''],
   ])('reads %j with status %s as %j', (attributes, statusCode, expected) => {
     expect(spanResult(span({ id: 'a', attributes, statusCode }))).toBe(expected);
+  });
+});
+
+describe('spanFailure', () => {
+  const failing = { id: 'a', statusCode: 2 };
+  it('names the first exception type of an error span', () => {
+    const exceptions = [
+      { type: '', message: 'untyped' },
+      { type: 'java.net.UnknownHostException', message: 'price' },
+    ];
+    expect(spanFailure({ ...span(failing), exceptions })).toBe('java.net.UnknownHostException');
+  });
+
+  it.each([
+    [{ 'error.type': 'java.net.NoRouteToHostException' }, 2, 'java.net.NoRouteToHostException'],
+    [{ 'error.type': '500' }, 2, ''],
+    [{ 'error.type': 'java.io.IOException' }, 1, ''],
+    [{}, 2, ''],
+  ])('reads %j with status %s as %j', (attributes, statusCode, expected) => {
+    expect(spanFailure(span({ id: 'a', attributes, statusCode }))).toBe(expected);
   });
 });
 

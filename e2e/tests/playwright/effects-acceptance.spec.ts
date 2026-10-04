@@ -1,6 +1,6 @@
 import { setTimeout as delay } from 'node:timers/promises';
 
-import { expect, test, type EffectContractBuilder } from '@suites/blackbox/playwright';
+import { expect, test, type EffectContractBuilder } from '@suites/blackbox-playwright';
 
 import { json, traceId } from './effects-acceptance.support.js';
 

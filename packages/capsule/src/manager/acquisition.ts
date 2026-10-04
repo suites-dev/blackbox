@@ -122,6 +122,12 @@ export async function startPlannedSandbox(input: PlannedSandboxInput): Promise<{
     projectName,
   });
   const progress = sandboxProgressBridge({ bootstrap: input.bootstrap, entry: input.entry });
+  // The Testcontainers start-up budget: the readiness timeouts, at least two minutes.
+  const startupTimeoutMs = Math.max(
+    ...input.plan.readiness.map(({ timeoutMs }) => timeoutMs),
+    120_000,
+  );
+  const started = Date.now();
   const operation = runStartStage('acquisition', async () => {
     const telemetry = await capsuleSandboxTelemetry(input);
     return input.ports.sandbox.start({
@@ -137,10 +143,7 @@ export async function startPlannedSandbox(input: PlannedSandboxInput): Promise<{
           service,
           containerPort,
         })),
-        startupTimeoutMs: Math.max(
-          ...input.plan.readiness.map(({ timeoutMs }) => timeoutMs),
-          120_000,
-        ),
+        startupTimeoutMs,
         stopTimeoutMs: 60_000,
         telemetry,
       },
@@ -158,7 +161,19 @@ export async function startPlannedSandbox(input: PlannedSandboxInput): Promise<{
     }
     throw error;
   }
-  return { sandbox, flushProgress: () => runStartStage('persistence', progress.flush) };
+  const durationMs = Date.now() - started;
+  return {
+    sandbox,
+    flushProgress: async () => {
+      await runStartStage('persistence', progress.flush);
+      await emitProgress(input.bootstrap, {
+        kind: 'acquisition-completed',
+        sessionId: input.bootstrap.sessionId,
+        durationMs,
+        startupTimeoutMs,
+      });
+    },
+  };
 }
 
 export async function completePlannedSandbox(

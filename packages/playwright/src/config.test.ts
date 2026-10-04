@@ -9,7 +9,7 @@ it('keeps native projects and settings while moving the catalog path into runner
     workers: 3,
     fullyParallel: true,
     projects: [{ name: 'systems', use: { baseURL: 'https://example.test' } }],
-    reporter: [['@suites/blackbox/playwright/reporter']],
+    reporter: [['@suites/blackbox-playwright/reporter']],
   });
   expect(config.metadata).toEqual({
     owner: 'orders',
@@ -18,7 +18,7 @@ it('keeps native projects and settings while moving the catalog path into runner
   expect(config.workers).toBe(3);
   expect(config.fullyParallel).toBe(true);
   expect(config.projects![0].use!.baseURL).toBe('https://example.test');
-  expect(config.reporter).toEqual([['@suites/blackbox/playwright/reporter']]);
+  expect(config.reporter).toEqual([['@suites/blackbox-playwright/reporter']]);
   expect(config).not.toHaveProperty('blackboxConfigFile');
 });
 
