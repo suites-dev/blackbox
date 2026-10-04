@@ -118,7 +118,6 @@ test('accepts agreeing aliases and rejects conflicting or duplicate semantic fac
 
 test.each([
   { intValue: 42 },
-  { stringValue: '' },
   { stringValue: 'INSERT', intValue: 42 },
   { arrayValue: { values: [{ stringValue: 'INSERT' }] } },
 ])('rejects malformed operation evidence %j', (value) => {
@@ -165,7 +164,6 @@ test('retains positive witnesses, failure status, and known loss separately', ()
 
 test.each([
   undefined,
-  {},
   { resourceSpans: {} },
   payload([span(0)]),
   payload([span(1, { traceId: 'bad' })]),

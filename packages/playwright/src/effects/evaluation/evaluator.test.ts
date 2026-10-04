@@ -101,7 +101,7 @@ test('conflicting records and aliases quarantine the whole assertion despite a g
   for (const payloads of [
     [payload([insertion]), payload([changed])],
     [payload([insertion, conflict])],
-    [{}],
+    [{ resourceSpans: {} }],
   ]) {
     await expect(evaluator(payloads).evaluate(exists)).resolves.toMatchObject({
       kind: 'inconclusive',

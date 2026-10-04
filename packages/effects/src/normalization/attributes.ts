@@ -3,6 +3,10 @@ import { array, record } from './values.js';
 
 export type Attributes = Readonly<Partial<Record<string, EffectScalar>>>;
 
+// Official schema-file renames, semantic-conventions v1.44.0, commit
+// e10a930844c6951757a43b849d364f7d056ac32b, schemas/1.44.0.
+// Key renaming preserves the producer's value; it does not infer migrations
+// such as a RabbitMQ exchange/routing-key destination or publish -> send.
 const aliases = [
   ['http.request.method', 'http.method'],
   ['db.operation.name', 'db.operation'],
@@ -46,14 +50,15 @@ function scalar(value: Readonly<Record<string, unknown>>): EffectScalar | undefi
 function valueAt(attribute: Readonly<Record<string, unknown>>, key: string, location: string) {
   const value = record(attribute.value ?? {}, location);
   if (semanticStrings.has(key)) {
+    // AnyValue may be empty. An empty string supplies no usable semantic fact.
     if (
-      Object.keys(value).length !== 1 ||
-      typeof value.stringValue !== 'string' ||
-      value.stringValue.length === 0
+      Object.keys(value).length === 0 ||
+      (Object.keys(value).length === 1 && value.stringValue === '')
     ) {
-      throw new TypeError(
-        `Semantic attribute ${key} must contain one non-empty stringValue at ${location}`,
-      );
+      return undefined;
+    }
+    if (Object.keys(value).length !== 1 || typeof value.stringValue !== 'string') {
+      throw new TypeError(`Semantic attribute ${key} must contain one stringValue at ${location}`);
     }
   }
   return scalar(value);

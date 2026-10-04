@@ -78,7 +78,7 @@ describe('Playwright source and authoring errors', () => {
     const effects = handle({
       kind: 'admitted',
       scopeId: 'adapter-scope',
-      payloads: [{}],
+      payloads: [{ resourceSpans: {} }],
       diagnostics: [],
     });
     await check(expect(effects).not.toSatisfy(compatible)).rejects.toThrow('observation rejected');

@@ -12,7 +12,7 @@ export interface EffectProjectionInput {
 /** Project observed operations into an immutable, open graph with explicit loss. */
 export function projectEffects(input: EffectProjectionInput): EffectGraph {
   const snapshot = fields(
-    snapshotJson(input),
+    snapshotJson(input, 'reject'),
     ['format', 'scopeId', 'payloads'],
     'projection input',
   );

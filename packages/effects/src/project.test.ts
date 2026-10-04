@@ -35,7 +35,7 @@ test('returns deeply immutable facts without freezing or retaining caller-owned 
   expect(graph.effects[0].operation).toBe('POST');
 });
 
-test('snapshots changing raw accessors once and ignores caller array iterators', () => {
+test('rejects telemetry accessors without executing their code', () => {
   let reads = 0;
   const raw = payload([
     span(1, {
@@ -52,13 +52,60 @@ test('snapshots changing raw accessors once and ignores caller array iterators',
       ],
     }),
   ]);
-  const payloads = [raw];
+  expect(() => projectEffects({ format: 'otlp-json', scopeId: 'scope', payloads: [raw] })).toThrow(
+    'Telemetry accessors are not JSON data',
+  );
+  expect(reads).toBe(0);
+});
+
+test('snapshots inert telemetry without invoking caller array iterators or map methods', () => {
+  const payloads = [payload([span(1, { attributes: [attribute('http.request.method', 'POST')] })])];
   payloads[Symbol.iterator] = () => [][Symbol.iterator]();
   payloads.map = () => [];
   const graph = projectEffects({ format: 'otlp-json', scopeId: 'scope', payloads });
   expect(graph.effects).toHaveLength(1);
   expect(graph.effects[0].operation).toBe('POST');
-  expect(reads).toBe(1);
+});
+
+test('rejects accessor array elements without running the getter', () => {
+  let reads = 0;
+  const payloads = [payload([])];
+  Object.defineProperty(payloads, '0', {
+    get() {
+      reads += 1;
+      throw new Error('Application getter must not run');
+    },
+  });
+  expect(() => projectEffects({ format: 'otlp-json', scopeId: 'scope', payloads })).toThrow(
+    'Telemetry accessors are not JSON data',
+  );
+  expect(reads).toBe(0);
+});
+
+test('rejects telemetry proxies before invoking reflection traps', () => {
+  let traps = 0;
+  const raw = new Proxy(payload([]), {
+    ownKeys() {
+      traps += 1;
+      throw new Error('Application proxy trap must not run');
+    },
+  });
+  expect(() => projectEffects({ format: 'otlp-json', scopeId: 'scope', payloads: [raw] })).toThrow(
+    'Telemetry proxies are not JSON data',
+  );
+  expect(traps).toBe(0);
+});
+
+test('rejects revoked proxies and accepts ordinary JSON after a capture rejection', () => {
+  const { proxy, revoke } = Proxy.revocable([], {});
+  revoke();
+  expect(() => projectEffects({ format: 'otlp-json', scopeId: 'scope', payloads: proxy })).toThrow(
+    'Telemetry proxies are not JSON data',
+  );
+  expect(
+    projectEffects({ format: 'otlp-json', scopeId: 'scope', payloads: [payload([span(1)])] })
+      .effects,
+  ).toHaveLength(1);
 });
 
 test('complete-looking raw telemetry never grants scope closure or coverage', () => {
@@ -76,6 +123,28 @@ test('complete-looking raw telemetry never grants scope closure or coverage', ()
   });
 });
 
+test('rejects identical span IDs carrying conflicting instrumentation provenance', () => {
+  const first = payload([span(1, { attributes: [attribute('http.request.method', 'POST')] })]);
+  const second = structuredClone(first);
+  second.resourceSpans[0].scopeSpans[0].scope.name = 'different-producer';
+  expect(() =>
+    projectEffects({ format: 'otlp-json', scopeId: 'scope', payloads: [first, second] }),
+  ).toThrow('Conflicting duplicate span records');
+});
+
+test('rejects identical span IDs interpreted under different semantic schemas', () => {
+  const first = payload([span(1)]);
+  const second = {
+    resourceSpans: first.resourceSpans.map((resource) => ({
+      ...resource,
+      schemaUrl: 'https://opentelemetry.io/schemas/1.37.0',
+    })),
+  };
+  expect(() =>
+    projectEffects({ format: 'otlp-json', scopeId: 'scope', payloads: [first, second] }),
+  ).toThrow('Conflicting duplicate span records');
+});
+
 test.each([
   null,
   {},
@@ -83,7 +152,6 @@ test.each([
   { format: 'otlp-json', scopeId: '', payloads: [] },
   { format: 'otlp-json', scopeId: 'scope', payloads: {} },
   { format: 'otlp-json', scopeId: 'scope', payloads: [], closed: true },
-  { format: 'otlp-json', scopeId: 'scope', payloads: [{}] },
   { format: 'otlp-json', scopeId: 'scope', payloads: new Array<unknown>(1) },
 ])('rejects malformed projection input %j', (input) => {
   expect(() => projectUnknown(input)).toThrow(TypeError);
