@@ -1,4 +1,4 @@
-import { expect, test } from '@suites/blackbox/playwright';
+import { expect, test } from '@suites/blackbox-playwright';
 
 import {
   blackboxEnvironment,

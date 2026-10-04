@@ -10,9 +10,9 @@
       "@playwright/test/reporter": [
         "packages/playwright/node_modules/@playwright/test/reporter.d.ts"
       ],
-      "@suites/blackbox/playwright": ["packages/blackbox/src/playwright/index.ts"],
-      "@suites/blackbox/playwright/config": ["packages/blackbox/src/playwright/config.ts"],
-      "@suites/blackbox/playwright/reporter": ["packages/blackbox/src/playwright/reporter.ts"]
+      "@suites/blackbox-playwright": ["packages/playwright/src/index.ts"],
+      "@suites/blackbox-playwright/config": ["packages/playwright/src/config.ts"],
+      "@suites/blackbox-playwright/reporter": ["packages/playwright/src/reporter.ts"]
     },
     "strict": true,
     "noEmit": true,

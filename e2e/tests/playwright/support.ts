@@ -4,7 +4,7 @@ import {
   type BlackboxEffects,
   type BlackboxSandbox,
   type BlackboxTelemetry,
-} from '@suites/blackbox/playwright';
+} from '@suites/blackbox-playwright';
 
 function requiredEnvironment(name: string): string {
   const value = process.env[name];
