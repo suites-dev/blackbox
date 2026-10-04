@@ -105,7 +105,11 @@ blackbox catalog validate --json
 blackbox catalog ls --json
 ```
 
-A successful validation returns `ok: true`. Listing returns catalog entries without acquiring Docker resources.
+A successful validation returns `ok: true`. When a runtime adapter plugin such as `@suites/blackbox-inst-runtime-node`
+is installed, validation also checks that one of its adapters can load each configured activation for its
+participant's runtime, and refuses the participant with the reason `capsule up` would give, for example
+`Activation adapter "node-preload" for runtime "java" is unavailable`.
+Listing returns catalog entries without acquiring Docker resources.
 For the included application, install instrumentation as shown in the quickstart before validation.
 Starting the application and receiving observations are separate steps.
 

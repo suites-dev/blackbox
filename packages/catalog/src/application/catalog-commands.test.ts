@@ -47,6 +47,8 @@ activations:
     version: 1
 `;
 
+const notChecked = { kind: 'not-checked' } as const;
+
 async function makeValidProject(): Promise<string> {
   const directory = await mkdtemp(join(tmpdir(), 'blackbox-catalog-command-'));
   await mkdir(join(directory, '.blackbox/compose'), { recursive: true });
@@ -64,7 +66,9 @@ async function makeValidProject(): Promise<string> {
 it('validates the canonical project-root configuration and referenced files', async () => {
   const projectDirectory = await makeValidProject();
 
-  await expect(runCatalogValidate({ projectDirectory })).resolves.toEqual({
+  await expect(
+    runCatalogValidate({ projectDirectory, activationAdapters: notChecked }),
+  ).resolves.toEqual({
     kind: 'catalog-validate-success',
     ok: true,
     operation: 'catalog.validate',
@@ -84,7 +88,7 @@ it('returns structured invalid-config diagnostics without printing or exiting', 
     'utf8',
   );
 
-  const result = await runCatalogValidate({ projectDirectory });
+  const result = await runCatalogValidate({ projectDirectory, activationAdapters: notChecked });
   expect(result).toMatchObject({
     ok: false,
     kind: 'catalog-command-user-error',
@@ -100,7 +104,7 @@ it('classifies a missing canonical configuration for validate and list', async (
   const projectDirectory = await mkdtemp(join(tmpdir(), 'blackbox-catalog-missing-'));
 
   const [validateResult, listResult] = await Promise.all([
-    runCatalogValidate({ projectDirectory }),
+    runCatalogValidate({ projectDirectory, activationAdapters: notChecked }),
     runCatalogList({ projectDirectory }),
   ]);
   expect(validateResult).toMatchObject({
@@ -124,7 +128,9 @@ it('classifies an unreadable project location as an operational failure', async 
   const projectDirectory = join(directory, 'regular-file');
   await writeFile(projectDirectory, 'not a directory\n');
 
-  await expect(runCatalogValidate({ projectDirectory })).resolves.toMatchObject({
+  await expect(
+    runCatalogValidate({ projectDirectory, activationAdapters: notChecked }),
+  ).resolves.toMatchObject({
     kind: 'catalog-command-operational-error',
     ok: false,
     operation: 'catalog.validate',
@@ -143,7 +149,7 @@ it('rejects a valid catalog whose Compose file is missing', async () => {
     writeFile(join(projectDirectory, '.blackbox/drivers/http.mjs'), 'export {};\n'),
   ]);
 
-  const result = await runCatalogValidate({ projectDirectory });
+  const result = await runCatalogValidate({ projectDirectory, activationAdapters: notChecked });
   expect(result).toEqual({
     ok: false,
     kind: 'catalog-command-user-error',
@@ -175,7 +181,9 @@ it('classifies an uninspectable reference as an operational failure', async () =
   await unlink(loop);
   await symlink(loop, loop);
 
-  await expect(runCatalogValidate({ projectDirectory })).resolves.toMatchObject({
+  await expect(
+    runCatalogValidate({ projectDirectory, activationAdapters: notChecked }),
+  ).resolves.toMatchObject({
     kind: 'catalog-command-operational-error',
     ok: false,
     operation: 'catalog.validate',
@@ -200,9 +208,56 @@ it('returns deterministic JSON-ready list output', async () => {
 
 it('validates every reference in an owned project fixture', async () => {
   const projectDirectory = await makeValidProject();
-  await expect(runCatalogValidate({ projectDirectory })).resolves.toMatchObject({
+  await expect(
+    runCatalogValidate({ projectDirectory, activationAdapters: notChecked }),
+  ).resolves.toMatchObject({
     kind: 'catalog-validate-success',
     ok: true,
     operation: 'catalog.validate',
   });
+});
+
+it('refuses a participant whose runtime no installed activation adapter serves, as capsule up does', async () => {
+  const projectDirectory = await makeValidProject();
+  await writeFile(
+    join(projectDirectory, 'blackbox.config.yaml'),
+    validCatalog.replace('runtime: node, activation', 'runtime: java, activation'),
+    'utf8',
+  );
+
+  await expect(
+    runCatalogValidate({
+      projectDirectory,
+      activationAdapters: {
+        kind: 'installed',
+        adapters: [{ runtime: 'node', adapter: 'node-factory' }],
+      },
+    }),
+  ).resolves.toEqual({
+    kind: 'catalog-command-user-error',
+    ok: false,
+    operation: 'catalog.validate',
+    exitClass: 'user-error',
+    classification: 'activation-adapter-unavailable',
+    configFile: join(projectDirectory, 'blackbox.config.yaml'),
+    diagnostics: [
+      {
+        kind: 'semantic',
+        instancePath: '/catalog/entries/orders/participants/api/activation',
+        message: 'Activation adapter "node-factory" for runtime "java" is unavailable',
+      },
+    ],
+  });
+});
+
+it('reports referenced-input problems before adapter availability', async () => {
+  const projectDirectory = await makeValidProject();
+  await unlink(join(projectDirectory, '.blackbox/compose/orders.yml'));
+
+  await expect(
+    runCatalogValidate({
+      projectDirectory,
+      activationAdapters: { kind: 'installed', adapters: [] },
+    }),
+  ).resolves.toMatchObject({ ok: false, classification: 'referenced-input-invalid' });
 });

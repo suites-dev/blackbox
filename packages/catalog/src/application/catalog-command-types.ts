@@ -5,7 +5,8 @@ export type CatalogCommandExitClass = 'success' | 'user-error' | 'operational-er
 export type CatalogCommandUserFailureClassification =
   | 'config-missing'
   | 'config-invalid'
-  | 'referenced-input-invalid';
+  | 'referenced-input-invalid'
+  | 'activation-adapter-unavailable';
 export type CatalogCommandOperationalFailureClassification = 'filesystem-error';
 export type CatalogCommandFailureClassification =
   | CatalogCommandUserFailureClassification
@@ -63,4 +64,22 @@ export type CatalogListResult = CatalogListSuccess | CatalogCommandFailure;
 
 export interface RunCatalogCommandInput {
   readonly projectDirectory: string;
+}
+
+/** The runtime and activation adapter pair that one installed activation adapter serves. */
+export interface CatalogRuntimeActivationAdapter {
+  readonly runtime: string;
+  readonly adapter: string;
+}
+
+/**
+ * The activation adapters validation checks participants against. The CLI passes the adapters
+ * its plugins registered, which are the ones Capsule startup uses.
+ */
+export type CatalogActivationAdapters =
+  | { readonly kind: 'not-checked' }
+  | { readonly kind: 'installed'; readonly adapters: readonly CatalogRuntimeActivationAdapter[] };
+
+export interface RunCatalogValidateInput extends RunCatalogCommandInput {
+  readonly activationAdapters: CatalogActivationAdapters;
 }

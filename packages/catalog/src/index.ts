@@ -9,6 +9,7 @@ export type {
 export { resolveCatalogEntry } from './selection/sandbox-resolution.js';
 export type { ResolveCatalogEntryInput } from './selection/sandbox-resolution.js';
 export { runCatalogList, runCatalogValidate } from './application/catalog-commands.js';
+export { registeredActivationAdapters } from './application/activation-adapters.js';
 export { catalogSchema, catalogSchemaUrl } from './schema/blackbox-schema.js';
 export {
   CatalogValidationError,
@@ -43,6 +44,7 @@ export type {
   ResolvedCatalogDriverTarget,
 } from './model/catalog-types.js';
 export type {
+  CatalogActivationAdapters,
   CatalogCommandDiagnostic,
   CatalogCommandExitClass,
   CatalogCommandFailure,
@@ -56,5 +58,7 @@ export type {
   CatalogListSuccess,
   CatalogValidateResult,
   CatalogValidateSuccess,
+  CatalogRuntimeActivationAdapter,
   RunCatalogCommandInput,
+  RunCatalogValidateInput,
 } from './application/catalog-command-types.js';

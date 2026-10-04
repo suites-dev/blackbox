@@ -11,7 +11,7 @@ set -Eeuo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd -- "$SCRIPT_DIR/../.." && pwd)"
-PACKAGES=(cli-contract telemetry skills cli catalog discovery blackbox)
+PACKAGES=(cli-contract telemetry instrumentation skills cli catalog discovery blackbox)
 
 for command in pnpm jq node diff; do
   command -v "$command" >/dev/null 2>&1 || {

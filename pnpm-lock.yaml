@@ -257,6 +257,9 @@ importers:
       '@suites/blackbox-cli-contract':
         specifier: workspace:*
         version: link:../cli-contract
+      '@suites/blackbox-instrumentation':
+        specifier: workspace:*
+        version: link:../instrumentation
       '@suites/blackbox-skills':
         specifier: workspace:*
         version: link:../skills

@@ -8,12 +8,15 @@ import type {
   CatalogListResult,
   CatalogValidateResult,
   RunCatalogCommandInput,
+  RunCatalogValidateInput,
 } from './catalog-command-types.js';
+import { unavailableActivationAdapterIssues } from './activation-adapters.js';
 import { validateReferencedInputs } from './referenced-inputs.js';
 import type { CatalogValidationIssue, LoadedCatalog } from '../model/catalog-types.js';
 import { CatalogValidationError } from '../schema/catalog-validation.js';
 
 export type {
+  CatalogActivationAdapters,
   CatalogCommandDiagnostic,
   CatalogCommandExitClass,
   CatalogCommandFailure,
@@ -27,7 +30,9 @@ export type {
   CatalogListSuccess,
   CatalogValidateResult,
   CatalogValidateSuccess,
+  CatalogRuntimeActivationAdapter,
   RunCatalogCommandInput,
+  RunCatalogValidateInput,
 } from './catalog-command-types.js';
 
 function canonicalConfigFile(projectDirectory: string): string {
@@ -108,7 +113,7 @@ function loadingFailure(
  * It never writes to stdout/stderr and never terminates the process.
  */
 export async function runCatalogValidate(
-  input: RunCatalogCommandInput,
+  input: RunCatalogValidateInput,
 ): Promise<CatalogValidateResult> {
   const { projectDirectory } = input;
   const configFile = canonicalConfigFile(projectDirectory);
@@ -148,6 +153,25 @@ export async function runCatalogValidate(
       classification: 'referenced-input-invalid',
       configFile,
       diagnostics: referenceIssues.map((issue) => ({ ...issue })),
+    };
+  }
+
+  const adapterIssues =
+    input.activationAdapters.kind === 'installed'
+      ? unavailableActivationAdapterIssues({
+          config: loaded.config,
+          adapters: input.activationAdapters.adapters,
+        })
+      : [];
+  if (adapterIssues.length > 0) {
+    return {
+      kind: 'catalog-command-user-error',
+      ok: false,
+      operation: 'catalog.validate',
+      exitClass: 'user-error',
+      classification: 'activation-adapter-unavailable',
+      configFile,
+      diagnostics: adapterIssues.map((issue) => ({ ...issue })),
     };
   }
 
