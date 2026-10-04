@@ -24,6 +24,7 @@ it('keeps native projects and settings while moving the catalog path into runner
     owner: 'orders',
     blackboxConfigFile: './catalog/blackbox.yaml',
     blackboxSandboxLifecycle: true,
+    blackboxExpectTimeouts: { systems: 5000 },
   });
   expect(config.workers).toBe(3);
   expect(config.fullyParallel).toBe(true);
@@ -74,4 +75,18 @@ it('rejects invalid lifecycle options for the package reporter', () => {
 
 it.each(['', '  '])('rejects an empty catalog config path: %j', (blackboxConfigFile) => {
   expect(() => defineConfig({ blackboxConfigFile })).toThrow('blackboxConfigFile must name');
+});
+
+it('records each project expect timeout for the runner-policy manifest', () => {
+  const config = defineConfig({
+    blackboxConfigFile: './blackbox.yaml',
+    expect: { timeout: 7000 },
+    projects: [{ name: 'inherits' }, { name: 'overrides', expect: { timeout: 900 } }, {}],
+  });
+  expect(config.metadata).toMatchObject({
+    blackboxExpectTimeouts: { inherits: 7000, overrides: 900, '': 7000 },
+  });
+  expect(defineConfig({ blackboxConfigFile: './blackbox.yaml' }).metadata).toMatchObject({
+    blackboxExpectTimeouts: { '': 5000 },
+  });
 });

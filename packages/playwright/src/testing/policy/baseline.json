@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "policy": {
+    "run": {
+      "failOnFlakyTests": false,
+      "forbidOnly": false,
+      "fullyParallel": false,
+      "globalTimeout": 0,
+      "grep": "/.*/",
+      "grepInvert": null,
+      "maxFailures": 0,
+      "shard": null,
+      "workers": 1
+    },
+    "projects": {
+      "primary": {
+        "retries": 1,
+        "timeout": 30000,
+        "expectTimeout": 5000,
+        "repeatEach": 1,
+        "grep": "/.*/",
+        "grepInvert": null,
+        "testDir": ".",
+        "testMatch": "policy.spec.ts",
+        "testIgnore": []
+      },
+      "secondary": {
+        "retries": 1,
+        "timeout": 30000,
+        "expectTimeout": 5000,
+        "repeatEach": 1,
+        "grep": "/.*/",
+        "grepInvert": null,
+        "testDir": ".",
+        "testMatch": "policy.spec.ts",
+        "testIgnore": []
+      }
+    },
+    "blackbox": {
+      "sandboxCleanupTimeoutMs": 30000
+    },
+    "tests": {
+      "primary › policy.spec.ts › alpha": {
+        "retries": 1,
+        "timeout": 30000
+      },
+      "primary › policy.spec.ts › beta": {
+        "retries": 1,
+        "timeout": 30000
+      },
+      "secondary › policy.spec.ts › alpha": {
+        "retries": 1,
+        "timeout": 30000
+      },
+      "secondary › policy.spec.ts › beta": {
+        "retries": 1,
+        "timeout": 30000
+      }
+    }
+  }
+}

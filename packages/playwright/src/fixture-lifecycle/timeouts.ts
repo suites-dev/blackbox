@@ -12,6 +12,10 @@ export interface BlackboxFixturePolicy {
   readonly sandboxCleanupTimeoutMs: number;
 }
 
+export const defaultFixturePolicy: BlackboxFixturePolicy = Object.freeze({
+  sandboxCleanupTimeoutMs: 30_000,
+});
+
 async function cleanupSettledWithin(cleanup: Promise<void>, timeoutMs: number): Promise<boolean> {
   void cleanup.catch(() => undefined);
 

@@ -15,10 +15,67 @@ function isBlackboxReporter(specifier: string): boolean {
   return specifier === reporterSpecifier || reporterFiles.has(specifier);
 }
 
-export function sandboxLifecycleOption(options: unknown = {}): boolean {
+interface BlackboxPolicyFields {
+  /**
+   * Protected baseline manifest, relative to the config directory. Any difference from
+   * the effective runner policy fails the run.
+   */
+  readonly baseline: string;
+  /** Where to write the effective runner-policy manifest, relative to the config directory. */
+  readonly outputFile: string;
+}
+
+export type BlackboxPolicyOptions = Readonly<Partial<BlackboxPolicyFields>>;
+
+interface BlackboxReporterFields {
+  /** Print ready/cleanup messages through Playwright's per-test stdout. Default: true. */
+  readonly sandboxLifecycle: boolean;
+  /** Runner-policy verification. The policy is printed on every run either way. */
+  readonly policy: BlackboxPolicyOptions;
+}
+
+export type BlackboxReporterOptions = Readonly<Partial<BlackboxReporterFields>>;
+
+export interface PolicySettings {
+  readonly baseline: string | null;
+  readonly outputFile: string | null;
+}
+
+function optionsObject(options: unknown): object {
   if (typeof options !== 'object' || options === null || Array.isArray(options)) {
     throw new Error('Blackbox reporter options must be an object');
   }
+  return options;
+}
+
+function pathSetting(policy: object, key: keyof BlackboxPolicyFields): string | null {
+  const value: unknown = key in policy ? (policy as Record<string, unknown>)[key] : undefined;
+  if (value === undefined) {
+    return null;
+  }
+  if (typeof value !== 'string' || value.trim().length === 0) {
+    throw new Error(`Blackbox reporter policy.${key} must be a non-empty path`);
+  }
+  return value;
+}
+
+export function policyOption(input: unknown = {}): PolicySettings {
+  const options = optionsObject(input);
+  const policy: unknown = 'policy' in options ? options.policy : undefined;
+  if (policy === undefined) {
+    return { baseline: null, outputFile: null };
+  }
+  if (typeof policy !== 'object' || policy === null || Array.isArray(policy)) {
+    throw new Error('Blackbox reporter policy must be an object');
+  }
+  return {
+    baseline: pathSetting(policy, 'baseline'),
+    outputFile: pathSetting(policy, 'outputFile'),
+  };
+}
+
+export function sandboxLifecycleOption(input: unknown = {}): boolean {
+  const options = optionsObject(input);
   const value: unknown = 'sandboxLifecycle' in options ? options.sandboxLifecycle : undefined;
   if (value === undefined) {
     return true;

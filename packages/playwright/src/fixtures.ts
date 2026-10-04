@@ -9,7 +9,7 @@ import {
 } from '@playwright/test';
 
 import { runAttemptFixture } from './fixture-lifecycle/attempt.js';
-import type { BlackboxFixturePolicy } from './fixture-lifecycle/timeouts.js';
+import { defaultFixturePolicy, type BlackboxFixturePolicy } from './fixture-lifecycle/timeouts.js';
 import {
   productionBlackboxRuntime,
   type BlackboxAttemptRuntime,
@@ -47,10 +47,6 @@ type NativeBlackboxTest = TestType<
   PlaywrightWorkerArgs & PlaywrightWorkerOptions
 >;
 
-const defaultPolicy: BlackboxFixturePolicy = Object.freeze({
-  sandboxCleanupTimeoutMs: 30_000,
-});
-
 function selectedAttempt(
   fixture: AttemptFixture,
   name: keyof BlackboxTestFixtures,
@@ -65,7 +61,7 @@ function selectedAttempt(
 
 export function createBlackboxTest(
   runtime: BlackboxAttemptRuntime,
-  policy: BlackboxFixturePolicy = defaultPolicy,
+  policy: BlackboxFixturePolicy = defaultFixturePolicy,
 ): NativeBlackboxTest {
   const testScopes = new WeakSet<TestInfo>();
   return playwrightTest.extend<BlackboxFixtures>({
@@ -121,7 +117,7 @@ export function createBlackboxTest(
 
 export function createBlackboxSystemTest(
   runtime: BlackboxAttemptRuntime,
-  policy: BlackboxFixturePolicy = defaultPolicy,
+  policy: BlackboxFixturePolicy = defaultFixturePolicy,
 ): BlackboxSystemTest {
   return createSystemTestFacade<BlackboxNativeTestArgs, BlackboxNativeWorkerArgs, PrivateFixtures>(
     createBlackboxTest(runtime, policy),
