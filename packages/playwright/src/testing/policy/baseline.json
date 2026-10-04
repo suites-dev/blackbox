@@ -20,7 +20,7 @@
         "repeatEach": 1,
         "grep": "/.*/",
         "grepInvert": null,
-        "testDir": ".",
+        "testDir": "tests",
         "testMatch": "policy.spec.ts",
         "testIgnore": []
       },
@@ -31,7 +31,7 @@
         "repeatEach": 1,
         "grep": "/.*/",
         "grepInvert": null,
-        "testDir": ".",
+        "testDir": "tests",
         "testMatch": "policy.spec.ts",
         "testIgnore": []
       }

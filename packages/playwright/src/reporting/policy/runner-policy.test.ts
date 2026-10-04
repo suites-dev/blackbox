@@ -116,6 +116,17 @@ const driftCases = [
     differences: [unselected(tests('primary')[1]), unselected(tests('secondary')[1])],
   },
   {
+    // FullConfig.rootDir follows testDir, so testDir is recorded from the config directory.
+    change: 'config testDir',
+    variant: 'test-dir',
+    args: [],
+    stillSelected: [],
+    differences: [
+      'policy.projects.primary.testDir: baseline "tests", effective "."',
+      'policy.projects.secondary.testDir: baseline "tests", effective "."',
+    ],
+  },
+  {
     change: '--shard',
     variant: 'baseline',
     args: ['--shard=1/2'],

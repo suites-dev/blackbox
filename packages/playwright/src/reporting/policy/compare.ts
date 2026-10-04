@@ -84,12 +84,12 @@ function readBaseline(path: string): { policy: unknown } | { reason: string } {
 export function compareWithBaseline(
   manifest: PolicyManifest,
   baseline: string | null,
-  rootDir: string,
+  configDir: string,
 ): BaselineComparison {
   if (baseline === null) {
     return { kind: 'unconfigured' };
   }
-  const read = readBaseline(resolve(rootDir, baseline));
+  const read = readBaseline(resolve(configDir, baseline));
   if ('reason' in read) {
     return { kind: 'invalid', baseline, reason: read.reason };
   }

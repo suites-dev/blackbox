@@ -85,7 +85,7 @@ function expectTimeoutOf(config: FullConfig, projectName: string): number | null
   return typeof value === 'number' ? value : null;
 }
 
-function projectPolicy(config: FullConfig, project: FullProject): ProjectPolicy {
+function projectPolicy(config: FullConfig, project: FullProject, configDir: string): ProjectPolicy {
   return {
     retries: project.retries,
     timeout: project.timeout,
@@ -93,7 +93,7 @@ function projectPolicy(config: FullConfig, project: FullProject): ProjectPolicy 
     repeatEach: project.repeatEach,
     grep: patternValue(project.grep),
     grepInvert: patternValue(project.grepInvert),
-    testDir: portablePath(config.rootDir, project.testDir),
+    testDir: portablePath(configDir, project.testDir),
     testMatch: patternValue(project.testMatch),
     testIgnore: patternValue(project.testIgnore),
   };
@@ -107,10 +107,10 @@ function uniqueKey(entries: Record<string, unknown>, name: string): string {
   return key;
 }
 
-function projectPolicies(config: FullConfig): Record<string, ProjectPolicy> {
+function projectPolicies(config: FullConfig, configDir: string): Record<string, ProjectPolicy> {
   const projects: Record<string, ProjectPolicy> = {};
   for (const project of config.projects) {
-    projects[uniqueKey(projects, project.name)] = projectPolicy(config, project);
+    projects[uniqueKey(projects, project.name)] = projectPolicy(config, project, configDir);
   }
   return projects;
 }
@@ -153,18 +153,23 @@ function argvOf(config: FullConfig): string[] {
   return Array.isArray(argv) ? argv.map(String) : [];
 }
 
-/** Capture the policy Playwright resolved from config, CLI flags, and test declarations. */
+/**
+ * Capture the policy Playwright resolved from config, CLI flags, and test declarations.
+ * Project test directories are recorded relative to the config directory, so moving
+ * testDir is drift; FullConfig.rootDir would move with it.
+ */
 export function capturePolicy(
   config: FullConfig,
   suite: Suite,
   fixturePolicy: BlackboxFixturePolicy,
+  configDir: string,
 ): PolicyManifest {
   return {
     schemaVersion: policySchemaVersion,
     argv: argvOf(config),
     policy: {
       run: runPolicy(config),
-      projects: projectPolicies(config),
+      projects: projectPolicies(config, configDir),
       blackbox: { sandboxCleanupTimeoutMs: fixturePolicy.sandboxCleanupTimeoutMs },
       tests: testPolicies(suite),
     },

@@ -215,7 +215,8 @@ and test declarations such as `test.describe.configure`:
 - run settings: `failOnFlakyTests`, `forbidOnly`, `fullyParallel`,
   `globalTimeout`, `grep`/`grepInvert`, `maxFailures`, `shard`, `workers`;
 - per project: `retries`, `timeout`, expect timeout, `repeatEach`,
-  `grep`/`grepInvert`, `testDir`, `testMatch`, `testIgnore`;
+  `grep`/`grepInvert`, `testDir` (relative to the config directory), `testMatch`,
+  `testIgnore`;
 - the Sandbox cleanup timeout;
 - every selected test with its own `retries` and `timeout`.
 

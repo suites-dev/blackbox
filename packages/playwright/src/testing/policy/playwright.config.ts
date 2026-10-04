@@ -1,4 +1,4 @@
-import { join } from 'node:path';
+import { join, relative } from 'node:path';
 
 import { defineConfig } from '../../config.js';
 
@@ -11,7 +11,8 @@ const variant = process.env.BLACKBOX_TEST_POLICY_VARIANT ?? 'baseline';
 
 export default defineConfig({
   blackboxConfigFile: './blackbox.config.yaml',
-  testDir: import.meta.dirname,
+  // testDir differs from the config directory, so option paths prove where they resolve from.
+  testDir: variant === 'test-dir' ? import.meta.dirname : './tests',
   testMatch: 'policy.spec.ts',
   workers: 1,
   retries: variant === 'retries' ? 2 : 1,
@@ -27,7 +28,7 @@ export default defineConfig({
         sandboxLifecycle: false,
         policy: {
           baseline: process.env.BLACKBOX_TEST_POLICY_BASELINE ?? './baseline.json',
-          outputFile: join(output, 'blackbox-policy.json'),
+          outputFile: relative(import.meta.dirname, join(output, 'blackbox-policy.json')),
         },
       },
     ],
