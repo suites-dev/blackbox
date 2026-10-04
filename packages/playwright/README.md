@@ -167,6 +167,39 @@ completed collector shutdown proves that a business workflow finished; the test
 must await its completion boundary before asserting behavior. Effect contract
 diagnostics will be added with the effect evaluator.
 
+## Strict verdicts
+
+Playwright treats a flaky test, a `test.fail()` test that failed, and a skipped
+test as ok, so a run that contains only those can exit 0. With strict verdicts,
+the Blackbox reporter counts a test as **supported** only when it was expected
+to pass, ran, and passed on its first and only attempt. Any other test is
+**not supported** and turns a passing run into a failing one: flaky,
+`test.fail()`, skipped or `fixme`, interrupted, and never-run tests.
+
+```ts
+[
+  '@suites/blackbox-playwright/reporter',
+  {
+    sandboxLifecycle: true,
+    verdicts: 'strict',
+    runManifest: 'blackbox-run.json',
+  },
+],
+```
+
+The reporter prints one verdict line per test, such as
+`supported [REQ-100] checkout.spec.ts › subscribes` or
+`not supported (flaky) [-] checkout.spec.ts › retries`, and writes the run
+manifest to `runManifest`, resolved relative to the Playwright config file. Each
+manifest record has the test's ID, title path, location, expected status,
+outcome, verdict and reasons, and every attempt's status and sandbox
+`executionId`. It also copies the descriptions of `requirement` annotations;
+requirement IDs never affect a verdict.
+
+The option names are provisional. A CLI `--reporter` flag replaces the
+configured reporters, so it also drops the strict verdicts; a run without the
+manifest is not strict evidence.
+
 Effect projection, accepted baselines, drivers, and shared worker
 sandboxes are intentionally outside this package's current surface.
 
