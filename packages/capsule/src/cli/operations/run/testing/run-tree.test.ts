@@ -25,6 +25,8 @@ function span(
     startTimeUnixNano: String(start),
     endTimeUnixNano: null,
     statusCode: null,
+    statusMessage: null,
+    exceptions: [],
     attributes: Object.entries(attributes).map(([key, value]) => ({ key, value })),
     links: [],
   };

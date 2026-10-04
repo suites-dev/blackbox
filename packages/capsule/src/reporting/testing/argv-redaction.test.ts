@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import type { CapsuleExecutionOutcome } from '../../model/execution/outcome.js';
-import { redactOutcomeArgv } from '../redaction.js';
+import { createRedactionContext, redactOutcomeArgv, redactText } from '../redaction.js';
 
 const MASK = '[REDACTED]';
 const SECRET = 'run-json-secret-0123456789';
@@ -109,6 +109,13 @@ const CASES = [
     ['--cert', `client.pem:${MASK}`],
   ],
   ['curl --cert=file:password', [`--cert=client.pem:${SECRET}`], [`--cert=client.pem:${MASK}`]],
+  ['curl --pass=', [`--pass=${SECRET}`], [`--pass=${MASK}`]],
+  [
+    'an environment assignment',
+    [`PGPASSWORD=${SECRET}`, `API_URL=${SECRET}`],
+    [`PGPASSWORD=${MASK}`, `API_URL=${MASK}`],
+  ],
+  ['a sensitive lower-case assignment', [`api_token=${SECRET}`], [`api_token=${MASK}`]],
   [
     'URL user information with an empty user name',
     [`https://:${SECRET}@api.example.test/v1`],
@@ -193,5 +200,30 @@ describe('redactOutcomeArgv', () => {
       },
     } satisfies Refused;
     expect(redactOutcomeArgv(refused)).toBe(refused);
+  });
+});
+
+describe('name=value that is not a credential (#111)', () => {
+  it.each([
+    ['curl -w metrics', ['-w', 'http_code=%{http_code} size_download=%{size_download}\\n']],
+    ['a query string', ['http://localhost:8080/hello?lang=en&probe=bench']],
+    ['a lower-case setting', ['--set', 'trace=present']],
+    ['a single metric', ['-w', 'http_code=%{http_code}']],
+  ])('keeps %s in argv as recorded', (_name, input) => {
+    const argv = ['curl', ...input];
+    expect(argvOf(redactOutcomeArgv(hostExited(argv)))).toEqual(argv);
+  });
+
+  it('keeps harmless pairs in free text and still masks secrets beside them', () => {
+    const context = createRedactionContext();
+    const text = `http_code=200 time_total=0.2 API_URL=${SECRET} ?lang=en&token=${SECRET}&page=2`;
+    expect(redactText(text, 'outcome.stdout', context)).toBe(
+      `http_code=200 time_total=0.2 API_URL=${MASK} ?lang=en&token=${MASK}&page=2`,
+    );
+    // One entry per masked value: the query rule's token is not counted again.
+    expect(context.entries.map((entry) => entry.kind)).toEqual([
+      'sensitive-output',
+      'environment-value',
+    ]);
   });
 });

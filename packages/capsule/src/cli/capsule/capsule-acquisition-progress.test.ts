@@ -152,3 +152,40 @@ void test('interactive substeps mark observed unhealthy and terminated container
     renderer.finish();
   }
 });
+
+void test('plain progress names the awaited endpoint and reports the start-up phase apart from readiness', () => {
+  const output: string[] = [];
+  const renderer = createCapsuleProgressRenderer({
+    presentation: 'plain',
+    color: false,
+    write: (text) => output.push(text),
+  });
+  renderer.sink({
+    ...base,
+    kind: 'acquisition-observation',
+    observation: {
+      kind: 'waiting-for-endpoints',
+      elapsedMs: 30_000,
+      awaiting: [{ service: 'ts-travel-service', containerPort: 12346 }],
+    },
+  });
+  renderer.sink({
+    ...base,
+    sequence: 2,
+    kind: 'acquisition-completed',
+    durationMs: 152_340,
+    startupTimeoutMs: 300_000,
+  });
+  renderer.sink({
+    ...base,
+    sequence: 3,
+    stage: 'readiness',
+    kind: 'readiness-started',
+    url: 'http://localhost:1/welcome',
+    timeoutMs: 300_000,
+  });
+  const text = output.join('');
+  assert.match(text, /ts-travel-service:12346 accepting connections \(30s elapsed\)/u);
+  assert.match(text, /Compose start-up finished after 152\.3s \(start-up budget 300000ms/u);
+  assert.match(text, /readiness checking: http:\/\/localhost:1\/welcome \(timeout 300000ms\)/u);
+});

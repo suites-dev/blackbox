@@ -28,6 +28,7 @@ it('reports real state before completion, deduplicates, and keeps health separat
     inspect,
     now: () => now,
     intervalMs: 1,
+    awaiting: [],
   });
   try {
     await vi.waitFor(() => {
@@ -70,6 +71,7 @@ it('aborts an in-flight inspection on failed acquisition without publishing unav
     mode: { kind: 'events', emit: (event) => events.push(event) },
     now: Date.now,
     intervalMs: 500,
+    awaiting: [],
     inspect: ({ signal }) =>
       new Promise((_resolve, reject) => {
         observedSignal = signal;
@@ -96,6 +98,7 @@ it('records unavailable and recovered observation without converting Docker erro
     inspect,
     now: Date.now,
     intervalMs: 1,
+    awaiting: [],
   });
   try {
     await vi.waitFor(() => {
@@ -128,6 +131,7 @@ it('does not inspect in silent mode, and contains presentation exceptions in eve
     inspect,
     now: Date.now,
     intervalMs: 500,
+    awaiting: [],
   }).stop();
   expect(inspect).not.toHaveBeenCalled();
   const observer = observeComposeStartup({
@@ -140,8 +144,28 @@ it('does not inspect in silent mode, and contains presentation exceptions in eve
     inspect,
     now: Date.now,
     intervalMs: 1,
+    awaiting: [],
   });
   await Promise.resolve();
   await observer.stop();
   expect(inspect).toHaveBeenCalledOnce();
+});
+
+it('names the awaited endpoints in every waiting event', async () => {
+  const events: ComposeAcquisitionObservation[] = [];
+  const awaiting = [{ service: 'travel', containerPort: 12346 }];
+  const observer = observeComposeStartup({
+    mode: { kind: 'events', emit: (event) => events.push(event) },
+    inspect: () => Promise.resolve({ containers: [], resources: [] }),
+    now: () => 0,
+    intervalMs: 1,
+    awaiting,
+  });
+  try {
+    await vi.waitFor(() => {
+      expect(events).toContainEqual({ kind: 'waiting-for-endpoints', elapsedMs: 0, awaiting });
+    });
+  } finally {
+    await observer.stop();
+  }
 });

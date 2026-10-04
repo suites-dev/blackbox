@@ -29,6 +29,30 @@ export type TracePlacement =
       readonly earliestStartUnixNano: string | null;
     };
 
+/**
+ * How long after an activity completes a trace that starts can still be placed
+ * in its time window (the default `capsule run --wait`).
+ */
+export const ACTIVITY_WINDOW_GRACE_MS = 5_000;
+
+/**
+ * The end of an activity's time window, in Unix milliseconds: the next
+ * activity's start or the activity's completion plus the grace, whichever is
+ * first. A running activity's window stays open until the next one starts.
+ */
+export function activityWindowEndMs(input: {
+  readonly completedAt: string | null;
+  readonly nextStartedAt: string | null;
+}): number {
+  const next =
+    input.nextStartedAt === null ? Number.POSITIVE_INFINITY : Date.parse(input.nextStartedAt);
+  const completed =
+    input.completedAt === null
+      ? Number.POSITIVE_INFINITY
+      : Date.parse(input.completedAt) + ACTIVITY_WINDOW_GRACE_MS;
+  return Math.min(next, completed);
+}
+
 export function isoToUnixNano(iso: string): bigint | null {
   const milliseconds = Date.parse(iso);
   return Number.isNaN(milliseconds) ? null : BigInt(milliseconds) * 1_000_000n;

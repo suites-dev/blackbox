@@ -27,11 +27,11 @@ activity <ACT_1>
   observed  1 traces · 1 services · <N> spans · provisional (capsule running)
   SPANS
   public-api  GET /health  200
-    ├─ public-api  PING
+    ├─ public-api  PING → redis
     ├─ public-api  SQS.GetQueueUrl  200
-    │  └─ public-api  POST  200
-    ├─ public-api  pg-pool.connect
-    └─ public-api  pg.query:SELECT subscriptions
+    │  └─ public-api  POST → localstack  200
+    ├─ public-api  pg-pool.connect → postgres
+    └─ public-api  pg.query:SELECT subscriptions → postgres
 → blackbox capsule show <TRACE_1> --session <CAPSULE_1> --spans
 $ blackbox capsule show $CAPSULE_1
 capsule <CAPSULE_1>  subscription-system  running · provisional (capsule running)

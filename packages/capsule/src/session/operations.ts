@@ -224,6 +224,7 @@ export async function reportCapsule(input: CapsuleReportInput): Promise<CapsuleR
     return {
       kind: 'capsule-report',
       document: projectCapsuleReport({
+        generatedAt: new Date().toISOString(),
         record,
         activities,
         progress,

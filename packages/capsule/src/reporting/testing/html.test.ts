@@ -16,6 +16,7 @@ function document(): CapsuleReportDocument {
   return {
     schemaVersion: 1,
     kind: 'capsule-operational-report',
+    generatedAt: '2026-09-23T12:02:00.000Z',
     session: {
       sessionId: 'bright-river-ada',
       system: 'orders',
@@ -27,10 +28,11 @@ function document(): CapsuleReportDocument {
       artifactRoot: '/private/customer/project',
     },
     lifecycle: { kind: 'stopped', retainedState: 'stopped' },
+    observationPolicy: { kind: 'not-recorded' },
     composeProject: { kind: 'unavailable' },
     entrypoint: { kind: 'unavailable' },
     readiness: { kind: 'unavailable' },
-    resources: { containers: [], networks: [], volumes: [] },
+    resources: { containers: [], infrastructure: [], networks: [], volumes: [] },
     activities: [],
     activityTelemetry: [],
     progress: [],
@@ -91,6 +93,9 @@ function hostileDocument(): CapsuleReportDocument {
           networkNames: [],
         },
       ],
+      infrastructure: [
+        { service: hostile, containerName: hostile, containerId: hostile, state: 'running' },
+      ],
       networks: [hostile],
       volumes: [hostile],
     },
@@ -120,6 +125,8 @@ function hostileDocument(): CapsuleReportDocument {
             startTimeUnixNano: null,
             endTimeUnixNano: null,
             statusCode: null,
+            statusMessage: null,
+            exceptions: [],
             attributes: [{ key: 'http.method', value: hostile }],
             links: [],
           },
@@ -231,7 +238,7 @@ describe('shared mockup presentation', () => {
     expect(html).toContain('report-inspector');
     expect(html).toContain('Raw telemetry');
     expect(html).toContain('What was observed');
-    expect(html).toContain("telemetry.spans.length + ' spans'");
+    expect(html).toContain("' system spans'");
     expect(html).toContain("return activity ? ['activity-' + activity.sequence] : open");
     expect(html).toContain("method + ' ' + path");
     expect(html).toContain("span.service + ' → '");

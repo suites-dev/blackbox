@@ -6,6 +6,10 @@ import {
 } from '@suites/blackbox-capsule';
 
 import { redactOutcomeArgv } from '../../../reporting/redaction.js';
+import {
+  redactOutcomeOutput,
+  type RunOutputRedaction,
+} from '../../../reporting/redaction/run-output.js';
 import { nextSteps } from '../../cli/next-steps.js';
 import { ActivityDisplay } from '../../context/display.js';
 import type { InvocationContext } from '../../context/invocation.js';
@@ -20,6 +24,8 @@ export interface RunReportRequest {
   readonly purpose: CapsuleActivityPurpose;
   readonly driver: string | null;
   readonly json: boolean;
+  /** `--json` prints the child's output redacted unless `--raw-output` asked for it as captured. */
+  readonly output: RunOutputRedaction;
   /** Longest wait for telemetry after the child exits, in ms; 0 does not wait. */
   readonly waitMs: number;
 }
@@ -105,11 +111,12 @@ export async function reportRun(
         });
   if (request.json) {
     // A driver that failed first keeps its phase 1 document: no context or observation.
-    // The command line can carry credentials: every argv is redacted as the
-    // report redacts it (argv[0] kept); the field keeps its place and type.
+    // The command line and the child's output can carry credentials: every argv
+    // is redacted as the report redacts it (argv[0] kept), and stdout and stderr
+    // too unless --raw-output; the fields keep their place and type.
     output.json({
       ...result,
-      outcome: redactOutcomeArgv(result.outcome),
+      outcome: redactOutcomeOutput(redactOutcomeArgv(result.outcome), request.output),
       capsule,
       next,
       ...(observed === null ? {} : runDocument(observed)),

@@ -54,12 +54,14 @@ kind capsule-exec-completed
   observation.traces
   observation.tree
   observation.tree[].children
+  observation.tree[].children[].failure
   observation.tree[].children[].kind
   observation.tree[].children[].orphan
   observation.tree[].children[].result
   observation.tree[].children[].service
   observation.tree[].children[].spanId
   observation.tree[].children[].title
+  observation.tree[].failure
   observation.tree[].kind
   observation.tree[].orphan
   observation.tree[].result
@@ -138,12 +140,14 @@ kind capsule-exec-completed
   observation.traces
   observation.tree
   observation.tree[].children
+  observation.tree[].children[].failure
   observation.tree[].children[].kind
   observation.tree[].children[].orphan
   observation.tree[].children[].result
   observation.tree[].children[].service
   observation.tree[].children[].spanId
   observation.tree[].children[].title
+  observation.tree[].failure
   observation.tree[].kind
   observation.tree[].orphan
   observation.tree[].result
@@ -280,12 +284,14 @@ kind collector-activity-found
   observation.traces
   observation.tree
   observation.tree[].children
+  observation.tree[].children[].failure
   observation.tree[].children[].kind
   observation.tree[].children[].orphan
   observation.tree[].children[].result
   observation.tree[].children[].service
   observation.tree[].children[].spanId
   observation.tree[].children[].title
+  observation.tree[].failure
   observation.tree[].kind
   observation.tree[].orphan
   observation.tree[].result
@@ -354,12 +360,14 @@ kind collector-trace-found
   traceId
   tree
   tree[].children
+  tree[].children[].failure
   tree[].children[].kind
   tree[].children[].orphan
   tree[].children[].result
   tree[].children[].service
   tree[].children[].spanId
   tree[].children[].title
+  tree[].failure
   tree[].kind
   tree[].orphan
   tree[].result

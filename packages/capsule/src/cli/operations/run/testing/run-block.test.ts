@@ -2,7 +2,10 @@ import assert from 'node:assert/strict';
 import { join } from 'node:path';
 import test from 'node:test';
 
+import type { CapsuleActivityReport } from '@suites/blackbox-capsule';
+
 import { activityView } from '../../inspection/show-activity.js';
+import { NO_WAIT } from '../../inspection/show-json.js';
 import { LiveRunBlock, runBlockLines, runDocument } from '../run-block.js';
 import {
   SNAPSHOTS,
@@ -18,6 +21,14 @@ import {
   waited,
 } from './run-recorded.fixture.js';
 
+function completedLater(activity: CapsuleActivityReport, ms: number): CapsuleActivityReport {
+  if (activity.kind !== 'completed') {
+    throw new Error('expected a completed activity');
+  }
+  const completedAt = new Date(Date.parse(activity.completedAt) + ms).toISOString();
+  return { ...activity, completedAt };
+}
+
 /**
  * `run` renderer snapshots from `recorded-run.json` (see run-recorded.fixture.ts).
  * Update them with `node --test --test-update-snapshots` on the compiled test
@@ -26,7 +37,8 @@ import {
 
 void test('run block: context sent, filtered tree, uncaused traces (non-TTY)', async (t) => {
   const recorded = await running();
-  const activity = named(recorded, 'Create Alice subscription');
+  // Completing 10 s later keeps all four later traces in the activity's window.
+  const activity = completedLater(named(recorded, 'Create Alice subscription'), 10_000);
   const lines = runBlockLines(block(recorded, activity, waited(812)));
   t.assert.fileSnapshot(text(lines), join(SNAPSHOTS, 'run-sent.txt'), raw);
   // More than three later traces: three warnings, then one summary line.
@@ -164,11 +176,13 @@ void test('run block: at most 40 tree lines, then how many more', async (t) => {
   const tree = lines.slice(lines.findIndex((line) => line.startsWith('  observed')) + 1);
   const more = tree.findIndex((line) => /^ {4}… \d+ more spans$/u.test(line));
   assert.equal(more, 40);
-  // show keeps printing every span.
-  const shown = activityView({
-    short: short(activity.activityId),
-    activity,
-    investigation: investigation(many),
-  }).lines;
-  assert.ok(shown.filter((line) => line.startsWith('    ')).length > 60);
+  // show folds a tree this large by default, and prints every span with --full.
+  const input = { short: short(activity.activityId), activity, investigation: investigation(many) };
+  const spanLines = (lines: readonly string[]) => lines.filter((line) => line.startsWith('    '));
+  const full = activityView(input, NO_WAIT, 'full').lines;
+  const folded = activityView(input).lines;
+  assert.ok(spanLines(full).length > 60);
+  assert.ok(spanLines(folded).length < spanLines(full).length);
+  assert.ok(folded.some((line) => line.startsWith('  services  ')));
+  assert.ok(folded.includes('  --full prints every span'));
 });
