@@ -69,23 +69,27 @@ test('rejects worker reuse and missing acquisition timings as parallel evidence'
   assert.throws(() => verifyParallelAcquisition(missing), /within a test file/);
 });
 
-test('attributes helper callsites to their catalog without treating helpers as entry files', () => {
-  for (const helper of ['browser', 'database', 'messaging']) {
-    assert.deepEqual(
-      expectedCatalogForSpec(
-        `/consumer/tests/playwright/effects-acceptance-${helper}.ts`,
-        'candidate case',
-      ),
-      { kind: 'system', id: 'effects-acceptance' },
-    );
-  }
+test('attributes explicit specs to their catalog and rejects obsolete declaration modules', () => {
   assert.deepEqual(
     expectedCatalogForSpec(
-      '/consumer/tests/playwright/effects-acceptance-database.ts',
+      '/consumer/tests/playwright/effects-acceptance.spec.ts',
+      'candidate case',
+    ),
+    { kind: 'system', id: 'effects-acceptance' },
+  );
+  assert.deepEqual(
+    expectedCatalogForSpec(
+      '/consumer/tests/playwright/effects-acceptance.spec.ts',
       '@withheld successful action stays inconclusive under positive and negated matchers',
     ),
     { kind: 'system', id: 'effects-withheld' },
   );
+  for (const helper of ['browser', 'database', 'messaging']) {
+    assert.equal(
+      expectedCatalogForSpec(`/consumer/tests/playwright/effects-acceptance-${helper}.ts`, 'case'),
+      undefined,
+    );
+  }
 
   const helpersOnly = parallelAcquisitions();
   helpersOnly.attempts.forEach((attempt, index) => {

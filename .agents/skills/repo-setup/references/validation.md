@@ -88,6 +88,18 @@ The E2E config uses fully parallel tests with two workers. Its live evidence rec
 acquisition start/completion times on the reporter's monotonic clock; acceptance
 requires overlapping acquisition on distinct workers within a file and across files.
 Worker counts alone do not establish concurrent sandbox execution.
+Keep consumer journeys explicit in their `.spec.ts` files. E2E inherits the
+repository ESLint configuration. Playwright spec files replace the general file
+and function line limits with an 80 code-token-line executable-function limit.
+Only direct, synchronous last-argument callbacks to `test.system`,
+`system.sandbox`, and `sandbox.describe` are exempt as declaration containers;
+nested tests, hooks, steps, helpers, async callbacks, and unrelated describes
+remain limited.
+
+Run `pnpm --dir e2e run test:lint` to verify the local rule and
+`pnpm --dir e2e run lint` for consumer test/config/reporter/lint sources. Keep
+both separate from the repository's `pnpm lint`; CI runs all three as separate
+named steps in the lint job.
 The console uses Playwright's native list reporter. Verify ready/cleanup messages
 in each attempt's captured stdout, no streamed container polling, and retained
 `blackbox-diagnostics` attachments. Lifecycle messages can be disabled using the

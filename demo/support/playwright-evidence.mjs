@@ -141,9 +141,6 @@ export async function boundary(consumerRootValue) {
     'sut/effects-acceptance/init.sql',
     'sut/effects-acceptance/package-lock.json',
     'sut/effects-acceptance/package.json',
-    'tests/playwright/effects-acceptance-browser.ts',
-    'tests/playwright/effects-acceptance-database.ts',
-    'tests/playwright/effects-acceptance-messaging.ts',
     'tests/playwright/effects-acceptance.spec.ts',
     'tests/playwright/effects-acceptance.support.ts',
   ];
@@ -201,14 +198,7 @@ function collectSpecs(suite, result = []) {
 
 export function expectedCatalogForSpec(file, title) {
   const name = file.split(/[/\\]/u).at(-1);
-  if (
-    [
-      'effects-acceptance.spec.ts',
-      'effects-acceptance-browser.ts',
-      'effects-acceptance-database.ts',
-      'effects-acceptance-messaging.ts',
-    ].includes(name)
-  ) {
+  if (name === 'effects-acceptance.spec.ts') {
     return {
       kind: 'system',
       id: title.startsWith('@withheld ') ? 'effects-withheld' : 'effects-acceptance',

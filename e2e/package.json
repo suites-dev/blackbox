@@ -8,5 +8,9 @@
     "@suites/blackbox": "workspace:*",
     "@suites/blackbox-catalog": "workspace:*",
     "@suites/blackbox-cli": "workspace:*"
+  },
+  "scripts": {
+    "lint": "eslint tests/playwright reporters playwright.config.ts lint",
+    "test:lint": "node --test lint/*.test.mjs"
   }
 }
