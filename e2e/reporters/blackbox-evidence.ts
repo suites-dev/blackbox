@@ -34,8 +34,12 @@ function isEffectsSource(file: string): boolean {
   return /[/\\]effects-acceptance\.spec\.ts$/u.test(file);
 }
 
-/** Acceptance oracle: observe worker events before the test result is finalized. */
+/**
+ * Maintainer-only acceptance recorder; ordinary consumer projects do not need it.
+ * Public live callbacks preserve ordering evidence that final test results cannot reconstruct.
+ */
 export default class BlackboxEvidence implements Reporter {
+  // TestResult identifies one physical attempt, so a retry receives its own evidence record.
   private readonly attempts = new Map<
     TestResult,
     {
@@ -90,12 +94,14 @@ export default class BlackboxEvidence implements Reporter {
     if (attempt === undefined) {
       return;
     }
+    // Fixture lifecycle steps have their own oracle and must not inflate business-step coverage.
     if (this.lifecycle.beginStep(result, step, attempt) !== 'business') {
       return;
     }
     if (step.parent !== undefined && step.parent.category === 'test.step') {
       attempt.nestedSteps++;
     }
+    // Seeing readiness later in a final result cannot prove it preceded business execution.
     if (
       !attempt.events.some((event) => event.phase === 'readiness' && event.status === 'completed')
     ) {
@@ -115,6 +121,7 @@ export default class BlackboxEvidence implements Reporter {
       }
       const event = JSON.parse(attachment.body.toString('utf8')) as Event;
       attempt.events.push(event);
+      // Reporter-clock samples make concurrent acquisition overlap independently checkable.
       if (event.phase === 'acquisition' && event.status === 'started') {
         attempt.acquisitionStartedAt = performance.now();
       }
@@ -152,6 +159,7 @@ export default class BlackboxEvidence implements Reporter {
     attempt.effectsAssertions = result.attachments.filter(
       (attachment) => attachment.name === 'blackbox-effects',
     ).length;
+    // Effects cases may use activity actions, but still require effects assertion attachments.
     if (isEffectsSource(attempt.sourceFile) && attempt.effectsAssertions === 0) {
       attempt.errors.push('Missing live effects assertion evidence');
     }
@@ -165,17 +173,20 @@ export default class BlackboxEvidence implements Reporter {
     const errors = attempts.flatMap(({ title, errors }) =>
       errors.map((error) => `${title}: ${error}`),
     );
+    // This fixture intentionally contains exactly 18 physical acceptance cases.
     if (attempts.length !== 18) {
       errors.push(`Expected 18 attempts, received ${attempts.length}`);
     }
     if (!attempts.some(({ nestedSteps }) => nestedSteps > 0)) {
       errors.push('No nested business steps');
     }
+    // The harness joins this artifact to retained reports, attempt identity and cleanup records.
     await writeFile(
       join(import.meta.dirname, '../test-results/live-reporting.json'),
       JSON.stringify({ attempts, errors }, null, 2),
     );
     if (errors.length > 0) {
+      // Broken evidence fails the lane even when the test's business assertions passed.
       return { status: 'failed' };
     }
     return undefined;
