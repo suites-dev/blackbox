@@ -170,6 +170,11 @@ const TIERS = [
     packages: ['capsule', 'playwright'],
   },
   {
+    name: 'extensions',
+    why: 'opt-in authoring layers built on a composition root, such as Gherkin input on native Playwright',
+    packages: ['gherkin'],
+  },
+  {
     name: 'host',
     why: 'the CLI binary, which loads plugins at runtime instead of importing them',
     packages: ['cli'],
@@ -308,6 +313,14 @@ module.exports = {
         pathNot: ['^packages/playwright/', '^packages/instrumentation-runtime-[^/]+/'],
       },
       to: { path: '^packages/instrumentation-runtime-[^/]+/' },
+    },
+    {
+      name: 'gherkin-registry-is-library-only',
+      severity: 'error',
+      comment:
+        'Hard rule 3: step definitions come from one shared, reviewed step library. Only that library may build a vocabulary; the compiler and generated-code runtime receive a finished, closed StepLibrary.',
+      from: { path: inPackage('gherkin'), pathNot: '^packages/gherkin/src/(library|runtime)/' },
+      to: { path: '^packages/gherkin/src/runtime/registry\\.ts$' },
     },
     {
       name: 'command-does-not-import-command',

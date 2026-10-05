@@ -1,0 +1,280 @@
+{
+  "schemaVersion": 1,
+  "compiler": "@suites/blackbox-gherkin",
+  "library": {
+    "name": "compiler-test-library",
+    "version": "0.0.0",
+    "vocabularyHash": "sha256:9b0f687cc036f7d237af1a2b7fdee6d0eb95587856292ff80c1cbdff2da2243c"
+  },
+  "capabilities": [],
+  "features": [
+    {
+      "feature": "features/arguments.feature",
+      "featureHash": "sha256:433ae70ab6ca03e861999813b7b011da244fd6c6ed50e6eca2cdd6e66e0ed5ab",
+      "title": "Feature: Doc strings and data tables are passed as plain data",
+      "description": "",
+      "selection": {
+        "kind": "system",
+        "id": "subscription-system",
+        "sandbox": "default"
+      },
+      "generated": "features/arguments.feature.spec.mjs",
+      "generatedHash": "sha256:499e5c61d6fb973ae99d2e8445f15fc3aae9f9f298dce9842eb8e5b77e5bb1a9"
+    },
+    {
+      "feature": "features/background.feature",
+      "featureHash": "sha256:e5ec891d6150e7b95fad24ba810a465d0ed583633f6db5e081773cdd114a2c16",
+      "title": "Feature: Feature-level Background",
+      "description": "The Background runs inside every attempt, before each scenario's own steps.\n  Description lines are documentation and are never executed.",
+      "selection": {
+        "kind": "system",
+        "id": "subscription-system",
+        "sandbox": "default"
+      },
+      "generated": "features/background.feature.spec.mjs",
+      "generatedHash": "sha256:652b251c68cd22812e785fd872d50b2761ef254df9440f290c623d7dacc07ea9"
+    },
+    {
+      "feature": "features/outline.feature",
+      "featureHash": "sha256:f596eead2b8105ba0bc009560eb4a0e58f0b9e726ded682fe3b3fb1c03a16bb5",
+      "title": "Feature: Scenario Outline rows become separate tests",
+      "description": "",
+      "selection": {
+        "kind": "system",
+        "id": "subscription-system",
+        "sandbox": "default"
+      },
+      "generated": "features/outline.feature.spec.mjs",
+      "generatedHash": "sha256:75e8d844631a755c3be3a5fd6eddc59b722cc7c3853c0d49d8e012acb49d5344"
+    },
+    {
+      "feature": "features/rules.feature",
+      "featureHash": "sha256:25ad22b7deeeed6e54948e0f88b82b281461da14e23675ac0d5115a4f5618973",
+      "title": "Feature: Rules and Rule-level Backgrounds",
+      "description": "",
+      "selection": {
+        "kind": "system",
+        "id": "subscription-system",
+        "sandbox": "default"
+      },
+      "generated": "features/rules.feature.spec.mjs",
+      "generatedHash": "sha256:34239fdb2b10320c7bd0e87662ad1b78f25a6059f2c50e86374c7e3ca4e70054"
+    },
+    {
+      "feature": "features/subsystem.feature",
+      "featureHash": "sha256:2ae43a4faf2cd4e4b06177c3260a3f046f0e51315cd2c6bc4cbeb7ee428b0304",
+      "title": "Feature: A subsystem is selected through @system and its kind is read from the catalog",
+      "description": "",
+      "selection": {
+        "kind": "subsystem",
+        "id": "payment-mock",
+        "sandbox": "bare"
+      },
+      "generated": "features/subsystem.feature.spec.mjs",
+      "generatedHash": "sha256:58723651e781a129db868e02c9b45ac97918db73131ef10dbeda418915dc39a2"
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "features/arguments.feature:4",
+      "feature": "features/arguments.feature",
+      "line": 4,
+      "column": 3,
+      "exampleLine": null,
+      "titlePath": [
+        "Feature: Doc strings and data tables are passed as plain data",
+        "Scenario: concurrent requests"
+      ],
+      "generated": "features/arguments.feature.spec.mjs",
+      "selection": {
+        "kind": "system",
+        "id": "subscription-system",
+        "sandbox": "default"
+      },
+      "requirements": []
+    },
+    {
+      "id": "features/background.feature:14",
+      "feature": "features/background.feature",
+      "line": 14,
+      "column": 3,
+      "exampleLine": null,
+      "titlePath": [
+        "Feature: Feature-level Background",
+        "Scenario: a direct request"
+      ],
+      "generated": "features/background.feature.spec.mjs",
+      "selection": {
+        "kind": "system",
+        "id": "subscription-system",
+        "sandbox": "default"
+      },
+      "requirements": [
+        "REQ-100"
+      ]
+    },
+    {
+      "id": "features/background.feature:19",
+      "feature": "features/background.feature",
+      "line": 19,
+      "column": 3,
+      "exampleLine": null,
+      "titlePath": [
+        "Feature: Feature-level Background",
+        "Scenario: a second scenario shares the Background"
+      ],
+      "generated": "features/background.feature.spec.mjs",
+      "selection": {
+        "kind": "system",
+        "id": "subscription-system",
+        "sandbox": "default"
+      },
+      "requirements": [
+        "REQ-100",
+        "REQ-101"
+      ]
+    },
+    {
+      "id": "features/outline.feature:5:14",
+      "feature": "features/outline.feature",
+      "line": 5,
+      "column": 3,
+      "exampleLine": 14,
+      "titlePath": [
+        "Feature: Scenario Outline rows become separate tests",
+        "Scenario: ghost-user is rejected [user=ghost-user, method=pm_ghost, status=404]"
+      ],
+      "generated": "features/outline.feature.spec.mjs",
+      "selection": {
+        "kind": "system",
+        "id": "subscription-system",
+        "sandbox": "default"
+      },
+      "requirements": [
+        "REQ-102"
+      ]
+    },
+    {
+      "id": "features/outline.feature:5:15",
+      "feature": "features/outline.feature",
+      "line": 5,
+      "column": 3,
+      "exampleLine": 15,
+      "titlePath": [
+        "Feature: Scenario Outline rows become separate tests",
+        "Scenario: mallory is rejected [user=mallory, method=pm_mallory_1, status=404]"
+      ],
+      "generated": "features/outline.feature.spec.mjs",
+      "selection": {
+        "kind": "system",
+        "id": "subscription-system",
+        "sandbox": "default"
+      },
+      "requirements": [
+        "REQ-102"
+      ]
+    },
+    {
+      "id": "features/outline.feature:5:19",
+      "feature": "features/outline.feature",
+      "line": 5,
+      "column": 3,
+      "exampleLine": 19,
+      "titlePath": [
+        "Feature: Scenario Outline rows become separate tests",
+        "Scenario: eve is rejected [user=eve, method=pm_eve, status=403]"
+      ],
+      "generated": "features/outline.feature.spec.mjs",
+      "selection": {
+        "kind": "system",
+        "id": "subscription-system",
+        "sandbox": "default"
+      },
+      "requirements": [
+        "REQ-102"
+      ]
+    },
+    {
+      "id": "features/rules.feature:7",
+      "feature": "features/rules.feature",
+      "line": 7,
+      "column": 3,
+      "exampleLine": null,
+      "titlePath": [
+        "Feature: Rules and Rule-level Backgrounds",
+        "Scenario: outside any Rule"
+      ],
+      "generated": "features/rules.feature.spec.mjs",
+      "selection": {
+        "kind": "system",
+        "id": "subscription-system",
+        "sandbox": "default"
+      },
+      "requirements": [
+        "REQ-100"
+      ]
+    },
+    {
+      "id": "features/rules.feature:18",
+      "feature": "features/rules.feature",
+      "line": 18,
+      "column": 5,
+      "exampleLine": null,
+      "titlePath": [
+        "Feature: Rules and Rule-level Backgrounds",
+        "Rule: full-path subscriptions",
+        "Scenario: an eligible user subscribes"
+      ],
+      "generated": "features/rules.feature.spec.mjs",
+      "selection": {
+        "kind": "system",
+        "id": "subscription-system",
+        "sandbox": "default"
+      },
+      "requirements": [
+        "REQ-100",
+        "REQ-101",
+        "REQ-110"
+      ]
+    },
+    {
+      "id": "features/rules.feature:28",
+      "feature": "features/rules.feature",
+      "line": 28,
+      "column": 5,
+      "exampleLine": null,
+      "titlePath": [
+        "Feature: Rules and Rule-level Backgrounds",
+        "Rule: a Rule without its own Background or requirement",
+        "Scenario: an unknown user is rejected"
+      ],
+      "generated": "features/rules.feature.spec.mjs",
+      "selection": {
+        "kind": "system",
+        "id": "subscription-system",
+        "sandbox": "default"
+      },
+      "requirements": [
+        "REQ-100"
+      ]
+    },
+    {
+      "id": "features/subsystem.feature:4",
+      "feature": "features/subsystem.feature",
+      "line": 4,
+      "column": 3,
+      "exampleLine": null,
+      "titlePath": [
+        "Feature: A subsystem is selected through @system and its kind is read from the catalog",
+        "Scenario: the subsystem answers"
+      ],
+      "generated": "features/subsystem.feature.spec.mjs",
+      "selection": {
+        "kind": "subsystem",
+        "id": "payment-mock",
+        "sandbox": "bare"
+      },
+      "requirements": []
+    }
+  ]
+}
