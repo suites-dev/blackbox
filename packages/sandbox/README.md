@@ -43,6 +43,14 @@ admission record before touching Docker. It then starts the selected Compose
 services, resolves explicitly requested endpoints, snapshots owned resources, and
 returns a [`SandboxHandle`](src/model/handle.ts).
 
+Startup waits, within `startupTimeoutMs`, until every container Compose started
+has its published ports listening inside the container and, when the container
+declares a Docker health check, until that check reports healthy. Neither signal
+alone counts: a passing health check does not make a closed port ready. The
+port check runs a shell command inside the container, so an image with neither
+`/bin/sh` nor `/bin/bash` cannot pass it; this already applied to containers
+without a health check. See [`readiness/wait-strategy.ts`](src/acquisition/readiness/wait-strategy.ts).
+
 ```text
 validate -> admit -> start Compose -> inspect -> running -> stop -> completed
                          |                          |
@@ -105,5 +113,7 @@ local Docker environment available, run the bounded proof explicitly:
 pnpm --filter @suites/blackbox-sandbox test:docker
 ```
 
-The Docker proof creates isolated Compose projects and requires its owned
-containers, networks, and volumes to be removed before it succeeds.
+The Docker proof sets `BLACKBOX_SANDBOX_DOCKER_TEST=1` and runs every
+`src/**/*.docker.test.ts` file. It creates isolated Compose projects and requires its owned
+containers, networks, and volumes to be removed before it succeeds. CI runs it
+as the `Sandbox Docker tests` lane of the E2E workflow (`pnpm test:sandbox:docker`).

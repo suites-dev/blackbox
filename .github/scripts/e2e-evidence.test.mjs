@@ -398,6 +398,19 @@ test('the CLI approves one journey run for every golden the checkout ships', asy
   assert.deepEqual(approvedCliCommand(['pnpm', 'test:e2e:journeys']), ['pnpm', 'test:e2e:journeys']);
 });
 
+test('the CLI approves the sandbox Docker lane command and nothing appended to it', () => {
+  assert.deepEqual(approvedCliCommand(['pnpm', 'test:sandbox:docker']), [
+    'pnpm',
+    'test:sandbox:docker',
+  ]);
+  for (const command of [
+    ['pnpm', 'test:sandbox:docker', '--', '--reporter=dot'],
+    ['pnpm', 'test:sandbox:docker', 'src/acquisition'],
+  ]) {
+    assert.throws(() => approvedCliCommand(command), /not an approved repository check/, command.join(' '));
+  }
+});
+
 test('the CLI refuses journey runs that do not name exactly one shipped golden', () => {
   const refused = [
     // Journey grammar, but no such golden.
