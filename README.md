@@ -2,7 +2,7 @@
 
 **Executable specs for agentic software engineering.**
 
-Blackbox is a **verification framework for coding agents**. It helps your agent check that the running software does what the spec says, using system tests and evidence from the real system.
+Blackbox is a **verification framework for coding agents**. It gives your agent the tools to run system tests in isolation, collect evidence, and verify behavior against your spec.
 
 Your agent sets it up, investigates behavior in a Capsule, and records repeatable checks with native Playwright. You review the expected behavior and follow the results in the terminal or HTML report.
 
@@ -16,7 +16,7 @@ Your agent sets it up, investigates behavior in a Capsule, and records repeatabl
 
 Already working from a Markdown specification, or using a spec-driven development (SDD) workflow such as Spec Kit? Keep that workflow.
 
-**The spec describes what to build. Blackbox checks whether the running system behaves that way.**
+**Your spec describes what the software should do. Blackbox gives your agent a way to test that behavior against the running system.**
 
 The handoff starts with your requirements, not with whatever the implementation happens to do. Your agent turns those requirements into concrete scenarios for review. The approved scenarios become executable checks.
 
@@ -143,11 +143,32 @@ This is how a specification becomes executable: its expectations are checked aga
 
 Blackbox is built for teams working with coding agents. Setup and operation belong to the agent; you own the intent and approve the expected behavior.
 
-The intended onboarding is one task, not a tour of the package architecture. Give your coding agent:
+The proposed one-command entry point is **not implemented yet**:
 
-> Set up Suites Blackbox for this repository. Inspect the project and its existing specifications. Install compatible Blackbox packages and the skills needed for this agent, then use Discovery to identify the smallest useful system boundary. Configure the catalog, supported instrumentation, and any required drivers. Start the system, run a focused check, and show me the report. Draft scenarios from the requirements for review; do not change the requirements to match the implementation. Tell me which preview steps are unavailable.
+```sh
+npx @suites/blackbox-cli onboarding start
+```
 
-This is the agent's setup task, not a claim that a single automatic setup command has shipped. The agent checks installed capabilities and requests any permissions or secrets it needs rather than guessing.
+The intended command bootstraps the agent-guided setup. Discovery, project configuration, and verification remain work your coding agent carries out through Blackbox's CLI and skills. It must work before project-local Blackbox packages or skills are installed.
+
+For the current preview, give your coding agent this setup task:
+
+```txt
+Set up Suites Blackbox for this repository using the Blackbox CLI
+and its agent skills.
+
+Inspect the project and its existing specifications. Install compatible
+Blackbox packages and the skills needed for this agent, then use Discovery
+to identify the smallest useful system boundary. Configure the catalog,
+supported instrumentation, and any required drivers.
+
+Start the system, run a focused check, and show me the report. Draft
+executable scenarios from the requirements for review. Do not change
+the requirements to match the implementation.
+
+Check which capabilities are available. Ask for any missing permissions
+or secrets, and report unsupported preview steps instead of inventing them.
+```
 
 A dedicated SDD handoff skill is planned: take the existing spec, draft supported scenarios, and connect them to verification. `speckit.verify` is a possible name, **not an available command or an official Spec Kit integration**.
 
@@ -224,8 +245,8 @@ The agent reads structured results; you can follow the same investigation in HTM
 
 </details>
 
-Blackbox checks the behavior of the running system. Use a unit test to check an isolated calculation. Use Blackbox when the question is whether that calculation results in the correct charge, saved state, or downstream behavior. The distinction is the behavior being checked, not which source file changed.
+Blackbox gives your agent the tools to verify the behavior of the running system. Use a unit test to check an isolated calculation. Use Blackbox when the question is whether that calculation results in the correct charge, saved state, or downstream behavior. The distinction is the behavior being checked, not which source file changed.
 
 ---
 
-**Alpha scope:** Native Playwright and Capsule workflows are available in the source preview. The [Gherkin compiler and step library](https://github.com/suites-dev/blackbox/pull/131), [runner guardrails](https://github.com/suites-dev/blackbox/pull/155), and [spec/code separation](https://github.com/suites-dev/blackbox/pull/133) are separate deliveries. The Feature example uses the preview response/state vocabulary, not arbitrary natural-language steps. The dedicated SDD skill and complete public spec-to-CI onboarding remain planned. This README does not imply npm publication or that all preview pieces are connected in this branch.
+**Alpha scope:** Native Playwright and Capsule workflows are available in the source preview. The [Gherkin compiler and step library](https://github.com/suites-dev/blackbox/pull/131), [runner guardrails](https://github.com/suites-dev/blackbox/pull/155), and [spec/code separation](https://github.com/suites-dev/blackbox/pull/133) are separate deliveries. The Feature example uses the preview response/state vocabulary, not arbitrary natural-language steps. The onboarding command, dedicated SDD skill, and complete public spec-to-CI onboarding remain planned. This README does not imply npm publication or that all preview pieces are connected in this branch.
