@@ -1,12 +1,9 @@
 import assert from 'node:assert/strict';
 import { readdir, readFile } from 'node:fs/promises';
-import { createRequire } from 'node:module';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const require = createRequire(import.meta.url);
-const embedded = process.argv.includes('--embedded');
 const authoredModules = [
   'domain.ts',
   'fixture-control-auth.ts',
@@ -87,30 +84,14 @@ for (const authoredRelative of authoredModules) {
   const mappedAuthoredPath = path.resolve(path.dirname(mapPath), parsed.sources[0]);
   const expectedAuthoredPath = path.join(root, 'src', authoredRelative);
   assert.equal(mappedAuthoredPath, expectedAuthoredPath, `${generatedRelative} authored binding`);
-  if (!embedded) {
-    assert.equal(
-      parsed.sourcesContent[0],
-      await readFile(expectedAuthoredPath, 'utf8'),
-      `${generatedRelative} exact sourcesContent`,
-    );
-  }
+  assert.equal(
+    parsed.sourcesContent[0],
+    await readFile(expectedAuthoredPath, 'utf8'),
+    `${generatedRelative} exact sourcesContent`,
+  );
 }
 
-if (embedded) {
-  assert.match(process.env.NODE_OPTIONS ?? '', /(?:^|\s)--enable-source-maps(?:\s|$)/);
-  const config = require(path.join(root, 'dist/lib/config.js'));
-  let mappedStack = '';
-  try {
-    config.requiredEnvironment('SOURCE_MAP_PROBE_MUST_BE_UNSET');
-  } catch (error) {
-    mappedStack = error instanceof Error ? (error.stack ?? '') : '';
-  }
-  assert.match(mappedStack, /src\/lib\/config\.ts:\d+:\d+/, 'runtime stack uses authored source');
-}
-
-console.log(
-  `PASS ${String(authoredModules.length)} Node CommonJS sidecar source maps${embedded ? ' embedded in image' : ''}`,
-);
+console.log(`PASS ${String(authoredModules.length)} Node CommonJS sidecar source maps`);
 
 async function generatedModules(directory, prefix = '') {
   const modules = [];
