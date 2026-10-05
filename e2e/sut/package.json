@@ -6,8 +6,7 @@
   "scripts": {
     "build": "node scripts/clean-build.mjs && tsc -p tsconfig.json",
     "test": "npm run verify:source-maps && node ../../scripts/run-node-tests.mjs 'dist/**/*.test.js' '{dist/**/*.test.js,scripts/**/*.test.mjs}'",
-    "verify:source-maps": "npm run build && node scripts/verify-source-maps.mjs",
-    "smoke": "node scripts/smoke.mjs"
+    "verify:source-maps": "npm run build && node scripts/verify-source-maps.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-sqs": "3.1145.0",
