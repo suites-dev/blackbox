@@ -35,6 +35,7 @@
         "do_not_enforce_on_create": true,
         "required_status_checks": [
           { "context": "CI Gate", "integration_id": 15368 },
+          { "context": "E2E Gate", "integration_id": 15368 },
           { "context": "Capsule E2E (Testcontainers)", "integration_id": 15368 },
           { "context": "Validate PR title", "integration_id": 15368 },
           { "context": "Security Gate", "integration_id": 15368 }

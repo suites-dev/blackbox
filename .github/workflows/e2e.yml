@@ -524,9 +524,10 @@ jobs:
           done
 
   # This display name is the required status check in branch protection
-  # (maintainers/docs/security.md). Renaming it blocks every merge.
+  # (maintainers/docs/security.md). Renaming it without first updating the live
+  # ruleset blocks every merge.
   gate:
-    name: Capsule E2E (Testcontainers)
+    name: E2E Gate
     if: always()
     needs: [build, transport, demo, storyboard, journeys, playwright, skills]
     runs-on: ubuntu-24.04
@@ -556,3 +557,22 @@ jobs:
             fi
           done
           exit "$failed"
+
+  # Transition shim: the live ruleset still requires the old display name of
+  # `E2E Gate`. Remove this job, and the old name from
+  # .github/security/branches.ruleset.json, once the live ruleset requires
+  # `E2E Gate` instead.
+  legacy-gate:
+    name: Capsule E2E (Testcontainers)
+    if: always()
+    needs: [gate]
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Mirror the E2E Gate result
+        env:
+          GATE_RESULT: ${{ needs.gate.result }}
+        run: |
+          if [[ "$GATE_RESULT" != success ]]; then
+            echo "E2E Gate: $GATE_RESULT" >&2
+            exit 1
+          fi
