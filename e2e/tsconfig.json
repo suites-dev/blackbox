@@ -7,7 +7,12 @@
     "baseUrl": "..",
     "paths": {
       "@playwright/test": ["packages/playwright/node_modules/@playwright/test/index.d.ts"],
-      "@suites/blackbox-playwright": ["packages/playwright/src/index.ts"]
+      "@playwright/test/reporter": [
+        "packages/playwright/node_modules/@playwright/test/reporter.d.ts"
+      ],
+      "@suites/blackbox-playwright": ["packages/playwright/src/index.ts"],
+      "@suites/blackbox-playwright/config": ["packages/playwright/src/config.ts"],
+      "@suites/blackbox-playwright/reporter": ["packages/playwright/src/reporter.ts"]
     },
     "strict": true,
     "noEmit": true,
@@ -17,6 +22,6 @@
     "allowArbitraryExtensions": true,
     "types": ["node"]
   },
-  "include": ["playwright.config.ts", "tests/playwright/**/*.ts"],
+  "include": ["playwright.config.ts", "tests/playwright/**/*.ts", "reporters/**/*.ts"],
   "exclude": ["node_modules"]
 }

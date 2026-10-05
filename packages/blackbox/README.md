@@ -12,15 +12,13 @@ The release installation model is:
 
 ```sh
 npm install --save-dev @suites/blackbox@next @suites/blackbox-cli@next
-# Optional: choose either or both execution adapters.
-npm install --save-dev @suites/blackbox-capsule@next @suites/blackbox-playwright@next
 ```
 
 Prereleases use the `next` distribution tag. Use your project's package manager
 and compatible Blackbox versions. Node 22.15+
 is required; Docker is needed for Compose-backed execution, not skill installation
-or static discovery. Runtime instrumentation and project drivers are separate
-choices; see [installation](../../docs/installation.md).
+or static discovery. Install integrations separately when needed; see
+[installation](../../docs/installation.md).
 
 | Included dependency          | Responsibility                                           |
 | ---------------------------- | -------------------------------------------------------- |
@@ -33,9 +31,9 @@ This package has no `bin` or launcher. Although CLI is a runtime dependency,
 declare it directly in your project to expose its command through the package
 manager; do not depend on transitive binary hoisting.
 
-Capsule, Playwright, Sandbox, and runtime instrumentation are not dependencies of
-this package. Execution adapters own the runtime packages they need. Installing
-the main package alone does not expose Capsule commands or its skill.
+Integrations are not dependencies of this package. They own the runtime packages
+they need, and installing the main package alone does not install them. See the
+[integration choices](../../docs/installation.md) before adding one.
 
 ## Start with the agent skill
 
@@ -84,8 +82,8 @@ discovers this composition from the consumer's dependencies. Third-party modules
 
 Resolve portable content through `blackboxSkill.source`, not guessed filesystem
 paths. This package owns `skills/blackbox/`; the generic Skills package owns no
-concrete skills. Specialist APIs remain in their owning packages, not re-exported
-through this entry point.
+concrete skills. Integration APIs remain in their owning packages; see the
+[installation guide](../../docs/installation.md) for package choices.
 
 ## Validate
 
@@ -98,5 +96,5 @@ pnpm test:e2e:skills
 
 The packed test installs the main package and CLI as direct dependencies and checks
 CLI executable ownership, the absence of a main-package launcher, default commands
-and skills, all host destinations, and absent adapters. Registry-consumer E2E lanes
-add explicitly selected Capsule, Playwright, driver, and Node instrumentation adapters.
+and skills, all host destinations, and absent integrations. Registry-consumer E2E
+lanes add explicitly selected integrations.

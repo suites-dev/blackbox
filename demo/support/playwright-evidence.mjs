@@ -3,6 +3,7 @@ import { lstat, readFile, readdir, realpath } from 'node:fs/promises';
 import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
+import { verifyAttemptReports, verifyParallelAcquisition } from './playwright-report-proof.mjs';
 
 const execute = promisify(execFile);
 const supportDirectory = dirname(fileURLToPath(import.meta.url));
@@ -60,7 +61,7 @@ async function sandboxRecords() {
       Array.isArray(value.composeFiles) &&
       typeof value.state === 'string'
     ) {
-      records.push({ path, recordDirectory: dirname(path), value });
+      records.push({ path, recordDirectory: await realpath(dirname(path)), value });
     }
   }
   return records;
@@ -193,7 +194,17 @@ export async function verify() {
     JSON.stringify(discoveredSpecs) === JSON.stringify(expectedSpecs),
     `Unexpected Playwright specs: ${JSON.stringify(discoveredSpecs)}`,
   );
-  const attempts = specs.flatMap((spec) => spec.tests.flatMap((test) => test.results));
+  const attempts = specs.flatMap((spec) => {
+    const catalogByFile = {
+      'payment-service.spec.ts': { kind: 'subsystem', id: 'payment-mock' },
+      'subscription-system.spec.ts': { kind: 'system', id: 'subscription-system' },
+    };
+    const expectedCatalog = catalogByFile[spec.file.split('/').at(-1)];
+    assert(expectedCatalog !== undefined, `Unexpected scenario file: ${spec.file}`);
+    return spec.tests.flatMap((test) =>
+      test.results.map((result) => ({ ...result, testId: spec.id, expectedCatalog })),
+    );
+  });
   assert(
     attempts.length === expectedSpecs.length,
     `Expected ${expectedSpecs.length} Playwright attempts, found ${attempts.length}`,
@@ -204,8 +215,16 @@ export async function verify() {
       attempts.map((attempt) => attempt.status),
     )}`,
   );
+  const live = JSON.parse(await readFile(join(resultsRoot, 'live-reporting.json'), 'utf8'));
+  verifyParallelAcquisition(live);
   return {
     kind: 'playwright-e2e-proof',
+    reporting: verifyAttemptReports({
+      attempts,
+      records,
+      live,
+      text: await readFile(join(resultsRoot, 'execution.txt'), 'utf8'),
+    }),
     specs: specs.map((spec) => spec.title),
     attempts: attempts.length,
     sandboxes: records.map(({ value }) => ({
