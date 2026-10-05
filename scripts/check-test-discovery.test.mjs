@@ -1,10 +1,53 @@
 import assert from 'node:assert/strict';
+import { execFile } from 'node:child_process';
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import test from 'node:test';
+import { fileURLToPath } from 'node:url';
+import { promisify } from 'node:util';
 
-import { RUNNERS, checkTestDiscovery } from './check-test-discovery.mjs';
+import {
+  CI_SCRIPTS,
+  RUNNERS,
+  checkRootWiring,
+  checkTestDiscovery,
+  vitestInvocations,
+} from './check-test-discovery.mjs';
+
+// Fixture packages have no node_modules, so discovery runs the repository's
+// own Vitest CLI in each fixture package: the same `vitest list` the check
+// runs, not a reimplementation of its matching.
+const VITEST_CLI = fileURLToPath(new URL('../node_modules/vitest/vitest.mjs', import.meta.url));
+const execFileAsync = promisify(execFile);
+
+async function listWithRepositoryVitest(packageDirectory, args) {
+  const { stdout } = await execFileAsync(
+    process.execPath,
+    [VITEST_CLI, 'list', '--filesOnly', '--json', ...args],
+    { cwd: packageDirectory, encoding: 'utf8' },
+  );
+  return JSON.parse(stdout).map((entry) => entry.file);
+}
+
+const WIRED_ROOT_SCRIPTS = {
+  test: 'pnpm run build && pnpm --recursive run test',
+  'test:integration': 'pnpm run build && pnpm --recursive run test:integration',
+};
+const WIRED_WORKFLOW = [
+  'jobs:',
+  '  test:',
+  '    steps:',
+  '      - run: pnpm run test',
+  '  integration:',
+  '    steps:',
+  '      - name: Run integration',
+  '        run: pnpm run test:integration',
+].join('\n');
+const WIRED_ROOT = {
+  'package.json': JSON.stringify({ scripts: WIRED_ROOT_SCRIPTS }),
+  '.github/workflows/ci.yml': `${WIRED_WORKFLOW}\n`,
+};
 
 const VITEST_PACKAGE = {
   'packages/alpha/package.json': JSON.stringify({
@@ -18,16 +61,17 @@ const VITEST_PACKAGE = {
 async function fixture(t, files) {
   const root = await mkdtemp(join(tmpdir(), 'check-test-discovery-'));
   t.after(() => rm(root, { recursive: true, force: true }));
-  for (const [path, contents] of Object.entries(files)) {
+  const all = { ...WIRED_ROOT, ...files };
+  for (const [path, contents] of Object.entries(all)) {
     await mkdir(dirname(join(root, path)), { recursive: true });
     await writeFile(join(root, path), contents);
   }
-  return { root, files: Object.keys(files) };
+  return { root, files: Object.keys(all) };
 }
 
 async function problemsFor(t, files, runners = []) {
   const checkout = await fixture(t, files);
-  return checkTestDiscovery({ ...checkout, runners });
+  return checkTestDiscovery({ ...checkout, runners, listVitest: listWithRepositoryVitest });
 }
 
 test('accepts a checkout where the package test script discovers every test', async (t) => {
@@ -53,26 +97,57 @@ test('flags a test placed under test/ instead of src/', async (t) => {
   assert.match(problems[0], /^packages\/alpha\/test\/unit\.test\.ts: no runner/u);
 });
 
-test('flags tests whose vitest config the test script never runs, until it does', async (t) => {
-  const integration = {
-    ...VITEST_PACKAGE,
-    'packages/alpha/vitest.integration.config.mjs':
-      "export default { test: { include: ['src/**/*.integration.test.ts'] } };\n",
-    'packages/alpha/src/slow.integration.test.ts': '',
-  };
-  const unwired = await problemsFor(t, integration);
-  assert.deepEqual(unwired, [
-    'packages/alpha/src/slow.integration.test.ts: no runner that CI invokes discovers this test file.',
-  ]);
-  const wired = await problemsFor(t, {
-    ...integration,
+const INTEGRATION_PACKAGE = {
+  ...VITEST_PACKAGE,
+  'packages/alpha/vitest.integration.config.mjs':
+    "export default { test: { include: ['src/**/*.integration.test.ts'] } };\n",
+  'packages/alpha/src/slow.integration.test.ts': '',
+};
+
+test('flags tests whose vitest config no CI script runs', async (t) => {
+  const problems = await problemsFor(t, {
+    ...INTEGRATION_PACKAGE,
     'packages/alpha/package.json': JSON.stringify({
       scripts: {
-        test: 'vitest run --config vitest.config.mjs && vitest run --config vitest.integration.config.mjs',
+        test: 'vitest run --config vitest.config.mjs',
+        // Not a CI script: nothing at the root runs it recursively.
+        'test:slow': 'vitest run --config vitest.integration.config.mjs',
       },
     }),
   });
-  assert.deepEqual(wired, []);
+  assert.deepEqual(problems, [
+    'packages/alpha/src/slow.integration.test.ts: no runner that CI invokes discovers this test file.',
+  ]);
+});
+
+test('accepts integration tests once the test:integration script runs their config', async (t) => {
+  const problems = await problemsFor(t, {
+    ...INTEGRATION_PACKAGE,
+    'packages/alpha/package.json': JSON.stringify({
+      scripts: {
+        test: 'vitest run --config vitest.config.mjs',
+        'test:integration': 'vitest run --config vitest.integration.config.mjs',
+      },
+    }),
+  });
+  assert.deepEqual(problems, []);
+});
+
+test('flags a CI-run config that discovers zero files', async (t) => {
+  const problems = await problemsFor(t, {
+    ...VITEST_PACKAGE,
+    'packages/alpha/package.json': JSON.stringify({
+      scripts: {
+        test: 'vitest run --config vitest.config.mjs',
+        'test:integration': 'vitest run --config vitest.integration.config.mjs',
+      },
+    }),
+    'packages/alpha/vitest.integration.config.mjs':
+      "export default { test: { include: ['src/**/*.integration.test.ts'] } };\n",
+  });
+  assert.deepEqual(problems, [
+    'packages/alpha vitest vitest.integration.config.mjs (script "test:integration"): discovers zero test files.',
+  ]);
 });
 
 test('flags every test of a package that has no test script', async (t) => {
@@ -98,6 +173,89 @@ test('reads the vitest config and CLI excludes from a script the test script lau
   });
   assert.deepEqual(problems, [
     'packages/alpha/src/cli/command.test.ts: no runner that CI invokes discovers this test file.',
+  ]);
+});
+
+test('flags a CI script that runs Vitest without naming its config', async (t) => {
+  const problems = await problemsFor(t, {
+    ...VITEST_PACKAGE,
+    'packages/alpha/package.json': JSON.stringify({ scripts: { test: 'vitest run' } }),
+  });
+  assert.deepEqual(problems, [
+    'packages/alpha: script "test" runs Vitest without --config; name the config explicitly.',
+    'packages/alpha/src/unit.test.ts: no runner that CI invokes discovers this test file.',
+  ]);
+});
+
+test('flags root wiring that stops running a CI script across the workspace', async (t) => {
+  const problems = await problemsFor(t, {
+    ...VITEST_PACKAGE,
+    'package.json': JSON.stringify({ scripts: { test: WIRED_ROOT_SCRIPTS.test } }),
+  });
+  assert.deepEqual(problems, [
+    'root script "test:integration" must run "pnpm --recursive run test:integration".',
+  ]);
+});
+
+test('CI runs exactly the package test and integration scripts', () => {
+  assert.deepEqual(CI_SCRIPTS, ['test', 'test:integration']);
+});
+
+test('configs come only from CI-run scripts and keep their script name', () => {
+  const unread = () => assert.fail('no script is launched');
+  assert.deepEqual(
+    vitestInvocations(
+      {
+        test: 'vitest run --config vitest.config.ts',
+        'test:integration': 'vitest run --config=vitest.integration.config.ts',
+        'test:docker': 'vitest run --config vitest.docker.config.ts',
+      },
+      unread,
+    ),
+    {
+      invocations: [
+        { script: 'test', config: 'vitest.config.ts', excludes: [] },
+        { script: 'test:integration', config: 'vitest.integration.config.ts', excludes: [] },
+      ],
+      problems: [],
+    },
+  );
+});
+
+test('a package whose CI scripts do not run Vitest selects nothing', () => {
+  assert.deepEqual(
+    vitestInvocations({ test: 'node scripts/run-tests.mjs' }, () => 'spawn(node, ["--test"])'),
+    { invocations: [], problems: [] },
+  );
+});
+
+test('fully wired root scripts and workflow pass', () => {
+  assert.deepEqual(
+    checkRootWiring({ rootScripts: WIRED_ROOT_SCRIPTS, workflow: WIRED_WORKFLOW }),
+    [],
+  );
+});
+
+test('a root script that runs a different recursive script does not count', () => {
+  const problems = checkRootWiring({
+    rootScripts: {
+      ...WIRED_ROOT_SCRIPTS,
+      'test:integration': 'pnpm --recursive run test:integration-old',
+    },
+    workflow: WIRED_WORKFLOW,
+  });
+  assert.deepEqual(problems, [
+    'root script "test:integration" must run "pnpm --recursive run test:integration".',
+  ]);
+});
+
+test('a workflow that no longer calls the integration script fails', () => {
+  const problems = checkRootWiring({
+    rootScripts: WIRED_ROOT_SCRIPTS,
+    workflow: WIRED_WORKFLOW.replace('pnpm run test:integration', 'echo skipped'),
+  });
+  assert.deepEqual(problems, [
+    '.github/workflows/ci.yml has no step "run: pnpm run test:integration".',
   ]);
 });
 

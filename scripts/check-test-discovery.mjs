@@ -1,34 +1,35 @@
 // Fails when a test file sits where no runner that CI invokes would find it.
 //
-// Each package runner discovers tests by its own pattern: vitest by the
-// include/exclude of the config its `test` script names, node:test by a glob
-// on a workflow line. A file outside every pattern (a `*.spec.ts` beside
-// `*.test.ts` files, a test under `test/`, a suite whose config is never run)
-// is silently never executed. This check lists every test file in the
-// checkout and requires each one to be claimed by a runner.
+// Each runner discovers tests by its own pattern: Vitest by the config a
+// package script names, node:test by a glob on a workflow line. A file
+// outside every pattern (a `*.spec.ts` beside `*.test.ts` files, a test under
+// `test/`, a suite whose config no CI script runs) is silently never executed,
+// and pnpm exits 0 when no package has a recursively run script. This check
+// lists every test file in the checkout and fails when:
+//   - no runner that CI invokes claims a test file;
+//   - a Vitest config behind a CI script discovers zero files (`vitest list`
+//     exits 0 on an empty match, unlike `vitest run`);
+//   - a CI script runs Vitest without --config, so its discovery cannot be
+//     checked against the config that actually runs;
+//   - the root package.json or ci.yml stops running a CI_SCRIPTS entry;
+//   - a declared runner's wiring text disappears, or it matches no file;
+//   - a Playwright fixture spec is named by no test that runs.
 //
-// Package vitest runners are derived from each package's `test` script, so
+// Package Vitest runners are derived from each package's CI_SCRIPTS (and any
+// scripts/*.mjs they launch) by asking Vitest which files it discovers, so
 // they cannot drift. Every other runner is declared in RUNNERS below with the
-// literal command text that wires it into CI; if that text disappears the
-// check fails, so a declaration cannot outlive the runner it describes.
-import { execFileSync } from 'node:child_process';
-import { existsSync, readFileSync, readdirSync } from 'node:fs';
+// literal command text that wires it into CI.
+import { execFile, execFileSync } from 'node:child_process';
+import { existsSync, readFileSync, readdirSync, realpathSync } from 'node:fs';
 import { basename, join, matchesGlob, relative } from 'node:path';
 import { cwd } from 'node:process';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import { fileURLToPath } from 'node:url';
+import { promisify } from 'node:util';
 
 export const TEST_FILE = /\.(test|spec)\.[cm]?[jt]sx?$/u;
 
-// Vitest's own defaults, used when a config does not set include or exclude.
-const VITEST_DEFAULT_INCLUDE = ['**/*.{test,spec}.?(c|m)[jt]s?(x)'];
-const VITEST_DEFAULT_EXCLUDE = ['**/node_modules/**', '**/.git/**'];
-
-// Package tests reach CI through the root `pnpm test`, which runs every
-// package's `test` script.
-const PACKAGE_TESTS_WIRED_BY = [
-  { file: 'package.json', text: '"test": "pnpm run build && pnpm --recursive run test"' },
-  { file: '.github/workflows/ci.yml', text: 'run: pnpm run test' },
-];
+/** The package scripts that root scripts run across the workspace in CI. */
+export const CI_SCRIPTS = ['test', 'test:integration'];
 
 const NODE_TESTS_IN_CI = "node scripts/run-node-tests.mjs '";
 
@@ -44,7 +45,8 @@ export const RUNNERS = [
   },
   {
     name: 'repository check scripts',
-    reason: 'Tests for the scripts in scripts/, including this check; run by glob in the deps job.',
+    reason:
+      'Tests for the scripts in scripts/, including this check and the node:test runner; run by glob in the deps job.',
     discovers: ['scripts/*.test.mjs'],
     wiredBy: [{ file: '.github/workflows/ci.yml', text: `${NODE_TESTS_IN_CI}scripts/*.test.mjs'` }],
   },
@@ -62,7 +64,7 @@ export const RUNNERS = [
   {
     name: 'demo support and consumer helpers',
     reason:
-      'Helpers behind the Docker demo and consumer preparation, tested without Docker in CI Package Tests.',
+      'Helpers behind the Docker demo and consumer preparation. They need no Docker, only bash, jq, Node and the built workspace, so they run once in CI Package Tests after its build.',
     discovers: ['demo/support/*.test.mjs', 'scripts/consumer/*.test.mjs'],
     wiredBy: [
       {
@@ -96,12 +98,12 @@ export const RUNNERS = [
     name: 'system under test units',
     reason:
       'Standalone npm project; tsc compiles src/ to dist/ and the test script runs every emitted test by glob.',
-    discovers: ['e2e/sut/src/**/*.test.ts', 'e2e/sut/scripts/**/*.test.mjs'],
+    discovers: ['e2e/sut/src/**/*.test.ts'],
     wiredBy: [
       { file: 'e2e/sut/tsconfig.json', text: '"include": ["src/**/*.ts"]' },
       {
         file: 'e2e/sut/package.json',
-        text: "node ../../scripts/run-node-tests.mjs 'dist/**/*.test.js' '{dist/**/*.test.js,scripts/**/*.test.mjs}'",
+        text: "node ../../scripts/run-node-tests.mjs 'dist/**/*.test.js'",
       },
       { file: '.github/workflows/ci.yml', text: 'npm test --prefix e2e/sut' },
     ],
@@ -122,13 +124,12 @@ export const RUNNERS = [
   {
     name: 'Capsule CLI node tests',
     reason:
-      'Compiled with tsconfig.test.json and run by node:test; the vitest config excludes src/cli.',
+      'Compiled with tsconfig.test.json and run by node:test; the Vitest config excludes src/cli.',
     discovers: ['packages/capsule/src/cli/**/*.test.ts'],
     wiredBy: [
       { file: 'packages/capsule/package.json', text: '"test": "node scripts/run-tests.mjs"' },
       { file: 'packages/capsule/tsconfig.test.json', text: '"include": ["src/**/*.ts"]' },
       { file: 'packages/capsule/scripts/run-tests.mjs', text: "testsIn(join(output, 'cli'))" },
-      ...PACKAGE_TESTS_WIRED_BY,
     ],
   },
   {
@@ -139,12 +140,11 @@ export const RUNNERS = [
       { file: 'packages/cli/package.json', text: '"test": "node scripts/run-tests.mjs"' },
       { file: 'packages/cli/tsconfig.test.json', text: '"include": ["src/**/*.ts"]' },
       { file: 'packages/cli/scripts/run-tests.mjs', text: 'const tests = await testsIn(output);' },
-      ...PACKAGE_TESTS_WIRED_BY,
     ],
   },
 ];
 
-// Playwright specs that vitest tests launch by name through a nested
+// Playwright specs that Vitest tests launch by name through a nested
 // Playwright run. They are not discovered by any glob, so each must be named by
 // a test that runs, directly or through a config file such a test names.
 export const LAUNCHED_SPECS = {
@@ -158,73 +158,128 @@ function matchesAny(file, patterns) {
   return patterns.some((pattern) => matchesGlob(file, pattern));
 }
 
-function asList(value, fallback) {
-  if (value === undefined) {
-    return fallback;
-  }
-  return Array.isArray(value) ? value : [value];
-}
+const VITEST_RUN = /\bvitest['"]?,?\s*['"]?run\b/u;
+const CONFIG_FLAG = /--config['",=\s]+([\w.-]+\.config\.[cm]?[jt]s)\b/gu;
+const EXCLUDE_FLAG = /--exclude['",=\s]+([^'"\s]+)/gu;
+const LAUNCHED_SCRIPT = /\bnode (scripts\/[\w./-]+\.mjs)\b/gu;
 
-// The files a package's `test` script runs, read from the script and from any
-// repository script it launches with `node scripts/<name>.mjs`.
-function packageTestCommands(root, packageDirectory) {
-  const manifestPath = join(root, packageDirectory, 'package.json');
-  const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
-  const scripts = manifest.scripts === undefined ? {} : manifest.scripts;
-  const script = scripts.test;
-  if (script === undefined) {
-    return [];
-  }
-  const texts = [script];
-  for (const match of script.matchAll(/\bnode (scripts\/[\w./-]+\.mjs)\b/gu)) {
-    texts.push(readFileSync(join(root, packageDirectory, match[1]), 'utf8'));
-  }
-  return texts;
-}
-
-export async function vitestRunners(root) {
-  const runners = [];
-  const packagesDirectory = join(root, 'packages');
-  if (!existsSync(packagesDirectory)) {
-    return runners;
-  }
-  for (const entry of readdirSync(packagesDirectory, { withFileTypes: true })) {
-    const packageDirectory = `packages/${entry.name}`;
-    if (!entry.isDirectory() || !existsSync(join(root, packageDirectory, 'package.json'))) {
+/**
+ * The Vitest runs behind a package's CI scripts. Each script is read with any
+ * repository script it launches (`node scripts/<name>.mjs`), because Capsule
+ * builds its Vitest argv there. A CI script that runs Vitest without naming a
+ * config is a problem: its discovery cannot be checked.
+ */
+export function vitestInvocations(scripts, readLaunched) {
+  const invocations = [];
+  const problems = [];
+  for (const name of CI_SCRIPTS) {
+    const command = scripts[name];
+    if (typeof command !== 'string') {
       continue;
     }
-    const texts = packageTestCommands(root, packageDirectory);
-    const joined = texts.join('\n');
-    const cliExcludes = [...joined.matchAll(/--exclude['",\s]+([^'"\s]+)/gu)].map(
-      (match) => match[1],
-    );
-    const configs = new Set(
-      [...joined.matchAll(/--config['",\s]+([\w.-]+\.config\.[cm]?[jt]s)\b/gu)].map(
-        (match) => match[1],
-      ),
-    );
-    for (const config of configs) {
-      const module = await import(pathToFileURL(join(root, packageDirectory, config)).href);
-      const exported =
-        typeof module.default === 'function' ? await module.default({}) : module.default;
-      const test = exported.test === undefined ? {} : exported.test;
-      runners.push({
-        name: `${packageDirectory} vitest (${config})`,
-        root: packageDirectory,
-        include: asList(test.include, VITEST_DEFAULT_INCLUDE),
-        exclude: [...asList(test.exclude, VITEST_DEFAULT_EXCLUDE), ...cliExcludes],
-      });
+    const texts = [command];
+    for (const match of command.matchAll(LAUNCHED_SCRIPT)) {
+      texts.push(readLaunched(match[1]));
+    }
+    for (const text of texts) {
+      if (!VITEST_RUN.test(text)) {
+        continue;
+      }
+      const configs = [...text.matchAll(CONFIG_FLAG)].map((match) => match[1]);
+      if (configs.length === 0) {
+        problems.push(`script "${name}" runs Vitest without --config; name the config explicitly.`);
+        continue;
+      }
+      const excludes = [...text.matchAll(EXCLUDE_FLAG)].map((match) => match[1]);
+      for (const config of new Set(configs)) {
+        invocations.push({ script: name, config, excludes });
+      }
     }
   }
-  return runners;
+  return { invocations, problems };
+}
+
+const escape = (text) => text.replaceAll(/[.*+?^${}()|[\]\\]/gu, String.raw`\$&`);
+
+/**
+ * Package scripts only run in CI if a root script runs each one recursively
+ * and ci.yml calls that root script as a step.
+ */
+export function checkRootWiring({ rootScripts, workflow }) {
+  const problems = [];
+  for (const name of CI_SCRIPTS) {
+    const command = rootScripts[name];
+    const recursive = new RegExp(String.raw`pnpm --recursive run ${escape(name)}(\s|$)`, 'u');
+    if (typeof command !== 'string' || !recursive.test(command)) {
+      problems.push(`root script "${name}" must run "pnpm --recursive run ${name}".`);
+    }
+    const step = new RegExp(String.raw`^\s*(?:-\s+)?run:\s*pnpm run ${escape(name)}\s*$`, 'mu');
+    if (!step.test(workflow)) {
+      problems.push(`.github/workflows/ci.yml has no step "run: pnpm run ${name}".`);
+    }
+  }
+  return problems;
+}
+
+const execFileAsync = promisify(execFile);
+
+/** Asks the package's own Vitest which files a run would execute, without running them. */
+export async function listWithVitest(packageDirectory, args) {
+  const { stdout } = await execFileAsync(
+    'pnpm',
+    ['exec', 'vitest', 'list', '--filesOnly', '--json', ...args],
+    { cwd: packageDirectory, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 },
+  );
+  const entries = JSON.parse(stdout);
+  if (!Array.isArray(entries)) {
+    throw new Error(`vitest list printed non-array JSON in ${packageDirectory}`);
+  }
+  return entries.map((entry) => entry.file);
+}
+
+export async function vitestRunners(root, listVitest = listWithVitest) {
+  const runners = [];
+  const problems = [];
+  const packagesDirectory = join(root, 'packages');
+  if (!existsSync(packagesDirectory)) {
+    return { runners, problems };
+  }
+  const realRoot = realpathSync(root);
+  const pending = [];
+  for (const entry of readdirSync(packagesDirectory, { withFileTypes: true })) {
+    const packageDirectory = `packages/${entry.name}`;
+    const manifestPath = join(root, packageDirectory, 'package.json');
+    if (!entry.isDirectory() || !existsSync(manifestPath)) {
+      continue;
+    }
+    const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
+    const scripts = manifest.scripts === undefined ? {} : manifest.scripts;
+    const selection = vitestInvocations(scripts, (path) =>
+      readFileSync(join(root, packageDirectory, path), 'utf8'),
+    );
+    problems.push(...selection.problems.map((problem) => `${packageDirectory}: ${problem}`));
+    for (const { script, config, excludes } of selection.invocations) {
+      const args = ['--config', config, ...excludes.flatMap((glob) => ['--exclude', glob])];
+      const name = `${packageDirectory} vitest ${config} (script "${script}")`;
+      pending.push(
+        listVitest(join(root, packageDirectory), args).then((discovered) => {
+          const files = new Set(
+            discovered.map((file) => relative(realRoot, file).split(/[\\/]/u).join('/')),
+          );
+          if (files.size === 0) {
+            problems.push(`${name}: discovers zero test files.`);
+          }
+          runners.push({ name, files });
+        }),
+      );
+    }
+  }
+  await Promise.all(pending);
+  return { runners, problems: problems.sort() };
 }
 
 function vitestDiscovers(runner, file) {
-  if (!file.startsWith(`${runner.root}/`)) {
-    return false;
-  }
-  const local = file.slice(runner.root.length + 1);
-  return matchesAny(local, runner.include) && !matchesAny(local, runner.exclude);
+  return runner.files.has(file);
 }
 
 function namedIn(text, name) {
@@ -261,10 +316,19 @@ function launchedSpecs(files, read, vitest) {
   return { launched, unreferenced };
 }
 
-export async function checkTestDiscovery({ root, files: unsorted, runners = RUNNERS }) {
+export async function checkTestDiscovery({
+  root,
+  files: unsorted,
+  runners = RUNNERS,
+  listVitest = listWithVitest,
+  report = () => {},
+}) {
   const files = [...unsorted].sort();
   const read = (file) => readFileSync(join(root, file), 'utf8');
-  const problems = [];
+  const problems = checkRootWiring({
+    rootScripts: JSON.parse(read('package.json')).scripts,
+    workflow: read('.github/workflows/ci.yml'),
+  });
 
   for (const runner of runners) {
     for (const { file, text } of runner.wiredBy) {
@@ -274,18 +338,19 @@ export async function checkTestDiscovery({ root, files: unsorted, runners = RUNN
     }
   }
 
-  const vitest = await vitestRunners(root);
+  const { runners: vitest, problems: vitestProblems } = await vitestRunners(root, listVitest);
+  problems.push(...vitestProblems);
   const tests = files.filter((file) => TEST_FILE.test(file));
   const { launched, unreferenced } = launchedSpecs(files, read, vitest);
   for (const file of unreferenced) {
     problems.push(`${file}: ${LAUNCHED_SPECS.name}, but no running test names it.`);
   }
 
-  const claimed = new Set();
+  const claimed = new Map();
   for (const file of tests) {
     const declared = runners.filter((runner) => matchesAny(file, runner.discovers));
     for (const runner of declared) {
-      claimed.add(runner.name);
+      claimed.set(runner.name, (claimed.get(runner.name) ?? 0) + 1);
     }
     if (declared.length > 0 || launched.has(file) || unreferenced.includes(file)) {
       continue;
@@ -303,6 +368,12 @@ export async function checkTestDiscovery({ root, files: unsorted, runners = RUNN
       );
     }
   }
+  const summary = [
+    ...vitest.map((runner) => `${runner.name}: ${runner.files.size} files`).sort(),
+    ...runners.map((runner) => `${runner.name}: ${claimed.get(runner.name) ?? 0} files`),
+    `${LAUNCHED_SPECS.name}: ${launched.size} files`,
+  ];
+  report(summary);
   return problems;
 }
 
@@ -324,7 +395,15 @@ function checkoutFiles(root) {
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const root = cwd();
-  const problems = await checkTestDiscovery({ root, files: checkoutFiles(root) });
+  const problems = await checkTestDiscovery({
+    root,
+    files: checkoutFiles(root),
+    report: (summary) => {
+      for (const line of summary) {
+        console.log(line);
+      }
+    },
+  });
   for (const problem of problems) {
     console.error(problem);
   }
@@ -333,5 +412,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
       `\n${problems.length} test discovery problem(s). Move the file where a runner finds it, wire a runner, or declare one in ${relative(root, fileURLToPath(import.meta.url))}.`,
     );
     process.exitCode = 1;
+  } else {
+    console.log('Every test file is discovered by a runner that CI invokes.');
   }
 }
