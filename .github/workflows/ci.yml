@@ -99,9 +99,11 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           pnpm-version: ${{ env.PNPM_VERSION }}
 
-      - name: Test the fan-out check
+      # Every scripts/*.test.mjs, so a new check script's tests cannot be left
+      # out of a hand-written list. The wrapper fails if the glob is empty.
+      - name: Test the repository check scripts
         timeout-minutes: 5
-        run: node --test scripts/check-fan-out.test.mjs
+        run: node scripts/run-node-tests.mjs 'scripts/*.test.mjs'
 
       - name: Check dependency boundaries
         timeout-minutes: 5
@@ -137,7 +139,8 @@ jobs:
         run: |
           npm ci --prefix e2e/sut --ignore-scripts
           npm test --prefix e2e/sut
-          node --test .github/scripts/e2e-evidence.test.mjs .github/scripts/capsule-evidence.test.mjs
+          node scripts/run-node-tests.mjs '.github/scripts/*.test.mjs'
+          node scripts/run-node-tests.mjs 'demo/support/*.test.mjs' 'scripts/consumer/*.test.mjs'
 
   # One stable aggregate over the required lanes. Each lane keeps its own
   # diagnosable result; this job only folds them into a single verdict.

@@ -148,8 +148,7 @@ jobs:
         run: >-
           node .github/scripts/ci-evidence.mjs run --lane transport --project self-tests
           --evidence-dir ci-evidence/transport/self-tests
-          -- node --test .github/scripts/e2e-evidence.test.mjs
-          .github/scripts/capsule-evidence.test.mjs
+          -- node scripts/run-node-tests.mjs '.github/scripts/*.test.mjs'
 
       - name: Retain transport evidence
         id: transport_evidence
@@ -161,7 +160,7 @@ jobs:
           evidence-dir: ci-evidence/transport/self-tests
           setup-result: ${{ steps.setup.outcome }}
           result: ${{ steps.transport_tests.outcome }}
-          command: node --test .github/scripts/e2e-evidence.test.mjs .github/scripts/capsule-evidence.test.mjs
+          command: node scripts/run-node-tests.mjs '.github/scripts/*.test.mjs'
           expected: |
             log=ci-evidence/transport/self-tests/logs/command.log
 

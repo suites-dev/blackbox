@@ -11,6 +11,6 @@
   },
   "scripts": {
     "lint": "eslint tests/playwright reporters playwright.config.ts lint",
-    "test:lint": "node --test lint/*.test.mjs"
+    "test:lint": "node ../scripts/run-node-tests.mjs 'lint/*.test.mjs'"
   }
 }

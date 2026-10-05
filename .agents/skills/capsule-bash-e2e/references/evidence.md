@@ -54,8 +54,8 @@ Cheap checks from the repository root:
 
 ```sh
 bash -n demo/acceptance/capsule-test.sh demo/acceptance/capsule-test-support.sh demo/storyboard/capsule-player.sh
-node --test demo/support/*.test.mjs scripts/consumer/*.test.mjs
-node --test .github/scripts/e2e-evidence.test.mjs .github/scripts/capsule-evidence.test.mjs
+node scripts/run-node-tests.mjs 'demo/support/*.test.mjs' 'scripts/consumer/*.test.mjs'
+node scripts/run-node-tests.mjs '.github/scripts/*.test.mjs'
 ```
 
 Inspect helper tests before running them and ensure glob expansion finds actual

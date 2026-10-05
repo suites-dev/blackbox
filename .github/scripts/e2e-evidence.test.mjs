@@ -318,9 +318,30 @@ test('required CI runs the repository boundary test suites', async () => {
         run: |
           npm ci --prefix e2e/sut --ignore-scripts
           npm test --prefix e2e/sut
-          node --test .github/scripts/e2e-evidence.test.mjs .github/scripts/capsule-evidence.test.mjs
+          node scripts/run-node-tests.mjs '.github/scripts/*.test.mjs'
+          node scripts/run-node-tests.mjs 'demo/support/*.test.mjs' 'scripts/consumer/*.test.mjs'
 `;
   assert.ok(workflow.includes(expectedStep));
+});
+
+test('the E2E transport lane runs the self-tests by glob through an approved command', async () => {
+  const workflow = await fs.readFile(new URL('../workflows/e2e.yml', import.meta.url), 'utf8');
+  assert.ok(
+    workflow.includes("          -- node scripts/run-node-tests.mjs '.github/scripts/*.test.mjs'\n"),
+  );
+  // The shell strips the quotes, so the runner receives the glob unexpanded.
+  const argv = ['node', 'scripts/run-node-tests.mjs', '.github/scripts/*.test.mjs'];
+  assert.deepEqual(approvedCliCommand(argv), argv);
+  assert.throws(
+    () =>
+      approvedCliCommand([
+        'node',
+        '--test',
+        '.github/scripts/e2e-evidence.test.mjs',
+        '.github/scripts/capsule-evidence.test.mjs',
+      ]),
+    /not an approved repository check/,
+  );
 });
 
 test('the CLI rejects unknown option names instead of assigning object properties', () => {
