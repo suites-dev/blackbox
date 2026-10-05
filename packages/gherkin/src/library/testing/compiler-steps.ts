@@ -3,7 +3,8 @@ import type { Capability, StepDefinition, StepLibrary } from '../../runtime/step
 
 // Test-only vocabulary for compiler tests. It covers every step kind, every
 // argument shape, both gated capabilities and one deliberately ambiguous pair.
-// The bodies never run: generated code is executed against a recording runtime.
+// Bodies are no-ops unless a test supplies stub bodies for a real Playwright run;
+// the vocabulary hash never covers bodies, so stubs do not change compiled output.
 
 const noop = (): Promise<void> => Promise.resolve();
 
@@ -56,11 +57,27 @@ const definitions = [
   step('the queue {word} is empty', { kind: 'state-claim', argument: 'none', fixtures: ['sandbox'] }),
 ] satisfies readonly StepDefinition[];
 
-export function compilerTestLibrary(capabilities: readonly Capability[] = []): StepLibrary {
+/** Step bodies keyed by expression, for tests that run generated code under Playwright. */
+export type StubStepBodies = Readonly<Record<string, StepDefinition['run']>>;
+
+export function compilerTestLibrary(
+  capabilities: readonly Capability[] = [],
+  bodies: StubStepBodies = {},
+): StepLibrary {
+  const unknown = Object.keys(bodies).filter(
+    (expression) => !definitions.some((definition) => definition.expression === expression),
+  );
+  if (unknown.length > 0) {
+    throw new Error(`No test step is defined for stub bodies: ${unknown.join(', ')}`);
+  }
   return createStepLibrary({
     name: 'compiler-test-library',
     version: '0.0.0',
-    definitions,
+    definitions: definitions.map((definition) =>
+      Object.hasOwn(bodies, definition.expression)
+        ? { ...definition, run: bodies[definition.expression] }
+        : definition,
+    ),
     capabilities,
   });
 }

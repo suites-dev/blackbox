@@ -128,6 +128,8 @@ const ENTRY_POINTS = [
   // its reporter option loads the observer by filesystem path.
   '^packages/playwright/src/testing/reporting/playwright\\.config\\.ts$',
   '^packages/playwright/src/testing/reporting/progress-observer\\.ts$',
+  // Generated feature tests in playwright.test.ts import this runtime by file URL.
+  '^packages/gherkin/src/compiler/testing/playwright-runtime\\.ts$',
   // Maintainer script run by hand to refresh the recorded capsule fixture
   // (see the README next to it); nothing imports it.
   '^packages/capsule/src/cli/operations/inspection/testing/fixtures/sanitize-recording\\.mjs$',
