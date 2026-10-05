@@ -526,8 +526,8 @@ jobs:
   # The sandbox Docker tests import packages/sandbox/src only, so this lane needs
   # neither the build nor the test registry and starts alongside them. They skip
   # themselves without BLACKBOX_SANDBOX_DOCKER_TEST=1 so `pnpm test` passes on a
-  # machine without Docker; test:sandbox:docker sets it, runs every
-  # *.docker.test.ts it finds, and fails if none are found or any test skips.
+  # machine without Docker; test:sandbox:docker sets it and runs every
+  # *.docker.test.ts file.
   sandbox:
     name: Sandbox Docker tests
     runs-on: ubuntu-24.04
