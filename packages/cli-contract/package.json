@@ -21,8 +21,7 @@
     "prebuild": "rimraf dist",
     "build": "tsc --project tsconfig.build.json",
     "prepack": "pnpm build",
-    "lint": "eslint .",
-    "test": "node --test"
+    "lint": "eslint ."
   },
   "devDependencies": {
     "@types/node": "catalog:",

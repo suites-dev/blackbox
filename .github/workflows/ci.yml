@@ -99,10 +99,6 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           pnpm-version: ${{ env.PNPM_VERSION }}
 
-      - name: Test the fan-out check
-        timeout-minutes: 5
-        run: node --test scripts/check-fan-out.test.mjs
-
       - name: Check dependency boundaries
         timeout-minutes: 5
         run: pnpm run check:deps
@@ -132,18 +128,45 @@ jobs:
         timeout-minutes: 25
         run: pnpm run test
 
+      # After the package build: demo/support/postgres-driver.test.mjs loads
+      # the built @suites/blackbox-driver.
       - name: Run repository boundary tests
         timeout-minutes: 10
         run: |
           npm ci --prefix e2e/sut --ignore-scripts
-          npm test --prefix e2e/sut
-          node --test .github/scripts/e2e-evidence.test.mjs .github/scripts/capsule-evidence.test.mjs
+          pnpm run test:sut
+          pnpm run test:repo
+
+  # Package `test:integration` suites (`*.integration.test.ts`), which the
+  # default package configs exclude. They need no Docker: they spawn Node
+  # child processes, write temporary directories, bind loopback ports, and
+  # run `npm install` against the public registry to build the Node runtime
+  # instrumentation dependency tree. Its own job so Package Tests stays fast.
+  integration:
+    name: Package Integration Tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup toolchain
+        uses: ./.github/actions/setup
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          pnpm-version: ${{ env.PNPM_VERSION }}
+
+      # Builds first: the suites import sibling packages through their
+      # compiled dist entry points.
+      - name: Run every package integration suite
+        timeout-minutes: 25
+        run: pnpm run test:integration
 
   # One stable aggregate over the required lanes. Each lane keeps its own
   # diagnosable result; this job only folds them into a single verdict.
   gate:
     name: CI Gate
-    needs: [build, lint, deps, test]
+    needs: [build, lint, deps, test, integration]
     if: always()
     runs-on: ubuntu-24.04
     timeout-minutes: 5
@@ -154,13 +177,15 @@ jobs:
           LINT_RESULT: ${{ needs.lint.result }}
           DEPS_RESULT: ${{ needs.deps.result }}
           TEST_RESULT: ${{ needs.test.result }}
+          INTEGRATION_RESULT: ${{ needs.integration.result }}
         run: |
           status=0
           for lane in \
             "build=$BUILD_RESULT" \
             "lint=$LINT_RESULT" \
             "deps=$DEPS_RESULT" \
-            "test=$TEST_RESULT"; do
+            "test=$TEST_RESULT" \
+            "integration=$INTEGRATION_RESULT"; do
             printf '%s\n' "$lane"
             [[ "${lane#*=}" == success ]] || status=1
           done
