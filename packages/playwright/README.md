@@ -121,7 +121,7 @@ reasons. Setup failure also attempts cleanup before surfacing the error.
   activity telemetry is still inconclusive; elapsed time never turns missing
   evidence into a pass or a definite absence.
 - `activities` records explicitly named `setup`, `stimulus`, and `inspection`
-  actions. Each purpose supports `request` and custom `run` actions.
+  actions. Each purpose supports `request`, `browser`, and custom `run` actions.
   Only stimuli feed the default `effects` selection, so fixture setup and state
   inspection cannot silently satisfy a behavior assertion.
 
@@ -135,6 +135,29 @@ const response = await activities.stimulus.request('create subscription', reques
   }),
 );
 ```
+
+Browser actions install a temporary route on the supplied page. The route adds
+the activity context only to the Sandbox entrypoint origin and is removed when
+the callback settles:
+
+```ts
+await activities.stimulus.browser('submit subscription form', page, async (scopedPage) => {
+  await scopedPage.goto(new URL('/subscribe', sandbox.entrypoint.url).href);
+  await scopedPage.getByRole('button', { name: 'Subscribe' }).click();
+});
+```
+
+Configure the Playwright project with `use: { serviceWorkers: 'block' }` before
+using scoped browser activities. Public Playwright routes do not reliably
+intercept service-worker traffic or the follow-up hops of a redirect, so a
+scoped browser action rejects any redirect response instead of losing activity
+ownership. Start a new scoped action at the final URL when that behavior is part
+of the test.
+
+Only one Blackbox activity may own a given `Page` at a time. Nested or concurrent
+scoped actions on the same page are rejected; independent pages can run separate
+activities. Page work outside `activities.*.browser(...)` remains ordinary
+native Playwright behavior and has no Blackbox activity propagation.
 
 Use `activities.inspection.request(...)` for fixture state endpoints and other
 authoritative reads. A successful state read remains a separate result; observed
@@ -157,8 +180,9 @@ pnpm --filter @suites/blackbox-playwright test
 ```
 
 The Docker-backed matcher cases live in [`tests/effects`](tests/effects), beside
-this package. They exercise PostgreSQL, RabbitMQ, request activity, inspection
-isolation, and withheld telemetry:
+this package. They exercise PostgreSQL, RabbitMQ, scoped browser work, inspection
+isolation, and withheld telemetry. Run them with Docker and Playwright Chromium
+available:
 
 ```sh
 pnpm --filter @suites/blackbox-playwright... build
@@ -197,7 +221,7 @@ including repeated arrivals, and 32 KiB per record. Each registry permits 256
 activity registrations. [The named limits](src/activities/limits.ts) apply to this
 initial integration and do not establish production load capacity.
 
-The public activity fixture connects request and custom execution to the trusted
+The public activity fixture connects request and browser execution to the trusted
 registry within each system/sandbox attempt. The internal factory remains outside
 the authoring API. Shared sandboxes must not imply shared effects selections.
 Published-release acceptance still requires the selected registry and version;
