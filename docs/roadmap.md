@@ -25,9 +25,10 @@ visual design will incorporate the additional user references recorded in its is
 Native Playwright exposes explicit propagated activities, an effects fixture, normalized projection, and a three-valued
 contract evaluator. The initial public selection includes completed stimuli and excludes setup and inspection. Missing
 capture remains inconclusive, including under negation; observed effects do not prove durable state or completeness.
-Accepted baselines and broader assurance remain future work. ODC/decision coverage, generated Gherkin/specs, suite
-generation, and legacy contract-promotion surfaces are outside this roadmap. Final package names and command renames
-are decisions owned by their issues.
+Accepted baselines and broader assurance remain future work. ODC/decision coverage, Blackbox-generated Gherkin,
+feature files or specs, suite generation, and legacy contract-promotion surfaces are outside this roadmap.
+Human-authored Gherkin feature files are in scope as test input. Final package names and command renames are
+decisions owned by their issues.
 
 For current agent setup, see [agent skills](agent-skills.md). For the present product model, see
 [the verification machine](verification-machine.md).

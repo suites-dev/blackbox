@@ -10,13 +10,13 @@
     "smoke": "node scripts/smoke.mjs"
   },
   "dependencies": {
-    "@aws-sdk/client-sqs": "3.1142.0",
-    "pg": "8.16.3",
+    "@aws-sdk/client-sqs": "3.1145.0",
+    "pg": "8.23.1",
     "redis": "4.7.1"
   },
   "devDependencies": {
     "@types/node": "22.19.17",
-    "@types/pg": "8.20.0",
+    "@types/pg": "8.23.1",
     "typescript": "5.7.3"
   },
   "engines": {

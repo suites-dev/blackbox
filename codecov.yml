@@ -10,24 +10,24 @@ coverage:
     project: false
     patch: false
 
-# The Alpha gate covers the 18 supported packages listed in vitest.config.ts,
+# The Alpha gate covers the packages/* projects listed in vitest.config.ts,
 # so per-package granularity comes from
 # path attribution (components), not from separate uploads (flags). Components
 # remain useful for informational attribution without creating status checks.
 component_management:
   individual_components:
-    - component_id: analyzer
-      name: analyzer
-      paths:
-        - packages/analyzer/**
     - component_id: blackbox
       name: blackbox
       paths:
         - packages/blackbox/**
-    - component_id: capture-node
-      name: capture-node
+    - component_id: capsule
+      name: capsule
       paths:
-        - packages/capture-node/**
+        - packages/capsule/**
+    - component_id: catalog
+      name: catalog
+      paths:
+        - packages/catalog/**
     - component_id: cli
       name: cli
       paths:
@@ -36,50 +36,50 @@ component_management:
       name: cli-contract
       paths:
         - packages/cli-contract/**
-    - component_id: collection-http
-      name: collection-http
+    - component_id: discovery
+      name: discovery
       paths:
-        - packages/collection-http/**
-    - component_id: config
-      name: config
+        - packages/discovery/**
+    - component_id: driver
+      name: driver
       paths:
-        - packages/catalog/**
-    - component_id: execution
-      name: execution
+        - packages/driver/**
+    - component_id: effects
+      name: effects
       paths:
-        - packages/execution/**
-    - component_id: protocol
-      name: protocol
+        - packages/effects/**
+    - component_id: instrumentation
+      name: instrumentation
       paths:
-        - packages/protocol/**
-    - component_id: report
-      name: report
+        - packages/instrumentation/**
+    - component_id: instrumentation-runtime-node
+      name: instrumentation-runtime-node
       paths:
-        - packages/report/**
-    - component_id: runner-playwright
-      name: runner-playwright
+        - packages/instrumentation-runtime-node/**
+    - component_id: otel-collector
+      name: otel-collector
       paths:
-        - packages/runner-playwright/**
-    - component_id: spec
-      name: spec
+        - packages/otel-collector/**
+    - component_id: playwright
+      name: playwright
       paths:
-        - packages/spec/**
-    - component_id: spec-gherkin
-      name: spec-gherkin
+        - packages/playwright/**
+    - component_id: report-server
+      name: report-server
       paths:
-        - packages/spec-gherkin/**
-    - component_id: spec-playwright
-      name: spec-playwright
+        - packages/report-server/**
+    - component_id: sandbox
+      name: sandbox
       paths:
-        - packages/spec-playwright/**
-    - component_id: system
-      name: system
+        - packages/sandbox/**
+    - component_id: skills
+      name: skills
       paths:
-        - packages/system/**
-    - component_id: testbed
-      name: testbed
+        - packages/skills/**
+    - component_id: telemetry
+      name: telemetry
       paths:
-        - packages/testbed/**
+        - packages/telemetry/**
 
 ignore:
   - '**/types.ts' # Type definition files
