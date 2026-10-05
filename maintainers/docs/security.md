@@ -81,10 +81,9 @@ findings below the configured threshold. It prevents deletion and force pushes;
 there are no standing bypass actors. Existing Code Quality and automatic Copilot
 review rules are retained. Owners are `@omermorad` and `@qballer`.
 
-Required Actions checks are `CI Gate`, `Capsule E2E (Testcontainers)`,
-`Validate PR title`, and `Security Gate`, bound to the GitHub Actions App. A new
-release branch may be created from a reviewed commit; subsequent changes require
-PRs. The [tag ruleset](https://github.com/suites-dev/blackbox/rules/24043163) prevents
+Required Actions checks are `CI Gate`, `E2E Gate`, `Validate PR title`, and
+`Security Gate`, bound to the GitHub Actions App. A new release branch may be
+created from a reviewed commit; subsequent changes require PRs. The [tag ruleset](https://github.com/suites-dev/blackbox/rules/24043163) prevents
 updates and deletion of `v*` release tags. See [releasing.md](releasing.md).
 
 The desired settings are prepared under `.github/security` on the CI setup branch;

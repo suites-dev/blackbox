@@ -16,6 +16,7 @@ import { composeTelemetryController } from '../telemetry/compose-controller.js';
 import { writeEndpointComposeOverride } from './endpoint-override.js';
 import { snapshotContainerEnvironment } from './container-environment.js';
 import { inspectEffectiveParticipantEnvironments } from './environment/effective.js';
+import { SandboxReadinessWaitStrategy } from './readiness/wait-strategy.js';
 
 type Dockerode = Awaited<
   ReturnType<typeof getContainerRuntimeClient>
@@ -153,6 +154,7 @@ export class TestcontainersComposeDriver implements ComposeSandboxDriver {
       .withBuild()
       .withProjectName(request.projectName)
       .withEnvironment(composeEnvironment(request))
+      .withDefaultWaitStrategy(new SandboxReadinessWaitStrategy())
       .withStartupTimeout(request.startupTimeoutMs);
     const services = selectedServices(request);
     const observer = observeComposeStartup({
