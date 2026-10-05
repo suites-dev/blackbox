@@ -5,7 +5,7 @@
   "type": "commonjs",
   "scripts": {
     "build": "node scripts/clean-build.mjs && tsc -p tsconfig.json",
-    "test": "npm run verify:source-maps && node ../../scripts/run-node-tests.mjs 'dist/**/*.test.js' '{dist/**/*.test.js,scripts/**/*.test.mjs}'",
+    "test": "npm run verify:source-maps && node ../../scripts/run-node-tests.mjs 'dist/**/*.test.js' '{dist/**/*.test.js,test/**/*.test.mjs}'",
     "verify:source-maps": "npm run build && node scripts/verify-source-maps.mjs"
   },
   "dependencies": {
