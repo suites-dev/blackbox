@@ -135,6 +135,14 @@ export async function fakeManagerWith(input: {
   };
 }
 
+/**
+ * A report's text with its snapshot time blanked: two generations of one report
+ * differ only in `generatedAt` (JSON, and the JSON embedded in HTML).
+ */
+export function withoutSnapshotTime(text: string): string {
+  return text.replaceAll(/"generatedAt":\s*"[^"]*"/gu, '"generatedAt":"<snapshot>"');
+}
+
 export async function removeFixture(directory: string): Promise<void> {
   await rm(directory, { recursive: true, force: true });
 }

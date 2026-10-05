@@ -18,6 +18,12 @@ export interface ComposeServiceObservation {
     | { readonly kind: 'exited'; readonly exitCode: number };
 }
 
+/** A published container port that start-up waits on before it can finish. */
+export interface ComposeAwaitedEndpoint {
+  readonly service: string;
+  readonly containerPort: number;
+}
+
 export type ComposeAcquisitionObservation =
   | { readonly kind: 'service-state'; readonly container: ComposeServiceObservation }
   | {
@@ -25,6 +31,12 @@ export type ComposeAcquisitionObservation =
       readonly resource: { readonly kind: 'network' | 'volume'; readonly name: string };
     }
   | { readonly kind: 'waiting'; readonly elapsedMs: number }
+  | {
+      /** `waiting`, naming the published endpoints Testcontainers is waiting on. */
+      readonly kind: 'waiting-for-endpoints';
+      readonly elapsedMs: number;
+      readonly awaiting: readonly ComposeAwaitedEndpoint[];
+    }
   | { readonly kind: 'observation-status'; readonly status: 'available' | 'unavailable' };
 
 export type ComposeObservationMode =

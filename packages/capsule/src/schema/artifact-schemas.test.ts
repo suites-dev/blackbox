@@ -4,7 +4,6 @@ import type { ValidateFunction } from 'ajv';
 
 import type { CapsuleSessionRecord } from '../records.js';
 import type { CapsuleActivityReport } from '../model/execution/activity.js';
-import type { CapsuleReportDocument } from '../reporting/types.js';
 import { activeTelemetry, completedDriverActivity } from '../persistence/testing/record.fixture.js';
 import { capsuleProgressSchema } from '../progress/schema.js';
 import {
@@ -12,6 +11,7 @@ import {
   capsuleOperationalReportSchema,
   capsuleSessionSchema,
 } from './artifact-schemas.js';
+import { report } from './report.fixture.js';
 
 const ajv = new Ajv2020({ strict: true, allErrors: true });
 ajv.addSchema(capsuleProgressSchema);
@@ -62,75 +62,6 @@ function activity(): Extract<CapsuleActivityReport, { readonly kind: 'completed'
   return completedDriverActivity();
 }
 
-function report(): CapsuleReportDocument {
-  return {
-    schemaVersion: 1,
-    kind: 'capsule-operational-report',
-    session: {
-      sessionId: 'quiet-river-ada',
-      system: 'orders',
-      title: 'Orders exploration',
-      description: { kind: 'omitted' },
-      retainedState: 'stopped',
-      admittedAt: '2026-09-24T00:00:00.000Z',
-      updatedAt: '2026-09-24T00:00:03.000Z',
-      artifactRoot: '[REDACTED]',
-    },
-    lifecycle: { kind: 'stopped', retainedState: 'stopped' },
-    composeProject: { kind: 'available', value: 'orders' },
-    entrypoint: { kind: 'unavailable' },
-    resources: { containers: [], networks: [], volumes: [] },
-    readiness: { kind: 'unavailable' },
-    activities: [activity()],
-    activityTelemetry: [],
-    progress: [],
-    observations: {
-      kind: 'collector-session-found',
-      telemetry: {
-        status: 'received',
-        acceptedRequests: 1,
-        acceptedSpans: 2,
-        lastReceivedAt: '2026-09-24T00:00:02.000Z',
-      },
-      fragmentCount: 1,
-      runs: [
-        {
-          startedAt: '2026-09-24T00:00:00.000Z',
-          updatedAt: '2026-09-24T00:00:03.000Z',
-          stopped: { kind: 'stopped', at: '2026-09-24T00:00:03.000Z' },
-          receiver: 'stopped',
-          instrumentation: {
-            kind: 'activated',
-            activations: [
-              {
-                kind: 'instrumentation-activation',
-                runtime: 'node',
-                serviceName: 'orders-api',
-                activatedAt: '2026-09-24T00:00:01.000Z',
-              },
-            ],
-          },
-          shutdown: 'complete',
-          failure: { kind: 'none' },
-        },
-      ],
-      traces: {
-        activityCorrelated: [],
-        sessionOnly: [
-          {
-            kind: 'unavailable',
-            traceId: 'trace-1',
-            association: { kind: 'session-only' },
-            reason: 'not-retained',
-          },
-        ],
-      },
-    },
-    cleanup: { kind: 'complete' },
-    failure: { kind: 'none' },
-    redactions: { count: 0, entries: [] },
-  };
-}
 
 describe('Capsule session artifact schema', () => {
   it('accepts the retained record and rejects invalid union branches', () => {
@@ -195,6 +126,50 @@ describe('Capsule activities artifact schema', () => {
       expect(validateActivities(invalid)).toBe(false);
     }
   });
+});
+
+describe('Capsule operational report schema: #111 additions', () => {
+  it('reads reports written before snapshot time, policy and failure causes were kept', () => {
+    const earlier = Object.fromEntries(
+      Object.entries(report()).filter(([key]) => key !== 'generatedAt' && key !== 'observationPolicy'),
+    );
+    expect(validateReport(earlier)).toBe(true);
+    const boundary = { id: 'effects.http', kind: 'http', authoritativeFor: ['HTTP'] };
+    const policy = {
+      kind: 'recorded',
+      policyId: 'orders-v1',
+      terminalObservationWindowMs: 5000,
+      redaction: { requestBodies: 'not-captured', headers: [], dynamicIdentifiers: 'kept' },
+      requiredBoundaries: ['effects.http'],
+      boundaries: [{ ...boundary, required: true, status: 'not-evaluated' }],
+    };
+    const failed = {
+      traceId: 'trace',
+      spanId: 'span',
+      parentSpanId: null,
+      spanKind: 'client',
+      operation: 'GET',
+      service: 'api',
+      startTimeUnixNano: null,
+      endTimeUnixNano: null,
+      statusCode: 2,
+      statusMessage: 'refused',
+      exceptions: [{ type: 'java.net.UnknownHostException', message: 'price' }],
+      attributes: [{ key: 'error.type', value: 'java.net.UnknownHostException' }],
+      links: [],
+    };
+    const current = {
+      ...report(),
+      observationPolicy: policy,
+      activityTelemetry: [{ kind: 'available', activityId: 'one', spans: [failed] }],
+    };
+    expect(validateReport(current)).toBe(true);
+    const verdict = { ...boundary, required: true, status: 'satisfied' };
+    expect(validateReport({ ...current, observationPolicy: { ...policy, boundaries: [verdict] } })).toBe(
+      false,
+    );
+  });
+
 });
 
 describe('Capsule operational report schema', () => {

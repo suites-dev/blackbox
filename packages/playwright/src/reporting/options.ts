@@ -5,17 +5,14 @@ import type { FullConfig } from '@playwright/test/reporter';
 
 export const sandboxLifecycleMetadataKey = 'blackboxSandboxLifecycle';
 
-const reporterSpecifiers = new Set([
-  '@suites/blackbox/playwright/reporter',
-  '@suites/blackbox-playwright/reporter',
-]);
+const reporterSpecifier = '@suites/blackbox-playwright/reporter';
 const reporterFiles = new Set([
   fileURLToPath(new URL('../reporter.js', import.meta.url)),
   fileURLToPath(new URL('../reporter.ts', import.meta.url)),
 ]);
 
 function isBlackboxReporter(specifier: string): boolean {
-  return reporterSpecifiers.has(specifier) || reporterFiles.has(specifier);
+  return specifier === reporterSpecifier || reporterFiles.has(specifier);
 }
 
 export function sandboxLifecycleOption(options: unknown = {}): boolean {

@@ -27,6 +27,11 @@ export default class Run extends RunCommand {
       min: 0,
     }),
     json: Flags.boolean({ default: false }),
+    'raw-output': Flags.boolean({
+      default: false,
+      description:
+        'With --json, print the child stdout and stderr as captured, without redacting credentials',
+    }),
   };
 
   protected async execute(): Promise<void> {
@@ -38,6 +43,7 @@ export default class Run extends RunCommand {
       purpose: flags.purpose as 'setup' | 'stimulus' | 'inspection',
       allowUntraced: flags['allow-untraced'],
       json: flags.json,
+      output: flags['raw-output'] ? 'raw' : 'redacted',
       waitMs: flags.wait ?? DEFAULT_WAIT_CAP_MS,
     });
   }

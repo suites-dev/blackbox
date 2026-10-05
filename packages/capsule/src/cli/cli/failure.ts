@@ -12,6 +12,8 @@ export type CliErrorCode =
   | 'system-required'
   | 'conflicting-output'
   | 'current-capsule-write-failed'
+  /** A participant container exited during the capsule; only ever a warning. */
+  | 'participant-exited'
   /** Any other Blackbox failure raised in the CLI layer (for example an occupied viewer port). */
   | 'operation-failed';
 

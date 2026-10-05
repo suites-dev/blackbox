@@ -7,13 +7,5 @@ activity c0000003  Queue proof stimulus
   observed  nothing observed · complete
   later in this capsule, no known cause:
     e0000023  redis-proof-consumer  POST /fixture/shared-state-proof/proof-journey  202  +212ms
-    e0000025  public-api            GET /health                                     200  +1.5s
-    e0000019  public-api            GET /health                                     200  +2.2s
-    e0000016  public-api            GET /health                                     200  +2.8s
   ⚠ Blackbox cannot prove that c0000003 caused e0000023.
     Both belong to capsule calm-comet-ada-000000000001, but no trace context links them.
-  ⚠ Blackbox cannot prove that c0000003 caused e0000025.
-    Both belong to capsule calm-comet-ada-000000000001, but no trace context links them.
-  ⚠ Blackbox cannot prove that c0000003 caused e0000019.
-    Both belong to capsule calm-comet-ada-000000000001, but no trace context links them.
-  ⚠ … 1 more traces with no known cause

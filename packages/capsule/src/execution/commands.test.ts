@@ -25,8 +25,10 @@ afterEach(async () => {
 
 async function readinessServer(status: () => number) {
   const requests: string[] = [];
+  const agents: (string | undefined)[] = [];
   const server = createServer((request, response) => {
     requests.push(request.url ?? '');
+    agents.push(request.headers['user-agent']);
     response.writeHead(status()).end();
   });
   servers.push(server);
@@ -38,6 +40,7 @@ async function readinessServer(status: () => number) {
   }
   return {
     requests,
+    agents,
     entrypoint: {
       host: '127.0.0.1',
       port: address.port,
@@ -193,6 +196,17 @@ it('retries an unhealthy real endpoint and waits for HTTP success', async () => 
   const fixture = await readinessServer(() => (++attempts === 1 ? 503 : 204));
   await awaitReadiness({ entrypoint: fixture.entrypoint, path: '/health', timeoutMs: 3000 });
   expect(fixture.requests).toEqual(['/health', '/health']);
+});
+
+it('backs off between failed probes and names itself in the user agent (#111)', async () => {
+  const fixture = await readinessServer(() => 403);
+  await expect(
+    awaitReadiness({ entrypoint: fixture.entrypoint, path: '/health', timeoutMs: 1_700 }),
+  ).rejects.toThrow('Readiness did not succeed within 1700ms');
+  // Waits of 200, 400, 800 ms then 1 s: about 4 probes, where a fixed 200 ms wait makes about 8.
+  expect(fixture.requests.length).toBeGreaterThanOrEqual(3);
+  expect(fixture.requests.length).toBeLessThanOrEqual(5);
+  expect(new Set(fixture.agents)).toEqual(new Set(['blackbox-readiness/1']));
 });
 
 it('retains the unhealthy HTTP cause when readiness expires', async () => {

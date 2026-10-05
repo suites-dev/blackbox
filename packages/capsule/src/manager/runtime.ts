@@ -4,7 +4,7 @@ import { createServer, type Server } from 'node:net';
 import { dirname, join } from 'node:path';
 
 import type { SandboxHandle } from '@suites/blackbox-sandbox';
-import type { CatalogSandboxInput } from '@suites/blackbox-catalog';
+import type { CatalogSandboxInput, ObservationPolicy } from '@suites/blackbox-catalog';
 
 import type { CapsuleManagerBootstrap } from '../protocol.js';
 import {
@@ -93,7 +93,32 @@ async function resolvePlan(bootstrap: CapsuleManagerBootstrap, ports: CapsuleMan
     composeFiles: plan.composeFiles,
     services: plan.services,
   });
-  return { plan, entry: catalog.config.catalog.entries[bootstrap.systemId] };
+  const entry = catalog.config.catalog.entries[bootstrap.systemId];
+  await emitProgress(bootstrap, {
+    kind: 'observation-policy-resolved',
+    sessionId: bootstrap.sessionId,
+    policy: recordedPolicy(entry.observation),
+  });
+  return { plan, entry };
+}
+
+/** Exactly the policy fields the progress schema records. */
+function recordedPolicy(policy: ObservationPolicy): ObservationPolicy {
+  return {
+    policyId: policy.policyId,
+    boundaries: policy.boundaries.map(({ id, kind, authoritativeFor }) => ({
+      id,
+      kind,
+      authoritativeFor,
+    })),
+    requiredBoundaries: policy.requiredBoundaries,
+    terminalObservationWindowMs: policy.terminalObservationWindowMs,
+    redaction: {
+      requestBodies: policy.redaction.requestBodies,
+      headers: policy.redaction.headers,
+      dynamicIdentifiers: policy.redaction.dynamicIdentifiers,
+    },
+  };
 }
 
 async function cleanupFailedSandbox(sandbox: SandboxHandle | undefined) {

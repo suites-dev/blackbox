@@ -8,7 +8,9 @@
 // when the pool opens a new connection (a cold pool), not when it hands out an
 // idle one. A childless pg.connect directly under the same service's
 // pg-pool.connect is therefore dropped before comparison; every other span,
-// including a pg.connect anywhere else or with children, still counts.
+// including a pg.connect anywhere else or with children, still counts. Both
+// are matched by operation, so a client target (`pg.connect → postgres`)
+// does not hide them from this rule.
 
 const CONNECTOR = /^((?:│ {2}| {3})*)([├└]─ )/u;
 
@@ -29,6 +31,11 @@ function parseTree(lines) {
   return roots;
 }
 
+/** A span title without its client target: `pg.connect → postgres` is `pg.connect`. */
+function operationOf(title) {
+  return title.replace(/ → .*$/u, '');
+}
+
 /** Removes the optional pg.connect children described above; returns how many. */
 function dropPoolConnects(nodes, parts) {
   let dropped = 0;
@@ -37,8 +44,8 @@ function dropPoolConnects(nodes, parts) {
     const kept = node.children.filter((child) => {
       const own = parts(child);
       const optional =
-        parent.title === 'pg-pool.connect' &&
-        own.title === 'pg.connect' &&
+        operationOf(parent.title) === 'pg-pool.connect' &&
+        operationOf(own.title) === 'pg.connect' &&
         own.service === parent.service &&
         child.children.length === 0;
       return !optional;

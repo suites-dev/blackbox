@@ -3,7 +3,13 @@ import { expect, it } from 'vitest';
 import { completedHostActivity } from '../../persistence/testing/record.fixture.js';
 import { createRedactionContext } from '../../reporting/redaction.js';
 import { projectObservations } from '../../reporting/observations.js';
-import { earliestStart, placeTraces, type CausalityActivity } from '../causality.js';
+import {
+  ACTIVITY_WINDOW_GRACE_MS,
+  activityWindowEndMs,
+  earliestStart,
+  placeTraces,
+  type CausalityActivity,
+} from '../causality.js';
 
 const ns = (iso: string) => String(BigInt(Date.parse(iso)) * 1_000_000n);
 
@@ -218,4 +224,17 @@ it('returns the numerically earliest start, ignoring spans without one', () => {
     ]),
   ).toBe('999');
   expect(earliestStart([{ startTimeUnixNano: null }])).toBeNull();
+});
+
+it('ends an activity window at the next start or the completion plus the grace', () => {
+  const completedAt = '2026-01-01T00:00:01.000Z';
+  const completed = Date.parse(completedAt);
+  expect(ACTIVITY_WINDOW_GRACE_MS).toBe(5_000);
+  expect(activityWindowEndMs({ completedAt, nextStartedAt: null })).toBe(completed + 5_000);
+  expect(activityWindowEndMs({ completedAt, nextStartedAt: '2026-01-01T00:00:02.000Z' })).toBe(
+    completed + 1_000,
+  );
+  expect(activityWindowEndMs({ completedAt: null, nextStartedAt: null })).toBe(
+    Number.POSITIVE_INFINITY,
+  );
 });

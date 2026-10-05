@@ -2,6 +2,8 @@ import { projectActivityTelemetry } from './telemetry.js';
 import { projectObservations } from './observations.js';
 import type { CapsuleProgressEvent } from '../progress/events.js';
 import type { CapsuleSessionState } from '../model/session-state.js';
+import { evidenceUpdatedAt, projectObservationPolicy } from './policy.js';
+import { infrastructureContainers } from './resources.js';
 import { createRedactionContext, redactActivities, redactError, redactText } from './redaction.js';
 import type {
   CapsuleReportDocument,
@@ -57,6 +59,15 @@ function redactProgress(input: {
             context: input.context,
           }),
         };
+      case 'capsule-stop-failed':
+        return {
+          ...event,
+          error: redactError({
+            error: event.error,
+            location: 'progress.error',
+            context: input.context,
+          }),
+        };
       default:
         return event;
     }
@@ -97,12 +108,12 @@ function activityTelemetry(
   });
 }
 
-export function projectCapsuleReport(input: CapsuleReportProjectionInput): CapsuleReportDocument {
-  const context = createRedactionContext();
-  const cleanup = cleanupProjection(input, context);
-  const entrypoint = input.record.entrypoint;
-  const readiness = input.record.readiness;
-  const session = {
+/** The session fields, redacted, with the time its evidence last changed. */
+function sessionProjection(
+  input: CapsuleReportProjectionInput,
+  context: ReturnType<typeof createRedactionContext>,
+): CapsuleReportDocument['session'] {
+  return {
     sessionId: input.record.sessionId,
     system: input.record.system,
     title: input.record.title,
@@ -115,14 +126,28 @@ export function projectCapsuleReport(input: CapsuleReportProjectionInput): Capsu
           },
     retainedState: input.record.state,
     admittedAt: input.record.admittedAt,
-    updatedAt: input.record.updatedAt,
+    updatedAt: evidenceUpdatedAt({
+      recordUpdatedAt: input.record.updatedAt,
+      activities: input.activities,
+      progress: input.progress,
+    }),
     artifactRoot: redactText(input.record.artifactRoot, 'session.artifactRoot', context),
   };
+}
+
+export function projectCapsuleReport(input: CapsuleReportProjectionInput): CapsuleReportDocument {
+  const context = createRedactionContext();
+  const cleanup = cleanupProjection(input, context);
+  const entrypoint = input.record.entrypoint;
+  const readiness = input.record.readiness;
+  const session = sessionProjection(input, context);
   const document = {
     schemaVersion: 1,
     kind: 'capsule-operational-report',
+    generatedAt: input.generatedAt,
     session,
     lifecycle: lifecycle(input.record.state),
+    observationPolicy: projectObservationPolicy(input.progress),
     composeProject: input.record.composeProject,
     entrypoint:
       entrypoint.kind === 'unavailable'
@@ -136,6 +161,10 @@ export function projectCapsuleReport(input: CapsuleReportProjectionInput): Capsu
           },
     resources: {
       containers: input.record.containers,
+      infrastructure: infrastructureContainers({
+        containers: input.record.containers,
+        progress: input.progress,
+      }),
       networks: input.record.networks,
       volumes: input.record.volumes,
     },

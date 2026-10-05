@@ -11,6 +11,10 @@ import { cliFailure } from '../../cli/failure.js';
 import { capsulePackageFailure } from '../../capsule/capsule-output.js';
 import { runProcessInteractiveCapsuleExec } from '../../capsule/execution/interactive-execution.js';
 import { InvocationContext } from '../../context/invocation.js';
+import {
+  participantWarnings,
+  type ParticipantWarnings,
+} from '../lifecycle/participant-warnings.js';
 import { OutputTracker } from './output-tracker.js';
 import { interruptOnSigint } from './run-observe.js';
 import { reportRun, type RunReportRequest } from './run-report.js';
@@ -19,6 +23,13 @@ export interface RunRequest extends RunReportRequest {
   readonly capsuleFlag: string | null;
   readonly name: string | null;
   readonly allowUntraced: boolean;
+}
+
+/** The run document, with `exitedParticipants` when a participant exited. */
+function withExitedParticipants(document: unknown, warnings: ParticipantWarnings): unknown {
+  return warnings.exited.length === 0
+    ? document
+    : { ...(document as object), exitedParticipants: warnings.exited };
 }
 
 /**
@@ -71,6 +82,8 @@ export abstract class RunCommand extends BlackboxCommand {
     if (result.kind !== 'capsule-exec-completed') {
       throw capsulePackageFailure(result, capsule);
     }
+    // A participant that stopped during the run is reported, never fatal.
+    const warnings = await participantWarnings(capsule);
     // From the moment the child has exited, Ctrl-C only ends the telemetry
     // wait: it never replaces the child's exit code.
     const interrupt = interruptOnSigint();
@@ -95,10 +108,13 @@ export abstract class RunCommand extends BlackboxCommand {
             this.human(lines);
           },
           json: (document) => {
-            this.json(document);
+            this.json(withExitedParticipants(document, warnings));
           },
         },
       );
+      if (!request.json && warnings.lines.length > 0) {
+        process.stderr.write(`${warnings.lines.join('\n')}\n`);
+      }
     } finally {
       interrupt.dispose();
     }

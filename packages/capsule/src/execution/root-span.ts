@@ -82,6 +82,8 @@ export async function exportActivityRootSpan(input: {
   readonly purpose: CapsuleActivityPurpose;
   readonly scope: ActiveTelemetryExecutionScopeRecord;
   readonly result: TelemetryScopeResult;
+  /** The span's end, the same instant the activity records as its telemetry end. */
+  readonly endedAt: string;
 }): Promise<RootSpanExportResult> {
   try {
     const telemetry = await input.sandbox.inspectTelemetry();
@@ -95,7 +97,7 @@ export async function exportActivityRootSpan(input: {
         authorization: `Bearer ${input.authorizationToken}`,
         'content-type': 'application/json',
       },
-      body: JSON.stringify(request({ ...input, endedAt: new Date().toISOString() })),
+      body: JSON.stringify(request(input)),
     });
     return response.ok
       ? { kind: 'root-span-exported' }

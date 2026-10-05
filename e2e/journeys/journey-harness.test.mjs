@@ -562,6 +562,37 @@ void test('an optional pg.connect under the same service pg-pool.connect is not 
   assert.match(canonicalizeTrees(other), / pg\.connect /u);
 });
 
+void test('an optional pg.connect is still dropped when both spans name their client target', () => {
+  const tree = (connect) =>
+    ACTIVITY_TREE([
+      '    └─ fraud-check  POST /assess  200',
+      '       ├─ fraud-check  pg-pool.connect → postgres',
+      ...(connect ? ['       │  └─ fraud-check  pg.connect → postgres'] : []),
+      '       └─ fraud-check  pg.query:INSERT subscriptions → postgres',
+    ]);
+  assert.equal(canonicalizeTrees(tree(true)), canonicalizeTrees(tree(false)));
+
+  const header =
+    '  SPAN              PARENT            SERVICE      KIND    TITLE                         RESULT  DURATION  FAILURE';
+  const row = (id, parent, title) =>
+    `  ${id}  ${parent}  fraud-check  client  ${title.padEnd(28)}          1ms`;
+  const rows = (connect) =>
+    [
+      'trace t · capsule c · 3 spans · complete',
+      header,
+      row('aaaaaaaaaaaaaaaa', '1111111111111111', 'pg-pool.connect → postgres'),
+      ...(connect ? [row('bbbbbbbbbbbbbbbb', 'aaaaaaaaaaaaaaaa', 'pg.connect → postgres')] : []),
+      row('cccccccccccccccc', '1111111111111111', 'pg.query:INSERT → postgres'),
+      '→ next',
+    ].join('\n');
+  assert.equal(canonicalizeTrees(rows(true)), canonicalizeTrees(rows(false)));
+  // Negative control: a pg.connect under another service's pool still counts.
+  assert.notEqual(
+    canonicalizeTrees(tree(true).replace('fraud-check  pg.connect', 'other  pg.connect')),
+    canonicalizeTrees(tree(false)),
+  );
+});
+
 const RUN = 'blackbox capsule run --via public-api -- curl /x';
 const RUN_OUTPUT = [
   '{"child":"stdout before"}',
