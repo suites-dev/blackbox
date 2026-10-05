@@ -10,12 +10,16 @@ function isFileEntry(data) {
 }
 
 export default async function* census(source) {
-  const result = { tests: 0, skipped: [], todo: [], testsByFile: {} };
+  const result = { tests: 0, failed: 0, skipped: [], todo: [], testsByFile: {} };
   for await (const event of source) {
     if (event.type !== 'test:pass' && event.type !== 'test:fail') {
       continue;
     }
     const { data } = event;
+    if (event.type === 'test:fail') {
+      // Includes a file that failed to load, which reports as a file entry.
+      result.failed += 1;
+    }
     if (data.details.type === 'suite' || isFileEntry(data)) {
       continue;
     }

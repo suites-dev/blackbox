@@ -79,13 +79,49 @@ test('fails and names a todo test', async (t) => {
   assert.match(result.stderr, /todo tests: .*later/u);
 });
 
-test('propagates a failing test as a failing exit', async (t) => {
+test('counts subtests in every file across several patterns', async (t) => {
   const root = await fixture(t, {
-    'suite/fail.test.mjs':
-      "import test from 'node:test';\ntest('breaks', () => { throw new Error('x'); });\n",
+    'one/a.test.mjs': PASSING,
+    'one/b.test.mjs': `${PASSING}test('also passes', async (t) => { await t.test('child', () => {}); });\n`,
+    'two/c.test.mjs': PASSING,
+  });
+  const result = run(root, ['one/*.test.mjs', 'two/*.test.mjs']);
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stderr, /5 tests passed across 3 files/u);
+});
+
+test('fails and names a test skipped at run time', async (t) => {
+  const root = await fixture(t, {
+    'suite/conditional.test.mjs': `${PASSING}test('conditional', (t) => { t.skip('no jq'); });\n`,
+  });
+  const result = run(root, ['suite/*.test.mjs']);
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /skipped tests: .*conditional/u);
+});
+
+test('fails on a failing test and names a file that cannot load', async (t) => {
+  const root = await fixture(t, {
+    'suite/a.test.mjs': `${PASSING}test('fails', () => { throw new Error('boom'); });\n`,
+    'suite/b.test.mjs': "import './missing.mjs';\n",
   });
   const result = run(root, ['suite/*.test.mjs']);
   assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /2 test\(s\) failed/u);
+  assert.match(result.stderr, /files that ran no test: .*b\.test\.mjs/u);
+});
+
+// node:test marks its file processes with NODE_TEST_CONTEXT, and a nested
+// `node --test` (or run()) there reports into the parent instead of running
+// its own files. The runner strips it, so it must work from inside a test.
+test('runs its own files when launched from inside a node:test process', async (t) => {
+  const root = await fixture(t, { 'suite/one.test.mjs': PASSING });
+  const result = spawnSync(process.execPath, [RUNNER, 'suite/*.test.mjs'], {
+    cwd: root,
+    encoding: 'utf8',
+    env: { ...process.env, NODE_TEST_CONTEXT: 'child-v8' },
+  });
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stderr, /1 tests passed across 1 files/u);
 });
 
 test('discovery ignores node_modules and deduplicates overlapping patterns', async (t) => {

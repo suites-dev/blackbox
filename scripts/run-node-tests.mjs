@@ -8,7 +8,7 @@
 // Usage: node scripts/run-node-tests.mjs '<glob>' ['<glob>' ...]
 // Quote each glob so the runner, not the shell, expands it.
 import { spawnSync } from 'node:child_process';
-import { globSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, globSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { cwd, execPath } from 'node:process';
@@ -92,17 +92,25 @@ function main(patterns) {
     if (result.error !== undefined) {
       throw result.error;
     }
-    if (result.status !== 0) {
-      return result.status === null ? 1 : result.status;
+    const exitCode = result.status === null ? 1 : result.status;
+    if (!existsSync(censusFile)) {
+      console.error('run-node-tests: the test run wrote no census, so nothing proves a test ran');
+      return exitCode === 0 ? 1 : exitCode;
     }
     const census = JSON.parse(readFileSync(censusFile, 'utf8'));
     const problems = censusVerdict(
       census,
       files.map((file) => resolve(root, file)),
     );
-    if (problems.length > 0) {
-      console.error(`run-node-tests: ${files.length} files, but ${problems.join('; ')}`);
-      return 1;
+    if (census.failed > 0) {
+      problems.unshift(`${census.failed} test(s) failed`);
+    }
+    // Report every problem even when node:test already failed, so a file that
+    // could not load is named alongside the failing tests.
+    if (exitCode !== 0 || problems.length > 0) {
+      const reason = problems.length > 0 ? problems.join('; ') : `node --test exited ${exitCode}`;
+      console.error(`run-node-tests: ${files.length} files, but ${reason}`);
+      return exitCode === 0 ? 1 : exitCode;
     }
     console.error(`run-node-tests: ${census.tests} tests passed across ${files.length} files`);
     return 0;
