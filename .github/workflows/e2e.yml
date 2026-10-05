@@ -523,13 +523,68 @@ jobs:
             [[ "$outcome" == success ]] || exit 1
           done
 
+  # The sandbox Docker tests import packages/sandbox/src only, so this lane needs
+  # neither the build nor the test registry and starts alongside them. They skip
+  # themselves without BLACKBOX_SANDBOX_DOCKER_TEST=1 so `pnpm test` passes on a
+  # machine without Docker; test:sandbox:docker sets it, runs every
+  # *.docker.test.ts it finds, and fails if none are found or any test skips.
+  sandbox:
+    name: Sandbox Docker tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.target_branch || github.ref }}
+
+      - name: Setup toolchain
+        id: setup
+        uses: ./.github/actions/setup
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          pnpm-version: ${{ env.PNPM_VERSION }}
+
+      - name: Run the sandbox Docker tests
+        id: sandbox_tests
+        timeout-minutes: 15
+        run: >-
+          node .github/scripts/ci-evidence.mjs run --lane sandbox --project docker
+          --evidence-dir ci-evidence/sandbox/docker -- pnpm test:sandbox:docker
+
+      - name: Retain sandbox Docker evidence
+        id: sandbox_evidence
+        if: always()
+        uses: ./.github/actions/ci-evidence
+        with:
+          lane: sandbox
+          project: docker
+          evidence-dir: ci-evidence/sandbox/docker
+          setup-result: ${{ steps.setup.outcome }}
+          result: ${{ steps.sandbox_tests.outcome }}
+          command: pnpm test:sandbox:docker
+          expected: |
+            log=ci-evidence/sandbox/docker/logs/command.log
+
+      - name: Enforce lane outcomes
+        if: always()
+        env:
+          OUTCOMES: >-
+            ${{ steps.setup.outcome }} ${{ steps.sandbox_tests.outcome }}
+            ${{ steps.sandbox_evidence.outcome }}
+        run: |
+          for outcome in $OUTCOMES; do
+            [[ "$outcome" == success ]] || exit 1
+          done
+
   # This display name is the required status check in branch protection
   # (maintainers/docs/security.md). Renaming it without first updating the live
   # ruleset blocks every merge.
   gate:
     name: E2E Gate
     if: always()
-    needs: [build, transport, demo, storyboard, journeys, playwright, skills]
+    needs: [build, transport, demo, storyboard, journeys, playwright, skills, sandbox]
     runs-on: ubuntu-24.04
     steps:
       # Every lane always runs, so anything but success fails the gate. A matrix
@@ -544,11 +599,12 @@ jobs:
           JOURNEYS_RESULT: ${{ needs.journeys.result }}
           PLAYWRIGHT_RESULT: ${{ needs.playwright.result }}
           SKILLS_RESULT: ${{ needs.skills.result }}
+          SANDBOX_RESULT: ${{ needs.sandbox.result }}
         run: |
           failed=0
           for lane in "build=$BUILD_RESULT" "transport=$TRANSPORT_RESULT" "demo=$DEMO_RESULT" \
             "storyboard=$STORYBOARD_RESULT" "journeys=$JOURNEYS_RESULT" \
-            "playwright=$PLAYWRIGHT_RESULT" "skills=$SKILLS_RESULT"; do
+            "playwright=$PLAYWRIGHT_RESULT" "skills=$SKILLS_RESULT" "sandbox=$SANDBOX_RESULT"; do
             name="${lane%%=*}"
             result="${lane#*=}"
             if [[ "$result" != success ]]; then
