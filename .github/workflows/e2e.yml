@@ -90,13 +90,22 @@ jobs:
       # is a formality the registry accepts under its $all publish policy, and
       # npm refuses to publish at all without one. --provenance=false is the
       # only way to override publishConfig.provenance, which the real release
-      # keeps: a local registry issues no npm provenance.
-      - name: Publish every package to the test registry
+      # keeps: a local registry issues no npm provenance. Private packages are
+      # never published (npm rejects them with EPRIVATE), so they are not packed;
+      # the consumer preparation skips them the same way.
+      - name: Publish every public package to the test registry
         run: |
           tarballs="$RUNNER_TEMP/tarballs"
           rm -rf "$tarballs"
           mkdir -p "$tarballs"
-          pnpm --recursive --filter './packages/*' exec pnpm pack --pack-destination "$tarballs"
+          # An array, not a while-read loop: a pack script reading stdin would
+          # otherwise swallow the remaining package paths.
+          mapfile -t packages < <(pnpm list --recursive --depth -1 --json --filter './packages/*' \
+            | jq -r '.[] | select(.private != true) | .path')
+          test "${#packages[@]}" -gt 0
+          for package in "${packages[@]}"; do
+            pnpm --dir "$package" pack --pack-destination "$tarballs"
+          done
           for tarball in "$tarballs"/*.tgz; do
             env "npm_config_//127.0.0.1:4874/:_authToken=blackbox-e2e" \
               npm publish "$tarball" \
