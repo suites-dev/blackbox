@@ -5,9 +5,11 @@ import { useStubSystems } from '../testing/stub-lifecycle.js';
 
 // Requirements (task 2.3, report sections 2.8, 2.9 and 6.2): a setup step
 // sends a JSON request and checks its status without recording it; stimulus
-// steps send JSON to the Sandbox entrypoint only and record every response;
-// concurrent requests are all in flight together. Negative control: spike E's
-// no-row stub, which answers 201 without persisting the subscription.
+// steps send JSON, or a bodyless GET, to the Sandbox entrypoint only, never
+// follow redirects, and record every response; concurrent requests are all in
+// flight together. Negative controls: spike E's no-row stub, which answers 201
+// without persisting the subscription, and the not-ready stub, whose health
+// check answers 503.
 
 const SUBSCRIBE = 'the client sends POST "/subscriptions" with JSON:';
 const CONCURRENT = 'the client sends these requests concurrently:';
@@ -105,5 +107,46 @@ describe('the client sends these requests concurrently:', () => {
       scenario.step(CONCURRENT, table([['method', 'path', 'json'], ['POST', '/subscriptions', '{}']])),
     ).rejects.toThrow('requests in a concurrent stimulus');
     expect(sut.received).toEqual([]);
+  });
+});
+
+describe('the client sends GET {string}', () => {
+  const READY = json('{"status": "ready"}');
+
+  it('sends a bodyless, credential-free GET and records it as the latest stimulus, after any setup', async () => {
+    const sut = await system('correct');
+    const scenario = scenarioAt(sut.url);
+    await scenario.step(setup(201), json('{"userId": "carol", "paymentMethodId": "pm_carol_primary"}'));
+    await scenario.step('the client sends GET "/health"');
+    await scenario.step('the response status is 200');
+    await scenario.step('the response JSON equals:', READY);
+    expect(sut.received.at(-1)).toEqual({
+      method: 'GET',
+      path: '/health',
+      contentType: null,
+      authorization: null,
+      body: '',
+    });
+  });
+
+  it('tells a ready system from one still starting', async () => {
+    const scenario = scenarioAt((await system('not-ready')).url);
+    await scenario.step('the client sends GET "/health"');
+    await expect(scenario.step('the response status is 200')).rejects.toThrow('status of GET /health');
+    await expect(scenario.step('the response JSON equals:', READY)).rejects.toThrow('body of GET /health');
+  });
+
+  it('records a redirect instead of following it, and refuses other origins before sending', async () => {
+    const sut = await system('correct');
+    const scenario = scenarioAt(sut.url);
+    await scenario.step('the client sends GET "/fixture/moved"');
+    await scenario.step('the response status is 302');
+    expect(sut.received.map((request) => request.path)).toEqual(['/fixture/moved']);
+    for (const path of ['//evil.example/health', 'http://evil.example/health', 'health']) {
+      await expect(scenario.step(`the client sends GET "${path}"`), path).rejects.toThrow(
+        'request path (absolute, on the Sandbox entrypoint)',
+      );
+    }
+    expect(sut.received).toHaveLength(1);
   });
 });

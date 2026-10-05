@@ -24,6 +24,13 @@ const V1 = [
     fixtures: http,
   },
   {
+    sample: 'the client sends GET "/health"',
+    expression: 'the client sends GET {string}',
+    kind: 'stimulus',
+    argument: 'none',
+    fixtures: [...http, 'world'],
+  },
+  {
     sample: 'the client sends POST "/subscriptions" with JSON:',
     expression: 'the client sends {word} {string} with JSON:',
     kind: 'stimulus',
@@ -135,7 +142,8 @@ describe('step library v1', () => {
     for (const text of [
       'the effects satisfy:',
       'the "postgres" participant runs SQL:',
-      'the client sends GET "/health"',
+      'the client sends POST "/subscriptions"',
+      'the client sends DELETE "/health"',
       'the response status is 201 within 5 seconds',
       'the state at "/s" equals:',
     ]) {

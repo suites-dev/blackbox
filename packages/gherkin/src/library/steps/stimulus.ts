@@ -2,7 +2,7 @@ import { expect } from '@suites/blackbox-playwright';
 
 import type { StepDefinition } from '../../runtime/step-types.js';
 import { fixture, jsonDocString, stringAt, tableRecords } from '../support/arguments.js';
-import { sendJson } from '../support/http.js';
+import { sendGet, sendJson } from '../support/http.js';
 import { recordStimulus } from '../support/scenario.js';
 
 // Stimulus (report section 2.9). Each step records every response it received,
@@ -11,6 +11,17 @@ import { recordStimulus } from '../support/scenario.js';
 const CONCURRENT_COLUMNS = ['method', 'path', 'json'] as const;
 
 export const stimulusSteps = [
+  {
+    expression: 'the client sends GET {string}',
+    kind: 'stimulus',
+    argument: 'none',
+    fixtures: ['request', 'sandbox', 'world'],
+    requires: null,
+    run: async ({ fixtures, parameters }) => {
+      const exchange = await sendGet(fixture(fixtures, 'request'), fixture(fixtures, 'sandbox'), stringAt(parameters, 0));
+      recordStimulus(fixture(fixtures, 'world'), [exchange]);
+    },
+  },
   {
     expression: 'the client sends {word} {string} with JSON:',
     kind: 'stimulus',
