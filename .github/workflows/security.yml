@@ -33,7 +33,7 @@ jobs:
       - name: Install workspace dependencies without lifecycle scripts
         run: pnpm install --frozen-lockfile --ignore-scripts
       - name: Verify dependency audit policy and patched HTTP cache reuse semantics
-        run: node scripts/run-node-tests.mjs 'scripts/security/*.test.mjs'
+        run: pnpm run test:security
       - name: Audit workspace dependencies, including development tools
         run: node scripts/security/audit-workspace.mjs
       - name: Audit the standalone test application

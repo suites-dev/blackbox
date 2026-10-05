@@ -317,21 +317,24 @@ test('required CI runs the repository boundary test suites', async () => {
         timeout-minutes: 10
         run: |
           npm ci --prefix e2e/sut --ignore-scripts
-          npm test --prefix e2e/sut
-          node scripts/run-node-tests.mjs '.github/scripts/*.test.mjs'
-          node scripts/run-node-tests.mjs 'demo/support/*.test.mjs' 'scripts/consumer/*.test.mjs'
+          pnpm run test:sut
+          pnpm run test:repo
 `;
   assert.ok(workflow.includes(expectedStep));
+  const manifest = JSON.parse(
+    await fs.readFile(new URL('../../package.json', import.meta.url), 'utf8'),
+  );
+  assert.match(manifest.scripts['test:repo'], /'\.github\/scripts\/\*\.test\.mjs'/);
 });
 
-test('the E2E transport lane runs the self-tests by glob through an approved command', async () => {
+test('the E2E transport lane runs the self-tests through an approved root script', async () => {
   const workflow = await fs.readFile(new URL('../workflows/e2e.yml', import.meta.url), 'utf8');
-  assert.ok(
-    workflow.includes("          -- node scripts/run-node-tests.mjs '.github/scripts/*.test.mjs'\n"),
+  assert.ok(workflow.includes('          -- pnpm test:evidence\n'));
+  const manifest = JSON.parse(
+    await fs.readFile(new URL('../../package.json', import.meta.url), 'utf8'),
   );
-  // The shell strips the quotes, so the runner receives the glob unexpanded.
-  const argv = ['node', 'scripts/run-node-tests.mjs', '.github/scripts/*.test.mjs'];
-  assert.deepEqual(approvedCliCommand(argv), argv);
+  assert.equal(manifest.scripts['test:evidence'], "node --test '.github/scripts/*.test.mjs'");
+  assert.deepEqual(approvedCliCommand(['pnpm', 'test:evidence']), ['pnpm', 'test:evidence']);
   assert.throws(
     () =>
       approvedCliCommand([

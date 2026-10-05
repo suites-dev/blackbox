@@ -1079,8 +1079,8 @@ export function approvedCliCommand(command) {
   }
   const signature = command.join('\0');
   switch (signature) {
-    case 'node\0scripts/run-node-tests.mjs\0.github/scripts/*.test.mjs':
-      return ['node', 'scripts/run-node-tests.mjs', '.github/scripts/*.test.mjs'];
+    case 'pnpm\0test:evidence':
+      return ['pnpm', 'test:evidence'];
     case 'pnpm\0install\0--frozen-lockfile':
       return ['pnpm', 'install', '--frozen-lockfile'];
     case 'pnpm\0build':

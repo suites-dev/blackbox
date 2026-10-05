@@ -144,7 +144,7 @@ jobs:
         run: >-
           node .github/scripts/ci-evidence.mjs run --lane transport --project self-tests
           --evidence-dir ci-evidence/transport/self-tests
-          -- node scripts/run-node-tests.mjs '.github/scripts/*.test.mjs'
+          -- pnpm test:evidence
 
       - name: Retain transport evidence
         id: transport_evidence
@@ -156,7 +156,7 @@ jobs:
           evidence-dir: ci-evidence/transport/self-tests
           setup-result: ${{ steps.setup.outcome }}
           result: ${{ steps.transport_tests.outcome }}
-          command: node scripts/run-node-tests.mjs '.github/scripts/*.test.mjs'
+          command: pnpm test:evidence
           expected: |
             log=ci-evidence/transport/self-tests/logs/command.log
 

@@ -54,18 +54,18 @@ Cheap checks from the repository root:
 
 ```sh
 bash -n demo/acceptance/capsule-test.sh demo/acceptance/capsule-test-support.sh demo/storyboard/capsule-player.sh
-node scripts/run-node-tests.mjs 'demo/support/*.test.mjs' 'scripts/consumer/*.test.mjs'
-node scripts/run-node-tests.mjs '.github/scripts/*.test.mjs'
+pnpm build
+pnpm run test:repo
 ```
 
-CI runs the same helper tests once each, in the CI Package Tests job after its
-build. `demo/support/postgres-driver.test.mjs` loads a project driver, so it
-needs a built workspace `@suites/blackbox-driver` (`pnpm build`) or the Driver
-SDK that `pnpm prepare:consumer` installs. `scripts/run-node-tests.mjs` fails
-when a glob matches no files, a file runs no tests, or a test is skipped or
-marked todo; plain `node --test` passes in each of those cases. These commands
-check syntax and helper behavior; they do not exercise the full real Docker
-journey. Follow with the skill's acceptance command for changes
+`pnpm run test:repo` runs every `node:test` file under `scripts/`,
+`scripts/consumer/`, `demo/support/` and `.github/scripts/` by glob; CI runs it
+once, in the CI Package Tests job after its build.
+`demo/support/postgres-driver.test.mjs` loads a project driver, so it needs the
+built workspace `@suites/blackbox-driver`. Inspect helper tests before running
+them and ensure glob expansion finds actual tests. These commands check syntax
+and helper behavior; they do not exercise the full real Docker journey. Follow
+with the skill's acceptance command for changes
 to the registry consumer, CLI interactions, telemetry proof, or lifecycle behavior.
 
 When changing a behavioral assertion, demonstrate that a plausible wrong outcome

@@ -72,15 +72,6 @@ jobs:
         timeout-minutes: 5
         run: pnpm run check:packages
 
-      # Also part of `pnpm run lint`; named so a discovery failure is
-      # diagnosable on its own. Fails when a test file is claimed by no runner
-      # CI invokes, when a Vitest config behind `test` or `test:integration`
-      # discovers zero files, or when this workflow stops calling either root
-      # script. It asks Vitest for file lists without running tests or building.
-      - name: Check every test file runs in CI
-        timeout-minutes: 5
-        run: pnpm run check:test-discovery
-
       - name: Check source layout and lint packages
         timeout-minutes: 15
         run: pnpm run lint
@@ -107,12 +98,6 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           pnpm-version: ${{ env.PNPM_VERSION }}
-
-      # Every scripts/*.test.mjs, so a new check script's tests cannot be left
-      # out of a hand-written list. The wrapper fails if the glob is empty.
-      - name: Test the repository check scripts
-        timeout-minutes: 5
-        run: node scripts/run-node-tests.mjs 'scripts/*.test.mjs'
 
       - name: Check dependency boundaries
         timeout-minutes: 5
@@ -143,13 +128,14 @@ jobs:
         timeout-minutes: 25
         run: pnpm run test
 
+      # After the package build: demo/support/postgres-driver.test.mjs loads
+      # the built @suites/blackbox-driver.
       - name: Run repository boundary tests
         timeout-minutes: 10
         run: |
           npm ci --prefix e2e/sut --ignore-scripts
-          npm test --prefix e2e/sut
-          node scripts/run-node-tests.mjs '.github/scripts/*.test.mjs'
-          node scripts/run-node-tests.mjs 'demo/support/*.test.mjs' 'scripts/consumer/*.test.mjs'
+          pnpm run test:sut
+          pnpm run test:repo
 
   # Package `test:integration` suites (`*.integration.test.ts`), which the
   # default package configs exclude. They need no Docker: they spawn Node

@@ -73,7 +73,7 @@ require_command docker
 require_command jq
 require_command node
 # playwright-report-proof.test.mjs runs with every other demo support test in
-# CI Package Tests (node scripts/run-node-tests.mjs 'demo/support/*.test.mjs').
+# CI Package Tests (pnpm run test:repo).
 docker info >/dev/null
 
 rm -rf "$RESULT_ROOT"
