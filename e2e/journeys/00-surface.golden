@@ -1,4 +1,6 @@
 $ blackbox catalog ls
+effects-acceptance
+effects-withheld
 payment-mock
 payment-mock-dist
 subscription-system (default)
@@ -28,10 +30,10 @@ activity <ACT_1>
   SPANS
   public-api  GET /health  200
     ├─ public-api  PING → redis
+    ├─ public-api  SELECT → postgres
     ├─ public-api  SQS.GetQueueUrl  200
     │  └─ public-api  POST → localstack  200
-    ├─ public-api  pg-pool.connect → postgres
-    └─ public-api  pg.query:SELECT subscriptions → postgres
+    └─ public-api  pg-pool.connect → postgres
 → blackbox capsule show <TRACE_1> --session <CAPSULE_1> --spans
 $ blackbox capsule show $CAPSULE_1
 capsule <CAPSULE_1>  subscription-system  running · provisional (capsule running)
