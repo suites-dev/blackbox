@@ -69,7 +69,7 @@
     "@suites/blackbox-skills": "workspace:*",
     "@types/node": "catalog:",
     "@vitest/coverage-v8": "5.0.1",
-    "dependency-cruiser": "18.4.0",
+    "dependency-cruiser": "18.5.0",
     "eslint": "catalog:",
     "eslint-config-prettier": "catalog:",
     "eslint-plugin-import-x": "catalog:",
