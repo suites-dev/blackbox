@@ -36,22 +36,22 @@ activity <ACT_2>  Create Alice subscription
   public-api  POST /subscriptions  201
     ├─ public-api  GET → redis
     ├─ public-api  GET → redis
+    ├─ public-api  INSERT → postgres
     ├─ public-api  POST /assess → fraud-check  200
     │  └─ fraud-check  POST /assess  200
-    │     ├─ fraud-check  pg-pool.connect → postgres
-    │     └─ fraud-check  pg.query:INSERT subscriptions → postgres
+    │     ├─ fraud-check  INSERT → postgres
+    │     └─ fraud-check  pg-pool.connect → postgres
     ├─ public-api  POST /orders → order-service  201
     │  └─ order-service  POST /orders  201
     │     └─ order-service  subscription-orders  200
     │        └─ order-service  POST → localstack  200
     ├─ public-api  POST /v1/payment_intents → payment-mock  201
     │  └─ payment-mock  POST /v1/payment_intents  201
+    ├─ public-api  SELECT → postgres
     ├─ public-api  SET → redis
     ├─ public-api  SET → redis
     ├─ public-api  pg-pool.connect → postgres
-    ├─ public-api  pg-pool.connect → postgres
-    ├─ public-api  pg.query:INSERT subscriptions → postgres
-    └─ public-api  pg.query:SELECT subscriptions → postgres
+    └─ public-api  pg-pool.connect → postgres
 → blackbox capsule show <TRACE_1> --session <CAPSULE_1> --spans
 #! capture TRACE_1 show-trace
 $ blackbox capsule show $TRACE_1 --session $CAPSULE_1 --spans
@@ -60,20 +60,20 @@ trace <TRACE_1> · capsule <CAPSULE_1> · <N> spans · complete
   <SPAN_1>  <SPAN_2>  public-api  server  POST /subscriptions  201  <DUR>
   <SPAN_3>  <SPAN_1>  public-api  client  GET → redis  <DUR>
   <SPAN_4>  <SPAN_1>  public-api  client  GET → redis  <DUR>
-  <SPAN_5>  <SPAN_1>  public-api  client  POST /assess → fraud-check  200  <DUR>
-  <SPAN_6>  <SPAN_5>  fraud-check  server  POST /assess  200  <DUR>
-  <SPAN_7>  <SPAN_6>  fraud-check  client  pg-pool.connect → postgres  <DUR>
-  <SPAN_8>  <SPAN_6>  fraud-check  client  pg.query:INSERT subscriptions → postgres  <DUR>
-  <SPAN_9>  <SPAN_1>  public-api  client  POST /orders → order-service  201  <DUR>
-  <SPAN_10>  <SPAN_9>  order-service  server  POST /orders  201  <DUR>
-  <SPAN_11>  <SPAN_10>  order-service  producer  subscription-orders  200  <DUR>
-  <SPAN_12>  <SPAN_11>  order-service  client  POST → localstack  200  <DUR>
-  <SPAN_13>  <SPAN_1>  public-api  client  POST /v1/payment_intents → payment-mock  201  <DUR>
-  <SPAN_14>  <SPAN_13>  payment-mock  server  POST /v1/payment_intents  201  <DUR>
-  <SPAN_15>  <SPAN_1>  public-api  client  SET → redis  <DUR>
-  <SPAN_16>  <SPAN_1>  public-api  client  SET → redis  <DUR>
-  <SPAN_17>  <SPAN_1>  public-api  client  pg-pool.connect → postgres  <DUR>
-  <SPAN_18>  <SPAN_1>  public-api  client  pg-pool.connect → postgres  <DUR>
-  <SPAN_19>  <SPAN_1>  public-api  client  pg.query:INSERT subscriptions → postgres  <DUR>
-  <SPAN_20>  <SPAN_1>  public-api  client  pg.query:SELECT subscriptions → postgres  <DUR>
+  <SPAN_5>  <SPAN_1>  public-api  client  INSERT → postgres  <DUR>
+  <SPAN_6>  <SPAN_1>  public-api  client  POST /assess → fraud-check  200  <DUR>
+  <SPAN_7>  <SPAN_6>  fraud-check  server  POST /assess  200  <DUR>
+  <SPAN_8>  <SPAN_7>  fraud-check  client  INSERT → postgres  <DUR>
+  <SPAN_9>  <SPAN_7>  fraud-check  client  pg-pool.connect → postgres  <DUR>
+  <SPAN_10>  <SPAN_1>  public-api  client  POST /orders → order-service  201  <DUR>
+  <SPAN_11>  <SPAN_10>  order-service  server  POST /orders  201  <DUR>
+  <SPAN_12>  <SPAN_11>  order-service  producer  subscription-orders  200  <DUR>
+  <SPAN_13>  <SPAN_12>  order-service  client  POST → localstack  200  <DUR>
+  <SPAN_14>  <SPAN_1>  public-api  client  POST /v1/payment_intents → payment-mock  201  <DUR>
+  <SPAN_15>  <SPAN_14>  payment-mock  server  POST /v1/payment_intents  201  <DUR>
+  <SPAN_16>  <SPAN_1>  public-api  client  SELECT → postgres  <DUR>
+  <SPAN_17>  <SPAN_1>  public-api  client  SET → redis  <DUR>
+  <SPAN_18>  <SPAN_1>  public-api  client  SET → redis  <DUR>
+  <SPAN_19>  <SPAN_1>  public-api  client  pg-pool.connect → postgres  <DUR>
+  <SPAN_20>  <SPAN_1>  public-api  client  pg-pool.connect → postgres  <DUR>
 → blackbox capsule show <ACT_2> --session <CAPSULE_1>

@@ -1,6 +1,6 @@
 import { spawn } from 'node:child_process';
 import { createRequire } from 'node:module';
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { access, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { stripVTControlCharacters } from 'node:util';
@@ -170,6 +170,9 @@ it.each([
   try {
     const result = await run(directory, options);
     expectNativeOutput(result, options);
+    await expect(access(join(directory, 'untrusted-observer'))).rejects.toMatchObject({
+      code: 'ENOENT',
+    });
     const report = JSON.parse(
       await readFile(join(directory, 'results.json'), 'utf8'),
     ) as JSONReport;
@@ -220,6 +223,8 @@ async function run(
       env: {
         ...process.env,
         BLACKBOX_PLAYWRIGHT_OUTPUT_DIR: directory,
+        // Observer files must stay in the parent-owned cwd despite this legacy override.
+        BLACKBOX_PLAYWRIGHT_OBSERVER_DIR: join(directory, 'untrusted-observer'),
         BLACKBOX_TEST_NATIVE_REPORTER: options.native,
         FORCE_COLOR: options.color,
         PLAYWRIGHT_FORCE_TTY: options.color === '1' ? '100x30' : '0',

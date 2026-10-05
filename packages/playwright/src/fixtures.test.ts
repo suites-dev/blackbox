@@ -1,4 +1,4 @@
-import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawn } from 'node:child_process';
@@ -20,12 +20,13 @@ async function runPlaywright(input: {
   const require = createRequire(import.meta.url);
   const cli = require.resolve('@playwright/test/cli');
   const config = join(import.meta.dirname, 'testing', input.configFile);
+  await mkdir(input.outputDirectory, { recursive: true });
   const child = spawn(process.execPath, [cli, 'test', '--config', config], {
-    cwd: join(import.meta.dirname, '..'),
+    cwd: input.outputDirectory,
     env: {
       ...process.env,
-      BLACKBOX_PLAYWRIGHT_OUTPUT_DIR: input.outputDirectory,
-      BLACKBOX_PLAYWRIGHT_OBSERVER_DIR: input.outputDirectory,
+      // Playwright clears this child directory; the observer's cwd must survive.
+      BLACKBOX_PLAYWRIGHT_OUTPUT_DIR: join(input.outputDirectory, 'attempts'),
       FORCE_COLOR: '0',
       NO_COLOR: undefined,
     },

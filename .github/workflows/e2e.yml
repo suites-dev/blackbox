@@ -138,9 +138,9 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           pnpm-version: ${{ env.PNPM_VERSION }}
 
-      - name: Verify consumer composition guards
+      - name: Verify consumer guards
         id: consumer_tests
-        run: node --test scripts/consumer/composition.test.mjs
+        run: node --test scripts/consumer/composition.test.mjs scripts/consumer/effects-artifacts.test.mjs
 
       - name: Run the evidence transport self-tests
         id: transport_tests

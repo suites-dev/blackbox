@@ -11,13 +11,15 @@ export async function save(directory, name, value) {
   await writeFile(join(directory, name), `${JSON.stringify(value, null, 2)}\n`);
 }
 
-export function isolatedEnvironment(temporaryDirectory) {
-  const env = { ...process.env };
-  for (const name of Object.keys(env)) {
-    if (name.toLowerCase().startsWith('npm_config_')) delete env[name];
-  }
-  delete env.NODE_OPTIONS;
-  delete env.NODE_PATH;
+export function isolatedEnvironment(temporaryDirectory, inherited = process.env) {
+  const env = Object.fromEntries(
+    Object.entries(inherited).filter(
+      ([name]) =>
+        !name.toLowerCase().startsWith('npm_config_') &&
+        name !== 'NODE_OPTIONS' &&
+        name !== 'NODE_PATH',
+    ),
+  );
   return {
     ...env,
     TMPDIR: temporaryDirectory,

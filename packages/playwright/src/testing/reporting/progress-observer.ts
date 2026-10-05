@@ -1,4 +1,4 @@
-import { appendFileSync, mkdirSync, writeFileSync } from 'node:fs';
+import { appendFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import type { Reporter, TestCase, TestResult, TestStep } from '@playwright/test/reporter';
@@ -9,13 +9,6 @@ function lifecycleSteps(steps: readonly TestStep[]): TestStep[] {
     ...(step.title === 'Start sandbox' || step.title === 'Clean up sandbox' ? [step] : []),
     ...lifecycleSteps(step.steps),
   ]);
-}
-
-function outputDirectory(): string {
-  const configured = process.env.BLACKBOX_PLAYWRIGHT_OBSERVER_DIR;
-  const directory = configured ?? process.cwd();
-  mkdirSync(directory, { recursive: true });
-  return directory;
 }
 
 /** Test-only handshake proves diagnostic attachments arrive during blocked setup. */
@@ -30,7 +23,7 @@ export default class ProgressObserver implements Reporter {
     }
     const parent = step.parent;
     appendFileSync(
-      join(outputDirectory(), 'native-step-events.jsonl'),
+      join(process.cwd(), 'native-step-events.jsonl'),
       `${JSON.stringify({
         phase: 'begin',
         testId: test.id,
@@ -44,14 +37,14 @@ export default class ProgressObserver implements Reporter {
       })}\n`,
     );
     if (step.title === 'Start sandbox') {
-      writeFileSync(join(outputDirectory(), 'native-start-step-observed'), 'observed');
+      writeFileSync(join(process.cwd(), 'native-start-step-observed'), 'observed');
     }
   }
 
   onStepEnd(_test: TestCase, _result: TestResult, step: TestStep): void {
     if (step.title === 'Start sandbox' || step.title === 'Clean up sandbox') {
       appendFileSync(
-        join(outputDirectory(), 'native-step-events.jsonl'),
+        join(process.cwd(), 'native-step-events.jsonl'),
         `${JSON.stringify({
           phase: 'end',
           testId: _test.id,
@@ -70,7 +63,7 @@ export default class ProgressObserver implements Reporter {
       }
       const event = decodeEvent(attachment.body);
       if (event !== null && event.phase === 'acquisition' && event.status === 'started') {
-        writeFileSync(join(outputDirectory(), 'reporter-observed-startup'), 'observed');
+        writeFileSync(join(process.cwd(), 'reporter-observed-startup'), 'observed');
       }
     }
   }
@@ -82,7 +75,7 @@ export default class ProgressObserver implements Reporter {
       error: step.error === undefined ? null : step.error.message,
     }));
     appendFileSync(
-      join(outputDirectory(), 'native-step-events.jsonl'),
+      join(process.cwd(), 'native-step-events.jsonl'),
       `${JSON.stringify({
         phase: 'result',
         testId: test.id,
