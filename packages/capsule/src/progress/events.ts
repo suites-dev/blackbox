@@ -1,3 +1,5 @@
+import type { ObservationPolicy } from '@suites/blackbox-catalog';
+
 import type { CapsuleEntrypoint } from '../model/environment.js';
 import type { CapsuleRecordedError } from '../model/recorded-error.js';
 import type { CapsuleAcquisitionObservation } from './acquisition.js';
@@ -18,7 +20,9 @@ export type CapsuleProgressStage =
   | 'catalog-resolution'
   | 'manager-spawn'
   | 'manager-handshake'
-  | 'persistence';
+  | 'persistence'
+  | 'running'
+  | 'stop';
 
 interface CapsuleProgressBase {
   readonly sessionId: string;
@@ -58,6 +62,11 @@ export type CapsuleProgressEvent =
       readonly composeFiles: readonly string[];
       readonly services: readonly string[];
     })
+  | (CapsuleProgressBase & {
+      /** The catalog entry's observation block, as resolved when the capsule started. */
+      readonly kind: 'observation-policy-resolved';
+      readonly policy: ObservationPolicy;
+    })
   | (CapsuleProgressBase & { readonly kind: 'compose-configured'; readonly projectName: string })
   | (CapsuleProgressBase & { readonly kind: 'acquisition-started'; readonly projectName: string })
   | (CapsuleProgressBase & {
@@ -71,6 +80,15 @@ export type CapsuleProgressEvent =
       readonly containerName: string;
       readonly containerId: string;
       readonly networkNames: readonly string[];
+    })
+  | (CapsuleProgressBase & {
+      /**
+       * Compose start-up and the Testcontainers port checks finished. Their budget
+       * is separate from the HTTP readiness timeout that follows.
+       */
+      readonly kind: 'acquisition-completed';
+      readonly durationMs: number;
+      readonly startupTimeoutMs: number;
     })
   | (CapsuleProgressBase & {
       readonly kind: 'endpoint-mapped';
@@ -93,6 +111,23 @@ export type CapsuleProgressEvent =
       readonly durationMs: number;
     })
   | (CapsuleProgressBase & { readonly kind: 'capsule-ready'; readonly durationMs: number })
+  | (CapsuleProgressBase & {
+      /** A participant container stopped or disappeared while the capsule was running. */
+      readonly kind: 'participant-exited';
+      readonly participant: string;
+      readonly service: string;
+      readonly containerName: string;
+      readonly containerId: string;
+      readonly state: 'exited' | 'dead' | 'missing';
+      /** Null when the container is gone and its exit code is unknown. */
+      readonly exitCode: number | null;
+    })
+  | (CapsuleProgressBase & { readonly kind: 'capsule-stop-requested'; readonly reason: string })
+  | (CapsuleProgressBase & { readonly kind: 'capsule-stopped'; readonly cleanup: 'complete' })
+  | (CapsuleProgressBase & {
+      readonly kind: 'capsule-stop-failed';
+      readonly error: CapsuleRecordedError;
+    })
   | (CapsuleProgressBase & {
       readonly kind: 'capsule-start-failed';
       readonly stage: CapsuleStartFailureStage;

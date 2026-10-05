@@ -1,4 +1,5 @@
 import {
+  activityWindowEndMs,
   buildSpanTree,
   earliestStart,
   isoToUnixNano,
@@ -106,14 +107,24 @@ export class CapsuleInvestigation {
     );
   }
 
-  /** Uncaused traces that started at or after the activity started. */
+  /**
+   * Uncaused traces that started in the activity's time window: placed after
+   * it (so before the next activity started) and no later than the grace
+   * after it completed. A later trace belongs to a later activity or to none.
+   */
   uncausedAfter(activity: CapsuleActivityReport): readonly UncausedPlacement[] {
-    const started = isoToUnixNano(activity.startedAt);
+    const ordered = this.orderedActivities();
+    const index = ordered.findIndex((item) => item.activityId === activity.activityId);
+    const next = index < 0 ? undefined : ordered[index + 1];
+    const windowEnd = activityWindowEndMs({
+      completedAt: activity.kind === 'running' ? null : activity.completedAt,
+      nextStartedAt: next === undefined ? null : next.startedAt,
+    });
     return this.uncaused().filter(
       (placement) =>
-        started !== null &&
+        placement.placedAfter === activity.activityId &&
         placement.earliestStartUnixNano !== null &&
-        BigInt(placement.earliestStartUnixNano) >= started,
+        Number(BigInt(placement.earliestStartUnixNano) / 1_000_000n) < windowEnd,
     );
   }
 

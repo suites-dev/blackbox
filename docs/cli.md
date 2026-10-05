@@ -15,23 +15,23 @@ blackbox capsule run --help
 
 ## Commands
 
-| Command                                        | Purpose and main arguments                                                                                                                                                    |
-| ---------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `capsule up [system]`                          | Start a capsule (the catalog default when `system` is omitted) and make it current. Optional `--title`, `--description`, repeated `--env KEY=VALUE`, and `--json`.            |
-| `capsule run [--via <driver>] -- <command...>` | Run a command against a capsule, retain it as an activity, and show its telemetry. Optional `--session`, `--name`, `--purpose`, `--allow-untraced`, `--wait`, `--json`.       |
-| `capsule down [capsule-id]`                    | Stop a capsule and keep its evidence. Takes only a capsule ID; without one, the resolved capsule. Optional `--session` and `--json`.                                          |
-| `capsule show <id>`                            | Show a capsule, activity or trace, running or stopped. Activity IDs accept a 6+ character prefix. Optional `--session`, `--spans` (trace), `--timeline` (capsule), `--json`.  |
-| `capsule ls`                                   | List running capsules, newest first; `*` marks the current one. `--all` lists every retained capsule. Optional `--json`.                                                      |
-| `capsule use <capsule-id>`                     | Make a capsule current, in any state. Optional `--json`.                                                                                                                      |
-| `capsule report [capsule-id]`                  | Write the HTML and JSON report to `.blackbox/reports/`. `--format json\|html` writes one; `--output <path>` requires `--format`; `--output -` is JSON-only, without `--json`. |
-| `capsule report serve`                         | Start or reuse the local report viewer. Shows the registry unless `--session <id>` names a capsule; opens a browser only with `--open`. Optional `--port`. No `--json`.       |
-| `capsule report export`                        | Export a snapshot of an exact capsule, running or stopped. Requires `--session <id>` and `--format json\|html`. Optional `--output <path>`.                                   |
-| `catalog ls`                                   | List catalog systems. Optional `--json`; does not start a system.                                                                                                             |
-| `catalog validate`                             | Validate `blackbox.config.yaml`, referenced files, and activation adapters per runtime. Optional `--json`.                                                                    |
-| `driver install --runtime node`                | Prepare `.blackbox/drivers/` and install the driver SDK. Optional `--json`. Does not install protocol tools.                                                                  |
-| `inst install --runtime node`                  | Install `.blackbox/instrumentation/` and its pinned Node dependencies.                                                                                                        |
-| `skills list`                                  | List skills contributed by selected Blackbox plugins. `--json` also reports availability of optional integrations.                                                            |
-| `skills install <name>`                        | Install a contributed skill for one or more project-local agent hosts. Supports host flags, repeated `--agent`, `--yes`, and `--json`.                                        |
+| Command                                        | Purpose and main arguments                                                                                                                                                                                                                   |
+| ---------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `capsule up [system]`                          | Start a capsule (the catalog default when `system` is omitted) and make it current. Optional `--title`, `--description`, repeated `--env KEY=VALUE`, and `--json`.                                                                           |
+| `capsule run [--via <driver>] -- <command...>` | Run a command against a capsule, retain it as an activity, and show its telemetry. Optional `--session`, `--name`, `--purpose`, `--allow-untraced`, `--wait`, `--json`, `--raw-output` (with `--json`, print the child's output unredacted). |
+| `capsule down [capsule-id]`                    | Stop a capsule and keep its evidence. Takes only a capsule ID; without one, the resolved capsule. Optional `--session` and `--json`.                                                                                                         |
+| `capsule show <id>`                            | Show a capsule, activity or trace, running or stopped. Activity IDs accept a 6+ character prefix. Optional `--session`, `--spans` (trace), `--timeline` (capsule), `--full` (activity: every span, unfolded), `--json`.                      |
+| `capsule ls`                                   | List running capsules, newest first; `*` marks the current one. `--all` lists every retained capsule. Optional `--json`.                                                                                                                     |
+| `capsule use <capsule-id>`                     | Make a capsule current, in any state. Optional `--json`.                                                                                                                                                                                     |
+| `capsule report [capsule-id]`                  | Write the HTML and JSON report to `.blackbox/reports/`. `--format json\|html` writes one; `--output <path>` requires `--format`; `--output -` is JSON-only, without `--json`.                                                                |
+| `capsule report serve`                         | Start or reuse the local report viewer. Shows the registry unless `--session <id>` names a capsule; opens a browser only with `--open`. Optional `--port`. No `--json`.                                                                      |
+| `capsule report export`                        | Export a snapshot of an exact capsule, running or stopped. Requires `--session <id>` and `--format json\|html`. Optional `--output <path>`.                                                                                                  |
+| `catalog ls`                                   | List catalog systems. Optional `--json`; does not start a system.                                                                                                                                                                            |
+| `catalog validate`                             | Validate `blackbox.config.yaml`, referenced files, and activation adapters per runtime. Optional `--json`.                                                                                                                                   |
+| `driver install --runtime node`                | Prepare `.blackbox/drivers/` and install the driver SDK. Optional `--json`. Does not install protocol tools.                                                                                                                                 |
+| `inst install --runtime node`                  | Install `.blackbox/instrumentation/` and its pinned Node dependencies.                                                                                                                                                                       |
+| `skills list`                                  | List skills contributed by selected Blackbox plugins. `--json` also reports availability of optional integrations.                                                                                                                           |
+| `skills install <name>`                        | Install a contributed skill for one or more project-local agent hosts. Supports host flags, repeated `--agent`, `--yes`, and `--json`.                                                                                                       |
 
 The capsule a command acts on is, in order: a positional capsule ID, `--session`, the `BLACKBOX_CAPSULE`
 environment variable, then the current capsule in `.blackbox/state/current-capsule` (set by `capsule up` and
@@ -55,6 +55,10 @@ Without `--session` it shows the registry of all capsules.
 | Other commands: Blackbox and capsule failures                                                      | `125`     |
 | Reserved commands                                                                                  | `3`       |
 
+`capsule run` reports the child's exit code, not the outcome of the request it sent: `curl -s` exits `0` on an
+HTTP 500. A script that must fail on HTTP errors can use `curl --fail-with-body` (exit `22` on a 4xx or 5xx,
+with the response body still printed and retained), or check the status itself with `curl -w '%{http_code}'`.
+
 A child can itself exit `125`, `126` or `127`, so the exit code alone
 never proves where a failure came from: with `--json`, stdout carries exactly one JSON document for success
 and for every failure, and that document is authoritative. A capsule failure keeps the Capsule package's
@@ -65,6 +69,18 @@ document (`capsule-not-found`, `capsule-invalid-state`, `capsule-operation-faile
 `capsule up` and `capsule down` never undo a capsule that started or stopped because the current-capsule file
 could not be written or cleared. They report it instead: a `blackbox:` line in human mode, a
 `current-capsule-write-failed` entry in the JSON document's `warnings`, and exit `125`.
+
+While a capsule runs, `capsule ls`, `capsule show`, `capsule run` and `capsule down` check its participant
+containers in Docker. A participant that exited, died, or whose container is gone is reported as a
+`⚠ participant … exited with code N` line in human mode and as `exitedParticipants` in the JSON document
+(`down` also adds a `participant-exited` entry to `warnings`). The first check that sees it records a
+`participant-exited` event in the capsule's progress, so the report keeps it. The check never changes an exit
+code, and a Docker query that fails adds no warning.
+
+While Compose and Testcontainers start the containers, `capsule up` names the published ports it waits on,
+then reports when that start-up phase finished. Start-up has its own budget, the largest readiness `timeoutMs`
+but at least 120000 ms; HTTP readiness then gets the full `timeoutMs` again, so a slow start can take up to
+both budgets before `up` fails.
 
 In human mode, Blackbox writes its own lines to stderr only. `capsule run` passes the child's stdout to
 stdout and its stderr to stderr. A captured (non-terminal) run prints the retained output, which is
@@ -124,10 +140,21 @@ The command line can carry credentials, so the argv in the document (`outcome.ar
 `outcome.process.argv` for a driver) is redacted exactly as the report redacts it: `Bearer`/`Basic`
 credentials, `Authorization`, `Proxy-Authorization`, `Cookie`, `Set-Cookie`, `X-Api-Key` and `Api-Key`
 header values, `user:password@` in URLs, secret query parameters (`token`, `secret`, `password`,
-`api_key`, …), `NAME=value` assignments, the value after a sensitive flag (`--token value`), and every
-position the driver declares become `[REDACTED]`. `argv[0]`, the executable, is always kept, and the
-field keeps its name, place and type (a string array). Only what is printed changes: the retained
-activity record keeps the command as run, and the report redacts it when rendered.
+`api_key`, …), `NAME=value` assignments to an environment variable name (`API_URL=…`) or a sensitive name
+(`api_token=…`), the value after a sensitive flag (`--token value`), and every position the driver declares
+become `[REDACTED]`. Other `name=value` pairs, such as query parameters or `curl -w` metrics, are kept.
+`argv[0]`, the executable, is always kept, and the field keeps its name, place and type (a string array).
+
+The child's stdout and stderr in the document (`outcome.stdout`, or `outcome.process.stdout` for a driver)
+pass through the same text redaction, so a response's bearer token or `"password"` field prints as
+`[REDACTED]`. `--raw-output` prints them as captured. In human mode the child's own output is passed through
+unchanged.
+
+Only what is printed changes. The activity record keeps each command line and its captured output
+unredacted in `.blackbox/experiments/capsule-<id>/activities.json`, credentials included, apart from values a
+driver declared for redaction. The file is readable only by its owner (mode `0600`), and
+`.blackbox/experiments/` belongs in `.gitignore`. Reports, exports and `capsule run --json` redact when they
+render: share those, not the experiment directory.
 
 ## Reading `capsule show`
 
@@ -147,13 +174,21 @@ context (`context`), and what the capsule observed:
 trace ID, nested only by each span's recorded parent. A root whose parent is absent ends with
 `(parent not yet observed)` while the capsule runs, or `(parent not retained)` once it has stopped.
 Siblings are ordered by start time, then service, then title, then span ID. `capsule show <trace> --spans`
-lists the same spans as rows with their span and parent IDs.
+lists the same spans as rows with their span and parent IDs, and a `FAILURE` column with an error span's
+exception type. In both, a client span names where it went (`GET → ts-price-service`,
+`find config → config-db`), and an error span ends with its exception type.
 
-Only trace context links an activity to what it caused. Every other trace in the capsule whose
-first span started at or after the activity started is listed under `later in this capsule, no known
-cause`, with a `⚠ Blackbox cannot prove that …` line: it happened in the same capsule, but no trace
-context connects it to the activity. Earlier traces, and traces without a start time, are not listed
-there. `capsule show <capsule> --timeline` places each uncaused trace after the latest activity that
+Above 40 spans, `capsule show <activity>` folds the tree: a `services` line counts spans per service, a run of
+identical sibling subtrees prints once marked `×N`, and a subtree identical to one already printed shows only
+its root, marked `(same subtree as above)`. `--full` prints every span; `--json` always keeps the whole tree.
+
+Only trace context links an activity to what it caused. Every other trace whose first span started in
+the activity's time window is listed under `later in this capsule, no known cause`, with a
+`⚠ Blackbox cannot prove that …` line: it happened in the same capsule, but no trace context connects
+it to the activity. The window opens when the activity starts and closes when the next activity starts
+or 5 seconds after the activity completed, whichever comes first, so a later activity's traces are
+never listed under an earlier one. Earlier traces, later traces, and traces without a start time are
+not listed there. `capsule show <capsule> --timeline` places each uncaused trace after the latest activity that
 started at or before its first span, or before every activity when none did (`┈┈`), and marks
 traces an activity caused with `──`. Placement is display order only, never a cause. Traces from
 before the first activity (instrumentation start-up, readiness probes) are summarized in one row; the

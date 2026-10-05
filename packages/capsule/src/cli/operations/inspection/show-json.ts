@@ -1,4 +1,5 @@
 import {
+  spanFailure,
   spanResult,
   spanTitle,
   type ActivityContext,
@@ -17,6 +18,8 @@ export interface SpanNodeDocument {
   readonly kind: string;
   readonly title: string;
   readonly result: string;
+  /** An error span's exception or error type; null when none is known. */
+  readonly failure: string | null;
   readonly orphan: OrphanMark | null;
   readonly children: readonly SpanNodeDocument[];
 }
@@ -30,12 +33,14 @@ export function treeDocument(roots: readonly SpanTreeNode[]): readonly SpanNodeD
   for (let item = stack.pop(); item !== undefined; item = stack.pop()) {
     const { node } = item;
     const children: SpanNodeDocument[] = [];
+    const failure = spanFailure(node.span);
     item.into.push({
       spanId: node.span.spanId,
       service: node.span.service,
       kind: node.span.spanKind,
       title: spanTitle(node.span),
       result: spanResult(node.span),
+      failure: failure === '' ? null : failure,
       orphan: node.orphan,
       children,
     });

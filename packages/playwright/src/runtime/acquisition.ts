@@ -6,13 +6,7 @@ import {
   type CatalogSandboxInput,
   type LoadedCatalog,
 } from '@suites/blackbox-catalog';
-import { readCollectorSession, readCollectorTrace } from '@suites/blackbox-otel-collector';
-import {
-  sandboxTelemetryStorageDirectory,
-  startSandbox,
-  type SandboxHandle,
-  type SandboxStopReason,
-} from '@suites/blackbox-sandbox';
+import { startSandbox, type SandboxHandle, type SandboxStopReason } from '@suites/blackbox-sandbox';
 
 import type {
   BlackboxCatalogSelection,
@@ -22,17 +16,20 @@ import type {
   BlackboxTelemetry,
 } from '../types.js';
 import { createUnavailableBlackboxEffects } from '../effects/runtime.js';
+import { reported, type AttemptProgress } from '../reporting/events.js';
 import { verifyRequiredActivations } from './activation.js';
 import { resolveCollectorRuntime } from './collector-runtime.js';
 import { awaitReadiness } from './readiness.js';
 import { startAttemptSandbox } from './sandbox-start.js';
 import { createSandboxTelemetry, type TelemetryAuthorization } from './telemetry.js';
+import { publicTelemetry } from './telemetry-handle.js';
 
 export interface BlackboxAttemptInput {
   readonly selection: BlackboxCatalogSelection;
   readonly configFile: string;
   readonly environment: Readonly<Record<string, string>>;
   readonly artifactDirectory: string;
+  readonly progress: AttemptProgress;
 }
 
 export interface RunningBlackboxAttempt {
@@ -128,6 +125,7 @@ async function verifyReadiness(input: {
   readonly plan: CatalogSandboxInput;
   readonly sandbox: SandboxHandle;
   readonly ports: BlackboxAcquisitionPorts;
+  readonly progress: AttemptProgress;
 }): Promise<void> {
   for (const readiness of input.plan.readiness) {
     const mapped = input.sandbox.endpoints.get(readiness.name);
@@ -136,48 +134,30 @@ async function verifyReadiness(input: {
         `Sandbox did not return readiness endpoint ${JSON.stringify(readiness.name)}`,
       );
     }
-    await input.ports.awaitReadiness({
-      entrypoint: {
-        url: `${readiness.protocol}://${mapped.host}:${mapped.port}`,
-        host: mapped.host,
-        port: mapped.port,
-        protocol: readiness.protocol,
-      },
-      path: readiness.path,
-      timeoutMs: readiness.timeoutMs,
-    });
+    await reported(input.progress, 'readiness', `${readiness.name} ${readiness.path}`, () =>
+      input.ports.awaitReadiness({
+        entrypoint: {
+          url: `${readiness.protocol}://${mapped.host}:${mapped.port}`,
+          host: mapped.host,
+          port: mapped.port,
+          protocol: readiness.protocol,
+        },
+        path: readiness.path,
+        timeoutMs: readiness.timeoutMs,
+      }),
+    );
   }
-}
-
-function publicTelemetry(input: {
-  readonly sandbox: SandboxHandle;
-  readonly recordDirectory: string;
-  readonly sessionId: string;
-  readonly executionId: string;
-}): BlackboxTelemetry {
-  const identity = {
-    sessionId: input.sessionId,
-    executionId: input.executionId,
-    storageDirectory: sandboxTelemetryStorageDirectory({
-      recordDirectory: input.recordDirectory,
-      sandboxId: input.executionId,
-    }),
-  };
-  return Object.freeze({
-    sessionId: input.sessionId,
-    executionId: input.executionId,
-    inspect: () => input.sandbox.inspectTelemetry(),
-    read: () => readCollectorSession(identity),
-    readTrace: (traceId: string) => readCollectorTrace({ ...identity, traceId }),
-  });
 }
 
 async function cleanupAfterSetupFailure(input: {
   readonly sandbox: SandboxHandle;
   readonly cause: unknown;
+  readonly progress: AttemptProgress;
 }): Promise<never> {
   try {
-    await input.sandbox.stop({ reason: 'failed' });
+    await reported(input.progress, 'teardown', 'setup failed; release owned resources', () =>
+      input.sandbox.stop({ reason: 'failed' }),
+    );
   } catch (cleanupError) {
     throw new AggregateError(
       [input.cause, cleanupError],
@@ -191,31 +171,46 @@ export async function acquireBlackboxAttempt(
   input: BlackboxAttemptInput,
   ports: BlackboxAcquisitionPorts = productionPorts,
 ): Promise<RunningBlackboxAttempt> {
-  const catalog = await ports.loadCatalog({ configFile: input.configFile });
-  const plan = selectedPlan({ selection: input.selection, catalog, ports });
+  const plan = await reported(
+    input.progress,
+    'catalog',
+    input.selection.kind === 'unselected'
+      ? 'no entry selected'
+      : `${input.selection.kind} ${input.selection.id}`,
+    async () => {
+      const catalog = await ports.loadCatalog({ configFile: input.configFile });
+      return selectedPlan({ selection: input.selection, catalog, ports });
+    },
+  );
+  input.progress.protect(plan.environment);
   const sessionId = `playwright-${ports.randomId()}`;
   const executionId = `playwright-${ports.randomId()}`;
   const recordDirectory = input.artifactDirectory;
   const collectorAuthorization = authorization(ports);
-  const sandbox = await startAttemptSandbox({
-    plan,
-    sessionId,
-    executionId,
-    authorization: collectorAuthorization,
-    recordDirectory,
-    environment: input.environment,
-    ports,
-  });
-  try {
-    await ports.verifyActivations({
+  const sandbox = await reported(input.progress, 'acquisition', plan.services.join(', '), () =>
+    startAttemptSandbox({
       plan,
-      sandbox,
-      authorization: collectorAuthorization,
       sessionId,
       executionId,
-      timeoutMs: Math.max(...plan.readiness.map(({ timeoutMs }) => timeoutMs), 1),
-    });
-    await verifyReadiness({ plan, sandbox, ports });
+      authorization: collectorAuthorization,
+      recordDirectory,
+      environment: input.environment,
+      ports,
+      progress: input.progress,
+    }),
+  );
+  try {
+    await reported(input.progress, 'instrumentation', 'required activations', () =>
+      ports.verifyActivations({
+        plan,
+        sandbox,
+        authorization: collectorAuthorization,
+        sessionId,
+        executionId,
+        timeoutMs: Math.max(...plan.readiness.map(({ timeoutMs }) => timeoutMs), 1),
+      }),
+    );
+    await verifyReadiness({ plan, sandbox, ports, progress: input.progress });
     const selectedEntrypoint = entrypoint({ plan, sandbox });
     const publicSandbox = Object.freeze({
       sandboxId: sandbox.sandboxId,
@@ -244,7 +239,7 @@ export async function acquireBlackboxAttempt(
       },
     };
   } catch (cause) {
-    return cleanupAfterSetupFailure({ sandbox, cause });
+    return cleanupAfterSetupFailure({ sandbox, cause, progress: input.progress });
   }
 }
 

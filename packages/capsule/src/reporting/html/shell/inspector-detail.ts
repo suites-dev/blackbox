@@ -1,4 +1,25 @@
 export const capsuleInspectorDetailScript = `
+function spanStartText(span) {
+  if (!span.startTimeUnixNano) return 'Unavailable';
+  return new Date(Number(BigInt(span.startTimeUnixNano) / 1000000n)).toISOString();
+}
+function spanDurationText(span) {
+  if (!span.startTimeUnixNano || !span.endTimeUnixNano) return 'Unavailable';
+  const micros = Number((BigInt(span.endTimeUnixNano) - BigInt(span.startTimeUnixNano)) / 1000n);
+  return (micros / 1000).toFixed(micros < 10000 ? 3 : 1) + ' ms';
+}
+function spanStatusText(code) {
+  // OTLP omits an UNSET status; a missing code is UNSET, not missing data.
+  if (code === null || code === 0) return 'UNSET';
+  return code === 1 ? 'OK (1)' : code === 2 ? 'ERROR (2)' : String(code);
+}
+function exceptionRows(span) {
+  const exceptions = span.exceptions || [];
+  if (!exceptions.length) return [];
+  const list = n('dl', 'inspector-fields');
+  for (const item of exceptions) add(list, n('dt', '', item.type || 'Exception'), n('dd', '', item.message || '(no message)'));
+  return [n('h4', '', 'Exceptions'), list];
+}
 function inspectSpan(root, span, selection, presentation) {
   const aside = root.querySelector('.report-inspector');
   resetInspector(aside);
@@ -25,17 +46,21 @@ function inspectSpan(root, span, selection, presentation) {
     ['Span kind', span.spanKind],
     ['Trace ID', span.traceId],
     ['Span ID', span.spanId],
-    ['Parent span ID', span.parentSpanId || 'Not retained'],
+    ['Parent span ID', span.parentSpanId || 'None (root span)'],
+    ['Start', spanStartText(span)],
+    ['Duration', spanDurationText(span)],
     ['Start · Unix ns', span.startTimeUnixNano || 'Unavailable'],
     ['End · Unix ns', span.endTimeUnixNano || 'Unavailable'],
-    ['OTEL status code', span.statusCode === null ? 'Unavailable' : String(span.statusCode)],
+    ['OTEL status code', spanStatusText(span.statusCode)],
   ];
+  if (span.statusMessage) rows.push(['OTEL status message', span.statusMessage]);
   if (selection.kind !== 'exact-activity') rows.splice(1, 0, ['Session trace', selection.traceId]);
   const fields = n('dl', 'inspector-fields');
   for (const [key, value] of rows) add(fields, n('dt', '', key), n('dd', '', value));
   add(
     body,
     fields,
+    ...exceptionRows(span),
     n('h4', '', 'Retained attributes'),
     n('pre', '', JSON.stringify(span.attributes, null, 2)),
     n('h4', '', 'Trace links'),

@@ -14,6 +14,7 @@ import {
 } from './acquisition.js';
 import { createBlackboxEffects } from '../effects/runtime.js';
 import { catalog } from '../testing/catalog-fixture.js';
+import { silentProgress } from '../reporting/events.js';
 
 interface RuntimeFixture {
   readonly ports: BlackboxAcquisitionPorts;
@@ -147,6 +148,7 @@ function attemptInput(
     configFile: '/project/blackbox.config.yaml',
     environment,
     artifactDirectory: '/artifacts/test',
+    progress: silentProgress,
   };
 }
 
@@ -169,6 +171,35 @@ it('acquires an independent catalog-selected sandbox for each physical attempt',
   await first.stop('completed');
   await second.stop('failed');
   expect(fixture.stops).toEqual(['completed', 'failed']);
+});
+
+it('reports real acquisition milestones in order and reports cleanup when readiness fails', async () => {
+  const fixture = runtimeFixture({ catalog: catalog(), readinessFailure: new Error('not ready') });
+  const events: string[] = [];
+  const input = {
+    ...attemptInput({ kind: 'system', id: 'orders' }),
+    progress: {
+      protect: () => undefined,
+      emit: (phase: string, status: string) => {
+        events.push(`${phase}:${status}`);
+      },
+    },
+  };
+  await expect(acquireBlackboxAttempt(input, fixture.ports)).rejects.toThrow('not ready');
+  expect(events).toEqual([
+    'catalog:started',
+    'catalog:completed',
+    'acquisition:started',
+    'acquisition:completed',
+    'instrumentation:started',
+    'instrumentation:completed',
+    'readiness:started',
+    'readiness:failed',
+    'teardown:started',
+    'teardown:completed',
+  ]);
+  expect(fixture.starts[0].progress.kind).toBe('events');
+  expect(fixture.stops).toEqual(['failed']);
 });
 
 it('rejects a declared system or subsystem kind that contradicts the catalog', async () => {

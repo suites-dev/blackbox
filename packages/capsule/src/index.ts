@@ -6,6 +6,11 @@ export {
   stopCapsule,
 } from './session/operations.js';
 export {
+  checkCapsuleParticipants,
+  type CapsuleParticipantCheck,
+  type CapsuleParticipantExit,
+} from './session/participants.js';
+export {
   readCapsuleLifecycle,
   readCapsuleObservations,
   readCapsuleTraces,

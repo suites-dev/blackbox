@@ -3,7 +3,12 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import test from 'node:test';
 
-import { commandFixture, removeFixture, runCli } from './capsule-command.fixture.js';
+import {
+  commandFixture,
+  removeFixture,
+  runCli,
+  withoutSnapshotTime,
+} from './capsule-command.fixture.js';
 
 void test('JSON report selects the exact session and preserves cleanup truth', async () => {
   const fixture = await commandFixture('stopped');
@@ -165,7 +170,10 @@ void test('JSON exports to default or nested custom paths match stdout without a
       );
       assert.equal(result.stdout, '');
       assert.equal(result.stderr, `report for capsule ${fixture.sessionId}\n✔ ${path}\n`);
-      assert.equal(await readFile(path, 'utf8'), stdout.stdout);
+      assert.equal(
+        withoutSnapshotTime(await readFile(path, 'utf8')),
+        withoutSnapshotTime(stdout.stdout),
+      );
     }
     assert.equal(await readFile(join(fixture.artifactRoot, 'session.json'), 'utf8'), before);
   } finally {

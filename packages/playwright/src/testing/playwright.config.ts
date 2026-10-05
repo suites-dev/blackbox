@@ -1,6 +1,7 @@
-import { defineConfig } from '@playwright/test';
+import { defineConfig } from '../config.js';
 
 export default defineConfig({
+  blackboxConfigFile: './blackbox.config.yaml',
   testDir: import.meta.dirname,
   testMatch: 'physical-attempts.spec.ts',
   retries: 1,
