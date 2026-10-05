@@ -105,5 +105,8 @@ local Docker environment available, run the bounded proof explicitly:
 pnpm --filter @suites/blackbox-sandbox test:docker
 ```
 
-The Docker proof creates isolated Compose projects and requires its owned
-containers, networks, and volumes to be removed before it succeeds.
+The Docker proof runs every `src/**/*.docker.test.ts` file. It fails when no
+such file is found or when any of their tests is skipped, so a passing run means
+each one ran. It creates isolated Compose projects and requires its owned
+containers, networks, and volumes to be removed before it succeeds. CI runs it
+as the `Sandbox Docker tests` lane of the E2E workflow (`pnpm test:sandbox:docker`).

@@ -19,6 +19,7 @@
     "test:demo:storyboard": "bash demo/storyboard/capsule-player.sh --no-pause --no-color --no-browser",
     "test:e2e:journeys": "node --test e2e/journeys/journey-harness.test.mjs && node e2e/journeys/run-journeys.mjs --repeat 2",
     "test:e2e:skills": "bash demo/support/skills-packed-consumer.sh",
+    "test:sandbox:docker": "pnpm --filter @suites/blackbox-sandbox run test:docker",
     "test:e2e:playwright": "pnpm run prepare:consumer && bash demo/support/playwright-test.sh",
     "lint": "node scripts/check-source-layout.mjs && pnpm check:packages && eslint packages --cache",
     "lint:fix": "eslint packages --cache --fix",
