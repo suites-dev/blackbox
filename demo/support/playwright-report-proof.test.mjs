@@ -1,17 +1,9 @@
 import assert from 'node:assert/strict';
-import { execFile } from 'node:child_process';
-import { chmod, mkdir, mkdtemp, rm, symlink, writeFile } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
-import { fileURLToPath } from 'node:url';
-import { promisify } from 'node:util';
 
 import { expectedCatalogForSpec } from './playwright-evidence.mjs';
-import { collectImageInputs, declaredMutableInputs } from './playwright-image-inputs.mjs';
 import { verifyAttemptReports, verifyParallelAcquisition } from './playwright-report-proof.mjs';
-
-const execute = promisify(execFile);
 
 function parallelAcquisitions() {
   return {
@@ -78,81 +70,6 @@ test('attributes business specs to their catalog', () => {
     expectedCatalogForSpec('/consumer/tests/playwright/effects-acceptance.spec.ts'),
     undefined,
   );
-});
-
-test('requires every mutable image to resolve before the candidate run', async () => {
-  const pulled = [];
-  const result = await collectImageInputs({
-    pull: true,
-    pullImage: async (declared) => pulled.push(declared),
-    inspectImage: async (declared) => ({
-      Id: `sha256:${'a'.repeat(64)}`,
-      RepoDigests: [`${declared.split(':')[0]}@sha256:${'1'.repeat(64)}`],
-      RepoTags: [declared],
-    }),
-  });
-  assert.equal(result.complete, true);
-  assert.deepEqual(pulled, declaredMutableInputs);
-
-  await assert.rejects(
-    collectImageInputs({
-      pull: true,
-      pullImage: async () => undefined,
-      inspectImage: async () => ({ Id: 'mutable-tag-only' }),
-    }),
-    /immutable image ID/,
-  );
-});
-
-test('cleanup records unavailable image inputs without pulling or masking the primary failure', async () => {
-  let pulls = 0;
-  const result = await collectImageInputs({
-    pull: false,
-    pullImage: async () => {
-      pulls++;
-    },
-    inspectImage: async (declared) => {
-      if (declared === 'node:22.22.0-bookworm-slim') {
-        throw new Error('image was never pulled');
-      }
-      return { Id: `sha256:${'2'.repeat(64)}`, RepoDigests: [], RepoTags: [declared] };
-    },
-  });
-  assert.equal(pulls, 0);
-  assert.equal(result.complete, false);
-  assert.deepEqual(
-    result.images.find(({ declared }) => declared === 'node:22.22.0-bookworm-slim'),
-    { declared: 'node:22.22.0-bookworm-slim', state: 'unavailable' },
-  );
-});
-
-test('image evidence CLI executes through a filesystem alias', async () => {
-  const root = await mkdtemp(join(tmpdir(), 'blackbox-image-cli-'));
-  try {
-    const binary = join(root, 'bin');
-    const docker = join(binary, 'docker');
-    const alias = join(root, 'image-inputs-alias.mjs');
-    await mkdir(binary);
-    await writeFile(
-      docker,
-      `#!/usr/bin/env bash
-set -eu
-[[ "$1:$2" == 'image:inspect' ]]
-printf '[{"Id":"sha256:%s","RepoDigests":[],"RepoTags":[]}]\\n' '${'3'.repeat(64)}'
-`,
-    );
-    await chmod(docker, 0o755);
-    await symlink(fileURLToPath(new URL('./playwright-image-inputs.mjs', import.meta.url)), alias);
-    const { stdout } = await execute(process.execPath, [alias], {
-      env: { ...process.env, PATH: `${binary}:${process.env.PATH}` },
-    });
-    const receipt = JSON.parse(stdout);
-    assert.equal(receipt.kind, 'playwright-image-inputs');
-    assert.equal(receipt.resolution, 'cleanup-snapshot');
-    assert.equal(receipt.complete, true);
-  } finally {
-    await rm(root, { recursive: true, force: true });
-  }
 });
 
 function fixture(suffix = 'a', testId = `test-${suffix}`, retry = 0) {

@@ -412,19 +412,6 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           pnpm-version: ${{ env.PNPM_VERSION }}
 
-      - name: Select the browser cache
-        run: echo "PLAYWRIGHT_BROWSERS_PATH=$RUNNER_TEMP/playwright-browsers" >> "$GITHUB_ENV"
-
-      - name: Prepare pinned Chromium
-        id: browser_setup
-        run: >-
-          pnpm --filter @suites/blackbox-playwright exec playwright install
-          --with-deps chromium --only-shell
-
-      - name: Test browser propagation
-        id: browser_tests
-        run: pnpm --filter @suites/blackbox-playwright test:browser
-
       - name: Download the test registry storage
         uses: actions/download-artifact@v5
         with:
@@ -496,8 +483,7 @@ jobs:
         if: always()
         env:
           OUTCOMES: >-
-            ${{ steps.setup.outcome }} ${{ steps.browser_setup.outcome }}
-            ${{ steps.browser_tests.outcome }} ${{ steps.effects_build.outcome }}
+            ${{ steps.setup.outcome }} ${{ steps.effects_build.outcome }}
             ${{ steps.effects_tests.outcome }} ${{ steps.effects_evidence.outcome }}
             ${{ steps.playwright_tests.outcome }}
             ${{ steps.playwright_archive.outcome }} ${{ steps.playwright_evidence.outcome }}

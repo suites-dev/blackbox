@@ -23,11 +23,6 @@ function send(res, status, body) {
   res.end(`${JSON.stringify(body)}\n`);
 }
 
-function sendHtml(res, body) {
-  res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
-  res.end(body);
-}
-
 async function readJson(req) {
   const chunks = [];
   for await (const chunk of req) chunks.push(chunk);
@@ -65,34 +60,6 @@ async function route(req, res) {
   if (req.method === 'GET' && url.pathname === '/health') {
     await pool.query('SELECT 1');
     send(res, 200, { ready: Boolean(rabbitChannel) });
-    return;
-  }
-
-  const browserRecord =
-    req.method === 'GET' ? url.pathname.match(/^\/browser\/records\/(\d+)$/) : null;
-  if (browserRecord) {
-    const id = Number(browserRecord[1]);
-    sendHtml(
-      res,
-      `<!doctype html>
-<html lang="en">
-  <head><meta charset="utf-8"><title>Effects browser acceptance</title></head>
-  <body>
-    <button id="insert" type="button">Insert record</button>
-    <output id="result">idle</output>
-    <script>
-      document.querySelector('#insert').addEventListener('click', async () => {
-        const response = await fetch('/records/${id}', {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ value: 'browser-${id}' }),
-        });
-        document.querySelector('#result').textContent = response.ok ? 'inserted' : 'failed';
-      });
-    </script>
-  </body>
-</html>`,
-    );
     return;
   }
 

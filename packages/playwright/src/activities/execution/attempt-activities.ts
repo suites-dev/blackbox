@@ -1,8 +1,6 @@
-import type { Page } from '@playwright/test';
 import { injectW3CTextMap, type TelemetryScopeResult } from '@suites/blackbox-telemetry';
 
 import { createActivityRegistry } from '../activity-registry.js';
-import { runBrowserActivity } from './browser-propagation.js';
 import { mergeActivityHeaders } from './propagation.js';
 import type {
   BlackboxActivities,
@@ -63,7 +61,6 @@ export class AttemptActivities {
   readonly activities: BlackboxActivities;
   readonly #registry: ReturnType<typeof createActivityRegistry>;
   readonly #completedStimuli: OwnedActivity[] = [];
-  readonly #origin: string;
   #active = true;
 
   constructor(input: {
@@ -72,7 +69,6 @@ export class AttemptActivities {
     readonly entrypointUrl: string;
   }) {
     this.#registry = createActivityRegistry(input);
-    this.#origin = new URL(input.entrypointUrl).origin;
     this.activities = Object.freeze({
       setup: this.#actions('setup'),
       stimulus: this.#actions('stimulus'),
@@ -162,10 +158,6 @@ export class AttemptActivities {
         request: BlackboxScopedRequest,
         action: (request: BlackboxScopedRequest) => Promise<T>,
       ) => this.#run(purpose, name, ({ headers }) => this.#request({ request, headers, action })),
-      browser: <T>(name: string, page: Page, action: (page: Page) => Promise<T>) =>
-        this.#run(purpose, name, ({ headers }) =>
-          runBrowserActivity({ page, origin: this.#origin, headers, action }),
-        ),
     });
   }
 }

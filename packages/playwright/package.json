@@ -43,7 +43,6 @@
     "prepack": "pnpm build",
     "lint": "eslint .",
     "test": "vitest run --config vitest.config.ts",
-    "test:browser": "vitest run --config vitest.integration.config.ts",
     "test:effects": "node tests/effects/run.mjs"
   },
   "dependencies": {

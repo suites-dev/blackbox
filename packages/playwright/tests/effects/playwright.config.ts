@@ -20,7 +20,7 @@ export default defineConfig({
   retries: 1,
   timeout: 180_000,
   expect: { timeout: 15_000 },
-  use: { serviceWorkers: 'block', trace: 'retain-on-failure' },
+  use: { trace: 'retain-on-failure' },
   outputDir: join(results, 'output'),
   preserveOutput: 'always',
   reporter: [
