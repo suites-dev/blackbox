@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 
 import type { ComposeStartRequest } from '../../model/compose.js';
+import { SandboxReadinessWaitStrategy } from '../readiness/wait-strategy.js';
 import { TestcontainersComposeDriver } from '../testcontainers-driver.js';
 
 const docker = vi.hoisted(() => {
@@ -17,6 +18,7 @@ const docker = vi.hoisted(() => {
   };
   return { inspect, down,
     build: vi.fn(),
+    defaultWaitStrategy: vi.fn<(strategy: unknown) => void>(),
     selected: vi.fn((_service: string) => container),
     lookup: vi.fn((_id: string) => ({ inspect })),
     up: vi.fn<(services: string[] | undefined) => void>(),
@@ -28,6 +30,7 @@ vi.mock('testcontainers', () => ({
     withBuild() { docker.build(); return this; }
     withProjectName() { return this; }
     withEnvironment() { return this; }
+    withDefaultWaitStrategy(strategy: unknown) { docker.defaultWaitStrategy(strategy); return this; }
     withStartupTimeout() { return this; }
     up(services: string[] | undefined) {
       docker.up(services);
@@ -104,6 +107,9 @@ it.each(['selected', 'all'] as const)('inspects only the exact acquired containe
   });
   expect(docker.up).toHaveBeenCalledWith(kind === 'selected' ? ['api'] : undefined);
   expect(docker.build).toHaveBeenCalledOnce();
+  expect(docker.defaultWaitStrategy).toHaveBeenCalledExactlyOnceWith(
+    expect.any(SandboxReadinessWaitStrategy),
+  );
   expect(docker.selected.mock.calls).toEqual([['api-1']]);
   expect(docker.lookup.mock.calls).toEqual([['owned-container-id']]);
   expect(docker.inspect).toHaveBeenCalledOnce();

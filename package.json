@@ -14,6 +14,7 @@
     "test:evidence": "node --test '.github/scripts/*.test.mjs'",
     "test:security": "node --test 'scripts/security/*.test.mjs'",
     "test:sut": "npm test --prefix e2e/sut",
+    "test:sandbox:docker": "pnpm --filter @suites/blackbox-sandbox run test:docker",
     "prepare:consumer": "node scripts/consumer/prepare.mjs",
     "test:demo": "bash demo/acceptance/capsule-test.sh",
     "test:demo:storyboard": "bash demo/storyboard/capsule-player.sh --no-pause --no-color --no-browser",

@@ -38,17 +38,18 @@ collect final results against the final relevant tree.
 
 ## Select the actual test lane
 
-| Command                         | What it establishes                                                                                                         | What it does not establish                      |
-| ------------------------------- | --------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------- |
-| `pnpm lint`                     | Source-layout rules and package ESLint checks                                                                               | Type safety, behavior, Bash correctness         |
-| `pnpm check:deps`               | Package layering, cycles, declared deps, coupling                                                                           | Whether an import is used correctly at runtime  |
-| `pnpm typecheck`                | Root TypeScript source/test compilation                                                                                     | Runtime behavior or Docker fixture correctness  |
-| `pnpm test`                     | Build, then every package `test` script                                                                                     | Package integration suites or Capsule Bash E2E  |
-| `pnpm test:integration`         | Build, then every package `test:integration` script (needs npm registry access, no Docker)                                  | Default package suites or Capsule Bash E2E      |
-| `pnpm test:repo`                | Repository `node:test` files under `scripts/`, `scripts/consumer/`, `demo/support/`, `.github/scripts/` (run after a build) | Security policy tests, the SUT, or Docker lanes |
-| `pnpm test:security`            | Dependency audit policy tests in `scripts/security/`                                                                        | The audit itself                                |
-| `pnpm test:sut`                 | SUT build, source maps, and every compiled `dist/**/*.test.js`                                                              | The Compose system under Docker                 |
-| `pnpm run test:demo </dev/null` | Published CLI and Docker-backed Capsule journey                                                                             | Independent review or all unit-test branches    |
+| Command                         | What it establishes                                                                                                                | What it does not establish                          |
+| ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
+| `pnpm lint`                     | Source-layout rules and package ESLint checks                                                                                      | Type safety, behavior, Bash correctness             |
+| `pnpm check:deps`               | Package layering, cycles, declared deps, coupling                                                                                  | Whether an import is used correctly at runtime      |
+| `pnpm typecheck`                | Root TypeScript source/test compilation                                                                                            | Runtime behavior or Docker fixture correctness      |
+| `pnpm test`                     | Build, then every package `test` script                                                                                            | Package integration suites or Capsule Bash E2E      |
+| `pnpm test:integration`         | Build, then every package `test:integration` script (needs npm registry access, no Docker)                                         | Default package suites or Capsule Bash E2E          |
+| `pnpm test:repo`                | Repository `node:test` files under `scripts/`, `scripts/consumer/`, `demo/support/`, `.github/scripts/` (run after a build)        | Security policy tests, the SUT, or Docker lanes     |
+| `pnpm test:security`            | Dependency audit policy tests in `scripts/security/`                                                                               | The audit itself                                    |
+| `pnpm test:sut`                 | SUT build, source maps, and every compiled `dist/**/*.test.js`                                                                     | The Compose system under Docker                     |
+| `pnpm test:sandbox:docker`      | Every sandbox `*.docker.test.ts` against the local Docker engine (`pnpm test` skips them without `BLACKBOX_SANDBOX_DOCKER_TEST=1`) | Other packages' Docker behavior or Capsule Bash E2E |
+| `pnpm run test:demo </dev/null` | Published CLI and Docker-backed Capsule journey                                                                                    | Independent review or all unit-test branches        |
 
 Inspect changed packages' scripts and runner configs before selecting targeted
 commands. The instrumentation packages' default Vitest configs exclude
