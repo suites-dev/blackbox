@@ -25,7 +25,8 @@ through the public `test.system(...).sandbox(...)` facade of `@suites/blackbox-p
   doc string or data table does not match, and a step that needs a capability this runtime does not offer
   (effects claims, participant exec) are compile errors. A scenario must make a claim, and an effects claim
   needs a completion barrier before it.
-- Runs each step as a boxed native step whose location is the `.feature` line.
+- Runs each step as a native step whose location is the `.feature` line; a failing step is reported there
+  too, not at the generated file.
 - Writes all generated tests or none into a git-ignored output directory, together with
   `compile-manifest.json`: per scenario its ID, `.feature` location, selection and requirement IDs, plus the
   step library identity and the hashes of each feature and generated file.

@@ -50,10 +50,28 @@ Feature: stub system
 interface Run {
   readonly code: number;
   readonly output: string;
+  readonly feature: string;
   readonly report: {
     readonly stats: { readonly expected: number; readonly unexpected: number };
-    readonly suites: readonly unknown[];
+    readonly suites: unknown;
   };
+}
+
+/** The `location` of every test error in a JSON report subtree. */
+function reportedLocations(node: unknown): readonly unknown[] {
+  if (Array.isArray(node)) {
+    return node.flatMap(reportedLocations);
+  }
+  if (typeof node !== 'object' || node === null) {
+    return [];
+  }
+  const own =
+    'errors' in node && Array.isArray(node.errors)
+      ? node.errors.map((error: unknown) =>
+          typeof error === 'object' && error !== null && 'location' in error ? error.location : null,
+        )
+      : [];
+  return [...own, ...Object.values(node).flatMap(reportedLocations)];
 }
 
 const roots: string[] = [];
@@ -100,7 +118,7 @@ async function compileAndRun(status: number): Promise<Run> {
     );
   });
   const report = JSON.parse(await readFile(join(root, 'results.json'), 'utf8')) as Run['report'];
-  return { code, output, report };
+  return { code, output, feature: join(root, 'features/stub.feature'), report };
 }
 
 describe('generated tests under the real Playwright test CLI', { timeout: 120_000 }, () => {
@@ -118,5 +136,14 @@ describe('generated tests under the real Playwright test CLI', { timeout: 120_00
     expect(run.output).toContain('1 failed');
     expect(run.output).toMatch(/✘.*Scenario: the stub claim/u);
     expect(run.output).toContain('stub response status is 200, not 500');
+  });
+
+  it('reports the failing step at its .feature line, not the generated spec', async () => {
+    const run = await compileAndRun(500);
+    expect(reportedLocations(run.report.suites)).toEqual([
+      { file: run.feature, line: 9, column: 5 },
+    ]);
+    expect(run.output).toContain(`at ${run.feature}:9:5`);
+    expect(run.output).toMatch(/>\s+9 \|\s+Then the response status is 500/u);
   });
 });
