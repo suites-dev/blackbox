@@ -25,8 +25,9 @@ visual design will incorporate the additional user references recorded in its is
 Native Playwright exposes an effects fixture and contract-matcher boundary, but it does not yet project telemetry into
 normalized effects or provide an assurance evaluator. Until a runtime supplies that evaluator, effect contracts fail
 as inconclusive. The planned evaluator must distinguish insufficient evidence from a supported claim, and keep
-authorization separate from evaluation. ODC/decision coverage, generated Gherkin/specs, suite generation, and legacy
-contract-promotion surfaces are outside this roadmap. Final package names and command renames are decisions owned by
+authorization separate from evaluation. ODC/decision coverage, Blackbox-generated Gherkin, feature files or specs, suite
+generation, and legacy contract-promotion surfaces are outside this roadmap. Human-authored Gherkin feature files are
+in scope as test input. Final package names and command renames are decisions owned by
 their issues.
 
 For current agent setup, see [agent skills](agent-skills.md). For the present product model, see

@@ -28,14 +28,15 @@ See the [CLI reference](cli.md) for command options.
 | Automatic project setup                             | Not available yet; `setup init` remains reserved.                 |
 | General test reports, history, and baseline updates | Not available yet. Capsule reports work through `capsule report`. |
 | Python and Java instrumentation installers          | Not supported yet. The current installer supports Node.           |
+| Gherkin feature input                               | Not available yet.                                                |
 
 Native Playwright execution now composes the shared Sandbox for each physical test attempt, including retries. The
 effects fixture and `toSatisfy` contract boundary are present, but they fail as inconclusive until a runtime supplies
 normalized effects. A separate assurance stage will add effect projection, claim qualification, and accepted-baseline
 comparisons. See the [roadmap](roadmap.md).
 
-ODC/decision coverage, generated Gherkin or feature files, suite generation, and legacy contract-promotion workflows
-are outside the current product direction. Automated repair is not a committed product capability; developers and
+ODC/decision coverage, Blackbox generating Gherkin or feature files, suite generation, and legacy contract-promotion
+workflows are outside the current product direction. Running human-authored feature files is part of the direction. Automated repair is not a committed product capability; developers and
 agents can already use execution feedback in their own repair loops.
 
 Commands, configuration, and report formats may change as the first alpha takes shape.
