@@ -557,22 +557,3 @@ jobs:
             fi
           done
           exit "$failed"
-
-  # Transition shim: the live ruleset still requires the old display name of
-  # `E2E Gate`. Remove this job, and the old name from
-  # .github/security/branches.ruleset.json, once the live ruleset requires
-  # `E2E Gate` instead.
-  legacy-gate:
-    name: Capsule E2E (Testcontainers)
-    if: always()
-    needs: [gate]
-    runs-on: ubuntu-24.04
-    steps:
-      - name: Mirror the E2E Gate result
-        env:
-          GATE_RESULT: ${{ needs.gate.result }}
-        run: |
-          if [[ "$GATE_RESULT" != success ]]; then
-            echo "E2E Gate: $GATE_RESULT" >&2
-            exit 1
-          fi
