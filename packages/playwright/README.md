@@ -179,6 +179,27 @@ From the repository root, after installing and building workspace dependencies:
 pnpm --filter @suites/blackbox-playwright test
 ```
 
+The Docker-backed matcher cases live in [`tests/effects`](tests/effects), beside
+this package. They exercise PostgreSQL, RabbitMQ, scoped browser work, inspection
+isolation, and withheld telemetry. Run them with Docker and Playwright Chromium
+available:
+
+```sh
+pnpm --filter @suites/blackbox-playwright... build
+pnpm --filter @suites/blackbox-playwright test:effects
+```
+
+The suite compares assertion contracts, verdicts, and semantic witnesses with
+checked-in [`goldens`](tests/effects/goldens). Generated trace IDs are excluded.
+Native reports remain under `.blackbox/tmp/playwright-effects.*`; the runner
+recovers owned sandboxes and removes its temporary fixture project on exit.
+Use `test:effects --update-snapshots` only for a reviewed behavior change.
+Business examples remain in `e2e/tests/playwright`, using registry-installed
+packages to create subscriptions and payments and inspect their resulting state.
+Their HTTP effects match service and method: this raw Node HTTP fixture emits
+`url.path`, but no `http.route` template. A request path is not treated as a route
+template, and missing route evidence stays inconclusive.
+
 [The composition factory](src/effects/scoped-effects.ts) takes an immutable,
 registry-owned selection. Stimulus selections exclude setup and inspection;
 combining purposes requires an explicit procedure selection. Collector shutdown

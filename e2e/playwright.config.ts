@@ -29,7 +29,7 @@ export default defineConfig({
     ['list', { printSteps: true }],
     // Adds retained, readable Blackbox diagnostics.
     ['@suites/blackbox-playwright/reporter'],
-    // Maintainer-only recorder for Blackbox's 18-test acceptance journey;
+    // Maintainer-only recorder for Blackbox's 8-test acceptance journey;
     // ordinary consumers do not need to add it.
     [join(import.meta.dirname, 'reporters', 'blackbox-evidence.ts')],
     ['junit', { outputFile: join(resultsRoot, 'junit.xml') }],

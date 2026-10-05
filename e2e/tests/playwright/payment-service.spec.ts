@@ -58,7 +58,11 @@ test.system({ kind: 'subsystem', id: 'payment-mock' }, (system) => {
               userId: 'alice',
             } as const;
             expect(await expectJson<PaymentIntent>(response, 201)).toEqual(intent);
-            await expect(effects).toSatisfy((e) => [e.exists(e.http({ method: 'POST' }))]);
+            await expect(effects).toSatisfy((e) => [
+              e.exists(
+                e.http({ actor: 'payment-mock', method: 'POST' }),
+              ),
+            ]);
             expect(
               await activities.inspection.request(
                 'read retained payment state',

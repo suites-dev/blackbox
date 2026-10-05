@@ -30,10 +30,6 @@ function entrypointFile(test: TestCase): string {
   return suite.title;
 }
 
-function isEffectsSource(file: string): boolean {
-  return /[/\\]effects-acceptance\.spec\.ts$/u.test(file);
-}
-
 /**
  * Maintainer-only acceptance recorder; ordinary consumer projects do not need it.
  * Public live callbacks preserve ordering evidence that final test results cannot reconstruct.
@@ -159,11 +155,7 @@ export default class BlackboxEvidence implements Reporter {
     attempt.effectsAssertions = result.attachments.filter(
       (attachment) => attachment.name === 'blackbox-effects',
     ).length;
-    // Effects cases may use activity actions, but still require effects assertion attachments.
-    if (isEffectsSource(attempt.sourceFile) && attempt.effectsAssertions === 0) {
-      attempt.errors.push('Missing live effects assertion evidence');
-    }
-    if (!isEffectsSource(attempt.sourceFile) && attempt.businessSteps < 3) {
+    if (attempt.businessSteps < 3) {
       attempt.errors.push('Missing business steps');
     }
   }
@@ -173,9 +165,9 @@ export default class BlackboxEvidence implements Reporter {
     const errors = attempts.flatMap(({ title, errors }) =>
       errors.map((error) => `${title}: ${error}`),
     );
-    // This fixture intentionally contains exactly 18 physical acceptance cases.
-    if (attempts.length !== 18) {
-      errors.push(`Expected 18 attempts, received ${attempts.length}`);
+    // This fixture intentionally contains exactly 8 physical acceptance cases.
+    if (attempts.length !== 8) {
+      errors.push(`Expected 8 attempts, received ${attempts.length}`);
     }
     if (!attempts.some(({ nestedSteps }) => nestedSteps > 0)) {
       errors.push('No nested business steps');

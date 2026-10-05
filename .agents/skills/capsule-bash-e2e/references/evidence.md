@@ -2,13 +2,13 @@
 
 ## Know which layer failed
 
-| Layer               | Source                                                                      | Required distinction                                         |
-| ------------------- | --------------------------------------------------------------------------- | ------------------------------------------------------------ |
-| Registry consumer   | `scripts/consumer/prepare.mjs`, `scripts/consumer/capsule-asset-verify.mjs` | Registry-installed dependency closure, not workspace imports |
-| Public CLI journey  | `demo/acceptance/capsule-test.sh`                                           | Real commands and assertions, not a narrated demo            |
-| Runtime and cleanup | `demo/acceptance/capsule-test-support.sh`                                   | Exact session/PID ownership; reused viewers survive          |
-| Telemetry oracle    | `demo/support/capsule-telemetry-proof.mjs`                                  | Activity-correlated versus session-only observations         |
-| CI retention        | `.github/scripts/e2e-evidence.mjs`, `.github/workflows/e2e.yml`             | Test, archive, and retention must all succeed                |
+| Layer               | Source                                                                | Required distinction                                       |
+| ------------------- | --------------------------------------------------------------------- | ---------------------------------------------------------- |
+| Registry consumer   | `scripts/consumer/prepare.mjs`, `scripts/consumer/capsule-assets.mjs` | Registry installation and owned temporary-resource cleanup |
+| Public CLI journey  | `demo/acceptance/capsule-test.sh`                                     | Real commands and assertions, not a narrated demo          |
+| Runtime and cleanup | `demo/acceptance/capsule-test-support.sh`                             | Exact session/PID ownership; reused viewers survive        |
+| Telemetry oracle    | `demo/support/capsule-telemetry-proof.mjs`                            | Activity-correlated versus session-only observations       |
+| CI retention        | `.github/scripts/e2e-evidence.mjs`, `.github/workflows/e2e.yml`       | Test, archive, and retention must all succeed              |
 
 Resolve paths relative to the repo root. Read only the source/helper relevant to
 the failure, but inspect both the assertion and its production behavior before
@@ -24,10 +24,9 @@ output, and the retained experiment under `e2e/.blackbox/experiments/`.
 
 Verify the specific assertions in the current harness, including:
 
-- Registry consumer package-boundary verification and absence of workspace imports.
-  Its direct dependencies are `@suites/blackbox`, `@suites/blackbox-cli`, and the selected
-  Capsule, Playwright, driver, and Node instrumentation adapters. The executable
-  must belong to the CLI package; core internals arrive transitively.
+- Registry-installed CLI and adapters execute the journey. Preparation installs
+  the selected version and retains ownership records for cleanup; it does not
+  audit Node module resolution. Keep behavior evidence in the journey goldens.
 - Fixture state changes after real HTTP/Postgres/Redis interactions, not just an
   HTTP 200 or a command invocation recorded by a mock.
 - Exact HTTP activity/trace relationships; Redis shared-state downstream work is

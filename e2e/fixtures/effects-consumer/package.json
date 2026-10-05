@@ -1,9 +1,0 @@
-{
-  "name": "effects-consumer-fixture",
-  "version": "1.0.0",
-  "private": true,
-  "type": "module",
-  "dependencies": {
-    "@suites/blackbox-effects": "workspace:*"
-  }
-}

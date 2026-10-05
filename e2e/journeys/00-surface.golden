@@ -1,6 +1,4 @@
 $ blackbox catalog ls
-effects-acceptance
-effects-withheld
 payment-mock
 payment-mock-dist
 subscription-system (default)

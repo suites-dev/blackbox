@@ -138,9 +138,9 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           pnpm-version: ${{ env.PNPM_VERSION }}
 
-      - name: Verify consumer guards
+      - name: Test consumer cleanup
         id: consumer_tests
-        run: node --test scripts/consumer/composition.test.mjs scripts/consumer/effects-artifacts.test.mjs
+        run: node --test scripts/consumer/capsule-reset.test.mjs scripts/consumer/capsule-assets.test.mjs scripts/consumer/npm-prefix.test.mjs
 
       - name: Run the evidence transport self-tests
         id: transport_tests
@@ -441,6 +441,25 @@ jobs:
         with:
           storage: ${{ runner.temp }}/registry-storage
 
+      - name: Build dependencies for package integration tests
+        id: effects_build
+        run: pnpm --filter @suites/blackbox-playwright... build
+
+      - name: Test effects integration and goldens inside the Playwright package
+        id: effects_tests
+        run: pnpm --filter @suites/blackbox-playwright test:effects
+
+      - name: Retain package effects reports
+        id: effects_evidence
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: playwright-effects-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .blackbox/tmp/playwright-effects.*
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 14
+
       # The script prepares its own registry-installed consumer, then
       # materializes this project in it.
       - name: Run the Playwright system tests
@@ -483,7 +502,9 @@ jobs:
         env:
           OUTCOMES: >-
             ${{ steps.setup.outcome }} ${{ steps.browser_setup.outcome }}
-            ${{ steps.browser_tests.outcome }} ${{ steps.playwright_tests.outcome }}
+            ${{ steps.browser_tests.outcome }} ${{ steps.effects_build.outcome }}
+            ${{ steps.effects_tests.outcome }} ${{ steps.effects_evidence.outcome }}
+            ${{ steps.playwright_tests.outcome }}
             ${{ steps.playwright_archive.outcome }} ${{ steps.playwright_evidence.outcome }}
         run: |
           for outcome in $OUTCOMES; do

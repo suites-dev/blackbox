@@ -15,7 +15,7 @@ Read root `AGENTS.md`, `package.json`, `.github/workflows/e2e.yml`,
 `.github/actions/registry/action.yml`, and the current
 `scripts/consumer/prepare.mjs`, `demo/acceptance/capsule-test.sh`, and
 `demo/acceptance/capsule-test-support.sh`. For reset/cleanup work also read
-`scripts/consumer/capsule-reset.mjs`, `scripts/consumer/capsule-asset-boundary.mjs`,
+`scripts/consumer/capsule-reset.mjs`, `scripts/consumer/capsule-assets.mjs`,
 and the relevant proof-image helpers under `demo/support/` before changing resource
 handling.
 
@@ -64,7 +64,7 @@ plays the same journey narrated, and also needs `prepare:consumer` first.
 ## Qualify the run, not the success banner
 
 Read [evidence and maintenance](references/evidence.md). Verify the exact session,
-activity/trace identities, real fixture side effects, packaged module boundary,
+activity/trace identities, real fixture side effects, installed CLI behavior,
 negative command behavior, reports after stop, and cleanup outcomes. The final
 `Capsule journey passed` line precedes exit cleanup: only the final successful
 exit and retained evidence can establish a passed run.

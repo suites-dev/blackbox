@@ -165,13 +165,10 @@ From the repository root after a frozen dependency installation:
 ```sh
 pnpm --filter @suites/blackbox-effects build
 pnpm --filter @suites/blackbox-effects test
-pnpm test:effects:consumer
 ```
 
-The final command packs the built candidate and installs it into a temporary
-project outside the workspace with only this package as a direct dependency. It
-runs plain Node assertions, checks the published declaration shape with TypeScript,
-and challenges the assertions with disposable broken-package variants. It removes
-the temporary project and retains evidence under `.blackbox/tmp/effects-consumer.*`.
-The fixture is synthetic OTLP; this check does not establish released-registry or
-live-system acceptance. See the [consumer fixture](../../e2e/fixtures/effects-consumer/README.md).
+These tests cover OTLP projection, contract compilation, and three-valued
+assessment. The real PostgreSQL/RabbitMQ matcher tests and their assertion goldens
+live in [`packages/playwright/tests/effects`](../playwright/tests/effects).
+Run that package's `test:effects` lane for Docker-backed integration, and
+`pnpm test:e2e:playwright` for business scenarios using registry-installed packages.

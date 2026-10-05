@@ -21,7 +21,7 @@ test.system('subscription-system', (system) => {
     sandbox.describe('Rule: full-path subscriptions settle every required effect', () => {
       sandbox.test(
         'Scenario: an eligible user receives an active subscription',
-        async ({ request, sandbox, telemetry, effects }) => {
+        async ({ activities, request, sandbox, telemetry, effects }) => {
           expectAttemptEvidenceIdentity({ effects, sandbox, telemetry });
 
           await test.step('Given Alice has no subscription or downstream effects', async () => {
@@ -31,9 +31,11 @@ test.system('subscription-system', (system) => {
           });
 
           const response = await test.step('When Alice subscribes with a payment method', () =>
-            request.post(new URL('/subscriptions', sandbox.entrypoint.url).href, {
-              data: { paymentMethodId: 'pm_alice_primary', userId: 'alice' },
-            }));
+            activities.stimulus.request('subscribe Alice', request, (scoped) =>
+              scoped.post(new URL('/subscriptions', sandbox.entrypoint.url).href, {
+                data: { paymentMethodId: 'pm_alice_primary', userId: 'alice' },
+              }),
+            ));
 
           await test.step('Then the subscription is active only after every effect settles', async () => {
             expect(await expectJson<SubscriptionResult>(response, 201)).toEqual({
@@ -43,6 +45,16 @@ test.system('subscription-system', (system) => {
               tier: 'pro',
               userId: 'alice',
             });
+
+            await expect(effects).toSatisfy((e) => [
+              e.exists(e.http({ actor: 'fraud-check', method: 'POST' })),
+              e.exists(
+                e.http({ actor: 'payment-mock', method: 'POST' }),
+              ),
+              e.exists(e.http({ actor: 'order-service', method: 'POST' })),
+              e.exists(e.cache({ actor: 'public-api', operation: 'SET' })),
+              e.exists(e.db({ actor: 'public-api' })),
+            ]);
 
             await test.step('And the durable state records one coherent subscription flow', async () => {
               expect(await readFixtureState<SystemState>(request, sandbox.entrypoint.url)).toEqual({
@@ -112,7 +124,7 @@ test.system('subscription-system', (system) => {
     sandbox.describe('Rule: local-only subscriptions avoid external service effects', () => {
       sandbox.test(
         'Scenario: a local-only user activates without payment or ordering',
-        async ({ request, sandbox, telemetry, effects }) => {
+        async ({ activities, request, sandbox, telemetry, effects }) => {
           expectAttemptEvidenceIdentity({ effects, sandbox, telemetry });
 
           await test.step('Given Dora has no subscription or downstream effects', async () => {
@@ -122,11 +134,17 @@ test.system('subscription-system', (system) => {
           });
 
           const response = await test.step('When Dora subscribes with a payment method', () =>
-            request.post(new URL('/subscriptions', sandbox.entrypoint.url).href, {
-              data: { paymentMethodId: 'pm_dora_unused', userId: 'dora' },
-            }));
+            activities.stimulus.request('subscribe Dora locally', request, (scoped) =>
+              scoped.post(new URL('/subscriptions', sandbox.entrypoint.url).href, {
+                data: { paymentMethodId: 'pm_dora_unused', userId: 'dora' },
+              }),
+            ));
 
           await test.step('Then her subscription is activated entirely within the local path', async () => {
+            await expect(effects).toSatisfy((e) => [
+              e.exists(e.cache({ actor: 'public-api', operation: 'SET' })),
+              e.exists(e.db({ actor: 'public-api' })),
+            ]);
             expect(await expectJson<SubscriptionResult>(response, 201)).toEqual({
               orderId: null,
               paymentIntentId: null,

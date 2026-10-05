@@ -8,7 +8,6 @@ export const declaredMutableInputs = Object.freeze([
   'localstack/localstack:3.8',
   'node:22.22.0-bookworm-slim',
   'postgres:16-alpine',
-  'rabbitmq:4.1-alpine',
   'redis:7-alpine',
 ]);
 

@@ -62,3 +62,7 @@ blackbox-docs-draft-gpt-v1-old
 !.agents/skills/capsule-bash-e2e/
 archive
 plans
+
+!packages/playwright/tests/effects/project/sut/effects-acceptance/package-lock.json
+
+!packages/playwright/tests/effects/project/.blackbox/
