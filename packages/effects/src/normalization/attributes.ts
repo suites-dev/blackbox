@@ -18,6 +18,7 @@ const aliases = [
 ] as const;
 const semanticStrings = new Set<string>([
   ...aliases.flat(),
+  'messaging.system',
   'http.route',
   'rpc.method',
   'rpc.service',

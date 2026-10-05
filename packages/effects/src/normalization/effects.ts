@@ -11,7 +11,7 @@ function classify(attributes: Attributes) {
       target: textAttribute(attributes, 'http.route'),
     };
   }
-  if (attributes['db.operation.name'] !== undefined) {
+  if (attributes['db.operation.name'] !== undefined || attributes['db.system.name'] !== undefined) {
     const redis = attributes['db.system.name'] === 'redis';
     // Public table/key selectors must not match a database namespace. Redis
     // collection names also do not establish a particular cache key.
@@ -28,7 +28,10 @@ function classify(attributes: Attributes) {
       target: textAttribute(attributes, 'rpc.service'),
     };
   }
-  if (attributes['messaging.operation.type'] !== undefined) {
+  if (
+    attributes['messaging.operation.type'] !== undefined ||
+    attributes['messaging.system'] !== undefined
+  ) {
     return {
       kind: 'message',
       operation: textAttribute(attributes, 'messaging.operation.type'),

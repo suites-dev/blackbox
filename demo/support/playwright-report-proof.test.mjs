@@ -465,19 +465,27 @@ test('rejects custom terminal rendering and missing diagnostics', () => {
 const effectCases = [
   ['Scenario: a valid payment method creates a payment intent', [['satisfied', 'passed', false]]],
   [
-    'PostgreSQL INSERT is observed and persisted state is checked separately',
-    [['satisfied', 'passed', false]],
+    'PostgreSQL activity is observed while its operation remains unknown',
+    [
+      ['satisfied', 'passed', false],
+      ['inconclusive', 'inconclusive', false],
+      ['inconclusive', 'inconclusive', true],
+    ],
   ],
   [
-    'RabbitMQ send is observed and broker delivery is checked separately',
-    [['satisfied', 'passed', false]],
+    'RabbitMQ activity is observed while send remains unknown',
+    [
+      ['satisfied', 'passed', false],
+      ['inconclusive', 'inconclusive', false],
+      ['inconclusive', 'inconclusive', true],
+    ],
   ],
   [
-    'an observed forbidden INSERT produces a definite matcher failure',
+    'forbidden database activity produces a definite matcher failure',
     [['unsatisfied', 'failed', false]],
   ],
   [
-    'inspection SELECT cannot satisfy a stimulus SELECT contract',
+    'inspection database activity cannot satisfy a stimulus database contract',
     [
       ['satisfied', 'passed', false],
       ['inconclusive', 'inconclusive', false],
@@ -491,11 +499,11 @@ const effectCases = [
     ],
   ]),
   [
-    'a rolled-back INSERT remains an observed operation while state is absent',
+    'database activity remains observable after rollback while state is absent',
     [['satisfied', 'passed', false]],
   ],
   [
-    'browser stimulus propagates ownership to a PostgreSQL INSERT',
+    'browser stimulus propagates ownership to PostgreSQL activity',
     [['satisfied', 'passed', false]],
   ],
   [
@@ -518,19 +526,19 @@ function encoded(name, document) {
   return { name, body: Buffer.from(JSON.stringify(document)).toString('base64') };
 }
 
-function admittedEvidence(suffix, evaluation, selector = { kind: 'db', operation: 'INSERT' }) {
+function admittedEvidence(suffix, evaluation, selector = { kind: 'db' }) {
   const scopeId = `scope-${suffix}`;
   const activityId = `activity-${suffix}`;
   const effectId = `effect-${suffix}`;
   const traceId = suffix.padEnd(32, '0').slice(0, 32);
   const spanId = suffix.padEnd(16, '0').slice(0, 16);
-  const operationField = {
-    db: { key: 'db.operation.name', value: selector.operation },
-    http: { key: 'http.request.method', value: selector.operation },
-    message: {
-      key: 'messaging.operation.type',
-      value: selector.operation === 'send' ? 'publish' : selector.operation,
-    },
+  const fields = {
+    db: [{ key: 'db.system', value: 'postgresql' }],
+    http: [{ key: 'http.request.method', value: selector.operation }],
+    message: [
+      { key: 'messaging.system', value: 'rabbitmq' },
+      { key: 'messaging.destination', value: selector.target },
+    ],
   }[selector.kind];
   return {
     kind: 'admitted',
@@ -545,7 +553,7 @@ function admittedEvidence(suffix, evaluation, selector = { kind: 'db', operation
           service: 'fixture',
           kind: 'client',
           status: 'ok',
-          fields: [operationField],
+          fields,
         },
       ],
     },
@@ -569,7 +577,7 @@ function admittedEvidence(suffix, evaluation, selector = { kind: 'db', operation
         {
           id: effectId,
           kind: selector.kind,
-          operation: selector.operation,
+          operation: selector.kind === 'http' ? selector.operation : 'unknown',
           target: selector.target ?? 'records',
           actor: 'app',
           outcome: 'success',
@@ -694,38 +702,35 @@ function withheldDiagnostic(evidence) {
 }
 
 function effectContract(title, index) {
-  let selector = { node: 'selector', kind: 'db', operation: 'INSERT' };
+  let selector = { node: 'selector', kind: 'db' };
   let operator = 'atLeast';
   let count = 1;
   if (title === 'Scenario: a valid payment method creates a payment intent') {
     selector = { node: 'selector', kind: 'http', operation: 'POST' };
-  } else if (title === 'RabbitMQ send is observed and broker delivery is checked separately') {
+  } else if (title === 'RabbitMQ activity is observed while send remains unknown') {
     selector = {
       node: 'selector',
       kind: 'message',
-      operation: 'send',
       target: 'acceptance.alpha',
     };
-  } else if (title === 'an observed forbidden INSERT produces a definite matcher failure') {
+  } else if (title === 'forbidden database activity produces a definite matcher failure') {
     operator = 'exactly';
     count = 0;
-  } else if (title === 'inspection SELECT cannot satisfy a stimulus SELECT contract') {
+  } else if (title === 'inspection database activity cannot satisfy a stimulus database contract') {
     selector =
       index === 0
         ? {
             node: 'selector',
             kind: 'message',
-            operation: 'send',
             target: 'acceptance.alpha',
           }
-        : { node: 'selector', kind: 'db', operation: 'SELECT' };
+        : { node: 'selector', kind: 'db' };
   } else if (title.startsWith('@isolation ')) {
     const own = title.includes(' alpha ') ? 'alpha' : 'beta';
     const target = index === 0 ? own : own === 'alpha' ? 'beta' : 'alpha';
     selector = {
       node: 'selector',
       kind: 'message',
-      operation: 'send',
       target: `acceptance.${target}`,
     };
   } else if (
@@ -735,9 +740,17 @@ function effectContract(title, index) {
     selector = {
       node: 'selector',
       kind: 'message',
-      operation: 'send',
       target: 'acceptance.beta',
     };
+  }
+  if (
+    index > 0 &&
+    title === 'PostgreSQL activity is observed while its operation remains unknown'
+  ) {
+    selector.operation = 'INSERT';
+  }
+  if (index > 0 && title === 'RabbitMQ activity is observed while send remains unknown') {
+    selector.operation = 'send';
   }
   return {
     schemaVersion: 1,
@@ -793,7 +806,7 @@ function rewriteAttachment(attachment, update) {
 }
 
 test('accepts complete, owned and bounded effects attachment evidence', () => {
-  assert.equal(verifyEffectReports(effectAttempts()).assertions, 16);
+  assert.equal(verifyEffectReports(effectAttempts()).assertions, 20);
 });
 
 test('rejects missing effects evidence and unstable assertion sequences', () => {
@@ -937,4 +950,29 @@ test('rejects finding evidence and omitted data for a withheld trace', () => {
     document.evidence.omitted.observations = 1;
   });
   assert.throws(() => verifyEffectReports(omitted), /omitted report data/);
+});
+
+test('rejects invented operations and missing system evidence for neutral telemetry', () => {
+  for (const [index, operation] of [
+    [1, 'INSERT'],
+    [2, 'send'],
+  ]) {
+    const invented = effectAttempts();
+    rewriteAttachment(invented[index].attachments[1], (document) => {
+      document.evidence.projection.effects[0].operation = operation;
+    });
+    assert.throws(() => verifyEffectReports(invented), /classified operation field/);
+
+    const missing = effectAttempts();
+    rewriteAttachment(missing[index].attachments[1], (document) => {
+      document.evidence.observations.excerpts[0].fields = [];
+    });
+    assert.throws(() => verifyEffectReports(missing), /classified operation field/);
+
+    const definite = effectAttempts();
+    rewriteAttachment(definite[index].attachments[2], (document) => {
+      document.assertion.evaluation = 'satisfied';
+    });
+    assert.throws(() => verifyEffectReports(definite), /Unexpected effects evaluation/);
+  }
 });

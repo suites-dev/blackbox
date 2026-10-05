@@ -10,19 +10,27 @@ const effectExpectations = new Map([
     [{ evaluation: 'satisfied', outcome: 'passed', negated: false }],
   ],
   [
-    'PostgreSQL INSERT is observed and persisted state is checked separately',
-    [{ evaluation: 'satisfied', outcome: 'passed', negated: false }],
+    'PostgreSQL activity is observed while its operation remains unknown',
+    [
+      { evaluation: 'satisfied', outcome: 'passed', negated: false },
+      { evaluation: 'inconclusive', outcome: 'inconclusive', negated: false },
+      { evaluation: 'inconclusive', outcome: 'inconclusive', negated: true },
+    ],
   ],
   [
-    'RabbitMQ send is observed and broker delivery is checked separately',
-    [{ evaluation: 'satisfied', outcome: 'passed', negated: false }],
+    'RabbitMQ activity is observed while send remains unknown',
+    [
+      { evaluation: 'satisfied', outcome: 'passed', negated: false },
+      { evaluation: 'inconclusive', outcome: 'inconclusive', negated: false },
+      { evaluation: 'inconclusive', outcome: 'inconclusive', negated: true },
+    ],
   ],
   [
-    'an observed forbidden INSERT produces a definite matcher failure',
+    'forbidden database activity produces a definite matcher failure',
     [{ evaluation: 'unsatisfied', outcome: 'failed', negated: false }],
   ],
   [
-    'inspection SELECT cannot satisfy a stimulus SELECT contract',
+    'inspection database activity cannot satisfy a stimulus database contract',
     [
       { evaluation: 'satisfied', outcome: 'passed', negated: false },
       { evaluation: 'inconclusive', outcome: 'inconclusive', negated: false },
@@ -36,11 +44,11 @@ const effectExpectations = new Map([
     ],
   ]),
   [
-    'a rolled-back INSERT remains an observed operation while state is absent',
+    'database activity remains observable after rollback while state is absent',
     [{ evaluation: 'satisfied', outcome: 'passed', negated: false }],
   ],
   [
-    'browser stimulus propagates ownership to a PostgreSQL INSERT',
+    'browser stimulus propagates ownership to PostgreSQL activity',
     [{ evaluation: 'satisfied', outcome: 'passed', negated: false }],
   ],
   [
@@ -67,7 +75,17 @@ function expectedContract(title, index) {
       selector: { node: 'selector', kind: 'http', operation: 'POST' },
     };
   }
-  if (title === 'RabbitMQ send is observed and broker delivery is checked separately') {
+  if (
+    index > 0 &&
+    title === 'PostgreSQL activity is observed while its operation remains unknown'
+  ) {
+    return {
+      operator: 'atLeast',
+      count: 1,
+      selector: { node: 'selector', kind: 'db', operation: 'INSERT' },
+    };
+  }
+  if (index > 0 && title === 'RabbitMQ activity is observed while send remains unknown') {
     return {
       operator: 'atLeast',
       count: 1,
@@ -79,14 +97,25 @@ function expectedContract(title, index) {
       },
     };
   }
-  if (title === 'an observed forbidden INSERT produces a definite matcher failure') {
+  if (title === 'RabbitMQ activity is observed while send remains unknown') {
+    return {
+      operator: 'atLeast',
+      count: 1,
+      selector: {
+        node: 'selector',
+        kind: 'message',
+        target: 'acceptance.alpha',
+      },
+    };
+  }
+  if (title === 'forbidden database activity produces a definite matcher failure') {
     return {
       operator: 'exactly',
       count: 0,
-      selector: { node: 'selector', kind: 'db', operation: 'INSERT' },
+      selector: { node: 'selector', kind: 'db' },
     };
   }
-  if (title === 'inspection SELECT cannot satisfy a stimulus SELECT contract') {
+  if (title === 'inspection database activity cannot satisfy a stimulus database contract') {
     return index === 0
       ? {
           operator: 'atLeast',
@@ -94,14 +123,13 @@ function expectedContract(title, index) {
           selector: {
             node: 'selector',
             kind: 'message',
-            operation: 'send',
             target: 'acceptance.alpha',
           },
         }
       : {
           operator: 'atLeast',
           count: 1,
-          selector: { node: 'selector', kind: 'db', operation: 'SELECT' },
+          selector: { node: 'selector', kind: 'db' },
         };
   }
   if (title.startsWith('@isolation ')) {
@@ -113,7 +141,6 @@ function expectedContract(title, index) {
       selector: {
         node: 'selector',
         kind: 'message',
-        operation: 'send',
         target: `acceptance.${target}`,
       },
     };
@@ -122,13 +149,13 @@ function expectedContract(title, index) {
     return {
       operator: 'atLeast',
       count: 1,
-      selector: { node: 'selector', kind: 'message', operation: 'send', target: 'acceptance.beta' },
+      selector: { node: 'selector', kind: 'message', target: 'acceptance.beta' },
     };
   }
   return {
     operator: 'atLeast',
     count: 1,
-    selector: { node: 'selector', kind: 'db', operation: 'INSERT' },
+    selector: { node: 'selector', kind: 'db' },
   };
 }
 
@@ -183,6 +210,7 @@ const semanticFields = new Set([
   'messaging.destination.name',
   'messaging.operation',
   'messaging.operation.type',
+  'messaging.system',
   'rpc.method',
   'rpc.service',
 ]);
@@ -214,13 +242,28 @@ function witnessedOperation(excerpt, selector) {
     message: new Set(['messaging.operation', 'messaging.operation.type']),
     rpc: new Set(['rpc.method']),
   }[selector.kind];
-  const values =
-    selector.kind === 'message' && selector.operation === 'send'
-      ? new Set(['send', 'publish'])
-      : new Set([selector.operation.toLowerCase()]);
-  return excerpt.fields.some(
+  const operations = excerpt.fields.filter(
+    ({ key, value }) => keys?.has(key) && typeof value === 'string' && value.length > 0,
+  );
+  if (selector.operation !== 'unknown') {
+    return operations.some(({ value }) => value === selector.operation);
+  }
+  const systems = excerpt.fields.filter(
     ({ key, value }) =>
-      keys?.has(key) && typeof value === 'string' && values.has(value.toLowerCase()),
+      ['db.system', 'db.system.name', 'messaging.system'].includes(key) &&
+      typeof value === 'string' &&
+      value.length > 0,
+  );
+  return (
+    operations.length === 0 &&
+    systems.some(({ key, value }) =>
+      selector.kind === 'message'
+        ? key === 'messaging.system'
+        : key !== 'messaging.system' &&
+          (selector.kind === 'cache'
+            ? value === 'redis'
+            : selector.kind === 'db' && value !== 'redis'),
+    )
   );
 }
 
@@ -502,7 +545,7 @@ export function verifyEffectReports(attempts) {
     });
     assertions += attachments.length;
   }
-  assert(assertions === 16, `Expected 16 effects assertion reports, received ${assertions}`);
+  assert(assertions === 20, `Expected 20 effects assertion reports, received ${assertions}`);
   return { kind: 'playwright-effects-reporting-proof', assertions };
 }
 

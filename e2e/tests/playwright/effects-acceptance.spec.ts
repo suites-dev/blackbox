@@ -8,7 +8,7 @@ test.system('effects-acceptance', (system) => {
   system.sandbox('real dependencies', (sandbox) => {
     sandbox.describe('candidate effects acceptance', () => {
       sandbox.test(
-        'PostgreSQL INSERT is observed and persisted state is checked separately',
+        'PostgreSQL activity is observed while its operation remains unknown',
         async ({ activities, effects, request, sandbox }) => {
           const response = await activities.stimulus.request(
             'insert record 101',
@@ -21,7 +21,14 @@ test.system('effects-acceptance', (system) => {
           expect(await json<{ row: { id: number; value: string } }>(response, 201)).toEqual({
             row: { id: 101, value: 'persisted-101' },
           });
-          await expect(effects).toSatisfy((e) => [e.exists(e.db({ operation: 'INSERT' }))]);
+          await expect(effects).toSatisfy((e) => [e.exists(e.db({}))]);
+          const insertion: EffectContractBuilder = (e) => [e.exists(e.db({ operation: 'INSERT' }))];
+          await expect(expect(effects).toSatisfy(insertion)).rejects.toThrow(
+            /Scope .*: inconclusive/,
+          );
+          await expect(expect(effects).not.toSatisfy(insertion)).rejects.toThrow(
+            /Scope .*: inconclusive/,
+          );
 
           const inspection = await activities.inspection.request(
             'read record 101 independently',
@@ -35,7 +42,7 @@ test.system('effects-acceptance', (system) => {
       );
 
       sandbox.test(
-        'an observed forbidden INSERT produces a definite matcher failure',
+        'forbidden database activity produces a definite matcher failure',
         async ({ activities, effects, request, sandbox }) => {
           const response = await activities.stimulus.request(
             'insert forbidden record',
@@ -43,14 +50,14 @@ test.system('effects-acceptance', (system) => {
             (scoped) => scoped.post(new URL('/records/201', sandbox.entrypoint.url).href),
           );
           expect(response.status()).toBe(201);
-          await expect(
-            expect(effects).toSatisfy((e) => [e.absent(e.db({ operation: 'INSERT' }))]),
-          ).rejects.toThrow(/Scope .*: fail[\s\S]*observed lower=1/);
+          await expect(expect(effects).toSatisfy((e) => [e.absent(e.db({}))])).rejects.toThrow(
+            /Scope .*: fail[\s\S]*observed lower=[1-9]/,
+          );
         },
       );
 
       sandbox.test(
-        'a rolled-back INSERT remains an observed operation while state is absent',
+        'database activity remains observable after rollback while state is absent',
         async ({ activities, effects, request, sandbox }) => {
           const response = await activities.stimulus.request(
             'insert then roll back',
@@ -58,7 +65,7 @@ test.system('effects-acceptance', (system) => {
             (scoped) => scoped.post(new URL('/records/301/rollback', sandbox.entrypoint.url).href),
           );
           expect(await json(response, 200)).toEqual({ id: 301, rolledBack: true });
-          await expect(effects).toSatisfy((e) => [e.exists(e.db({ operation: 'INSERT' }))]);
+          await expect(effects).toSatisfy((e) => [e.exists(e.db({}))]);
 
           const inspection = await activities.inspection.request(
             'read rolled-back record independently',
@@ -70,7 +77,7 @@ test.system('effects-acceptance', (system) => {
       );
 
       sandbox.test(
-        'RabbitMQ send is observed and broker delivery is checked separately',
+        'RabbitMQ activity is observed while send remains unknown',
         async ({ activities, effects, request, sandbox }) => {
           const response = await activities.stimulus.request(
             'publish alpha message',
@@ -90,8 +97,17 @@ test.system('effects-acceptance', (system) => {
             destination: 'acceptance.alpha',
           });
           await expect(effects).toSatisfy((e) => [
-            e.exists(e.message({ operation: 'send', destination: 'acceptance.alpha' })),
+            e.exists(e.message({ destination: 'acceptance.alpha' })),
           ]);
+          const sending: EffectContractBuilder = (e) => [
+            e.exists(e.message({ operation: 'send', destination: 'acceptance.alpha' })),
+          ];
+          await expect(expect(effects).toSatisfy(sending)).rejects.toThrow(
+            /Scope .*: inconclusive/,
+          );
+          await expect(expect(effects).not.toSatisfy(sending)).rejects.toThrow(
+            /Scope .*: inconclusive/,
+          );
 
           const delivery = await activities.inspection.request(
             'read alpha delivery independently',
@@ -122,7 +138,7 @@ test.system('effects-acceptance', (system) => {
       );
 
       sandbox.test(
-        'inspection SELECT cannot satisfy a stimulus SELECT contract',
+        'inspection database activity cannot satisfy a stimulus database contract',
         async ({ activities, effects, request, sandbox, telemetry }) => {
           let stimulusTrace = '';
           await activities.stimulus.run('publish without selecting', async ({ headers }) => {
@@ -134,7 +150,7 @@ test.system('effects-acceptance', (system) => {
             expect(response.status()).toBe(202);
           });
           await expect(effects).toSatisfy((e) => [
-            e.exists(e.message({ operation: 'send', destination: 'acceptance.alpha' })),
+            e.exists(e.message({ destination: 'acceptance.alpha' })),
           ]);
 
           let inspectionTrace = '';
@@ -146,9 +162,9 @@ test.system('effects-acceptance', (system) => {
             );
             expect(await json(response, 200)).toEqual({ row: null });
           });
-          await expect(
-            expect(effects).toSatisfy((e) => [e.exists(e.db({ operation: 'SELECT' }))]),
-          ).rejects.toThrow(/Scope .*: inconclusive/);
+          await expect(expect(effects).toSatisfy((e) => [e.exists(e.db({}))])).rejects.toThrow(
+            /Scope .*: inconclusive/,
+          );
           expect(inspectionTrace).not.toBe(stimulusTrace);
           await expect(telemetry.readTrace(stimulusTrace)).resolves.toMatchObject({
             kind: 'collector-trace-found',
@@ -178,19 +194,17 @@ test.system('effects-acceptance', (system) => {
             );
             expect(response.status()).toBe(202);
             await expect(effects).toSatisfy((e) => [
-              e.exists(e.message({ operation: 'send', destination: `acceptance.${own}` })),
+              e.exists(e.message({ destination: `acceptance.${own}` })),
             ]);
             await expect(
-              expect(effects).toSatisfy((e) => [
-                e.exists(e.message({ operation: 'send', destination: foreign })),
-              ]),
+              expect(effects).toSatisfy((e) => [e.exists(e.message({ destination: foreign }))]),
             ).rejects.toThrow(/Scope .*: inconclusive/);
           },
         );
       }
 
       sandbox.test(
-        'browser stimulus propagates ownership to a PostgreSQL INSERT',
+        'browser stimulus propagates ownership to PostgreSQL activity',
         async ({ activities, effects, page, request, sandbox }) => {
           await activities.stimulus.browser(
             'insert record 501 in browser',
@@ -207,7 +221,7 @@ test.system('effects-acceptance', (system) => {
               await expect(scopedPage.locator('#result')).toHaveText('inserted');
             },
           );
-          await expect(effects).toSatisfy((e) => [e.exists(e.db({ operation: 'INSERT' }))]);
+          await expect(effects).toSatisfy((e) => [e.exists(e.db({}))]);
           const inspection = await activities.inspection.request(
             'read browser-created record independently',
             request,
@@ -239,11 +253,11 @@ test.system('effects-acceptance', (system) => {
           );
           expect(response.status()).toBe(202);
           await expect(effects).toSatisfy((e) => [
-            e.exists(e.message({ operation: 'send', destination: 'acceptance.beta' })),
+            e.exists(e.message({ destination: 'acceptance.beta' })),
           ]);
-          await expect(
-            expect(effects).toSatisfy((e) => [e.exists(e.db({ operation: 'INSERT' }))]),
-          ).rejects.toThrow(/Scope .*: inconclusive/);
+          await expect(expect(effects).toSatisfy((e) => [e.exists(e.db({}))])).rejects.toThrow(
+            /Scope .*: inconclusive/,
+          );
           const inspection = await activities.inspection.request(
             'read unscoped browser-created record independently',
             request,
@@ -273,7 +287,7 @@ test.system('effects-withheld', (system) => {
         );
         expect(response.status()).toBe(201);
 
-        const contract: EffectContractBuilder = (e) => [e.exists(e.db({ operation: 'INSERT' }))];
+        const contract: EffectContractBuilder = (e) => [e.exists(e.db({}))];
         await expect(expect(effects).toSatisfy(contract)).rejects.toThrow(
           /inconclusive|No retained|activity-trace-not-received/,
         );

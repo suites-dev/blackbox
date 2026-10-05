@@ -4,6 +4,7 @@ import type { EffectAssessment, EffectGraph } from '@suites/blackbox-effects';
 import type { ActivityProvenance, ActivitySelection } from '../../activities/types.js';
 import type { ScopedObservationReadResult } from '../../activities/scoped-observations.js';
 import { createEffectEvidenceArtifact } from './artifact.js';
+import { observationExcerpts } from './observation-artifact.js';
 
 function span(index: number): Record<string, unknown> {
   const suffix = index.toString(16).padStart(16, '0');
@@ -44,9 +45,7 @@ function fixture() {
     sessionId: 'session-1',
     executionId: 'execution-1',
     kind: 'stimulus',
-    activities: [
-      { activityId: 'activity-1', purpose: 'stimulus', traceIds: [traceId] },
-    ],
+    activities: [{ activityId: 'activity-1', purpose: 'stimulus', traceIds: [traceId] }],
   } satisfies ActivitySelection;
   const provenance = {
     [`${traceId}:${spanId}`]: [
@@ -134,4 +133,17 @@ it('combines bounded safe observations, projection, findings, and activity owner
     effectId: 'effect-1',
     observations: [{ owners: [{ activityId: 'activity-1', purpose: 'stimulus' }] }],
   });
+});
+
+it('retains messaging system evidence without adding operation fields or exposing payloads', () => {
+  const input = {
+    ...span(1),
+    attributes: [
+      { key: 'messaging.system', value: { stringValue: 'rabbitmq' } },
+      { key: 'messaging.message.body', value: { stringValue: 'raw-secret' } },
+    ],
+  };
+  const result = observationExcerpts([payload([input])], 1);
+  expect(result.excerpts[0].fields).toEqual([{ key: 'messaging.system', value: 'rabbitmq' }]);
+  expect(JSON.stringify(result)).not.toContain('raw-secret');
 });

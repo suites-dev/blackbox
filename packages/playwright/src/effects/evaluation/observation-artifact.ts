@@ -18,6 +18,7 @@ const semanticFields = new Set([
   'messaging.destination.name',
   'messaging.operation',
   'messaging.operation.type',
+  'messaging.system',
   'rpc.method',
   'rpc.service',
 ]);
@@ -87,10 +88,7 @@ function excerpt(input: {
   };
 }
 
-function visitPayload(
-  payload: unknown,
-  visit: (observation: ObservationExcerpt) => void,
-): void {
+function visitPayload(payload: unknown, visit: (observation: ObservationExcerpt) => void): void {
   if (!record(payload)) {
     return;
   }

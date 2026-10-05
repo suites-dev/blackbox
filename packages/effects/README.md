@@ -86,6 +86,13 @@ Projection always returns an open graph. `scopeId` labels the caller's selection
 it does not authenticate or filter telemetry. Collecting, admitting, and isolating
 observations belongs to the consumer.
 
+The source instrumentation stays neutral: the effects engine consumes the attributes
+it receives without requiring Blackbox producer hooks. A database system attribute
+can establish `db` activity (or `cache` for Redis), and `messaging.system` can
+establish message activity, even when the operation is absent. For example,
+`e.exists(e.db({}))` can pass while `e.exists(e.db({ operation: 'INSERT' }))`
+remains inconclusive on the same PostgreSQL span. Missing operations stay `unknown`.
+
 Projection does not infer operations from SQL text or span display names. Database
 namespaces do not become table names, and Redis key targets remain unknown without
 a supported convention. Parent links and timestamps do not become
