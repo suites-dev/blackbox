@@ -38,18 +38,21 @@ collect final results against the final relevant tree.
 
 ## Select the actual test lane
 
-| Command                                                             | What it establishes                               | What it does not establish                       |
-| ------------------------------------------------------------------- | ------------------------------------------------- | ------------------------------------------------ |
-| `pnpm lint`                                                         | Source-layout rules and package ESLint checks     | Type safety, behavior, Bash correctness          |
-| `pnpm check:deps`                                                   | Package layering, cycles, declared deps, coupling | Whether an import is used correctly at runtime   |
-| `pnpm typecheck`                                                    | Root TypeScript source/test compilation           | Runtime behavior or Docker fixture correctness   |
-| `pnpm test`                                                         | Build, then workspace package test scripts        | Separate integration scripts or Capsule Bash E2E |
-| `pnpm --filter @suites/blackbox-instrumentation test:integration`   | Instrumentation integration lane                  | Other packages' integration coverage             |
-| `pnpm --filter @suites/blackbox-inst-runtime-node test:integration` | Node runtime instrumentation integration lane     | Full registry consumer acceptance                |
-| `pnpm run test:demo </dev/null`                                     | Published CLI and Docker-backed Capsule journey   | Independent review or all unit-test branches     |
+| Command                         | What it establishes                                                                                                                                                  | What it does not establish                     |
+| ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
+| `pnpm lint`                     | Source-layout rules and package ESLint checks                                                                                                                        | Type safety, behavior, Bash correctness        |
+| `pnpm check:deps`               | Package layering, cycles, declared deps, coupling                                                                                                                    | Whether an import is used correctly at runtime |
+| `pnpm typecheck`                | Root TypeScript source/test compilation                                                                                                                              | Runtime behavior or Docker fixture correctness |
+| `pnpm test`                     | Build, then every package `test` script                                                                                                                              | Package integration suites or Capsule Bash E2E |
+| `pnpm test:integration`         | Build, then every package `test:integration` script (needs npm registry access, no Docker)                                                                           | Default package suites or Capsule Bash E2E     |
+| `pnpm check:test-discovery`     | Every Vitest test file under a package `src/` is discovered by a config behind `test` or `test:integration`, no such config is empty, and CI calls both root scripts | That the discovered tests pass                 |
+| `pnpm run test:demo </dev/null` | Published CLI and Docker-backed Capsule journey                                                                                                                      | Independent review or all unit-test branches   |
 
 Inspect changed packages' scripts and runner configs before selecting targeted
-commands. Instrumentation default Vitest configs exclude `*.integration.test.ts`.
+commands. The instrumentation packages' default Vitest configs exclude
+`*.integration.test.ts` and run them from `test:integration`; other packages'
+default configs include them in `test`. Filter one package's integration suite
+with `pnpm --filter <package> test:integration` after a build.
 The CLI uses `packages/cli/scripts/run-tests.mjs`, compiles tests, and invokes
 Node's test runner; do not send it Vitest flags. Build before targeted CLI tests
 that exercise generated executable output. A filename alone does not establish

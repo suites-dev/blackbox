@@ -35,9 +35,12 @@ pnpm lint
 pnpm check:deps
 pnpm typecheck
 pnpm test
+pnpm test:integration
 ```
 
-`pnpm test` includes a build. The [workspace definition](../../pnpm-workspace.yaml) includes `packages/*`; `e2e/`
+`pnpm test` and `pnpm test:integration` each include a build. `pnpm test:integration` runs the package
+`*.integration.test.ts` suites that a package's default Vitest config excludes; it needs network access to the npm
+registry but not Docker. The [workspace definition](../../pnpm-workspace.yaml) includes `packages/*`; `e2e/`
 is not itself a workspace package. It holds the project fixture the lanes drive: the catalog, the project-authored
 drivers, the system under test, and the golden CLI journeys. `pnpm run test:demo` and `pnpm run test:e2e:journeys`
 are active entrypoints. `pnpm run test:e2e:playwright` runs the system tests against the same project fixture.
