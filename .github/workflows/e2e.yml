@@ -138,18 +138,13 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           pnpm-version: ${{ env.PNPM_VERSION }}
 
-      - name: Test consumer cleanup
-        id: consumer_tests
-        run: node --test scripts/consumer/capsule-reset.test.mjs scripts/consumer/capsule-assets.test.mjs scripts/consumer/npm-prefix.test.mjs
-
       - name: Run the evidence transport self-tests
         id: transport_tests
         timeout-minutes: 10
         run: >-
           node .github/scripts/ci-evidence.mjs run --lane transport --project self-tests
           --evidence-dir ci-evidence/transport/self-tests
-          -- node --test .github/scripts/e2e-evidence.test.mjs
-          .github/scripts/capsule-evidence.test.mjs
+          -- pnpm test:evidence
 
       - name: Retain transport evidence
         id: transport_evidence
@@ -161,7 +156,7 @@ jobs:
           evidence-dir: ci-evidence/transport/self-tests
           setup-result: ${{ steps.setup.outcome }}
           result: ${{ steps.transport_tests.outcome }}
-          command: node --test .github/scripts/e2e-evidence.test.mjs .github/scripts/capsule-evidence.test.mjs
+          command: pnpm test:evidence
           expected: |
             log=ci-evidence/transport/self-tests/logs/command.log
 
@@ -169,7 +164,7 @@ jobs:
         if: always()
         env:
           OUTCOMES: >-
-            ${{ steps.setup.outcome }} ${{ steps.consumer_tests.outcome }} ${{ steps.transport_tests.outcome }}
+            ${{ steps.setup.outcome }} ${{ steps.transport_tests.outcome }}
             ${{ steps.transport_evidence.outcome }}
         run: |
           for outcome in $OUTCOMES; do
@@ -564,9 +559,10 @@ jobs:
           done
 
   # This display name is the required status check in branch protection
-  # (maintainers/docs/security.md). Renaming it blocks every merge.
+  # (maintainers/docs/security.md). Renaming it without first updating the live
+  # ruleset blocks every merge.
   gate:
-    name: Capsule E2E (Testcontainers)
+    name: E2E Gate
     if: always()
     needs: [build, transport, demo, storyboard, journeys, playwright, skills]
     runs-on: ubuntu-24.04
@@ -596,3 +592,22 @@ jobs:
             fi
           done
           exit "$failed"
+
+  # Transition shim: the live ruleset still requires the old display name of
+  # `E2E Gate`. Remove this job, and the old name from
+  # .github/security/branches.ruleset.json, once the live ruleset requires
+  # `E2E Gate` instead.
+  legacy-gate:
+    name: Capsule E2E (Testcontainers)
+    if: always()
+    needs: [gate]
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Mirror the E2E Gate result
+        env:
+          GATE_RESULT: ${{ needs.gate.result }}
+        run: |
+          if [[ "$GATE_RESULT" != success ]]; then
+            echo "E2E Gate: $GATE_RESULT" >&2
+            exit 1
+          fi

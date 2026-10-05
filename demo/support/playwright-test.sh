@@ -88,7 +88,8 @@ require_command node
   echo 'playwright-test: PLAYWRIGHT_BROWSERS_PATH must name the prepared browser cache' >&2
   exit 1
 }
-node --test "$SCRIPT_DIR/playwright-report-proof.test.mjs"
+# playwright-report-proof.test.mjs runs with every other demo support test in
+# CI Package Tests (pnpm run test:repo).
 docker info >/dev/null
 
 rm -rf "$RESULT_ROOT"
