@@ -54,13 +54,19 @@ Cheap checks from the repository root:
 
 ```sh
 bash -n demo/acceptance/capsule-test.sh demo/acceptance/capsule-test-support.sh demo/storyboard/capsule-player.sh
-node --test demo/support/*.test.mjs scripts/consumer/*.test.mjs
+node scripts/run-node-tests.mjs 'scripts/consumer/*.test.mjs' scripts/run-node-tests.test.mjs
+node scripts/run-node-tests.mjs 'demo/support/*.test.mjs'
 node --test .github/scripts/e2e-evidence.test.mjs .github/scripts/capsule-evidence.test.mjs
 ```
 
-Inspect helper tests before running them and ensure glob expansion finds actual
-tests. These commands check syntax and helper behavior; they do not exercise the
-full real Docker journey. Follow with the skill's acceptance command for changes
+CI runs the same helper tests: the E2E transport lane runs the consumer script
+tests, and the demo lane runs the demo support tests after `pnpm prepare:consumer`.
+`demo/support/postgres-driver.test.mjs` loads a project driver, so it needs the
+Driver SDK that `pnpm prepare:consumer` installs (or a built workspace
+`@suites/blackbox-driver`). `scripts/run-node-tests.mjs` fails when a glob matches
+no files, a file runs no tests, or a test is skipped or marked todo; plain
+`node --test` passes in each of those cases. These commands check syntax and
+helper behavior; they do not exercise the full real Docker journey. Follow with the skill's acceptance command for changes
 to the registry consumer, CLI interactions, telemetry proof, or lifecycle behavior.
 
 When changing a behavioral assertion, demonstrate that a plausible wrong outcome

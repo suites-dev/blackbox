@@ -138,9 +138,11 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           pnpm-version: ${{ env.PNPM_VERSION }}
 
-      - name: Verify consumer composition guards
+      # The runner fails when a glob matches nothing, a file runs no tests, or a
+      # test is skipped, so a moved or emptied test file cannot pass here.
+      - name: Run the consumer script tests
         id: consumer_tests
-        run: node --test scripts/consumer/composition.test.mjs
+        run: node scripts/run-node-tests.mjs 'scripts/consumer/*.test.mjs' scripts/run-node-tests.test.mjs
 
       - name: Run the evidence transport self-tests
         id: transport_tests
@@ -212,6 +214,17 @@ jobs:
         timeout-minutes: 10
         run: pnpm run prepare:consumer
 
+      # Runs here because postgres-driver.test.mjs loads a project driver, and
+      # that driver resolves the published Driver SDK only after
+      # prepare:consumer installs it into e2e/.blackbox/drivers. The rest of
+      # these helpers need only bash, jq, and Node. playwright-test.sh no
+      # longer runs playwright-report-proof.test.mjs itself, so this glob is
+      # the one place every demo support test runs.
+      - name: Run the demo support tests
+        id: support_tests
+        timeout-minutes: 5
+        run: node scripts/run-node-tests.mjs 'demo/support/*.test.mjs'
+
       - name: Run the acceptance journey
         id: acceptance
         timeout-minutes: 20
@@ -254,8 +267,8 @@ jobs:
         if: always()
         env:
           OUTCOMES: >-
-            ${{ steps.setup.outcome }} ${{ steps.acceptance.outcome }}
-            ${{ steps.archive.outcome }} ${{ steps.evidence.outcome }}
+            ${{ steps.setup.outcome }} ${{ steps.support_tests.outcome }}
+            ${{ steps.acceptance.outcome }} ${{ steps.archive.outcome }} ${{ steps.evidence.outcome }}
         run: |
           for outcome in $OUTCOMES; do
             [[ "$outcome" == success ]] || exit 1

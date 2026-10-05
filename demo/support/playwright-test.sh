@@ -72,7 +72,8 @@ trap 'exit 143' TERM
 require_command docker
 require_command jq
 require_command node
-node --test "$SCRIPT_DIR/playwright-report-proof.test.mjs"
+# playwright-report-proof.test.mjs runs with every other demo support test in
+# the E2E demo lane (node scripts/run-node-tests.mjs 'demo/support/*.test.mjs').
 docker info >/dev/null
 
 rm -rf "$RESULT_ROOT"
