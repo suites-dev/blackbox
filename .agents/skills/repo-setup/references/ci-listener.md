@@ -18,8 +18,9 @@ Compare all checks with applicable workflows and live branch rules/protections,
 including code-scanning requirements. If live rules cannot be read, disclose that
 readiness cannot be fully verified; a checked-in ruleset is not proof of deployment.
 
-Current workflow landmarks are `CI Gate` (build/typecheck, lint, package tests),
-`Capsule E2E (Testcontainers)`, `Security Gate`, and `Validate PR title`.
+Current workflow landmarks are `CI Gate` (build/typecheck, lint, dependency
+boundaries, package tests, package integration tests),
+`E2E Gate` (every E2E lane), `Security Gate`, and `Validate PR title`.
 Inspect underlying jobs too: a successful aggregate must not hide a skipped or
 failed required lane. Check scanner findings as well as successful scanner
 execution. Do not assume Snyk enrollment/integration is complete from policy prose.

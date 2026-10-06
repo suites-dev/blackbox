@@ -127,7 +127,7 @@ Before pushing the first release tag:
 3. Configure the GitHub `npm` environment with required reviewers and prevent the
    person who initiated a deployment from approving it.
 4. Confirm the branch and tag rulesets still cover `main`, `release/**`, and `v*`,
-   and that the required checks include CI, Capsule E2E, PR title, and security.
+   and that the required checks include CI, E2E, PR title, and security.
 
 The first three items are release gates. All package names are new, and npm's trusted
 publisher controls live in an existing package's settings. Confirm the available

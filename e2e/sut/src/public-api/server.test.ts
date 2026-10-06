@@ -1,12 +1,11 @@
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
-import { once } from 'node:events';
-import { fileURLToPath } from 'node:url';
+import path from 'node:path';
 import test from 'node:test';
 
-const serverEntrypoint = fileURLToPath(new URL('../dist/public-api/server.js', import.meta.url));
+const serverEntrypoint = path.join(__dirname, 'server.js');
 
-test('invalid downstream configuration exits before opening infrastructure clients', async () => {
+void test('invalid downstream configuration exits before opening infrastructure clients', async () => {
   const child = spawn(process.execPath, [serverEntrypoint], {
     env: {
       FIXTURE_CONTROL_TOKEN: 'startup-test-token',
@@ -18,7 +17,7 @@ test('invalid downstream configuration exits before opening infrastructure clien
   });
   let stderr = '';
   child.stderr.setEncoding('utf8');
-  child.stderr.on('data', (chunk) => {
+  child.stderr.on('data', (chunk: string) => {
     stderr += chunk;
   });
   let timedOut = false;
@@ -26,7 +25,14 @@ test('invalid downstream configuration exits before opening infrastructure clien
     timedOut = true;
     child.kill('SIGKILL');
   }, 2_000);
-  const [code, signal] = await once(child, 'close');
+  const { code, signal } = await new Promise<{
+    readonly code: number | null;
+    readonly signal: NodeJS.Signals | null;
+  }>((resolve) => {
+    child.once('close', (exitCode, exitSignal) => {
+      resolve({ code: exitCode, signal: exitSignal });
+    });
+  });
   clearTimeout(timeout);
 
   assert.equal(timedOut, false, 'misconfiguration retained an open process handle');

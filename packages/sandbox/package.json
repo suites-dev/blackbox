@@ -33,7 +33,7 @@
     "prepack": "pnpm build",
     "lint": "eslint .",
     "test": "vitest run --config vitest.config.ts",
-    "test:docker": "BLACKBOX_SANDBOX_DOCKER_TEST=1 vitest run --config vitest.config.ts src/acquisition/docker-proof"
+    "test:docker": "BLACKBOX_SANDBOX_DOCKER_TEST=1 vitest run --config vitest.config.ts .docker.test."
   },
   "dependencies": {
     "ajv": "8.20.0",

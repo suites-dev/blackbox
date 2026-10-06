@@ -49,7 +49,7 @@ Keep the original test selection, projects, retry count, shard/repeat settings, 
 
 Effects baselines are separate acceptance references. Read [effects and baselines](effects-and-baselines.md) before creating or updating one. A baseline does not replace targeted response, state, or runtime assertions.
 
-ODC and generated feature files are outside the current product direction.
+ODC and Blackbox-generated feature files are outside the current product direction. Human-authored feature files are an input; agents may draft them only in a drafts path, and a human approves them.
 
 ## Report the result
 
