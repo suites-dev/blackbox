@@ -96,10 +96,12 @@ export async function writeProject(text: string, stepLibrary: StepLibrary, runti
   return opened;
 }
 
-/** Writes, compiles and baselines a project with one feature, compiled against `stepLibrary`. */
-async function createProject(text: string, stepLibrary: StepLibrary, runtimeModule: string): Promise<VerifyProject> {
-  const opened = await writeProject(text, stepLibrary, runtimeModule);
-  // The baseline is what a reviewer would accept: the effective policy of this config, as --list records it.
+/**
+ * Records the effective runner policy of the project's current Playwright
+ * config, as `playwright test --list` records it, as its baseline: what a
+ * reviewer would accept.
+ */
+export async function recordBaseline(opened: VerifyProject): Promise<void> {
   const listed = await opened.run(['--list']);
   let recorded: { readonly schemaVersion: unknown; readonly policy: unknown };
   try {
@@ -112,6 +114,12 @@ async function createProject(text: string, stepLibrary: StepLibrary, runtimeModu
   }
   await writeJson(opened.project.policy.baseline, { schemaVersion: recorded.schemaVersion, policy: recorded.policy });
   await rm(dirname(opened.project.policy.outputFile), { recursive: true, force: true });
+}
+
+/** Writes, compiles and baselines a project with one feature, compiled against `stepLibrary`. */
+async function createProject(text: string, stepLibrary: StepLibrary, runtimeModule: string): Promise<VerifyProject> {
+  const opened = await writeProject(text, stepLibrary, runtimeModule);
+  await recordBaseline(opened);
   return opened;
 }
 
