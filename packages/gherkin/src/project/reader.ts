@@ -11,6 +11,9 @@ export const isObject = (value: unknown): value is JsonObject =>
 
 const ENV_NAME = /^[A-Za-z_][A-Za-z0-9_]*$/u;
 
+// Names that address an object's prototype chain rather than an entry.
+const RESERVED_NAMES = new Set(['__proto__', 'constructor', 'prototype']);
+
 /** Collects every problem with its JSON path instead of stopping at the first. */
 export class ConfigReader {
   readonly problems: string[] = [];
@@ -33,18 +36,27 @@ export class ConfigReader {
     return value;
   }
 
-  /** A record whose keys follow `keyPattern`; null when it is not an object. */
-  record(value: unknown, path: string, keyPattern: RegExp): JsonObject | null {
+  /**
+   * The entries of a record whose keys are names following `keyPattern`.
+   * Invalid and reserved names are reported and left out, so a name from the
+   * file never becomes a property key of anything this reader builds.
+   */
+  entries(value: unknown, path: string, keyPattern: RegExp): readonly (readonly [string, unknown])[] {
     if (!isObject(value)) {
       this.report(path, 'must be an object');
-      return null;
+      return [];
     }
-    for (const key of Object.keys(value)) {
+    return Object.entries(value).filter(([key]) => {
+      if (RESERVED_NAMES.has(key)) {
+        this.report(`${path}.${key}`, 'is a reserved name; choose another name');
+        return false;
+      }
       if (!keyPattern.test(key)) {
         this.report(`${path}.${key}`, `is not a valid name (${String(keyPattern)})`);
+        return false;
       }
-    }
-    return value;
+      return true;
+    });
   }
 
   string(value: unknown, path: string): string {

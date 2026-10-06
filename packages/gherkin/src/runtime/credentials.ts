@@ -28,15 +28,15 @@ export function sandboxCredentials(
   spec: SandboxCredentialSpec,
   environment: NodeJS.ProcessEnv = process.env,
 ): SandboxCredentials {
-  const resolved: Record<string, SandboxCredentials[string]> = {};
-  for (const [name, source] of Object.entries(spec)) {
+  const resolved = Object.entries(spec).map(([name, source]) => {
     const token = environment[source.fromEnv];
     if (token === undefined || token === '') {
       throw new Error(
         `Credential "${name}" reads ${source.fromEnv}, which is not set in the runner environment`,
       );
     }
-    resolved[name] = Object.freeze({ scheme: source.scheme, token });
-  }
-  return Object.freeze(resolved);
+    return [name, Object.freeze({ scheme: source.scheme, token })] as const;
+  });
+  // Own entries only: a credential name never becomes an assignment target.
+  return Object.freeze(Object.fromEntries(resolved));
 }

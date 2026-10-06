@@ -84,7 +84,7 @@ describe('a refused project file', () => {
       'bad profile': {},
       default: {
         environment: { TOKEN: 'literal-value', 'NOT-A-NAME': { fromEnv: 'X' } },
-        credentials: { Admin: { scheme: 'basic', fromEnv: 'not a variable' } },
+        credentials: { Admin: { scheme: 'bearer', fromEnv: 'ADMIN' }, admin: { scheme: 'basic', fromEnv: 'not a variable' } },
       },
     };
     expect(problems({ ...VALID, sandboxes })).toEqual([
@@ -93,8 +93,8 @@ describe('a refused project file', () => {
       'sandboxes.default.environment.TOKEN: must be an object',
       'sandboxes.default.environment.TOKEN.fromEnv: must be a non-empty string',
       expect.stringMatching(/^sandboxes\.default\.credentials\.Admin: is not a valid name/u),
-      'sandboxes.default.credentials.Admin.scheme: must be "bearer", the only credential scheme in v1',
-      'sandboxes.default.credentials.Admin.fromEnv: must name an environment variable',
+      'sandboxes.default.credentials.admin.scheme: must be "bearer", the only credential scheme in v1',
+      'sandboxes.default.credentials.admin.fromEnv: must name an environment variable',
     ]);
   });
 
@@ -117,5 +117,37 @@ describe('a refused project file', () => {
     ]);
     expect(problems({ ...VALID, features: [] })).toEqual(['features: must be a non-empty array of globs']);
     expect(problems([])).toEqual(['must be an object']);
+  });
+});
+
+describe('names that address the prototype chain', () => {
+  // As read from a file: JSON.parse makes "__proto__" an own key, as an attacker-supplied file would.
+  const document = JSON.parse(`{
+    "schemaVersion": 1,
+    "blackboxConfigFile": "blackbox.config.yaml",
+    "features": ["features/**/*.feature"],
+    "outputDir": ".features-gen",
+    "sandboxes": {
+      "__proto__": { "environment": { "polluted": { "fromEnv": "X" } } },
+      "constructor": {},
+      "default": {
+        "environment": { "__proto__": { "fromEnv": "POLLUTED" }, "prototype": { "fromEnv": "X" } },
+        "credentials": { "constructor": { "scheme": "bearer", "fromEnv": "X" } }
+      }
+    }
+  }`) as unknown;
+
+  it('are refused with a clear error and never reach Object.prototype', () => {
+    const before = Object.getOwnPropertyNames(Object.prototype).sort();
+    expect(problems(document)).toEqual([
+      'sandboxes.__proto__: is a reserved name; choose another name',
+      'sandboxes.constructor: is a reserved name; choose another name',
+      'sandboxes.default.environment.__proto__: is a reserved name; choose another name',
+      'sandboxes.default.environment.prototype: is a reserved name; choose another name',
+      'sandboxes.default.credentials.constructor: is a reserved name; choose another name',
+    ]);
+    expect(Object.getOwnPropertyNames(Object.prototype).sort()).toEqual(before);
+    const probe: Record<string, unknown> = {};
+    expect([probe.fromEnv, probe.environment, probe.polluted, probe.scheme]).toEqual([undefined, undefined, undefined, undefined]);
   });
 });
