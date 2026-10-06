@@ -18,7 +18,10 @@ export class SandboxStartError extends Error {
   readonly failure: SandboxStartFailure;
 
   constructor(input: { readonly failure: SandboxStartFailure }) {
-    super('Sandbox startup failed', { cause: input.failure.startupError });
+    // Name the cause, such as the participant that exited, not only the phase.
+    super(`Sandbox startup failed: ${input.failure.startupError.message}`, {
+      cause: input.failure.startupError,
+    });
     this.name = 'SandboxStartError';
     this.failure = input.failure;
   }

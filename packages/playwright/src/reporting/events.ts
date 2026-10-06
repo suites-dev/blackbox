@@ -12,7 +12,8 @@ export interface AttemptEvent {
 
 export interface AttemptProgress {
   emit(phase: string, status: AttemptEvent['status'], detail: string): void;
-  protect(values: Readonly<Record<string, string>>): void;
+  /** Redacts the values of credential-named entries from later progress. */
+  protect(environment: Readonly<Record<string, string>>): void;
 }
 
 export const silentProgress = {
