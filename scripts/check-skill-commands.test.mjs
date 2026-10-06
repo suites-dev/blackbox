@@ -77,8 +77,8 @@ test('negative control: unknown fields in a yaml block fail at the right level',
   assert.deepEqual(messages(check(yaml('      isolation: shared\n'))), [
     '7: unknown catalog entry field isolation',
   ]);
-  assert.deepEqual(messages(check('```yaml\nisolation: shared\n```')), [
-    '2: unknown top-level catalog field isolation',
+  assert.deepEqual(messages(check('```yaml\nschemaVersion: 1\nisolation: shared\n```')), [
+    '3: unknown top-level catalog field isolation',
   ]);
 });
 
@@ -93,7 +93,7 @@ test('a hidden command is not an available command', () => {
 
 test('commands are found behind package-manager runners and line continuations', () => {
   assert.deepEqual(check('`pnpm exec blackbox capsule show <id> --spans`'), []);
-  assert.deepEqual(check('`npm exec -- blackbox --help`'), []);
+  assert.deepEqual(check('`npm exec --no -- blackbox --help`'), []);
   assert.deepEqual(
     messages(check('```sh\nid=$(blackbox capsule up shop \\\n  --json \\\n  --reuse)\n```')),
     ['2: unknown flag --reuse: blackbox capsule up shop --json --reuse'],
@@ -138,4 +138,37 @@ test('a marker with trailing text covers its own line only, not the next one', (
     messages(check('<!-- skill-lint: not-available --> see below\nNo `blackbox capsule exec`.')),
     ['2: unknown command: blackbox capsule exec'],
   );
+});
+
+test('negative control: a command that can download a missing CLI fails', () => {
+  const good = 'Run `npm exec --no -- blackbox --help` or `npx --no blackbox --help`.';
+  assert.deepEqual(check(good), []);
+  assert.deepEqual(check('Run `pnpm exec blackbox --help`.'), []);
+  assert.deepEqual(messages(check('Run `npm exec -- blackbox --help`.')), [
+    '1: may download a missing CLI, use --no: npm exec -- blackbox --help',
+  ]);
+  assert.deepEqual(messages(check('```sh\nnpx blackbox skills list\n```')), [
+    '2: may download a missing CLI, use --no: npx blackbox skills list',
+  ]);
+  assert.deepEqual(check('Run `npx playwright test`.'), []);
+  assert.deepEqual(check(good), []);
+});
+
+test('negative control: a flag on a topic-only invocation fails', () => {
+  assert.deepEqual(check('`blackbox capsule --help`'), []);
+  assert.deepEqual(messages(check('`blackbox capsule --json`')), [
+    '1: unknown flag --json: blackbox capsule --json',
+  ]);
+  assert.deepEqual(messages(check('`blackbox capsule report --format json`')), []);
+});
+
+test('negative control: only a blackbox.config.yaml block is checked as a catalog', () => {
+  const actions = '```yaml\nname: ci\non: push\njobs:\n  test:\n    runs-on: ubuntu-latest\n```';
+  const compose = '```yaml\nservices:\n  web:\n    image: nginx\n```';
+  assert.deepEqual(check(actions, CATALOG), []);
+  assert.deepEqual(check(compose), []);
+  assert.deepEqual(messages(check('```yaml\ncatalog:\n  extra: 1\n```')), []);
+  assert.deepEqual(messages(check('```yaml\nschemaVersion: 1\non: push\n```')), [
+    '3: unknown top-level catalog field on',
+  ]);
 });

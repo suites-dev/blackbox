@@ -118,13 +118,13 @@ function resolve(argv, commands) {
   };
 }
 
-function flagProblem(command, rest, commands) {
+function flagProblem(flags, rest) {
   for (const token of rest) {
     if (token === '--') return undefined;
     if (!token.startsWith('--')) continue;
     const name = token.slice(2).split('=')[0];
     if (!/^[a-z][a-z0-9-]*$/.test(name) || GLOBAL_FLAGS.has(name)) continue;
-    if (!commands.get(command).flags.has(name)) return `unknown flag --${name}`;
+    if (!flags.has(name)) return `unknown flag --${name}`;
   }
   return undefined;
 }
@@ -174,22 +174,41 @@ function markerLines(lines) {
   return marked;
 }
 
+/** `npm exec -- blackbox` and `npx blackbox` fetch a remote package when the CLI is missing. */
+function runnerProblem(text) {
+  for (const match of text.matchAll(/\b(?:npm\s+exec|npx)\b([^;&|)`]*)/g)) {
+    const tokens = match[1].trim().split(/\s+/);
+    const at = tokens.indexOf('blackbox');
+    if (at !== -1 && !tokens.slice(0, at).some((token) => /^--no(?:-install)?$/.test(token))) {
+      return match[0].trim().replace(/\s+/g, ' ');
+    }
+  }
+  return undefined;
+}
+
 function checkCommands(file, lines, commands, problems) {
   const marked = markerLines(lines);
   for (const line of lines) {
     for (const text of commandTexts(line, line.fenced)) {
+      const runner = runnerProblem(text);
+      if (runner !== undefined && !marked.has(line.number)) {
+        const message = `may download a missing CLI, use --no: ${runner}`;
+        problems.push({ file, line: line.number, message });
+      }
       for (const argv of splitCommands(text, line.fenced, commands)) {
         if (argv === '' || argv.startsWith('<') || argv.startsWith('[')) continue;
         const resolved = resolve(argv, commands);
         let problem;
-        if (resolved.topic !== true) {
+        if (resolved.topic === true) {
+          problem = flagProblem(new Set(), resolved.rest);
+        } else {
           if (resolved.id === undefined) {
             if (resolved.path === '' || resolved.path.startsWith('-')) continue;
             problem = 'unknown command';
           } else if (commands.get(resolved.id).hidden) {
             problem = 'hidden command';
           } else {
-            problem = flagProblem(resolved.id, resolved.rest, commands);
+            problem = flagProblem(commands.get(resolved.id).flags, resolved.rest);
           }
         }
         const label = `blackbox ${argv}`;
@@ -209,8 +228,23 @@ function checkCommands(file, lines, commands, problems) {
   }
 }
 
+/** Fenced yaml blocks whose first key is `schemaVersion` or `catalog`: a blackbox.config.yaml. */
+function blackboxConfigBlocks(lines) {
+  const seen = new Set();
+  const blocks = new Set();
+  for (const line of lines) {
+    if (!line.fenced || !/^ya?ml$/.test(line.language) || seen.has(line.block)) continue;
+    const key = /^([A-Za-z][A-Za-z0-9_-]*):/.exec(line.text)?.[1];
+    if (key === undefined) continue;
+    seen.add(line.block);
+    if (key === 'schemaVersion' || key === 'catalog') blocks.add(line.block);
+  }
+  return blocks;
+}
+
 function checkCatalogFields(file, lines, fields, problems) {
   const inCatalogSkill = /(^|\/)packages\/catalog\/skills\//.test(file);
+  const configBlocks = blackboxConfigBlocks(lines);
   let stack = [];
   let block = 0;
   for (const line of lines) {
@@ -219,7 +253,7 @@ function checkCatalogFields(file, lines, fields, problems) {
       stack = [];
     }
     if (line.fenced) {
-      if (/^ya?ml$/.test(line.language)) checkYamlLine(file, line, stack, fields, problems);
+      if (configBlocks.has(line.block)) checkYamlLine(file, line, stack, fields, problems);
       continue;
     }
     if (!inCatalogSkill) continue;

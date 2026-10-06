@@ -13,7 +13,7 @@ do not turn an explanation or inspection request into a live experiment.
 ## Check what is available
 
 Use the project's installed `blackbox` executable through its existing package
-manager, for example `pnpm exec blackbox` or `npm exec -- blackbox`. Do not use a command that downloads a
+manager, for example `pnpm exec blackbox` or `npm exec --no -- blackbox`. Do not use a command that downloads a
 missing CLI on demand. From the target project, inspect:
 
 ```sh
