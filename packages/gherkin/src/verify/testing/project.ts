@@ -4,15 +4,24 @@ import { dirname, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 import { testCatalog } from '../../compiler/testing/context.js';
-import { runPlaywright, stubRuntimeModule, type PlaywrightRun } from '../../compiler/testing/playwright-cli.js';
+import {
+  libraryRuntimeModule,
+  runPlaywright,
+  stubRuntimeModule,
+  type PlaywrightRun,
+} from '../../compiler/testing/playwright-cli.js';
+import { library } from '../../library/index.js';
 import { compilerTestLibrary } from '../../library/testing/compiler-steps.js';
 import { compileProject } from '../../project/compile.js';
 import { loadGherkinProject, type GherkinProject } from '../../project/config.js';
+import type { StepLibrary } from '../../runtime/library.js';
 
 // A disposable Gherkin project run under the real Playwright test CLI with the
 // real defineGherkinConfig and Blackbox reporter. Only the step bodies and
 // Sandbox acquisition are stubbed (compiler/testing/playwright-runtime.ts), so
-// the run, policy and compile manifests are the ones a real project gets.
+// the run, policy and compile manifests are the ones a real project gets. A
+// library project runs the shared step library's own bodies against a
+// loopback system instead (compiler/testing/library-runtime.ts).
 
 export const STUB_LIBRARY = compilerTestLibrary();
 
@@ -74,21 +83,16 @@ function open(root: string): VerifyProject {
   };
 }
 
-/** Writes, compiles and baselines a project whose first scenario's stub answers `status`. */
-export async function verifyProject(status = 200): Promise<VerifyProject> {
+/** Writes, compiles and baselines a project with one feature, compiled against `stepLibrary`. */
+async function createProject(text: string, stepLibrary: StepLibrary, runtimeModule: string): Promise<VerifyProject> {
   const root = await mkdtemp(join(tmpdir(), 'blackbox-gherkin-verify-'));
   roots.push(root);
   await mkdir(join(root, 'features'));
-  await writeFile(join(root, 'features/stub.feature'), feature(status));
+  await writeFile(join(root, 'features/stub.feature'), text);
   await writeFile(join(root, 'blackbox.feature.yaml'), stringify(PROJECT_FILE));
   await writeFile(join(root, 'playwright.config.mjs'), CONFIG);
   const opened = open(root);
-  await compileProject({
-    project: opened.project,
-    catalog: testCatalog,
-    library: STUB_LIBRARY,
-    runtimeModule: stubRuntimeModule,
-  });
+  await compileProject({ project: opened.project, catalog: testCatalog, library: stepLibrary, runtimeModule });
   // The baseline is what a reviewer would accept: the effective policy of this config, as --list records it.
   const listed = await opened.run(['--list']);
   let recorded: { readonly policy: unknown };
@@ -100,6 +104,19 @@ export async function verifyProject(status = 200): Promise<VerifyProject> {
   await writeJson(opened.project.policy.baseline, { schemaVersion: 1, policy: recorded.policy });
   await rm(dirname(opened.project.policy.outputFile), { recursive: true, force: true });
   return opened;
+}
+
+/** A project whose first scenario's stub answers `status`. */
+export function verifyProject(status = 200): Promise<VerifyProject> {
+  return createProject(feature(status), STUB_LIBRARY, stubRuntimeModule);
+}
+
+/**
+ * A project of `text` compiled against the shared step library. Its steps
+ * address the loopback system at BLACKBOX_LOOPBACK_URL, which each run passes.
+ */
+export function libraryProject(text: string): Promise<VerifyProject> {
+  return createProject(text, library, libraryRuntimeModule);
 }
 
 /** A copy of a finished project, to change one file without touching the original. */

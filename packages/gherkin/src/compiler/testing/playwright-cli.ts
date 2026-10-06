@@ -6,6 +6,9 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 /** The generated-code runtime with stub steps and no Sandbox acquisition (see playwright-runtime.ts). */
 export const stubRuntimeModule = pathToFileURL(fileURLToPath(new URL('./playwright-runtime.ts', import.meta.url))).href;
 
+/** The generated-code runtime with the shared library against a loopback system (see library-runtime.ts). */
+export const libraryRuntimeModule = pathToFileURL(fileURLToPath(new URL('./library-runtime.ts', import.meta.url))).href;
+
 // The CLI must be the @playwright/test instance that @suites/blackbox-playwright
 // imports, so it is resolved from that package. Spawning it is not an import.
 async function playwrightCli(): Promise<string> {

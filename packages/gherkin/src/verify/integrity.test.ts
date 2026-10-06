@@ -101,6 +101,11 @@ describe('verify fails when the compiled output is not what ran', () => {
     expect((await verify(recompiled)).problems).toEqual([
       expect.stringMatching(/^the step library differs .*\(compiled compiler-test-library@0\.0\.0 sha256:0{64}, installed compiler-test-library@0\.0\.0 sha256:/u),
     ]);
+    // Same name, version and vocabulary, one step body replaced: the hash covers bodies.
+    const rebodied = compilerTestLibrary([], { 'the response status is {int}': () => Promise.reject(new Error('replaced')) });
+    expect((await verify(passing, rebodied)).problems).toEqual([
+      expect.stringMatching(/^the step library differs .*\(compiled compiler-test-library@0\.0\.0 sha256:\w+, installed compiler-test-library@0\.0\.0 sha256:/u),
+    ]);
     const gated = await verify(passing, compilerTestLibrary(['effects-claims']));
     expect(gated.problems).toEqual(['runtime capabilities differ from the compiled ones (compiled [], installed [effects-claims])']);
   });
