@@ -169,3 +169,46 @@ diagnostics will be added with the effect evaluator.
 
 Effect projection, accepted baselines, drivers, and shared worker
 sandboxes are intentionally outside this package's current surface.
+
+## Runner policy
+
+Timeouts, retries, projects, and test selection decide what a green run means,
+so the Blackbox reporter prints the effective runner policy on stderr at the
+start of every run and attaches the same text to each attempt as
+`blackbox-policy`. The policy is what Playwright resolved from the config, CLI
+flags such as `--retries`, `--timeout`, `--grep`, `--project`, and `--shard`,
+and test declarations such as `test.describe.configure`:
+
+- run settings: `failOnFlakyTests`, `forbidOnly`, `fullyParallel`,
+  `globalTimeout`, `grep`/`grepInvert`, `maxFailures`, `shard`, `workers`;
+- per project: `retries`, `timeout`, expect timeout, `repeatEach`,
+  `grep`/`grepInvert`, `testDir`, `testMatch`, `testIgnore`;
+- the Sandbox cleanup timeout;
+- every selected test with its own `retries` and `timeout`.
+
+The expect timeout is known only when the config uses `defineConfig` from
+`@suites/blackbox-playwright/config`; otherwise it is recorded as `null`.
+
+To verify the policy, commit a baseline and name it in the reporter options:
+
+```ts
+[
+  '@suites/blackbox-playwright/reporter',
+  {
+    policy: {
+      baseline: './blackbox.policy.json',
+      outputFile: './test-results/blackbox-policy.json',
+    },
+  },
+],
+```
+
+Both paths resolve from the config directory. `outputFile` writes the effective
+manifest. Any difference from the baseline, or a missing or malformed baseline,
+prints one line per difference and fails the run, even when every test passed.
+`playwright test --list` performs the same check without running tests. To
+accept a change, copy the written manifest's `schemaVersion` and `policy` over
+the baseline in a reviewed change; `argv` is printed and written but never
+compared, because it holds machine paths and its effect is already in the
+policy. Protect the baseline like test code, for example with CODEOWNERS.
+Sharded CI jobs select different tests, so give each shard its own baseline.
