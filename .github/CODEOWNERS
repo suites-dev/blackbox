@@ -1,6 +1,2 @@
 # Both owners have write access. One independent owner approval is required.
 * @omermorad
-
-# Hard rule 3: the shared Gherkin step library is reviewed on its own. The last
-# matching pattern wins, so this stays below the catch-all.
-/packages/gherkin/src/library/ @omermorad
