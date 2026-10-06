@@ -30,7 +30,6 @@ it('reads runner-policy paths and rejects values that would silently skip verifi
   expect(() => policyOption({ policy: { baseline: 1 } })).toThrow('policy.baseline');
   expect(() => policyOption({ policy: { outputFile: ' ' } })).toThrow('policy.outputFile');
   expect(() => policyOption({ policy: 'policy.json' })).toThrow('policy must be an object');
-  // @ts-expect-error Exercise a JavaScript consumer passing an invalid option.
   expect(() => new BlackboxReporter({ policy: { baseline: false } })).toThrow('policy.baseline');
 });
 
@@ -49,7 +48,6 @@ it('accepts strict verdicts only with an explicit run manifest path', () => {
   expect(() => strictVerdictsOption({ runManifest: 'run.json' })).toThrow(
     'requires verdicts: "strict"',
   );
-  // @ts-expect-error Exercise a JavaScript consumer passing an invalid option.
   expect(() => new BlackboxReporter({ sandboxLifecycle: true, verdicts: true })).toThrow(
     'verdicts must be "strict"',
   );

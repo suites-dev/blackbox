@@ -25,24 +25,6 @@ interface BlackboxPolicyFields {
   readonly outputFile: string;
 }
 
-export type BlackboxPolicyOptions = Readonly<Partial<BlackboxPolicyFields>>;
-
-interface BlackboxReporterFields {
-  /** Print ready/cleanup messages through Playwright's per-test stdout. Default: true. */
-  readonly sandboxLifecycle: boolean;
-  /** Runner-policy verification. The policy is printed on every run either way. */
-  readonly policy: BlackboxPolicyOptions;
-  /**
-   * Fail the run unless every test is supported: one attempt, expected to pass, passed.
-   * Requires `runManifest`. Provisional name; it settles with the options reshaped by #123.
-   */
-  readonly verdicts: 'strict';
-  /** Strict-verdict run manifest path, relative to the config directory. Provisional name. */
-  readonly runManifest: string;
-}
-
-export type BlackboxReporterOptions = Readonly<Partial<BlackboxReporterFields>>;
-
 export interface PolicySettings {
   readonly baseline: string | null;
   readonly outputFile: string | null;
@@ -66,6 +48,10 @@ function pathSetting(policy: object, key: keyof BlackboxPolicyFields): string | 
   return value;
 }
 
+/**
+ * Reads `policy: { baseline?, outputFile? }`. The policy is printed on every run;
+ * `baseline` turns on verification.
+ */
 export function policyOption(input: unknown = {}): PolicySettings {
   const options = optionsObject(input);
   const policy: unknown = 'policy' in options ? options.policy : undefined;
@@ -93,7 +79,11 @@ export function sandboxLifecycleOption(input: unknown = {}): boolean {
   return value;
 }
 
-/** Returns the run manifest path when strict verdicts are enabled. */
+/**
+ * Reads `verdicts: 'strict'` and its required `runManifest` path, relative to the config
+ * directory. Strict verdicts fail the run unless every test is supported: one attempt,
+ * expected to pass, passed. Provisional names; they settle with the options reshaped by #123.
+ */
 export function strictVerdictsOption(
   input: unknown = {},
 ): { readonly kind: 'off' } | { readonly kind: 'strict'; readonly runManifest: string } {

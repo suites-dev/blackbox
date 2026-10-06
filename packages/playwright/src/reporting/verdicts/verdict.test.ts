@@ -7,8 +7,7 @@ import { stripVTControlCharacters } from 'node:util';
 
 import { afterEach, describe, expect, it } from 'vitest';
 
-import type { RunManifest, ScenarioRecord } from '../../reporter.js';
-import { scenarioVerdict } from './verdict.js';
+import { scenarioVerdict, type RunManifest, type ScenarioRecord } from './verdict.js';
 
 const directories: string[] = [];
 
