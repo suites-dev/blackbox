@@ -32,6 +32,13 @@ interface BlackboxReporterFields {
   readonly sandboxLifecycle: boolean;
   /** Runner-policy verification. The policy is printed on every run either way. */
   readonly policy: BlackboxPolicyOptions;
+  /**
+   * Fail the run unless every test is supported: one attempt, expected to pass, passed.
+   * Requires `runManifest`. Provisional name; it settles with the options reshaped by #123.
+   */
+  readonly verdicts: 'strict';
+  /** Strict-verdict run manifest path, relative to the config directory. Provisional name. */
+  readonly runManifest: string;
 }
 
 export type BlackboxReporterOptions = Readonly<Partial<BlackboxReporterFields>>;
@@ -84,6 +91,28 @@ export function sandboxLifecycleOption(input: unknown = {}): boolean {
     throw new Error('Blackbox reporter sandboxLifecycle must be a boolean');
   }
   return value;
+}
+
+/** Returns the run manifest path when strict verdicts are enabled. */
+export function strictVerdictsOption(
+  input: unknown = {},
+): { readonly kind: 'off' } | { readonly kind: 'strict'; readonly runManifest: string } {
+  const options = optionsObject(input);
+  const verdicts: unknown = 'verdicts' in options ? options.verdicts : undefined;
+  const runManifest: unknown = 'runManifest' in options ? options.runManifest : undefined;
+  if (verdicts === undefined) {
+    if (runManifest !== undefined) {
+      throw new Error('Blackbox reporter runManifest requires verdicts: "strict"');
+    }
+    return { kind: 'off' };
+  }
+  if (verdicts !== 'strict') {
+    throw new Error('Blackbox reporter verdicts must be "strict"');
+  }
+  if (typeof runManifest !== 'string' || runManifest.trim() === '') {
+    throw new Error('Blackbox reporter runManifest must be a non-empty path');
+  }
+  return { kind: 'strict', runManifest };
 }
 
 export function sandboxLifecycleConfigured(reporter: PlaywrightTestConfig['reporter']): boolean {

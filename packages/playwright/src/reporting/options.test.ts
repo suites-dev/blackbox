@@ -1,7 +1,7 @@
 import { expect, it } from 'vitest';
 
 import BlackboxReporter from '../reporter.js';
-import { policyOption, sandboxLifecycleEnabled } from './options.js';
+import { policyOption, sandboxLifecycleEnabled, strictVerdictsOption } from './options.js';
 
 it('reads lifecycle output from runner metadata without shared state', () => {
   expect(sandboxLifecycleEnabled({ metadata: { blackboxSandboxLifecycle: true } })).toBe(true);
@@ -32,4 +32,25 @@ it('reads runner-policy paths and rejects values that would silently skip verifi
   expect(() => policyOption({ policy: 'policy.json' })).toThrow('policy must be an object');
   // @ts-expect-error Exercise a JavaScript consumer passing an invalid option.
   expect(() => new BlackboxReporter({ policy: { baseline: false } })).toThrow('policy.baseline');
+});
+
+it('accepts strict verdicts only with an explicit run manifest path', () => {
+  expect(strictVerdictsOption({ sandboxLifecycle: true })).toEqual({ kind: 'off' });
+  expect(
+    strictVerdictsOption({ sandboxLifecycle: true, verdicts: 'strict', runManifest: 'run.json' }),
+  ).toEqual({ kind: 'strict', runManifest: 'run.json' });
+  expect(() => strictVerdictsOption({ verdicts: 'lenient', runManifest: 'run.json' })).toThrow(
+    'verdicts must be "strict"',
+  );
+  expect(() => strictVerdictsOption({ verdicts: 'strict' })).toThrow('non-empty path');
+  expect(() => strictVerdictsOption({ verdicts: 'strict', runManifest: ' ' })).toThrow(
+    'non-empty path',
+  );
+  expect(() => strictVerdictsOption({ runManifest: 'run.json' })).toThrow(
+    'requires verdicts: "strict"',
+  );
+  // @ts-expect-error Exercise a JavaScript consumer passing an invalid option.
+  expect(() => new BlackboxReporter({ sandboxLifecycle: true, verdicts: true })).toThrow(
+    'verdicts must be "strict"',
+  );
 });
