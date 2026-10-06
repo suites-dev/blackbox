@@ -7,9 +7,10 @@ import { setTimeout as delay } from 'node:timers/promises';
 // `no-row` is spike E's negative control: it answers 201 but never persists
 // the subscription row, and so never enqueues the order either. It is not
 // evidence about the real application, only about whether a step tells the two
-// apart.
+// apart. Mode `not-ready` is correct except that GET /health answers 503
+// `{"status": "starting"}`, the stated wrong case for the health check.
 
-export type StubMode = 'correct' | 'no-row';
+export type StubMode = 'correct' | 'no-row' | 'not-ready';
 
 export const STUB_TOKEN = 'stub-fixture-control-token';
 
@@ -74,7 +75,7 @@ function createState(mode: StubMode) {
       return { status: 409, body: { outcome: 'already-subscribed', userId } };
     }
     const row = { id: `subscription_${userId}`, userId, tier, status: 'active' } as const;
-    if (mode === 'correct') {
+    if (mode !== 'no-row') {
       subscriptions.push(row);
       if (tier === 'pro') {
         setTimeout(() => orders.push({ id: `order_${userId}`, userId }), ORDER_DELAY_MS).unref();
@@ -83,6 +84,22 @@ function createState(mode: StubMode) {
     return { status: 201, body: { userId, tier, subscription: { id: row.id, status: row.status } } };
   };
   return { subscribe, snapshot: () => ({ subscriptions: [...subscriptions], orders: [...orders] }) };
+}
+
+/** The read-only routes: inspection, health, a redirect and not found. */
+function sendRead(request: IncomingMessage, response: ServerResponse, mode: StubMode, snapshot: () => unknown): void {
+  const path = request.url ?? '/';
+  if (request.method === 'GET' && path === '/fixture/state') {
+    const authorized = request.headers.authorization === `Bearer ${STUB_TOKEN}`;
+    send(response, authorized ? 200 : 401, authorized ? snapshot() : { error: 'unauthorized' });
+  } else if (request.method === 'GET' && path === '/health') {
+    const ready = mode !== 'not-ready';
+    send(response, ready ? 200 : 503, { status: ready ? 'ready' : 'starting' });
+  } else if (path === '/fixture/moved') {
+    send(response, 302, {}, { location: '/fixture/state' });
+  } else {
+    send(response, 404, { error: 'not-found' });
+  }
 }
 
 export async function startStubSystem(mode: StubMode): Promise<StubSystem> {
@@ -105,13 +122,8 @@ export async function startStubSystem(mode: StubMode): Promise<StubSystem> {
       const result = state.subscribe(userId);
       await delay(RESPONSE_DELAY_MS);
       send(response, result.status, result.body);
-    } else if (request.method === 'GET' && path === '/fixture/state') {
-      const authorized = request.headers.authorization === `Bearer ${STUB_TOKEN}`;
-      send(response, authorized ? 200 : 401, authorized ? state.snapshot() : { error: 'unauthorized' });
-    } else if (path === '/fixture/moved') {
-      send(response, 302, {}, { location: '/fixture/state' });
     } else {
-      send(response, 404, { error: 'not-found' });
+      sendRead(request, response, mode, state.snapshot);
     }
   };
   const server: Server = createServer((request, response) => {

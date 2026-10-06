@@ -63,6 +63,11 @@ export function sendJson(request: RequestContext, sandbox: Sandbox, input: JsonR
   });
 }
 
+/** Sends a bodyless GET from the client to the Sandbox entrypoint, without credentials. */
+export function sendGet(request: RequestContext, sandbox: Sandbox, path: string): Promise<Exchange> {
+  return exchange(request, sandbox, { method: 'GET', path, headers: {}, data: null });
+}
+
 /** Reads an inspection endpoint, presenting a credential's headers. */
 export function inspect(
   request: RequestContext,
