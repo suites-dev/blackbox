@@ -205,27 +205,26 @@ sandboxes are intentionally outside this package's current surface.
 
 ## Runner policy
 
-Timeouts, retries, projects, and test selection decide what a green run means,
+Timeouts, retries, workers, and test selection decide what a green run means,
 so the Blackbox reporter prints the effective runner policy on stderr at the
 start of every run and attaches the same text to each attempt as
 `blackbox-policy`. The policy is what Playwright resolved from the config, CLI
 flags such as `--retries`, `--timeout`, `--grep`, `--project`, and `--shard`,
-and test declarations such as `test.describe.configure`:
+and test declarations such as `test.describe.configure`. It keeps only the
+settings that can change a verdict, and omits every field at its default:
 
-- run settings: `failOnFlakyTests`, `forbidOnly`, `fullyParallel`,
-  `globalTimeout`, `grep`/`grepInvert`, `maxFailures`, `shard`, `workers`;
+- `workers`, the global timeout, the config's `grep`/`grepInvert`, and `shard`;
 - the command-line test selection, which the config's `grep` does not show:
   `--grep`, `--grep-invert`, `--project`, file filters, `--last-failed`,
   `--last-failed-file`, `--only-changed`, `--test-list`, `--test-list-invert`
   and `--no-deps`, so a filter that still selects every test is surfaced too;
-- per project: `retries`, `timeout`, expect timeout, `repeatEach`,
-  `grep`/`grepInvert`, `testDir` (relative to the config directory), `testMatch`,
-  `testIgnore`;
+- per project: `retries`, `timeout`, expect timeout, `grep`/`grepInvert`,
+  `testDir` (relative to the config directory), `testMatch`, and `testIgnore`;
 - the Sandbox cleanup timeout;
-- every selected test with its own `retries` and `timeout`.
+- a test only when its own `retries` or `timeout` differ from its project's.
 
 The expect timeout is known only when the config uses `defineConfig` from
-`@suites/blackbox-playwright/config`; otherwise it is recorded as `null`.
+`@suites/blackbox-playwright/config`; otherwise it is omitted.
 
 To verify the policy, commit a baseline and name it in the reporter options:
 
@@ -234,19 +233,38 @@ To verify the policy, commit a baseline and name it in the reporter options:
   '@suites/blackbox-playwright/reporter',
   {
     policy: {
-      baseline: './blackbox.policy.json',
-      outputFile: './test-results/blackbox-policy.json',
+      baseline: './blackbox.policy.yaml',
+      outputFile: './test-results/blackbox-policy.yaml',
     },
   },
 ],
 ```
 
+A baseline is short:
+
+```yaml
+schemaVersion: 3
+policy:
+  workers: 2
+  projects:
+    e2e:
+      retries: 1
+      testDir: tests
+```
+
 Both paths resolve from the config directory. `outputFile` writes the effective
-manifest. Any difference from the baseline, or a missing or malformed baseline,
-prints one line per difference and fails the run, even when every test passed.
+policy as YAML. Any difference from the baseline, or a missing or malformed
+baseline, prints one line per difference and fails the run, even when every
+test passed:
+
+```text
+baseline: ./blackbox.policy.yaml differs (1 difference(s)):
+  policy.projects.e2e.retries: baseline 1, effective 3
+```
+
 `playwright test --list` performs the same check without running tests. To
-accept a change, copy the written manifest's `schemaVersion` and `policy` over
-the baseline in a reviewed change; `argv` is printed and written but never
-compared, because it holds machine paths; its selection flags are compared
-through `selection`. Protect the baseline like test code, for example with CODEOWNERS.
-Sharded CI jobs select different tests, so give each shard its own baseline.
+accept a change, copy the written policy file over the baseline in a reviewed
+change. Its `argv` is printed and written but never compared, because it holds
+machine paths; its selection flags are compared through `selection`. Protect
+the baseline like test code, for example with CODEOWNERS. Sharded CI jobs
+select different tests, so give each shard its own baseline.

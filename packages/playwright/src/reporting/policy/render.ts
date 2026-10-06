@@ -1,6 +1,6 @@
 import { reportText } from '../text.js';
 import type { BaselineComparison } from './compare.js';
-import type { PolicyManifest, TestPolicy } from './manifest.js';
+import type { PolicyManifest } from './manifest.js';
 
 /** Long selections stay readable; the written manifest keeps every difference. */
 const maxPrintedDifferences = 50;
@@ -15,26 +15,11 @@ function fields(record: object): string {
     .join(' ');
 }
 
-function distribution(tests: readonly TestPolicy[], field: keyof TestPolicy): string {
-  const counts = new Map<number, number>();
-  for (const test of tests) {
-    counts.set(test[field], (counts.get(test[field]) ?? 0) + 1);
-  }
-  return [...counts]
-    .sort(([left], [right]) => left - right)
-    .map(([value, count]) => `${value}×${count}`)
-    .join(', ');
-}
-
-function testsLine(manifest: PolicyManifest): string {
-  const tests = Object.values(manifest.policy.tests);
-  if (tests.length === 0) {
-    return 'tests: 0 selected';
-  }
-  return (
-    `tests: ${tests.length} selected; ` +
-    `retries ${distribution(tests, 'retries')}; timeout ${distribution(tests, 'timeout')}`
-  );
+function testsLine(manifest: PolicyManifest, selected: number): string {
+  const own = Object.keys(manifest.policy.tests ?? {}).length;
+  return own === 0
+    ? `tests: ${selected} selected; all use their project's retries and timeout`
+    : `tests: ${selected} selected; ${own} with their own retries or timeout`;
 }
 
 function baselineLines(comparison: BaselineComparison): string[] {
@@ -58,17 +43,25 @@ function baselineLines(comparison: BaselineComparison): string[] {
 }
 
 /** The runner-policy block printed at the start of every run and attached to every test. */
-export function policyReport(manifest: PolicyManifest, comparison: BaselineComparison): string {
-  const { policy } = manifest;
+export function policyReport(
+  manifest: PolicyManifest,
+  comparison: BaselineComparison,
+  selectedTests: number,
+): string {
+  const { projects, selection, sandboxCleanupTimeoutMs, tests, ...run } = manifest.policy;
   const lines = [
-    'Blackbox runner policy',
-    `  run: ${fields(policy.run)}`,
-    `  selection: ${fields(policy.selection)}`,
-    ...Object.entries(policy.projects).map(
-      ([name, project]) => `  project ${show(name)}: ${fields(project)}`,
+    'Blackbox runner policy (fields at their default are omitted)',
+    `  run: ${fields(run)}`,
+    `  selection: ${selection === undefined ? 'none on the command line' : fields(selection)}`,
+    ...Object.entries(projects).map(
+      ([name, project]) =>
+        `  project ${show(name)}: ${Object.keys(project).length === 0 ? 'defaults' : fields(project)}`,
     ),
-    `  blackbox: ${fields(policy.blackbox)}`,
-    `  ${testsLine(manifest)}`,
+    ...(sandboxCleanupTimeoutMs === undefined
+      ? []
+      : [`  blackbox: sandboxCleanupTimeoutMs=${sandboxCleanupTimeoutMs}`]),
+    `  ${testsLine(manifest, selectedTests)}`,
+    ...Object.entries(tests ?? {}).map(([name, own]) => `    ${name}: ${fields(own)}`),
     `  argv: ${show(manifest.argv.slice(2))}`,
     ...baselineLines(comparison).map((line) => `  ${line}`),
   ];

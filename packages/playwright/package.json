@@ -49,7 +49,8 @@
     "@suites/blackbox-inst-runtime-node": "workspace:*",
     "@suites/blackbox-instrumentation": "workspace:*",
     "@suites/blackbox-otel-collector": "workspace:*",
-    "@suites/blackbox-sandbox": "workspace:*"
+    "@suites/blackbox-sandbox": "workspace:*",
+    "yaml": "2.9.1"
   },
   "peerDependencies": {
     "@playwright/test": ">=1.61.0 <2"

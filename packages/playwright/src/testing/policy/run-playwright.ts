@@ -18,7 +18,8 @@ export interface Run {
   readonly directory: string;
 }
 
-export type RunOptions = { readonly variant: string } | { readonly baseline: string };
+/** The config variant (default `baseline`) and the baseline path (default the fixture's). */
+export type RunOptions = Readonly<Partial<{ variant: string; baseline: string }>>;
 
 const directories: string[] = [];
 
@@ -55,8 +56,8 @@ export async function runPolicyFixture(
       env: {
         ...process.env,
         BLACKBOX_PLAYWRIGHT_OUTPUT_DIR: directory,
-        BLACKBOX_TEST_POLICY_VARIANT: 'variant' in options ? options.variant : 'baseline',
-        BLACKBOX_TEST_POLICY_BASELINE: 'baseline' in options ? options.baseline : undefined,
+        BLACKBOX_TEST_POLICY_VARIANT: options.variant ?? 'baseline',
+        BLACKBOX_TEST_POLICY_BASELINE: options.baseline,
         FORCE_COLOR: '0',
       },
       stdio: ['ignore', 'pipe', 'pipe'],

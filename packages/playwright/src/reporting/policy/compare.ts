@@ -1,6 +1,8 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
+import { parse } from 'yaml';
+
 import { policySchemaVersion, type PolicyManifest } from './manifest.js';
 
 export type BaselineComparison =
@@ -64,7 +66,7 @@ export function policyDifferences(baseline: unknown, effective: unknown): string
 function readBaseline(path: string): { policy: unknown } | { reason: string } {
   let document: unknown;
   try {
-    document = JSON.parse(readFileSync(path, 'utf8'));
+    document = parse(readFileSync(path, 'utf8')) as unknown;
   } catch (error) {
     return { reason: error instanceof Error ? error.message : String(error) };
   }

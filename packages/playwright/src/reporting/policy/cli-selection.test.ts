@@ -101,9 +101,7 @@ it(
       'primary',
       'secondary',
     ]);
-    expect(run.stderr).toContain(
-      'selection: grep="." grepInvert=null projects=["primary","secondary"] testFilters=[]',
-    );
+    expect(run.stderr).toContain('selection: grep="." projects=["primary","secondary"]');
     expect(run.stderr).toContain('tests: 4 selected');
     expect(run.code).toBe(1);
   },

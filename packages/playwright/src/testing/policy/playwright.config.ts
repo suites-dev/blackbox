@@ -6,7 +6,7 @@ const output = process.env.BLACKBOX_PLAYWRIGHT_OUTPUT_DIR;
 if (output === undefined) {
   throw new Error('Missing output directory');
 }
-// Each variant changes one runner-policy input that baseline.json pins.
+// Each variant changes one runner-policy input that baseline.yaml pins.
 const variant = process.env.BLACKBOX_TEST_POLICY_VARIANT ?? 'baseline';
 
 export default defineConfig({
@@ -27,8 +27,8 @@ export default defineConfig({
       {
         sandboxLifecycle: false,
         policy: {
-          baseline: process.env.BLACKBOX_TEST_POLICY_BASELINE ?? './baseline.json',
-          outputFile: relative(import.meta.dirname, join(output, 'blackbox-policy.json')),
+          baseline: process.env.BLACKBOX_TEST_POLICY_BASELINE ?? './baseline.yaml',
+          outputFile: relative(import.meta.dirname, join(output, 'blackbox-policy.yaml')),
         },
       },
     ],

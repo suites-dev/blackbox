@@ -1,0 +1,12 @@
+schemaVersion: 3
+policy:
+  workers: 1
+  projects:
+    primary:
+      retries: 1
+      testDir: tests
+      testMatch: policy.spec.ts
+    secondary:
+      retries: 1
+      testDir: tests
+      testMatch: policy.spec.ts

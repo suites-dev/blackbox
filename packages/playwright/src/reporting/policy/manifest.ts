@@ -2,36 +2,49 @@ import { isAbsolute, relative, sep } from 'node:path';
 
 import type { FullConfig, FullProject, Suite } from '@playwright/test/reporter';
 
-import type { BlackboxFixturePolicy } from '../../fixture-lifecycle/timeouts.js';
+import {
+  defaultFixturePolicy,
+  type BlackboxFixturePolicy,
+} from '../../fixture-lifecycle/timeouts.js';
 import { cliSelection, type CliSelection } from './cli-selection.js';
 
 /** defineConfig copies expect.timeout here because FullProject does not expose it. */
 export const expectTimeoutsMetadataKey = 'blackboxExpectTimeouts';
 
-/** 2 added `selection`, the CLI test selection. */
-export const policySchemaVersion = 2;
+/**
+ * 2 added `selection`, the CLI test selection. 3 keeps only what can change a verdict
+ * (workers, retries, timeouts, test selection and the Sandbox cleanup timeout), omits
+ * defaults, and lists a test only when its retries or timeout differ from its project's.
+ */
+export const policySchemaVersion = 3;
 
 type Pattern = string | RegExp | readonly (string | RegExp)[] | null;
 type PatternValue = string | readonly string[] | null;
 
+/** Playwright's defaults; a field at its default is omitted from the policy. */
+const defaults = {
+  globalTimeout: 0,
+  grep: '/.*/',
+  retries: 0,
+  timeout: 30_000,
+  expectTimeout: 5_000,
+  testDir: '.',
+  testMatch: '**/*.@(spec|test).?(c|m)[jt]s?(x)',
+} as const;
+
 export interface RunPolicy {
-  readonly failOnFlakyTests: boolean;
-  readonly forbidOnly: boolean;
-  readonly fullyParallel: boolean;
+  readonly workers: number;
   readonly globalTimeout: number;
   readonly grep: PatternValue;
   readonly grepInvert: PatternValue;
-  readonly maxFailures: number;
-  readonly shard: string | null;
-  readonly workers: number;
+  readonly shard: string;
 }
 
 export interface ProjectPolicy {
   readonly retries: number;
   readonly timeout: number;
-  /** null when the config was not built with defineConfig from this package. */
-  readonly expectTimeout: number | null;
-  readonly repeatEach: number;
+  /** Known only when the config was built with defineConfig from this package. */
+  readonly expectTimeout: number;
   readonly grep: PatternValue;
   readonly grepInvert: PatternValue;
   readonly testDir: string;
@@ -44,16 +57,20 @@ export interface TestPolicy {
   readonly timeout: number;
 }
 
-/** Everything compared against the protected baseline. */
-export interface EffectivePolicy {
-  readonly run: RunPolicy;
-  /** CLI test selection; FullConfig's grep and projects hold only the config file's values. */
-  readonly selection: CliSelection;
-  readonly projects: Readonly<Record<string, ProjectPolicy>>;
-  readonly blackbox: BlackboxFixturePolicy;
-  /** The selected tests, keyed by project and title path. */
-  readonly tests: Readonly<Record<string, TestPolicy>>;
-}
+/** Everything compared against the protected baseline. Fields at their default are omitted. */
+export type EffectivePolicy = Readonly<
+  Pick<RunPolicy, 'workers'> &
+    Partial<Omit<RunPolicy, 'workers'>> &
+    Partial<{
+      /** CLI test selection; FullConfig's grep and projects hold only the config file's values. */
+      readonly selection: Partial<CliSelection>;
+      readonly sandboxCleanupTimeoutMs: number;
+      /** Tests whose retries or timeout differ from their project's, keyed by project and title path. */
+      readonly tests: Readonly<Record<string, Partial<TestPolicy>>>;
+    }> & {
+      readonly projects: Readonly<Record<string, Partial<ProjectPolicy>>>;
+    }
+>;
 
 export interface PolicyManifest {
   readonly schemaVersion: typeof policySchemaVersion;
@@ -70,6 +87,19 @@ function patternValue(pattern: Pattern): PatternValue {
     return String(pattern);
   }
   return pattern.map(String);
+}
+
+/** Keeps the entries that are set and not at their default: not null, false, empty or equal to it. */
+function withoutDefaults<T extends object>(
+  entries: readonly (readonly [keyof T & string, unknown, unknown])[],
+): Partial<T> {
+  const kept = entries.filter(([, value, fallback]) => {
+    if (value === null || value === false || (Array.isArray(value) && value.length === 0)) {
+      return false;
+    }
+    return JSON.stringify(value) !== JSON.stringify(fallback);
+  });
+  return Object.fromEntries(kept.map(([key, value]) => [key, value])) as Partial<T>;
 }
 
 function portablePath(root: string, path: string): string {
@@ -89,18 +119,21 @@ function expectTimeoutOf(config: FullConfig, projectName: string): number | null
   return typeof value === 'number' ? value : null;
 }
 
-function projectPolicy(config: FullConfig, project: FullProject, configDir: string): ProjectPolicy {
-  return {
-    retries: project.retries,
-    timeout: project.timeout,
-    expectTimeout: expectTimeoutOf(config, project.name),
-    repeatEach: project.repeatEach,
-    grep: patternValue(project.grep),
-    grepInvert: patternValue(project.grepInvert),
-    testDir: portablePath(configDir, project.testDir),
-    testMatch: patternValue(project.testMatch),
-    testIgnore: patternValue(project.testIgnore),
-  };
+function projectPolicy(
+  config: FullConfig,
+  project: FullProject,
+  configDir: string,
+): Partial<ProjectPolicy> {
+  return withoutDefaults<ProjectPolicy>([
+    ['retries', project.retries, defaults.retries],
+    ['timeout', project.timeout, defaults.timeout],
+    ['expectTimeout', expectTimeoutOf(config, project.name), defaults.expectTimeout],
+    ['grep', patternValue(project.grep), defaults.grep],
+    ['grepInvert', patternValue(project.grepInvert), null],
+    ['testDir', portablePath(configDir, project.testDir), defaults.testDir],
+    ['testMatch', patternValue(project.testMatch), defaults.testMatch],
+    ['testIgnore', patternValue(project.testIgnore), null],
+  ]);
 }
 
 function uniqueKey(entries: Record<string, unknown>, name: string): string {
@@ -111,44 +144,55 @@ function uniqueKey(entries: Record<string, unknown>, name: string): string {
   return key;
 }
 
-function projectPolicies(config: FullConfig, configDir: string): Record<string, ProjectPolicy> {
-  const projects: Record<string, ProjectPolicy> = {};
+function projectPolicies(
+  config: FullConfig,
+  configDir: string,
+): Record<string, Partial<ProjectPolicy>> {
+  const projects: Record<string, Partial<ProjectPolicy>> = {};
   for (const project of config.projects) {
     projects[uniqueKey(projects, project.name)] = projectPolicy(config, project, configDir);
   }
   return projects;
 }
 
-function testPolicies(suite: Suite): Record<string, TestPolicy> {
-  const tests = suite
-    .allTests()
-    .map(
-      (test) =>
-        [
-          test
-            .titlePath()
-            .filter((part) => part.length > 0)
-            .join(' › '),
-          { retries: test.retries, timeout: test.timeout },
-        ] as const,
-    )
-    .sort(([left], [right]) => left.localeCompare(right));
-  // repeatEach copies share one key; the project policy records repeatEach itself.
-  return Object.fromEntries(tests);
+/** The root suite as the policy reads it: one child suite per project. */
+export interface ProjectSuites {
+  readonly suites: readonly Pick<Suite, 'project' | 'allTests'>[];
 }
 
-function runPolicy(config: FullConfig): RunPolicy {
-  return {
-    failOnFlakyTests: config.failOnFlakyTests,
-    forbidOnly: config.forbidOnly,
-    fullyParallel: config.fullyParallel,
-    globalTimeout: config.globalTimeout,
-    grep: patternValue(config.grep),
-    grepInvert: patternValue(config.grepInvert),
-    maxFailures: config.maxFailures,
-    shard: config.shard === null ? null : `${config.shard.current}/${config.shard.total}`,
-    workers: config.workers,
-  };
+/** Tests whose retries or timeout differ from their project's, with only the fields that differ. */
+function testPolicies(suite: ProjectSuites): Record<string, Partial<TestPolicy>> {
+  const tests: (readonly [string, Partial<TestPolicy>])[] = [];
+  for (const projectSuite of suite.suites) {
+    const project = projectSuite.project();
+    if (project === undefined) {
+      continue;
+    }
+    for (const test of projectSuite.allTests()) {
+      const own = withoutDefaults<TestPolicy>([
+        ['retries', test.retries, project.retries],
+        ['timeout', test.timeout, project.timeout],
+      ]);
+      if (Object.keys(own).length > 0) {
+        const key = test
+          .titlePath()
+          .filter((part) => part.length > 0)
+          .join(' › ');
+        tests.push([key, own]);
+      }
+    }
+  }
+  // repeatEach copies share one key.
+  return Object.fromEntries(tests.sort(([left], [right]) => left.localeCompare(right)));
+}
+
+function runPolicy(config: FullConfig): Partial<RunPolicy> {
+  return withoutDefaults<RunPolicy>([
+    ['globalTimeout', config.globalTimeout, defaults.globalTimeout],
+    ['grep', patternValue(config.grep), defaults.grep],
+    ['grepInvert', patternValue(config.grepInvert), null],
+    ['shard', config.shard === null ? null : `${config.shard.current}/${config.shard.total}`, null],
+  ]);
 }
 
 function argvOf(config: FullConfig): string[] {
@@ -164,20 +208,33 @@ function argvOf(config: FullConfig): string[] {
  */
 export function capturePolicy(
   config: FullConfig,
-  suite: Suite,
+  suite: ProjectSuites,
   fixturePolicy: BlackboxFixturePolicy,
   configDir: string,
 ): PolicyManifest {
   const argv = argvOf(config);
+  const selection = withoutDefaults<CliSelection>(
+    Object.entries(cliSelection(argv)).map(
+      ([key, value]) => [key as keyof CliSelection, value, null] as const,
+    ),
+  );
+  const tests = testPolicies(suite);
   return {
     schemaVersion: policySchemaVersion,
     argv,
     policy: {
-      run: runPolicy(config),
-      selection: cliSelection(argv),
+      workers: config.workers,
+      ...runPolicy(config),
+      ...(Object.keys(selection).length > 0 ? { selection } : {}),
       projects: projectPolicies(config, configDir),
-      blackbox: { sandboxCleanupTimeoutMs: fixturePolicy.sandboxCleanupTimeoutMs },
-      tests: testPolicies(suite),
+      ...withoutDefaults<{ sandboxCleanupTimeoutMs: number }>([
+        [
+          'sandboxCleanupTimeoutMs',
+          fixturePolicy.sandboxCleanupTimeoutMs,
+          defaultFixturePolicy.sandboxCleanupTimeoutMs,
+        ],
+      ]),
+      ...(Object.keys(tests).length > 0 ? { tests } : {}),
     },
   };
 }

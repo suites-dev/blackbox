@@ -17,11 +17,11 @@ function isBlackboxReporter(specifier: string): boolean {
 
 interface BlackboxPolicyFields {
   /**
-   * Protected baseline manifest, relative to the config directory. Any difference from
-   * the effective runner policy fails the run.
+   * Protected YAML baseline of the runner policy, relative to the config directory. Any
+   * difference from the effective runner policy fails the run.
    */
   readonly baseline: string;
-  /** Where to write the effective runner-policy manifest, relative to the config directory. */
+  /** Where to write the effective runner policy as YAML, relative to the config directory. */
   readonly outputFile: string;
 }
 

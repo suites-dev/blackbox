@@ -2,6 +2,7 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 
 import type { FullConfig, Suite } from '@playwright/test/reporter';
+import { stringify } from 'yaml';
 
 import { defaultFixturePolicy } from '../../fixture-lifecycle/timeouts.js';
 import type { PolicySettings } from '../options.js';
@@ -31,8 +32,12 @@ export function evaluateRunnerPolicy(
   if (settings.outputFile !== null) {
     const outputFile = resolve(configDir, settings.outputFile);
     mkdirSync(dirname(outputFile), { recursive: true });
-    writeFileSync(outputFile, `${JSON.stringify(manifest, null, 2)}\n`);
+    // YAML, like the baseline: accepting a change is copying this file over it.
+    writeFileSync(outputFile, stringify(manifest, { lineWidth: 0 }));
   }
   const comparison = compareWithBaseline(manifest, settings.baseline, configDir);
-  return { report: policyReport(manifest, comparison), failure: verificationFailure(comparison) };
+  return {
+    report: policyReport(manifest, comparison, suite.allTests().length),
+    failure: verificationFailure(comparison),
+  };
 }
