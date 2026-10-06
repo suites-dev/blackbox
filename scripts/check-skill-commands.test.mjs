@@ -132,3 +132,10 @@ test('the marker fails on a command that exists, and covers only its own line', 
     ['3: unknown command: blackbox capsule exec'],
   );
 });
+
+test('a marker with trailing text covers its own line only, not the next one', () => {
+  assert.deepEqual(
+    messages(check('<!-- skill-lint: not-available --> see below\nNo `blackbox capsule exec`.')),
+    ['2: unknown command: blackbox capsule exec'],
+  );
+});

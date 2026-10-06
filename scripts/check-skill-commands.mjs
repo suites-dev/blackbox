@@ -9,6 +9,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const MARKER = /skill-lint:\s*not-available/;
+const MARKER_LINE = '<!-- skill-lint: not-available -->';
 const RUNNER_PREFIX = /^(?:\$\s+)?(?:(?:pnpm|npm|yarn)\s+exec\s+(?:--\s+)?|npx\s+(?:--\s+)?)?/;
 const TOPICS = new Set(['capsule', 'catalog', 'driver', 'inst', 'skills', 'skill']);
 const GLOBAL_FLAGS = new Set(['help', 'version']);
@@ -162,7 +163,7 @@ function markerLines(lines) {
   for (let index = 0; index < lines.length; index += 1) {
     if (!MARKER.test(lines[index].text)) continue;
     marked.add(lines[index].number);
-    if (lines[index].text.replace(/<!--.*?-->/g, '').trim() === '') {
+    if (lines[index].text.trim() === MARKER_LINE) {
       for (let next = index + 1; next < lines.length; next += 1) {
         if (lines[next].text.trim() === '') continue;
         marked.add(lines[next].number);
@@ -176,9 +177,6 @@ function markerLines(lines) {
 function checkCommands(file, lines, commands, problems) {
   const marked = markerLines(lines);
   for (const line of lines) {
-    if (MARKER.test(line.text) && line.fenced === false && /^\s*<!--.*-->\s*$/.test(line.text)) {
-      continue;
-    }
     for (const text of commandTexts(line, line.fenced)) {
       for (const argv of splitCommands(text, line.fenced, commands)) {
         if (argv === '' || argv.startsWith('<') || argv.startsWith('[')) continue;
