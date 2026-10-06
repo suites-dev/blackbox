@@ -52,7 +52,7 @@ export function globToRegExp(glob) {
     } else if (glob[index] === '*') {
       source += '[^/]*';
     } else {
-      source += glob[index].replace(/[$()+.?[\\\]^{|}]/, '\\$&');
+      source += glob[index].replace(/[$()+.?[\\\]^{|}]/g, '\\$&');
     }
   }
   return new RegExp(`^${source}$`);

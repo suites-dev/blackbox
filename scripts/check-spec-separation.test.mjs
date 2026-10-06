@@ -11,6 +11,7 @@ import {
   classifyChanges,
   classifyManifest,
   classifyPath,
+  globToRegExp,
 } from './check-spec-separation.mjs';
 
 const SCRIPT = fileURLToPath(new URL('check-spec-separation.mjs', import.meta.url));
@@ -380,6 +381,19 @@ test('path classes: spec wins, Markdown is neutral, everything else is code', ()
   };
   for (const [path, expected] of Object.entries(cases)) {
     assert.equal(classifyPath(path), expected, path);
+  }
+});
+
+test('glob characters outside the wildcards match literally', () => {
+  const pattern = globToRegExp('patches/@scope__lib@1.0.0+(build)[1]{a|b}^$.patch');
+  assert.ok(pattern.test('patches/@scope__lib@1.0.0+(build)[1]{a|b}^$.patch'));
+  for (const other of [
+    'patches/@scope__lib@1x0x0+(build)[1]{a|b}^$.patch',
+    'patches/@scope__lib@1.0.0+(build)[1]{a|b}^$xpatch',
+    'patches/@scope__lib@1.0.00+(build)[1]{a|b}^$.patch',
+    'patches/@scope__lib@1.0.0build1a.patch',
+  ]) {
+    assert.equal(pattern.test(other), false, other);
   }
 });
 
