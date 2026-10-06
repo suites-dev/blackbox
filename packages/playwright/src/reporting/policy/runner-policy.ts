@@ -25,13 +25,14 @@ export function evaluateRunnerPolicy(
   config: FullConfig,
   suite: Suite,
   settings: PolicySettings,
+  configDir: string,
 ): RunnerPolicyResult {
-  const manifest = capturePolicy(config, suite, defaultFixturePolicy);
+  const manifest = capturePolicy(config, suite, defaultFixturePolicy, configDir);
   if (settings.outputFile !== null) {
-    const outputFile = resolve(config.rootDir, settings.outputFile);
+    const outputFile = resolve(configDir, settings.outputFile);
     mkdirSync(dirname(outputFile), { recursive: true });
     writeFileSync(outputFile, `${JSON.stringify(manifest, null, 2)}\n`);
   }
-  const comparison = compareWithBaseline(manifest, settings.baseline, config.rootDir);
+  const comparison = compareWithBaseline(manifest, settings.baseline, configDir);
   return { report: policyReport(manifest, comparison), failure: verificationFailure(comparison) };
 }

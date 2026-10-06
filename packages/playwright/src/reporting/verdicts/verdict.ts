@@ -104,12 +104,12 @@ function attemptExecutionId(result: TestResult): string | null {
   }
 }
 
-export function scenarioRecord(test: TestCase, rootDir: string): ScenarioRecord {
+export function scenarioRecord(test: TestCase, configDir: string): ScenarioRecord {
   return {
     id: test.id,
     titlePath: test.titlePath().filter((title) => title !== ''),
     location: {
-      file: relative(rootDir, test.location.file),
+      file: relative(configDir, test.location.file),
       line: test.location.line,
       column: test.location.column,
     },

@@ -52,11 +52,11 @@ export default class BlackboxReporter implements Reporter {
   }
 
   onBegin(config: FullConfig, suite: Suite): void {
-    this.runnerPolicy = evaluateRunnerPolicy(config, suite, this.policySettings);
+    // FullConfig.rootDir is the test directory; option paths resolve from the config file.
+    const configDir = config.configFile === undefined ? process.cwd() : dirname(config.configFile);
+    this.runnerPolicy = evaluateRunnerPolicy(config, suite, this.policySettings, configDir);
     // stderr keeps stdout reporters (json, junit without outputFile) parseable.
     process.stderr.write(`${this.runnerPolicy.report}\n`);
-    // FullConfig.rootDir is the test directory; manifest paths are relative to the config file.
-    const configDir = config.configFile === undefined ? process.cwd() : dirname(config.configFile);
     this.run = { configDir, suite };
   }
 
