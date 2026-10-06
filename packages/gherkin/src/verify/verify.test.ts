@@ -73,6 +73,23 @@ describe('verify fails on the run', () => {
     ]);
   });
 
+  it('after a rerun without the Blackbox reporter, instead of judging the earlier run (benchmark F1, stale-L2)', {
+    timeout: 60_000,
+  }, async () => {
+    const copy = await copyOf(passing);
+    expect((await verify(copy)).ok).toBe(true);
+    // The system now fails, and the rerun replaces the reporter and the timeout on the command line.
+    const rerun = await copy.run(['--reporter=list', '--timeout=5000'], { BLACKBOX_STUB_STATUS: '503' });
+    expect(rerun.code, rerun.output).toBe(1);
+    expect(rerun.output).toContain('stub response status is 503, not 200');
+    const result = await verify(copy);
+    expect(result.ok).toBe(false);
+    expect(result.problems).toEqual([
+      `no run manifest at ${copy.project.runManifest}: the Blackbox reporter did not write one, so the run had no strict verdicts (was the reporter replaced on the command line?)`,
+      `no runner-policy manifest at ${copy.project.policy.outputFile}: the Blackbox reporter did not record the effective runner policy`,
+    ]);
+  });
+
   it('when a compiled scenario did not run', { timeout: 60_000 }, async () => {
     const copy = await copyOf(passing);
     const run = await copy.run(['--grep', 'again']);

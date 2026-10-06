@@ -1,10 +1,11 @@
 import { createRequire } from 'node:module';
-import { isAbsolute } from 'node:path';
+import { extname, isAbsolute } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { defineConfig } from '@suites/blackbox-playwright/config';
 
 import { loadGherkinProject, type GherkinProject } from '../project/config.js';
+import { MANIFESTS_METADATA_KEY } from './clear-manifests.js';
 
 type BlackboxPlaywrightConfig = Parameters<typeof defineConfig>[0];
 type ReporterEntry = Exclude<NonNullable<BlackboxPlaywrightConfig['reporter']>, string>[number];
@@ -28,6 +29,11 @@ export const GENERATED_TESTS = '**/*.feature.spec.mjs';
 // the reporter and the config share one @suites/blackbox-playwright.
 const REPORTER_SPECIFIER = '@suites/blackbox-playwright/reporter';
 const reporterFile = createRequire(import.meta.url).resolve(REPORTER_SPECIFIER);
+
+// The global setup next to this module: .js when built, .ts under the blackbox-source condition.
+const clearManifestsFile = fileURLToPath(
+  new URL(`./clear-manifests${extname(fileURLToPath(import.meta.url))}`, import.meta.url),
+);
 
 function configFilePath(file: string | URL): string {
   const path = file instanceof URL ? fileURLToPath(file) : file;
@@ -61,6 +67,13 @@ function reportersOf(reporter: BlackboxPlaywrightConfig['reporter']): ReporterEn
   return list;
 }
 
+function globalSetupsOf(globalSetup: BlackboxPlaywrightConfig['globalSetup']): readonly string[] {
+  if (globalSetup === undefined) {
+    return [];
+  }
+  return typeof globalSetup === 'string' ? [globalSetup] : globalSetup;
+}
+
 function strictReporter(project: GherkinProject): ReporterEntry {
   return [
     reporterFile,
@@ -77,7 +90,9 @@ function strictReporter(project: GherkinProject): ReporterEntry {
  * tests, fails flaky tests and `.only`, and adds the Blackbox reporter with
  * strict verdicts, the run manifest and the protected runner-policy baseline
  * from blackbox.feature.yaml (hard rules 4 and 5). It throws when the caller
- * sets any of these itself.
+ * sets any of these itself. A global setup, run before the caller's own,
+ * deletes both manifests first, so a run without the Blackbox reporter leaves
+ * none for `verify` to mistake for its own.
  */
 export function defineGherkinConfig(input: GherkinPlaywrightConfig) {
   const { gherkinConfigFile, ...config } = input;
@@ -93,6 +108,8 @@ export function defineGherkinConfig(input: GherkinPlaywrightConfig) {
     testMatch: GENERATED_TESTS,
     failOnFlakyTests: true,
     forbidOnly: true,
+    globalSetup: [clearManifestsFile, ...globalSetupsOf(config.globalSetup)],
+    metadata: { ...config.metadata, [MANIFESTS_METADATA_KEY]: [project.runManifest, project.policy.outputFile] },
     reporter: [...reportersOf(config.reporter), strictReporter(project)],
   });
 }

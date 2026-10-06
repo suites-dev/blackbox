@@ -33,10 +33,14 @@ function world(fixtures: StepFixtures): ScenarioWorld {
   return fixtures.world;
 }
 
-/** The stub system: the barrier records a 200 response and the claim compares against it. */
+/**
+ * The stub system: the barrier records a 200 response, or the status in
+ * BLACKBOX_STUB_STATUS to stand for a system that changed between runs, and
+ * the claim compares against it.
+ */
 const library = compilerTestLibrary([], {
   'the flow is sealed by the terminal response(s)': ({ fixtures }) => {
-    world(fixtures).set('status', 200);
+    world(fixtures).set('status', Number(process.env.BLACKBOX_STUB_STATUS ?? '200'));
     return Promise.resolve();
   },
   'the response status is {int}': ({ fixtures, parameters }) => {

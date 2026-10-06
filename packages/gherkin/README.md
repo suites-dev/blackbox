@@ -80,7 +80,9 @@ and it refuses any key it does not document:
 `defineGherkinConfig` from
 `@suites/blackbox-gherkin/config` builds the Playwright config from this file. It runs only the generated
 tests, sets `failOnFlakyTests` and `forbidOnly`, and adds the Blackbox reporter with strict verdicts, the
-run manifest and the policy baseline. It throws when the caller sets any of these itself:
+run manifest and the policy baseline. It throws when the caller sets any of these itself. Its global setup,
+which runs before the config's own, deletes both manifests, so a run whose reporter was replaced on the
+command line leaves none and `verify` fails instead of judging an earlier run:
 
 ```ts
 import { defineGherkinConfig } from '@suites/blackbox-gherkin/config';

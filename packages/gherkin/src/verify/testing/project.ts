@@ -63,14 +63,14 @@ export async function cleanupVerifyProjects(): Promise<void> {
 export interface VerifyProject {
   readonly root: string;
   readonly project: GherkinProject;
-  run(args?: readonly string[]): Promise<PlaywrightRun>;
+  run(args?: readonly string[], env?: Readonly<Record<string, string>>): Promise<PlaywrightRun>;
 }
 
 function open(root: string): VerifyProject {
   return {
     root,
     project: loadGherkinProject(join(root, 'blackbox.feature.yaml')),
-    run: (args = []) => runPlaywright(root, ['--config', 'playwright.config.mjs', ...args]),
+    run: (args = [], env = {}) => runPlaywright(root, ['--config', 'playwright.config.mjs', ...args], env),
   };
 }
 

@@ -21,7 +21,11 @@ export interface PlaywrightRun {
 }
 
 /** Runs the real Playwright test CLI in `cwd`; workspace packages resolve to their sources. */
-export async function runPlaywright(cwd: string, args: readonly string[]): Promise<PlaywrightRun> {
+export async function runPlaywright(
+  cwd: string,
+  args: readonly string[],
+  env: Readonly<Record<string, string>> = {},
+): Promise<PlaywrightRun> {
   const cli = await playwrightCli();
   return new Promise((resolve) => {
     execFile(
@@ -32,6 +36,7 @@ export async function runPlaywright(cwd: string, args: readonly string[]): Promi
         encoding: 'utf8',
         env: {
           ...process.env,
+          ...env,
           NODE_OPTIONS: [process.env.NODE_OPTIONS, '--conditions=blackbox-source'].filter(Boolean).join(' '),
           FORCE_COLOR: '0',
         },

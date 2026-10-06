@@ -1,23 +1,27 @@
-import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { access, mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { pathToFileURL } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { GherkinConfigError } from '../project/config.js';
+import clearManifests, { MANIFESTS_METADATA_KEY } from './clear-manifests.js';
 import { defineGherkinConfig, GENERATED_TESTS } from './define.js';
 
 // Requirements (task 2.4, report sections 4.4 and 5.2): defineGherkinConfig
 // runs only the generated tests, sets failOnFlakyTests and forbidOnly, and adds
 // the Blackbox reporter with strict verdicts, the run manifest and the policy
 // baseline from blackbox.feature.yaml. It throws when a caller sets any of
-// these itself, instead of letting a config override them silently.
+// these itself, instead of letting a config override them silently. Its
+// global setup deletes both manifests before any test runs (benchmark F1), so
+// a run without the Blackbox reporter cannot leave an earlier run's behind.
 
 let root = '';
 let gherkinConfigFile = '';
 const reporterFile = createRequire(import.meta.url).resolve('@suites/blackbox-playwright/reporter');
+const clearManifestsFile = fileURLToPath(new URL('./clear-manifests.ts', import.meta.url));
 
 beforeAll(async () => {
   root = await mkdtemp(join(tmpdir(), 'blackbox-gherkin-config-'));
@@ -65,6 +69,25 @@ describe('defineGherkinConfig', () => {
     });
   });
 
+  it('clears both manifests in a global setup that runs before the caller\'s own', () => {
+    const manifests = [join(root, 'results/blackbox-run.json'), join(root, 'results/blackbox-policy.json')];
+    expect(defineGherkinConfig({ gherkinConfigFile })).toMatchObject({
+      globalSetup: [clearManifestsFile],
+      metadata: { [MANIFESTS_METADATA_KEY]: manifests },
+    });
+    expect(
+      defineGherkinConfig({ gherkinConfigFile, globalSetup: './setup.ts', metadata: { [MANIFESTS_METADATA_KEY]: [] } }),
+    ).toMatchObject({
+      globalSetup: [clearManifestsFile, './setup.ts'],
+      metadata: { [MANIFESTS_METADATA_KEY]: manifests },
+    });
+    expect(defineGherkinConfig({ gherkinConfigFile, globalSetup: ['./a.ts', './b.ts'] }).globalSetup).toEqual([
+      clearManifestsFile,
+      './a.ts',
+      './b.ts',
+    ]);
+  });
+
   it('accepts a file URL and keeps the list reporter when none is configured', () => {
     const config = defineGherkinConfig({ gherkinConfigFile: pathToFileURL(gherkinConfigFile) });
     expect(config.reporter).toEqual([['list'], [reporterFile, expect.objectContaining({ verdicts: 'strict' })]]);
@@ -97,5 +120,27 @@ describe('defineGherkinConfig', () => {
     const invalid = join(root, 'invalid.gherkin.json');
     await writeFile(invalid, JSON.stringify({ schemaVersion: 1 }));
     expect(() => defineGherkinConfig({ gherkinConfigFile: invalid })).toThrow(GherkinConfigError);
+  });
+});
+
+describe('the global setup', () => {
+  const exists = (file: string) => access(file).then(
+    () => true,
+    () => false,
+  );
+
+  it('deletes the listed manifests and tolerates one that is already gone', async () => {
+    const dir = join(root, 'clear');
+    await mkdir(dir, { recursive: true });
+    const run = join(dir, 'blackbox-run.json');
+    await writeFile(run, '{}');
+    await clearManifests({ metadata: { [MANIFESTS_METADATA_KEY]: [run, join(dir, 'blackbox-policy.json')] } });
+    expect(await exists(run)).toBe(false);
+  });
+
+  it('refuses a config that does not list absolute manifest paths', async () => {
+    for (const metadata of [{}, { [MANIFESTS_METADATA_KEY]: ['results/blackbox-run.json'] }]) {
+      await expect(clearManifests({ metadata })).rejects.toThrow('build the config with defineGherkinConfig');
+    }
   });
 });
