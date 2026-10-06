@@ -203,8 +203,13 @@ function checkCommands(file, lines, commands, problems) {
           problem = flagProblem(new Set(), resolved.rest);
         } else {
           if (resolved.id === undefined) {
-            if (resolved.path === '' || resolved.path.startsWith('-')) continue;
-            problem = 'unknown command';
+            if (resolved.path === '' || resolved.path.startsWith('-')) {
+              // A root invocation: only the global flags exist.
+              problem = flagProblem(new Set(), argv.split(/\s+/));
+              if (problem === undefined) continue;
+            } else {
+              problem = 'unknown command';
+            }
           } else if (commands.get(resolved.id).hidden) {
             problem = 'hidden command';
           } else {

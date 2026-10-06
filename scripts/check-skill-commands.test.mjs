@@ -162,6 +162,12 @@ test('negative control: a flag on a topic-only invocation fails', () => {
   assert.deepEqual(messages(check('`blackbox capsule report --format json`')), []);
 });
 
+test('negative control: a mistyped root flag fails', () => {
+  assert.deepEqual(check('`blackbox --help`'), []);
+  assert.deepEqual(check('`blackbox --version`'), []);
+  assert.deepEqual(messages(check('`blackbox --jzon`')), ['1: unknown flag --jzon: blackbox --jzon']);
+});
+
 test('negative control: only a blackbox.config.yaml block is checked as a catalog', () => {
   const actions = '```yaml\nname: ci\non: push\njobs:\n  test:\n    runs-on: ubuntu-latest\n```';
   const compose = '```yaml\nservices:\n  web:\n    image: nginx\n```';
