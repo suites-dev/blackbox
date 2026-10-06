@@ -35,7 +35,7 @@ For each fact you report, keep the exact file or report identity, schema version
 
 ## Read reports as projections
 
-Reports are read-only projections of retained records. Use `blackbox capsule report serve --session <id>` for the local viewer or `blackbox capsule report export --session <id> --format json|html` for a snapshot. `blackbox capsule report <id>` writes both formats to `.blackbox/reports/`. Rendering must not mutate source evidence or strengthen its authority. Reporting on a test run, as opposed to a capsule, is planned and has no command yet.
+Reports are read-only projections of retained records. Use `blackbox capsule report serve --session <id>` for the local viewer or `blackbox capsule report export --session <id> --format json` (or `--format html`) for a snapshot of a running or stopped capsule. `blackbox capsule report <id>` writes both formats to `.blackbox/reports/`; pass the capsule ID explicitly, since `capsule down` clears the current capsule when it names the stopped one. Use `blackbox capsule show <id>` for the terminal view of the same records, including its `provisional`, `complete` or `incomplete` status. Rendering must not mutate source evidence or strengthen its authority. Reporting on a test run, as opposed to a capsule, is planned and has no command yet.
 
 A report command succeeding means that output was written. It does not mean the application passed or every selected test ran. Confirm the report names the requested source ID. Read any version, unsupported-section, or data warnings before summarizing.
 
