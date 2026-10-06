@@ -4,6 +4,7 @@ import { join } from 'node:path';
 
 import { afterEach, beforeEach, expect, it } from 'vitest';
 
+import { compareWithBaseline as exportedComparison } from '../../reporter.js';
 import { compareWithBaseline, policyDifferences } from './compare.js';
 import type { PolicyManifest } from './manifest.js';
 
@@ -123,4 +124,8 @@ it.each([
   expect(comparison.kind).toBe('invalid');
   expect(comparison).toMatchObject({ baseline: 'baseline.json' });
   expect('reason' in comparison && comparison.reason).toContain(reason);
+});
+
+it('is exported from the reporter entry for tools that verify a finished run', () => {
+  expect(exportedComparison).toBe(compareWithBaseline);
 });

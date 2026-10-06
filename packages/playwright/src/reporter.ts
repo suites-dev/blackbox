@@ -21,6 +21,17 @@ import { evaluateRunnerPolicy, type RunnerPolicyResult } from './reporting/polic
 import { reportText } from './reporting/text.js';
 import { scenarioRecord, verdictLine, type RunManifest } from './reporting/verdicts/verdict.js';
 
+// The manifests this reporter writes, and the baseline comparison it applies,
+// for tools that verify a finished run from its files.
+export { compareWithBaseline, type BaselineComparison } from './reporting/policy/compare.js';
+export type { CliSelection } from './reporting/policy/cli-selection.js';
+export type { PolicyManifest } from './reporting/policy/manifest.js';
+export type {
+  NotSupportedReason,
+  RunManifest,
+  ScenarioRecord,
+} from './reporting/verdicts/verdict.js';
+
 /**
  * Native reporters own terminal rendering; Blackbox adds retained diagnostics and
  * surfaces the effective runner policy. Blackbox config metadata controls per-test
