@@ -1,0 +1,63 @@
+{
+  "name": "@suites/blackbox-gherkin",
+  "version": "0.0.1-alpha.0",
+  "private": true,
+  "type": "module",
+  "description": "Compiles human-authored Gherkin feature files into native Blackbox Playwright tests.",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "NOTICE",
+    "src",
+    "!src/**/*.test.*",
+    "!src/**/*.spec.*",
+    "!src/**/*.fixture.*",
+    "!src/**/testing/**",
+    "!src/**/test-fixtures/**",
+    "!src/**/__tests__/**"
+  ],
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "blackbox-source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "prebuild": "rimraf dist",
+    "build": "tsc --project tsconfig.build.json",
+    "prepack": "pnpm build",
+    "lint": "eslint .",
+    "test": "vitest run --config vitest.config.ts"
+  },
+  "dependencies": {
+    "@cucumber/cucumber-expressions": "20.1.0",
+    "@cucumber/gherkin": "42.0.1",
+    "@cucumber/messages": "34.2.1",
+    "@suites/blackbox-catalog": "workspace:*",
+    "@suites/blackbox-playwright": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "rimraf": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=22.15"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/suites-dev/blackbox.git",
+    "directory": "packages/gherkin"
+  },
+  "homepage": "https://github.com/suites-dev/blackbox/tree/main/packages/gherkin#readme",
+  "bugs": {
+    "url": "https://github.com/suites-dev/blackbox/issues"
+  },
+  "author": "Suites"
+}
