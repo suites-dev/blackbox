@@ -33,10 +33,12 @@ function notes(entry: StepVocabularyEntry, offered: readonly string[]): readonly
 }
 
 function entryLines(entry: StepVocabularyEntry, keyword: string, offered: readonly string[]): readonly string[] {
+  // A step that cannot compile here gets no argument template: the JSON and request-table shapes are v1's.
+  const usable = entry.requires === null || offered.includes(entry.requires);
   return [
     `  ${entry.expression}`,
     `    ${keyword} ${entry.example}`,
-    ...ARGUMENTS[entry.argument].map((line) => `    ${line}`),
+    ...(usable ? ARGUMENTS[entry.argument] : []).map((line) => `    ${line}`),
     ...notes(entry, offered).map((note) => `    - ${note}`),
   ];
 }

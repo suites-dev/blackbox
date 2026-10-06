@@ -191,8 +191,11 @@ describe('blackbox gherkin check-change and steps', () => {
     expect(run.exit).toBe(0);
     expect(run.stdout).toContain('Stimulus (When):\n  the client sends GET {string}\n    When the client sends GET "/health"');
     expect(run.stdout).toContain("parameter 3 names a credential of the feature's Sandbox profile");
+    expect(run.stdout).toContain(
+      'Effects claims (Then):\n  the effects satisfy:\n    Then the effects satisfy:\n    - needs capability "effects-claims", which this runtime does not offer: it does not compile',
+    );
     const json = JSON.parse((await runCommand(GherkinSteps, ['--json'])).stdout) as { steps: unknown[] };
-    expect(json.steps).toHaveLength(16);
+    expect(json.steps).toHaveLength(18);
     expect(Object.keys(COMMANDS).sort()).toEqual([
       'gherkin:check',
       'gherkin:check-change',

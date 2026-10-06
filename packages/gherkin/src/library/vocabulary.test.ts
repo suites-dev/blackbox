@@ -12,6 +12,9 @@ import { library } from './index.js';
 // name a credential of the feature's Sandbox profile, and polling barriers
 // carry their deadline, at the parameters listed here. Benchmark F2: response
 // claims address members of the body by JSON Pointer, as state claims do.
+// Benchmark F14: the planned effects claim and participant command are listed
+// with the capability they need, so a feature that uses one fails to compile
+// naming that capability instead of reporting an undefined step.
 
 type Entry = Pick<
   StepDefinition,
@@ -159,6 +162,27 @@ const V1 = [
   },
 ] satisfies readonly Entry[];
 
+const GATED = [
+  {
+    sample: 'the effects satisfy:',
+    expression: 'the effects satisfy:',
+    kind: 'effects-claim',
+    argument: 'data-table',
+    fixtures: ['effects', 'world'],
+    requires: 'effects-claims',
+    ...plain,
+  },
+  {
+    sample: 'the "postgres" participant runs SQL:',
+    expression: 'the {string} participant runs SQL:',
+    kind: 'setup',
+    argument: 'doc-string',
+    fixtures: ['sandbox'],
+    requires: 'participant-exec',
+    ...plain,
+  },
+] satisfies readonly (Entry & Pick<StepDefinition, 'requires'>)[];
+
 describe('step library v1', () => {
   it('resolves each sample to exactly its own step, with no capability required', () => {
     for (const { sample, expression, kind, argument, fixtures, credentialParameter, deadlineParameter } of V1) {
@@ -193,7 +217,7 @@ describe('step library v1', () => {
     // The hash covers bodies and checks, so the listed steps take the library's own; another step or a missing one changes it.
     const codeOf = (sample: string): Pick<StepDefinition, 'run' | 'check'> => {
       const step = library.resolve(sample);
-      if (step.status !== 'resolved') {
+      if (step.status !== 'resolved' && step.status !== 'unavailable') {
         throw new Error(`${sample} does not resolve`);
       }
       return { run: step.definition.run, check: step.definition.check };
@@ -201,7 +225,10 @@ describe('step library v1', () => {
     const listed = createStepLibrary({
       name: library.identity.name,
       version: library.identity.version,
-      definitions: V1.map((entry) => ({ ...entry, requires: null, example: entry.sample, ...codeOf(entry.sample) })),
+      definitions: [
+        ...V1.map((entry) => ({ ...entry, requires: null, example: entry.sample, ...codeOf(entry.sample) })),
+        ...GATED.map((entry) => ({ ...entry, example: entry.sample, ...codeOf(entry.sample) })),
+      ],
       capabilities: [],
     });
     expect(library.identity).toEqual(listed.identity);
@@ -209,16 +236,26 @@ describe('step library v1', () => {
     expect(library.capabilities).toEqual([]);
   });
 
-  it('leaves effects claims, participant commands and invented steps undefined', () => {
+  it('leaves invented steps undefined', () => {
     for (const text of [
-      'the effects satisfy:',
-      'the "postgres" participant runs SQL:',
       'the client sends POST "/subscriptions"',
       'the client sends DELETE "/health"',
       'the response status is 201 within 5 seconds',
       'the state at "/s" equals:',
     ]) {
       expect(library.resolve(text), text).toEqual({ status: 'undefined' });
+    }
+  });
+});
+
+describe('gated steps (benchmark F14)', () => {
+  it('lists effects claims and participant commands with a capability this runtime does not offer', () => {
+    for (const { sample, expression, kind, argument, requires } of GATED) {
+      expect(library.resolve(sample), sample).toEqual({
+        status: 'unavailable',
+        capability: requires,
+        definition: expect.objectContaining({ expression, kind, argument, requires }),
+      });
     }
   });
 });
