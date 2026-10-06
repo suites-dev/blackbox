@@ -6,6 +6,7 @@ import { dirname, join } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import {
+  baselineReferences,
   checkSeparation,
   classifyChanges,
   classifyManifest,
@@ -55,11 +56,19 @@ snapshots:
   typescript@${typescript}: {}
 `;
 
+const playwrightConfig = (baseline, retries = 0) => `export default {
+  retries: ${retries},
+  reporter: [['@suites/blackbox-playwright/reporter', { policy: { baseline: '${baseline}' } }]],
+};
+`;
+
 const BASE_FILES = {
   'e2e/features/subscription-intake.feature': 'Feature: Subscription intake\n',
   'e2e/sut/app.ts': 'export const app = 1;\n',
   'packages/playwright/src/fixture.ts': 'export const fixture = 1;\n',
   'README.md': '# Fixture\n',
+  'e2e/playwright.config.ts': playwrightConfig('./policy/runner-baseline.json'),
+  'e2e/policy/runner-baseline.json': '{ "policy": { "retries": 0 } }\n',
   'package.json': manifest('1.0.0'),
   'pnpm-lock.yaml': lockfile('1.0.0'),
 };
@@ -254,6 +263,81 @@ test('a non-library dependency bump alone is code', (t) => {
   );
 });
 
+test('the runner-policy baseline is spec, so it cannot move with runner config', async (t) => {
+  await t.test('accepting a new baseline alone passes', (t) => {
+    const root = fixturePullRequest(t, {
+      files: { 'e2e/policy/runner-baseline.json': '{ "policy": { "retries": 2 } }\n' },
+    });
+    const run = check(root);
+    assert.equal(run.status, 0, run.stderr);
+    assert.deepEqual(listed(run.stdout), ['spec e2e/policy/runner-baseline.json']);
+  });
+
+  await t.test('changing the runner config and its baseline together fails', (t) => {
+    const root = fixturePullRequest(t, {
+      files: {
+        'e2e/playwright.config.ts': playwrightConfig('./policy/runner-baseline.json', 2),
+        'e2e/policy/runner-baseline.json': '{ "policy": { "retries": 2 } }\n',
+      },
+    });
+    const run = check(root);
+    assert.equal(run.status, 1);
+    assert.match(
+      run.stderr,
+      /Spec: e2e\/policy\/runner-baseline\.json\. Code: e2e\/playwright\.config\.ts\.$/m,
+    );
+  });
+
+  await t.test('pointing the reporter at a new baseline it adds fails', (t) => {
+    const root = fixturePullRequest(t, {
+      files: {
+        'e2e/playwright.config.ts': playwrightConfig('./policy/relaxed.json', 2),
+        'e2e/policy/relaxed.json': '{ "policy": { "retries": 2 } }\n',
+      },
+    });
+    const run = check(root);
+    assert.equal(run.status, 1);
+    assert.deepEqual(listed(run.stdout), [
+      'spec e2e/policy/relaxed.json',
+      'code e2e/playwright.config.ts',
+    ]);
+  });
+
+  await t.test('the Blackbox runner policy baseline is spec without a config naming it', (t) => {
+    const root = fixturePullRequest(t, {
+      files: {
+        'packages/playwright/src/testing/policy/baseline.json': '{}\n',
+        'packages/playwright/src/fixture.ts': 'export const fixture = 2;\n',
+      },
+    });
+    const run = check(root);
+    assert.equal(run.status, 1);
+    assert.deepEqual(listed(run.stdout), [
+      'spec packages/playwright/src/testing/policy/baseline.json',
+      'code packages/playwright/src/fixture.ts',
+    ]);
+  });
+});
+
+test('baseline references resolve from the config directory', () => {
+  const config = `
+    reporter: [[reporter, { sandboxLifecycle: false, policy: {
+      baseline: process.env.BLACKBOX_TEST_POLICY_BASELINE ?? './baseline.json',
+      outputFile: join(output, 'blackbox-policy.json'),
+    } }]],
+    other: { baseline: "../shared/blackbox.policy.json" },
+    skipped: [{ baseline: \`\${root}/policy.json\` }, { baseline: '/etc/policy.json' }, { baseline: '../../../../../../out.json' }],
+  `;
+  assert.deepEqual(
+    baselineReferences('packages/playwright/src/testing/policy/playwright.config.ts', config),
+    [
+      'packages/playwright/src/testing/policy/baseline.json',
+      'packages/playwright/src/testing/shared/blackbox.policy.json',
+    ],
+  );
+  assert.deepEqual(baselineReferences('playwright.config.ts', config), ['baseline.json']);
+});
+
 test('the check refuses arguments it cannot use and manifests it cannot read', (t) => {
   const root = fixturePullRequest(t, { files: { 'package.json': '{ "name": ' } });
   assert.equal(check(root, []).status, 2);
@@ -273,6 +357,9 @@ test('path classes: spec wins, Markdown is neutral, everything else is code', ()
     'blackbox.gherkin.json': 'spec',
     'e2e/blackbox.gherkin.json': 'spec',
     'blackbox.policy.json': 'spec',
+    'e2e/blackbox.policy.json': 'spec',
+    'packages/playwright/src/testing/policy/baseline.json': 'spec',
+    'packages/playwright/src/testing/policy/playwright.config.ts': 'code',
     'patches/@suites__blackbox-gherkin@1.0.0.patch': 'spec',
     'docs/gherkin.md': 'neutral',
     'README.md': 'neutral',

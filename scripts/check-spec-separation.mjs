@@ -1,4 +1,5 @@
 import { execFileSync } from 'node:child_process';
+import { posix } from 'node:path';
 import { argv, exit } from 'node:process';
 import { fileURLToPath } from 'node:url';
 
@@ -12,7 +13,10 @@ import { fileURLToPath } from 'node:url';
 // package.json, pnpm-lock.yaml and pnpm-workspace.yaml are read by content: an
 // entry that names the step-library package (version, catalog, override,
 // patch) is spec, any other changed entry is code. A renamed path counts under
-// both its old and its new name. Usage:
+// both its old and its new name. The runner-policy baseline is spec too: every
+// path a config file names as the Blackbox reporter's `policy.baseline`, at the
+// merge base or at HEAD, joins the spec class, so one change cannot alter the
+// runner code or config and also accept the result in the baseline. Usage:
 //   node scripts/check-spec-separation.mjs --base <ref> [--head <ref>]
 // CI passes the pull request's base and runs the base branch's copy of this
 // file from a temporary directory, so keep it self-contained (Node built-ins
@@ -24,6 +28,7 @@ export const REPOSITORY_CLASSES = {
     'packages/gherkin/src/library/**',
     '**/blackbox.gherkin.json',
     '**/blackbox.policy.json',
+    'packages/playwright/src/testing/policy/baseline.json',
     '**/patches/@suites__blackbox-gherkin@*.patch',
   ],
   // Spec patterns win, so Markdown inside a spec path stays spec.
@@ -55,9 +60,12 @@ export function globToRegExp(glob) {
 
 const matchesAny = (path, globs) => globs.some((glob) => globToRegExp(glob).test(path));
 
-/** 'spec' | 'neutral' | 'manifest' | 'code' for one repository-relative path. */
+/**
+ * 'spec' | 'neutral' | 'manifest' | 'code' for one repository-relative path.
+ * `classes.specFiles` holds exact spec paths, such as discovered baselines.
+ */
 export function classifyPath(path, classes = REPOSITORY_CLASSES) {
-  if (matchesAny(path, classes.spec)) {
+  if (classes.specFiles?.includes(path) || matchesAny(path, classes.spec)) {
     return 'spec';
   }
   if (matchesAny(path, classes.neutral)) {
@@ -219,6 +227,33 @@ export function checkSeparation(result) {
   ];
 }
 
+// Config modules that can name a reporter option, such as playwright.config.ts.
+const CONFIG = /(^|\/)[^/]*\.config\.[cm]?[jt]s$/;
+const BASELINE_OPTION = /\bbaseline\s*:\s*([^,}\n]*)/g;
+const STRING_LITERAL = /(['"`])((?:(?!\1)[^\\\n]|\\.)*)\1/g;
+
+/**
+ * Repository paths a config module names as `baseline:`, resolved from the
+ * config's directory as the reporter resolves them. Every string literal in
+ * the value counts, so `process.env.X ?? './baseline.json'` yields its
+ * fallback. Interpolated, absolute and out-of-repository paths are skipped.
+ */
+export function baselineReferences(configPath, text) {
+  const paths = [];
+  for (const [, value] of text.matchAll(BASELINE_OPTION)) {
+    for (const [, , literal] of value.matchAll(STRING_LITERAL)) {
+      if (literal === '' || literal.includes('${') || posix.isAbsolute(literal)) {
+        continue;
+      }
+      const path = posix.normalize(posix.join(posix.dirname(configPath), literal));
+      if (path !== '..' && !path.startsWith('../') && !paths.includes(path)) {
+        paths.push(path);
+      }
+    }
+  }
+  return paths;
+}
+
 function git(args, cwd) {
   return execFileSync('git', args, { cwd, encoding: 'utf8', maxBuffer: 256 * 1024 * 1024 });
 }
@@ -227,9 +262,29 @@ function contentAt(revision, path, cwd) {
   return MANIFEST.test(path) ? git(['cat-file', 'blob', `${revision}:${path}`], cwd) : '';
 }
 
+/** The baselines that config modules at `revision` name. */
+function baselinesAt(revision, cwd) {
+  const paths = [];
+  for (const path of git(['ls-tree', '-r', '-z', '--name-only', revision], cwd).split('\0')) {
+    if (!CONFIG.test(path)) {
+      continue;
+    }
+    for (const baseline of baselineReferences(
+      path,
+      git(['cat-file', 'blob', `${revision}:${path}`], cwd),
+    )) {
+      if (!paths.includes(baseline)) {
+        paths.push(baseline);
+      }
+    }
+  }
+  return paths;
+}
+
 /**
  * Reads the changes between the merge base of `base` and `head`, splitting a
- * rename or copy into its old path (removed) and its new path (added).
+ * rename or copy into its old path (removed) and its new path (added), and the
+ * policy baselines named on either side.
  */
 export function readChanges({ base, head = 'HEAD', cwd }) {
   const mergeBase = git(['merge-base', base, head], cwd).trim();
@@ -255,7 +310,8 @@ export function readChanges({ base, head = 'HEAD', cwd }) {
       index += 2;
     }
   }
-  return { mergeBase, changes };
+  const baselines = [...new Set([...baselinesAt(mergeBase, cwd), ...baselinesAt(head, cwd)])];
+  return { mergeBase, changes, baselines };
 }
 
 function describe(entry) {
@@ -284,8 +340,9 @@ if (argv[1] === fileURLToPath(import.meta.url)) {
   let report;
   try {
     const options = parseArguments(argv.slice(2));
-    const { mergeBase, changes } = readChanges({ ...options, cwd: process.cwd() });
-    report = { mergeBase, result: classifyChanges(changes) };
+    const { mergeBase, changes, baselines } = readChanges({ ...options, cwd: process.cwd() });
+    const classes = { ...REPOSITORY_CLASSES, specFiles: baselines };
+    report = { mergeBase, result: classifyChanges(changes, classes) };
   } catch (error) {
     console.error(`error spec-separation: ${error.message}`);
     console.error('usage: node scripts/check-spec-separation.mjs --base <ref> [--head <ref>]');
