@@ -6,6 +6,7 @@ import { defineConfig } from '@suites/blackbox-playwright/config';
 
 import { loadGherkinProject, type GherkinProject } from '../project/config.js';
 import { MANIFESTS_METADATA_KEY } from './clear-manifests.js';
+import { compiledScenarios, projectTimeouts, unfitDeadlines } from './deadlines.js';
 
 type BlackboxPlaywrightConfig = Parameters<typeof defineConfig>[0];
 type ReporterEntry = Exclude<NonNullable<BlackboxPlaywrightConfig['reporter']>, string>[number];
@@ -74,6 +75,20 @@ function globalSetupsOf(globalSetup: BlackboxPlaywrightConfig['globalSetup']): r
   return typeof globalSetup === 'string' ? [globalSetup] : globalSetup;
 }
 
+/** A stated barrier deadline must be the effective one, so each scenario's deadlines must fit its test timeout. */
+function refuseUnfitDeadlines(project: GherkinProject, config: Pick<BlackboxPlaywrightConfig, 'timeout' | 'projects'>): void {
+  const unfit = unfitDeadlines(compiledScenarios(project.outputDir), projectTimeouts(config));
+  if (unfit.length > 0) {
+    throw new Error(
+      [
+        'defineGherkinConfig: the test timeout would cut a barrier deadline the feature states:',
+        ...unfit.map((line) => `  ${line}`),
+        'Raise timeout above the deadlines (and accept the new runner-policy baseline), or shorten them in the feature.',
+      ].join('\n'),
+    );
+  }
+}
+
 function strictReporter(project: GherkinProject): ReporterEntry {
   return [
     reporterFile,
@@ -92,7 +107,9 @@ function strictReporter(project: GherkinProject): ReporterEntry {
  * from blackbox.feature.yaml (hard rules 4 and 5). It throws when the caller
  * sets any of these itself. A global setup, run before the caller's own,
  * deletes both manifests first, so a run without the Blackbox reporter leaves
- * none for `verify` to mistake for its own.
+ * none for `verify` to mistake for its own. It also throws when a compiled
+ * scenario's barrier deadlines, Background included, do not fit inside its
+ * test timeout, which would cut them short.
  */
 export function defineGherkinConfig(input: GherkinPlaywrightConfig) {
   const { gherkinConfigFile, ...config } = input;
@@ -101,6 +118,7 @@ export function defineGherkinConfig(input: GherkinPlaywrightConfig) {
     refuseOwned(project, PROJECT_OWNED, ` (projects[${index}])`);
   }
   const project = loadGherkinProject(configFilePath(gherkinConfigFile));
+  refuseUnfitDeadlines(project, config);
   return defineConfig({
     ...config,
     blackboxConfigFile: project.blackboxConfigFile,

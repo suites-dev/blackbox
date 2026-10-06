@@ -82,7 +82,9 @@ and it refuses any key it does not document:
 tests, sets `failOnFlakyTests` and `forbidOnly`, and adds the Blackbox reporter with strict verdicts, the
 run manifest and the policy baseline. It throws when the caller sets any of these itself. Its global setup,
 which runs before the config's own, deletes both manifests, so a run whose reporter was replaced on the
-command line leaves none and `verify` fails instead of judging an earlier run:
+command line leaves none and `verify` fails instead of judging an earlier run. A barrier's stated deadline
+must be the effective one, so it also throws when a compiled scenario's barrier deadlines, Background
+included, do not fit inside its test timeout:
 
 ```ts
 import { defineGherkinConfig } from '@suites/blackbox-gherkin/config';

@@ -83,8 +83,8 @@ function open(root: string): VerifyProject {
   };
 }
 
-/** Writes, compiles and baselines a project with one feature, compiled against `stepLibrary`. */
-async function createProject(text: string, stepLibrary: StepLibrary, runtimeModule: string): Promise<VerifyProject> {
+/** Writes and compiles a project with one feature, compiled against `stepLibrary`, without a baseline. */
+export async function writeProject(text: string, stepLibrary: StepLibrary, runtimeModule: string): Promise<VerifyProject> {
   const root = await mkdtemp(join(tmpdir(), 'blackbox-gherkin-verify-'));
   roots.push(root);
   await mkdir(join(root, 'features'));
@@ -93,6 +93,12 @@ async function createProject(text: string, stepLibrary: StepLibrary, runtimeModu
   await writeFile(join(root, 'playwright.config.mjs'), CONFIG);
   const opened = open(root);
   await compileProject({ project: opened.project, catalog: testCatalog, library: stepLibrary, runtimeModule });
+  return opened;
+}
+
+/** Writes, compiles and baselines a project with one feature, compiled against `stepLibrary`. */
+async function createProject(text: string, stepLibrary: StepLibrary, runtimeModule: string): Promise<VerifyProject> {
+  const opened = await writeProject(text, stepLibrary, runtimeModule);
   // The baseline is what a reviewer would accept: the effective policy of this config, as --list records it.
   const listed = await opened.run(['--list']);
   let recorded: { readonly policy: unknown };
@@ -106,9 +112,14 @@ async function createProject(text: string, stepLibrary: StepLibrary, runtimeModu
   return opened;
 }
 
+/** A baselined project of `text` compiled against the stub library. */
+export function stubProject(text: string): Promise<VerifyProject> {
+  return createProject(text, STUB_LIBRARY, stubRuntimeModule);
+}
+
 /** A project whose first scenario's stub answers `status`. */
 export function verifyProject(status = 200): Promise<VerifyProject> {
-  return createProject(feature(status), STUB_LIBRARY, stubRuntimeModule);
+  return stubProject(feature(status));
 }
 
 /**
