@@ -1,18 +1,10 @@
 import type { Reporter, TestCase, TestResult } from '@playwright/test/reporter';
 
 import { decodeEvent, progressAttachment } from './reporting/events.js';
-import { sandboxLifecycleOption } from './reporting/options.js';
 import { reportText } from './reporting/text.js';
 
-/**
- * Native reporters own terminal rendering; Blackbox adds retained diagnostics.
- * Blackbox config metadata controls per-test lifecycle output from fixtures.
- */
+/** Native reporters own rendering; Blackbox adds retained diagnostics. */
 export default class BlackboxReporter implements Reporter {
-  constructor(options: unknown = {}) {
-    sandboxLifecycleOption(options);
-  }
-
   printsToStdio(): boolean {
     return false;
   }

@@ -10,15 +10,15 @@
 // version recorded in lerna.json.
 
 import { execFile } from 'node:child_process';
-import { chmod, mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
+import { chmod, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 
-import { cleanupCapsuleAssets, verifyCapsuleAssetBoundary } from './capsule-asset-boundary.mjs';
+import { cleanupCapsuleAssets } from './capsule-assets.mjs';
 import { resetCapsuleDemo } from './capsule-reset.mjs';
-import { consumerPackages, verifyConsumerComposition } from './composition.mjs';
+import { canonicalNpmInstallLocation } from './npm-prefix.mjs';
 
 const execute = promisify(execFile);
 const scriptDirectory = dirname(fileURLToPath(import.meta.url));
@@ -30,24 +30,14 @@ const registry = process.env.BLACKBOX_TEST_REGISTRY ?? 'http://127.0.0.1:4874/';
 
 const projectDrivers = ['public-api.mjs', 'postgres.mjs', 'redis.mjs'];
 
-async function publicPackageNames() {
-  const packagesRoot = join(workspaceRoot, 'packages');
-  const names = [];
-  for (const entry of await readdir(packagesRoot, { withFileTypes: true })) {
-    if (!entry.isDirectory()) continue;
-    const manifestPath = join(packagesRoot, entry.name, 'package.json');
-    let manifest;
-    try {
-      manifest = JSON.parse(await readFile(manifestPath, 'utf8'));
-    } catch (error) {
-      if (error.code === 'ENOENT') continue;
-      throw error;
-    }
-    if (manifest.private === true) continue;
-    names.push(manifest.name);
-  }
-  return names.sort();
-}
+const consumerPackages = [
+  '@suites/blackbox',
+  '@suites/blackbox-capsule',
+  '@suites/blackbox-cli',
+  '@suites/blackbox-driver',
+  '@suites/blackbox-inst-runtime-node',
+  '@suites/blackbox-playwright',
+];
 
 async function readVersion() {
   const lerna = JSON.parse(await readFile(join(workspaceRoot, 'lerna.json'), 'utf8'));
@@ -58,22 +48,20 @@ async function readVersion() {
 }
 
 async function installConsumer(input) {
+  const install = await canonicalNpmInstallLocation(input.consumerRoot);
   const manifest = {
     name: 'blackbox-registry-consumer',
     private: true,
     type: 'module',
     dependencies: Object.fromEntries(consumerPackages.map((name) => [name, input.version])),
   };
-  await writeFile(
-    join(input.consumerRoot, 'package.json'),
-    `${JSON.stringify(manifest, null, 2)}\n`,
-  );
+  await writeFile(join(install.prefix, 'package.json'), `${JSON.stringify(manifest, null, 2)}\n`);
   await execute(
     'npm',
     [
       'install',
       '--prefix',
-      input.consumerRoot,
+      install.prefix,
       '--registry',
       registry,
       '--cache',
@@ -84,7 +72,7 @@ async function installConsumer(input) {
       '--loglevel',
       'warn',
     ],
-    { cwd: input.consumerRoot },
+    { cwd: install.cwd },
   );
 }
 
@@ -136,7 +124,7 @@ async function installDrivers(input) {
     );
   }
   // Repeated installation must retain the project-owned package contract and
-  // keep the published Driver SDK resolvable without workspace imports.
+  // report the installed Driver SDK without overwriting project files.
   const second = await run();
   if (
     second.kind !== 'driver-runtime-installation-succeeded' ||
@@ -151,7 +139,6 @@ async function installDrivers(input) {
 
 async function main() {
   const version = await readVersion();
-  const packages = await publicPackageNames();
   const driverDirectory = join(projectRoot, '.blackbox', 'drivers');
   const artifactRoot = join(projectRoot, '.blackbox', 'tmp', 'capsule-assets');
   const statePath = join(projectRoot, '.blackbox', 'capsule-assets.json');
@@ -177,7 +164,7 @@ async function main() {
     await installConsumer({ consumerRoot, npmCache, version });
 
     const blackboxBin = join(consumerRoot, 'node_modules', '.bin', 'blackbox');
-    const { cliEntrypoint: entrypoint } = await verifyConsumerComposition(consumerRoot);
+    const entrypoint = join(consumerRoot, 'node_modules', '@suites/blackbox-cli', 'bin', 'run.js');
 
     // Reset before installing generated assets: reset deliberately removes
     // generated driver state. Live sessions stop through the published CLI.
@@ -220,31 +207,10 @@ async function main() {
 
     await writeFile(
       statePath,
-      `${JSON.stringify({ assetRoot, consumerRoot, blackboxBin, driverDirectory, packages }, null, 2)}\n`,
+      `${JSON.stringify({ assetRoot, consumerRoot, blackboxBin, driverDirectory }, null, 2)}\n`,
     );
     await chmod(statePath, 0o600);
 
-    await writeFile(
-      join(artifactRoot, 'package-boundary.json'),
-      `${JSON.stringify(await verifyCapsuleAssetBoundary(), null, 2)}\n`,
-    );
-    await execute(blackboxBin, ['--help'], { env: { ...process.env, NODE_OPTIONS: '' } });
-
-    await writeFile(
-      join(artifactRoot, 'receipt.txt'),
-      [
-        `registry=${registry}`,
-        `version=${version}`,
-        `packages=${packages.length}`,
-        `direct-packages=${consumerPackages.join(',')}`,
-        `consumer=${consumerRoot}`,
-        `blackbox-bin=${blackboxBin}`,
-        'project-drivers=validated',
-        'driver-sdk=published-project-local',
-        'workspace-imports=absent',
-        '',
-      ].join('\n'),
-    );
     ready = true;
     process.stdout.write(`[blackbox] Consumer ready: ${consumerRoot}\n`);
     process.stdout.write(`[blackbox] Artifacts: ${artifactRoot}\n`);

@@ -423,6 +423,25 @@ jobs:
         with:
           storage: ${{ runner.temp }}/registry-storage
 
+      - name: Build dependencies for package integration tests
+        id: effects_build
+        run: pnpm --filter @suites/blackbox-playwright... build
+
+      - name: Test effects integration and goldens inside the Playwright package
+        id: effects_tests
+        run: pnpm --filter @suites/blackbox-playwright test:effects
+
+      - name: Retain package effects reports
+        id: effects_evidence
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: playwright-effects-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .blackbox/tmp/playwright-effects.*
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 14
+
       # The script prepares its own registry-installed consumer, then
       # materializes this project in it.
       - name: Run the Playwright system tests
@@ -464,7 +483,9 @@ jobs:
         if: always()
         env:
           OUTCOMES: >-
-            ${{ steps.setup.outcome }} ${{ steps.playwright_tests.outcome }}
+            ${{ steps.setup.outcome }} ${{ steps.effects_build.outcome }}
+            ${{ steps.effects_tests.outcome }} ${{ steps.effects_evidence.outcome }}
+            ${{ steps.playwright_tests.outcome }}
             ${{ steps.playwright_archive.outcome }} ${{ steps.playwright_evidence.outcome }}
         run: |
           for outcome in $OUTCOMES; do

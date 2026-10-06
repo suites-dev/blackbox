@@ -23,7 +23,7 @@ See the [CLI reference](cli.md) for command options.
 | Capability                                          | Current status                                                    |
 | --------------------------------------------------- | ----------------------------------------------------------------- |
 | Playwright integration                              | Preview: per-attempt Sandbox, telemetry, and effects fixtures.    |
-| Effect projection and snapshots                     | Not available yet. Raw observation queries are available.         |
+| Effect projection and snapshots                     | Preview in Playwright; Capsule still exposes raw observations.    |
 | Capsule checkpoints                                 | Not available yet.                                                |
 | Automatic project setup                             | Not available yet; `setup init` remains reserved.                 |
 | General test reports, history, and baseline updates | Not available yet. Capsule reports work through `capsule report`. |
@@ -31,8 +31,9 @@ See the [CLI reference](cli.md) for command options.
 | Gherkin feature input                               | Not available yet.                                                |
 
 Native Playwright execution now composes the shared Sandbox for each physical test attempt, including retries. The
-effects fixture and `toSatisfy` contract boundary are present, but they fail as inconclusive until a runtime supplies
-normalized effects. A separate assurance stage will add effect projection, claim qualification, and accepted-baseline
+effects fixture evaluates completed, explicitly propagated stimulus activities through the preview normalized-effect
+projection. Setup and inspection activities stay outside that default selection. Missing or incomplete capture remains
+inconclusive, and effect observations do not prove durable state. A later assurance stage will add accepted-baseline
 comparisons. See the [roadmap](roadmap.md).
 
 ODC/decision coverage, Blackbox generating Gherkin or feature files, suite generation, and legacy contract-promotion

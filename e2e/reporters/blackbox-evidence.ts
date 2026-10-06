@@ -4,16 +4,30 @@ import { join } from 'node:path';
 import type {
   FullResult,
   Reporter,
+  Suite,
   TestCase,
   TestResult,
   TestStep,
 } from '@playwright/test/reporter';
+
+import { NativeLifecycleObserver, type NativeLifecycleStep } from './native-lifecycle.js';
 
 interface Event {
   readonly phase: string;
   readonly status: string;
   readonly sequence: number;
   readonly detail: string;
+}
+
+function entrypointFile(test: TestCase): string {
+  let suite: Suite | undefined = test.parent;
+  while (suite !== undefined && suite.type !== 'file') {
+    suite = suite.parent;
+  }
+  if (suite === undefined) {
+    throw new Error(`Missing native file suite for ${test.title}`);
+  }
+  return suite.title;
 }
 
 /**
@@ -27,6 +41,7 @@ export default class BlackboxEvidence implements Reporter {
     {
       title: string;
       file: string;
+      sourceFile: string;
       acquisitionStartedAt: number | null;
       acquisitionCompletedAt: number | null;
       testId: string;
@@ -35,11 +50,14 @@ export default class BlackboxEvidence implements Reporter {
       parallelIndex: number;
       sandboxId: string | null;
       events: Event[];
+      lifecycleSteps: NativeLifecycleStep[];
       businessSteps: number;
       nestedSteps: number;
+      effectsAssertions: number;
       errors: string[];
     }
   >();
+  private readonly lifecycle = new NativeLifecycleObserver();
 
   printsToStdio(): boolean {
     return false;
@@ -48,7 +66,8 @@ export default class BlackboxEvidence implements Reporter {
   onTestBegin(test: TestCase, result: TestResult): void {
     this.attempts.set(result, {
       title: test.title,
-      file: test.location.file,
+      file: entrypointFile(test),
+      sourceFile: test.location.file,
       acquisitionStartedAt: null,
       acquisitionCompletedAt: null,
       testId: test.id,
@@ -57,18 +76,24 @@ export default class BlackboxEvidence implements Reporter {
       parallelIndex: result.parallelIndex,
       sandboxId: null,
       events: [],
+      lifecycleSteps: [],
       businessSteps: 0,
       nestedSteps: 0,
+      effectsAssertions: 0,
       errors: [],
     });
+    this.lifecycle.beginAttempt(result);
   }
 
   onStepBegin(_test: TestCase, result: TestResult, step: TestStep): void {
     const attempt = this.attempts.get(result);
-    if (attempt === undefined || step.category !== 'test.step') {
+    if (attempt === undefined) {
       return;
     }
-    attempt.businessSteps++;
+    // Fixture lifecycle steps have their own oracle and must not inflate business-step coverage.
+    if (this.lifecycle.beginStep(result, step, attempt) !== 'business') {
+      return;
+    }
     if (step.parent !== undefined && step.parent.category === 'test.step') {
       attempt.nestedSteps++;
     }
@@ -85,6 +110,7 @@ export default class BlackboxEvidence implements Reporter {
     if (attempt === undefined) {
       return;
     }
+    this.lifecycle.endStep(result, step);
     for (const attachment of step.attachments) {
       if (attachment.name !== 'blackbox-progress' || attachment.body === undefined) {
         continue;
@@ -112,6 +138,7 @@ export default class BlackboxEvidence implements Reporter {
     if (attempt === undefined) {
       return;
     }
+    this.lifecycle.validate(attempt);
     for (const phase of [
       'catalog',
       'acquisition',
@@ -125,6 +152,9 @@ export default class BlackboxEvidence implements Reporter {
         attempt.errors.push(`Missing live completion: ${phase}`);
       }
     }
+    attempt.effectsAssertions = result.attachments.filter(
+      (attachment) => attachment.name === 'blackbox-effects',
+    ).length;
     if (attempt.businessSteps < 3) {
       attempt.errors.push('Missing business steps');
     }
@@ -135,7 +165,7 @@ export default class BlackboxEvidence implements Reporter {
     const errors = attempts.flatMap(({ title, errors }) =>
       errors.map((error) => `${title}: ${error}`),
     );
-    // This fixture intentionally contains exactly eight physical acceptance cases.
+    // This fixture intentionally contains exactly 8 physical acceptance cases.
     if (attempts.length !== 8) {
       errors.push(`Expected 8 attempts, received ${attempts.length}`);
     }

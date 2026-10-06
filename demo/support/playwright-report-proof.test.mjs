@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
+import { join } from 'node:path';
 import test from 'node:test';
 
+import { expectedCatalogForSpec } from './playwright-evidence.mjs';
 import { verifyAttemptReports, verifyParallelAcquisition } from './playwright-report-proof.mjs';
 
 function parallelAcquisitions() {
@@ -55,6 +57,21 @@ test('rejects worker reuse and missing acquisition timings as parallel evidence'
   assert.throws(() => verifyParallelAcquisition(missing), /within a test file/);
 });
 
+test('attributes business specs to their catalog', () => {
+  assert.deepEqual(expectedCatalogForSpec('/consumer/tests/playwright/payment-service.spec.ts'), {
+    kind: 'subsystem',
+    id: 'payment-mock',
+  });
+  assert.deepEqual(
+    expectedCatalogForSpec('/consumer/tests/playwright/subscription-system.spec.ts'),
+    { kind: 'system', id: 'subscription-system' },
+  );
+  assert.equal(
+    expectedCatalogForSpec('/consumer/tests/playwright/effects-acceptance.spec.ts'),
+    undefined,
+  );
+});
+
 function fixture(suffix = 'a', testId = `test-${suffix}`, retry = 0) {
   const owner = {
     testId,
@@ -95,11 +112,7 @@ function fixture(suffix = 'a', testId = `test-${suffix}`, retry = 0) {
         {
           ...owner,
           expectedCatalog: { ...document.identity.catalogEntry },
-          stdout: [
-            {
-              text: 'Blackbox: sandbox ready for system "subscription-system"\nBlackbox: sandbox cleaned up for system "subscription-system"\n',
-            },
-          ],
+          stdout: [{ text: 'consumer output\n' }],
           attachments: [
             {
               name: 'blackbox-attempt',
@@ -118,7 +131,39 @@ function fixture(suffix = 'a', testId = `test-${suffix}`, retry = 0) {
           value: { sandboxId: `run-${suffix}`, cleanup: 'complete' },
         },
       ],
-      live: { errors: [], attempts: [{ ...owner, sandboxId: `run-${suffix}` }] },
+      live: {
+        errors: [],
+        attempts: [
+          {
+            ...owner,
+            sandboxId: `run-${suffix}`,
+            acquisitionStartedAt: 120,
+            acquisitionCompletedAt: 300,
+            lifecycleSteps: [
+              {
+                title: 'Start sandbox',
+                sequence: 0,
+                startedAt: '2026-10-04T00:00:00.000Z',
+                startedAtMonotonic: 100,
+                completedAtMonotonic: 400,
+                duration: 300,
+                status: 'completed',
+                error: null,
+              },
+              {
+                title: 'Clean up sandbox',
+                sequence: 1,
+                startedAt: '2026-10-04T00:00:00.800Z',
+                startedAtMonotonic: 800,
+                completedAtMonotonic: 900,
+                duration: 100,
+                status: 'completed',
+                error: null,
+              },
+            ],
+          },
+        ],
+      },
       text: 'Then And\n1 passed (1s)',
     },
   };
@@ -204,15 +249,62 @@ test('rejects delayed progress, unrelated sandboxes, and leaked fixture secrets'
   const secret = fixture().input;
   secret.text += ' playwright-e2e-token';
   assert.throws(() => verifyAttemptReports(secret), /leaked/);
+  const liveSecret = fixture().input;
+  liveSecret.live.attempts[0].title = 'playwright-e2e-token';
+  assert.throws(() => verifyAttemptReports(liveSecret), /leaked/);
 });
 
-test('rejects missing or duplicated lifecycle output and custom terminal rendering', () => {
+test('requires complete, ordered and measured native lifecycle steps', () => {
   const missing = fixture().input;
-  missing.attempts[0].stdout = [];
-  assert.throws(() => verifyAttemptReports(missing), /Native per-test stdout/);
+  missing.live.attempts[0].lifecycleSteps.pop();
+  assert.throws(() => verifyAttemptReports(missing), /duplicated or omitted/);
   const duplicate = fixture().input;
-  duplicate.attempts[0].stdout.push(...duplicate.attempts[0].stdout);
-  assert.throws(() => verifyAttemptReports(duplicate), /Native per-test stdout/);
+  duplicate.live.attempts[0].lifecycleSteps.push(
+    structuredClone(duplicate.live.attempts[0].lifecycleSteps[0]),
+  );
+  assert.throws(() => verifyAttemptReports(duplicate), /duplicated or omitted/);
+  const reordered = fixture().input;
+  reordered.live.attempts[0].lifecycleSteps.reverse();
+  assert.throws(() => verifyAttemptReports(reordered), /missing or out of order/);
+  const failed = fixture().input;
+  Object.assign(failed.live.attempts[0].lifecycleSteps[1], {
+    status: 'failed',
+    error: 'cleanup failed',
+  });
+  assert.throws(() => verifyAttemptReports(failed), /failed or did not complete/);
+  const unmeasured = fixture().input;
+  unmeasured.live.attempts[0].lifecycleSteps[0].duration = null;
+  assert.throws(() => verifyAttemptReports(unmeasured), /invalid timings/);
+  const outsideStart = fixture().input;
+  outsideStart.live.attempts[0].acquisitionStartedAt = 50;
+  assert.throws(() => verifyAttemptReports(outsideStart), /outside the native Start/);
+  const fabricatedSequence = fixture().input;
+  fabricatedSequence.live.attempts[0].lifecycleSteps[1].sequence = 7;
+  assert.throws(() => verifyAttemptReports(fabricatedSequence), /missing or out of order/);
+  const invalidStartTime = fixture().input;
+  invalidStartTime.live.attempts[0].lifecycleSteps[0].startedAt = 'not-a-time';
+  assert.throws(() => verifyAttemptReports(invalidStartTime), /invalid timings/);
+});
+
+test('rejects legacy lifecycle stdout while allowing consumer stdout', () => {
+  const allowed = fixture().input;
+  allowed.attempts[0].stdout.push({ text: 'application: sandbox ready for requests\n' });
+  assert.equal(verifyAttemptReports(allowed).attempts.length, 1);
+  for (const message of [
+    'Blackbox: sandbox ready for system "subscription-system"',
+    'Blackbox: sandbox cleaned up for system "subscription-system"',
+    'Blackbox: sandbox cleanup failed for system "subscription-system"',
+  ]) {
+    const legacy = fixture().input;
+    legacy.attempts[0].stdout.push({ text: `${message}\n` });
+    assert.throws(() => verifyAttemptReports(legacy), /Legacy Blackbox lifecycle stdout/);
+  }
+  const rendered = fixture().input;
+  rendered.text += '\nBlackbox: sandbox ready for system "subscription-system"';
+  assert.throws(() => verifyAttemptReports(rendered), /Legacy Blackbox lifecycle stdout/);
+});
+
+test('rejects custom terminal rendering and missing diagnostics', () => {
   for (const extra of [
     'Blackbox · passed',
     '[1]   ✓ passed',

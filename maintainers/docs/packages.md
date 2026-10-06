@@ -46,6 +46,13 @@ drivers, the system under test, and the golden CLI journeys. `pnpm run test:demo
 are active entrypoints. `pnpm run test:e2e:playwright` runs the system tests against the same project fixture.
 Every lane consumes packages installed from a disposable registry.
 
+The Playwright system-test lane runs against packages installed from a disposable registry and retains its JSON,
+JUnit, and native diagnostic evidence under `e2e/test-results`. Run it with:
+
+```sh
+pnpm run test:e2e:playwright
+```
+
 Package and source checks run in
 [Continuous Integration](../../.github/workflows/ci.yml). The separate
 [E2E workflow](../../.github/workflows/e2e.yml) builds once, then runs the demo, the journeys, and the Playwright

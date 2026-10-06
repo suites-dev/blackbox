@@ -16,6 +16,8 @@ import type {
 } from '@suites/blackbox-otel-collector';
 import type { SandboxContainer, SandboxTelemetryStatus } from '@suites/blackbox-sandbox';
 
+import type { BlackboxActivities } from './activities/public-types.js';
+
 export type BlackboxCatalogSelection =
   { readonly kind: 'unselected' } | { readonly kind: CatalogEntryKind; readonly id: string };
 
@@ -67,6 +69,8 @@ export interface BlackboxTestFixtures {
   readonly telemetry: BlackboxTelemetry;
   /** Attempt-scoped handle for evaluating normalized behavioral contracts. */
   readonly effects: BlackboxEffects;
+  /** Explicit propagated setup, stimulus, and inspection actions for this attempt. */
+  readonly activities: BlackboxActivities;
 }
 
 export type BlackboxSystemSelection =

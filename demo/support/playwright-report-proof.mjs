@@ -4,6 +4,14 @@ function assert(value, message) {
   if (!value) throw new Error(message);
 }
 
+function exactKeys(value, keys, label) {
+  assert(value !== null && typeof value === 'object', `${label} is not an object`);
+  assert(
+    JSON.stringify(Object.keys(value).sort()) === JSON.stringify([...keys].sort()),
+    `${label} exposed an unexpected schema`,
+  );
+}
+
 export function verifyParallelAcquisition({ attempts }) {
   const overlaps = attempts.flatMap((first, index) =>
     attempts
@@ -29,6 +37,64 @@ export function verifyParallelAcquisition({ attempts }) {
   assert(
     overlaps.some(([first, second]) => first.file !== second.file),
     'No concurrent sandbox acquisition across test files',
+  );
+}
+
+function verifyNativeLifecycle(liveAttempt) {
+  assert(
+    Array.isArray(liveAttempt.lifecycleSteps),
+    'Live report omitted native sandbox lifecycle steps',
+  );
+  assert(
+    liveAttempt.lifecycleSteps.length === 2,
+    'Live report duplicated or omitted native sandbox lifecycle steps',
+  );
+  const [start, cleanup] = liveAttempt.lifecycleSteps;
+  assert(
+    start.title === 'Start sandbox' && cleanup.title === 'Clean up sandbox',
+    'Native sandbox lifecycle steps are missing or out of order',
+  );
+  for (const step of [start, cleanup]) {
+    exactKeys(
+      step,
+      [
+        'title',
+        'sequence',
+        'startedAt',
+        'startedAtMonotonic',
+        'completedAtMonotonic',
+        'duration',
+        'status',
+        'error',
+      ],
+      'Native sandbox lifecycle step',
+    );
+    assert(
+      Number.isInteger(step.sequence) &&
+        Number.isFinite(step.startedAtMonotonic) &&
+        Number.isFinite(step.completedAtMonotonic) &&
+        Number.isFinite(step.duration) &&
+        step.duration >= 0 &&
+        step.completedAtMonotonic >= step.startedAtMonotonic &&
+        Number.isFinite(Date.parse(step.startedAt)),
+      'Native sandbox lifecycle step has invalid timings',
+    );
+    assert(
+      step.status === 'completed' && step.error === null,
+      'Native sandbox lifecycle step failed or did not complete',
+    );
+  }
+  assert(
+    start.sequence === 0 &&
+      cleanup.sequence === 1 &&
+      start.completedAtMonotonic <= cleanup.startedAtMonotonic,
+    'Native sandbox lifecycle steps are missing or out of order',
+  );
+  assert(
+    start.startedAtMonotonic <= liveAttempt.acquisitionStartedAt &&
+      liveAttempt.acquisitionStartedAt < liveAttempt.acquisitionCompletedAt &&
+      liveAttempt.acquisitionCompletedAt <= start.completedAtMonotonic,
+    'Sandbox acquisition timings fall outside the native Start sandbox step',
   );
 }
 
@@ -63,6 +129,7 @@ export function verifyAttemptReports({ attempts, records, live, text }) {
         liveAttempts[0].sandboxId === sandboxId,
       'Live report belongs to a different Playwright attempt or sandbox',
     );
+    verifyNativeLifecycle(liveAttempts[0]);
     assert(
       sandboxId === executionId && typeof sessionId === 'string',
       'Invalid report execution identity',
@@ -104,21 +171,21 @@ export function verifyAttemptReports({ attempts, records, live, text }) {
       !events.some((event) => event.status === 'failed'),
       'Passed attempt has failed report phase',
     );
-    assert(
-      events.some(
-        (event) => event.phase === 'observations' && /[1-9]\d* spans/u.test(event.detail),
-      ),
-      'Report has no received telemetry',
+    const observationEvents = events.filter(
+      (event) => event.phase === 'observations' && event.status === 'info',
     );
-    const stdout = (attempt.stdout ?? []).map(({ text }) => text ?? '').join('');
-    const label = `${catalogEntry.kind} ${JSON.stringify(catalogEntry.id)}`;
-    const ready = `Blackbox: sandbox ready for ${label}`;
-    const cleaned = `Blackbox: sandbox cleaned up for ${label}`;
+    assert(observationEvents.length === 1, 'Report has an unexpected observations summary');
+    assert(/[1-9]\d* spans/u.test(observationEvents[0].detail), 'Report has no received telemetry');
+    const stdout = (attempt.stdout ?? [])
+      .map(
+        ({ text, buffer }) =>
+          text ??
+          (typeof buffer === 'string' ? Buffer.from(buffer, 'base64').toString('utf8') : ''),
+      )
+      .join('');
     assert(
-      stdout.split(ready).length === 2 &&
-        stdout.split(cleaned).length === 2 &&
-        stdout.indexOf(ready) < stdout.indexOf(cleaned),
-      'Native per-test stdout omitted or duplicated sandbox lifecycle messages',
+      !/Blackbox: sandbox (?:ready|cleaned up|cleanup failed)\b/u.test(`${stdout}\n${text}`),
+      'Legacy Blackbox lifecycle stdout was emitted',
     );
     assert(
       attempt.attachments.some(({ name }) => name === 'blackbox-diagnostics'),
@@ -140,6 +207,10 @@ export function verifyAttemptReports({ attempts, records, live, text }) {
     !text.includes('waiting for Compose') && !text.includes('Docker health:'),
     'Text report streamed internal polling',
   );
-  assert(!text.includes('playwright-e2e-token'), 'Text report leaked the fixture token');
+  assert(
+    !text.includes('playwright-e2e-token') &&
+      !JSON.stringify(live).includes('playwright-e2e-token'),
+    'Playwright reporting leaked the fixture token',
+  );
   return { kind: 'playwright-reporting-proof', attempts: identities, live: true };
 }

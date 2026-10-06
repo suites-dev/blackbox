@@ -99,13 +99,14 @@ export function createBlackboxTest(
           testInfo,
           catalogEntry,
           blackboxEnvironment,
+          step: (title, operation) => playwrightTest.step(title, operation),
           use: async (attempt) => {
             await use({ kind: 'selected', attempt });
           },
         });
       },
       // The helper enforces the test deadline and bounds every sandbox cleanup wait.
-      { auto: true, timeout: 0 },
+      { auto: true, timeout: 0, title: 'Blackbox sandbox' },
     ],
     sandbox: async ({ _blackboxAttempt }, use) => {
       await use(selectedAttempt(_blackboxAttempt, 'sandbox').sandbox);
@@ -115,6 +116,10 @@ export function createBlackboxTest(
     },
     effects: async ({ _blackboxAttempt }, use) => {
       await use(selectedAttempt(_blackboxAttempt, 'effects').effects);
+    },
+    activities: async ({ _blackboxAttempt }, use) => {
+      const attempt = selectedAttempt(_blackboxAttempt, 'activities');
+      await use(attempt.activities);
     },
   });
 }

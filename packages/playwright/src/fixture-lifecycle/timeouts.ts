@@ -7,6 +7,17 @@ const acquisitionTimedOut = Symbol('acquisitionTimedOut');
 const cleanupCompleted = Symbol('cleanupCompleted');
 const cleanupTimedOut = Symbol('cleanupTimedOut');
 
+type LateAcquisitionFailure =
+  { readonly kind: 'none' } | { readonly kind: 'rejected'; readonly cause: unknown };
+
+interface LateAcquisitionFailureState {
+  current: LateAcquisitionFailure;
+}
+
+function noLateAcquisitionFailure(): LateAcquisitionFailureState {
+  return { current: { kind: 'none' } };
+}
+
 export interface BlackboxFixturePolicy {
   /** Maximum time to wait for any sandbox cleanup operation. */
   readonly sandboxCleanupTimeoutMs: number;
@@ -33,7 +44,9 @@ async function awaitLateAcquisitionCleanup(input: {
   readonly acquisition: Promise<RunningBlackboxAttempt>;
   readonly timeoutError: Error;
   readonly cleanupTimeoutMs: number;
+  readonly cleanupStep: (operation: () => Promise<void>) => Promise<void>;
 }): Promise<never> {
+  const failure = noLateAcquisitionFailure();
   const cleanup = input.acquisition.then(
     async (attempt) => {
       try {
@@ -46,14 +59,19 @@ async function awaitLateAcquisitionCleanup(input: {
       }
     },
     (cause: unknown) => {
-      throw new Error(input.timeoutError.message, { cause });
+      failure.current = { kind: 'rejected', cause };
     },
   );
-  if (!(await cleanupSettledWithin(cleanup, input.cleanupTimeoutMs))) {
-    throw new AggregateError(
-      [input.timeoutError],
-      `Blackbox sandbox acquisition cleanup did not settle within ${input.cleanupTimeoutMs}ms`,
-    );
+  await input.cleanupStep(async () => {
+    if (!(await cleanupSettledWithin(cleanup, input.cleanupTimeoutMs))) {
+      throw new AggregateError(
+        [input.timeoutError],
+        `Blackbox sandbox acquisition cleanup did not settle within ${input.cleanupTimeoutMs}ms`,
+      );
+    }
+  });
+  if (failure.current.kind === 'rejected') {
+    throw new Error(input.timeoutError.message, { cause: failure.current.cause });
   }
   throw input.timeoutError;
 }
@@ -75,6 +93,7 @@ export async function acquireWithinTestTimeout(input: {
   readonly request: Parameters<BlackboxAttemptRuntime['start']>[0];
   readonly testInfo: TestInfo;
   readonly cleanupTimeoutMs: number;
+  readonly cleanupStep: (operation: () => Promise<void>) => Promise<void>;
 }): Promise<RunningBlackboxAttempt> {
   const acquisition = input.runtime.start(input.request);
   if (input.testInfo.timeout === 0) {
@@ -101,5 +120,6 @@ export async function acquireWithinTestTimeout(input: {
     acquisition,
     timeoutError,
     cleanupTimeoutMs: input.cleanupTimeoutMs,
+    cleanupStep: input.cleanupStep,
   });
 }

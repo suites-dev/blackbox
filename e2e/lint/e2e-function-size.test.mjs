@@ -39,6 +39,7 @@ test('rejects oversized tests, steps, hooks, and helper functions', () => {
     `test('journey', ${callback(81, { async: true })});`,
     `sandbox.test('journey', ${callback(81, { async: true })});`,
     `test.step('action', ${callback(81, { async: true })});`,
+    `test.beforeEach(${callback(81, { async: true })});`,
     `sandbox.beforeEach(${callback(81, { async: true })});`,
     `sandbox.afterEach(${callback(81, { async: true })});`,
     `function helper() {\n${'value;\n'.repeat(79)}}`,
@@ -49,8 +50,10 @@ test('rejects oversized tests, steps, hooks, and helper functions', () => {
 });
 
 test('still rejects an oversized test nested inside an exempt suite callback', () => {
-  const source = `test.system('orders', () => {\nsandbox.test('journey', ${callback(81)});\n});`;
-  assert.equal(messages(source).filter(({ ruleId }) => ruleId === 'e2e/function-size').length, 1);
+  for (const declaration of ['test', 'sandbox.test']) {
+    const source = `test.system('orders', () => {\n${declaration}('journey', ${callback(81)});\n});`;
+    assert.equal(messages(source).filter(({ ruleId }) => ruleId === 'e2e/function-size').length, 1);
+  }
 });
 
 test('rejects unrelated describe, async suite, and callback in the wrong position', () => {

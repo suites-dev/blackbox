@@ -81,53 +81,6 @@ async function dockerResources(projectName) {
   return observed;
 }
 
-export async function boundary(consumerRootValue) {
-  const consumerRoot = resolve(await realpath(consumerRootValue));
-  const consumerManifest = JSON.parse(await readFile(join(consumerRoot, 'package.json'), 'utf8'));
-  const registryPackages = Object.keys(consumerManifest.dependencies ?? {})
-    .filter((name) => name.startsWith('@suites/blackbox-'))
-    .sort();
-  assert(
-    registryPackages.includes('@suites/blackbox-playwright'),
-    'Registry consumer did not declare @suites/blackbox-playwright',
-  );
-  const packages = [];
-  for (const name of registryPackages) {
-    const packageRoot = resolve(
-      await realpath(join(consumerRoot, 'node_modules', ...name.split('/'))),
-    );
-    assert(isWithin(packageRoot, consumerRoot), `${name} escaped the registry consumer`);
-    const manifest = JSON.parse(await readFile(join(packageRoot, 'package.json'), 'utf8'));
-    assert(manifest.name === name, `Registry package identity mismatch: ${name}`);
-    packages.push({ name, packageRoot });
-  }
-  const projectFiles = [
-    'blackbox.config.yaml',
-    '.blackbox/catalog/subscription-system.yml',
-    '.blackbox/instrumentation/instrumentation.js',
-    '.blackbox/instrumentation/package.json',
-    'playwright.config.ts',
-  ];
-  for (const name of projectFiles) {
-    const path = resolve(await realpath(join(consumerRoot, name)));
-    assert(isWithin(path, consumerRoot), `Project file escaped the registry consumer: ${name}`);
-  }
-  const instrumentationDependencies = resolve(
-    await realpath(join(consumerRoot, '.blackbox', 'instrumentation', 'node_modules')),
-  );
-  assert(
-    isWithin(instrumentationDependencies, consumerRoot),
-    'Instrumentation dependencies escaped the registry consumer',
-  );
-  return {
-    kind: 'playwright-registry-consumer-boundary',
-    consumerRoot,
-    packages,
-    projectFiles,
-    instrumentationDependencies,
-  };
-}
-
 export async function recover(recoverSandbox) {
   const recoveries = [];
   for (const item of await sandboxRecords()) {
@@ -147,6 +100,14 @@ function collectSpecs(suite, result = []) {
   result.push(...(suite.specs ?? []));
   for (const child of suite.suites ?? []) collectSpecs(child, result);
   return result;
+}
+
+export function expectedCatalogForSpec(file) {
+  const name = file.split(/[/\\]/u).at(-1);
+  return {
+    'payment-service.spec.ts': { kind: 'subsystem', id: 'payment-mock' },
+    'subscription-system.spec.ts': { kind: 'system', id: 'subscription-system' },
+  }[name];
 }
 
 export async function verify() {
@@ -195,14 +156,15 @@ export async function verify() {
     `Unexpected Playwright specs: ${JSON.stringify(discoveredSpecs)}`,
   );
   const attempts = specs.flatMap((spec) => {
-    const catalogByFile = {
-      'payment-service.spec.ts': { kind: 'subsystem', id: 'payment-mock' },
-      'subscription-system.spec.ts': { kind: 'system', id: 'subscription-system' },
-    };
-    const expectedCatalog = catalogByFile[spec.file.split('/').at(-1)];
+    const expectedCatalog = expectedCatalogForSpec(spec.file);
     assert(expectedCatalog !== undefined, `Unexpected scenario file: ${spec.file}`);
     return spec.tests.flatMap((test) =>
-      test.results.map((result) => ({ ...result, testId: spec.id, expectedCatalog })),
+      test.results.map((result) => ({
+        ...result,
+        title: spec.title,
+        testId: spec.id,
+        expectedCatalog,
+      })),
     );
   });
   assert(

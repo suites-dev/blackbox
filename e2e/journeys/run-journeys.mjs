@@ -53,7 +53,7 @@ const REGISTRY = process.env.BLACKBOX_TEST_REGISTRY ?? 'http://127.0.0.1:4874/';
 
 /**
  * The published CLI of the current consumer preparation. As in
- * scripts/consumer/capsule-asset-boundary.mjs, every path is rebuilt from the fixed
+ * scripts/consumer/capsule-assets.mjs, every path is rebuilt from the fixed
  * asset layout under the OS temp directory; the state file only names which
  * asset directory, and nothing it contains is executed or used as a path as-is.
  */

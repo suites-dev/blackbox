@@ -75,6 +75,7 @@
     "@suites/blackbox-cli": "workspace:*",
     "@suites/blackbox-discovery": "workspace:*",
     "@suites/blackbox-driver": "workspace:*",
+    "@suites/blackbox-effects": "workspace:*",
     "@suites/blackbox-inst-runtime-node": "workspace:*",
     "@suites/blackbox-skills": "workspace:*",
     "@types/node": "catalog:",

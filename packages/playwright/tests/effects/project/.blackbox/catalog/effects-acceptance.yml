@@ -1,0 +1,62 @@
+name: published-effects-acceptance
+
+services:
+  app:
+    build:
+      context: ../../sut/effects-acceptance
+      dockerfile: Dockerfile
+    init: true
+    restart: 'no'
+    environment:
+      DATABASE_URL: postgresql://acceptance:acceptance@postgres:5432/acceptance
+      RABBIT_URL: amqp://acceptance:acceptance@rabbitmq:5672
+      PORT: 8080
+      OTEL_NODE_DISABLED_INSTRUMENTATIONS: dns,net
+    depends_on:
+      postgres: { condition: service_healthy }
+      rabbitmq: { condition: service_healthy }
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:8080/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 1s
+      timeout: 3s
+      retries: 60
+    ports: ['127.0.0.1::8080']
+
+  postgres:
+    image: postgres:16-alpine
+    restart: 'no'
+    environment:
+      POSTGRES_DB: acceptance
+      POSTGRES_PASSWORD: acceptance
+      POSTGRES_USER: acceptance
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U acceptance -d acceptance']
+      interval: 1s
+      timeout: 3s
+      retries: 60
+    volumes:
+      - ../../sut/effects-acceptance/init.sql:/docker-entrypoint-initdb.d/001-init.sql:ro
+
+  rabbitmq:
+    image: rabbitmq:4.1-alpine
+    restart: 'no'
+    environment:
+      RABBITMQ_DEFAULT_PASS: acceptance
+      RABBITMQ_DEFAULT_USER: acceptance
+    healthcheck:
+      # Use the image entrypoint so diagnostics drops to the rabbitmq account
+      # without racing its cookie, then wait for the AMQP listener as well.
+      test:
+        [
+          'CMD-SHELL',
+          "docker-entrypoint.sh rabbitmq-diagnostics -q ping && bash -c 'exec 3<>/dev/tcp/127.0.0.1/5672'",
+        ]
+      interval: 1s
+      timeout: 5s
+      retries: 60

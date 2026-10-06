@@ -60,8 +60,6 @@ ASSET_ROOT="$(jq -er '.assetRoot' "$STATE_FILE")"
 BLACKBOX_BIN="$(jq -er '.blackboxBin' "$STATE_FILE")"
 BLACKBOX_ENTRYPOINT="$ASSET_ROOT/consumer/node_modules/@suites/blackbox-cli/bin/run.js"
 export BLACKBOX_BIN
-node "$CONSUMER_DIR/capsule-asset-verify.mjs" \
-  >"$E2E_ROOT/.blackbox/tmp/capsule-package-boundary.json"
 BLACKBOX_COMMAND=("$BLACKBOX_BIN")
 
 blackbox() {

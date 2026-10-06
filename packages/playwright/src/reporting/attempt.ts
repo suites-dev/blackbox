@@ -2,25 +2,27 @@ import { realpathSync } from 'node:fs';
 import { relative } from 'node:path';
 
 import type { TestInfo } from '@playwright/test';
+import type { EffectAssertionReport, EffectAssertionReporter } from '../effects/runtime.js';
 import type { BlackboxSandbox, BlackboxTelemetry } from '../types.js';
 
+import { effectAttachment, effectAttachmentBody } from './effects/attachment.js';
 import {
   attemptAttachment,
   progressAttachment,
   type AttemptEvent,
   type AttemptProgress,
 } from './events.js';
-import { reportText } from './text.js';
-import { sandboxLifecycleEnabled } from './options.js';
+import { reportTextResult } from './text.js';
 
 /** Attachments use Playwright's worker transport and remain available to other reporters. */
-export class AttemptReport implements AttemptProgress {
+export class AttemptReport implements AttemptProgress, EffectAssertionReporter {
   private readonly started = Date.now();
   private readonly events: AttemptEvent[] = [];
   private readonly secrets = new Set<string>();
   private pending = Promise.resolve();
   private attachmentFailure: unknown = null;
   private dropped = 0;
+  private effectAssertions = 0;
   private closed = false;
   private identity:
     | { readonly kind: 'not-ready' }
@@ -52,25 +54,16 @@ export class AttemptReport implements AttemptProgress {
     }
   }
 
-  lifecycle(
-    status: 'ready' | 'cleaned up' | 'cleanup failed',
-    catalog: BlackboxSandbox['catalogEntry'],
-  ): void {
-    if (sandboxLifecycleEnabled(this.testInfo.config)) {
-      // Worker stdout is attributed to this attempt by Playwright and rendered
-      // by its native reporter, including cursor handling and parallel output.
-      process.stdout.write(
-        `${this.sanitize(`Blackbox: sandbox ${status} for ${catalog.kind} ${JSON.stringify(catalog.id)}`)}\n`,
-      );
-    }
-  }
-
-  private sanitize(detail: string): string {
+  private sanitizeResult(detail: string): ReturnType<typeof reportTextResult> {
     let sanitized = detail;
     for (const value of [...this.secrets].sort((a, b) => b.length - a.length)) {
       sanitized = sanitized.replaceAll(value, '[REDACTED]');
     }
-    return reportText(sanitized);
+    return reportTextResult(sanitized);
+  }
+
+  private sanitize(detail: string): string {
+    return this.sanitizeResult(detail).text;
   }
 
   emit(phase: string, status: AttemptEvent['status'], detail: string): void {
@@ -101,6 +94,18 @@ export class AttemptReport implements AttemptProgress {
       .catch((error: unknown) => {
         this.attachmentFailure = error;
       });
+  }
+
+  async effectAssertion(report: EffectAssertionReport): Promise<void> {
+    this.effectAssertions++;
+    await this.testInfo.attach(effectAttachment, {
+      contentType: 'application/json',
+      body: effectAttachmentBody({
+        sequence: this.effectAssertions,
+        report,
+        sanitize: (value) => this.sanitizeResult(value),
+      }),
+    });
   }
 
   async flush(): Promise<void> {

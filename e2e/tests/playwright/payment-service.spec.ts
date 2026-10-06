@@ -32,19 +32,23 @@ test.system({ kind: 'subsystem', id: 'payment-mock' }, (system) => {
     sandbox.describe('Rule: accepted payments are retained as succeeded intents', () => {
       sandbox.test(
         'Scenario: a valid payment method creates a payment intent',
-        async ({ request, sandbox, telemetry, effects }) => {
+        async ({ activities, request, sandbox, telemetry, effects }) => {
           expectAttemptEvidenceIdentity({ effects, sandbox, telemetry });
 
           await test.step('Given the payment service has no prior transactions', async () => {
-            expect(await readFixtureState<PaymentState>(request, sandbox.entrypoint.url)).toEqual(
-              emptyPaymentState,
-            );
+            expect(
+              await activities.inspection.request('read initial payment state', request, (scoped) =>
+                readFixtureState<PaymentState>(scoped, sandbox.entrypoint.url),
+              ),
+            ).toEqual(emptyPaymentState);
           });
 
           const response = await test.step('When Alice submits a payment method', () =>
-            request.post(new URL('/v1/payment_intents', sandbox.entrypoint.url).href, {
-              data: { paymentMethodId: 'pm_alice_primary', userId: 'alice' },
-            }));
+            activities.stimulus.request('submit Alice payment', request, (scoped) =>
+              scoped.post(new URL('/v1/payment_intents', sandbox.entrypoint.url).href, {
+                data: { paymentMethodId: 'pm_alice_primary', userId: 'alice' },
+              }),
+            ));
 
           await test.step('Then a succeeded payment intent is returned and retained', async () => {
             const intent = {
@@ -54,10 +58,18 @@ test.system({ kind: 'subsystem', id: 'payment-mock' }, (system) => {
               userId: 'alice',
             } as const;
             expect(await expectJson<PaymentIntent>(response, 201)).toEqual(intent);
-            expect(await readFixtureState<PaymentState>(request, sandbox.entrypoint.url)).toEqual({
-              paymentIntents: [intent],
-              refunds: [],
-            });
+            await expect(effects).toSatisfy((e) => [
+              e.exists(
+                e.http({ actor: 'payment-mock', method: 'POST' }),
+              ),
+            ]);
+            expect(
+              await activities.inspection.request(
+                'read retained payment state',
+                request,
+                (scoped) => readFixtureState<PaymentState>(scoped, sandbox.entrypoint.url),
+              ),
+            ).toEqual({ paymentIntents: [intent], refunds: [] });
           });
         },
       );

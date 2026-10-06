@@ -12,7 +12,7 @@ import {
   type BlackboxAttemptInput,
   type BlackboxAcquisitionPorts,
 } from './acquisition.js';
-import { createBlackboxEffects } from '../effects/runtime.js';
+import { createAttemptEffects } from '../effects/attempt-effects.js';
 import { catalog } from '../testing/catalog-fixture.js';
 import { silentProgress } from '../reporting/events.js';
 
@@ -129,12 +129,8 @@ function runtimeFixture(input: {
       return value;
     },
     randomToken: () => 'test-token',
-    createEffects: ({ sessionId, executionId }) =>
-      createBlackboxEffects({
-        sessionId,
-        executionId,
-        evaluator: { evaluate: () => Promise.resolve({ kind: 'satisfied' }) },
-      }),
+    createEffects: ({ sessionId, executionId, storageDirectory, entrypointUrl }) =>
+      createAttemptEffects({ sessionId, executionId, storageDirectory, entrypointUrl }),
   } satisfies BlackboxAcquisitionPorts;
   return { ports, starts, stops, readiness };
 }

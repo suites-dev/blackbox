@@ -114,7 +114,6 @@ cp -R "$E2E_ROOT/sut" "$CONSUMER_ROOT/sut"
 cp "$E2E_ROOT/playwright.config.ts" "$CONSUMER_ROOT/playwright.config.ts"
 cp "$E2E_ROOT/reporters/"*.ts "$CONSUMER_ROOT/reporters/"
 cp "$E2E_ROOT/tests/playwright/"*.ts "$CONSUMER_ROOT/tests/playwright/"
-cp "$SCRIPT_DIR/playwright-boundary.mjs" "$CONSUMER_ROOT/playwright-boundary.mjs"
 cp "$SCRIPT_DIR/playwright-evidence.mjs" "$CONSUMER_ROOT/playwright-evidence.mjs"
 cp "$SCRIPT_DIR/playwright-report-proof.mjs" "$CONSUMER_ROOT/playwright-report-proof.mjs"
 cp "$SCRIPT_DIR/playwright-recover.mjs" "$CONSUMER_ROOT/playwright-recover.mjs"
@@ -135,8 +134,6 @@ jq -e '
   (.entries | any(.id == "subscription-system" and .kind == "system")) and
   (.entries | any(.id == "payment-mock" and .kind == "subsystem"))
 ' "$RUN_RESULT_ROOT/catalog.json" >/dev/null
-
-node "$CONSUMER_ROOT/playwright-boundary.mjs" >"$RUN_RESULT_ROOT/package-boundary.json"
 
 PLAYWRIGHT_BIN="$CONSUMER_ROOT/node_modules/.bin/playwright"
 if [[ ! -x "$PLAYWRIGHT_BIN" ]]; then

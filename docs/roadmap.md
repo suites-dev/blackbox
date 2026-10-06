@@ -22,13 +22,13 @@ command decision. Playwright's public imports follow the package decision, while
 before publishing. Publishing workflows depend on the approved package set. Report terminology follows CLI design;
 visual design will incorporate the additional user references recorded in its issue.
 
-Native Playwright exposes an effects fixture and contract-matcher boundary, but it does not yet project telemetry into
-normalized effects or provide an assurance evaluator. Until a runtime supplies that evaluator, effect contracts fail
-as inconclusive. The planned evaluator must distinguish insufficient evidence from a supported claim, and keep
-authorization separate from evaluation. ODC/decision coverage, Blackbox-generated Gherkin, feature files or specs, suite
-generation, and legacy contract-promotion surfaces are outside this roadmap. Human-authored Gherkin feature files are
-in scope as test input. Final package names and command renames are decisions owned by
-their issues.
+Native Playwright exposes explicit propagated activities, an effects fixture, normalized projection, and a three-valued
+contract evaluator. The initial public selection includes completed stimuli and excludes setup and inspection. Missing
+capture remains inconclusive, including under negation; observed effects do not prove durable state or completeness.
+Accepted baselines and broader assurance remain future work. ODC/decision coverage, Blackbox-generated Gherkin,
+feature files or specs, suite generation, and legacy contract-promotion surfaces are outside this roadmap.
+Human-authored Gherkin feature files are in scope as test input. Final package names and command renames are
+decisions owned by their issues.
 
 For current agent setup, see [agent skills](agent-skills.md). For the present product model, see
 [the verification machine](verification-machine.md).
