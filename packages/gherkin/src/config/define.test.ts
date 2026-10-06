@@ -34,7 +34,7 @@ beforeAll(async () => {
       features: ['features/**/*.feature'],
       outputDir: '.features-gen',
       runManifest: 'results/blackbox-run.json',
-      policy: { baseline: 'blackbox.policy.json', outputFile: 'results/blackbox-policy.json' },
+      policy: { baseline: 'blackbox.policy.yaml', outputFile: 'results/blackbox-policy.yaml' },
       sandboxes: { default: {} },
     }),
   );
@@ -61,7 +61,7 @@ describe('defineGherkinConfig', () => {
           {
             verdicts: 'strict',
             runManifest: join(root, 'results/blackbox-run.json'),
-            policy: { baseline: join(root, 'blackbox.policy.json'), outputFile: join(root, 'results/blackbox-policy.json') },
+            policy: { baseline: join(root, 'blackbox.policy.yaml'), outputFile: join(root, 'results/blackbox-policy.yaml') },
           },
         ],
       ],
@@ -70,7 +70,7 @@ describe('defineGherkinConfig', () => {
   });
 
   it('clears both manifests in a global setup that runs before the caller\'s own', () => {
-    const manifests = [join(root, 'results/blackbox-run.json'), join(root, 'results/blackbox-policy.json')];
+    const manifests = [join(root, 'results/blackbox-run.json'), join(root, 'results/blackbox-policy.yaml')];
     expect(defineGherkinConfig({ gherkinConfigFile })).toMatchObject({
       globalSetup: [clearManifestsFile],
       metadata: { [MANIFESTS_METADATA_KEY]: manifests },
@@ -117,7 +117,7 @@ describe('defineGherkinConfig', () => {
 
   it('refuses a relative project file path and an invalid project file', async () => {
     expect(() => defineGherkinConfig({ gherkinConfigFile: 'blackbox.feature.yaml' })).toThrow('gherkinConfigFile must be absolute');
-    const invalid = join(root, 'invalid.gherkin.json');
+    const invalid = join(root, 'invalid.feature.yaml');
     await writeFile(invalid, JSON.stringify({ schemaVersion: 1 }));
     expect(() => defineGherkinConfig({ gherkinConfigFile: invalid })).toThrow(GherkinConfigError);
   });
@@ -134,7 +134,7 @@ describe('the global setup', () => {
     await mkdir(dir, { recursive: true });
     const run = join(dir, 'blackbox-run.json');
     await writeFile(run, '{}');
-    await clearManifests({ metadata: { [MANIFESTS_METADATA_KEY]: [run, join(dir, 'blackbox-policy.json')] } });
+    await clearManifests({ metadata: { [MANIFESTS_METADATA_KEY]: [run, join(dir, 'blackbox-policy.yaml')] } });
     expect(await exists(run)).toBe(false);
   });
 

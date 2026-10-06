@@ -48,7 +48,7 @@ beforeAll(async () => {
       features: ['features/**/*.feature'],
       outputDir: '.features-gen',
       runManifest: 'results/blackbox-run.json',
-      policy: { baseline: 'blackbox.policy.json', outputFile: 'results/blackbox-policy.json' },
+      policy: { baseline: 'blackbox.policy.yaml', outputFile: 'results/blackbox-policy.yaml' },
       sandboxes: { default: {} },
     }),
   );

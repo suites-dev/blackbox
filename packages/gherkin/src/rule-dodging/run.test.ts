@@ -1,5 +1,7 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { createRequire } from 'node:module';
 import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
@@ -43,9 +45,6 @@ Feature: service
 
 const FIRST = 'features/stub.feature:4';
 const SECOND = 'features/stub.feature:11';
-const TITLE = 'features/stub.feature.spec.mjs › system \\"subscription-system\\" › sandbox \\"bare\\" › Feature: service ›';
-const FIRST_TEST = `policy.tests["${TITLE} Scenario: the service is ready"]`;
-const SECOND_TEST = `policy.tests["${TITLE} Rule: a second scenario › Scenario: the service is ready again"]`;
 
 let accepted: VerifyProject;
 
@@ -98,7 +97,7 @@ function expectDrift(result: Gate, differences: readonly string[]): void {
   expect(result.run.code, result.run.output).toBe(1);
   expect(result.run.output).toContain(`Blackbox runner policy verification failed: ${differences.length} difference(s) from baseline`);
   expect(result.verify.exit).toBe(1);
-  const drift = result.verify.problems.find((problem) => problem.startsWith('the runner policy differs from the baseline blackbox.policy.json'));
+  const drift = result.verify.problems.find((problem) => problem.startsWith('the runner policy differs from the baseline blackbox.policy.yaml'));
   expect(drift, result.verify.problems.join('\n')).toBeDefined();
   expect(drift!.split('\n').slice(1).map((line) => line.trim())).toEqual(differences);
 }
@@ -147,8 +146,13 @@ describe('a reporter swapped on the command line', { timeout: 120_000 }, () => {
   });
 });
 
+// The forged reporter reads and writes the YAML runner-policy files with this package's yaml.
+const YAML_MODULE = pathToFileURL(createRequire(import.meta.url).resolve('yaml')).href;
+
 const FORGE = `import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
+
+import { parse, stringify } from ${JSON.stringify(YAML_MODULE)};
 
 export default class Forge {
   onBegin(config, suite) {
@@ -157,9 +161,9 @@ export default class Forge {
   }
 
   onEnd() {
-    const baseline = JSON.parse(readFileSync(join(this.root, 'blackbox.policy.json'), 'utf8'));
+    const baseline = parse(readFileSync(join(this.root, 'blackbox.policy.yaml'), 'utf8'));
     mkdirSync(join(this.root, 'results'), { recursive: true });
-    writeFileSync(join(this.root, 'results/blackbox-policy.json'), JSON.stringify({ ...baseline, argv: [] }));
+    writeFileSync(join(this.root, 'results/blackbox-policy.yaml'), stringify({ ...baseline, argv: [] }));
     const scenarios = this.suite.allTests().map((test) => ({
       id: test.id,
       titlePath: test.titlePath().filter(Boolean),
@@ -179,32 +183,31 @@ export default class Forge {
 
 describe('changed retries or timeout', { timeout: 120_000 }, () => {
   it.each([
-    ['--retries on the command line', commandLine('--retries=2'), 'retries: baseline 0, effective 2'],
-    ['--timeout on the command line', commandLine('--timeout=5000'), 'timeout: baseline 30000, effective 5000'],
-    ['retries in the Playwright config', configSetting('retries: 0,', 'retries: 1,'), 'retries: baseline 0, effective 1'],
+    // The project's retries or timeout move off their default; its tests follow the project, so none is listed.
+    ['--retries on the command line', commandLine('--retries=2'), 'retries: not in baseline, effective 2'],
+    ['--timeout on the command line', commandLine('--timeout=5000'), 'timeout: not in baseline, effective 5000'],
+    ['retries in the Playwright config', configSetting('retries: 0,', 'retries: 1,'), 'retries: not in baseline, effective 1'],
   ])('%s fails the run and verify as runner-policy drift', async (_name, change, difference) => {
     const result = await gate(change);
-    expectDrift(result, [`policy.projects[""].${difference}`, `${SECOND_TEST}.${difference}`, `${FIRST_TEST}.${difference}`]);
+    expectDrift(result, [`policy.projects[""].${difference}`]);
     expect(result.verify.verdicts).toEqual(BOTH_SUPPORTED);
     expect(result.verify.problems[0]).toBe(FAILED_RUN);
   });
 });
 
 describe('a filtered-out scenario', { timeout: 120_000 }, () => {
-  const LEFT_OUT = '{"retries":0,"timeout":30000}, not in effective policy';
-
   it.each([
-    ['--grep', commandLine('--grep', 'again'), ['policy.selection.grep: baseline null, effective "again"', `${FIRST_TEST}: baseline ${LEFT_OUT}`], [[FIRST, 'not-run'], [SECOND, 'supported']]],
+    ['--grep', commandLine('--grep', 'again'), ['policy.selection: not in baseline, effective {"grep":"again"}'], [[FIRST, 'not-run'], [SECOND, 'supported']]],
     [
       'a file:line filter',
       commandLine('.features-gen/features/stub.feature.spec.mjs:10'),
-      ['policy.selection.testFilters: baseline [], effective [".features-gen/features/stub.feature.spec.mjs:10"]', `${SECOND_TEST}: baseline ${LEFT_OUT}`],
+      ['policy.selection: not in baseline, effective {"testFilters":[".features-gen/features/stub.feature.spec.mjs:10"]}'],
       [[FIRST, 'supported'], [SECOND, 'not-run']],
     ],
     [
       '--shard',
       commandLine('--shard=2/2'),
-      ['policy.run.shard: baseline null, effective "2/2"', `${SECOND_TEST}: baseline ${LEFT_OUT}`, `${FIRST_TEST}: baseline ${LEFT_OUT}`],
+      ['policy.shard: not in baseline, effective "2/2"'],
       [[FIRST, 'not-run'], [SECOND, 'not-run']],
     ],
   ])('by %s fails the run and verify, which reports the scenario as not run', async (_name, change, differences, verdicts) => {

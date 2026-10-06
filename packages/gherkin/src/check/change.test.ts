@@ -31,14 +31,14 @@ describe('check-change passes', () => {
       repo.write({
         'app/features/intake.feature': 'Feature: intake, revised\n',
         'app/blackbox.feature.yaml': '{}\n',
-        'app/blackbox.policy.json': '{"schemaVersion": 1, "policy": {"run": {}}}\n',
+        'app/blackbox.policy.yaml': '{"schemaVersion": 1, "policy": {"run": {}}}\n',
         'app/README.md': '# app, revised\n',
       }),
     );
     expect(check.problem).toBeNull();
     expect(paths(check.classification.spec)).toEqual([
       'app/blackbox.feature.yaml',
-      'app/blackbox.policy.json',
+      'app/blackbox.policy.yaml',
       'app/features/intake.feature',
     ]);
     expect(paths(check.classification.neutral)).toEqual(['app/README.md']);
@@ -69,9 +69,9 @@ describe('check-change fails', () => {
 
   it('on the policy baseline accepted together with code, and on a library bump with another dependency', async () => {
     const baseline = await classify((repo) =>
-      repo.write({ 'app/blackbox.policy.json': '{"retries": 2}\n', 'app/playwright.config.ts': 'export default {};\n' }),
+      repo.write({ 'app/blackbox.policy.yaml': '{"retries": 2}\n', 'app/playwright.config.ts': 'export default {};\n' }),
     );
-    expect(baseline.problem).toContain('Spec: app/blackbox.policy.json. Code: app/playwright.config.ts.');
+    expect(baseline.problem).toContain('Spec: app/blackbox.policy.yaml. Code: app/playwright.config.ts.');
     const both = await classify((repo) =>
       repo.write({ 'app/package.json': JSON.stringify({ name: 'app', devDependencies: { '@suites/blackbox-gherkin': '0.0.2', vitest: '2.0.0' } }) }),
     );

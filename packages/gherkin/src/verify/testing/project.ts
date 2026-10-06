@@ -3,6 +3,8 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
+import { parse, stringify } from 'yaml';
+
 import { testCatalog } from '../../compiler/testing/context.js';
 import {
   libraryRuntimeModule,
@@ -47,7 +49,7 @@ const PROJECT_FILE = {
   features: ['features/**/*.feature'],
   outputDir: '.features-gen',
   runManifest: 'results/blackbox-run.json',
-  policy: { baseline: 'blackbox.policy.json', outputFile: 'results/blackbox-policy.json' },
+  policy: { baseline: 'blackbox.policy.yaml', outputFile: 'results/blackbox-policy.yaml' },
   sandboxes: { bare: {} },
 };
 
@@ -105,14 +107,14 @@ export async function recordBaseline(opened: VerifyProject): Promise<void> {
   const listed = await opened.run(['--list']);
   let recorded: { readonly schemaVersion: unknown; readonly policy: unknown };
   try {
-    recorded = JSON.parse(await readFile(opened.project.policy.outputFile, 'utf8')) as {
+    recorded = parse(await readFile(opened.project.policy.outputFile, 'utf8')) as {
       readonly schemaVersion: unknown;
       readonly policy: unknown;
     };
   } catch (error) {
     throw new Error(`playwright --list recorded no runner policy:\n${listed.output}`, { cause: error });
   }
-  await writeJson(opened.project.policy.baseline, { schemaVersion: recorded.schemaVersion, policy: recorded.policy });
+  await writeYaml(opened.project.policy.baseline, { schemaVersion: recorded.schemaVersion, policy: recorded.policy });
   await rm(dirname(opened.project.policy.outputFile), { recursive: true, force: true });
 }
 
@@ -155,4 +157,13 @@ export async function readJson<T = Record<string, unknown>>(path: string): Promi
 
 export async function writeJson(path: string, value: unknown): Promise<void> {
   await writeFile(path, `${JSON.stringify(value, null, 2)}\n`);
+}
+
+/** The runner-policy files are YAML. */
+export async function readYaml<T = Record<string, unknown>>(path: string): Promise<T> {
+  return parse(await readFile(path, 'utf8')) as T;
+}
+
+export async function writeYaml(path: string, value: unknown): Promise<void> {
+  await writeFile(path, stringify(value));
 }

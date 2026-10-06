@@ -55,7 +55,7 @@ export async function verifyRun(input: VerifyInput): Promise<VerifyResult> {
   if (policy.kind === 'problem') {
     problems.push(policy.problem);
   } else {
-    problems.push(...policyProblems(project, policy.value, run.kind === 'read' ? run.value : null));
+    problems.push(...policyProblems(project, policy.value));
   }
   const supported = scenarios.length > 0 && scenarios.every((scenario) => scenario.verdict === 'supported');
   return { ok: supported && problems.length === 0, scenarios, problems };

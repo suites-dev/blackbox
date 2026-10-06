@@ -59,22 +59,26 @@ vocabulary (dependency-cruiser rule `gherkin-registry-is-library-only`).
 `blackbox.feature.yaml` is the project's protected spec file. Its paths are relative to its directory,
 and it refuses any key it does not document:
 
-```json
-{
-  "schemaVersion": 1,
-  "blackboxConfigFile": "blackbox.config.yaml",
-  "features": ["features/**/*.feature"],
-  "outputDir": ".features-gen",
-  "runManifest": "test-results/blackbox-run.json",
-  "policy": { "baseline": "blackbox.policy.json", "outputFile": "test-results/blackbox-policy.json" },
-  "sandboxes": {
-    "default": {
-      "environment": { "FIXTURE_CONTROL_TOKEN": { "fromEnv": "BLACKBOX_E2E_FIXTURE_TOKEN" } },
-      "credentials": { "fixture-control": { "scheme": "bearer", "fromEnv": "BLACKBOX_E2E_FIXTURE_TOKEN" } }
-    }
-  },
-  "changes": { "spec": [], "neutral": ["**/*.md"] }
-}
+```yaml
+schemaVersion: 1
+blackboxConfigFile: blackbox.config.yaml
+features:
+  - features/**/*.feature
+outputDir: .features-gen
+runManifest: test-results/blackbox-run.json
+policy:
+  baseline: blackbox.policy.yaml
+  outputFile: test-results/blackbox-policy.yaml
+sandboxes:
+  default:
+    environment:
+      FIXTURE_CONTROL_TOKEN: { fromEnv: BLACKBOX_E2E_FIXTURE_TOKEN }
+    credentials:
+      fixture-control: { scheme: bearer, fromEnv: BLACKBOX_E2E_FIXTURE_TOKEN }
+changes:
+  spec: []
+  neutral:
+    - "**/*.md"
 ```
 
 `defineGherkinConfig` from

@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises';
 
 import type { PolicyManifest, RunManifest } from '@suites/blackbox-playwright/reporter';
+import { parse } from 'yaml';
 
 import { COMPILER_NAME, type CompileManifest } from '../compiler/manifest.js';
 import { isObject } from '../project/reader.js';
@@ -12,7 +13,16 @@ import { isObject } from '../project/reader.js';
 
 export type Read<T> = { readonly kind: 'read'; readonly value: T } | { readonly kind: 'problem'; readonly problem: string };
 
-async function readJson(file: string, what: string, missing: string): Promise<Read<unknown>> {
+interface Format {
+  readonly name: 'JSON' | 'YAML';
+  readonly parse: (text: string) => unknown;
+}
+
+const JSON_FORMAT = { name: 'JSON', parse: (text: string): unknown => JSON.parse(text) } satisfies Format;
+// The runner-policy file is YAML, like the protected baseline it is compared with.
+const YAML_FORMAT = { name: 'YAML', parse: (text: string): unknown => parse(text) } satisfies Format;
+
+async function readDocument(file: string, what: string, missing: string, format: Format = JSON_FORMAT): Promise<Read<unknown>> {
   let text: string;
   try {
     text = await readFile(file, 'utf8');
@@ -23,9 +33,9 @@ async function readJson(file: string, what: string, missing: string): Promise<Re
     throw error;
   }
   try {
-    return { kind: 'read', value: JSON.parse(text) as unknown };
+    return { kind: 'read', value: format.parse(text) };
   } catch (error) {
-    return { kind: 'problem', problem: `the ${what} at ${file} is not JSON: ${(error as Error).message}` };
+    return { kind: 'problem', problem: `the ${what} at ${file} is not ${format.name}: ${(error as Error).message}` };
   }
 }
 
@@ -54,11 +64,11 @@ function isRunManifest(value: unknown): value is RunManifest {
 }
 
 function isPolicyManifest(value: unknown): value is PolicyManifest {
-  return isObject(value) && value.schemaVersion === 2 && isObject(value.policy) && isObject(value.policy.tests);
+  return isObject(value) && value.schemaVersion === 3 && isObject(value.policy);
 }
 
 export async function readCompileManifest(file: string): Promise<Read<CompileManifest>> {
-  const read = await readJson(file, 'compile manifest', 'run `blackbox feature compile` first');
+  const read = await readDocument(file, 'compile manifest', 'run `blackbox feature compile` first');
   if (read.kind === 'problem') {
     return read;
   }
@@ -69,7 +79,7 @@ export async function readCompileManifest(file: string): Promise<Read<CompileMan
 }
 
 export async function readRunManifest(file: string): Promise<Read<RunManifest>> {
-  const read = await readJson(
+  const read = await readDocument(
     file,
     'run manifest',
     'the Blackbox reporter did not write one, so the run had no strict verdicts (was the reporter replaced on the command line?)',
@@ -84,12 +94,12 @@ export async function readRunManifest(file: string): Promise<Read<RunManifest>> 
 }
 
 export async function readPolicyManifest(file: string): Promise<Read<PolicyManifest>> {
-  const read = await readJson(file, 'runner-policy manifest', 'the Blackbox reporter did not record the effective runner policy');
+  const read = await readDocument(file, 'runner-policy manifest', 'the Blackbox reporter did not record the effective runner policy', YAML_FORMAT);
   if (read.kind === 'problem') {
     return read;
   }
   if (!isPolicyManifest(read.value)) {
-    return { kind: 'problem', problem: `the runner-policy manifest at ${file} is not a runner-policy manifest (schemaVersion 2)` };
+    return { kind: 'problem', problem: `the runner-policy manifest at ${file} is not a runner-policy manifest (schemaVersion 3)` };
   }
   return { kind: 'read', value: read.value };
 }

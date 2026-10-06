@@ -5,8 +5,8 @@ features:
 outputDir: .features-gen
 runManifest: test-results/gherkin/blackbox-run.json
 policy:
-  baseline: blackbox.policy.json
-  outputFile: test-results/gherkin/blackbox-policy.json
+  baseline: blackbox.policy.yaml
+  outputFile: test-results/gherkin/blackbox-policy.yaml
 sandboxes:
   default:
     environment:

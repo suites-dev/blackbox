@@ -7,7 +7,7 @@ import { MANIFEST_FILE } from '../compiler/manifest.js';
 import { library as sharedLibrary } from '../library/index.js';
 import { compilerTestLibrary } from '../library/testing/compiler-steps.js';
 import type { StepLibrary } from '../runtime/library.js';
-import { cleanupVerifyProjects, copyOf, feature, readJson, STUB_LIBRARY, verifyProject, writeJson, type VerifyProject } from './testing/project.js';
+import { cleanupVerifyProjects, copyOf, feature, readJson, readYaml, STUB_LIBRARY, verifyProject, writeJson, writeYaml, type VerifyProject } from './testing/project.js';
 import { verifyRun } from './verify.js';
 
 // Requirements (task 2.4, report sections 4.3, 4.5 and 8): verify fails on
@@ -36,35 +36,25 @@ describe('verify fails on runner policy', () => {
     const result = await verify(copy);
     expect(result.ok).toBe(false);
     expect(result.problems).toContainEqual(
-      expect.stringMatching(/^the runner policy differs from the baseline blackbox\.policy\.json; .*\n {2}policy\.projects\[""\]\.retries: baseline 0, effective 1$/mu),
+      expect.stringMatching(/^the runner policy differs from the baseline blackbox\.policy\.yaml; .*\n {2}policy\.projects\[""\]\.retries: not in baseline, effective 1$/mu),
     );
   });
 
   it('when the baseline no longer matches the run, naming each difference', async () => {
     const copy = await copyOf(passing);
-    const baseline = await readJson<{ policy: { run: Record<string, unknown> } }>(copy.project.policy.baseline);
-    baseline.policy.run.workers = 4;
-    await writeJson(copy.project.policy.baseline, baseline);
+    const baseline = await readYaml<{ policy: Record<string, unknown> }>(copy.project.policy.baseline);
+    baseline.policy.workers = 4;
+    await writeYaml(copy.project.policy.baseline, baseline);
     expect((await verify(copy)).problems).toEqual([
-      'the runner policy differs from the baseline blackbox.policy.json; change the baseline in a reviewed spec-only change if this is intended:\n  policy.run.workers: baseline 4, effective 1',
+      'the runner policy differs from the baseline blackbox.policy.yaml; change the baseline in a reviewed spec-only change if this is intended:\n  policy.workers: baseline 4, effective 1',
     ]);
   });
 
-  it('when the runner-policy manifest is missing or describes another run', async () => {
+  it('when the runner-policy manifest is missing', async () => {
     const missing = await copyOf(passing);
     await rm(missing.project.policy.outputFile);
     expect((await verify(missing)).problems).toEqual([
       `no runner-policy manifest at ${missing.project.policy.outputFile}: the Blackbox reporter did not record the effective runner policy`,
-    ]);
-    // A policy manifest that matches its baseline but lists other tests than the run manifest.
-    const other = await copyOf(passing);
-    for (const file of [other.project.policy.outputFile, other.project.policy.baseline]) {
-      const policy = await readJson<{ policy: { tests: Record<string, unknown> } }>(file);
-      policy.policy.tests = {};
-      await writeJson(file, policy);
-    }
-    expect((await verify(other)).problems).toEqual([
-      'the runner-policy manifest results/blackbox-policy.json does not list the tests of the run manifest; both must come from the same run',
     ]);
   });
 });

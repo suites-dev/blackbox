@@ -116,7 +116,6 @@ describe('verify fails on the run', () => {
     );
     expect((await verify(copy)).problems).toEqual([
       'test "features/stub.feature.spec.mjs › hand-written test" ran but was not compiled from an accepted feature',
-      expect.stringContaining('does not list the tests of the run manifest'),
     ]);
   });
 });

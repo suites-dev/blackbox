@@ -1,0 +1,8 @@
+schemaVersion: 3
+policy:
+  workers: 2
+  projects:
+    "":
+      timeout: 180000
+      testDir: .features-gen
+      testMatch: "**/*.feature.spec.mjs"

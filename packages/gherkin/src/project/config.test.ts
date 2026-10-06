@@ -21,7 +21,7 @@ const VALID = {
   features: ['features/**/*.feature'],
   outputDir: '.features-gen',
   runManifest: 'test-results/blackbox-run.json',
-  policy: { baseline: 'blackbox.policy.json', outputFile: 'test-results/blackbox-policy.json' },
+  policy: { baseline: 'blackbox.policy.yaml', outputFile: 'test-results/blackbox-policy.yaml' },
   sandboxes: {
     default: {
       environment: { FIXTURE_CONTROL_TOKEN: { fromEnv: 'BLACKBOX_E2E_FIXTURE_TOKEN' } },
@@ -52,7 +52,7 @@ describe('a valid project file', () => {
       features: ['features/**/*.feature'],
       outputDir: join(ROOT, '.features-gen'),
       runManifest: join(ROOT, 'test-results/blackbox-run.json'),
-      policy: { baseline: join(ROOT, 'blackbox.policy.json'), outputFile: join(ROOT, 'test-results/blackbox-policy.json') },
+      policy: { baseline: join(ROOT, 'blackbox.policy.yaml'), outputFile: join(ROOT, 'test-results/blackbox-policy.yaml') },
       sandboxProfiles: VALID.sandboxes,
       changes: { spec: [], neutral: ['**/*.md'] },
     });
@@ -110,7 +110,7 @@ describe('a refused project file', () => {
         blackboxConfigFile: '/etc/blackbox.config.yaml',
         features: ['../shared/**/*.feature'],
         outputDir: '..',
-        policy: { baseline: 'blackbox.policy.json' },
+        policy: { baseline: 'blackbox.policy.yaml' },
         sandboxes: {},
       }),
     ).toEqual([
@@ -134,7 +134,7 @@ describe('names that address the prototype chain', () => {
     "features": ["features/**/*.feature"],
     "outputDir": ".features-gen",
     "runManifest": "results/blackbox-run.json",
-    "policy": { "baseline": "blackbox.policy.json", "outputFile": "results/blackbox-policy.json" },
+    "policy": { "baseline": "blackbox.policy.yaml", "outputFile": "results/blackbox-policy.yaml" },
     "sandboxes": {
       "__proto__": { "environment": { "polluted": { "fromEnv": "X" } } },
       "constructor": {},
@@ -180,7 +180,7 @@ describe('blackbox.feature.yaml read from disk', () => {
 
   it('reads a YAML project file', async () => {
     expect(
-      await load('schemaVersion: 1\nblackboxConfigFile: blackbox.config.yaml\nfeatures: ["features/**/*.feature"]\noutputDir: .features-gen\nrunManifest: results/blackbox-run.json\npolicy:\n  baseline: blackbox.policy.json\n  outputFile: results/blackbox-policy.json\nsandboxes:\n  default: {}\n'),
+      await load('schemaVersion: 1\nblackboxConfigFile: blackbox.config.yaml\nfeatures: ["features/**/*.feature"]\noutputDir: .features-gen\nrunManifest: results/blackbox-run.json\npolicy:\n  baseline: blackbox.policy.yaml\n  outputFile: results/blackbox-policy.yaml\nsandboxes:\n  default: {}\n'),
     ).toEqual([]);
   });
 
@@ -188,7 +188,7 @@ describe('blackbox.feature.yaml read from disk', () => {
     expect(await load('features: [unclosed\n')).toEqual([expect.stringMatching(/^is not valid YAML: /u)]);
     const before = Object.getOwnPropertyNames(Object.prototype).sort();
     expect(
-      await load('schemaVersion: 1\nblackboxConfigFile: blackbox.config.yaml\nfeatures: ["f/*.feature"]\noutputDir: out\nrunManifest: results/blackbox-run.json\npolicy:\n  baseline: blackbox.policy.json\n  outputFile: results/blackbox-policy.json\nsandboxes:\n  __proto__: { environment: { polluted: { fromEnv: X } } }\n  default: {}\n'),
+      await load('schemaVersion: 1\nblackboxConfigFile: blackbox.config.yaml\nfeatures: ["f/*.feature"]\noutputDir: out\nrunManifest: results/blackbox-run.json\npolicy:\n  baseline: blackbox.policy.yaml\n  outputFile: results/blackbox-policy.yaml\nsandboxes:\n  __proto__: { environment: { polluted: { fromEnv: X } } }\n  default: {}\n'),
     ).toEqual(['sandboxes.__proto__: is a reserved name; choose another name']);
     expect(Object.getOwnPropertyNames(Object.prototype).sort()).toEqual(before);
   });
