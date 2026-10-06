@@ -1,5 +1,6 @@
 import { expect } from '@suites/blackbox-playwright';
 
+import { jsonSyntaxError } from '../../compiler/planning/json-syntax.js';
 import type { StepArgument, StepFixtures } from '../../runtime/step-types.js';
 
 // Readers for what the compiler hands a step: its expression parameters, its
@@ -44,6 +45,24 @@ export function parseJson(text: string, what: string): unknown {
   }, `${what} is JSON`).not.toThrow();
   const value: unknown = JSON.parse(text);
   return value;
+}
+
+/** Why `text` is not JSON, or nothing when it is: the compile-time form of parseJson. */
+export function jsonProblems(text: string, what: string): readonly string[] {
+  const error = jsonSyntaxError(text);
+  return error === null ? [] : [`${what} is not JSON (${error})`];
+}
+
+/** The compile-time form of jsonDocString: an untyped or `json` doc string holding JSON. */
+export function jsonDocStringProblems(argument: StepArgument): readonly string[] {
+  if (argument.kind !== 'doc-string') {
+    return [];
+  }
+  const mediaType = argument.mediaType ?? 'json';
+  if (mediaType !== 'json') {
+    return [`the doc string is typed ${JSON.stringify(mediaType)}; this step takes an untyped or json doc string`];
+  }
+  return jsonProblems(argument.content, 'the doc string');
 }
 
 /** The step's doc string, which must be JSON (untyped or typed `json`). Returns its text. */

@@ -20,6 +20,7 @@ function definition(expression: string, requires: StepDefinition['requires'] = n
     credentialParameter: null,
     deadlineParameter: null,
     example: expression,
+    check: null,
     run,
   };
 }

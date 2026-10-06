@@ -34,6 +34,13 @@ function child(value: unknown, token: string): PointerResult {
   return NOT_FOUND;
 }
 
+/** Why `pointer` is not a JSON Pointer, or nothing: the compile-time form of expectPointer. */
+export function pointerProblems(pointer: string): readonly string[] {
+  return POINTER.test(pointer)
+    ? []
+    : [`${JSON.stringify(pointer)} is not a JSON Pointer (RFC 6901), such as "" or "/subscriptions/0/id"`];
+}
+
 /** Fails the step when `pointer` is not a JSON Pointer. */
 export function expectPointer(pointer: string): void {
   expect(pointer, 'JSON Pointer (RFC 6901), such as "" or "/subscriptions/0/id"').toMatch(POINTER);

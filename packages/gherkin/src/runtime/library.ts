@@ -13,8 +13,8 @@ export interface StepLibraryIdentity {
   readonly vocabularyHash: string;
 }
 
-/** A step as an author reads it: its definition without the body. */
-export type StepVocabularyEntry = Omit<StepDefinition, 'run'>;
+/** A step as an author reads it: its definition without the body or the compile-time check. */
+export type StepVocabularyEntry = Omit<StepDefinition, 'run' | 'check'>;
 
 /** A closed, read-only step vocabulary. There is no registration API. */
 export interface StepLibrary {

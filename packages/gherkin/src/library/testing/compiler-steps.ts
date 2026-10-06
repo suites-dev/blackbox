@@ -23,6 +23,7 @@ function step(expression: string, shape: Shape, requires: Capability | null = nu
     ...shape,
     requires,
     example: expression,
+    check: null,
     run: noop,
   };
 }

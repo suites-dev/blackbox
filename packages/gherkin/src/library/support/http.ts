@@ -18,6 +18,25 @@ export interface JsonRequest {
 }
 
 const JSON_METHOD = /^(?:POST|PUT|PATCH|DELETE)$/u;
+const ENTRYPOINT_PATH = /^\/(?!\/)/u;
+// Stands in for the Sandbox entrypoint when a path is checked before any Sandbox exists.
+const COMPILE_ORIGIN = 'http://sandbox.invalid';
+
+/** Why `path` is not an absolute path on the Sandbox entrypoint's origin, or nothing. */
+export function pathProblems(path: string): readonly string[] {
+  const url = ENTRYPOINT_PATH.test(path) ? URL.parse(path, COMPILE_ORIGIN) : null;
+  if (url !== null && url.origin === COMPILE_ORIGIN) {
+    return [];
+  }
+  return [`request path ${JSON.stringify(path)} is not an absolute path on the Sandbox entrypoint, such as "/health"`];
+}
+
+/** Why `method` cannot send a JSON request, or nothing. */
+export function methodProblems(method: string): readonly string[] {
+  return JSON_METHOD.test(method)
+    ? []
+    : [`HTTP method ${JSON.stringify(method)} cannot send a JSON request; use POST, PUT, PATCH or DELETE`];
+}
 
 /**
  * The absolute URL for a path on the Sandbox entrypoint. Feature text can only
@@ -25,7 +44,7 @@ const JSON_METHOD = /^(?:POST|PUT|PATCH|DELETE)$/u;
  * fails, so a credential is never sent anywhere else.
  */
 export function entrypointUrl(sandbox: Sandbox, path: string): string {
-  expect(path, 'request path (absolute, on the Sandbox entrypoint)').toMatch(/^\/(?!\/)/u);
+  expect(path, 'request path (absolute, on the Sandbox entrypoint)').toMatch(ENTRYPOINT_PATH);
   const base = new URL(sandbox.entrypoint.url);
   const url = new URL(path, base);
   expect(url.origin, `origin of ${path}`).toBe(base.origin);

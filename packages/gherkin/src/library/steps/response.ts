@@ -2,8 +2,8 @@ import { expect } from '@suites/blackbox-playwright';
 
 import { stepDefinitions } from '../../runtime/registry.js';
 import type { StepFixtures } from '../../runtime/step-types.js';
-import { fixture, integerAt, jsonDocString, parseJson, stringAt } from '../support/arguments.js';
-import { expectPointer, resolvePointer, type PointerResult } from '../support/json-pointer.js';
+import { fixture, integerAt, jsonDocString, jsonDocStringProblems, parseJson, stringAt } from '../support/arguments.js';
+import { expectPointer, pointerProblems, resolvePointer, type PointerResult } from '../support/json-pointer.js';
 import { latestStimulus, singleResponse } from '../support/scenario.js';
 import { itemCount } from '../support/state.js';
 
@@ -36,6 +36,7 @@ export const responseSteps = stepDefinitions([
     credentialParameter: null,
     deadlineParameter: null,
     example: 'the response status is 201',
+    check: null,
     run: ({ fixtures, parameters }) => {
       const response = singleResponse(fixture(fixtures, 'world'));
       expect(response.status, `status of ${response.method} ${response.path}`).toBe(integerAt(parameters, 0));
@@ -51,6 +52,7 @@ export const responseSteps = stepDefinitions([
     credentialParameter: null,
     deadlineParameter: null,
     example: 'the response statuses are "201, 409"',
+    check: null,
     run: ({ fixtures, parameters }) => {
       const written = stringAt(parameters, 0);
       expect(written, 'statuses as a comma-separated list, such as "201, 409"').toMatch(STATUS_LIST);
@@ -70,6 +72,7 @@ export const responseSteps = stepDefinitions([
     credentialParameter: null,
     deadlineParameter: null,
     example: 'the response JSON equals:',
+    check: ({ argument }) => jsonDocStringProblems(argument),
     run: ({ fixtures, argument }) => {
       const response = singleResponse(fixture(fixtures, 'world'));
       const expected = parseJson(jsonDocString(argument), 'the doc string');
@@ -87,6 +90,7 @@ export const responseSteps = stepDefinitions([
     credentialParameter: null,
     deadlineParameter: null,
     example: 'the response has "/subscription/status" equal to:',
+    check: ({ parameters, argument }) => [...pointerProblems(stringAt(parameters, 0)), ...jsonDocStringProblems(argument)],
     run: ({ fixtures, parameters, argument }) => {
       const expected = parseJson(jsonDocString(argument), 'the doc string');
       const { at, where } = responseAt(fixtures, stringAt(parameters, 0));
@@ -103,6 +107,7 @@ export const responseSteps = stepDefinitions([
     credentialParameter: null,
     deadlineParameter: null,
     example: 'the response has 3 items at "/data"',
+    check: ({ parameters }) => pointerProblems(stringAt(parameters, 1)),
     run: ({ fixtures, parameters }) => {
       const { at, where } = responseAt(fixtures, stringAt(parameters, 1));
       expect(itemCount(at), `items of the array at ${where}`).toBe(integerAt(parameters, 0));
@@ -119,6 +124,7 @@ export const responseSteps = stepDefinitions([
     credentialParameter: null,
     deadlineParameter: null,
     example: 'the response has a value at "/subscription/id"',
+    check: ({ parameters }) => pointerProblems(stringAt(parameters, 0)),
     run: ({ fixtures, parameters }) => {
       const { at, where } = responseAt(fixtures, stringAt(parameters, 0));
       expect(at, `a value other than null at ${where}`).toEqual({ found: true, value: expect.anything() });

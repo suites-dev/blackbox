@@ -29,6 +29,7 @@ function harness(capabilities: readonly ('effects-claims' | 'participant-exec')[
     credentialParameter: null,
     deadlineParameter: null,
     example: expression,
+    check: null,
     run: (input) => {
       inputs.push(input);
       return Promise.resolve();
@@ -77,6 +78,7 @@ describe('createStepRunner', () => {
           credentialParameter: null,
           deadlineParameter: null,
           example: 'the response status is 200',
+          check: null,
           run: () => Promise.reject(new Error('expected 200\nreceived 500')),
         },
       ],

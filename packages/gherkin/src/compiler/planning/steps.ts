@@ -104,6 +104,11 @@ export function planStep(source: StepSource, scope: StepScope, sink: DiagnosticS
     return null;
   }
   checkCredential({ source, definition, parameters }, scope.profile, sink);
+  // Argument values are checked here, so a mistake costs a compile instead of a Sandbox acquisition.
+  const problems = definition.check === null ? [] : definition.check({ parameters, argument: source.argument });
+  for (const problem of problems) {
+    sink.report(source, `step ${quoted}: ${problem}`);
+  }
   return { ...source, definition, parameters };
 }
 

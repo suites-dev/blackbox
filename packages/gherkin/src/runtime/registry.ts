@@ -49,9 +49,9 @@ export function stepDefinitions(definitions: readonly StepDefinition[]): readonl
 
 /**
  * Identifies the library by its definitions in any order: each one's
- * expression, kind, argument, fixtures, capability, parameter roles and body
- * source. A body that differs from the compiled one changes the hash, so
- * verify reports it.
+ * expression, kind, argument, fixtures, capability, parameter roles, body
+ * source and compile-time check source. A body that differs from the compiled
+ * one changes the hash the compile manifest records.
  */
 function vocabularyHash(definitions: readonly StepDefinition[]): string {
   const vocabulary = definitions
@@ -65,6 +65,7 @@ function vocabularyHash(definitions: readonly StepDefinition[]): string {
         definition.credentialParameter,
         definition.deadlineParameter,
         definition.run.toString(),
+        ...(definition.check === null ? [] : [definition.check.toString()]),
       ]),
     )
     .sort();
@@ -123,7 +124,7 @@ export function createStepLibrary(input: StepLibraryInput): StepLibrary {
       vocabularyHash: vocabularyHash(input.definitions),
     }),
     capabilities: Object.freeze([...offered].sort()),
-    vocabulary: Object.freeze(input.definitions.map(({ run: _run, ...entry }) => Object.freeze(entry))),
+    vocabulary: Object.freeze(input.definitions.map(({ run: _run, check: _check, ...entry }) => Object.freeze(entry))),
     resolve: (text: string) => resolveText(compiled, offered, text),
   });
 }

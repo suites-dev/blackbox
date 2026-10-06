@@ -25,6 +25,9 @@ through the public `test.system(...).sandbox(...)` facade of `@suites/blackbox-p
   doc string or data table does not match, and a step that needs a capability this runtime does not offer
   (effects claims, participant exec) are compile errors. A scenario must make a claim, and an effects claim
   needs a completion barrier before it.
+- Checks the values a step is written with, at its `.feature` position: JSON doc strings and table cells,
+  request paths on the Sandbox entrypoint's origin, JSON Pointer syntax, the HTTP method of a JSON request,
+  and barrier deadlines from 1 to 3600 seconds. A mistake costs a compile, not a Sandbox acquisition.
 - Runs each step as a native step whose location is the `.feature` line; a failing step is reported there
   too, not at the generated file.
 - Writes all generated tests or none into a git-ignored output directory, together with

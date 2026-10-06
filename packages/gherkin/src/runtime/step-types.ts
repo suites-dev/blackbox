@@ -78,6 +78,12 @@ export interface StepInput {
   readonly argument: StepArgument;
 }
 
+/** What a step's compile-time check reads: the written values, never a fixture. */
+export type StepCheckInput = Omit<StepInput, 'fixtures'>;
+
+/** Returns what is wrong with a step's written values; empty when nothing is. */
+export type StepCheck = (input: StepCheckInput) => readonly string[];
+
 export interface StepDefinition {
   /** A Cucumber expression, for example `the response status is {int}`. */
   readonly expression: string;
@@ -99,6 +105,12 @@ export interface StepDefinition {
   readonly deadlineParameter: number | null;
   /** Step text a human author can copy; it resolves to this definition. Not part of the vocabulary hash. */
   readonly example: string;
+  /**
+   * Checks the written values when the feature compiles, before any Sandbox
+   * starts, or null when the expression's types are the whole check. Pure;
+   * the body checks the same values again when it runs.
+   */
+  readonly check: StepCheck | null;
   readonly run: (input: StepInput) => Promise<void>;
 }
 

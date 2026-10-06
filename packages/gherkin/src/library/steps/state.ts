@@ -2,7 +2,9 @@ import { expect } from '@suites/blackbox-playwright';
 
 import { stepDefinitions } from '../../runtime/registry.js';
 import type { StepFixtures } from '../../runtime/step-types.js';
-import { fixture, integerAt, jsonDocString, parseJson, stringAt } from '../support/arguments.js';
+import { fixture, integerAt, jsonDocString, jsonDocStringProblems, parseJson, stringAt } from '../support/arguments.js';
+import { pathProblems } from '../support/http.js';
+import { pointerProblems } from '../support/json-pointer.js';
 import { describeSource, itemCount, readState, readStateAt, type StateSource } from '../support/state.js';
 
 // State claims (report section 2.10): an authoritative read of an inspection
@@ -29,6 +31,7 @@ export const stateSteps = stepDefinitions([
     credentialParameter: 1,
     deadlineParameter: null,
     example: 'the state at "/fixture/state" as "fixture-control" equals:',
+    check: ({ parameters, argument }) => [...pathProblems(stringAt(parameters, 0)), ...jsonDocStringProblems(argument)],
     run: async ({ fixtures, parameters, argument }) => {
       const state = source(fixtures, parameters);
       const expected = parseJson(jsonDocString(argument), 'the doc string');
@@ -44,6 +47,11 @@ export const stateSteps = stepDefinitions([
     credentialParameter: 1,
     deadlineParameter: null,
     example: 'the state at "/fixture/state" as "fixture-control" has "/subscriptions" equal to:',
+    check: ({ parameters, argument }) => [
+      ...pathProblems(stringAt(parameters, 0)),
+      ...pointerProblems(stringAt(parameters, 2)),
+      ...jsonDocStringProblems(argument),
+    ],
     run: async ({ fixtures, parameters, argument }) => {
       const state = source(fixtures, parameters);
       const pointer = stringAt(parameters, 2);
@@ -63,6 +71,7 @@ export const stateSteps = stepDefinitions([
     credentialParameter: 1,
     deadlineParameter: null,
     example: 'the state at "/fixture/state" as "fixture-control" has 1 item at "/subscriptions"',
+    check: ({ parameters }) => [...pathProblems(stringAt(parameters, 0)), ...pointerProblems(stringAt(parameters, 3))],
     run: async ({ fixtures, parameters }) => {
       const state = source(fixtures, parameters);
       const pointer = stringAt(parameters, 3);
