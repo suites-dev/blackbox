@@ -162,11 +162,51 @@ jobs:
         timeout-minutes: 25
         run: pnpm run test:integration
 
+  # Hard rule 2 of the Gherkin input design: a pull request changes specs
+  # (features, the step library, their project files) or code, never both.
+  # The check runs the base branch's copy of the checker when the base has
+  # one, so a pull request cannot loosen the check that judges it. Node only.
+  separation:
+    name: Spec/code separation
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          # The pull request merge commit and its first parent, the base tip.
+          fetch-depth: 2
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Test the separation check
+        timeout-minutes: 5
+        run: node --test scripts/check-spec-separation.test.mjs
+
+      - name: Check spec/code separation
+        if: github.event_name == 'pull_request'
+        timeout-minutes: 5
+        run: |
+          git rev-parse --verify --quiet 'HEAD^2' > /dev/null || {
+            echo 'error spec-separation: HEAD is not the pull request merge commit' >&2
+            exit 1
+          }
+          checker=scripts/check-spec-separation.mjs
+          if git cat-file -e "HEAD^1:$checker" 2> /dev/null; then
+            echo "Using the base branch's $checker"
+            git show "HEAD^1:$checker" > "$RUNNER_TEMP/check-spec-separation.mjs"
+            checker="$RUNNER_TEMP/check-spec-separation.mjs"
+          fi
+          node "$checker" --base 'HEAD^1'
+
   # One stable aggregate over the required lanes. Each lane keeps its own
   # diagnosable result; this job only folds them into a single verdict.
   gate:
     name: CI Gate
-    needs: [build, lint, deps, test, integration]
+    needs: [build, lint, deps, test, integration, separation]
     if: always()
     runs-on: ubuntu-24.04
     timeout-minutes: 5
@@ -178,6 +218,7 @@ jobs:
           DEPS_RESULT: ${{ needs.deps.result }}
           TEST_RESULT: ${{ needs.test.result }}
           INTEGRATION_RESULT: ${{ needs.integration.result }}
+          SEPARATION_RESULT: ${{ needs.separation.result }}
         run: |
           status=0
           for lane in \
@@ -185,7 +226,8 @@ jobs:
             "lint=$LINT_RESULT" \
             "deps=$DEPS_RESULT" \
             "test=$TEST_RESULT" \
-            "integration=$INTEGRATION_RESULT"; do
+            "integration=$INTEGRATION_RESULT" \
+            "separation=$SEPARATION_RESULT"; do
             printf '%s\n' "$lane"
             [[ "${lane#*=}" == success ]] || status=1
           done
