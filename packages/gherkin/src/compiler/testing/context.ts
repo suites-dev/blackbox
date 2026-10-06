@@ -15,8 +15,11 @@ export function testContext(capabilities: readonly Capability[] = []): CompileCo
   return {
     catalog: testCatalog,
     sandboxProfiles: {
-      default: { environment: { FIXTURE_CONTROL_TOKEN: { fromEnv: 'BLACKBOX_E2E_FIXTURE_TOKEN' } } },
-      bare: { environment: {} },
+      default: {
+        environment: { FIXTURE_CONTROL_TOKEN: { fromEnv: 'BLACKBOX_E2E_FIXTURE_TOKEN' } },
+        credentials: { 'fixture-control': { scheme: 'bearer', fromEnv: 'BLACKBOX_E2E_FIXTURE_TOKEN' } },
+      },
+      bare: { environment: {}, credentials: {} },
     },
     library: compilerTestLibrary(capabilities),
   };

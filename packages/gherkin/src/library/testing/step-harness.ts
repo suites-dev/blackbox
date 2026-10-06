@@ -1,6 +1,8 @@
 import { createStepRunner, type StepRunner } from '../../runtime/run-step.js';
+import type { SandboxCredentials } from '../../runtime/credentials.js';
 import type { BlackboxStep, StepArgument, StepFixtures } from '../../runtime/step-types.js';
 import { library } from '../index.js';
+import { STUB_TOKEN } from './stub-system.js';
 
 // Runs library steps by their feature text through the real runtime path
 // (resolve, then run), outside Playwright. The `request` fixture is a stand-in
@@ -69,9 +71,19 @@ const plainStep: BlackboxStep = async (_title, body) => body({} as StepInfo);
 
 export const runLibraryStep: StepRunner = createStepRunner(library, plainStep);
 
+/** The Sandbox profile credentials of the stub: fixture-control presents the stub's token. */
+export const STUB_CREDENTIALS = {
+  'fixture-control': { scheme: 'bearer', token: STUB_TOKEN },
+} as const satisfies SandboxCredentials;
+
 /** One scenario attempt: fresh fixtures and world, steps run in order. */
-export function scenarioAt(url: string) {
-  const fixtures = { request: fetchRequest(), sandbox: sandboxAt(url), world: new Map() } satisfies StepFixtures;
+export function scenarioAt(url: string, credentials: SandboxCredentials = STUB_CREDENTIALS) {
+  const fixtures = {
+    credentials,
+    request: fetchRequest(),
+    sandbox: sandboxAt(url),
+    world: new Map(),
+  } satisfies StepFixtures;
   const site = { feature: new URL('file:///qualification/library.feature'), line: 1, column: 1, keyword: 'Step' };
   return {
     fixtures,

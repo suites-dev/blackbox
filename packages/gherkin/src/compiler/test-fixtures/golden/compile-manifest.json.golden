@@ -4,7 +4,7 @@
   "library": {
     "name": "compiler-test-library",
     "version": "0.0.0",
-    "vocabularyHash": "sha256:9b0f687cc036f7d237af1a2b7fdee6d0eb95587856292ff80c1cbdff2da2243c"
+    "vocabularyHash": "sha256:81b13fdce85da8378089fc7bc4e2a95ed506f28f1b41f10d2523eb9c23297723"
   },
   "capabilities": [],
   "features": [
@@ -19,7 +19,7 @@
         "sandbox": "default"
       },
       "generated": "features/arguments.feature.spec.mjs",
-      "generatedHash": "sha256:499e5c61d6fb973ae99d2e8445f15fc3aae9f9f298dce9842eb8e5b77e5bb1a9"
+      "generatedHash": "sha256:9d0c0fd74f2e4314cde3de9681ee26fcf2f4c1b55b4fa15fb4b7bf43e6cfbc9e"
     },
     {
       "feature": "features/background.feature",
@@ -32,7 +32,20 @@
         "sandbox": "default"
       },
       "generated": "features/background.feature.spec.mjs",
-      "generatedHash": "sha256:652b251c68cd22812e785fd872d50b2761ef254df9440f290c623d7dacc07ea9"
+      "generatedHash": "sha256:8fe02e6bdc8328123b25d318dc740d7620075ac289e6b8088ecabfdb7f64d1a4"
+    },
+    {
+      "feature": "features/deadlines.feature",
+      "featureHash": "sha256:ac55814fc9e63302c459730a238d682c69d6888d2e2711afeb94f3d54fe98173",
+      "title": "Feature: Barrier deadlines and named credentials",
+      "description": "Deadlines written in the feature are runner policy, so the compile manifest\n  records every one a scenario runs, Background steps included.",
+      "selection": {
+        "kind": "system",
+        "id": "subscription-system",
+        "sandbox": "default"
+      },
+      "generated": "features/deadlines.feature.spec.mjs",
+      "generatedHash": "sha256:250df9b741d513225524196431d0e4ed8682c08810ffaa71ea7574e976dc489c"
     },
     {
       "feature": "features/outline.feature",
@@ -45,7 +58,7 @@
         "sandbox": "default"
       },
       "generated": "features/outline.feature.spec.mjs",
-      "generatedHash": "sha256:75e8d844631a755c3be3a5fd6eddc59b722cc7c3853c0d49d8e012acb49d5344"
+      "generatedHash": "sha256:b2d05d8e1f9aed2b8223ad523e4d506f310e092014136954b8abe7dfb8123829"
     },
     {
       "feature": "features/rules.feature",
@@ -58,7 +71,7 @@
         "sandbox": "default"
       },
       "generated": "features/rules.feature.spec.mjs",
-      "generatedHash": "sha256:34239fdb2b10320c7bd0e87662ad1b78f25a6059f2c50e86374c7e3ca4e70054"
+      "generatedHash": "sha256:69b6e091a0ce0dac376039b5803acce3921ad8d70bd124fb59b3ca43ff6aa543"
     },
     {
       "feature": "features/subsystem.feature",
@@ -71,7 +84,7 @@
         "sandbox": "bare"
       },
       "generated": "features/subsystem.feature.spec.mjs",
-      "generatedHash": "sha256:58723651e781a129db868e02c9b45ac97918db73131ef10dbeda418915dc39a2"
+      "generatedHash": "sha256:737bafc01d6e0a1ef85f4e933cec70f17b34d84bb9695921ed2df3e35ad2998c"
     }
   ],
   "scenarios": [
@@ -91,7 +104,8 @@
         "id": "subscription-system",
         "sandbox": "default"
       },
-      "requirements": []
+      "requirements": [],
+      "barrierDeadlines": []
     },
     {
       "id": "features/background.feature:14",
@@ -111,7 +125,8 @@
       },
       "requirements": [
         "REQ-100"
-      ]
+      ],
+      "barrierDeadlines": []
     },
     {
       "id": "features/background.feature:19",
@@ -132,6 +147,68 @@
       "requirements": [
         "REQ-100",
         "REQ-101"
+      ],
+      "barrierDeadlines": []
+    },
+    {
+      "id": "features/deadlines.feature:9",
+      "feature": "features/deadlines.feature",
+      "line": 9,
+      "column": 3,
+      "exampleLine": null,
+      "titlePath": [
+        "Feature: Barrier deadlines and named credentials",
+        "Scenario: a scenario deadline after the Background one"
+      ],
+      "generated": "features/deadlines.feature.spec.mjs",
+      "selection": {
+        "kind": "system",
+        "id": "subscription-system",
+        "sandbox": "default"
+      },
+      "requirements": [],
+      "barrierDeadlines": [
+        {
+          "line": 7,
+          "column": 5,
+          "seconds": 3
+        },
+        {
+          "line": 11,
+          "column": 5,
+          "seconds": 10
+        }
+      ]
+    },
+    {
+      "id": "features/deadlines.feature:19",
+      "feature": "features/deadlines.feature",
+      "line": 19,
+      "column": 5,
+      "exampleLine": null,
+      "titlePath": [
+        "Feature: Barrier deadlines and named credentials",
+        "Rule: a Rule-level Background deadline",
+        "Scenario: a Rule scenario runs both Background deadlines"
+      ],
+      "generated": "features/deadlines.feature.spec.mjs",
+      "selection": {
+        "kind": "system",
+        "id": "subscription-system",
+        "sandbox": "default"
+      },
+      "requirements": [],
+      "barrierDeadlines": [
+        {
+          "line": 7,
+          "column": 5,
+          "seconds": 3
+        },
+        {
+          "line": 17,
+          "column": 7,
+          "seconds": 1
+        }
       ]
     },
     {
@@ -152,7 +229,8 @@
       },
       "requirements": [
         "REQ-102"
-      ]
+      ],
+      "barrierDeadlines": []
     },
     {
       "id": "features/outline.feature:5:15",
@@ -172,7 +250,8 @@
       },
       "requirements": [
         "REQ-102"
-      ]
+      ],
+      "barrierDeadlines": []
     },
     {
       "id": "features/outline.feature:5:19",
@@ -192,7 +271,8 @@
       },
       "requirements": [
         "REQ-102"
-      ]
+      ],
+      "barrierDeadlines": []
     },
     {
       "id": "features/rules.feature:7",
@@ -212,7 +292,8 @@
       },
       "requirements": [
         "REQ-100"
-      ]
+      ],
+      "barrierDeadlines": []
     },
     {
       "id": "features/rules.feature:18",
@@ -235,7 +316,8 @@
         "REQ-100",
         "REQ-101",
         "REQ-110"
-      ]
+      ],
+      "barrierDeadlines": []
     },
     {
       "id": "features/rules.feature:28",
@@ -256,7 +338,8 @@
       },
       "requirements": [
         "REQ-100"
-      ]
+      ],
+      "barrierDeadlines": []
     },
     {
       "id": "features/subsystem.feature:4",
@@ -274,7 +357,8 @@
         "id": "payment-mock",
         "sandbox": "bare"
       },
-      "requirements": []
+      "requirements": [],
+      "barrierDeadlines": []
     }
   ]
 }

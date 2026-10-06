@@ -1,4 +1,4 @@
-import { afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 
 import { useStubSystems } from './testing/stub-lifecycle.js';
 import { featureFixture, planWorkedExample, scenarioSteps, verdicts } from './testing/worked-examples.js';
@@ -11,7 +11,7 @@ import { featureFixture, planWorkedExample, scenarioSteps, verdicts } from './te
 // never persists the row, turns exactly the scenarios that depend on the row
 // not supported, at the claim that notices.
 
-const system = useStubSystems(beforeAll, afterEach);
+const system = useStubSystems(afterEach);
 const FEATURE = featureFixture('subscription-intake.feature');
 
 const ELIGIBLE = 'Scenario: an eligible user receives an active subscription';

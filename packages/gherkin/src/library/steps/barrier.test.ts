@@ -1,4 +1,4 @@
-import { afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 
 import { json, scenarioAt } from '../testing/step-harness.js';
 import { useStubSystems } from '../testing/stub-lifecycle.js';
@@ -11,7 +11,7 @@ import type { StubSystem } from '../testing/stub-system.js';
 // order, so its flow never completes. The stub enqueues an order one second
 // after a pro user's subscription.
 
-const system = useStubSystems(beforeAll, afterEach);
+const system = useStubSystems(afterEach);
 
 // Playwright stops polling once the next interval would pass the deadline, so a
 // barrier gives up within one interval (at most 1s) before it, never after it.
@@ -85,7 +85,7 @@ describe('the flow is sealed within {int} second(s) when ... has {int} item(s) a
 });
 
 describe('polling barrier preconditions', () => {
-  it('refuses a deadline below one second, an unset credential and a bad pointer before polling', async () => {
+  it('refuses a deadline below one second, an undefined credential and a bad pointer before polling', async () => {
     const sut = await system('correct');
     const scenario = scenarioAt(sut.url);
     await expect(scenario.step(ORDERS_EQUAL(0), ALICE_ORDER)).rejects.toThrow('barrier deadline in seconds');
@@ -95,9 +95,8 @@ describe('polling barrier preconditions', () => {
         'the flow is sealed within 1 second when the state at "/fixture/state" as "fixture-control" has 1 item at "orders"',
       ),
     ).rejects.toThrow('JSON Pointer (RFC 6901)');
-    delete process.env.BLACKBOX_CREDENTIAL_FIXTURE_CONTROL;
-    await expect(scenario.step(ORDER_COUNT(1))).rejects.toThrow(
-      'Credential "fixture-control" reads BLACKBOX_CREDENTIAL_FIXTURE_CONTROL, which is not set in the runner environment',
+    await expect(scenarioAt(sut.url, {}).step(ORDER_COUNT(1))).rejects.toThrow(
+      'Credential "fixture-control" is not defined by the feature\'s Sandbox profile',
     );
     expect(sut.received).toEqual([]);
   });

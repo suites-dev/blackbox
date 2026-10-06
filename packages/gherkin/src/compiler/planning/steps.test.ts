@@ -139,3 +139,34 @@ describe('selection', () => {
     ]);
   });
 });
+
+describe('named credentials (task 2.4)', () => {
+  const claim = (credential: string) => `Then the state at "/fixture/state" as "${credential}" has 1 item`;
+
+  it('accepts a credential the Sandbox profile defines', () => {
+    expect(diagnosticsOf(scenario('When the client sends GET "/health"', claim('fixture-control')))).toEqual([]);
+  });
+
+  it('rejects a credential the Sandbox profile does not define, naming the ones it does', () => {
+    expect(diagnosticsOf(scenario('When the client sends GET "/health"', claim('admin')))).toEqual([
+      at(6, 5, 'credential "admin" is not defined by Sandbox profile "default" (it defines fixture-control)'),
+    ]);
+    const bare = featureWith(
+      '@system:subscription-system @sandbox:bare',
+      ['  Scenario: probe', '    When the client sends GET "/health"', `    ${claim('fixture-control')}`].join('\n'),
+    );
+    expect(diagnosticsOf(bare)).toEqual([
+      at(6, 5, 'credential "fixture-control" is not defined by Sandbox profile "bare" (it defines none)'),
+    ]);
+  });
+
+  it('reports only the unknown profile when the Feature selects none', () => {
+    const unknown = featureWith(
+      '@system:subscription-system @sandbox:nightly',
+      ['  Scenario: probe', '    When the client sends GET "/health"', `    ${claim('admin')}`].join('\n'),
+    );
+    expect(diagnosticsOf(unknown)).toEqual([
+      at(1, 29, '@sandbox:nightly names no Sandbox profile (known: bare, default)'),
+    ]);
+  });
+});

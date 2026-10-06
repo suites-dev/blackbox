@@ -4,6 +4,13 @@ import { library } from './library/index.js';
 import { createStepRunner } from './runtime/run-step.js';
 import { test } from './runtime/scenario-test.js';
 
+export { sandboxCredentials } from './runtime/credentials.js';
+export type {
+  CredentialSource,
+  ResolvedCredential,
+  SandboxCredentialSpec,
+  SandboxCredentials,
+} from './runtime/credentials.js';
 export { sandboxEnvironment } from './runtime/environment.js';
 export type { EnvironmentSource, SandboxEnvironmentSpec } from './runtime/environment.js';
 export { test };

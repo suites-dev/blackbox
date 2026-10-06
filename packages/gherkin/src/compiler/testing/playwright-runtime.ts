@@ -12,6 +12,7 @@ import type { ScenarioWorld, StepFixtures } from '../../runtime/step-types.js';
 // fixture is renamed, the production runtime acquires a Sandbox again and the run
 // fails without a catalog, so the substitution cannot silently stop applying.
 
+export { sandboxCredentials } from '../../runtime/credentials.js';
 export { sandboxEnvironment } from '../../runtime/environment.js';
 
 export const test = scenarioTest.extend<{ readonly _blackboxAttempt: { readonly kind: 'unselected' } }>({

@@ -3,13 +3,13 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 
 import { compileFeatures } from '../compiler/compile.js';
 import { testCatalog } from '../compiler/testing/context.js';
 import { library } from './index.js';
 import { useStubSystems } from './testing/stub-lifecycle.js';
-import { featureFixture, verdicts } from './testing/worked-examples.js';
+import { featureFixture, verdicts, WORKED_EXAMPLE_PROFILE } from './testing/worked-examples.js';
 
 // Requirement (task 2.3, captain's addition on #154): the showcase's feature 1,
 // the health check, compiles against the shared library now that it has a
@@ -18,7 +18,7 @@ import { featureFixture, verdicts } from './testing/worked-examples.js';
 // stated wrong case). Before the GET step it failed to compile with
 // `undefined step "When the client sends GET "/health""`.
 
-const system = useStubSystems(beforeAll, afterEach);
+const system = useStubSystems(afterEach);
 const FEATURE = featureFixture('health-check.feature');
 const SCENARIO = 'Scenario: the public API reports ready';
 
@@ -37,7 +37,7 @@ describe('worked example: health check', () => {
       rootDir: root,
       outputDir: join(root, '.features-gen'),
       features: ['features/01-health-check.feature'],
-      context: { catalog: testCatalog, sandboxProfiles: { default: { environment: {} } }, library },
+      context: { catalog: testCatalog, sandboxProfiles: { default: WORKED_EXAMPLE_PROFILE }, library },
       runtimeModule: '@suites/blackbox-gherkin',
     });
     expect(files).toEqual(['features/01-health-check.feature.spec.mjs']);

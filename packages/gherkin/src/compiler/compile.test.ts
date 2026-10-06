@@ -61,7 +61,7 @@ describe('the compile manifest', () => {
       exampleLine: 19,
       requirements: ['REQ-102'],
     });
-    expect(output.manifest.scenarios).toHaveLength(10);
+    expect(output.manifest.scenarios).toHaveLength(12);
     expect(output.files).toEqual(FIXTURE_FEATURES.map((name) => `features/${name}.feature.spec.mjs`));
   });
 
@@ -77,5 +77,23 @@ describe('the compile manifest', () => {
     });
     const source = await readFile(join(project.root, 'features/subsystem.feature'), 'utf8');
     expect(subsystem!.featureHash).toBe(sha256(source));
+  });
+});
+
+describe('barrier deadlines in the compile manifest', () => {
+  it('records every deadline a scenario runs, feature and Rule Background barriers first', async () => {
+    const { output } = await compileFixtures();
+    const deadlines = (title: string) =>
+      output.manifest.scenarios.filter((scenario) => scenario.titlePath.at(-1) === title).map((scenario) => scenario.barrierDeadlines)[0];
+    expect(deadlines('Scenario: a scenario deadline after the Background one')).toEqual([
+      { line: 7, column: 5, seconds: 3 },
+      { line: 11, column: 5, seconds: 10 },
+    ]);
+    expect(deadlines('Scenario: a Rule scenario runs both Background deadlines')).toEqual([
+      { line: 7, column: 5, seconds: 3 },
+      { line: 17, column: 7, seconds: 1 },
+    ]);
+    // A synchronous seal has no deadline.
+    expect(deadlines('Scenario: an eligible user subscribes')).toEqual([]);
   });
 });

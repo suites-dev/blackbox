@@ -10,7 +10,17 @@ import type { StepDefinition } from './step-types.js';
 const run = () => Promise.resolve();
 
 function definition(expression: string, requires: StepDefinition['requires'] = null): StepDefinition {
-  return { expression, kind: 'response-claim', argument: 'none', fixtures: ['world'], requires, run };
+  return {
+    expression,
+    kind: 'response-claim',
+    argument: 'none',
+    fixtures: ['world'],
+    requires,
+    credentialParameter: null,
+    deadlineParameter: null,
+    example: expression,
+    run,
+  };
 }
 
 const definitions = [

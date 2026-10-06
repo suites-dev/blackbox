@@ -2,12 +2,8 @@ import { createHash } from 'node:crypto';
 
 import { CucumberExpression, ParameterTypeRegistry } from '@cucumber/cucumber-expressions';
 
-import type {
-  Capability,
-  StepDefinition,
-  StepLibrary,
-  StepResolution,
-} from './step-types.js';
+import type { StepLibrary } from './library.js';
+import type { Capability, StepDefinition, StepResolution } from './step-types.js';
 
 // Only the shared step library may build a vocabulary from definitions
 // (dependency-cruiser rule gherkin-registry-is-library-only). Everything else
@@ -34,6 +30,8 @@ function vocabularyHash(definitions: readonly StepDefinition[]): string {
         definition.argument,
         [...definition.fixtures].sort(),
         definition.requires,
+        definition.credentialParameter,
+        definition.deadlineParameter,
       ]),
     )
     .sort();
@@ -91,6 +89,7 @@ export function createStepLibrary(input: StepLibraryInput): StepLibrary {
       vocabularyHash: vocabularyHash(input.definitions),
     }),
     capabilities: Object.freeze([...offered].sort()),
+    vocabulary: Object.freeze(input.definitions.map(({ run: _run, ...entry }) => Object.freeze(entry))),
     resolve: (text: string) => resolveText(compiled, offered, text),
   });
 }

@@ -1,4 +1,4 @@
-import { afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 
 import { json, scenarioAt } from '../testing/step-harness.js';
 import { useStubSystems } from '../testing/stub-lifecycle.js';
@@ -10,7 +10,7 @@ import { STUB_TOKEN, type StubMode } from '../testing/stub-system.js';
 // shown to pass against the correct stub and to fail against spike E's no-row
 // stub, which answers 201 without persisting the subscription.
 
-const system = useStubSystems(beforeAll, afterEach);
+const system = useStubSystems(afterEach);
 
 const SUBSCRIBE = 'the client sends POST "/subscriptions" with JSON:';
 const STATE = 'the state at "/fixture/state" as "fixture-control"';
@@ -100,22 +100,34 @@ describe('state claims', () => {
 });
 
 describe('named credentials', () => {
-  it('present the bearer token from BLACKBOX_CREDENTIAL_<NAME> and fail without it', async () => {
+  it('present the bearer token of the Sandbox profile and fail without it', async () => {
     const sut = await system('correct');
     const scenario = scenarioAt(sut.url);
     await scenario.step(`${STATE} has 0 items at "/subscriptions"`);
     expect(sut.received.map((request) => request.authorization)).toEqual([`Bearer ${STUB_TOKEN}`]);
-    process.env.BLACKBOX_CREDENTIAL_FIXTURE_CONTROL = 'not-the-token';
-    const refused = scenario.step(`${STATE} has 0 items at "/subscriptions"`);
+    const wrongToken = scenarioAt(sut.url, { 'fixture-control': { scheme: 'bearer', token: 'not-the-token' } });
+    const refused = wrongToken.step(`${STATE} has 0 items at "/subscriptions"`);
     await expect(refused).rejects.toThrow('inspection status of the state at /fixture/state');
     await expect(refused).rejects.not.toThrow('not-the-token');
-    delete process.env.BLACKBOX_CREDENTIAL_FIXTURE_CONTROL;
-    await expect(scenario.step(`${STATE} has 0 items at "/subscriptions"`)).rejects.toThrow(
-      'reads BLACKBOX_CREDENTIAL_FIXTURE_CONTROL, which is not set',
+    await expect(scenarioAt(sut.url, {}).step(`${STATE} has 0 items at "/subscriptions"`)).rejects.toThrow(
+      'Credential "fixture-control" is not defined by the feature\'s Sandbox profile',
     );
     await expect(
       scenario.step('the state at "/fixture/state" as "Fixture Control" has 0 items at "/subscriptions"'),
     ).rejects.toThrow('credential name');
+  });
+
+  it('never come from a BLACKBOX_CREDENTIAL_<NAME> variable', async () => {
+    const sut = await system('correct');
+    process.env.BLACKBOX_CREDENTIAL_FIXTURE_CONTROL = STUB_TOKEN;
+    try {
+      await expect(scenarioAt(sut.url, {}).step(`${STATE} has 0 items at "/subscriptions"`)).rejects.toThrow(
+        'is not defined by the feature\'s Sandbox profile',
+      );
+    } finally {
+      delete process.env.BLACKBOX_CREDENTIAL_FIXTURE_CONTROL;
+    }
+    expect(sut.received).toEqual([]);
   });
 
   it('are never sent through a redirect', async () => {

@@ -20,6 +20,8 @@ export interface RecordedStep {
   readonly argument: unknown;
   /** The fixture names the hook or test body destructured. */
   readonly fixtures: readonly string[];
+  /** What the generated file passed as `credentials`, or null when the step reads none. */
+  readonly credentials: unknown;
 }
 
 export interface RecordedTest {
@@ -41,6 +43,10 @@ export function sandboxEnvironment(spec) {
   return { spec };
 }
 
+export function sandboxCredentials(spec) {
+  return { credentialSpec: spec };
+}
+
 export async function runStep(fixtures, site, text, argument) {
   steps.push({
     feature: fileURLToPath(site.feature),
@@ -50,6 +56,7 @@ export async function runStep(fixtures, site, text, argument) {
     text,
     argument,
     fixtures: Object.keys(fixtures),
+    credentials: 'credentials' in fixtures ? fixtures.credentials : null,
   });
 }
 

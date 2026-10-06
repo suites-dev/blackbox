@@ -14,6 +14,7 @@ function source(fixtures: StepFixtures, parameters: readonly unknown[]): StateSo
     sandbox: fixture(fixtures, 'sandbox'),
     path: stringAt(parameters, 0),
     credential: stringAt(parameters, 1),
+    credentials: fixture(fixtures, 'credentials'),
   };
 }
 
@@ -22,8 +23,11 @@ export const stateSteps = [
     expression: 'the state at {string} as {string} equals:',
     kind: 'state-claim',
     argument: 'doc-string',
-    fixtures: ['request', 'sandbox'],
+    fixtures: ['credentials', 'request', 'sandbox'],
     requires: null,
+    credentialParameter: 1,
+    deadlineParameter: null,
+    example: 'the state at "/fixture/state" as "fixture-control" equals:',
     run: async ({ fixtures, parameters, argument }) => {
       const state = source(fixtures, parameters);
       const expected = parseJson(jsonDocString(argument), 'the doc string');
@@ -34,8 +38,11 @@ export const stateSteps = [
     expression: 'the state at {string} as {string} has {string} equal to:',
     kind: 'state-claim',
     argument: 'doc-string',
-    fixtures: ['request', 'sandbox'],
+    fixtures: ['credentials', 'request', 'sandbox'],
     requires: null,
+    credentialParameter: 1,
+    deadlineParameter: null,
+    example: 'the state at "/fixture/state" as "fixture-control" has "/subscriptions" equal to:',
     run: async ({ fixtures, parameters, argument }) => {
       const state = source(fixtures, parameters);
       const pointer = stringAt(parameters, 2);
@@ -50,8 +57,11 @@ export const stateSteps = [
     expression: 'the state at {string} as {string} has {int} item(s) at {string}',
     kind: 'state-claim',
     argument: 'none',
-    fixtures: ['request', 'sandbox'],
+    fixtures: ['credentials', 'request', 'sandbox'],
     requires: null,
+    credentialParameter: 1,
+    deadlineParameter: null,
+    example: 'the state at "/fixture/state" as "fixture-control" has 1 item at "/subscriptions"',
     run: async ({ fixtures, parameters }) => {
       const state = source(fixtures, parameters);
       const pointer = stringAt(parameters, 3);

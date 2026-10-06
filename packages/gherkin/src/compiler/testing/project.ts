@@ -4,7 +4,7 @@ import { join, resolve } from 'node:path';
 
 const FIXTURES = resolve(import.meta.dirname, '../test-fixtures');
 
-export const FIXTURE_FEATURES = ['arguments', 'background', 'outline', 'rules', 'subsystem'] as const;
+export const FIXTURE_FEATURES = ['arguments', 'background', 'deadlines', 'outline', 'rules', 'subsystem'] as const;
 
 export interface FixtureProject {
   readonly root: string;

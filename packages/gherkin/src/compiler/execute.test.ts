@@ -134,3 +134,21 @@ describe('executing the generated code', () => {
     expect(neutral(untagged)).toEqual(neutral(tagged));
   });
 });
+
+describe('named credentials in the generated code', () => {
+  it('resolves only the profile credentials the feature names, for the bodies whose steps read them', async () => {
+    const { tests } = await compileAndRun(await fixtureProject());
+    const resolved = { credentialSpec: { 'fixture-control': { scheme: 'bearer', fromEnv: 'BLACKBOX_E2E_FIXTURE_TOKEN' } } };
+    // One fixtures object per hook or test body: the Background reads none, the body's state claim does.
+    const scenario = titled(tests, 'Scenario: a scenario deadline after the Background one');
+    expect(scenario.steps.map((step) => [step.line, step.credentials])).toEqual([
+      [7, null],
+      [10, resolved],
+      [11, resolved],
+      [12, resolved],
+    ]);
+    const others = tests.filter((test) => test !== scenario);
+    expect(others.flatMap((test) => test.steps).every((step) => step.credentials === null)).toBe(true);
+    expect(others.flatMap((test) => test.steps).some((step) => step.fixtures.includes('credentials'))).toBe(false);
+  });
+});

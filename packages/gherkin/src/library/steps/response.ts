@@ -20,6 +20,9 @@ export const responseSteps = [
     argument: 'none',
     fixtures: ['world'],
     requires: null,
+    credentialParameter: null,
+    deadlineParameter: null,
+    example: 'the response status is 201',
     run: ({ fixtures, parameters }) => {
       const response = singleResponse(fixture(fixtures, 'world'));
       expect(response.status, `status of ${response.method} ${response.path}`).toBe(integerAt(parameters, 0));
@@ -32,6 +35,9 @@ export const responseSteps = [
     argument: 'none',
     fixtures: ['world'],
     requires: null,
+    credentialParameter: null,
+    deadlineParameter: null,
+    example: 'the response statuses are "201, 409"',
     run: ({ fixtures, parameters }) => {
       const written = stringAt(parameters, 0);
       expect(written, 'statuses as a comma-separated list, such as "201, 409"').toMatch(STATUS_LIST);
@@ -48,6 +54,9 @@ export const responseSteps = [
     argument: 'doc-string',
     fixtures: ['world'],
     requires: null,
+    credentialParameter: null,
+    deadlineParameter: null,
+    example: 'the response JSON equals:',
     run: ({ fixtures, argument }) => {
       const response = singleResponse(fixture(fixtures, 'world'));
       const expected = parseJson(jsonDocString(argument), 'the doc string');

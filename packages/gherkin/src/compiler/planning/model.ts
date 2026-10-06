@@ -1,12 +1,16 @@
 import type { CatalogEntryKind, CatalogEntrySummary } from '@suites/blackbox-catalog';
 
+import type { SandboxCredentialSpec } from '../../runtime/credentials.js';
 import type { SandboxEnvironmentSpec } from '../../runtime/environment.js';
-import type { StepArgument, StepDefinition, StepLibrary } from '../../runtime/step-types.js';
+import type { StepLibrary } from '../../runtime/library.js';
+import type { StepArgument, StepDefinition } from '../../runtime/step-types.js';
 import type { SourceLocation } from './diagnostics.js';
 
 /** A Sandbox profile from protected project configuration. It names variables, never values. */
 export interface SandboxProfile {
   readonly environment: SandboxEnvironmentSpec;
+  /** Named credentials the profile's steps may present to the system under test. */
+  readonly credentials: SandboxCredentialSpec;
 }
 
 /** Everything a feature is compiled against. None of it comes from the feature text. */
@@ -27,6 +31,8 @@ export interface PlannedStep extends SourceLocation {
   readonly text: string;
   readonly argument: StepArgument;
   readonly definition: StepDefinition;
+  /** The expression's parameter values, as the compiler resolved them. */
+  readonly parameters: readonly unknown[];
 }
 
 export interface PlannedBackground extends SourceLocation {
@@ -55,6 +61,7 @@ export interface FeaturePlan extends SourceLocation {
   readonly description: string;
   readonly selection: FeatureSelection;
   readonly environment: SandboxEnvironmentSpec;
+  readonly credentials: SandboxCredentialSpec;
   readonly background: PlannedBackground | null;
   readonly scenarios: readonly PlannedScenario[];
   readonly rules: readonly PlannedRule[];

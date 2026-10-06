@@ -11,7 +11,7 @@ import type {
 } from './model.js';
 import { parseFeature } from './parse.js';
 import { selectBoundary } from './selection.js';
-import { checkScenario, planStep, stepArgument, type StepSource } from './steps.js';
+import { checkScenario, planStep, stepArgument, type StepScope, type StepSource } from './steps.js';
 import { readTags, unionRequirements } from './tags.js';
 
 interface Scope {
@@ -47,15 +47,15 @@ function scenariosOf(children: readonly FeatureChild[]): readonly Scenario[] {
 
 class FeaturePlanner {
   readonly #file: string;
-  readonly #context: CompileContext;
+  readonly #scope: StepScope;
   readonly #sink: DiagnosticSink;
   readonly #picklesByScenario = new Map<string, Pickle[]>();
   readonly #astSteps = new Map<string, Step>();
   readonly #exampleRows = new Map<string, { readonly line: number; readonly label: string }>();
 
-  constructor(file: string, context: CompileContext, sink: DiagnosticSink) {
+  constructor(file: string, scope: StepScope, sink: DiagnosticSink) {
     this.#file = file;
-    this.#context = context;
+    this.#scope = scope;
     this.#sink = sink;
   }
 
@@ -155,7 +155,7 @@ class FeaturePlanner {
 
   #steps(sources: readonly StepSource[]): readonly PlannedStep[] {
     return sources.flatMap((source) => {
-      const planned = planStep(source, this.#context.library, this.#sink);
+      const planned = planStep(source, this.#scope, this.#sink);
       return planned === null ? [] : [planned];
     });
   }
@@ -177,10 +177,12 @@ export function planFeature(source: string, file: string, context: CompileContex
     sink.report({ line: 1, column: 1 }, 'the file declares no Feature');
     return sink.fail();
   }
-  const planner = new FeaturePlanner(file, context, sink);
-  planner.index(parsed.pickles);
   const tags = readTags(feature.tags, 'Feature', sink);
   const boundary = selectBoundary(tags, at(feature.location), context, sink);
+  const profile =
+    boundary === null ? null : { name: boundary.selection.sandbox, credentials: boundary.credentials };
+  const planner = new FeaturePlanner(file, { library: context.library, profile }, sink);
+  planner.index(parsed.pickles);
   const background = planner.background(backgroundOf(feature.children), {
     requirements: tags.requirement,
     background: [],

@@ -22,6 +22,7 @@ function source(fixtures: StepFixtures, parameters: readonly unknown[]): StateSo
     sandbox: fixture(fixtures, 'sandbox'),
     path: stringAt(parameters, 1),
     credential: stringAt(parameters, 2),
+    credentials: fixture(fixtures, 'credentials'),
   };
 }
 
@@ -32,6 +33,9 @@ export const barrierSteps = [
     argument: 'none',
     fixtures: ['world'],
     requires: null,
+    credentialParameter: null,
+    deadlineParameter: null,
+    example: 'the flow is sealed by the terminal response',
     run: ({ fixtures }) => {
       // Stimulus steps await every response before they finish, so the seal holds once one ran.
       expect(latestStimulus(fixture(fixtures, 'world')).length, 'terminal responses').toBeGreaterThan(0);
@@ -43,8 +47,11 @@ export const barrierSteps = [
       'the flow is sealed within {int} second(s) when the state at {string} as {string} has {string} equal to:',
     kind: 'barrier',
     argument: 'doc-string',
-    fixtures: ['request', 'sandbox'],
+    fixtures: ['credentials', 'request', 'sandbox'],
     requires: null,
+    credentialParameter: 2,
+    deadlineParameter: 0,
+    example: 'the flow is sealed within 5 seconds when the state at "/fixture/state" as "fixture-control" has "/orders/0/status" equal to:',
     run: async ({ fixtures, parameters, argument }) => {
       const deadline = deadlineMilliseconds(integerAt(parameters, 0));
       const state = source(fixtures, parameters);
@@ -63,8 +70,11 @@ export const barrierSteps = [
       'the flow is sealed within {int} second(s) when the state at {string} as {string} has {int} item(s) at {string}',
     kind: 'barrier',
     argument: 'none',
-    fixtures: ['request', 'sandbox'],
+    fixtures: ['credentials', 'request', 'sandbox'],
     requires: null,
+    credentialParameter: 2,
+    deadlineParameter: 0,
+    example: 'the flow is sealed within 5 seconds when the state at "/fixture/state" as "fixture-control" has 1 item at "/orders"',
     run: async ({ fixtures, parameters }) => {
       const deadline = deadlineMilliseconds(integerAt(parameters, 0));
       const state = source(fixtures, parameters);

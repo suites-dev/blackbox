@@ -14,6 +14,9 @@ export const setupSteps = [
     argument: 'doc-string',
     fixtures: ['request', 'sandbox'],
     requires: null,
+    credentialParameter: null,
+    deadlineParameter: null,
+    example: 'the client has sent POST "/subscriptions" with JSON and received 201:',
     run: async ({ fixtures, parameters, argument }) => {
       const method = stringAt(parameters, 0);
       const path = stringAt(parameters, 1);

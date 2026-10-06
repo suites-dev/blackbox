@@ -17,6 +17,9 @@ export const stimulusSteps = [
     argument: 'none',
     fixtures: ['request', 'sandbox', 'world'],
     requires: null,
+    credentialParameter: null,
+    deadlineParameter: null,
+    example: 'the client sends GET "/health"',
     run: async ({ fixtures, parameters }) => {
       const exchange = await sendGet(fixture(fixtures, 'request'), fixture(fixtures, 'sandbox'), stringAt(parameters, 0));
       recordStimulus(fixture(fixtures, 'world'), [exchange]);
@@ -28,6 +31,9 @@ export const stimulusSteps = [
     argument: 'doc-string',
     fixtures: ['request', 'sandbox', 'world'],
     requires: null,
+    credentialParameter: null,
+    deadlineParameter: null,
+    example: 'the client sends POST "/subscriptions" with JSON:',
     run: async ({ fixtures, parameters, argument }) => {
       const exchange = await sendJson(fixture(fixtures, 'request'), fixture(fixtures, 'sandbox'), {
         method: stringAt(parameters, 0),
@@ -43,6 +49,9 @@ export const stimulusSteps = [
     argument: 'data-table',
     fixtures: ['request', 'sandbox', 'world'],
     requires: null,
+    credentialParameter: null,
+    deadlineParameter: null,
+    example: 'the client sends these requests concurrently:',
     run: async ({ fixtures, argument }) => {
       const rows = tableRecords(argument, CONCURRENT_COLUMNS);
       expect(rows.length, 'requests in a concurrent stimulus').toBeGreaterThanOrEqual(2);

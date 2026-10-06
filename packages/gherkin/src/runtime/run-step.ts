@@ -1,12 +1,7 @@
 import { fileURLToPath } from 'node:url';
 
-import type {
-  BlackboxStep,
-  StepArgument,
-  StepFixtures,
-  StepLibrary,
-  StepResolution,
-} from './step-types.js';
+import type { StepLibrary } from './library.js';
+import type { BlackboxStep, StepArgument, StepFixtures, StepResolution } from './step-types.js';
 
 /** Where a step was written: the `.feature` file, its line and column, and its keyword. */
 export interface StepSite {

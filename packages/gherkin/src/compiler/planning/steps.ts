@@ -1,6 +1,8 @@
 import type { PickleDocString } from '@cucumber/messages';
 
-import type { StepArgument, StepLibrary } from '../../runtime/step-types.js';
+import type { SandboxCredentialSpec } from '../../runtime/credentials.js';
+import type { StepLibrary } from '../../runtime/library.js';
+import type { StepArgument, StepDefinition } from '../../runtime/step-types.js';
 import type { DiagnosticSink, SourceLocation } from './diagnostics.js';
 import type { PlannedStep } from './model.js';
 
@@ -36,14 +38,44 @@ const ARGUMENT_NAMES = {
   none: 'no doc string or data table',
 } as const satisfies Readonly<Record<StepArgument['kind'], string>>;
 
-/** Resolves one step against the closed library. Returns null after reporting why it cannot run. */
-export function planStep(
-  source: StepSource,
-  library: StepLibrary,
+/** What a feature's steps resolve against: the closed library and the selected Sandbox profile. */
+export interface StepScope {
+  readonly library: StepLibrary;
+  /** Null when the Feature selects no valid profile; that is reported once, at the Feature. */
+  readonly profile: { readonly name: string; readonly credentials: SandboxCredentialSpec } | null;
+}
+
+function known(values: readonly string[]): string {
+  return values.length === 0 ? 'it defines none' : `it defines ${[...values].sort().join(', ')}`;
+}
+
+/** A credential parameter must name a credential of the feature's Sandbox profile. */
+function checkCredential(
+  step: { readonly source: StepSource; readonly definition: StepDefinition; readonly parameters: readonly unknown[] },
+  profile: StepScope['profile'],
   sink: DiagnosticSink,
-): PlannedStep | null {
+): void {
+  const index = step.definition.credentialParameter;
+  if (index === null || profile === null) {
+    return;
+  }
+  const name = step.parameters[index];
+  if (typeof name !== 'string') {
+    throw new TypeError(`Step ${JSON.stringify(step.definition.expression)} parameter ${index} is not a credential name`);
+  }
+  const names = Object.keys(profile.credentials);
+  if (!names.includes(name)) {
+    sink.report(
+      step.source,
+      `credential "${name}" is not defined by Sandbox profile "${profile.name}" (${known(names)})`,
+    );
+  }
+}
+
+/** Resolves one step against the closed library. Returns null after reporting why it cannot run. */
+export function planStep(source: StepSource, scope: StepScope, sink: DiagnosticSink): PlannedStep | null {
   const quoted = `"${source.keyword} ${source.text}"`;
-  const resolution = library.resolve(source.text);
+  const resolution = scope.library.resolve(source.text);
   switch (resolution.status) {
     case 'undefined':
       sink.report(source, `undefined step ${quoted}; only steps from the shared Blackbox step library are allowed`);
@@ -63,7 +95,7 @@ export function planStep(
     case 'resolved':
       break;
   }
-  const { definition } = resolution;
+  const { definition, parameters } = resolution;
   if (definition.argument !== source.argument.kind) {
     sink.report(
       source,
@@ -71,7 +103,8 @@ export function planStep(
     );
     return null;
   }
-  return { ...source, definition };
+  checkCredential({ source, definition, parameters }, scope.profile, sink);
+  return { ...source, definition, parameters };
 }
 
 export interface ScenarioCheck extends SourceLocation {

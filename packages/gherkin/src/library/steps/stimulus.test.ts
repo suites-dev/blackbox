@@ -1,4 +1,4 @@
-import { afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 
 import { json, scenarioAt, table } from '../testing/step-harness.js';
 import { useStubSystems } from '../testing/stub-lifecycle.js';
@@ -16,7 +16,7 @@ const CONCURRENT = 'the client sends these requests concurrently:';
 const setup = (status: number) =>
   `the client has sent POST "/subscriptions" with JSON and received ${status}:`;
 
-const system = useStubSystems(beforeAll, afterEach);
+const system = useStubSystems(afterEach);
 
 describe('the client has sent {word} {string} with JSON and received {int}:', () => {
   const carol = '{"userId": "carol", "paymentMethodId": "pm_carol_primary"}';

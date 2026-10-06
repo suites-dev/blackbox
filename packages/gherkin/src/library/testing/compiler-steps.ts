@@ -1,19 +1,29 @@
 import { createStepLibrary } from '../../runtime/registry.js';
-import type { Capability, StepDefinition, StepLibrary } from '../../runtime/step-types.js';
+import type { StepLibrary } from '../../runtime/library.js';
+import type { Capability, StepDefinition } from '../../runtime/step-types.js';
 
 // Test-only vocabulary for compiler tests. It covers every step kind, every
-// argument shape, both gated capabilities and one deliberately ambiguous pair.
-// Bodies are no-ops unless a test supplies stub bodies for a real Playwright run;
-// the vocabulary hash never covers bodies, so stubs do not change compiled output.
+// argument shape, both gated capabilities, a credential and a deadline
+// parameter, and one deliberately ambiguous pair. Bodies are no-ops unless a
+// test supplies stub bodies for a real Playwright run; the vocabulary hash
+// never covers bodies, so stubs do not change compiled output. Examples are
+// the expressions themselves: only the shared library's examples are checked.
 
 const noop = (): Promise<void> => Promise.resolve();
 
-function step(
-  expression: string,
-  shape: Pick<StepDefinition, 'kind' | 'argument' | 'fixtures'>,
-  requires: Capability | null = null,
-): StepDefinition {
-  return { expression, ...shape, requires, run: noop };
+type Shape = Pick<StepDefinition, 'kind' | 'argument' | 'fixtures'> &
+  Partial<Pick<StepDefinition, 'credentialParameter' | 'deadlineParameter'>>;
+
+function step(expression: string, shape: Shape, requires: Capability | null = null): StepDefinition {
+  return {
+    expression,
+    credentialParameter: null,
+    deadlineParameter: null,
+    ...shape,
+    requires,
+    example: expression,
+    run: noop,
+  };
 }
 
 const http = ['request', 'sandbox', 'world'] as const;
@@ -36,7 +46,19 @@ const definitions = [
     argument: 'none',
     fixtures: ['world'],
   }),
+  step('the flow is sealed within {int} second(s)', {
+    kind: 'barrier',
+    argument: 'none',
+    fixtures: ['world'],
+    deadlineParameter: 0,
+  }),
   step('the response status is {int}', { kind: 'response-claim', argument: 'none', fixtures: ['world'] }),
+  step('the state at {string} as {string} has {int} item(s)', {
+    kind: 'state-claim',
+    argument: 'none',
+    fixtures: ['credentials', 'request', 'sandbox'],
+    credentialParameter: 1,
+  }),
   step('the state at {string} equals:', {
     kind: 'state-claim',
     argument: 'doc-string',

@@ -1,5 +1,7 @@
 import type { test } from '@suites/blackbox-playwright';
 
+import type { SandboxCredentials } from './credentials.js';
+
 // @suites/blackbox-playwright exports the facade but not its argument types,
 // so they are read from the facade's own signatures. Parameters<> takes the
 // last overload: sandbox(name, options, callback) and test(title, details, body).
@@ -37,11 +39,16 @@ export type Capability = 'effects-claims' | 'participant-exec';
 /** Scenario-local state shared by the Background hooks and test body of one attempt. */
 export type ScenarioWorld = Map<string, unknown>;
 
-export type StepFixtureName = 'effects' | 'page' | 'request' | 'sandbox' | 'telemetry' | 'world';
+/**
+ * Native fixtures a step can read, plus `credentials`, which the generated file
+ * resolves from the Sandbox profile instead of asking Playwright for it.
+ */
+export type StepFixtureName = 'credentials' | 'effects' | 'page' | 'request' | 'sandbox' | 'telemetry' | 'world';
 
 export type StepFixtures = Partial<
   Readonly<
-    Pick<NativeTestArgs, Exclude<StepFixtureName, 'world'>> & {
+    Pick<NativeTestArgs, Exclude<StepFixtureName, 'credentials' | 'world'>> & {
+      readonly credentials: SandboxCredentials;
       readonly world: ScenarioWorld;
     }
   >
@@ -77,9 +84,21 @@ export interface StepDefinition {
   readonly kind: StepKind;
   /** The doc string or data table the step expects; a mismatch is a compile error. */
   readonly argument: StepArgument['kind'];
-  /** The native fixtures the step reads. Only these are destructured by the generated test. */
+  /** The fixtures the step reads. Only these are destructured by the generated test. */
   readonly fixtures: readonly StepFixtureName[];
   readonly requires: Capability | null;
+  /**
+   * The expression parameter that names a credential. The compiler checks that
+   * the feature's Sandbox profile defines it.
+   */
+  readonly credentialParameter: number | null;
+  /**
+   * The expression parameter that holds a barrier deadline in seconds. The
+   * compiler records it in the compile manifest.
+   */
+  readonly deadlineParameter: number | null;
+  /** Step text a human author can copy; it resolves to this definition. Not part of the vocabulary hash. */
+  readonly example: string;
   readonly run: (input: StepInput) => Promise<void>;
 }
 
@@ -96,17 +115,3 @@ export type StepResolution =
       readonly definition: StepDefinition;
       readonly capability: Capability;
     };
-
-export interface StepLibraryIdentity {
-  readonly name: string;
-  readonly version: string;
-  /** sha256 over every definition's expression, kind, argument, fixtures and capability. */
-  readonly vocabularyHash: string;
-}
-
-/** A closed, read-only step vocabulary. There is no registration API. */
-export interface StepLibrary {
-  readonly identity: StepLibraryIdentity;
-  readonly capabilities: readonly Capability[];
-  resolve(text: string): StepResolution;
-}

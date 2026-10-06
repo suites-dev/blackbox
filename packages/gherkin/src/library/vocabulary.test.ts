@@ -8,11 +8,18 @@ import { library } from './index.js';
 // closed and offers exactly the v1 vocabulary (setup, stimulus, barrier,
 // response and state steps); each sample text resolves to its own step, so no
 // two steps are ambiguous; effects claims and participant commands are not in
-// v1 and the runtime offers no capability.
+// v1 and the runtime offers no capability. Task 2.4: steps that read state
+// name a credential of the feature's Sandbox profile, and polling barriers
+// carry their deadline, at the parameters listed here.
 
-type Entry = Pick<StepDefinition, 'expression' | 'kind' | 'argument' | 'fixtures'> & { readonly sample: string };
+type Entry = Pick<
+  StepDefinition,
+  'expression' | 'kind' | 'argument' | 'fixtures' | 'credentialParameter' | 'deadlineParameter'
+> & { readonly sample: string };
 
 const http = ['request', 'sandbox'] as const;
+const inspection = ['credentials', ...http] as const;
+const plain = { credentialParameter: null, deadlineParameter: null } as const;
 const STATE = 'the state at {string} as {string}';
 
 const V1 = [
@@ -22,6 +29,7 @@ const V1 = [
     kind: 'setup',
     argument: 'doc-string',
     fixtures: http,
+    ...plain,
   },
   {
     sample: 'the client sends GET "/health"',
@@ -29,6 +37,7 @@ const V1 = [
     kind: 'stimulus',
     argument: 'none',
     fixtures: [...http, 'world'],
+    ...plain,
   },
   {
     sample: 'the client sends POST "/subscriptions" with JSON:',
@@ -36,6 +45,7 @@ const V1 = [
     kind: 'stimulus',
     argument: 'doc-string',
     fixtures: [...http, 'world'],
+    ...plain,
   },
   {
     sample: 'the client sends these requests concurrently:',
@@ -43,6 +53,7 @@ const V1 = [
     kind: 'stimulus',
     argument: 'data-table',
     fixtures: [...http, 'world'],
+    ...plain,
   },
   {
     sample: 'the flow is sealed by the terminal responses',
@@ -50,20 +61,25 @@ const V1 = [
     kind: 'barrier',
     argument: 'none',
     fixtures: ['world'],
+    ...plain,
   },
   {
     sample: 'the flow is sealed within 5 seconds when the state at "/s" as "c" has "/orders" equal to:',
     expression: `the flow is sealed within {int} second(s) when ${STATE} has {string} equal to:`,
     kind: 'barrier',
     argument: 'doc-string',
-    fixtures: http,
+    fixtures: inspection,
+    credentialParameter: 2,
+    deadlineParameter: 0,
   },
   {
     sample: 'the flow is sealed within 1 second when the state at "/s" as "c" has 1 item at "/orders"',
     expression: `the flow is sealed within {int} second(s) when ${STATE} has {int} item(s) at {string}`,
     kind: 'barrier',
     argument: 'none',
-    fixtures: http,
+    fixtures: inspection,
+    credentialParameter: 2,
+    deadlineParameter: 0,
   },
   {
     sample: 'the response status is 201',
@@ -71,6 +87,7 @@ const V1 = [
     kind: 'response-claim',
     argument: 'none',
     fixtures: ['world'],
+    ...plain,
   },
   {
     sample: 'the response statuses are "201, 409"',
@@ -78,6 +95,7 @@ const V1 = [
     kind: 'response-claim',
     argument: 'none',
     fixtures: ['world'],
+    ...plain,
   },
   {
     sample: 'the response JSON equals:',
@@ -85,33 +103,40 @@ const V1 = [
     kind: 'response-claim',
     argument: 'doc-string',
     fixtures: ['world'],
+    ...plain,
   },
   {
     sample: 'the state at "/s" as "c" equals:',
     expression: `${STATE} equals:`,
     kind: 'state-claim',
     argument: 'doc-string',
-    fixtures: http,
+    fixtures: inspection,
+    credentialParameter: 1,
+    deadlineParameter: null,
   },
   {
     sample: 'the state at "/s" as "c" has "/a" equal to:',
     expression: `${STATE} has {string} equal to:`,
     kind: 'state-claim',
     argument: 'doc-string',
-    fixtures: http,
+    fixtures: inspection,
+    credentialParameter: 1,
+    deadlineParameter: null,
   },
   {
     sample: 'the state at "/s" as "c" has 2 items at "/a"',
     expression: `${STATE} has {int} item(s) at {string}`,
     kind: 'state-claim',
     argument: 'none',
-    fixtures: http,
+    fixtures: inspection,
+    credentialParameter: 1,
+    deadlineParameter: null,
   },
 ] satisfies readonly Entry[];
 
 describe('step library v1', () => {
   it('resolves each sample to exactly its own step, with no capability required', () => {
-    for (const { sample, expression, kind, argument, fixtures } of V1) {
+    for (const { sample, expression, kind, argument, fixtures, credentialParameter, deadlineParameter } of V1) {
       const resolution = library.resolve(sample);
       if (resolution.status !== 'resolved') {
         throw new Error(`${sample} is ${resolution.status}`);
@@ -123,6 +148,19 @@ describe('step library v1', () => {
       ).toEqual({ expression, kind, argument });
       expect([...definition.fixtures].sort(), sample).toEqual([...fixtures].sort());
       expect(definition.requires, sample).toBeNull();
+      expect({ credentialParameter: definition.credentialParameter, deadlineParameter: definition.deadlineParameter }, sample).toEqual({
+        credentialParameter,
+        deadlineParameter,
+      });
+    }
+  });
+
+  it('gives every step an example that resolves to that step', () => {
+    for (const { sample, expression } of V1) {
+      const step = library.resolve(sample);
+      const example = step.status === 'resolved' ? library.resolve(step.definition.example) : step;
+      const resolved = example.status === 'resolved' ? example.definition.expression : example.status;
+      expect(resolved, sample).toBe(expression);
     }
   });
 
@@ -130,7 +168,7 @@ describe('step library v1', () => {
     const listed = createStepLibrary({
       name: library.identity.name,
       version: library.identity.version,
-      definitions: V1.map((entry) => ({ ...entry, requires: null, run: () => Promise.resolve() })),
+      definitions: V1.map((entry) => ({ ...entry, requires: null, example: entry.sample, run: () => Promise.resolve() })),
       capabilities: [],
     });
     expect(library.identity).toEqual(listed.identity);

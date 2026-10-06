@@ -1,11 +1,17 @@
 import { readFile } from 'node:fs/promises';
 
-import type { FeaturePlan, PlannedStep } from '../../compiler/planning/model.js';
+import type { FeaturePlan, PlannedStep, SandboxProfile } from '../../compiler/planning/model.js';
 import { planFeature } from '../../compiler/planning/plan.js';
 import { testCatalog } from '../../compiler/testing/context.js';
 import { library } from '../index.js';
 import { runLibraryStep, scenarioAt } from './step-harness.js';
 import type { StubMode, StubSystem } from './stub-system.js';
+
+/** The worked examples' Sandbox profile: it defines the fixture-control credential the features name. */
+export const WORKED_EXAMPLE_PROFILE = {
+  environment: {},
+  credentials: { 'fixture-control': { scheme: 'bearer', fromEnv: 'BLACKBOX_E2E_FIXTURE_TOKEN' } },
+} as const satisfies SandboxProfile;
 
 // Compiles a worked-example feature from ../test-fixtures against the real
 // library and runs it scenario by scenario, each on its own stub, the way a
@@ -21,7 +27,7 @@ export async function planWorkedExample(feature: URL): Promise<FeaturePlan> {
   const file = `features/${feature.pathname.split('/').at(-1) ?? ''}`;
   return planFeature(source, file, {
     catalog: testCatalog,
-    sandboxProfiles: { default: { environment: {} } },
+    sandboxProfiles: { default: WORKED_EXAMPLE_PROFILE },
     library,
   });
 }

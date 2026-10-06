@@ -1,32 +1,17 @@
-import { execFile } from 'node:child_process';
-import { mkdir, mkdtemp, readFile, realpath, rm, writeFile } from 'node:fs/promises';
-import { createRequire } from 'node:module';
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { compileFeatures } from './compile.js';
 import { testContext } from './testing/context.js';
+import { runPlaywright, stubRuntimeModule } from './testing/playwright-cli.js';
 
 // Generated tests run under the real Playwright test CLI, not the recording
 // facade: a passing stub step passes the run, and a failing one fails it with a
 // nonzero exit and the failing test reported. The runtime module substitutes only
 // the stub steps and Sandbox acquisition (see testing/playwright-runtime.ts).
-
-const runtimeModule = pathToFileURL(
-  fileURLToPath(new URL('./testing/playwright-runtime.ts', import.meta.url)),
-).href;
-
-// The CLI must be the @playwright/test instance that @suites/blackbox-playwright
-// imports, so it is resolved from that package. Spawning it is not an import.
-async function playwrightCli(): Promise<string> {
-  const dependency = fileURLToPath(
-    new URL('../../node_modules/@suites/blackbox-playwright/package.json', import.meta.url),
-  );
-  return createRequire(await realpath(dependency)).resolve('@playwright/test/cli');
-}
 
 const CONFIG = `export default {
   testDir: '.features-gen',
@@ -91,32 +76,9 @@ async function compileAndRun(status: number): Promise<Run> {
     outputDir: join(root, '.features-gen'),
     features: ['features/stub.feature'],
     context: testContext(),
-    runtimeModule,
+    runtimeModule: stubRuntimeModule,
   });
-  const cli = await playwrightCli();
-  const { code, output } = await new Promise<{ code: number; output: string }>((resolve) => {
-    execFile(
-      process.execPath,
-      [cli, 'test', '--config', 'playwright.config.mjs'],
-      {
-        cwd: root,
-        encoding: 'utf8',
-        // Workspace packages resolve to their sources, as the package tests do.
-        env: {
-          ...process.env,
-          NODE_OPTIONS: [process.env.NODE_OPTIONS, '--conditions=blackbox-source']
-            .filter(Boolean)
-            .join(' '),
-          FORCE_COLOR: '0',
-        },
-        timeout: 90_000,
-      },
-      (error, stdout, stderr) => {
-        const exit = error === null ? 0 : typeof error.code === 'number' ? error.code : 1;
-        resolve({ code: exit, output: `${stdout}\n${stderr}` });
-      },
-    );
-  });
+  const { code, output } = await runPlaywright(root, ['--config', 'playwright.config.mjs']);
   const report = JSON.parse(await readFile(join(root, 'results.json'), 'utf8')) as Run['report'];
   return { code, output, feature: join(root, 'features/stub.feature'), report };
 }

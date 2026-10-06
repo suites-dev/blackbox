@@ -118,6 +118,9 @@ importers:
       '@suites/blackbox-driver':
         specifier: workspace:*
         version: link:packages/driver
+      '@suites/blackbox-gherkin':
+        specifier: workspace:*
+        version: link:packages/gherkin
       '@suites/blackbox-inst-runtime-node':
         specifier: workspace:*
         version: link:packages/instrumentation-runtime-node
@@ -382,6 +385,9 @@ importers:
       '@cucumber/messages':
         specifier: 34.2.1
         version: 34.2.1
+      '@oclif/core':
+        specifier: ^5.1.0
+        version: 5.1.2
       '@suites/blackbox-catalog':
         specifier: workspace:*
         version: link:../catalog

@@ -1,3 +1,4 @@
+import type { SandboxCredentialSpec } from '../../runtime/credentials.js';
 import type { SandboxEnvironmentSpec } from '../../runtime/environment.js';
 import type { DiagnosticSink, SourceLocation } from './diagnostics.js';
 import type { CompileContext, FeatureSelection } from './model.js';
@@ -6,6 +7,7 @@ import type { NodeTags, TagValue } from './tags.js';
 export interface SelectedBoundary {
   readonly selection: FeatureSelection;
   readonly environment: SandboxEnvironmentSpec;
+  readonly credentials: SandboxCredentialSpec;
 }
 
 function known(values: readonly string[]): string {
@@ -70,5 +72,6 @@ export function selectBoundary(
   return {
     selection: { kind: entry.kind, id: entry.id, sandbox: sandbox.value },
     environment: profile.environment,
+    credentials: profile.credentials,
   };
 }
