@@ -7,8 +7,8 @@ import { createStepLibrary } from './registry.js';
 import { createStepRunner } from './run-step.js';
 import type { BlackboxStep, StepDefinition, StepFixtures, StepInput } from './step-types.js';
 
-// Requirements (task 2.2): each compiled step runs as a native boxed step
-// whose location is the .feature line, with the library's parsed parameters;
+// Requirements (task 2.2): each compiled step runs as a native step whose
+// location, and a failure's reported location, is the .feature line, with the library's parsed parameters;
 // a step the installed library no longer resolves, or whose capability it does
 // not offer, fails at run time instead of running something nobody compiled.
 // Sandbox environments name variables only and fail when one is missing.
@@ -47,17 +47,47 @@ function harness(capabilities: readonly ('effects-claims' | 'participant-exec')[
 }
 
 describe('createStepRunner', () => {
-  it('runs a native boxed step at the .feature location with the parsed parameters', async () => {
+  it('runs a native step at the .feature location with the parsed parameters', async () => {
     const { inputs, steps, runStep } = harness();
     const fixtures = { world: new Map() };
     await runStep(fixtures, site, 'the client sends GET "/health"', { kind: 'none' });
     expect(steps).toEqual([
       {
         title: 'When the client sends GET "/health"',
-        options: { location: { file: '/project/features/subscribe.feature', line: 12, column: 5 }, box: true },
+        options: { location: { file: '/project/features/subscribe.feature', line: 12, column: 5 } },
       },
     ]);
     expect(inputs).toEqual([{ fixtures, parameters: ['GET', '/health'], argument: { kind: 'none' } }]);
+  });
+
+  it('reports a failing step at its .feature line, ahead of the frames that threw', async () => {
+    const failing = createStepLibrary({
+      name: 'n',
+      version: '1',
+      definitions: [
+        {
+          expression: 'the response status is {int}',
+          kind: 'response-claim',
+          argument: 'none',
+          fixtures: ['world'],
+          requires: null,
+          run: () => Promise.reject(new Error('expected 200\nreceived 500')),
+        },
+      ],
+      capabilities: [],
+    });
+    const step: BlackboxStep = async (_title, body) => body({} as StepInfo);
+    const error: unknown = await createStepRunner(failing, step)({}, site, 'the response status is 500', {
+      kind: 'none',
+    }).catch((caught: unknown) => caught);
+    expect(error).toBeInstanceOf(Error);
+    const lines = (error as Error).stack!.split('\n');
+    expect(lines.slice(0, 3)).toEqual([
+      'Error: expected 200',
+      'received 500',
+      '    at /project/features/subscribe.feature:12:5',
+    ]);
+    expect(lines[3]).toMatch(/^\s+at /u);
   });
 
   it('fails without running a step that no longer resolves or whose capability is not offered', async () => {
