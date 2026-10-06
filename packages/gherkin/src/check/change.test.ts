@@ -6,7 +6,7 @@ import { cleanupRepositories, repository, type Repository } from './testing/repo
 
 // Requirements (task 2.4, report section 4.2): `check-change --base <ref>` is
 // hard rule 2 for a project. A change may touch spec paths (accepted features,
-// blackbox.gherkin.json, the step-library dependency entry and its
+// blackbox.feature.yaml, the step-library dependency entry and its
 // patches) or code paths, never both. Neutral paths
 // ride along with either side. The project lives in app/, so the classes are
 // resolved against the repository root.
@@ -30,13 +30,13 @@ describe('check-change passes', () => {
     const check = await classify((repo) =>
       repo.write({
         'app/features/intake.feature': 'Feature: intake, revised\n',
-        'app/blackbox.gherkin.json': '{}\n',
+        'app/blackbox.feature.yaml': '{}\n',
         'app/README.md': '# app, revised\n',
       }),
     );
     expect(check.problem).toBeNull();
     expect(paths(check.classification.spec)).toEqual([
-      'app/blackbox.gherkin.json',
+      'app/blackbox.feature.yaml',
       'app/features/intake.feature',
     ]);
     expect(paths(check.classification.neutral)).toEqual(['app/README.md']);

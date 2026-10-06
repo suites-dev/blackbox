@@ -1,17 +1,19 @@
+import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { GherkinConfigError, parseGherkinProject } from './config.js';
+import { GherkinConfigError, loadGherkinProject, parseGherkinProject } from './config.js';
 
-// Requirements (task 2.4, report section 4): blackbox.gherkin.json is the one
+// Requirements (task 2.4, report section 4): blackbox.feature.yaml is the one
 // protected project file. It holds the feature globs, the output
 // path, the change classes, and the Sandbox profiles with their named
 // credentials, which name environment variables and never hold a value.
 // Anything it does not document is refused.
 
 const ROOT = '/project';
-const FILE = join(ROOT, 'blackbox.gherkin.json');
+const FILE = join(ROOT, 'blackbox.feature.yaml');
 
 const VALID = {
   schemaVersion: 1,
@@ -147,5 +149,39 @@ describe('names that address the prototype chain', () => {
     expect(Object.getOwnPropertyNames(Object.prototype).sort()).toEqual(before);
     const probe: Record<string, unknown> = {};
     expect([probe.fromEnv, probe.environment, probe.polluted, probe.scheme]).toEqual([undefined, undefined, undefined, undefined]);
+  });
+});
+
+describe('blackbox.feature.yaml read from disk', () => {
+  async function load(text: string): Promise<readonly string[]> {
+    const directory = await mkdtemp(join(tmpdir(), 'blackbox-feature-config-'));
+    try {
+      const file = join(directory, 'blackbox.feature.yaml');
+      await writeFile(file, text);
+      loadGherkinProject(file);
+      return [];
+    } catch (error) {
+      if (error instanceof GherkinConfigError) {
+        return error.problems;
+      }
+      throw error;
+    } finally {
+      await rm(directory, { recursive: true, force: true });
+    }
+  }
+
+  it('reads a YAML project file', async () => {
+    expect(
+      await load('schemaVersion: 1\nblackboxConfigFile: blackbox.config.yaml\nfeatures: ["features/**/*.feature"]\noutputDir: .features-gen\nsandboxes:\n  default: {}\n'),
+    ).toEqual([]);
+  });
+
+  it('refuses malformed YAML and prototype-chain names without touching Object.prototype', async () => {
+    expect(await load('features: [unclosed\n')).toEqual([expect.stringMatching(/^is not valid YAML: /u)]);
+    const before = Object.getOwnPropertyNames(Object.prototype).sort();
+    expect(
+      await load('schemaVersion: 1\nblackboxConfigFile: blackbox.config.yaml\nfeatures: ["f/*.feature"]\noutputDir: out\nsandboxes:\n  __proto__: { environment: { polluted: { fromEnv: X } } }\n  default: {}\n'),
+    ).toEqual(['sandboxes.__proto__: is a reserved name; choose another name']);
+    expect(Object.getOwnPropertyNames(Object.prototype).sort()).toEqual(before);
   });
 });

@@ -1,20 +1,22 @@
 import { readFileSync } from 'node:fs';
 import { basename, dirname, relative, resolve, sep } from 'node:path';
 
+import { parse } from 'yaml';
+
 import type { SandboxProfile } from '../compiler/planning/model.js';
 import type { CredentialSource } from '../runtime/credentials.js';
 import type { EnvironmentSource } from '../runtime/environment.js';
 import { ConfigReader, isObject, type JsonObject } from './reader.js';
 
 /** The protected project file every `blackbox feature` command reads. */
-export const GHERKIN_CONFIG_FILE = 'blackbox.gherkin.json';
+export const GHERKIN_CONFIG_FILE = 'blackbox.feature.yaml';
 
 /**
- * A Gherkin project, read from blackbox.gherkin.json. Every path in the file is
+ * A Gherkin project, read from blackbox.feature.yaml. Every path in the file is
  * relative to the file's directory; here they are absolute, except the globs.
  */
 export interface GherkinProject {
-  /** The directory of blackbox.gherkin.json. */
+  /** The directory of blackbox.feature.yaml. */
   readonly root: string;
   readonly configFile: string;
   readonly blackboxConfigFile: string;
@@ -125,7 +127,7 @@ function read(reader: ConfigReader, document: JsonObject, configFile: string): G
   };
 }
 
-/** Validates a parsed blackbox.gherkin.json; throws GherkinConfigError naming every problem. */
+/** Validates a parsed blackbox.feature.yaml; throws GherkinConfigError naming every problem. */
 export function parseGherkinProject(document: unknown, configFile: string): GherkinProject {
   const reader = new ConfigReader();
   const object = reader.object(document, '', KEYS);
@@ -136,14 +138,14 @@ export function parseGherkinProject(document: unknown, configFile: string): Gher
   return project;
 }
 
-/** Reads and validates blackbox.gherkin.json. Synchronous, because Playwright configs are. */
+/** Reads and validates blackbox.feature.yaml. Synchronous, because Playwright configs are. */
 export function loadGherkinProject(configFile: string): GherkinProject {
   const text = readFileSync(configFile, 'utf8');
   let document: unknown;
   try {
-    document = JSON.parse(text);
+    document = parse(text) as unknown;
   } catch (error) {
-    throw new GherkinConfigError(basename(configFile), [`is not JSON: ${(error as Error).message}`]);
+    throw new GherkinConfigError(basename(configFile), [`is not valid YAML: ${(error as Error).message}`]);
   }
   return parseGherkinProject(document, configFile);
 }

@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import { stringify } from 'yaml';
 
 import { PROJECT_FILE } from '../check/testing/repository.js';
 import FeatureCompile from '../cli/commands/feature/compile.js';
@@ -35,10 +36,10 @@ async function compile(feature: string): Promise<CommandRun & { readonly generat
   const root = await mkdtemp(join(tmpdir(), 'blackbox-gherkin-dodging-'));
   roots.push(root);
   await mkdir(join(root, 'features'));
-  await writeFile(join(root, 'blackbox.gherkin.json'), `${JSON.stringify(PROJECT_FILE, null, 2)}\n`);
+  await writeFile(join(root, 'blackbox.feature.yaml'), stringify(PROJECT_FILE));
   await writeFile(join(root, 'blackbox.config.yaml'), CATALOG);
   await writeFile(join(root, FEATURE), feature);
-  const run = await runCommand(FeatureCompile, ['--config', join(root, 'blackbox.gherkin.json')]);
+  const run = await runCommand(FeatureCompile, ['--config', join(root, 'blackbox.feature.yaml')]);
   return { ...run, generated: (await readdir(root)).includes('.features-gen') };
 }
 

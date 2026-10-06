@@ -1,6 +1,6 @@
 import { isAbsolute, posix } from 'node:path';
 
-// A small strict reader for blackbox.gherkin.json. The file is a protected
+// A small strict reader for blackbox.feature.yaml. The file is a protected
 // spec file that decides runner policy and credentials, so it accepts only
 // the keys it documents: a misspelled key is an error, never silently ignored.
 

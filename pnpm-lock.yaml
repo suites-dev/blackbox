@@ -394,6 +394,9 @@ importers:
       '@suites/blackbox-playwright':
         specifier: workspace:*
         version: link:../playwright
+      yaml:
+        specifier: 2.9.1
+        version: 2.9.1
     devDependencies:
       '@types/node':
         specifier: 'catalog:'

@@ -4,6 +4,7 @@ import { join } from 'node:path';
 
 import { Config } from '@oclif/core';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { stringify } from 'yaml';
 
 import { git } from '../check/git.js';
 import { cleanupRepositories, repository } from '../check/testing/repository.js';
@@ -14,7 +15,7 @@ import FeatureSteps from './commands/feature/steps.js';
 import { COMMANDS } from './command-registry.js';
 
 // Requirements (task 2.4): the `blackbox feature` topic offers compile, check,
-// check-change and steps. Each command reads blackbox.gherkin.json,
+// check-change and steps. Each command reads blackbox.feature.yaml,
 // exits 0 when its check passes, 1 when it fails and 2 when the project file
 // is missing or invalid. compile uses the shared library and the project's
 // catalog, and prints requirement IDs and barrier deadlines.
@@ -113,10 +114,10 @@ async function runCommand(command: FeatureCommand, argv: readonly string[]): Pro
 
 beforeEach(async () => {
   root = await mkdtemp(join(tmpdir(), 'blackbox-gherkin-cli-'));
-  config = join(root, 'blackbox.gherkin.json');
+  config = join(root, 'blackbox.feature.yaml');
   await mkdir(join(root, 'features'), { recursive: true });
   await writeFile(join(root, 'blackbox.config.yaml'), CATALOG);
-  await writeFile(config, JSON.stringify(PROJECT));
+  await writeFile(config, stringify(PROJECT));
   await writeFile(join(root, 'features/health.feature'), HEALTH);
 });
 
@@ -159,8 +160,8 @@ describe('blackbox feature check and project errors', () => {
   it('exits 2 when the project file is missing or invalid', async () => {
     const missing = await runCommand(FeatureCheck, ['--config', join(root, 'nowhere.json')]);
     expect(missing).toMatchObject({ exit: 2 });
-    expect(missing.stderr).toContain(`no blackbox.gherkin.json at ${join(root, 'nowhere.json')}`);
-    await writeFile(config, JSON.stringify({ ...PROJECT, retries: 3 }));
+    expect(missing.stderr).toContain(`no blackbox.feature.yaml at ${join(root, 'nowhere.json')}`);
+    await writeFile(config, stringify({ ...PROJECT, retries: 3 }));
     const invalid = await runCommand(FeatureCompile, ['--config', config]);
     expect(invalid).toMatchObject({ exit: 2 });
     expect(invalid.stderr).toContain('retries: is not a known setting');
@@ -174,7 +175,7 @@ describe('blackbox feature check-change and steps', () => {
     await git(['checkout', '-q', '-b', 'change'], repo.root);
     await repo.write({ 'app/src/server.ts': 'export const port = 1;\n' });
     await repo.commit('code');
-    const argv = ['--config', join(repo.root, 'app/blackbox.gherkin.json'), '--base', 'main'];
+    const argv = ['--config', join(repo.root, 'app/blackbox.feature.yaml'), '--base', 'main'];
     expect(await runCommand(FeatureCheckChange, argv)).toMatchObject({ exit: 0 });
     await repo.write({ 'app/features/intake.feature': 'Feature: weakened\n' });
     await repo.commit('spec');

@@ -46,7 +46,7 @@ part of v1: they are listed with the capability they need, so a feature that use
 loaded into a run cannot replace a step, and the library hash covers the step bodies.
 
 A named credential such as `"fixture-control"` is defined by the feature's Sandbox profile in
-`blackbox.gherkin.json` as a bearer token read from a runner environment variable; features name
+`blackbox.feature.yaml` as a bearer token read from a runner environment variable; features name
 credentials, never values, and a credential the profile does not define is a compile error. Requests go
 only to the Sandbox entrypoint's origin and do not follow redirects. Library code may not catch,
 use `expect.soft`, or set timeouts, retries or timers (enforced by the repository ESLint configuration).
@@ -56,23 +56,25 @@ vocabulary (dependency-cruiser rule `gherkin-registry-is-library-only`).
 
 ## Project file and commands
 
-`blackbox.gherkin.json` is the project's protected spec file. Its paths are relative to its directory,
+`blackbox.feature.yaml` is the project's protected spec file. Its paths are relative to its directory,
 and it refuses any key it does not document:
 
-```json
-{
-  "schemaVersion": 1,
-  "blackboxConfigFile": "blackbox.config.yaml",
-  "features": ["features/**/*.feature"],
-  "outputDir": ".features-gen",
-  "sandboxes": {
-    "default": {
-      "environment": { "FIXTURE_CONTROL_TOKEN": { "fromEnv": "BLACKBOX_E2E_FIXTURE_TOKEN" } },
-      "credentials": { "fixture-control": { "scheme": "bearer", "fromEnv": "BLACKBOX_E2E_FIXTURE_TOKEN" } }
-    }
-  },
-  "changes": { "spec": [], "neutral": ["**/*.md"] }
-}
+```yaml
+schemaVersion: 1
+blackboxConfigFile: blackbox.config.yaml
+features:
+  - features/**/*.feature
+outputDir: .features-gen
+sandboxes:
+  default:
+    environment:
+      FIXTURE_CONTROL_TOKEN: { fromEnv: BLACKBOX_E2E_FIXTURE_TOKEN }
+    credentials:
+      fixture-control: { scheme: bearer, fromEnv: BLACKBOX_E2E_FIXTURE_TOKEN }
+changes:
+  spec: []
+  neutral:
+    - "**/*.md"
 ```
 
 The generated tests are native Playwright tests: run them with `playwright test` from a config whose `testDir` is `outputDir`, built with
@@ -85,6 +87,6 @@ The generated tests are native Playwright tests: run them with `playwright test`
 | `blackbox feature check-change --base <ref>` | Fails when one change touches spec paths (features, this file, the step-library dependency and its patches) and code paths. |
 | `blackbox feature steps` | Lists the step library with an example sentence per step. |
 
-Every command takes `--config <path>` (default `blackbox.gherkin.json`) and exits 1 when its check fails,
+Every command takes `--config <path>` (default `blackbox.feature.yaml`) and exits 1 when its check fails,
 2 when the project file is missing or invalid.
 

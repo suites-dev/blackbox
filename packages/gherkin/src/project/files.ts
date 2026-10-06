@@ -1,7 +1,7 @@
 import { readdir } from 'node:fs/promises';
 import { join, relative, sep } from 'node:path';
 
-// Project paths in blackbox.gherkin.json are `/`-separated globs relative to
+// Project paths in blackbox.feature.yaml are `/`-separated globs relative to
 // the project directory. Only `*` (within one segment) and `**` (any number of
 // segments) are special, the same subset as the repository's spec/code
 // separation check, so one pattern means the same thing to every check.

@@ -29,7 +29,7 @@ const runCommand = useCommands(beforeAll, afterAll, vi);
 
 afterEach(cleanupRepositories);
 
-const check = (root: string) => runCommand(FeatureCheck, ['--config', join(root, 'app/blackbox.gherkin.json')]);
+const check = (root: string) => runCommand(FeatureCheck, ['--config', join(root, 'app/blackbox.feature.yaml')]);
 
 const PASSED = 'check: passed; no project step files or step-registration imports, no patched or forked step library, .features-gen/ not tracked';
 

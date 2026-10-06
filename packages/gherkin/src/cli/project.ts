@@ -7,7 +7,7 @@ import { GHERKIN_CONFIG_FILE, GherkinConfigError, loadGherkinProject, type Gherk
 /** Exit codes shared by the gherkin commands: a failed check, and a project or usage error. */
 export const EXIT = { failed: 1, usage: 2 } as const;
 
-/** `--config`: the project's blackbox.gherkin.json, relative to the working directory. */
+/** `--config`: the project's blackbox.feature.yaml, relative to the working directory. */
 export const configFlag = Flags.string({
   description: `the project's ${GHERKIN_CONFIG_FILE}`,
   default: GHERKIN_CONFIG_FILE,

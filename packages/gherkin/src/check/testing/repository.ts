@@ -2,6 +2,8 @@ import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 
+import { stringify } from 'yaml';
+
 import { loadGherkinProject, type GherkinProject } from '../../project/config.js';
 import { git } from '../git.js';
 
@@ -46,7 +48,7 @@ export async function repository(files: Readonly<Record<string, string>> = {}): 
     }
   };
   await write({
-    'app/blackbox.gherkin.json': `${JSON.stringify(PROJECT_FILE, null, 2)}\n`,
+    'app/blackbox.feature.yaml': stringify(PROJECT_FILE),
     'app/features/intake.feature': 'Feature: intake\n',
     'app/src/server.ts': 'export {};\n',
     'app/README.md': '# app\n',
@@ -55,7 +57,7 @@ export async function repository(files: Readonly<Record<string, string>> = {}): 
   });
   return {
     root,
-    project: loadGherkinProject(join(root, 'app/blackbox.gherkin.json')),
+    project: loadGherkinProject(join(root, 'app/blackbox.feature.yaml')),
     write,
     remove: (path) => rm(join(root, path), { recursive: true }),
     commit: async (message) => {

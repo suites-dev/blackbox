@@ -7,7 +7,7 @@ import { git, gitTopLevel } from './git.js';
 
 // `blackbox feature check-change --base <ref>`: hard rule 2 for a project. A
 // change may alter the accepted expectations (spec) or the code they judge,
-// never both. Spec is the project's features, blackbox.gherkin.json,
+// never both. Spec is the project's features, blackbox.feature.yaml,
 // extra `changes.spec` globs, and the step-library dependency entries and
 // patches.
 

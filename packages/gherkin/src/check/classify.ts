@@ -2,7 +2,7 @@ import { matchesAny } from '../project/files.js';
 
 // The spec/code classifier of hard rule 2, the same rules as the repository's
 // scripts/check-spec-separation.mjs, with the classes taken from the project's
-// blackbox.gherkin.json. Deny by default: a path is spec when a spec glob
+// blackbox.feature.yaml. Deny by default: a path is spec when a spec glob
 // matches it, neutral when a neutral glob does, and code otherwise. Package
 // manifests and lockfiles are read by content: an entry naming the step
 // library is spec, any other changed entry is code.
