@@ -1,0 +1,21 @@
+# Incoming Gherkin verification profile. Keep generated output ignored.
+schemaVersion: 1
+blackboxConfigFile: blackbox.config.yaml
+features:
+  - features/**/*.feature
+outputDir: .features-gen
+runManifest: test-results/blackbox-run.json
+policy:
+  baseline: blackbox.policy.yaml
+  outputFile: test-results/blackbox-policy.yaml
+sandboxes:
+  default:
+    environment:
+      FIXTURE_CONTROL_TOKEN: { fromEnv: BLACKBOX_E2E_FIXTURE_TOKEN }
+    credentials:
+      fixture-control: { scheme: bearer, fromEnv: BLACKBOX_E2E_FIXTURE_TOKEN }
+changes:
+  spec:
+    - requirement.md
+  neutral:
+    - README.md
