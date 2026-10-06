@@ -1,7 +1,7 @@
 # @suites/blackbox-gherkin
 
 > Private preview package. Not published: it runs from this repository's workspace, where the root
-> manifest adds the `blackbox gherkin` commands to the CLI. Consumer distribution comes later.
+> manifest adds the `blackbox feature` commands to the CLI. Consumer distribution comes later.
 
 Compiles human-authored Gherkin `.feature` files into native Playwright tests that declare their boundary
 through the public `test.system(...).sandbox(...)` facade of `@suites/blackbox-playwright`.
@@ -80,10 +80,10 @@ The generated tests are native Playwright tests: run them with `playwright test`
 
 | Command | What it does |
 | --- | --- |
-| `blackbox gherkin compile` | Compiles the accepted features into generated tests and `compile-manifest.json`. Prints each scenario with its requirement IDs and barrier deadlines. |
-| `blackbox gherkin check` | Fails on project step files, imports of Cucumber, playwright-bdd or the generated-code runtime, patches or forks of the step library or its runtime, and tracked generated tests. A local tarball (`file:….tgz`) passes only when it is a pack of that package at this release, as the unpublished alpha is installed. |
-| `blackbox gherkin check-change --base <ref>` | Fails when one change touches spec paths (features, this file, the step-library dependency and its patches) and code paths. |
-| `blackbox gherkin steps` | Lists the step library with an example sentence per step. |
+| `blackbox feature compile` | Compiles the accepted features into generated tests and `compile-manifest.json`. Prints each scenario with its requirement IDs and barrier deadlines. |
+| `blackbox feature check` | Fails on project step files, imports of Cucumber, playwright-bdd or the generated-code runtime, patches or forks of the step library or its runtime, and tracked generated tests. A local tarball (`file:….tgz`) passes only when it is a pack of that package at this release, as the unpublished alpha is installed. |
+| `blackbox feature check-change --base <ref>` | Fails when one change touches spec paths (features, this file, the step-library dependency and its patches) and code paths. |
+| `blackbox feature steps` | Lists the step library with an example sentence per step. |
 
 Every command takes `--config <path>` (default `blackbox.gherkin.json`) and exits 1 when its check fails,
 2 when the project file is missing or invalid.

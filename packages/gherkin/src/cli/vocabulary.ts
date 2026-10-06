@@ -1,6 +1,6 @@
 import type { StepKind, StepLibrary, StepVocabularyEntry } from '../runtime/library.js';
 
-// `blackbox gherkin steps`: the shared library's vocabulary for human authors,
+// `blackbox feature steps`: the shared library's vocabulary for human authors,
 // grouped by what each step contributes, with a sentence to copy.
 
 const SECTIONS = [

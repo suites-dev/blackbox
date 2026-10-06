@@ -3,7 +3,7 @@ import { Command, Flags } from '@oclif/core';
 import { checkChange, renderChangeCheck } from '../../../check/change.js';
 import { configFlag, EXIT, projectAt } from '../../project.js';
 
-export default class GherkinCheckChange extends Command {
+export default class FeatureCheckChange extends Command {
   static override description =
     'Fail when one change alters both spec paths (features, project file, step library) and code paths.';
 
@@ -14,7 +14,7 @@ export default class GherkinCheckChange extends Command {
   };
 
   public async run(): Promise<void> {
-    const { flags } = await this.parse(GherkinCheckChange);
+    const { flags } = await this.parse(FeatureCheckChange);
     const check = await checkChange(projectAt(flags.config), { base: flags.base, head: flags.head });
     this.log(renderChangeCheck(check));
     if (check.problem !== null) {

@@ -5,7 +5,7 @@ import { toPosix } from '../project/files.js';
 import { classifyChanges, MANIFEST, separationProblem, type Change, type ChangeClasses, type Classification } from './classify.js';
 import { git, gitTopLevel } from './git.js';
 
-// `blackbox gherkin check-change --base <ref>`: hard rule 2 for a project. A
+// `blackbox feature check-change --base <ref>`: hard rule 2 for a project. A
 // change may alter the accepted expectations (spec) or the code they judge,
 // never both. Spec is the project's features, blackbox.gherkin.json,
 // extra `changes.spec` globs, and the step-library dependency entries and

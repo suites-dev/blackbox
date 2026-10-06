@@ -20,7 +20,7 @@ export type StepVocabularyEntry = Omit<StepDefinition, 'run' | 'check'>;
 export interface StepLibrary {
   readonly identity: StepLibraryIdentity;
   readonly capabilities: readonly Capability[];
-  /** Every step in library order, for authors (`blackbox gherkin steps`). */
+  /** Every step in library order, for authors (`blackbox feature steps`). */
   readonly vocabulary: readonly StepVocabularyEntry[];
   resolve(text: string): StepResolution;
 }

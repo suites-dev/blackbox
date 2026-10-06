@@ -67,7 +67,7 @@
       "driver": {
         "description": "Install the project-owned driver runtime."
       },
-      "gherkin": {
+      "feature": {
         "description": "Compile and check human-authored Gherkin feature files."
       },
       "inst": {

@@ -7,13 +7,13 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } 
 
 import { git } from '../check/git.js';
 import { cleanupRepositories, repository } from '../check/testing/repository.js';
-import GherkinCheck from './commands/gherkin/check.js';
-import GherkinCheckChange from './commands/gherkin/check-change.js';
-import GherkinCompile from './commands/gherkin/compile.js';
-import GherkinSteps from './commands/gherkin/steps.js';
+import FeatureCheck from './commands/feature/check.js';
+import FeatureCheckChange from './commands/feature/check-change.js';
+import FeatureCompile from './commands/feature/compile.js';
+import FeatureSteps from './commands/feature/steps.js';
 import { COMMANDS } from './command-registry.js';
 
-// Requirements (task 2.4): the `blackbox gherkin` topic offers compile, check,
+// Requirements (task 2.4): the `blackbox feature` topic offers compile, check,
 // check-change and steps. Each command reads blackbox.gherkin.json,
 // exits 0 when its check passes, 1 when it fails and 2 when the project file
 // is missing or invalid. compile uses the shared library and the project's
@@ -85,9 +85,9 @@ function oclifExit(error: unknown): number {
   return typeof oclif === 'object' && oclif !== null && 'exit' in oclif && typeof oclif.exit === 'number' ? oclif.exit : -1;
 }
 
-type GherkinCommand = typeof GherkinCheck | typeof GherkinCheckChange | typeof GherkinCompile | typeof GherkinSteps;
+type FeatureCommand = typeof FeatureCheck | typeof FeatureCheckChange | typeof FeatureCompile | typeof FeatureSteps;
 
-async function runCommand(command: GherkinCommand, argv: readonly string[]): Promise<CommandRun> {
+async function runCommand(command: FeatureCommand, argv: readonly string[]): Promise<CommandRun> {
   let stdout = '';
   let stderr = '';
   const loaded = await Config.load({ root: oclifRoot });
@@ -125,9 +125,9 @@ afterEach(async () => {
   await cleanupRepositories();
 });
 
-describe('blackbox gherkin compile', () => {
+describe('blackbox feature compile', () => {
   it('compiles the accepted features with the shared library', async () => {
-    const run = await runCommand(GherkinCompile, ['--config', config]);
+    const run = await runCommand(FeatureCompile, ['--config', config]);
     expect(run.exit, run.stderr).toBe(0);
     expect(run.stdout.split('\n')[0]).toBe(
       'features/health.feature:4 [REQ-7] Scenario: the public API reports ready (barrier deadlines: 5s at line 6)',
@@ -140,7 +140,7 @@ describe('blackbox gherkin compile', () => {
 
   it('fails with every diagnostic and generates nothing when a credential is not in the profile', async () => {
     await writeFile(join(root, 'features/health.feature'), HEALTH.replace('"fixture-control"', '"admin"'));
-    const run = await runCommand(GherkinCompile, ['--config', config]);
+    const run = await runCommand(FeatureCompile, ['--config', config]);
     expect(run.exit).toBe(1);
     expect(run.stderr).toContain('features/health.feature:6:5: credential "admin" is not defined by Sandbox profile "default" (it defines fixture-control)');
     expect(run.stderr).toContain('compile: failed; nothing was generated');
@@ -148,26 +148,26 @@ describe('blackbox gherkin compile', () => {
   });
 });
 
-describe('blackbox gherkin check and project errors', () => {
+describe('blackbox feature check and project errors', () => {
   it('check reports a project step file', async () => {
     await writeFile(join(root, 'features/login.steps.ts'), 'export {};\n');
-    const run = await runCommand(GherkinCheck, ['--config', config]);
+    const run = await runCommand(FeatureCheck, ['--config', config]);
     expect(run.exit).toBe(1);
     expect(run.stdout).toContain('error: features/login.steps.ts: a project step file');
   });
 
   it('exits 2 when the project file is missing or invalid', async () => {
-    const missing = await runCommand(GherkinCheck, ['--config', join(root, 'nowhere.json')]);
+    const missing = await runCommand(FeatureCheck, ['--config', join(root, 'nowhere.json')]);
     expect(missing).toMatchObject({ exit: 2 });
     expect(missing.stderr).toContain(`no blackbox.gherkin.json at ${join(root, 'nowhere.json')}`);
     await writeFile(config, JSON.stringify({ ...PROJECT, retries: 3 }));
-    const invalid = await runCommand(GherkinCompile, ['--config', config]);
+    const invalid = await runCommand(FeatureCompile, ['--config', config]);
     expect(invalid).toMatchObject({ exit: 2 });
     expect(invalid.stderr).toContain('retries: is not a known setting');
   });
 });
 
-describe('blackbox gherkin check-change and steps', () => {
+describe('blackbox feature check-change and steps', () => {
   it('check-change exits 0 for a code-only change and 1 for a mixed one', async () => {
     const repo = await repository();
     await repo.commit('base');
@@ -175,29 +175,29 @@ describe('blackbox gherkin check-change and steps', () => {
     await repo.write({ 'app/src/server.ts': 'export const port = 1;\n' });
     await repo.commit('code');
     const argv = ['--config', join(repo.root, 'app/blackbox.gherkin.json'), '--base', 'main'];
-    expect(await runCommand(GherkinCheckChange, argv)).toMatchObject({ exit: 0 });
+    expect(await runCommand(FeatureCheckChange, argv)).toMatchObject({ exit: 0 });
     await repo.write({ 'app/features/intake.feature': 'Feature: weakened\n' });
     await repo.commit('spec');
-    const mixed = await runCommand(GherkinCheckChange, argv);
+    const mixed = await runCommand(FeatureCheckChange, argv);
     expect(mixed.exit).toBe(1);
     expect(mixed.stdout).toContain('error: this change mixes spec and code.');
   });
 
   it('steps lists every library step with an example, and registers all four commands', async () => {
-    const run = await runCommand(GherkinSteps, []);
+    const run = await runCommand(FeatureSteps, []);
     expect(run.exit).toBe(0);
     expect(run.stdout).toContain('Stimulus (When):\n  the client sends GET {string}\n    When the client sends GET "/health"');
     expect(run.stdout).toContain("parameter 3 names a credential of the feature's Sandbox profile");
     expect(run.stdout).toContain(
       'Effects claims (Then):\n  the effects satisfy:\n    Then the effects satisfy:\n    - needs capability "effects-claims", which this runtime does not offer: it does not compile',
     );
-    const json = JSON.parse((await runCommand(GherkinSteps, ['--json'])).stdout) as { steps: unknown[] };
+    const json = JSON.parse((await runCommand(FeatureSteps, ['--json'])).stdout) as { steps: unknown[] };
     expect(json.steps).toHaveLength(18);
     expect(Object.keys(COMMANDS).sort()).toEqual([
-      'gherkin:check',
-      'gherkin:check-change',
-      'gherkin:compile',
-      'gherkin:steps',
+      'feature:check',
+      'feature:check-change',
+      'feature:compile',
+      'feature:steps',
     ]);
   });
 });

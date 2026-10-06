@@ -6,14 +6,14 @@ import { library } from '../../../library/index.js';
 import { compileProject, renderCompile } from '../../../project/compile.js';
 import { configFlag, EXIT, projectAt } from '../../project.js';
 
-export default class GherkinCompile extends Command {
+export default class FeatureCompile extends Command {
   static override description =
     'Compile the accepted .feature files into generated Playwright tests and a compile manifest.';
 
   static override flags = { config: configFlag };
 
   public async run(): Promise<void> {
-    const { flags } = await this.parse(GherkinCompile);
+    const { flags } = await this.parse(FeatureCompile);
     const project = projectAt(flags.config);
     try {
       const output = await compileProject({

@@ -5,19 +5,19 @@ import { join } from 'node:path';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { PROJECT_FILE } from '../check/testing/repository.js';
-import GherkinCompile from '../cli/commands/gherkin/compile.js';
+import FeatureCompile from '../cli/commands/feature/compile.js';
 import { CATALOG, useCommands, type CommandRun } from './testing/commands.js';
 
 // Rule-dodging suite, compile gate (hard rules 3, 4 and 5). Each feature here
 // tries to get a scenario that is selected, run or judged differently past
-// `blackbox gherkin compile`: a tag that would select, skip, invert or re-time
+// `blackbox feature compile`: a tag that would select, skip, invert or re-time
 // it, a step the shared library does not define, and a telemetry claim whose
 // evidence could end inconclusive. compile must exit 1, name each attempt at
 // its file:line:column and generate nothing. Each case has a control: the same
 // feature without the attempt compiles, so the failure is the attempt's.
 // Run-time attempts (a swapped reporter, changed retries or timeouts, filtered
 // scenarios, flaky and expected-to-fail results) are judged where they are
-// enforced, by the Playwright run and `blackbox gherkin verify`.
+// enforced, by the Playwright run and `blackbox feature verify`.
 
 const runCommand = useCommands(beforeAll, afterAll, vi);
 
@@ -38,7 +38,7 @@ async function compile(feature: string): Promise<CommandRun & { readonly generat
   await writeFile(join(root, 'blackbox.gherkin.json'), `${JSON.stringify(PROJECT_FILE, null, 2)}\n`);
   await writeFile(join(root, 'blackbox.config.yaml'), CATALOG);
   await writeFile(join(root, FEATURE), feature);
-  const run = await runCommand(GherkinCompile, ['--config', join(root, 'blackbox.gherkin.json')]);
+  const run = await runCommand(FeatureCompile, ['--config', join(root, 'blackbox.gherkin.json')]);
   return { ...run, generated: (await readdir(root)).includes('.features-gen') };
 }
 

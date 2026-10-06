@@ -3,7 +3,7 @@ import { Command, Flags } from '@oclif/core';
 import { library } from '../../../library/index.js';
 import { renderVocabulary, vocabularyJson } from '../../vocabulary.js';
 
-export default class GherkinSteps extends Command {
+export default class FeatureSteps extends Command {
   static override description = 'List the shared step library: every step a feature may use, with an example.';
 
   static override flags = {
@@ -11,7 +11,7 @@ export default class GherkinSteps extends Command {
   };
 
   public async run(): Promise<void> {
-    const { flags } = await this.parse(GherkinSteps);
+    const { flags } = await this.parse(FeatureSteps);
     this.log(flags.json ? vocabularyJson(library) : renderVocabulary(library));
   }
 }

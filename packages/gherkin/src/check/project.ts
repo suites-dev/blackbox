@@ -6,7 +6,7 @@ import { projectFiles, toPosix } from '../project/files.js';
 import { git, gitTopLevel } from './git.js';
 import { packageProblems } from './packages.js';
 
-// `blackbox gherkin check`: static checks for hard rule 3 (step definitions
+// `blackbox feature check`: static checks for hard rule 3 (step definitions
 // come only from the shared library) and for generated output that must never
 // be committed. It detects the known mechanisms; it cannot prove that no other
 // test code exists.

@@ -5,14 +5,14 @@ import { Command } from '@oclif/core';
 import { checkProject } from '../../../check/project.js';
 import { configFlag, EXIT, projectAt } from '../../project.js';
 
-export default class GherkinCheck extends Command {
+export default class FeatureCheck extends Command {
   static override description =
     'Check the project for step definitions outside the shared library, patched or forked library packages, and tracked generated tests.';
 
   static override flags = { config: configFlag };
 
   public async run(): Promise<void> {
-    const { flags } = await this.parse(GherkinCheck);
+    const { flags } = await this.parse(FeatureCheck);
     const project = projectAt(flags.config);
     const problems = await checkProject(project);
     if (problems.length > 0) {

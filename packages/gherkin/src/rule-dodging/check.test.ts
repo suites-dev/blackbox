@@ -4,21 +4,21 @@ import { pathToFileURL } from 'node:url';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { cleanupRepositories, repository } from '../check/testing/repository.js';
-import GherkinCheck from '../cli/commands/gherkin/check.js';
+import FeatureCheck from '../cli/commands/feature/check.js';
 import { compileFeatures } from '../compiler/compile.js';
 import { testContext } from '../compiler/testing/context.js';
 import { runPlaywright, stubRuntimeModule } from '../compiler/testing/playwright-cli.js';
 import { useCommands } from './testing/commands.js';
 
 // Rule-dodging suite, step definitions (hard rule 3): steps come only from the
-// shared library. `blackbox gherkin check` must exit 1 for a project step file
+// shared library. `blackbox feature check` must exit 1 for a project step file
 // and for an import that registers or runs steps outside the library. Its
 // match is static, so it does not see a file-path or computed import, a step
 // file outside the project directory or a symlinked one. None of those can
 // change a step: the library is closed, and its definitions are frozen where
 // they are declared (library/frozen.test.ts), so a project module that replaces
 // a step body fails the Playwright run as soon as its config loads (below).
-// With blackbox gherkin verify, the same probe also fails verify
+// With blackbox feature verify, the same probe also fails verify
 // (library/frozen.test.ts on the verification PR).
 // A change that mixes spec and code, or code and the policy baseline, is hard
 // rule 2: covered by check-change (check/change.test.ts) and by the repository
@@ -29,7 +29,7 @@ const runCommand = useCommands(beforeAll, afterAll, vi);
 
 afterEach(cleanupRepositories);
 
-const check = (root: string) => runCommand(GherkinCheck, ['--config', join(root, 'app/blackbox.gherkin.json')]);
+const check = (root: string) => runCommand(FeatureCheck, ['--config', join(root, 'app/blackbox.gherkin.json')]);
 
 const PASSED = 'check: passed; no project step files or step-registration imports, no patched or forked step library, .features-gen/ not tracked';
 

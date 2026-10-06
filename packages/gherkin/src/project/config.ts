@@ -6,7 +6,7 @@ import type { CredentialSource } from '../runtime/credentials.js';
 import type { EnvironmentSource } from '../runtime/environment.js';
 import { ConfigReader, isObject, type JsonObject } from './reader.js';
 
-/** The protected project file every `blackbox gherkin` command reads. */
+/** The protected project file every `blackbox feature` command reads. */
 export const GHERKIN_CONFIG_FILE = 'blackbox.gherkin.json';
 
 /**

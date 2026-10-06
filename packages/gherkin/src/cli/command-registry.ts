@@ -1,11 +1,11 @@
-import GherkinCheck from './commands/gherkin/check.js';
-import GherkinCheckChange from './commands/gherkin/check-change.js';
-import GherkinCompile from './commands/gherkin/compile.js';
-import GherkinSteps from './commands/gherkin/steps.js';
+import FeatureCheck from './commands/feature/check.js';
+import FeatureCheckChange from './commands/feature/check-change.js';
+import FeatureCompile from './commands/feature/compile.js';
+import FeatureSteps from './commands/feature/steps.js';
 
 export const COMMANDS = {
-  'gherkin:compile': GherkinCompile,
-  'gherkin:check': GherkinCheck,
-  'gherkin:check-change': GherkinCheckChange,
-  'gherkin:steps': GherkinSteps,
+  'feature:compile': FeatureCompile,
+  'feature:check': FeatureCheck,
+  'feature:check-change': FeatureCheckChange,
+  'feature:steps': FeatureSteps,
 };

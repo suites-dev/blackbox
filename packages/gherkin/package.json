@@ -37,7 +37,7 @@
     "cli": {
       "apiVersion": 1,
       "pluginId": "gherkin",
-      "topic": "gherkin"
+      "topic": "feature"
     }
   },
   "oclif": {

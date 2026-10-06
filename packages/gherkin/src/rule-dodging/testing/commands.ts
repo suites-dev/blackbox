@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import { Config, type Command } from '@oclif/core';
 import type { vi } from 'vitest';
 
-// Runs `blackbox gherkin` commands through oclif, as the CLI host runs them,
+// Runs `blackbox feature` commands through oclif, as the CLI host runs them,
 // from a bare oclif root so a test never loads a built command registry. The
 // gate is the command's exit code: 0 passes, 1 is a failed check.
 
@@ -38,7 +38,7 @@ export interface CommandRun {
   readonly stderr: string;
 }
 
-/** A `blackbox gherkin` command class, run through its static `run` as the CLI host does. */
+/** A `blackbox feature` command class, run through its static `run` as the CLI host does. */
 export type CommandClass = (new (argv: string[], config: Config) => Command) & Pick<typeof Command, 'run'>;
 
 export type RunCommand = (command: CommandClass, argv: readonly string[]) => Promise<CommandRun>;
