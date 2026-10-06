@@ -4,249 +4,207 @@
 
 Blackbox is a **verification framework for coding agents**. It gives your agent the tools to run system tests in isolation, collect evidence, and verify behavior against your spec.
 
-Your agent sets it up, investigates behavior in a Capsule, and records repeatable checks with native Playwright. You review the expected behavior and follow the results in the terminal or HTML report.
+**You own the intent. Your agent handles the setup, experiments, and tests.**
 
-**From spec → running system → evidence.**
+[Get started](#just-copy-this-prompt-and-start) · [How it works](docs/verification.md) · [Documentation](docs/README.md)
 
-[Start with your agent](#start-with-your-agent) · [See the spec-to-test workflow](#from-sdd-to-a-running-system)
+## Just copy this prompt and start
 
-> **Preview:** The executable-spec workflow is being connected incrementally. Feature compilation is a private preview; the public Gherkin CLI and dedicated SDD handoff skill are not available yet. The examples below explain the workflow without implying those commands have shipped.
+Open your coding agent in the project and paste:
 
-## From SDD to a running system
+```txt
+Set up Suites Blackbox for this project using its CLI and agent skills.
+Check whether the onboarding entry point is available:
+npx @suites/blackbox-cli onboarding start
 
-Already working from a Markdown specification, or using a spec-driven development (SDD) workflow such as Spec Kit? Keep that workflow.
-
-**Your spec describes what the software should do. Blackbox gives your agent a way to test that behavior against the running system.**
-
-The handoff starts with your requirements, not with whatever the implementation happens to do. Your agent turns those requirements into concrete scenarios for review. The approved scenarios become executable checks.
-
-### 1. Start with the specification
-
-`spec.md` describes the intended behavior:
-
-```markdown
-# Subscription creation
-
-## REQ-101: Activate an eligible customer
-
-Alice is an eligible customer with no existing subscription.
-When she subscribes with a valid payment method:
-
-- The request returns HTTP 201.
-- Exactly one subscription is retained for Alice.
-- That subscription is active.
+Use the available setup path and discover the smallest useful system.
+Run a focused check and show me the HTML report.
+Draft executable scenarios from my spec for review; don't change the
+spec to match the implementation.
 ```
 
-This is the requirement. It is not yet a test, and a successful implementation claim from the agent is not evidence that it holds.
+*Preview: `onboarding start` is the planned entry point, not a shipped command. Until it is available, the agent uses the existing setup path.*
 
-### 2. Make the behavior executable
+[Agent setup](docs/getting-started.md) · [Skills and permissions](docs/agent-skills.md)
 
-The agent drafts a Feature using Blackbox's supported step vocabulary. You review the expected behavior; the compiler supplies the executable steps rather than asking the implementation agent to invent what each assertion means.
+## From your spec to a running system
 
-This preview example uses the subscription fixture's state endpoint. The selected Sandbox seeds Alice; the agent configures the catalog and the named `fixture-control` credential. The endpoint belongs to the application fixture, not to an automatic Blackbox state reader.
+Already using Spec Kit or another **spec-driven development (SDD)** workflow? Keep it. Your spec describes what to build; Blackbox gives your agent a way to verify it.
+
+<!-- figure: spec-to-evidence
+Future asset: docs/assets/figures/01-spec-to-evidence.svg
+Alt: An agent drafts scenarios from a specification for review. Approved Features
+compile to native Playwright tests, which run against a real isolated system.
+Keep the approval boundary explicit; do not depict prose as automatically verified.
+-->
+```text
+   YOUR SPEC        REVIEWED FEATURE       PLAYWRIGHT SUITE
+   What to build --> What to check -------> Executable checks
+                                                |
+                                                v
+                                     +---------------------+
+                                     | Fresh Sandbox       |
+                                     | Real running system |
+                                     +---------------------+
+                                                |
+                                         Evidence + report
+```
+
+**1. The spec** — a small requirement, with Alice seeded in a fresh fixture.
+
+```markdown
+## REQ-101: Create a subscription
+An eligible customer's request returns HTTP 201
+and leaves exactly one subscription in the system.
+```
+
+**2. The Feature** — concrete checks from the supported preview vocabulary.
 
 ```gherkin
 @system:subscription-system @sandbox:default
 @requirement:REQ-101
-Feature: Subscription creation
-
-  Scenario: an eligible customer receives an active subscription
-    Given the state at "/fixture/state" as "fixture-control" has 0 items at "/subscriptions"
+Feature: Subscriptions
+  Scenario: Alice subscribes
     When the client sends POST "/subscriptions" with JSON:
       """json
-      {"userId": "alice", "paymentMethodId": "pm_alice_primary"}
+      {"userId":"alice","paymentMethodId":"pm_alice_primary"}
       """
     Then the response status is 201
     And the state at "/fixture/state" as "fixture-control" has 1 item at "/subscriptions"
-    And the state at "/fixture/state" as "fixture-control" has "/subscriptions/0/userId" equal to:
-      """json
-      "alice"
-      """
-    And the state at "/fixture/state" as "fixture-control" has "/subscriptions/0/status" equal to:
-      """json
-      "active"
-      """
 ```
 
-The Feature is the readable specification. The preview compiler turns its scenarios into native Playwright tests and records their source locations and requirement IDs. Generated tests are build output, not another specification to edit independently.
-
-### 3. Run against an isolated system
-
-Blackbox's Playwright integration selects a system and a Sandbox configuration. Every test attempt, including a retry, receives a fresh Sandbox.
-
-The following is a directly authored equivalent of the scenario above, not the compiler's literal output. Both examples check the response **and** the resulting state. Native Playwright remains a first-class path when code is the better way to express a check.
+**3. The Sandbox test** — the same checks expressed directly in native Playwright, not the compiler's literal output.
 
 ```ts
 import { expect, test } from '@suites/blackbox-playwright';
-
-const fixtureToken = process.env.BLACKBOX_CREDENTIAL_FIXTURE_CONTROL;
-if (!fixtureToken) {
-  throw new Error('BLACKBOX_CREDENTIAL_FIXTURE_CONTROL is required');
-}
+import { blackboxEnvironment, readFixtureState } from './support.js';
 
 test.system('subscription-system', (system) => {
-  system.sandbox(
-    'default',
-    { environment: { FIXTURE_CONTROL_TOKEN: fixtureToken } },
-    (suite) => {
-      suite.test(
-        'an eligible customer receives an active subscription',
-        { annotation: { type: 'requirement', description: 'REQ-101' } },
-        async ({ request, sandbox }) => {
-          const url = (path: string) => new URL(path, sandbox.entrypoint.url).href;
-          const readState = async () => {
-            const response = await request.get(url('/fixture/state'), {
-              headers: { authorization: `Bearer ${fixtureToken}` },
-            });
-            expect(response.status()).toBe(200);
-            return response.json();
-          };
-
-          await test.step('Given Alice has no subscription', async () => {
-            expect((await readState()).subscriptions).toHaveLength(0);
-          });
-
-          const response = await test.step('When Alice subscribes', () =>
-            request.post(url('/subscriptions'), {
-              data: { userId: 'alice', paymentMethodId: 'pm_alice_primary' },
-            }),
-          );
-
-          await test.step('Then one active subscription is retained for Alice', async () => {
-            expect(response.status()).toBe(201);
-            const { subscriptions } = await readState();
-            expect(subscriptions).toHaveLength(1);
-            expect(subscriptions[0]).toMatchObject({ userId: 'alice', status: 'active' });
-          });
-        },
+  system.sandbox('default', { environment: blackboxEnvironment }, (suite) => {
+    suite.test('Alice subscribes', async ({ request, sandbox }) => {
+      const response = await request.post(
+        new URL('/subscriptions', sandbox.entrypoint.url).href,
+        { data: { userId: 'alice', paymentMethodId: 'pm_alice_primary' } },
       );
-    },
-  );
+      expect(response.status()).toBe(201);
+      const state = await readFixtureState<{ subscriptions: unknown[] }>(
+        request, sandbox.entrypoint.url,
+      );
+      expect(state.subscriptions).toHaveLength(1);
+    });
+  });
 });
 ```
 
-The example checks state after the response because this fixture waits for its subscription write before responding. An asynchronous workflow needs its own completion check before final-state or absence assertions.
+`support.js` contains project-owned setup and state-reading helpers; `/fixture/state` belongs to the example application. Native tests remain a first-class path. Generated tests are build output, not another spec to edit.
 
-```text
-Markdown spec → approved Feature → compiled Playwright test
-                                          ↓
-                                  fresh isolated system
-                                          ↓
-                              responses + state + observations
-                                          ↓
-                                  checks and report
-```
-
-This is how a specification becomes executable: its expectations are checked against a real execution. It does not mean that every sentence in an arbitrary product document has been translated or verified.
-
-## Start with your agent
-
-Blackbox is built for teams working with coding agents. Setup and operation belong to the agent; you own the intent and approve the expected behavior.
-
-The proposed one-command entry point is **not implemented yet**:
-
-```sh
-npx @suites/blackbox-cli onboarding start
-```
-
-The intended command bootstraps the agent-guided setup. Discovery, project configuration, and verification remain work your coding agent carries out through Blackbox's CLI and skills. It must work before project-local Blackbox packages or skills are installed.
-
-For the current preview, give your coding agent this setup task:
-
-```txt
-Set up Suites Blackbox for this repository using the Blackbox CLI
-and its agent skills.
-
-Inspect the project and its existing specifications. Install compatible
-Blackbox packages and the skills needed for this agent, then use Discovery
-to identify the smallest useful system boundary. Configure the catalog,
-supported instrumentation, and any required drivers.
-
-Start the system, run a focused check, and show me the report. Draft
-executable scenarios from the requirements for review. Do not change
-the requirements to match the implementation.
-
-Check which capabilities are available. Ask for any missing permissions
-or secrets, and report unsupported preview steps instead of inventing them.
-```
-
-A dedicated SDD handoff skill is planned: take the existing spec, draft supported scenarios, and connect them to verification. `speckit.verify` is a possible name, **not an available command or an official Spec Kit integration**.
+[Full example](docs/spec-to-test.md) · [SDD handoff — planned](docs/sdd.md) · [Playwright guide](docs/playwright.md)
 
 ## The same system test. More evidence.
 
-**Verification means checking expected behavior against evidence.** System tests are one way to produce that evidence: establish a starting state, act on the system, and check the result.
+**Verification means checking expected behavior against evidence.** A response, a state check, and a runtime observation answer different questions.
 
-Keep ordinary Playwright assertions. Blackbox adds an isolated environment and supported runtime observations around the execution; it does not replace response or state checks.
-
-| Evidence | The question it answers |
-| --- | --- |
-| Response or command result | What came back? |
-| An explicit state check | What was actually saved or changed? |
-| Runtime observations | Which supported service, database, cache, or messaging operations were observed? |
-
-An HTTP 201 does not establish that a row was saved. A database call can be observed even if its transaction rolls back. A message send does not establish consumer completion. Each check needs evidence that can answer its particular question.
-
-Effects are a structured way to describe supported runtime observations. OpenTelemetry supplies observations; effects are not OpenTelemetry itself, and neither is a substitute for all the evidence a test needs. You do not need to learn either format to understand the workflow.
-
-**Not observed is not the same as did not happen.** Missing telemetry or an unlinked asynchronous operation must remain a visible limitation, not a reason to claim success.
-
-## Investigate in a Capsule. Keep what matters as a test.
-
-A **Capsule** is a controlled copy of the selected system that your agent can use for experiments. It can prepare data, send requests, inspect state and runtime observations, try a repair, and repeat the investigation.
-
-The agent does not need to turn every hypothesis into a permanent test. Use a Capsule to understand a problem; record the relevant checks once the expected behavior is clear. When the spec and test already exist, go straight to focused verification.
-
+<!-- figure: evidence-sources
+Future asset: docs/assets/figures/02-evidence-sources.svg
+Alt: One system-test execution provides response evidence, explicit state checks,
+and supported runtime observations. These inform checks against expected behavior.
+State reads must remain explicit, not implied to be automatic telemetry.
+-->
 ```text
-Question → Capsule experiment → inspect evidence → repair and rerun
-                                      ↓
-                         review against the intended behavior
-                                      ↓
-                         record a repeatable system test
-                                      ↓
-                             fresh run locally or in CI
+                    ONE SYSTEM-TEST EXECUTION
+                               |
+           +-------------------+-------------------+
+           |                   |                   |
+        RESPONSE          STATE CHECKS         OBSERVATIONS
+     What came back?    What was saved?       What ran?
+           |                   |                   |
+           +-------------------+-------------------+
+                               |
+                  Check the expected behavior
 ```
 
-**What happened is not automatically what should happen.** An agent must not preserve a bug by copying its behavior into the specification. Approved expectations come from the requirement, not from the execution being judged.
+A database call is not proof of a committed row. A message send is not proof of consumer completion. **Not observed does not mean it did not happen.**
+
+Effects describe supported runtime observations; they do not replace response or state assertions.
+
+[Verification and evidence](docs/verification.md) · [Runtime observations and effects](docs/runtime-evidence.md)
+
+## Experiment in a Capsule. Keep what matters as a test.
+
+A **Capsule** gives your agent a controlled running system for investigation. Try a hypothesis, inspect the evidence, repair, and rerun. Record useful checks once the expected behavior is clear.
+
+<!-- figure: capsule-to-ci
+Future asset: docs/assets/figures/03-capsule-to-ci.svg
+Alt: Capsule experiments support investigation and repair. Reviewed expectations
+become repeatable Playwright checks. Development runs narrowly; CI runs broadly.
+The spec, not the observed result, determines the expected behavior.
+-->
+```text
+        CAPSULE                         PLAYWRIGHT
+   Explore and investigate          Repeat accepted checks
+             |                              |
+   Act --> Inspect --> Repair      Spec --> Test --> Evidence
+    ^_____________________|                 |
+             |                      Focused runs locally
+             +-- reviewed checks --> Broader suite in CI
+```
+
+**What happened is not automatically what should happen.** The agent must not turn a bug into an accepted specification. Already have the right test? Run it directly.
+
+[Capsule experiments](docs/capsules.md) · [From investigation to a test](docs/spec-to-test.md)
 
 ## Run only what you need
 
-**Run the smallest real system that can answer the question.** A payment rule may need only the payment subsystem. A checkout-to-order claim needs the relevant services and dependencies. Do not remove a participant whose behavior the check depends on.
+**Choose the smallest system that can answer the question.** Keep the services the behavior depends on; leave unrelated ones out.
 
-A smaller boundary generally means less startup work, lower memory use, fewer competing actions, and less evidence to interpret. Its result applies to that boundary, not to services excluded from the run.
+<!-- figure: isolated-attempts
+Future asset: docs/assets/figures/04-isolated-attempts.svg
+Alt: Each Playwright attempt owns a separate Sandbox. Two available workers run
+two attempts while another waits. Isolation enables concurrency, not unlimited capacity.
+-->
+```text
+             TWO WORKERS / THREE TESTS
 
-During development, ask the agent to select the relevant tests and use Capsules for experiments. Use CI for broader verification. Focused runs are useful, but they are not claims that the entire suite passed.
+  Worker 1   Test A --> [Sandbox A]
+  Worker 2   Test B --> [Sandbox B]
+  Waiting    Test C --> [fresh Sandbox when a worker is free]
 
-Each Playwright attempt has its own Sandbox. Isolation permits concurrent tests, but CPU, memory, Docker capacity, and any shared external dependencies still limit concurrency. Set worker counts for the available machine rather than starting every environment at once. A retry produces a new attempt and new evidence; it does not erase the earlier failure.
+  More workers = more simultaneous environments = more resources
+```
 
-## Keep the specification and the checks honest
+Every physical attempt, including a retry, gets a fresh Sandbox. Isolation permits parallel work, not unlimited memory or CPU. Shared external dependencies still need care.
 
-The implementation should not pass by silently moving the target. Changes to expected behavior need review. Changes to retries, timeouts, selected tests, or projects also change what a green run means.
+Run focused tests during development; use CI for broader verification. A subset is not the whole suite, and a retry does not erase an earlier failure.
 
-The preview guardrails address different parts of this problem: strict verdicts distinguish a clean pass from skipped or flaky execution; runner-policy checks detect changes from an approved execution baseline; the repository's spec/code separation check requires specification and implementation changes to be reviewed separately.
+[System boundaries](docs/configuration.md) · [Concurrency and CI](docs/ci.md)
 
-These are not a universal semantic-drift detector. Assertions check the behaviors they express. Policy checks detect changes to how those tests run. Traceability connects scenarios to requirements; it does not prove that the requirements are complete. The consumer CLI and CI setup for this workflow are still being connected.
+## Follow the evidence, not just a checkmark
 
-## Follow the execution in the report
+Playwright keeps its native terminal and HTML reports. Blackbox adds lifecycle information, attempt identity, diagnostics, and supported evidence attachments. Capsule reports let you revisit an investigation after its environment stops.
 
-Playwright keeps its native terminal and HTML reports. Blackbox contributes Sandbox lifecycle information, attempt identity, diagnostics, and supported evidence attachments. Capsule investigations have their own HTML and JSON reports, with retained records available after the environment stops.
+<!-- figure: report-views
+Future asset: docs/assets/figures/05-report-views.svg
+Alt: A developer follows terminal and HTML reports while an agent reads structured
+results from the same execution. Both inspect checks, observations and limitations.
+Later accompany this conceptual figure with real report captures, not mock verdicts.
+-->
+```text
+                  SAME EXECUTION
+                  /            \
+       TERMINAL / HTML       STRUCTURED RESULTS
+       You follow the run    Your agent follows the evidence
+                  \            /
+            Checks + observations + limitations
+```
 
-The agent reads structured results; you can follow the same investigation in HTML. A report should show what ran, what was checked, what was observed, and what remains unknown. A checkmark belongs to a particular check, not to a claim that the whole system is correct.
+CI should also make changes to expected behavior, test selection, retries, and timeouts visible. Runner-policy checks and spec/code separation protect different parts of that workflow; neither proves every requirement is covered.
 
-## Underneath the workflow
-
-<details>
-<summary>How the agent connects Blackbox to your project</summary>
-
-**Discovery** helps the agent understand the repository and select a useful system boundary. **The catalog**, in `blackbox.config.yaml`, records the systems and subsystems Blackbox can operate. Compose describes how the services run; the catalog describes how Blackbox works with them.
-
-**Drivers** adapt commands to the selected system's endpoints or containers. **Instrumentation** observes supported runtime activity. The implemented instrumentation provider and project-driver authoring runtime currently support Node; the shared contracts are runtime-neutral. Arbitrary internal function calls are not automatically observed.
-
-**Skills** teach the agent these procedures. **The CLI** gives it a common interface. You should not need to learn the package graph to use the framework.
-
-</details>
-
-Blackbox gives your agent the tools to verify the behavior of the running system. Use a unit test to check an isolated calculation. Use Blackbox when the question is whether that calculation results in the correct charge, saved state, or downstream behavior. The distinction is the behavior being checked, not which source file changed.
+[Reports](docs/reports.md) · [Specification and execution guardrails](docs/ci.md#verification-guardrails)
 
 ---
 
-**Alpha scope:** Native Playwright and Capsule workflows are available in the source preview. The [Gherkin compiler and step library](https://github.com/suites-dev/blackbox/pull/131), [runner guardrails](https://github.com/suites-dev/blackbox/pull/155), and [spec/code separation](https://github.com/suites-dev/blackbox/pull/133) are separate deliveries. The Feature example uses the preview response/state vocabulary, not arbitrary natural-language steps. The onboarding command, dedicated SDD skill, and complete public spec-to-CI onboarding remain planned. This README does not imply npm publication or that all preview pieces are connected in this branch.
+**Under the hood:** Your agent handles [Discovery and the catalog](docs/configuration.md), [drivers](docs/drivers.md), and [Node instrumentation](docs/instrumentation.md) through the [CLI and skills](docs/agent-skills.md). You do not need to learn the package graph.
+
+**Scope:** Blackbox supplies the means to verify running-system behavior, not isolated function logic. Use unit tests for that; internal code changes can still warrant system-level checks.
+
+**Preview:** Feature compilation is a private preview. The onboarding command, dedicated SDD handoff skill, and complete public spec-to-CI setup remain planned. The ASCII figures are conceptual, not captured test results. Documentation links reserve the next pages in this rewrite.
