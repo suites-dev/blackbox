@@ -1,13 +1,13 @@
 import { expect } from '@suites/blackbox-playwright';
 
-import type { StepDefinition } from '../../runtime/step-types.js';
+import { stepDefinitions } from '../../runtime/registry.js';
 import { fixture, integerAt, jsonDocString, stringAt } from '../support/arguments.js';
 import { sendJson } from '../support/http.js';
 
 // Setup through the application (report section 2.8, kind 2). The response is
 // checked here and never recorded, so no claim can judge a setup response.
 
-export const setupSteps = [
+export const setupSteps = stepDefinitions([
   {
     expression: 'the client has sent {word} {string} with JSON and received {int}:',
     kind: 'setup',
@@ -28,4 +28,4 @@ export const setupSteps = [
       expect(exchange.status, `setup ${method} ${path} status`).toBe(integerAt(parameters, 2));
     },
   },
-] satisfies readonly StepDefinition[];
+]);

@@ -1,6 +1,7 @@
 import { expect } from '@suites/blackbox-playwright';
 
-import type { StepDefinition, StepFixtures } from '../../runtime/step-types.js';
+import { stepDefinitions } from '../../runtime/registry.js';
+import type { StepFixtures } from '../../runtime/step-types.js';
 import { fixture, integerAt, jsonDocString, parseJson, stringAt } from '../support/arguments.js';
 import { describeSource, itemCount, readState, readStateAt, type StateSource } from '../support/state.js';
 
@@ -18,7 +19,7 @@ function source(fixtures: StepFixtures, parameters: readonly unknown[]): StateSo
   };
 }
 
-export const stateSteps = [
+export const stateSteps = stepDefinitions([
   {
     expression: 'the state at {string} as {string} equals:',
     kind: 'state-claim',
@@ -69,4 +70,4 @@ export const stateSteps = [
       expect(items, `items of the array at ${pointer} in ${describeSource(state)}`).toBe(integerAt(parameters, 2));
     },
   },
-] satisfies readonly StepDefinition[];
+]);

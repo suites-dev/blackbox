@@ -37,7 +37,8 @@ through the public `test.system(...).sandbox(...)` facade of `@suites/blackbox-p
 (single and concurrent), completion barriers (a synchronous seal, and polling an inspection endpoint
 within a deadline written in the feature), response claims, and state claims that read an inspection
 endpoint with a named credential and address members by JSON Pointer. Effects claims and participant
-commands are not part of v1.
+commands are not part of v1. Every step definition is frozen where it is declared, body included, so code
+loaded into a run cannot replace a step, and the library hash covers the step bodies.
 
 A named credential such as `"fixture-control"` is defined by the feature's Sandbox profile in
 `blackbox.gherkin.json` as a bearer token read from a runner environment variable; features name

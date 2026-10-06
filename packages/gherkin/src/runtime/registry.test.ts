@@ -5,7 +5,8 @@ import type { StepDefinition } from './step-types.js';
 
 // Requirement: the library is closed and resolves text to exactly one
 // definition; a step whose capability the runtime does not offer is
-// unavailable (capability gate, task 2.2).
+// unavailable (capability gate, task 2.2). Its definitions are deep-frozen,
+// bodies included, and its hash covers the bodies (rule-dodging F1).
 
 const run = () => Promise.resolve();
 
@@ -61,11 +62,12 @@ describe('createStepLibrary', () => {
     expect(open.capabilities).toEqual(['effects-claims']);
   });
 
-  it('identifies the vocabulary by content, independent of order and step bodies', () => {
+  it('identifies the library by content and step bodies, independent of order', () => {
     const first = createStepLibrary({ name: 'n', version: '1', definitions, capabilities: [] });
     const reordered = createStepLibrary({
       name: 'n',
       version: '1',
+      // A new function with the same source is the same body.
       definitions: [...definitions].reverse().map((entry) => ({ ...entry, run: () => Promise.resolve() })),
       capabilities: [],
     });
@@ -75,9 +77,28 @@ describe('createStepLibrary', () => {
       definitions: [...definitions.slice(1), definition('the response status is {int}', 'participant-exec')],
       capabilities: [],
     });
+    const rebodied = createStepLibrary({
+      name: 'n',
+      version: '1',
+      definitions: [{ ...definitions[0], run: () => Promise.reject(new Error('another body')) }, ...definitions.slice(1)],
+      capabilities: [],
+    });
     expect(first.identity.vocabularyHash).toMatch(/^sha256:[0-9a-f]{64}$/u);
     expect(reordered.identity.vocabularyHash).toBe(first.identity.vocabularyHash);
     expect(changed.identity.vocabularyHash).not.toBe(first.identity.vocabularyHash);
+    expect(rebodied.identity.vocabularyHash).not.toBe(first.identity.vocabularyHash);
+  });
+
+  it('deep-freezes the definitions it is built from, bodies included', () => {
+    const own = [definition('the order {string} exists')];
+    const library = createStepLibrary({ name: 'n', version: '1', definitions: own, capabilities: [] });
+    expect(Object.isFrozen(own)).toBe(true);
+    expect(Object.isFrozen(own[0].fixtures)).toBe(true);
+    expect(Object.isFrozen(own[0].run)).toBe(true);
+    expect(() => {
+      (own[0] as { run: StepDefinition['run'] }).run = () => Promise.resolve();
+    }).toThrow(TypeError);
+    expect(library.resolve('the order "o-1" exists')).toMatchObject({ definition: { run } });
   });
 
   it('refuses a vocabulary that defines one expression twice', () => {

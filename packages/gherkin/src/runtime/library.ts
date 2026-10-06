@@ -9,7 +9,7 @@ export type { Capability, StepKind };
 export interface StepLibraryIdentity {
   readonly name: string;
   readonly version: string;
-  /** sha256 over every definition's expression, kind, argument, fixtures, capability and parameter roles. */
+  /** sha256 over every definition's expression, kind, argument, fixtures, capability, parameter roles and body source. */
   readonly vocabularyHash: string;
 }
 

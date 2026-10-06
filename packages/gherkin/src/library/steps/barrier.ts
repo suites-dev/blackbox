@@ -1,6 +1,7 @@
 import { expect } from '@suites/blackbox-playwright';
 
-import type { StepDefinition, StepFixtures } from '../../runtime/step-types.js';
+import { stepDefinitions } from '../../runtime/registry.js';
+import type { StepFixtures } from '../../runtime/step-types.js';
 import { fixture, integerAt, jsonDocString, parseJson, stringAt } from '../support/arguments.js';
 import { latestStimulus } from '../support/scenario.js';
 import { describeSource, itemCount, stateProbe, type StateSource } from '../support/state.js';
@@ -26,7 +27,7 @@ function source(fixtures: StepFixtures, parameters: readonly unknown[]): StateSo
   };
 }
 
-export const barrierSteps = [
+export const barrierSteps = stepDefinitions([
   {
     expression: 'the flow is sealed by the terminal response(s)',
     kind: 'barrier',
@@ -88,4 +89,4 @@ export const barrierSteps = [
         .toBe(integerAt(parameters, 3));
     },
   },
-] satisfies readonly StepDefinition[];
+]);

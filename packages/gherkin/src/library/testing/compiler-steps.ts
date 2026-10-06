@@ -5,9 +5,10 @@ import type { Capability, StepDefinition } from '../../runtime/step-types.js';
 // Test-only vocabulary for compiler tests. It covers every step kind, every
 // argument shape, both gated capabilities, a credential and a deadline
 // parameter, and one deliberately ambiguous pair. Bodies are no-ops unless a
-// test supplies stub bodies for a real Playwright run; the vocabulary hash
-// never covers bodies, so stubs do not change compiled output. Examples are
-// the expressions themselves: only the shared library's examples are checked.
+// test supplies stub bodies for a real Playwright run; the library hash covers
+// bodies, so a stub-bodied library has its own hash, which nothing compares at
+// run time. Examples are the expressions themselves: only the shared library's
+// examples are checked.
 
 const noop = (): Promise<void> => Promise.resolve();
 

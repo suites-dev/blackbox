@@ -1,6 +1,6 @@
 import { expect } from '@suites/blackbox-playwright';
 
-import type { StepDefinition } from '../../runtime/step-types.js';
+import { stepDefinitions } from '../../runtime/registry.js';
 import { fixture, jsonDocString, stringAt, tableRecords } from '../support/arguments.js';
 import { sendGet, sendJson } from '../support/http.js';
 import { recordStimulus } from '../support/scenario.js';
@@ -10,7 +10,7 @@ import { recordStimulus } from '../support/scenario.js';
 
 const CONCURRENT_COLUMNS = ['method', 'path', 'json'] as const;
 
-export const stimulusSteps = [
+export const stimulusSteps = stepDefinitions([
   {
     expression: 'the client sends GET {string}',
     kind: 'stimulus',
@@ -66,4 +66,4 @@ export const stimulusSteps = [
       recordStimulus(fixture(fixtures, 'world'), exchanges);
     },
   },
-] satisfies readonly StepDefinition[];
+]);

@@ -165,10 +165,18 @@ describe('step library v1', () => {
   });
 
   it('defines nothing else and offers no capability', () => {
+    // The hash covers bodies, so the listed steps take the library's own; another step or a missing one changes it.
+    const bodyOf = (sample: string) => {
+      const step = library.resolve(sample);
+      if (step.status !== 'resolved') {
+        throw new Error(`${sample} does not resolve`);
+      }
+      return step.definition.run;
+    };
     const listed = createStepLibrary({
       name: library.identity.name,
       version: library.identity.version,
-      definitions: V1.map((entry) => ({ ...entry, requires: null, example: entry.sample, run: () => Promise.resolve() })),
+      definitions: V1.map((entry) => ({ ...entry, requires: null, example: entry.sample, run: bodyOf(entry.sample) })),
       capabilities: [],
     });
     expect(library.identity).toEqual(listed.identity);

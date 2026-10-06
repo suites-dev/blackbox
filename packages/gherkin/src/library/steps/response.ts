@@ -1,6 +1,6 @@
 import { expect } from '@suites/blackbox-playwright';
 
-import type { StepDefinition } from '../../runtime/step-types.js';
+import { stepDefinitions } from '../../runtime/registry.js';
 import { fixture, integerAt, jsonDocString, parseJson, stringAt } from '../support/arguments.js';
 import { latestStimulus, singleResponse } from '../support/scenario.js';
 
@@ -13,7 +13,7 @@ function sortedStatuses(statuses: readonly number[]): readonly number[] {
   return [...statuses].sort((left, right) => left - right);
 }
 
-export const responseSteps = [
+export const responseSteps = stepDefinitions([
   {
     expression: 'the response status is {int}',
     kind: 'response-claim',
@@ -65,4 +65,4 @@ export const responseSteps = [
       return Promise.resolve();
     },
   },
-] satisfies readonly StepDefinition[];
+]);

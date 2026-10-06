@@ -21,6 +21,38 @@ interface CompiledDefinition {
   readonly expression: CucumberExpression;
 }
 
+/** Freezes a value and everything reachable through its own properties, functions included. */
+function deepFreeze(value: unknown, seen = new WeakSet()): void {
+  if ((typeof value !== 'object' || value === null) && typeof value !== 'function') {
+    return;
+  }
+  if (seen.has(value)) {
+    return;
+  }
+  seen.add(value);
+  Object.freeze(value);
+  for (const key of Reflect.ownKeys(value)) {
+    deepFreeze((value as Record<PropertyKey, unknown>)[key], seen);
+  }
+}
+
+/**
+ * Deep-freezes step definitions where they are declared, body included, so no
+ * module loaded into the run (a Playwright config, a global setup or a
+ * fixture) can replace a reviewed step body (hard rule 3). A replacement
+ * throws a TypeError in strict-mode code, which every ES module is.
+ */
+export function stepDefinitions(definitions: readonly StepDefinition[]): readonly StepDefinition[] {
+  deepFreeze(definitions);
+  return definitions;
+}
+
+/**
+ * Identifies the library by its definitions in any order: each one's
+ * expression, kind, argument, fixtures, capability, parameter roles and body
+ * source. A body that differs from the compiled one changes the hash, so
+ * verify reports it.
+ */
 function vocabularyHash(definitions: readonly StepDefinition[]): string {
   const vocabulary = definitions
     .map((definition) =>
@@ -32,6 +64,7 @@ function vocabularyHash(definitions: readonly StepDefinition[]): string {
         definition.requires,
         definition.credentialParameter,
         definition.deadlineParameter,
+        definition.run.toString(),
       ]),
     )
     .sort();
@@ -80,6 +113,7 @@ function resolveText(
 }
 
 export function createStepLibrary(input: StepLibraryInput): StepLibrary {
+  stepDefinitions(input.definitions);
   const compiled = compileDefinitions(input.definitions);
   const offered = new Set(input.capabilities);
   return Object.freeze({
