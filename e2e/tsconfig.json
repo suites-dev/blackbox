@@ -22,6 +22,11 @@
     "allowArbitraryExtensions": true,
     "types": ["node"]
   },
-  "include": ["playwright.config.ts", "tests/playwright/**/*.ts", "reporters/**/*.ts"],
+  "include": [
+    "playwright.config.ts",
+    "playwright.gherkin.config.ts",
+    "tests/playwright/**/*.ts",
+    "reporters/**/*.ts"
+  ],
   "exclude": ["node_modules"]
 }

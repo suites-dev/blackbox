@@ -347,6 +347,27 @@ test('the E2E transport lane runs the self-tests through an approved root script
   );
 });
 
+test('the E2E Gate requires the Gherkin lane, which runs through an approved root script', async () => {
+  const workflow = await fs.readFile(new URL('../workflows/e2e.yml', import.meta.url), 'utf8');
+  assert.ok(
+    workflow.includes(
+      '--evidence-dir ci-evidence/gherkin/subscription-intake -- pnpm test:e2e:gherkin\n',
+    ),
+  );
+  const gate = workflow.slice(workflow.indexOf('\n  gate:\n'));
+  assert.match(gate, /^ {4}needs: \[[^\]\n]*\bgherkin\b[^\]\n]*\]$/mu);
+  assert.ok(gate.includes('GHERKIN_RESULT: ${{ needs.gherkin.result }}\n'));
+  assert.ok(gate.includes('"gherkin=$GHERKIN_RESULT"'));
+  const manifest = JSON.parse(
+    await fs.readFile(new URL('../../package.json', import.meta.url), 'utf8'),
+  );
+  assert.equal(
+    manifest.scripts['test:e2e:gherkin'],
+    'pnpm run prepare:consumer && bash demo/support/gherkin-test.sh',
+  );
+  assert.deepEqual(approvedCliCommand(['pnpm', 'test:e2e:gherkin']), ['pnpm', 'test:e2e:gherkin']);
+});
+
 test('the CLI rejects unknown option names instead of assigning object properties', () => {
   const script = fileURLToPath(new URL('./ci-evidence.mjs', import.meta.url));
   const result = spawnSync(process.execPath, [script, 'collect', '--__proto__', 'polluted'], {

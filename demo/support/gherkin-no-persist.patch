@@ -1,0 +1,16 @@
+--- a/src/public-api/database-repository.ts
++++ b/src/public-api/database-repository.ts
+@@ -45,11 +45,4 @@
+   }): Promise<CreatedSubscription> {
+-    const result = await this.#pool.query<CreatedSubscription>(
+-      'INSERT INTO subscriptions (id, user_id, tier, status, payment_intent_id, order_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, status',
+-      [input.id, input.userId, input.tier, 'active', input.paymentIntentId, input.orderId],
+-    );
+-    const row = result.rows.at(0);
+-    if (row === undefined) {
+-      throw new Error('subscription insert returned no row');
+-    }
+-    return row;
++    // Negative control: answer as if the row were stored, and store nothing.
++    return { id: input.id, status: 'active' };
+   }

@@ -147,7 +147,7 @@ generated output, so preserve evidence you need before rerunning. Review telemet
 For package development, run `pnpm lint`, `pnpm typecheck`, and `pnpm test` separately. Package tests and helper tests
 do not replace the Docker-backed journey. CI runs the same journey in the `demo` job of the
 [E2E workflow](../../.github/workflows/e2e.yml). The `build` job publishes the packages once; `storyboard`,
-`journeys` (one matrix leg per golden), `playwright`, `skills` and `transport` run beside `demo`, and the `gate` job
+`journeys` (one matrix leg per golden), `playwright`, `gherkin`, `skills` and `transport` run beside `demo`, and the `gate` job
 (the required `E2E Gate` check) requires every one of them to succeed. Each lane retains its
 outputs as the `ci-evidence-<run>-<attempt>-<job>-<project>` artifact even when the run fails. See [contributing](../../CONTRIBUTING.md) for
 the development workflow.

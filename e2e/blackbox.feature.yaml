@@ -1,0 +1,15 @@
+schemaVersion: 1
+blackboxConfigFile: blackbox.config.yaml
+features:
+  - features/**/*.feature
+outputDir: .features-gen
+runManifest: test-results/gherkin/blackbox-run.json
+policy:
+  baseline: blackbox.policy.json
+  outputFile: test-results/gherkin/blackbox-policy.json
+sandboxes:
+  default:
+    environment:
+      FIXTURE_CONTROL_TOKEN: { fromEnv: BLACKBOX_E2E_FIXTURE_TOKEN }
+    credentials:
+      fixture-control: { scheme: bearer, fromEnv: BLACKBOX_E2E_FIXTURE_TOKEN }

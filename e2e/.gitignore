@@ -12,6 +12,7 @@
 .blackbox/tmp/
 test-results
 trace-store
+.features-gen
 *.d.ts
 # The consolidation sim's compose catalog type declaration is hand-maintained
 # source (A4/A5), not generated build output; the blanket *.d.ts rule above

@@ -1,0 +1,58 @@
+{
+  "schemaVersion": 1,
+  "policy": {
+    "run": {
+      "failOnFlakyTests": true,
+      "forbidOnly": true,
+      "fullyParallel": true,
+      "globalTimeout": 0,
+      "grep": "/.*/",
+      "grepInvert": null,
+      "maxFailures": 0,
+      "shard": null,
+      "workers": 2
+    },
+    "projects": {
+      "": {
+        "retries": 0,
+        "timeout": 180000,
+        "expectTimeout": 5000,
+        "repeatEach": 1,
+        "grep": "/.*/",
+        "grepInvert": null,
+        "testDir": ".features-gen",
+        "testMatch": "**/*.feature.spec.mjs",
+        "testIgnore": []
+      }
+    },
+    "blackbox": {
+      "sandboxCleanupTimeoutMs": 30000
+    },
+    "tests": {
+      "features/subscription-intake.feature.spec.mjs › system \"subscription-system\" › sandbox \"default\" › Feature: Subscription intake › Rule: a user can hold only one subscription › Scenario: a repeated request does not repeat downstream effects": {
+        "retries": 0,
+        "timeout": 180000
+      },
+      "features/subscription-intake.feature.spec.mjs › system \"subscription-system\" › sandbox \"default\" › Feature: Subscription intake › Rule: a user can hold only one subscription › Scenario: concurrent requests create exactly one subscription": {
+        "retries": 0,
+        "timeout": 180000
+      },
+      "features/subscription-intake.feature.spec.mjs › system \"subscription-system\" › sandbox \"default\" › Feature: Subscription intake › Rule: full-path subscriptions settle every required effect › Scenario: an eligible user receives an active subscription": {
+        "retries": 0,
+        "timeout": 180000
+      },
+      "features/subscription-intake.feature.spec.mjs › system \"subscription-system\" › sandbox \"default\" › Feature: Subscription intake › Rule: invalid subscription attempts have no side effects › Scenario: an unknown user is rejected without side effects [user=ghost-user, method=pm_ghost]": {
+        "retries": 0,
+        "timeout": 180000
+      },
+      "features/subscription-intake.feature.spec.mjs › system \"subscription-system\" › sandbox \"default\" › Feature: Subscription intake › Rule: invalid subscription attempts have no side effects › Scenario: an unknown user is rejected without side effects [user=mallory, method=pm_mallory_1]": {
+        "retries": 0,
+        "timeout": 180000
+      },
+      "features/subscription-intake.feature.spec.mjs › system \"subscription-system\" › sandbox \"default\" › Feature: Subscription intake › Rule: local-only subscriptions avoid external service effects › Scenario: a local-only user activates without payment or ordering": {
+        "retries": 0,
+        "timeout": 180000
+      }
+    }
+  }
+}

@@ -40,6 +40,7 @@ env:
   PNPM_VERSION: 9.15.4
   NODE_VERSION: 22.x
   BUILD_ARTIFACT: blackbox-registry
+  PREVIEW_ARTIFACT: blackbox-preview-packages
   BLACKBOX_TEST_REGISTRY: http://127.0.0.1:4874/
 
 jobs:
@@ -113,6 +114,24 @@ jobs:
                 --tag e2e \
                 --provenance=false
           done
+
+      # @suites/blackbox-gherkin is a private preview: the registry refuses it,
+      # so it travels as a tarball packed from this same build, and only the
+      # Gherkin lane installs it.
+      - name: Pack the private Gherkin preview package
+        run: |
+          rm -rf "$RUNNER_TEMP/preview-packages"
+          mkdir -p "$RUNNER_TEMP/preview-packages"
+          pnpm --dir packages/gherkin pack --pack-destination "$RUNNER_TEMP/preview-packages"
+          test -f "$RUNNER_TEMP"/preview-packages/suites-blackbox-gherkin-*.tgz
+
+      - name: Upload the private Gherkin preview package
+        uses: actions/upload-artifact@v5
+        with:
+          name: ${{ env.PREVIEW_ARTIFACT }}
+          path: ${{ runner.temp }}/preview-packages
+          if-no-files-found: error
+          retention-days: 3
 
       # Stopped before upload so Verdaccio cannot be mid-write when the storage
       # is read.
@@ -480,6 +499,90 @@ jobs:
             [[ "$outcome" == success ]] || exit 1
           done
 
+  # The Gherkin twin of the native subscription spec: e2e/features is compiled,
+  # run against the same Docker system under strict verdicts and the policy
+  # baseline, and verified; every native scenario must be supported by it too.
+  # The same feature then runs against a demo app patched, in the consumer
+  # only, to store no subscription, and must fail at the stored-state step.
+  gherkin:
+    name: Gherkin features / subscription intake
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.target_branch || github.ref }}
+
+      - name: Setup toolchain
+        id: setup
+        uses: ./.github/actions/setup
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          pnpm-version: ${{ env.PNPM_VERSION }}
+
+      - name: Download the test registry storage
+        uses: actions/download-artifact@v5
+        with:
+          name: ${{ env.BUILD_ARTIFACT }}
+          path: ${{ runner.temp }}/registry-storage
+
+      - name: Download the private Gherkin preview package
+        uses: actions/download-artifact@v5
+        with:
+          name: ${{ env.PREVIEW_ARTIFACT }}
+          path: ${{ runner.temp }}/preview-packages
+
+      - name: Serve the test registry
+        uses: ./.github/actions/registry
+        with:
+          storage: ${{ runner.temp }}/registry-storage
+
+      # The script prepares its own registry-installed consumer, installs the
+      # preview package into it, then materializes the e2e project there.
+      - name: Compile, run and verify the Gherkin features
+        id: gherkin_tests
+        timeout-minutes: 35
+        run: |
+          shopt -s failglob
+          packages=("$RUNNER_TEMP"/preview-packages/suites-blackbox-gherkin-*.tgz)
+          test "${#packages[@]}" -eq 1
+          export BLACKBOX_GHERKIN_PACKAGE="${packages[0]}"
+          node .github/scripts/ci-evidence.mjs run --lane gherkin --project subscription-intake \
+            --evidence-dir ci-evidence/gherkin/subscription-intake -- pnpm test:e2e:gherkin
+
+      - name: Retain Gherkin evidence
+        id: gherkin_evidence
+        if: always()
+        uses: ./.github/actions/ci-evidence
+        with:
+          lane: gherkin
+          project: subscription-intake
+          evidence-dir: ci-evidence/gherkin/subscription-intake
+          setup-result: ${{ steps.setup.outcome }}
+          result: ${{ steps.gherkin_tests.outcome }}
+          command: pnpm test:e2e:gherkin
+          expected: |
+            log=ci-evidence/gherkin/subscription-intake/logs/command.log
+            results?=e2e/test-results/gherkin
+
+      - name: Stop the registry
+        if: always()
+        run: docker rm --force blackbox-test-registry
+
+      - name: Enforce lane outcomes
+        if: always()
+        env:
+          OUTCOMES: >-
+            ${{ steps.setup.outcome }} ${{ steps.gherkin_tests.outcome }}
+            ${{ steps.gherkin_evidence.outcome }}
+        run: |
+          for outcome in $OUTCOMES; do
+            [[ "$outcome" == success ]] || exit 1
+          done
+
   # Packs the main package and its core dependencies, then installs the main
   # package and CLI directly. No Docker, registry, or prepared consumer is needed.
   skills:
@@ -593,7 +696,7 @@ jobs:
   gate:
     name: E2E Gate
     if: always()
-    needs: [build, transport, demo, storyboard, journeys, playwright, skills, sandbox]
+    needs: [build, transport, demo, storyboard, journeys, playwright, gherkin, skills, sandbox]
     runs-on: ubuntu-24.04
     steps:
       # Every lane always runs, so anything but success fails the gate. A matrix
@@ -607,13 +710,15 @@ jobs:
           STORYBOARD_RESULT: ${{ needs.storyboard.result }}
           JOURNEYS_RESULT: ${{ needs.journeys.result }}
           PLAYWRIGHT_RESULT: ${{ needs.playwright.result }}
+          GHERKIN_RESULT: ${{ needs.gherkin.result }}
           SKILLS_RESULT: ${{ needs.skills.result }}
           SANDBOX_RESULT: ${{ needs.sandbox.result }}
         run: |
           failed=0
           for lane in "build=$BUILD_RESULT" "transport=$TRANSPORT_RESULT" "demo=$DEMO_RESULT" \
             "storyboard=$STORYBOARD_RESULT" "journeys=$JOURNEYS_RESULT" \
-            "playwright=$PLAYWRIGHT_RESULT" "skills=$SKILLS_RESULT" "sandbox=$SANDBOX_RESULT"; do
+            "playwright=$PLAYWRIGHT_RESULT" "gherkin=$GHERKIN_RESULT" \
+            "skills=$SKILLS_RESULT" "sandbox=$SANDBOX_RESULT"; do
             name="${lane%%=*}"
             result="${lane#*=}"
             if [[ "$result" != success ]]; then
