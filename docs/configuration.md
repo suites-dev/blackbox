@@ -33,7 +33,9 @@ instrumentation into application processes, and drivers prepare the commands you
 | Root `activations`                      | Maps activation names to project-owned bootstrap files and adapters.                                                                  |
 
 Compose describes how services run. The catalog describes how Blackbox selects and operates them. Referenced paths
-must stay inside the project. Catalog validation also requires referenced Compose and activation files to exist.
+must stay inside the project. Catalog validation also requires referenced Compose and activation files to exist,
+and every participant with an activation to declare a runtime that an installed adapter of that name activates. For
+example, `node-preload` activates `runtime: node` only, so a `runtime: java` participant that uses it is refused.
 
 ## Reduce the system under test
 

@@ -1,4 +1,5 @@
 import type { CatalogEntrySummary } from '../model/catalog-types.js';
+import type { CatalogActivationAdapter } from './activation-adapters.js';
 
 export type CatalogCommandOperation = 'catalog.validate' | 'catalog.list';
 export type CatalogCommandExitClass = 'success' | 'user-error' | 'operational-error';
@@ -63,4 +64,9 @@ export type CatalogListResult = CatalogListSuccess | CatalogCommandFailure;
 
 export interface RunCatalogCommandInput {
   readonly projectDirectory: string;
+}
+
+export interface RunCatalogValidateInput extends RunCatalogCommandInput {
+  /** Activation adapters the installed runtime plugins provide. */
+  readonly activationAdapters: readonly CatalogActivationAdapter[];
 }
