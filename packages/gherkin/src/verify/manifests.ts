@@ -54,7 +54,7 @@ function isRunManifest(value: unknown): value is RunManifest {
 }
 
 function isPolicyManifest(value: unknown): value is PolicyManifest {
-  return isObject(value) && value.schemaVersion === 1 && isObject(value.policy) && isObject(value.policy.tests);
+  return isObject(value) && value.schemaVersion === 2 && isObject(value.policy) && isObject(value.policy.tests);
 }
 
 export async function readCompileManifest(file: string): Promise<Read<CompileManifest>> {
@@ -89,7 +89,7 @@ export async function readPolicyManifest(file: string): Promise<Read<PolicyManif
     return read;
   }
   if (!isPolicyManifest(read.value)) {
-    return { kind: 'problem', problem: `the runner-policy manifest at ${file} is not a runner-policy manifest (schemaVersion 1)` };
+    return { kind: 'problem', problem: `the runner-policy manifest at ${file} is not a runner-policy manifest (schemaVersion 2)` };
   }
   return { kind: 'read', value: read.value };
 }

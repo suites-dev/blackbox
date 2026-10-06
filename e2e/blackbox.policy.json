@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "policy": {
     "run": {
       "failOnFlakyTests": true,
@@ -11,6 +11,18 @@
       "maxFailures": 0,
       "shard": null,
       "workers": 2
+    },
+    "selection": {
+      "grep": null,
+      "grepInvert": null,
+      "projects": [],
+      "testFilters": [],
+      "lastFailed": false,
+      "lastFailedFile": null,
+      "onlyChanged": null,
+      "testList": null,
+      "testListInvert": null,
+      "noDeps": false
     },
     "projects": {
       "": {
@@ -29,27 +41,27 @@
       "sandboxCleanupTimeoutMs": 30000
     },
     "tests": {
-      "features/subscription-intake.feature.spec.mjs › system \"subscription-system\" › sandbox \"default\" › Feature: Subscription intake › Rule: a user can hold only one subscription › Scenario: a repeated request does not repeat downstream effects": {
+      "features/subscription-intake.feature.spec.mjs \u203a system \"subscription-system\" \u203a sandbox \"default\" \u203a Feature: Subscription intake \u203a Rule: a user can hold only one subscription \u203a Scenario: a repeated request does not repeat downstream effects": {
         "retries": 0,
         "timeout": 180000
       },
-      "features/subscription-intake.feature.spec.mjs › system \"subscription-system\" › sandbox \"default\" › Feature: Subscription intake › Rule: a user can hold only one subscription › Scenario: concurrent requests create exactly one subscription": {
+      "features/subscription-intake.feature.spec.mjs \u203a system \"subscription-system\" \u203a sandbox \"default\" \u203a Feature: Subscription intake \u203a Rule: a user can hold only one subscription \u203a Scenario: concurrent requests create exactly one subscription": {
         "retries": 0,
         "timeout": 180000
       },
-      "features/subscription-intake.feature.spec.mjs › system \"subscription-system\" › sandbox \"default\" › Feature: Subscription intake › Rule: full-path subscriptions settle every required effect › Scenario: an eligible user receives an active subscription": {
+      "features/subscription-intake.feature.spec.mjs \u203a system \"subscription-system\" \u203a sandbox \"default\" \u203a Feature: Subscription intake \u203a Rule: full-path subscriptions settle every required effect \u203a Scenario: an eligible user receives an active subscription": {
         "retries": 0,
         "timeout": 180000
       },
-      "features/subscription-intake.feature.spec.mjs › system \"subscription-system\" › sandbox \"default\" › Feature: Subscription intake › Rule: invalid subscription attempts have no side effects › Scenario: an unknown user is rejected without side effects [user=ghost-user, method=pm_ghost]": {
+      "features/subscription-intake.feature.spec.mjs \u203a system \"subscription-system\" \u203a sandbox \"default\" \u203a Feature: Subscription intake \u203a Rule: invalid subscription attempts have no side effects \u203a Scenario: an unknown user is rejected without side effects [user=ghost-user, method=pm_ghost]": {
         "retries": 0,
         "timeout": 180000
       },
-      "features/subscription-intake.feature.spec.mjs › system \"subscription-system\" › sandbox \"default\" › Feature: Subscription intake › Rule: invalid subscription attempts have no side effects › Scenario: an unknown user is rejected without side effects [user=mallory, method=pm_mallory_1]": {
+      "features/subscription-intake.feature.spec.mjs \u203a system \"subscription-system\" \u203a sandbox \"default\" \u203a Feature: Subscription intake \u203a Rule: invalid subscription attempts have no side effects \u203a Scenario: an unknown user is rejected without side effects [user=mallory, method=pm_mallory_1]": {
         "retries": 0,
         "timeout": 180000
       },
-      "features/subscription-intake.feature.spec.mjs › system \"subscription-system\" › sandbox \"default\" › Feature: Subscription intake › Rule: local-only subscriptions avoid external service effects › Scenario: a local-only user activates without payment or ordering": {
+      "features/subscription-intake.feature.spec.mjs \u203a system \"subscription-system\" \u203a sandbox \"default\" \u203a Feature: Subscription intake \u203a Rule: local-only subscriptions avoid external service effects \u203a Scenario: a local-only user activates without payment or ordering": {
         "retries": 0,
         "timeout": 180000
       }

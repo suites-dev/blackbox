@@ -101,13 +101,16 @@ async function createProject(text: string, stepLibrary: StepLibrary, runtimeModu
   const opened = await writeProject(text, stepLibrary, runtimeModule);
   // The baseline is what a reviewer would accept: the effective policy of this config, as --list records it.
   const listed = await opened.run(['--list']);
-  let recorded: { readonly policy: unknown };
+  let recorded: { readonly schemaVersion: unknown; readonly policy: unknown };
   try {
-    recorded = JSON.parse(await readFile(opened.project.policy.outputFile, 'utf8')) as { readonly policy: unknown };
+    recorded = JSON.parse(await readFile(opened.project.policy.outputFile, 'utf8')) as {
+      readonly schemaVersion: unknown;
+      readonly policy: unknown;
+    };
   } catch (error) {
     throw new Error(`playwright --list recorded no runner policy:\n${listed.output}`, { cause: error });
   }
-  await writeJson(opened.project.policy.baseline, { schemaVersion: 1, policy: recorded.policy });
+  await writeJson(opened.project.policy.baseline, { schemaVersion: recorded.schemaVersion, policy: recorded.policy });
   await rm(dirname(opened.project.policy.outputFile), { recursive: true, force: true });
   return opened;
 }
