@@ -36,7 +36,8 @@ through the public `test.system(...).sandbox(...)` facade of `@suites/blackbox-p
 `src/library/` is the one shared vocabulary. It covers setup through the application, JSON stimuli
 (single and concurrent), completion barriers (a synchronous seal, and polling an inspection endpoint
 within a deadline written in the feature), response claims, and state claims that read an inspection
-endpoint with a named credential and address members by JSON Pointer. Effects claims and participant
+endpoint with a named credential. Response and state claims address members by JSON Pointer: a member
+equal to a JSON value, the number of items in an array, and, for responses, a value other than null. Effects claims and participant
 commands are not part of v1. Every step definition is frozen where it is declared, body included, so code
 loaded into a run cannot replace a step, and the library hash covers the step bodies.
 

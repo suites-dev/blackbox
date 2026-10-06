@@ -192,7 +192,7 @@ describe('blackbox gherkin check-change and steps', () => {
     expect(run.stdout).toContain('Stimulus (When):\n  the client sends GET {string}\n    When the client sends GET "/health"');
     expect(run.stdout).toContain("parameter 3 names a credential of the feature's Sandbox profile");
     const json = JSON.parse((await runCommand(GherkinSteps, ['--json'])).stdout) as { steps: unknown[] };
-    expect(json.steps).toHaveLength(13);
+    expect(json.steps).toHaveLength(16);
     expect(Object.keys(COMMANDS).sort()).toEqual([
       'gherkin:check',
       'gherkin:check-change',

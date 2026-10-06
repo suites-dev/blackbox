@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 
+import { startAnswerSystem, type AnswerSystem } from '../testing/answer-system.js';
 import { json, scenarioAt } from '../testing/step-harness.js';
 import { useStubSystems } from '../testing/stub-lifecycle.js';
 import { STUB_TOKEN, type StubMode } from '../testing/stub-system.js';
@@ -54,6 +55,80 @@ describe('response claims', () => {
     await scenario.step('the response statuses are "201"');
     await expect(scenario.step('the response statuses are "201 and 409"')).rejects.toThrow(
       'statuses as a comma-separated list',
+    );
+  });
+});
+
+// Benchmark finding F2: train-ticket answers a login with HTTP 200 whether it
+// succeeds or not and reports the outcome in the body, so "status 200" holds
+// for a wrong password. These bodies are the shapes the benchmark recorded.
+const LOGIN_OK =
+  '{"status": 1, "msg": "login success", "data": {"userId": "4d2a46c7-71cb-4cf1-b5bb-b68406d9da6f", "username": "fdse_microservice", "token": "test-token"}}';
+const LOGIN_REFUSED = '{"status": 0, "msg": "Incorrect username or password.", "data": null}';
+const TRIPS =
+  '{"status": 1, "msg": "Success", "data": [{"tripId": {"type": "G", "number": "1234"}}, {"tripId": {"type": "G", "number": "1235"}}, {"tripId": {"type": "G", "number": "1236"}}]}';
+
+const answering: AnswerSystem[] = [];
+afterEach(async () => {
+  await Promise.all(answering.splice(0).map((sut) => sut.close()));
+});
+
+/** A scenario whose latest stimulus was answered with HTTP 200 and `body`. */
+async function answeredWith(body: string) {
+  const sut = await startAnswerSystem({ '/api/v1/users/login': { status: 200, body } });
+  answering.push(sut);
+  const scenario = scenarioAt(sut.url);
+  await scenario.step(
+    'the client sends POST "/api/v1/users/login" with JSON:',
+    json('{"username": "fdse_microservice", "password": "111111", "verificationCode": ""}'),
+  );
+  await scenario.step('the response status is 200');
+  return scenario;
+}
+
+describe('response member claims (benchmark F2)', () => {
+  it('the response has {string} equal to: the member at a JSON Pointer, which must exist', async () => {
+    const accepted = await answeredWith(LOGIN_OK);
+    await accepted.step('the response has "/status" equal to:', json('1'));
+    await accepted.step('the response has "/data/username" equal to:', json('"fdse_microservice"'));
+    const refused = await answeredWith(LOGIN_REFUSED);
+    await expect(refused.step('the response has "/status" equal to:', json('1'))).rejects.toThrow(
+      '/status in the body of POST /api/v1/users/login',
+    );
+    await expect(refused.step('the response has "/data/token" equal to:', json('null'))).rejects.toThrow(
+      '/data/token in the body of POST /api/v1/users/login',
+    );
+    await expect(accepted.step('the response has "status" equal to:', json('1'))).rejects.toThrow('JSON Pointer (RFC 6901)');
+  });
+
+  it('the response has {int} item(s) at {string}: the length of an array, which must be there', async () => {
+    const trips = await answeredWith(TRIPS);
+    await trips.step('the response has 3 items at "/data"');
+    await expect(trips.step('the response has 2 items at "/data"')).rejects.toThrow(
+      'items of the array at /data in the body of POST /api/v1/users/login',
+    );
+    await expect(trips.step('the response has 1 item at "/data/0"')).rejects.toThrow('items of the array at /data/0');
+    // A missing array is not an empty one.
+    const refused = await answeredWith(LOGIN_REFUSED);
+    await expect(refused.step('the response has 0 items at "/data"')).rejects.toThrow('items of the array at /data');
+  });
+
+  it('the response has a value at {string}: a member other than null, such as a generated token', async () => {
+    await (await answeredWith(LOGIN_OK)).step('the response has a value at "/data/token"');
+    const refused = await answeredWith(LOGIN_REFUSED);
+    await expect(refused.step('the response has a value at "/data/token"')).rejects.toThrow(
+      'a value other than null at /data/token in the body of POST /api/v1/users/login',
+    );
+    await expect(refused.step('the response has a value at "/data"')).rejects.toThrow('a value other than null at /data');
+    await refused.step('the response has a value at "/msg"');
+  });
+
+  it('judge the one response of the latest stimulus, not another step\'s', async () => {
+    const scenario = await after('correct', 'alice');
+    await scenario.step('the response has a value at "/subscription/id"');
+    await scenario.step(SUBSCRIBE, body('alice'));
+    await expect(scenario.step('the response has a value at "/subscription/id"')).rejects.toThrow(
+      'a value other than null at /subscription/id in the body of POST /subscriptions',
     );
   });
 });

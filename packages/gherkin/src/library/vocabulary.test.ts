@@ -10,7 +10,8 @@ import { library } from './index.js';
 // two steps are ambiguous; effects claims and participant commands are not in
 // v1 and the runtime offers no capability. Task 2.4: steps that read state
 // name a credential of the feature's Sandbox profile, and polling barriers
-// carry their deadline, at the parameters listed here.
+// carry their deadline, at the parameters listed here. Benchmark F2: response
+// claims address members of the body by JSON Pointer, as state claims do.
 
 type Entry = Pick<
   StepDefinition,
@@ -102,6 +103,30 @@ const V1 = [
     expression: 'the response JSON equals:',
     kind: 'response-claim',
     argument: 'doc-string',
+    fixtures: ['world'],
+    ...plain,
+  },
+  {
+    sample: 'the response has "/data/token" equal to:',
+    expression: 'the response has {string} equal to:',
+    kind: 'response-claim',
+    argument: 'doc-string',
+    fixtures: ['world'],
+    ...plain,
+  },
+  {
+    sample: 'the response has 1 item at "/data"',
+    expression: 'the response has {int} item(s) at {string}',
+    kind: 'response-claim',
+    argument: 'none',
+    fixtures: ['world'],
+    ...plain,
+  },
+  {
+    sample: 'the response has a value at "/data/token"',
+    expression: 'the response has a value at {string}',
+    kind: 'response-claim',
+    argument: 'none',
     fixtures: ['world'],
     ...plain,
   },
