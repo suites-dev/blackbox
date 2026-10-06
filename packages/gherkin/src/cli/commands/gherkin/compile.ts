@@ -8,7 +8,7 @@ import { configFlag, EXIT, projectAt } from '../../project.js';
 
 export default class GherkinCompile extends Command {
   static override description =
-    'Compile the accepted .feature files into generated Playwright tests and a compile manifest. Drafts are never compiled.';
+    'Compile the accepted .feature files into generated Playwright tests and a compile manifest.';
 
   static override flags = { config: configFlag };
 

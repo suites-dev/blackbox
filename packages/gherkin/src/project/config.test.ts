@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { GherkinConfigError, parseGherkinProject } from './config.js';
 
 // Requirements (task 2.4, report section 4): blackbox.gherkin.json is the one
-// protected project file. It holds the feature and drafts globs, the output
+// protected project file. It holds the feature globs, the output
 // path, the change classes, and the Sandbox profiles with their named
 // credentials, which name environment variables and never hold a value.
 // Anything it does not document is refused.
@@ -17,7 +17,6 @@ const VALID = {
   schemaVersion: 1,
   blackboxConfigFile: 'blackbox.config.yaml',
   features: ['features/**/*.feature'],
-  drafts: ['features/drafts/**'],
   outputDir: '.features-gen',
   sandboxes: {
     default: {
@@ -47,27 +46,26 @@ describe('a valid project file', () => {
       configFile: FILE,
       blackboxConfigFile: join(ROOT, 'blackbox.config.yaml'),
       features: ['features/**/*.feature'],
-      drafts: ['features/drafts/**'],
       outputDir: join(ROOT, '.features-gen'),
       sandboxProfiles: VALID.sandboxes,
       changes: { spec: [], neutral: ['**/*.md'] },
     });
   });
 
-  it('defaults drafts, changes, environment and credentials to empty', () => {
-    const { drafts, changes, ...required } = VALID;
+  it('defaults changes, environment and credentials to empty', () => {
+    const { changes, ...required } = VALID;
     const project = parseGherkinProject({ ...required, sandboxes: { bare: {} } }, FILE);
-    expect(project).toMatchObject({ drafts: [], changes: { spec: [], neutral: [] } });
+    expect(project).toMatchObject({ changes: { spec: [], neutral: [] } });
     expect(project.sandboxProfiles).toEqual({ bare: { environment: {}, credentials: {} } });
-    expect([drafts, changes]).toBeDefined();
+    expect(changes).toBeDefined();
   });
 });
 
 describe('a refused project file', () => {
   it('names unknown settings, so a misspelled key is never silently dropped', () => {
     expect(problems({ ...VALID, retries: 2, sandboxs: {} })).toEqual([
-      'retries: is not a known setting (known: schemaVersion, blackboxConfigFile, features, drafts, outputDir, sandboxes, changes)',
-      'sandboxs: is not a known setting (known: schemaVersion, blackboxConfigFile, features, drafts, outputDir, sandboxes, changes)',
+      'retries: is not a known setting (known: schemaVersion, blackboxConfigFile, features, outputDir, sandboxes, changes)',
+      'sandboxs: is not a known setting (known: schemaVersion, blackboxConfigFile, features, outputDir, sandboxes, changes)',
     ]);
   });
 

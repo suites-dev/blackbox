@@ -12,8 +12,6 @@ export const PROJECT_FILE = {
   schemaVersion: 1,
   blackboxConfigFile: 'blackbox.config.yaml',
   features: ['features/**/*.feature'],
-  // Outside the feature globs, so the drafts class is what makes a draft spec.
-  drafts: ['drafts/**'],
   outputDir: '.features-gen',
   sandboxes: { default: {} },
   changes: { neutral: ['**/*.md'] },

@@ -20,8 +20,6 @@ export interface GherkinProject {
   readonly blackboxConfigFile: string;
   /** Accepted feature files, as globs relative to the root. */
   readonly features: readonly string[];
-  /** Agent drafts: never compiled or run, even when a feature glob matches them. */
-  readonly drafts: readonly string[];
   /** Git-ignored directory for generated tests and the compile manifest. */
   readonly outputDir: string;
   readonly sandboxProfiles: Readonly<Record<string, SandboxProfile>>;
@@ -43,7 +41,6 @@ const KEYS = [
   'schemaVersion',
   'blackboxConfigFile',
   'features',
-  'drafts',
   'outputDir',
   'sandboxes',
   'changes',
@@ -119,7 +116,6 @@ function read(reader: ConfigReader, document: JsonObject, configFile: string): G
     configFile,
     blackboxConfigFile: at(reader.relativePath(document.blackboxConfigFile, 'blackboxConfigFile')),
     features: reader.globs(document.features, 'features', true),
-    drafts: reader.globs(document.drafts, 'drafts', false),
     outputDir,
     sandboxProfiles: profilesOf(reader, document.sandboxes),
     changes: {

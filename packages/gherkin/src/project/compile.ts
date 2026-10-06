@@ -17,9 +17,8 @@ export interface CompileProjectInput {
 }
 
 /**
- * Compiles every accepted feature of the project: files a feature glob
- * matches and no drafts glob does. Drafts are never compiled, so they can
- * never run. All features compile or none do.
+ * Compiles every accepted feature of the project: the files a feature glob
+ * matches. All features compile or none do.
  */
 export async function compileProject(input: CompileProjectInput): Promise<CompiledOutput> {
   const { project } = input;

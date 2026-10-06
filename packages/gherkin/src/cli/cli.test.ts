@@ -17,8 +17,7 @@ import { COMMANDS } from './command-registry.js';
 // check-change and steps. Each command reads blackbox.gherkin.json,
 // exits 0 when its check passes, 1 when it fails and 2 when the project file
 // is missing or invalid. compile uses the shared library and the project's
-// catalog, never compiles drafts, and prints requirement IDs and barrier
-// deadlines.
+// catalog, and prints requirement IDs and barrier deadlines.
 
 const CATALOG = `schemaVersion: 1
 catalog:
@@ -55,7 +54,6 @@ const PROJECT = {
   schemaVersion: 1,
   blackboxConfigFile: 'blackbox.config.yaml',
   features: ['features/**/*.feature'],
-  drafts: ['features/drafts/**'],
   outputDir: '.features-gen',
   sandboxes: { default: { credentials: { 'fixture-control': { scheme: 'bearer', fromEnv: 'FIXTURE_TOKEN' } } } },
 };
@@ -116,11 +114,10 @@ async function runCommand(command: GherkinCommand, argv: readonly string[]): Pro
 beforeEach(async () => {
   root = await mkdtemp(join(tmpdir(), 'blackbox-gherkin-cli-'));
   config = join(root, 'blackbox.gherkin.json');
-  await mkdir(join(root, 'features/drafts'), { recursive: true });
+  await mkdir(join(root, 'features'), { recursive: true });
   await writeFile(join(root, 'blackbox.config.yaml'), CATALOG);
   await writeFile(config, JSON.stringify(PROJECT));
   await writeFile(join(root, 'features/health.feature'), HEALTH);
-  await writeFile(join(root, 'features/drafts/idea.feature'), 'Feature: an agent draft\n  Scenario: x\n    When anything at all\n');
 });
 
 afterEach(async () => {
@@ -129,7 +126,7 @@ afterEach(async () => {
 });
 
 describe('blackbox gherkin compile', () => {
-  it('compiles the accepted features with the shared library and leaves drafts alone', async () => {
+  it('compiles the accepted features with the shared library', async () => {
     const run = await runCommand(GherkinCompile, ['--config', config]);
     expect(run.exit, run.stderr).toBe(0);
     expect(run.stdout.split('\n')[0]).toBe(

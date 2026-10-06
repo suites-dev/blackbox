@@ -3,8 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { acceptedFeatures, globToRegExp } from './files.js';
 
 // Requirements (task 2.4): project globs use only `*` and `**`, the subset the
-// spec/code separation check uses; drafts are never accepted features, even
-// when a feature glob matches them.
+// spec/code separation check uses.
 
 describe('project globs', () => {
   it('match `*` within one segment and `**` across segments, and nothing else as a wildcard', () => {
@@ -15,10 +14,8 @@ describe('project globs', () => {
     expect(globToRegExp('docs/[a].md').test('docs/a.md')).toBe(false);
   });
 
-  it('accept features that a feature glob matches and no drafts glob does', () => {
-    const files = ['features/a.feature', 'features/drafts/b.feature', 'features/drafts/c/d.feature', 'notes.md'];
-    expect(acceptedFeatures(files, { features: ['features/**/*.feature'], drafts: ['features/drafts/**'] })).toEqual([
-      'features/a.feature',
-    ]);
+  it('accept the features that a feature glob matches', () => {
+    const files = ['features/a.feature', 'features/b/c.feature', 'other/d.feature', 'notes.md'];
+    expect(acceptedFeatures(files, { features: ['features/**/*.feature'] })).toEqual(['features/a.feature', 'features/b/c.feature']);
   });
 });

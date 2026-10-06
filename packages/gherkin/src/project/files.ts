@@ -58,10 +58,7 @@ export async function projectFiles(root: string, skip: readonly string[] = []): 
   return files.sort();
 }
 
-/** The accepted feature files: matched by a feature glob and by no drafts glob. */
-export function acceptedFeatures(
-  files: readonly string[],
-  globs: { readonly features: readonly string[]; readonly drafts: readonly string[] },
-): readonly string[] {
-  return files.filter((file) => matchesAny(file, globs.features) && !matchesAny(file, globs.drafts));
+/** The accepted feature files: matched by a feature glob. */
+export function acceptedFeatures(files: readonly string[], globs: { readonly features: readonly string[] }): readonly string[] {
+  return files.filter((file) => matchesAny(file, globs.features));
 }

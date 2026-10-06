@@ -64,7 +64,6 @@ and it refuses any key it does not document:
   "schemaVersion": 1,
   "blackboxConfigFile": "blackbox.config.yaml",
   "features": ["features/**/*.feature"],
-  "drafts": ["features/drafts/**"],
   "outputDir": ".features-gen",
   "sandboxes": {
     "default": {
@@ -76,15 +75,14 @@ and it refuses any key it does not document:
 }
 ```
 
-Drafts are never compiled, even when a feature glob matches them. The generated tests are native
-Playwright tests: run them with `playwright test` from a config whose `testDir` is `outputDir`, built with
+The generated tests are native Playwright tests: run them with `playwright test` from a config whose `testDir` is `outputDir`, built with
 `defineConfig` from `@suites/blackbox-playwright/config`. Playwright's own verdicts decide the run.
 
 | Command | What it does |
 | --- | --- |
 | `blackbox gherkin compile` | Compiles the accepted features into generated tests and `compile-manifest.json`. Prints each scenario with its requirement IDs and barrier deadlines. |
 | `blackbox gherkin check` | Fails on project step files, imports of Cucumber, playwright-bdd or the generated-code runtime, patches or forks of the step library or its runtime, and tracked generated tests. A local tarball (`file:….tgz`) passes only when it is a pack of that package at this release, as the unpublished alpha is installed. |
-| `blackbox gherkin check-change --base <ref>` | Fails when one change touches spec paths (features, drafts, this file, the step-library dependency and its patches) and code paths. |
+| `blackbox gherkin check-change --base <ref>` | Fails when one change touches spec paths (features, this file, the step-library dependency and its patches) and code paths. |
 | `blackbox gherkin steps` | Lists the step library with an example sentence per step. |
 
 Every command takes `--config <path>` (default `blackbox.gherkin.json`) and exits 1 when its check fails,

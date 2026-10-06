@@ -7,7 +7,7 @@ import { git, gitTopLevel } from './git.js';
 
 // `blackbox gherkin check-change --base <ref>`: hard rule 2 for a project. A
 // change may alter the accepted expectations (spec) or the code they judge,
-// never both. Spec is the project's features and drafts, blackbox.gherkin.json,
+// never both. Spec is the project's features, blackbox.gherkin.json,
 // extra `changes.spec` globs, and the step-library dependency entries and
 // patches.
 
@@ -27,7 +27,7 @@ export function projectClasses(project: GherkinProject, repositoryRoot: string):
   const file = (path: string) => toPosix(relative(repositoryRoot, path));
   return {
     spec: [
-      ...[...project.features, ...project.drafts, ...project.changes.spec].map(inRepository),
+      ...[...project.features, ...project.changes.spec].map(inRepository),
       file(project.configFile),
       // pnpm and patch-package patches of the step library.
       '**/patches/@suites__blackbox-gherkin@*.patch',

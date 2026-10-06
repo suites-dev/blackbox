@@ -6,7 +6,7 @@ import { cleanupRepositories, repository, type Repository } from './testing/repo
 
 // Requirements (task 2.4, report section 4.2): `check-change --base <ref>` is
 // hard rule 2 for a project. A change may touch spec paths (accepted features,
-// drafts, blackbox.gherkin.json, the step-library dependency entry and its
+// blackbox.gherkin.json, the step-library dependency entry and its
 // patches) or code paths, never both. Neutral paths
 // ride along with either side. The project lives in app/, so the classes are
 // resolved against the repository root.
@@ -26,11 +26,10 @@ async function classify(change: (repo: Repository) => Promise<void>) {
 const paths = (entries: readonly { readonly path: string }[]) => entries.map((entry) => entry.path);
 
 describe('check-change passes', () => {
-  it('a spec-only change: a feature, a draft and the project file, with a neutral note', async () => {
+  it('a spec-only change: a feature and the project file, with a neutral note', async () => {
     const check = await classify((repo) =>
       repo.write({
         'app/features/intake.feature': 'Feature: intake, revised\n',
-        'app/drafts/idea.feature': 'Feature: idea\n',
         'app/blackbox.gherkin.json': '{}\n',
         'app/README.md': '# app, revised\n',
       }),
@@ -38,7 +37,6 @@ describe('check-change passes', () => {
     expect(check.problem).toBeNull();
     expect(paths(check.classification.spec)).toEqual([
       'app/blackbox.gherkin.json',
-      'app/drafts/idea.feature',
       'app/features/intake.feature',
     ]);
     expect(paths(check.classification.neutral)).toEqual(['app/README.md']);
