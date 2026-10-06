@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="420" height="720" viewBox="0 0 420 720" role="img" aria-labelledby="title desc">
+  <title>Capsule exploration and Playwright confirmation</title>
+  <desc>A diagram showing Capsule exploration for investigation and Playwright system tests for confirmation, connected by a reviewed expectation.</desc>
+  <defs>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="rgba(16,24,40,0.06)"/>
+    </filter>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#7a8394"/>
+    </marker>
+    <style>
+      .bg { fill: #ffffff; }
+      .surface { fill: #ffffff; stroke: #e4e7ec; stroke-width: 1.5; }
+      .surface-alt { fill: #f8f8fb; stroke: #e4e7ec; stroke-width: 1.5; }
+      .panel { fill: #f5f7fb; stroke: #e4e7ec; stroke-width: 1.5; }
+      .accent { fill: #fdf2f6; stroke: #e67189; stroke-width: 1.5; }
+      .accent-strong { fill: #fbe6ea; stroke: #db486f; stroke-width: 1.5; }
+      .green { fill: #ecfdf3; stroke: #067647; stroke-width: 1.5; }
+      .blue { fill: #eff4ff; stroke: #175cd3; stroke-width: 1.5; }
+      .amber { fill: #fffaeb; stroke: #b54708; stroke-width: 1.5; }
+      .box { rx: 18; ry: 18; filter: url(#shadow); }
+      .noshadow { filter: none; }
+      .title { font: 700 28px Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif; fill: #14151a; }
+      .subtitle { font: 600 15px Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif; fill: #667085; }
+      .label { font: 700 16px Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif; fill: #14151a; }
+      .body { font: 500 15px Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif; fill: #14151a; }
+      .small { font: 500 13px Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif; fill: #667085; }
+      .tiny { font: 600 12px Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif; fill: #667085; letter-spacing: .08em; text-transform: uppercase; }
+      .mono { font: 600 14px 'JetBrains Mono', 'SFMono-Regular', ui-monospace, monospace; fill: #14151a; }
+      .code { font: 600 13px 'JetBrains Mono', 'SFMono-Regular', ui-monospace, monospace; fill: #14151a; }
+      .accent-text { fill: #db486f; }
+      .line { stroke: #7a8394; stroke-width: 2.2; fill: none; marker-end: url(#arrow); }
+      .line-dash { stroke: #7a8394; stroke-width: 2.2; stroke-dasharray: 7 7; fill: none; marker-end: url(#arrow); }
+      .brace { stroke: #d0d5dd; stroke-width: 2; fill: none; }
+      .divider { stroke: #e4e7ec; stroke-width: 1; }
+    </style>
+  </defs>
+  <rect class="bg" x="0" y="0" width="420" height="720" rx="24" ry="24"/>
+  
+  <text class="title" x="40" y="48">Capsule exploration and Playwright confirmation</text>
+  <text class="subtitle" x="40" y="74">Investigate first. Keep accepted behavior as a repeatable test.</text><rect class="accent box" x="34" y="106" width="352" height="214" rx="18" ry="18"/>
+<text class="label" x="54" y="134">Capsule</text>
+<text class="small" x="54" y="160">Start the smallest useful system</text>
+<text class="small" x="54" y="180">Act on the system</text>
+<text class="small" x="54" y="200">Inspect evidence</text>
+<text class="small" x="54" y="220">Try a repair</text>
+<text class="small" x="54" y="240">Rerun the experiment</text><path class="line" d="M 210 324 L 210 378"/><text class="tiny" x="210" y="365" text-anchor="middle">reviewed expectation</text><rect class="blue box" x="34" y="390" width="352" height="190" rx="18" ry="18"/>
+<text class="label" x="54" y="418">Playwright system test</text>
+<text class="small" x="54" y="444">Record the accepted behavior</text>
+<text class="small" x="54" y="464">Run in a fresh Sandbox</text>
+<text class="small" x="54" y="484">Keep the check repeatable</text>
+<text class="small" x="54" y="504">Use local runs and CI</text><rect class="surface-alt box" x="34" y="614" width="352" height="102" rx="18" ry="18"/>
+<text class="label" x="54" y="642">Critical rule</text>
+<text class="small" x="54" y="668">Observed behavior is not accepted behavior.</text>
+<text class="small" x="54" y="688">The requirement decides what should happen.</text>
+</svg>

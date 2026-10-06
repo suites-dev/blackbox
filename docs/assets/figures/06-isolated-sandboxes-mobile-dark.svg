@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="420" height="760" viewBox="0 0 420 760" role="img" aria-labelledby="title desc">
+  <title>Isolation and concurrency</title>
+  <desc>A diagram showing multiple workers each running a test in its own Sandbox, with a waiting test and a resource budget panel.</desc>
+  <defs>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="rgba(0,0,0,0.25)"/>
+    </filter>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#8b8b94"/>
+    </marker>
+    <style>
+      .bg { fill: #0f0f12; }
+      .surface { fill: #17171c; stroke: #2c2c35; stroke-width: 1.5; }
+      .surface-alt { fill: #1c1c23; stroke: #2c2c35; stroke-width: 1.5; }
+      .panel { fill: #202027; stroke: #2c2c35; stroke-width: 1.5; }
+      .accent { fill: #38212a; stroke: #e67189; stroke-width: 1.5; }
+      .accent-strong { fill: #442531; stroke: #ef9dab; stroke-width: 1.5; }
+      .green { fill: #12311f; stroke: #86efac; stroke-width: 1.5; }
+      .blue { fill: #16263a; stroke: #93c5fd; stroke-width: 1.5; }
+      .amber { fill: #3f2a18; stroke: #fb923c; stroke-width: 1.5; }
+      .box { rx: 18; ry: 18; filter: url(#shadow); }
+      .noshadow { filter: none; }
+      .title { font: 700 28px Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif; fill: #f4f4f5; }
+      .subtitle { font: 600 15px Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif; fill: #a1a1aa; }
+      .label { font: 700 16px Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif; fill: #f4f4f5; }
+      .body { font: 500 15px Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif; fill: #f4f4f5; }
+      .small { font: 500 13px Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif; fill: #a1a1aa; }
+      .tiny { font: 600 12px Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif; fill: #a1a1aa; letter-spacing: .08em; text-transform: uppercase; }
+      .mono { font: 600 14px 'JetBrains Mono', 'SFMono-Regular', ui-monospace, monospace; fill: #f4f4f5; }
+      .code { font: 600 13px 'JetBrains Mono', 'SFMono-Regular', ui-monospace, monospace; fill: #f4f4f5; }
+      .accent-text { fill: #ef9dab; }
+      .line { stroke: #8b8b94; stroke-width: 2.2; fill: none; marker-end: url(#arrow); }
+      .line-dash { stroke: #8b8b94; stroke-width: 2.2; stroke-dasharray: 7 7; fill: none; marker-end: url(#arrow); }
+      .brace { stroke: #3b3b46; stroke-width: 2; fill: none; }
+      .divider { stroke: #2c2c35; stroke-width: 1; }
+    </style>
+  </defs>
+  <rect class="bg" x="0" y="0" width="420" height="760" rx="24" ry="24"/>
+  
+  <text class="title" x="40" y="48">Isolation and concurrency</text>
+  <text class="subtitle" x="40" y="74">Every physical attempt gets a fresh Sandbox. Isolation enables concurrency; resources limit it.</text><rect class="surface box" x="34" y="110" width="352" height="104" rx="18" ry="18"/>
+<text class="label" x="54" y="138">Worker 1</text>
+<text class="small" x="54" y="164">Test A → Sandbox A</text><rect class="surface box" x="34" y="238" width="352" height="104" rx="18" ry="18"/>
+<text class="label" x="54" y="266">Worker 2</text>
+<text class="small" x="54" y="292">Test B → Sandbox B</text><rect class="surface-alt box" x="34" y="366" width="352" height="104" rx="18" ry="18"/>
+<text class="label" x="54" y="394">Waiting</text>
+<text class="small" x="54" y="420">Test C starts when a worker is free</text><rect class="amber box" x="34" y="494" width="352" height="158" rx="18" ry="18"/>
+<text class="label" x="54" y="522">Resource budget</text>
+<text class="small" x="54" y="548">More workers = more simultaneous environments</text>
+<text class="small" x="54" y="568">CPU • memory • containers • databases</text>
+<text class="small" x="54" y="588">shared dependencies still limit concurrency</text>
+</svg>

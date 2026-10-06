@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="420" height="900" viewBox="0 0 420 900" role="img" aria-labelledby="title desc">
+  <title>Specification workflow</title>
+  <desc>A multi-stage workflow from requirement.md to feature.feature to an emitted Playwright suite, then to a test run that produces evidence and an HTML report.</desc>
+  <defs>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="rgba(0,0,0,0.25)"/>
+    </filter>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#8b8b94"/>
+    </marker>
+    <style>
+      .bg { fill: #0f0f12; }
+      .surface { fill: #17171c; stroke: #2c2c35; stroke-width: 1.5; }
+      .surface-alt { fill: #1c1c23; stroke: #2c2c35; stroke-width: 1.5; }
+      .panel { fill: #202027; stroke: #2c2c35; stroke-width: 1.5; }
+      .accent { fill: #38212a; stroke: #e67189; stroke-width: 1.5; }
+      .accent-strong { fill: #442531; stroke: #ef9dab; stroke-width: 1.5; }
+      .green { fill: #12311f; stroke: #86efac; stroke-width: 1.5; }
+      .blue { fill: #16263a; stroke: #93c5fd; stroke-width: 1.5; }
+      .amber { fill: #3f2a18; stroke: #fb923c; stroke-width: 1.5; }
+      .box { rx: 18; ry: 18; filter: url(#shadow); }
+      .noshadow { filter: none; }
+      .title { font: 700 28px Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif; fill: #f4f4f5; }
+      .subtitle { font: 600 15px Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif; fill: #a1a1aa; }
+      .label { font: 700 16px Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif; fill: #f4f4f5; }
+      .body { font: 500 15px Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif; fill: #f4f4f5; }
+      .small { font: 500 13px Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif; fill: #a1a1aa; }
+      .tiny { font: 600 12px Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif; fill: #a1a1aa; letter-spacing: .08em; text-transform: uppercase; }
+      .mono { font: 600 14px 'JetBrains Mono', 'SFMono-Regular', ui-monospace, monospace; fill: #f4f4f5; }
+      .code { font: 600 13px 'JetBrains Mono', 'SFMono-Regular', ui-monospace, monospace; fill: #f4f4f5; }
+      .accent-text { fill: #ef9dab; }
+      .line { stroke: #8b8b94; stroke-width: 2.2; fill: none; marker-end: url(#arrow); }
+      .line-dash { stroke: #8b8b94; stroke-width: 2.2; stroke-dasharray: 7 7; fill: none; marker-end: url(#arrow); }
+      .brace { stroke: #3b3b46; stroke-width: 2; fill: none; }
+      .divider { stroke: #2c2c35; stroke-width: 1; }
+    </style>
+  </defs>
+  <rect class="bg" x="0" y="0" width="420" height="900" rx="24" ry="24"/>
+  
+  <text class="title" x="40" y="48">Specification workflow</text>
+  <text class="subtitle" x="40" y="74">From a requirement to a generated Playwright suite.</text><rect class="surface box" x="30" y="108" width="360" height="120" rx="18" ry="18"/>
+<text class="label" x="50" y="136">1. requirement.md</text>
+<text class="small" x="50" y="162">REQ-101: Create a subscription</text>
+<text class="small" x="50" y="182">returns 201 and stores one</text>
+<text class="small" x="50" y="202">active subscription.</text><text class="code" x="34" y="260">$ blackbox feature create --spec=requirement.md</text><path class="line" d="M 210 272 L 210 316"/><rect class="accent box" x="30" y="328" width="360" height="170" rx="18" ry="18"/>
+<text class="label" x="50" y="356">2. feature.feature</text>
+<text class="small" x="50" y="382">Feature: Subscriptions</text>
+<text class="small" x="50" y="402">Scenario: Alice subscribes</text>
+<text class="small" x="50" y="422">When POST &quot;/subscriptions&quot;</text>
+<text class="small" x="50" y="442">Then response status is 201</text>
+<text class="small" x="50" y="462">And one active subscription exists</text><text class="code" x="34" y="530">$ blackbox feature suite emit --file=feature.feature</text><path class="line" d="M 210 542 L 210 586"/><rect class="blue box" x="30" y="598" width="360" height="132" rx="18" ry="18"/>
+<text class="label" x="50" y="626">3. Playwright suite</text>
+<text class="small" x="50" y="652">test.system(...)</text>
+<text class="small" x="50" y="672">system.sandbox(...)</text>
+<text class="small" x="50" y="692">suite.test(...)</text><text class="code" x="34" y="762">$ npx playwright test</text><path class="line" d="M 210 774 L 210 818"/><rect class="green box" x="30" y="830" width="360" height="120" rx="18" ry="18"/>
+<text class="label" x="50" y="858">4. evidence + report</text>
+<text class="small" x="50" y="884">Fresh Sandbox</text>
+<text class="small" x="50" y="904">Checks + observations</text>
+<text class="small" x="50" y="924">Open the HTML report</text><text class="code" x="34" y="982">$ npx playwright show-report</text>
+</svg>

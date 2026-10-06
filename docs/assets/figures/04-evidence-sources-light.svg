@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1040" height="430" viewBox="0 0 1040 430" role="img" aria-labelledby="title desc">
+  <title>Verification and evidence</title>
+  <desc>A diagram showing a system test execution leading to response evidence, state evidence, and runtime observations, which then support a behavioral claim.</desc>
+  <defs>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="rgba(16,24,40,0.06)"/>
+    </filter>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#7a8394"/>
+    </marker>
+    <style>
+      .bg { fill: #ffffff; }
+      .surface { fill: #ffffff; stroke: #e4e7ec; stroke-width: 1.5; }
+      .surface-alt { fill: #f8f8fb; stroke: #e4e7ec; stroke-width: 1.5; }
+      .panel { fill: #f5f7fb; stroke: #e4e7ec; stroke-width: 1.5; }
+      .accent { fill: #fdf2f6; stroke: #e67189; stroke-width: 1.5; }
+      .accent-strong { fill: #fbe6ea; stroke: #db486f; stroke-width: 1.5; }
+      .green { fill: #ecfdf3; stroke: #067647; stroke-width: 1.5; }
+      .blue { fill: #eff4ff; stroke: #175cd3; stroke-width: 1.5; }
+      .amber { fill: #fffaeb; stroke: #b54708; stroke-width: 1.5; }
+      .box { rx: 18; ry: 18; filter: url(#shadow); }
+      .noshadow { filter: none; }
+      .title { font: 700 28px Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif; fill: #14151a; }
+      .subtitle { font: 600 15px Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif; fill: #667085; }
+      .label { font: 700 16px Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif; fill: #14151a; }
+      .body { font: 500 15px Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif; fill: #14151a; }
+      .small { font: 500 13px Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif; fill: #667085; }
+      .tiny { font: 600 12px Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif; fill: #667085; letter-spacing: .08em; text-transform: uppercase; }
+      .mono { font: 600 14px 'JetBrains Mono', 'SFMono-Regular', ui-monospace, monospace; fill: #14151a; }
+      .code { font: 600 13px 'JetBrains Mono', 'SFMono-Regular', ui-monospace, monospace; fill: #14151a; }
+      .accent-text { fill: #db486f; }
+      .line { stroke: #7a8394; stroke-width: 2.2; fill: none; marker-end: url(#arrow); }
+      .line-dash { stroke: #7a8394; stroke-width: 2.2; stroke-dasharray: 7 7; fill: none; marker-end: url(#arrow); }
+      .brace { stroke: #d0d5dd; stroke-width: 2; fill: none; }
+      .divider { stroke: #e4e7ec; stroke-width: 1; }
+    </style>
+  </defs>
+  <rect class="bg" x="0" y="0" width="1040" height="430" rx="24" ry="24"/>
+  
+  <text class="title" x="40" y="48">Verification and evidence</text>
+  <text class="subtitle" x="40" y="74">A system test needs different evidence for different claims.</text><rect class="surface box" x="400" y="120" width="240" height="90" rx="18" ry="18"/>
+<text class="label" x="420" y="148">System test execution</text>
+<text class="small" x="420" y="174">Stimulus against the running system</text><path class="line" d="M 520 212 L 200 286"/><path class="line" d="M 520 212 L 520 286"/><path class="line" d="M 520 212 L 840 286"/><rect class="green box" x="60" y="290" width="260" height="90" rx="18" ry="18"/>
+<text class="label" x="80" y="318">Response evidence</text>
+<text class="small" x="80" y="344">What came back?</text>
+<text class="small" x="80" y="364">HTTP status • payload • exit code</text><rect class="accent box" x="390" y="290" width="260" height="90" rx="18" ry="18"/>
+<text class="label" x="410" y="318">State evidence</text>
+<text class="small" x="410" y="344">What was retained?</text>
+<text class="small" x="410" y="364">Explicit reads from authoritative state</text><rect class="blue box" x="720" y="290" width="260" height="90" rx="18" ry="18"/>
+<text class="label" x="740" y="318">Runtime observations</text>
+<text class="small" x="740" y="344">What ran?</text>
+<text class="small" x="740" y="364">Supported service, DB, cache, messaging activity</text><path class="line" d="M 190 382 L 520 406"/><path class="line" d="M 520 382 L 520 406"/><path class="line" d="M 850 382 L 520 406"/><rect class="surface-alt box" x="350" y="405" width="340" height="95" rx="18" ry="18"/>
+<text class="label" x="370" y="433">Behavioral claim</text>
+<text class="small" x="370" y="459">Check the expected behavior with the evidence</text>
+<text class="small" x="370" y="479">that can answer the question.</text>
+</svg>

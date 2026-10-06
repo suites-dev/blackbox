@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="420" viewBox="0 0 1000 420" role="img" aria-labelledby="title desc">
+  <title>SDD and Blackbox</title>
+  <desc>A diagram contrasting SDD and Blackbox. SDD asks what to build and Blackbox asks whether the running system behaves that way.</desc>
+  <defs>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="rgba(16,24,40,0.06)"/>
+    </filter>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#7a8394"/>
+    </marker>
+    <style>
+      .bg { fill: #ffffff; }
+      .surface { fill: #ffffff; stroke: #e4e7ec; stroke-width: 1.5; }
+      .surface-alt { fill: #f8f8fb; stroke: #e4e7ec; stroke-width: 1.5; }
+      .panel { fill: #f5f7fb; stroke: #e4e7ec; stroke-width: 1.5; }
+      .accent { fill: #fdf2f6; stroke: #e67189; stroke-width: 1.5; }
+      .accent-strong { fill: #fbe6ea; stroke: #db486f; stroke-width: 1.5; }
+      .green { fill: #ecfdf3; stroke: #067647; stroke-width: 1.5; }
+      .blue { fill: #eff4ff; stroke: #175cd3; stroke-width: 1.5; }
+      .amber { fill: #fffaeb; stroke: #b54708; stroke-width: 1.5; }
+      .box { rx: 18; ry: 18; filter: url(#shadow); }
+      .noshadow { filter: none; }
+      .title { font: 700 28px Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif; fill: #14151a; }
+      .subtitle { font: 600 15px Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif; fill: #667085; }
+      .label { font: 700 16px Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif; fill: #14151a; }
+      .body { font: 500 15px Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif; fill: #14151a; }
+      .small { font: 500 13px Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif; fill: #667085; }
+      .tiny { font: 600 12px Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif; fill: #667085; letter-spacing: .08em; text-transform: uppercase; }
+      .mono { font: 600 14px 'JetBrains Mono', 'SFMono-Regular', ui-monospace, monospace; fill: #14151a; }
+      .code { font: 600 13px 'JetBrains Mono', 'SFMono-Regular', ui-monospace, monospace; fill: #14151a; }
+      .accent-text { fill: #db486f; }
+      .line { stroke: #7a8394; stroke-width: 2.2; fill: none; marker-end: url(#arrow); }
+      .line-dash { stroke: #7a8394; stroke-width: 2.2; stroke-dasharray: 7 7; fill: none; marker-end: url(#arrow); }
+      .brace { stroke: #d0d5dd; stroke-width: 2; fill: none; }
+      .divider { stroke: #e4e7ec; stroke-width: 1; }
+    </style>
+  </defs>
+  <rect class="bg" x="0" y="0" width="1000" height="420" rx="24" ry="24"/>
+  
+  <text class="title" x="40" y="48">SDD and Blackbox</text>
+  <text class="subtitle" x="40" y="74">Blackbox begins where the accepted specification needs verification.</text><rect class="surface box" x="60" y="140" width="340" height="170" rx="18" ry="18"/>
+<text class="label" x="80" y="168">SDD</text>
+<text class="body" x="80" y="194">What should we build?</text>
+<text class="body" x="80" y="214"></text>
+<text class="body" x="80" y="234">spec.md</text>
+<text class="body" x="80" y="254">requirements.md</text>
+<text class="body" x="80" y="274">tickets and examples</text><rect class="accent box" x="600" y="140" width="340" height="170" rx="18" ry="18"/>
+<text class="label" x="620" y="168">Blackbox</text>
+<text class="body" x="620" y="194">Does the running system</text>
+<text class="body" x="620" y="214">behave that way?</text>
+<text class="body" x="620" y="234"></text>
+<text class="body" x="620" y="254">system tests + evidence</text><path class="line" d="M 402 226 L 592 226"/><text class="tiny" x="500" y="212" text-anchor="middle">accepted specification</text><text class="small" x="60" y="350">Spec-driven development defines intent. Blackbox turns accepted behavior into executable verification against a real isolated system.</text>
+</svg>

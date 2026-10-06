@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="480" viewBox="0 0 1200 480" role="img" aria-labelledby="title desc">
+  <title>Blackbox flow</title>
+  <desc>A diagram showing Specification, Executable behavior, Playwright suite, Sandbox, Evidence, and Verification connected in sequence.</desc>
+  <defs>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="rgba(16,24,40,0.06)"/>
+    </filter>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#7a8394"/>
+    </marker>
+    <style>
+      .bg { fill: #ffffff; }
+      .surface { fill: #ffffff; stroke: #e4e7ec; stroke-width: 1.5; }
+      .surface-alt { fill: #f8f8fb; stroke: #e4e7ec; stroke-width: 1.5; }
+      .panel { fill: #f5f7fb; stroke: #e4e7ec; stroke-width: 1.5; }
+      .accent { fill: #fdf2f6; stroke: #e67189; stroke-width: 1.5; }
+      .accent-strong { fill: #fbe6ea; stroke: #db486f; stroke-width: 1.5; }
+      .green { fill: #ecfdf3; stroke: #067647; stroke-width: 1.5; }
+      .blue { fill: #eff4ff; stroke: #175cd3; stroke-width: 1.5; }
+      .amber { fill: #fffaeb; stroke: #b54708; stroke-width: 1.5; }
+      .box { rx: 18; ry: 18; filter: url(#shadow); }
+      .noshadow { filter: none; }
+      .title { font: 700 28px Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif; fill: #14151a; }
+      .subtitle { font: 600 15px Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif; fill: #667085; }
+      .label { font: 700 16px Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif; fill: #14151a; }
+      .body { font: 500 15px Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif; fill: #14151a; }
+      .small { font: 500 13px Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif; fill: #667085; }
+      .tiny { font: 600 12px Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif; fill: #667085; letter-spacing: .08em; text-transform: uppercase; }
+      .mono { font: 600 14px 'JetBrains Mono', 'SFMono-Regular', ui-monospace, monospace; fill: #14151a; }
+      .code { font: 600 13px 'JetBrains Mono', 'SFMono-Regular', ui-monospace, monospace; fill: #14151a; }
+      .accent-text { fill: #db486f; }
+      .line { stroke: #7a8394; stroke-width: 2.2; fill: none; marker-end: url(#arrow); }
+      .line-dash { stroke: #7a8394; stroke-width: 2.2; stroke-dasharray: 7 7; fill: none; marker-end: url(#arrow); }
+      .brace { stroke: #d0d5dd; stroke-width: 2; fill: none; }
+      .divider { stroke: #e4e7ec; stroke-width: 1; }
+    </style>
+  </defs>
+  <rect class="bg" x="0" y="0" width="1200" height="480" rx="24" ry="24"/>
+  
+  <text class="title" x="40" y="48">Blackbox flow</text>
+  <text class="subtitle" x="40" y="74">From specification to a verified running system.</text><rect class="surface box" x="44" y="170" width="160" height="96" rx="18" ry="18"/>
+<text class="label" x="64" y="198">Specification</text>
+<text class="body" x="64" y="224">What should happen</text><path class="line" d="M 204 218 L 222 218"/><rect class="surface box" x="230" y="170" width="160" height="96" rx="18" ry="18"/>
+<text class="label" x="250" y="198">Executable behavior</text>
+<text class="body" x="250" y="224">Reviewed scenarios</text><path class="line" d="M 390 218 L 408 218"/><rect class="surface box" x="416" y="170" width="160" height="96" rx="18" ry="18"/>
+<text class="label" x="436" y="198">Playwright suite</text>
+<text class="body" x="436" y="224">Native system tests</text><path class="line" d="M 576 218 L 594 218"/><rect class="accent-strong box" x="602" y="170" width="160" height="96" rx="18" ry="18"/>
+<text class="label" x="622" y="198">Sandbox</text>
+<text class="body" x="622" y="224">Fresh isolated run</text><path class="line" d="M 762 218 L 780 218"/><rect class="blue box" x="788" y="170" width="160" height="96" rx="18" ry="18"/>
+<text class="label" x="808" y="198">Evidence</text>
+<text class="body" x="808" y="224">Response • state</text>
+<text class="body" x="808" y="244">observations</text><path class="line" d="M 948 218 L 966 218"/><rect class="surface box" x="974" y="170" width="160" height="96" rx="18" ry="18"/>
+<text class="label" x="994" y="198">Verification</text>
+<text class="body" x="994" y="224">CI or local verdict</text><text class="tiny" x="600" y="132" text-anchor="middle">Agent uses Blackbox to move from accepted behavior to evidence</text><text class="small" x="44" y="360">Blackbox connects the specification to a real execution. Each attempt runs in a fresh Sandbox and produces evidence.</text>
+</svg>
