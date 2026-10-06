@@ -19,7 +19,7 @@ including code-scanning requirements. If live rules cannot be read, disclose tha
 readiness cannot be fully verified; a checked-in ruleset is not proof of deployment.
 
 Current workflow landmarks are `CI Gate` (build/typecheck, lint, dependency
-boundaries, package tests, package integration tests),
+boundaries, package tests, package integration tests, spec/code separation),
 `E2E Gate` (every E2E lane), `Security Gate`, and `Validate PR title`.
 Inspect underlying jobs too: a successful aggregate must not hide a skipped or
 failed required lane. Check scanner findings as well as successful scanner
