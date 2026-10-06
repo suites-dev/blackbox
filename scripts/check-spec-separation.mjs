@@ -12,11 +12,16 @@ import { fileURLToPath } from 'node:url';
 //            packages, because they produce the verdict.
 // package.json, pnpm-lock.yaml and pnpm-workspace.yaml are read by content: an
 // entry that names the step-library package (version, catalog, override,
-// patch) is spec, any other changed entry is code. A renamed path counts under
-// both its old and its new name. The runner-policy baseline is spec too: every
-// path a config file names as the Blackbox reporter's `policy.baseline`, at the
-// merge base or at HEAD, joins the spec class, so one change cannot alter the
-// runner code or config and also accept the result in the baseline. Usage:
+// patch) or the script CI runs the Gherkin features with is spec, any other
+// changed entry is code. A renamed path counts under both its old and its new
+// name.
+// How a run is configured is spec too, because code running inside Playwright
+// (a reporter, a global setup) can write any run or policy manifest: Playwright
+// configs, project reporters, the Gherkin CI workflow and its run script, and
+// every path a config module names as the Blackbox reporter's
+// `policy.baseline`, as a local reporter, or as `globalSetup` or
+// `globalTeardown`, at the merge base or at HEAD. So one change cannot alter
+// code and also how its run is judged. Usage:
 //   node scripts/check-spec-separation.mjs --base <ref> [--head <ref>]
 // CI passes the pull request's base and runs the base branch's copy of this
 // file from a temporary directory, so keep it self-contained (Node built-ins
@@ -30,7 +35,15 @@ export const REPOSITORY_CLASSES = {
     '**/blackbox.policy.json',
     'packages/playwright/src/testing/policy/baseline.json',
     '**/patches/@suites__blackbox-gherkin@*.patch',
+    '**/playwright.config.*',
+    '**/playwright.*.config.*',
+    'e2e/reporters/**',
+    // The Gherkin features lane and the script that runs Playwright for it.
+    '.github/workflows/e2e.yml',
+    'demo/support/gherkin-test.sh',
   ],
+  // Manifest entries that are spec, by manifest path and key path prefix.
+  specEntries: { 'package.json': [['scripts', 'test:e2e:gherkin']] },
   // Spec patterns win, so Markdown inside a spec path stays spec.
   neutral: ['**/*.md'],
   // Packages whose dependency entries are step definitions.
@@ -60,12 +73,9 @@ export function globToRegExp(glob) {
 
 const matchesAny = (path, globs) => globs.some((glob) => globToRegExp(glob).test(path));
 
-/**
- * 'spec' | 'neutral' | 'manifest' | 'code' for one repository-relative path.
- * `classes.specFiles` holds exact spec paths, such as discovered baselines.
- */
+/** 'spec' | 'neutral' | 'manifest' | 'code' for one repository-relative path. */
 export function classifyPath(path, classes = REPOSITORY_CLASSES) {
-  if (classes.specFiles?.includes(path) || matchesAny(path, classes.spec)) {
+  if (matchesAny(path, classes.spec)) {
     return 'spec';
   }
   if (matchesAny(path, classes.neutral)) {
@@ -181,7 +191,13 @@ export function classifyManifest(path, before, after, classes = REPOSITORY_CLASS
   const result = { spec: [], code: [] };
   const changed = changedEntries(manifestEntries(path, before), manifestEntries(path, after));
   for (const entry of changed) {
-    const side = entry.path.some((key) => namesLibrary(key, classes.libraries)) ? 'spec' : 'code';
+    const side =
+      entry.path.some((key) => namesLibrary(key, classes.libraries)) ||
+      (classes.specEntries?.[path] ?? []).some((prefix) =>
+        prefix.every((key, index) => entry.path[index] === key),
+      )
+        ? 'spec'
+        : 'code';
     const reason = entry.path.join(' > ');
     if (!result[side].includes(reason)) {
       result[side].push(reason);
@@ -227,31 +243,111 @@ export function checkSeparation(result) {
   ];
 }
 
-// Config modules that can name a reporter option, such as playwright.config.ts.
+// Config modules that can name a reporter, a baseline or a global setup.
 const CONFIG = /(^|\/)[^/]*\.config\.[cm]?[jt]s$/;
-const BASELINE_OPTION = /\bbaseline\s*:\s*([^,}\n]*)/g;
 const STRING_LITERAL = /(['"`])((?:(?!\1)[^\\\n]|\\.)*)\1/g;
+const QUOTED = String.raw`(?:'[^'\n]*'|"[^"\n]*")`;
+const JOINED = new RegExp(
+  String.raw`\b(?:path\.)?(?:join|resolve)\(\s*(?:import\.meta\.dirname|__dirname)\s*((?:,\s*${QUOTED}\s*)+)\)`,
+  'g',
+);
+// Options whose every string literal is a path, and options where only
+// `./` or `../` literals are (a reporter entry also holds built-in reporter
+// names, package names and output files).
+const PATH_OPTIONS = ['baseline', 'globalSetup', 'globalTeardown'];
+const RELATIVE_PATH_OPTIONS = ['reporter'];
+
+/** The end index of the string literal or comment that starts at `index`. */
+function skipLiteral(text, index) {
+  const char = text[index];
+  if (char === '/' && text[index + 1] === '/') {
+    const end = text.indexOf('\n', index);
+    return end === -1 ? text.length : end;
+  }
+  if (char === '/' && text[index + 1] === '*') {
+    const end = text.indexOf('*/', index + 2);
+    return end === -1 ? text.length : end + 1;
+  }
+  for (let end = index + 1; end < text.length; end += 1) {
+    if (text[end] === '\\') {
+      end += 1;
+    } else if (text[end] === char) {
+      return end;
+    }
+  }
+  return text.length;
+}
+
+/** The source of each `key:` value, up to the comma or bracket that ends it. */
+function optionValues(text, key) {
+  const values = [];
+  for (const match of text.matchAll(new RegExp(String.raw`(?<![\w$.])${key}\s*:`, 'g'))) {
+    const start = match.index + match[0].length;
+    let depth = 0;
+    let index = start;
+    for (; index < text.length; index += 1) {
+      const char = text[index];
+      if (`'"\``.includes(char) || (char === '/' && '/*'.includes(text[index + 1]))) {
+        index = skipLiteral(text, index);
+      } else if ('([{'.includes(char)) {
+        depth += 1;
+      } else if (')]}'.includes(char)) {
+        if (depth === 0) {
+          break;
+        }
+        depth -= 1;
+      } else if (depth === 0 && ',;'.includes(char)) {
+        break;
+      }
+    }
+    values.push(text.slice(start, index));
+  }
+  return values;
+}
 
 /**
- * Repository paths a config module names as `baseline:`, resolved from the
- * config's directory as the reporter resolves them. Every string literal in
- * the value counts, so `process.env.X ?? './baseline.json'` yields its
- * fallback. Interpolated, absolute and out-of-repository paths are skipped.
+ * Spec globs for the paths a config module names as the Blackbox reporter's
+ * `policy.baseline`, as a local reporter, or as `globalSetup` or
+ * `globalTeardown`, resolved from the config's directory as Playwright and
+ * the reporter resolve them. `join(import.meta.dirname, 'a', 'b.ts')` counts,
+ * and so does the `'./baseline.json'` fallback of `process.env.X ?? ...`. A
+ * path without an extension also covers its module files. Interpolated,
+ * absolute and out-of-repository paths are skipped.
  */
-export function baselineReferences(configPath, text) {
-  const paths = [];
-  for (const [, value] of text.matchAll(BASELINE_OPTION)) {
-    for (const [, , literal] of value.matchAll(STRING_LITERAL)) {
-      if (literal === '' || literal.includes('${') || posix.isAbsolute(literal)) {
-        continue;
+export function configReferences(configPath, text) {
+  const globs = [];
+  const add = (relative) => {
+    if (relative === '' || relative.includes('${') || posix.isAbsolute(relative)) {
+      return;
+    }
+    const path = posix.normalize(posix.join(posix.dirname(configPath), relative));
+    if (path === '..' || path.startsWith('../')) {
+      return;
+    }
+    const candidates = posix.extname(path) === '' ? [path, `${path}.*`, `${path}/index.*`] : [path];
+    for (const glob of candidates) {
+      if (!globs.includes(glob)) {
+        globs.push(glob);
       }
-      const path = posix.normalize(posix.join(posix.dirname(configPath), literal));
-      if (path !== '..' && !path.startsWith('../') && !paths.includes(path)) {
-        paths.push(path);
+    }
+  };
+  for (const [keys, relativeOnly] of [
+    [PATH_OPTIONS, false],
+    [RELATIVE_PATH_OPTIONS, true],
+  ]) {
+    for (const value of keys.flatMap((key) => optionValues(text, key))) {
+      const rest = value.replace(JOINED, (_, parts) => {
+        add(posix.join(...[...parts.matchAll(STRING_LITERAL)].map((part) => part[2])));
+        return '';
+      });
+      for (const [, , literal] of rest.matchAll(STRING_LITERAL)) {
+        if (!relativeOnly || /^\.\.?\//.test(literal)) {
+          add(literal);
+        }
       }
     }
   }
-  return paths;
+  return globs;
 }
 
 function git(args, cwd) {
@@ -262,29 +358,33 @@ function contentAt(revision, path, cwd) {
   return MANIFEST.test(path) ? git(['cat-file', 'blob', `${revision}:${path}`], cwd) : '';
 }
 
-/** The baselines that config modules at `revision` name. */
-function baselinesAt(revision, cwd) {
-  const paths = [];
+/**
+ * The spec globs that project config modules at `revision` name. Configs under
+ * packages/ belong to the Blackbox runtime's own tests and name the runtime's
+ * reporter, which produces the verdict and so stays code.
+ */
+function referencesAt(revision, cwd) {
+  const globs = [];
   for (const path of git(['ls-tree', '-r', '-z', '--name-only', revision], cwd).split('\0')) {
-    if (!CONFIG.test(path)) {
+    if (!CONFIG.test(path) || path.startsWith('packages/')) {
       continue;
     }
-    for (const baseline of baselineReferences(
+    for (const glob of configReferences(
       path,
       git(['cat-file', 'blob', `${revision}:${path}`], cwd),
     )) {
-      if (!paths.includes(baseline)) {
-        paths.push(baseline);
+      if (!globs.includes(glob)) {
+        globs.push(glob);
       }
     }
   }
-  return paths;
+  return globs;
 }
 
 /**
  * Reads the changes between the merge base of `base` and `head`, splitting a
  * rename or copy into its old path (removed) and its new path (added), and the
- * policy baselines named on either side.
+ * spec globs that config modules name on either side.
  */
 export function readChanges({ base, head = 'HEAD', cwd }) {
   const mergeBase = git(['merge-base', base, head], cwd).trim();
@@ -310,8 +410,8 @@ export function readChanges({ base, head = 'HEAD', cwd }) {
       index += 2;
     }
   }
-  const baselines = [...new Set([...baselinesAt(mergeBase, cwd), ...baselinesAt(head, cwd)])];
-  return { mergeBase, changes, baselines };
+  const references = [...new Set([...referencesAt(mergeBase, cwd), ...referencesAt(head, cwd)])];
+  return { mergeBase, changes, references };
 }
 
 function describe(entry) {
@@ -340,8 +440,8 @@ if (argv[1] === fileURLToPath(import.meta.url)) {
   let report;
   try {
     const options = parseArguments(argv.slice(2));
-    const { mergeBase, changes, baselines } = readChanges({ ...options, cwd: process.cwd() });
-    const classes = { ...REPOSITORY_CLASSES, specFiles: baselines };
+    const { mergeBase, changes, references } = readChanges({ ...options, cwd: process.cwd() });
+    const classes = { ...REPOSITORY_CLASSES, spec: [...REPOSITORY_CLASSES.spec, ...references] };
     report = { mergeBase, result: classifyChanges(changes, classes) };
   } catch (error) {
     console.error(`error spec-separation: ${error.message}`);

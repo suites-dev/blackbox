@@ -164,7 +164,8 @@ jobs:
 
   # Hard rule 2 of the Gherkin input design: a pull request changes specs
   # (features, the step library, their project files, the runner-policy
-  # baseline) or code, never both.
+  # baseline, and how runs are configured: Playwright configs, project
+  # reporters, global setup, the Gherkin workflow) or code, never both.
   # The check runs the base branch's copy of the checker when the base has
   # one, so a pull request cannot loosen the check that judges it. Node only.
   separation:
