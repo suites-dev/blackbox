@@ -1,6 +1,8 @@
-import { mkdtemp, rm } from 'node:fs/promises';
+import { execFile } from 'node:child_process';
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { promisify } from 'node:util';
 
 import { afterEach, describe, expect, it } from 'vitest';
 
@@ -12,8 +14,26 @@ import { cleanupRepositories, repository } from './testing/repository.js';
 // project step mechanisms (step files, step-registration and other runner
 // imports) and on patches or forks of the step library and its runtime, and
 // on generated tests that are tracked by git. A clean project passes.
+// Benchmark finding F9: the unpublished alpha installs from local tarballs, so
+// a tarball packed from this release of the protected package is accepted;
+// another package, another version or an unreadable file is still refused.
 
 afterEach(cleanupRepositories);
+
+const RELEASE = (JSON.parse(await readFile(new URL('../../package.json', import.meta.url), 'utf8')) as { readonly version: string }).version;
+
+/** Packs a package holding only its package.json into `directory` with npm, and returns the tarball's name. */
+async function pack(directory: string, name: string, version = RELEASE): Promise<string> {
+  const source = await mkdtemp(join(tmpdir(), 'blackbox-gherkin-pack-'));
+  try {
+    await writeFile(join(source, 'package.json'), JSON.stringify({ name, version }));
+    await mkdir(directory, { recursive: true });
+    const { stdout } = await promisify(execFile)('npm', ['pack', '--ignore-scripts', '--silent', '--pack-destination', directory], { cwd: source });
+    return stdout.trim().split('\n').at(-1) ?? '';
+  } finally {
+    await rm(source, { recursive: true, force: true });
+  }
+}
 
 describe('check passes', () => {
   it('a project whose generated output is untracked and whose own code does not import the runtime', async () => {
@@ -93,5 +113,44 @@ describe('check fails', () => {
     } finally {
       await rm(outside, { recursive: true, force: true });
     }
+  });
+});
+
+describe('local tarball installs (benchmark F9)', () => {
+  it('pass when they are packs of this release, as the benchmark installed the unpublished alpha', { timeout: 30_000 }, async () => {
+    const repo = await repository();
+    const gherkin = await pack(join(repo.root, 'packages'), '@suites/blackbox-gherkin');
+    const playwright = await pack(join(repo.root, 'packages'), '@suites/blackbox-playwright');
+    await repo.write({
+      'app/package.json': JSON.stringify({
+        devDependencies: {
+          '@suites/blackbox-gherkin': `file:../packages/${gherkin}`,
+          '@suites/blackbox-playwright': `file:${join(repo.root, 'packages', playwright)}`,
+        },
+      }),
+    });
+    await repo.commit('base');
+    expect(await checkProject(repo.project)).toEqual([]);
+  });
+
+  it('fail for another package or version, or a file that is not a package tarball', { timeout: 30_000 }, async () => {
+    const repo = await repository();
+    const fork = await pack(join(repo.root, 'packages'), 'my-fork');
+    const future = await pack(join(repo.root, 'packages'), '@suites/blackbox-playwright', '9.9.9');
+    await repo.write({
+      'packages/notes.tgz': 'not a tarball',
+      'app/package.json': JSON.stringify({
+        devDependencies: { '@suites/blackbox-gherkin': `file:../packages/${fork}`, '@suites/blackbox-playwright': `file:../packages/${future}` },
+        overrides: { '@suites/blackbox-gherkin': 'file:../packages/notes.tgz', '@suites/blackbox-playwright': 'file:missing.tar.gz' },
+      }),
+    });
+    await repo.commit('base');
+    const points = (field: string, name: string, value: string) => `package.json: ${field} points ${name} at ${JSON.stringify(value)}`;
+    expect(await checkProject(repo.project)).toEqual([
+      `${points('devDependencies', '@suites/blackbox-gherkin', `file:../packages/${fork}`)}, a pack of my-fork@${RELEASE}; a local tarball must be a pack of @suites/blackbox-gherkin@${RELEASE}`,
+      `${points('devDependencies', '@suites/blackbox-playwright', `file:../packages/${future}`)}, a pack of @suites/blackbox-playwright@9.9.9; a local tarball must be a pack of @suites/blackbox-playwright@${RELEASE}`,
+      `${points('overrides', '@suites/blackbox-gherkin', 'file:../packages/notes.tgz')}, which is not a readable package tarball; use the published package or a pack of @suites/blackbox-gherkin@${RELEASE}`,
+      `${points('overrides', '@suites/blackbox-playwright', 'file:missing.tar.gz')}, which is not a readable package tarball; use the published package or a pack of @suites/blackbox-playwright@${RELEASE}`,
+    ]);
   });
 });

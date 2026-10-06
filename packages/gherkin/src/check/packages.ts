@@ -1,7 +1,9 @@
 import { readdir, readFile } from 'node:fs/promises';
-import { dirname, join, relative } from 'node:path';
+import { createRequire } from 'node:module';
+import { dirname, join, relative, resolve } from 'node:path';
 
 import { isObject, type JsonObject } from '../project/reader.js';
+import { packedPackage } from './tarball.js';
 
 // Rule 3: the shared step library and the runtime that runs it are used as
 // published. A project may not patch them or point them at a fork. These
@@ -14,16 +16,42 @@ export const PROTECTED_PACKAGES = ['@suites/blackbox-gherkin', '@suites/blackbox
 const DEPENDENCY_FIELDS = ['dependencies', 'devDependencies', 'optionalDependencies', 'peerDependencies'] as const;
 // Sources other than a registry version or the workspace.
 const FORK_SOURCE = /^(?:file:|link:|portal:|patch:|git\+|git:|github:|gitlab:|bitbucket:|https?:|\.{0,2}\/)/u;
+// A package tarball on disk, as `npm pack` or `pnpm pack` writes it.
+const LOCAL_TARBALL = /^file:(.+\.(?:tgz|tar\.gz))$/u;
+
+// src/check and dist/check sit at the same depth below the package root.
+// Releases are fixed-version, so every protected package carries this version.
+const RELEASE = (createRequire(import.meta.url)('../../package.json') as { readonly version: string }).version;
+
+/**
+ * A protected package installed from a local tarball, as the unpublished alpha
+ * is. It is accepted only when the tarball is a pack of that package at this
+ * release, which packageProblems reads from the tarball itself.
+ */
+interface LocalTarball {
+  readonly file: string;
+  readonly field: string;
+  readonly name: string;
+  readonly value: string;
+  readonly tarball: string;
+}
+
+type Finding = string | LocalTarball;
 
 /** The protected package a dependency, override or resolution key names (`name`, `name@range`, `a>name`, `**\/name`). */
 function protectedKey(key: string): string | null {
   return PROTECTED_PACKAGES.find((name) => new RegExp(`(?:^|[>/])${name.replace('/', '\\/')}(?:@|$)`, 'u').test(key)) ?? null;
 }
 
-function forkProblem(file: string, field: string, key: string, value: unknown): string | null {
+function forkProblem(where: Where, field: string, key: string, value: unknown): Finding | null {
+  const { file } = where;
   const name = protectedKey(key);
   if (name === null || typeof value !== 'string') {
     return null;
+  }
+  const local = LOCAL_TARBALL.exec(value);
+  if (local !== null) {
+    return { file, field, name, value, tarball: resolve(where.directory, local[1]) };
   }
   const alias = /^npm:(@?[^@]+)/u.exec(value);
   if (FORK_SOURCE.test(value) || (alias !== null && alias[1] !== name)) {
@@ -32,26 +60,33 @@ function forkProblem(file: string, field: string, key: string, value: unknown): 
   return null;
 }
 
+/** A package manifest: its path as reported, and the directory its relative sources resolve from. */
+interface Where {
+  readonly file: string;
+  readonly directory: string;
+}
+
 /** Dependency and override entries; npm `overrides` nest by dependency path, so every level is read. */
-function entryProblems(file: string, field: string, entries: JsonObject): string[] {
-  const problems: (string | null)[] = [];
+function entryProblems(where: Where, field: string, entries: JsonObject): Finding[] {
+  const problems: (Finding | null)[] = [];
   for (const [key, value] of Object.entries(entries)) {
     if (isObject(value)) {
       // "." is the override of the package itself when it also overrides its dependencies.
-      problems.push(forkProblem(file, field, key, value['.']), ...entryProblems(file, `${field} > ${key}`, value));
+      problems.push(forkProblem(where, field, key, value['.']), ...entryProblems(where, `${field} > ${key}`, value));
     } else {
-      problems.push(forkProblem(file, field, key, value));
+      problems.push(forkProblem(where, field, key, value));
     }
   }
-  return problems.filter((problem): problem is string => problem !== null);
+  return problems.filter((problem): problem is Finding => problem !== null);
 }
 
-function manifestProblems(file: string, manifest: JsonObject): string[] {
-  const problems: string[] = [];
+function manifestProblems(where: Where, manifest: JsonObject): Finding[] {
+  const { file } = where;
+  const problems: Finding[] = [];
   for (const field of DEPENDENCY_FIELDS) {
     const entries = manifest[field];
     if (isObject(entries)) {
-      problems.push(...entryProblems(file, field, entries));
+      problems.push(...entryProblems(where, field, entries));
     }
   }
   const pnpm = isObject(manifest.pnpm) ? manifest.pnpm : {};
@@ -61,7 +96,7 @@ function manifestProblems(file: string, manifest: JsonObject): string[] {
     ['pnpm.overrides', pnpm.overrides],
   ] as const) {
     if (isObject(value)) {
-      problems.push(...entryProblems(file, field, value));
+      problems.push(...entryProblems(where, field, value));
     }
   }
   const patched = isObject(pnpm.patchedDependencies) ? Object.keys(pnpm.patchedDependencies) : [];
@@ -113,6 +148,19 @@ async function patchProblems(directory: string, shown: (path: string) => string)
     .map((name) => `${shown(join(directory, 'patches', name))}: patches a protected package; the step library and its runtime may not be patched`);
 }
 
+/** Null when a local tarball is a pack of its protected package at this release; otherwise why not. */
+async function tarballProblem(use: LocalTarball): Promise<string | null> {
+  const packed = await packedPackage(use.tarball);
+  const points = `${use.file}: ${use.field} points ${use.name} at ${JSON.stringify(use.value)}`;
+  if (packed === null) {
+    return `${points}, which is not a readable package tarball; use the published package or a pack of ${use.name}@${RELEASE}`;
+  }
+  if (packed.name !== use.name || packed.version !== RELEASE) {
+    return `${points}, a pack of ${packed.name}@${packed.version}; a local tarball must be a pack of ${use.name}@${RELEASE}`;
+  }
+  return null;
+}
+
 /** Every patch or fork of a protected package between the project directory and the repository root. */
 export async function packageProblems(projectRoot: string, repositoryRoot: string): Promise<readonly string[]> {
   const shown = (path: string) => relative(projectRoot, path) || '.';
@@ -121,7 +169,13 @@ export async function packageProblems(projectRoot: string, repositoryRoot: strin
     const manifest = await readOptional(join(directory, 'package.json'));
     if (manifest !== null) {
       const parsed: unknown = JSON.parse(manifest);
-      problems.push(...(isObject(parsed) ? manifestProblems(shown(join(directory, 'package.json')), parsed) : []));
+      const findings = isObject(parsed) ? manifestProblems({ file: shown(join(directory, 'package.json')), directory }, parsed) : [];
+      for (const finding of findings) {
+        const problem = typeof finding === 'string' ? finding : await tarballProblem(finding);
+        if (problem !== null) {
+          problems.push(problem);
+        }
+      }
     }
     const workspace = await readOptional(join(directory, 'pnpm-workspace.yaml'));
     if (workspace !== null) {
