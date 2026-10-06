@@ -63,6 +63,7 @@ export function policyReport(manifest: PolicyManifest, comparison: BaselineCompa
   const lines = [
     'Blackbox runner policy',
     `  run: ${fields(policy.run)}`,
+    `  selection: ${fields(policy.selection)}`,
     ...Object.entries(policy.projects).map(
       ([name, project]) => `  project ${show(name)}: ${fields(project)}`,
     ),

@@ -8,7 +8,7 @@ import { compareWithBaseline, policyDifferences } from './compare.js';
 import type { PolicyManifest } from './manifest.js';
 
 const manifest = {
-  schemaVersion: 1,
+  schemaVersion: 2,
   argv: ['/usr/bin/node', '/opt/playwright/cli.js', 'test', '--retries=3'],
   policy: {
     run: {
@@ -21,6 +21,18 @@ const manifest = {
       maxFailures: 0,
       shard: null,
       workers: 1,
+    },
+    selection: {
+      grep: null,
+      grepInvert: null,
+      projects: [],
+      testFilters: [],
+      lastFailed: false,
+      lastFailedFile: null,
+      onlyChanged: null,
+      testList: null,
+      testListInvert: null,
+      noDeps: false,
     },
     projects: {
       primary: {
@@ -81,7 +93,7 @@ it('treats a type change as drift rather than an equal value', () => {
 
 it('ignores argv but compares every policy field against the baseline file', async () => {
   const file = join(directory, 'baseline.json');
-  await writeFile(file, JSON.stringify({ schemaVersion: 1, policy: manifest.policy }));
+  await writeFile(file, JSON.stringify({ schemaVersion: 2, policy: manifest.policy }));
   expect(compareWithBaseline(manifest, 'baseline.json', directory)).toEqual({
     kind: 'match',
     baseline: 'baseline.json',
@@ -99,9 +111,9 @@ it('ignores argv but compares every policy field against the baseline file', asy
 it.each([
   ['missing', null, 'ENOENT'],
   ['malformed', '{', 'JSON'],
-  ['wrong schema', JSON.stringify({ schemaVersion: 2, policy: {} }), 'schemaVersion 1'],
-  ['no policy', JSON.stringify({ schemaVersion: 1 }), '"policy" object'],
-  ['array policy', JSON.stringify({ schemaVersion: 1, policy: [] }), '"policy" object'],
+  ['wrong schema', JSON.stringify({ schemaVersion: 1, policy: {} }), 'schemaVersion 2'],
+  ['no policy', JSON.stringify({ schemaVersion: 2 }), '"policy" object'],
+  ['array policy', JSON.stringify({ schemaVersion: 2, policy: [] }), '"policy" object'],
 ])('rejects an unusable baseline instead of skipping verification (%s)', async (...cases) => {
   const [, content, reason] = cases;
   if (content !== null) {

@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "policy": {
     "run": {
       "failOnFlakyTests": false,
@@ -11,6 +11,18 @@
       "maxFailures": 0,
       "shard": null,
       "workers": 1
+    },
+    "selection": {
+      "grep": null,
+      "grepInvert": null,
+      "projects": [],
+      "testFilters": [],
+      "lastFailed": false,
+      "lastFailedFile": null,
+      "onlyChanged": null,
+      "testList": null,
+      "testListInvert": null,
+      "noDeps": false
     },
     "projects": {
       "primary": {

@@ -3,11 +3,13 @@ import { isAbsolute, relative, sep } from 'node:path';
 import type { FullConfig, FullProject, Suite } from '@playwright/test/reporter';
 
 import type { BlackboxFixturePolicy } from '../../fixture-lifecycle/timeouts.js';
+import { cliSelection, type CliSelection } from './cli-selection.js';
 
 /** defineConfig copies expect.timeout here because FullProject does not expose it. */
 export const expectTimeoutsMetadataKey = 'blackboxExpectTimeouts';
 
-export const policySchemaVersion = 1;
+/** 2 added `selection`, the CLI test selection. */
+export const policySchemaVersion = 2;
 
 type Pattern = string | RegExp | readonly (string | RegExp)[] | null;
 type PatternValue = string | readonly string[] | null;
@@ -45,6 +47,8 @@ export interface TestPolicy {
 /** Everything compared against the protected baseline. */
 export interface EffectivePolicy {
   readonly run: RunPolicy;
+  /** CLI test selection; FullConfig's grep and projects hold only the config file's values. */
+  readonly selection: CliSelection;
   readonly projects: Readonly<Record<string, ProjectPolicy>>;
   readonly blackbox: BlackboxFixturePolicy;
   /** The selected tests, keyed by project and title path. */
@@ -53,7 +57,7 @@ export interface EffectivePolicy {
 
 export interface PolicyManifest {
   readonly schemaVersion: typeof policySchemaVersion;
-  /** Recorded and printed, never compared: it holds machine paths, and its effect is in `policy`. */
+  /** Recorded and printed, never compared: it holds machine paths; its selection flags are in `policy.selection`. */
   readonly argv: readonly string[];
   readonly policy: EffectivePolicy;
 }
@@ -164,11 +168,13 @@ export function capturePolicy(
   fixturePolicy: BlackboxFixturePolicy,
   configDir: string,
 ): PolicyManifest {
+  const argv = argvOf(config);
   return {
     schemaVersion: policySchemaVersion,
-    argv: argvOf(config),
+    argv,
     policy: {
       run: runPolicy(config),
+      selection: cliSelection(argv),
       projects: projectPolicies(config, configDir),
       blackbox: { sandboxCleanupTimeoutMs: fixturePolicy.sandboxCleanupTimeoutMs },
       tests: testPolicies(suite),

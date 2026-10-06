@@ -214,6 +214,10 @@ and test declarations such as `test.describe.configure`:
 
 - run settings: `failOnFlakyTests`, `forbidOnly`, `fullyParallel`,
   `globalTimeout`, `grep`/`grepInvert`, `maxFailures`, `shard`, `workers`;
+- the command-line test selection, which the config's `grep` does not show:
+  `--grep`, `--grep-invert`, `--project`, file filters, `--last-failed`,
+  `--last-failed-file`, `--only-changed`, `--test-list`, `--test-list-invert`
+  and `--no-deps`, so a filter that still selects every test is surfaced too;
 - per project: `retries`, `timeout`, expect timeout, `repeatEach`,
   `grep`/`grepInvert`, `testDir` (relative to the config directory), `testMatch`,
   `testIgnore`;
@@ -243,6 +247,6 @@ prints one line per difference and fails the run, even when every test passed.
 `playwright test --list` performs the same check without running tests. To
 accept a change, copy the written manifest's `schemaVersion` and `policy` over
 the baseline in a reviewed change; `argv` is printed and written but never
-compared, because it holds machine paths and its effect is already in the
-policy. Protect the baseline like test code, for example with CODEOWNERS.
+compared, because it holds machine paths; its selection flags are compared
+through `selection`. Protect the baseline like test code, for example with CODEOWNERS.
 Sharded CI jobs select different tests, so give each shard its own baseline.

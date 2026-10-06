@@ -96,7 +96,10 @@ const driftCases = [
     variant: 'baseline',
     args: ['--project=primary'],
     stillSelected: tests('primary'),
-    differences: tests('secondary').map(unselected),
+    differences: [
+      'policy.selection.projects: baseline [], effective ["primary"]',
+      ...tests('secondary').map(unselected),
+    ],
   },
   {
     change: 'config grep',
@@ -113,7 +116,34 @@ const driftCases = [
     variant: 'baseline',
     args: ['--grep=alpha'],
     stillSelected: [tests('primary')[0], tests('secondary')[0]],
-    differences: [unselected(tests('primary')[1]), unselected(tests('secondary')[1])],
+    differences: [
+      'policy.selection.grep: baseline null, effective "alpha"',
+      unselected(tests('primary')[1]),
+      unselected(tests('secondary')[1]),
+    ],
+  },
+  {
+    // F17: a CLI grep that still selects every test changes no test entry, so only the
+    // recorded selection can surface it.
+    change: '--grep that selects every test',
+    variant: 'baseline',
+    args: ['-g', '.'],
+    stillSelected: [...tests('primary'), ...tests('secondary')],
+    differences: ['policy.selection.grep: baseline null, effective "."'],
+  },
+  {
+    change: '--grep-invert that excludes no test',
+    variant: 'baseline',
+    args: ['--grep-invert', 'no such test'],
+    stillSelected: [...tests('primary'), ...tests('secondary')],
+    differences: ['policy.selection.grepInvert: baseline null, effective "no such test"'],
+  },
+  {
+    change: 'a file filter that selects every test',
+    variant: 'baseline',
+    args: ['policy.spec.ts'],
+    stillSelected: [...tests('primary'), ...tests('secondary')],
+    differences: ['policy.selection.testFilters: baseline [], effective ["policy.spec.ts"]'],
   },
   {
     // FullConfig.rootDir follows testDir, so testDir is recorded from the config directory.
@@ -156,6 +186,9 @@ it(
     expect(run.stderr).toContain('Blackbox runner policy');
     expect(run.stderr).toContain('project "primary": retries=1 timeout=30000 expectTimeout=5000');
     expect(run.stderr).toContain('tests: 4 selected; retries 1×4; timeout 30000×4');
+    expect(run.stderr).toContain(
+      'selection: grep=null grepInvert=null projects=[] testFilters=[] lastFailed=false',
+    );
     expect(run.stderr).toContain('baseline: ./baseline.json (matches)');
     expect(run.stderr).not.toContain('verification failed');
     // stdout stays the native reporters' own output.
