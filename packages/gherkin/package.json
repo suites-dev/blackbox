@@ -24,6 +24,12 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "default": "./dist/index.js"
+    },
+    "./config": {
+      "blackbox-source": "./src/config/define.ts",
+      "types": "./dist/config/define.d.ts",
+      "import": "./dist/config/define.js",
+      "default": "./dist/config/define.js"
     }
   },
   "scripts": {

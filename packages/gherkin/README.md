@@ -59,32 +59,45 @@ vocabulary (dependency-cruiser rule `gherkin-registry-is-library-only`).
 `blackbox.feature.yaml` is the project's protected spec file. Its paths are relative to its directory,
 and it refuses any key it does not document:
 
-```yaml
-schemaVersion: 1
-blackboxConfigFile: blackbox.config.yaml
-features:
-  - features/**/*.feature
-outputDir: .features-gen
-sandboxes:
-  default:
-    environment:
-      FIXTURE_CONTROL_TOKEN: { fromEnv: BLACKBOX_E2E_FIXTURE_TOKEN }
-    credentials:
-      fixture-control: { scheme: bearer, fromEnv: BLACKBOX_E2E_FIXTURE_TOKEN }
-changes:
-  spec: []
-  neutral:
-    - "**/*.md"
+```json
+{
+  "schemaVersion": 1,
+  "blackboxConfigFile": "blackbox.config.yaml",
+  "features": ["features/**/*.feature"],
+  "outputDir": ".features-gen",
+  "runManifest": "test-results/blackbox-run.json",
+  "policy": { "baseline": "blackbox.policy.json", "outputFile": "test-results/blackbox-policy.json" },
+  "sandboxes": {
+    "default": {
+      "environment": { "FIXTURE_CONTROL_TOKEN": { "fromEnv": "BLACKBOX_E2E_FIXTURE_TOKEN" } },
+      "credentials": { "fixture-control": { "scheme": "bearer", "fromEnv": "BLACKBOX_E2E_FIXTURE_TOKEN" } }
+    }
+  },
+  "changes": { "spec": [], "neutral": ["**/*.md"] }
+}
 ```
 
-The generated tests are native Playwright tests: run them with `playwright test` from a config whose `testDir` is `outputDir`, built with
-`defineConfig` from `@suites/blackbox-playwright/config`. Playwright's own verdicts decide the run.
+`defineGherkinConfig` from
+`@suites/blackbox-gherkin/config` builds the Playwright config from this file. It runs only the generated
+tests, sets `failOnFlakyTests` and `forbidOnly`, and adds the Blackbox reporter with strict verdicts, the
+run manifest and the policy baseline. It throws when the caller sets any of these itself:
+
+```ts
+import { defineGherkinConfig } from '@suites/blackbox-gherkin/config';
+
+export default defineGherkinConfig({
+  gherkinConfigFile: new URL('./blackbox.feature.yaml', import.meta.url),
+  workers: 1,
+  timeout: 180_000,
+});
+```
 
 | Command | What it does |
 | --- | --- |
 | `blackbox feature compile` | Compiles the accepted features into generated tests and `compile-manifest.json`. Prints each scenario with its requirement IDs and barrier deadlines. |
 | `blackbox feature check` | Fails on project step files, imports of Cucumber, playwright-bdd or the generated-code runtime, patches or forks of the step library or its runtime, and tracked generated tests. A local tarball (`file:….tgz`) passes only when it is a pack of that package at this release, as the unpublished alpha is installed. |
-| `blackbox feature check-change --base <ref>` | Fails when one change touches spec paths (features, this file, the step-library dependency and its patches) and code paths. |
+| `blackbox feature check-change --base <ref>` | Fails when one change touches spec paths (features, this file, the policy baseline, the step-library dependency and its patches) and code paths. |
+| `blackbox feature verify` | Run after the tests. Fails on a missing run manifest, a compiled scenario that did not run or ran twice, a test that was not compiled, any verdict other than supported, requirement IDs that differ between the manifests, runner-policy drift, and features, generated tests or a step library that differ from the compile manifest. It computes no requirement coverage. |
 | `blackbox feature steps` | Lists the step library with an example sentence per step. |
 
 Every command takes `--config <path>` (default `blackbox.feature.yaml`) and exits 1 when its check fails,

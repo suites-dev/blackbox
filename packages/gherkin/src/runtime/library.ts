@@ -1,6 +1,6 @@
 import type { Capability, StepDefinition, StepKind, StepResolution } from './step-types.js';
 
-// The closed library as the compiler and the CLI see it. Step bodies
+// The closed library as the compiler, verify and the CLI see it. Step bodies
 // and their fixtures stay in step-types.ts, which only the runtime and the
 // library itself need.
 

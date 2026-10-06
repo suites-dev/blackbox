@@ -5,7 +5,7 @@ import { configFlag, EXIT, projectAt } from '../../project.js';
 
 export default class FeatureCheckChange extends Command {
   static override description =
-    'Fail when one change alters both spec paths (features, project file, step library) and code paths.';
+    'Fail when one change alters both spec paths (features, project file, policy baseline, step library) and code paths.';
 
   static override flags = {
     config: configFlag,

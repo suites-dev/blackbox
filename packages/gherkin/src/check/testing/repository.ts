@@ -15,6 +15,8 @@ export const PROJECT_FILE = {
   blackboxConfigFile: 'blackbox.config.yaml',
   features: ['features/**/*.feature'],
   outputDir: '.features-gen',
+  runManifest: 'results/blackbox-run.json',
+  policy: { baseline: 'blackbox.policy.json', outputFile: 'results/blackbox-policy.json' },
   sandboxes: { default: {} },
   changes: { neutral: ['**/*.md'] },
 };
@@ -49,6 +51,7 @@ export async function repository(files: Readonly<Record<string, string>> = {}): 
   };
   await write({
     'app/blackbox.feature.yaml': stringify(PROJECT_FILE),
+    'app/blackbox.policy.json': '{"schemaVersion": 1, "policy": {}}\n',
     'app/features/intake.feature': 'Feature: intake\n',
     'app/src/server.ts': 'export {};\n',
     'app/README.md': '# app\n',

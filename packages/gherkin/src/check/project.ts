@@ -9,7 +9,7 @@ import { packageProblems } from './packages.js';
 // `blackbox feature check`: static checks for hard rule 3 (step definitions
 // come only from the shared library) and for generated output that must never
 // be committed. It detects the known mechanisms; it cannot prove that no other
-// test code exists.
+// test code exists, and it does not replace the run-time checks of `verify`.
 
 const STEP_FILE = /(?:^|\/)(?:[^/]*\.steps\.[^/]+|step_definitions\/.*)$/u;
 const SOURCE_FILE = /\.(?:[cm]?[jt]s|[jt]sx)$/u;
@@ -24,8 +24,8 @@ function forbiddenImport(specifier: string): string | null {
   if (specifier === '@cucumber/cucumber' || specifier.startsWith('@cucumber/cucumber/')) {
     return 'Cucumber step definitions are not the shared library';
   }
-  if (specifier === '@suites/blackbox-gherkin' || specifier.startsWith('@suites/blackbox-gherkin/')) {
-    return 'only generated tests import the Gherkin runtime';
+  if (specifier === '@suites/blackbox-gherkin' || (specifier.startsWith('@suites/blackbox-gherkin/') && specifier !== '@suites/blackbox-gherkin/config')) {
+    return 'only generated tests import the Gherkin runtime; projects use @suites/blackbox-gherkin/config';
   }
   return null;
 }

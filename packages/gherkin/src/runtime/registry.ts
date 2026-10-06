@@ -51,7 +51,7 @@ export function stepDefinitions(definitions: readonly StepDefinition[]): readonl
  * Identifies the library by its definitions in any order: each one's
  * expression, kind, argument, fixtures, capability, parameter roles, body
  * source and compile-time check source. A body that differs from the compiled
- * one changes the hash the compile manifest records.
+ * one changes the hash, so verify reports it.
  */
 function vocabularyHash(definitions: readonly StepDefinition[]): string {
   const vocabulary = definitions

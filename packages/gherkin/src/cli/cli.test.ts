@@ -12,10 +12,11 @@ import FeatureCheck from './commands/feature/check.js';
 import FeatureCheckChange from './commands/feature/check-change.js';
 import FeatureCompile from './commands/feature/compile.js';
 import FeatureSteps from './commands/feature/steps.js';
+import FeatureVerify from './commands/feature/verify.js';
 import { COMMANDS } from './command-registry.js';
 
 // Requirements (task 2.4): the `blackbox feature` topic offers compile, check,
-// check-change and steps. Each command reads blackbox.feature.yaml,
+// check-change, verify and steps. Each command reads blackbox.feature.yaml,
 // exits 0 when its check passes, 1 when it fails and 2 when the project file
 // is missing or invalid. compile uses the shared library and the project's
 // catalog, and prints requirement IDs and barrier deadlines.
@@ -56,6 +57,8 @@ const PROJECT = {
   blackboxConfigFile: 'blackbox.config.yaml',
   features: ['features/**/*.feature'],
   outputDir: '.features-gen',
+  runManifest: 'results/blackbox-run.json',
+  policy: { baseline: 'blackbox.policy.json', outputFile: 'results/blackbox-policy.json' },
   sandboxes: { default: { credentials: { 'fixture-control': { scheme: 'bearer', fromEnv: 'FIXTURE_TOKEN' } } } },
 };
 
@@ -86,7 +89,12 @@ function oclifExit(error: unknown): number {
   return typeof oclif === 'object' && oclif !== null && 'exit' in oclif && typeof oclif.exit === 'number' ? oclif.exit : -1;
 }
 
-type FeatureCommand = typeof FeatureCheck | typeof FeatureCheckChange | typeof FeatureCompile | typeof FeatureSteps;
+type FeatureCommand =
+  | typeof FeatureCheck
+  | typeof FeatureCheckChange
+  | typeof FeatureCompile
+  | typeof FeatureSteps
+  | typeof FeatureVerify;
 
 async function runCommand(command: FeatureCommand, argv: readonly string[]): Promise<CommandRun> {
   let stdout = '';
@@ -149,7 +157,18 @@ describe('blackbox feature compile', () => {
   });
 });
 
-describe('blackbox feature check and project errors', () => {
+describe('blackbox feature verify, check and project errors', () => {
+  it('verify fails before anything ran, as text and as JSON', async () => {
+    await runCommand(FeatureCompile, ['--config', config]);
+    const text = await runCommand(FeatureVerify, ['--config', config]);
+    expect(text.exit).toBe(1);
+    expect(text.stdout).toContain(`error: no run manifest at ${join(root, 'results/blackbox-run.json')}`);
+    expect(text.stdout).toContain('verify: failed; 0 of 0 compiled scenarios supported, 2 other problem(s)');
+    const json = await runCommand(FeatureVerify, ['--config', config, '--json']);
+    expect(json.exit).toBe(1);
+    expect(JSON.parse(json.stdout)).toMatchObject({ ok: false, scenarios: [] });
+  });
+
   it('check reports a project step file', async () => {
     await writeFile(join(root, 'features/login.steps.ts'), 'export {};\n');
     const run = await runCommand(FeatureCheck, ['--config', config]);
@@ -158,7 +177,7 @@ describe('blackbox feature check and project errors', () => {
   });
 
   it('exits 2 when the project file is missing or invalid', async () => {
-    const missing = await runCommand(FeatureCheck, ['--config', join(root, 'nowhere.json')]);
+    const missing = await runCommand(FeatureVerify, ['--config', join(root, 'nowhere.json')]);
     expect(missing).toMatchObject({ exit: 2 });
     expect(missing.stderr).toContain(`no blackbox.feature.yaml at ${join(root, 'nowhere.json')}`);
     await writeFile(config, stringify({ ...PROJECT, retries: 3 }));
@@ -184,7 +203,7 @@ describe('blackbox feature check-change and steps', () => {
     expect(mixed.stdout).toContain('error: this change mixes spec and code.');
   });
 
-  it('steps lists every library step with an example, and registers all four commands', async () => {
+  it('steps lists every library step with an example, and registers all five commands', async () => {
     const run = await runCommand(FeatureSteps, []);
     expect(run.exit).toBe(0);
     expect(run.stdout).toContain('Stimulus (When):\n  the client sends GET {string}\n    When the client sends GET "/health"');
@@ -199,6 +218,7 @@ describe('blackbox feature check-change and steps', () => {
       'feature:check-change',
       'feature:compile',
       'feature:steps',
+      'feature:verify',
     ]);
   });
 });

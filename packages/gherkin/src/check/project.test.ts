@@ -36,9 +36,9 @@ async function pack(directory: string, name: string, version = RELEASE): Promise
 }
 
 describe('check passes', () => {
-  it('a project whose generated output is untracked and whose own code does not import the runtime', async () => {
+  it('a project whose generated output is untracked and which uses only the config entry point', async () => {
     const repo = await repository({
-      'app/playwright.config.ts': "import { defineConfig } from '@suites/blackbox-playwright/config';\n",
+      'app/playwright.config.ts': "import { defineGherkinConfig } from '@suites/blackbox-gherkin/config';\n",
       'app/.features-gen/.gitignore': '*\n',
       'app/.features-gen/features/intake.feature.spec.mjs': "import { runStep } from '@suites/blackbox-gherkin';\n",
       'app/package.json': JSON.stringify({ devDependencies: { '@suites/blackbox-gherkin': 'workspace:*' } }),
@@ -66,8 +66,8 @@ describe('check fails', () => {
       'support/login.steps.ts: a project step file; steps come only from the shared Blackbox step library',
       'tests/custom.ts: imports "@cucumber/cucumber"; Cucumber step definitions are not the shared library',
       'tests/custom.ts: imports "playwright-bdd"; playwright-bdd defines its own steps',
-      'tests/custom.ts: imports "@suites/blackbox-gherkin"; only generated tests import the Gherkin runtime',
-      'tests/custom.ts: imports "@suites/blackbox-gherkin/dist/runtime/registry.js"; only generated tests import the Gherkin runtime',
+      'tests/custom.ts: imports "@suites/blackbox-gherkin"; only generated tests import the Gherkin runtime; projects use @suites/blackbox-gherkin/config',
+      'tests/custom.ts: imports "@suites/blackbox-gherkin/dist/runtime/registry.js"; only generated tests import the Gherkin runtime; projects use @suites/blackbox-gherkin/config',
     ]);
   });
 

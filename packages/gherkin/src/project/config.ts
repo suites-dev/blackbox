@@ -8,7 +8,7 @@ import type { CredentialSource } from '../runtime/credentials.js';
 import type { EnvironmentSource } from '../runtime/environment.js';
 import { ConfigReader, isObject, type JsonObject } from './reader.js';
 
-/** The protected project file every `blackbox feature` command reads. */
+/** The protected project file every `blackbox feature` command and defineGherkinConfig read. */
 export const GHERKIN_CONFIG_FILE = 'blackbox.feature.yaml';
 
 /**
@@ -24,6 +24,14 @@ export interface GherkinProject {
   readonly features: readonly string[];
   /** Git-ignored directory for generated tests and the compile manifest. */
   readonly outputDir: string;
+  /** Where the Blackbox reporter writes the run manifest that `verify` reads. */
+  readonly runManifest: string;
+  readonly policy: {
+    /** The protected runner-policy baseline. */
+    readonly baseline: string;
+    /** Where the reporter writes the effective runner policy that `verify` compares. */
+    readonly outputFile: string;
+  };
   readonly sandboxProfiles: Readonly<Record<string, SandboxProfile>>;
   /** Extra path classes for `check-change`, as globs relative to the root. */
   readonly changes: { readonly spec: readonly string[]; readonly neutral: readonly string[] };
@@ -44,6 +52,8 @@ const KEYS = [
   'blackboxConfigFile',
   'features',
   'outputDir',
+  'runManifest',
+  'policy',
   'sandboxes',
   'changes',
 ] as const;
@@ -112,6 +122,7 @@ function read(reader: ConfigReader, document: JsonObject, configFile: string): G
   if (output !== '' && !insideRoot(root, outputDir)) {
     reader.report('outputDir', 'must be a directory inside the project directory');
   }
+  const policy = reader.object(document.policy, 'policy', ['baseline', 'outputFile']);
   const changes = document.changes === undefined ? {} : reader.object(document.changes, 'changes', ['spec', 'neutral']);
   return {
     root,
@@ -119,6 +130,11 @@ function read(reader: ConfigReader, document: JsonObject, configFile: string): G
     blackboxConfigFile: at(reader.relativePath(document.blackboxConfigFile, 'blackboxConfigFile')),
     features: reader.globs(document.features, 'features', true),
     outputDir,
+    runManifest: at(reader.relativePath(document.runManifest, 'runManifest')),
+    policy: {
+      baseline: at(reader.relativePath(policy === null ? '' : policy.baseline, 'policy.baseline')),
+      outputFile: at(reader.relativePath(policy === null ? '' : policy.outputFile, 'policy.outputFile')),
+    },
     sandboxProfiles: profilesOf(reader, document.sandboxes),
     changes: {
       spec: reader.globs(changes === null ? undefined : changes.spec, 'changes.spec', false),

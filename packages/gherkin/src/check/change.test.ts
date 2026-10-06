@@ -6,8 +6,8 @@ import { cleanupRepositories, repository, type Repository } from './testing/repo
 
 // Requirements (task 2.4, report section 4.2): `check-change --base <ref>` is
 // hard rule 2 for a project. A change may touch spec paths (accepted features,
-// blackbox.feature.yaml, the step-library dependency entry and its
-// patches) or code paths, never both. Neutral paths
+// blackbox.feature.yaml, the policy baseline, the step-library
+// dependency entry and its patches) or code paths, never both. Neutral paths
 // ride along with either side. The project lives in app/, so the classes are
 // resolved against the repository root.
 
@@ -26,17 +26,19 @@ async function classify(change: (repo: Repository) => Promise<void>) {
 const paths = (entries: readonly { readonly path: string }[]) => entries.map((entry) => entry.path);
 
 describe('check-change passes', () => {
-  it('a spec-only change: a feature and the project file, with a neutral note', async () => {
+  it('a spec-only change: a feature, the project file and the baseline, with a neutral note', async () => {
     const check = await classify((repo) =>
       repo.write({
         'app/features/intake.feature': 'Feature: intake, revised\n',
         'app/blackbox.feature.yaml': '{}\n',
+        'app/blackbox.policy.json': '{"schemaVersion": 1, "policy": {"run": {}}}\n',
         'app/README.md': '# app, revised\n',
       }),
     );
     expect(check.problem).toBeNull();
     expect(paths(check.classification.spec)).toEqual([
       'app/blackbox.feature.yaml',
+      'app/blackbox.policy.json',
       'app/features/intake.feature',
     ]);
     expect(paths(check.classification.neutral)).toEqual(['app/README.md']);
@@ -65,7 +67,11 @@ describe('check-change fails', () => {
     expect(renderChangeCheck(check)).toContain('error: this change mixes spec and code.');
   });
 
-  it('on a library bump together with another dependency', async () => {
+  it('on the policy baseline accepted together with code, and on a library bump with another dependency', async () => {
+    const baseline = await classify((repo) =>
+      repo.write({ 'app/blackbox.policy.json': '{"retries": 2}\n', 'app/playwright.config.ts': 'export default {};\n' }),
+    );
+    expect(baseline.problem).toContain('Spec: app/blackbox.policy.json. Code: app/playwright.config.ts.');
     const both = await classify((repo) =>
       repo.write({ 'app/package.json': JSON.stringify({ name: 'app', devDependencies: { '@suites/blackbox-gherkin': '0.0.2', vitest: '2.0.0' } }) }),
     );

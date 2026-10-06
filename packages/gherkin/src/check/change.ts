@@ -8,8 +8,8 @@ import { git, gitTopLevel } from './git.js';
 // `blackbox feature check-change --base <ref>`: hard rule 2 for a project. A
 // change may alter the accepted expectations (spec) or the code they judge,
 // never both. Spec is the project's features, blackbox.feature.yaml,
-// extra `changes.spec` globs, and the step-library dependency entries and
-// patches.
+// the runner-policy baseline, extra `changes.spec` globs, and the step-library
+// dependency entries and patches.
 
 export interface ChangeCheck {
   readonly mergeBase: string;
@@ -29,6 +29,7 @@ export function projectClasses(project: GherkinProject, repositoryRoot: string):
     spec: [
       ...[...project.features, ...project.changes.spec].map(inRepository),
       file(project.configFile),
+      file(project.policy.baseline),
       // pnpm and patch-package patches of the step library.
       '**/patches/@suites__blackbox-gherkin@*.patch',
       '**/patches/@suites+blackbox-gherkin+*.patch',
