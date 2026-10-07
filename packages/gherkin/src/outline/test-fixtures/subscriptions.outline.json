@@ -1,0 +1,294 @@
+{
+  "line": 3,
+  "column": 1,
+  "file": "features/subscriptions.feature",
+  "title": "subscriptions",
+  "tags": [
+    "@system:subscription-system",
+    "@sandbox:default",
+    "@requirement:REQ-1"
+  ],
+  "background": {
+    "line": 5,
+    "column": 3,
+    "steps": [
+      {
+        "line": 6,
+        "column": 5,
+        "keyword": "Given",
+        "text": "the account \"alice\" exists",
+        "sentence": "the account {string} exists",
+        "values": [
+          "alice"
+        ],
+        "argument": {
+          "kind": "none"
+        }
+      }
+    ]
+  },
+  "scenarios": [
+    {
+      "line": 8,
+      "column": 3,
+      "title": "a health probe answers",
+      "tags": [],
+      "example": null,
+      "steps": [
+        {
+          "line": 9,
+          "column": 5,
+          "keyword": "When",
+          "text": "the client sends GET \"/health\"",
+          "sentence": "the client sends {word} {string}",
+          "values": [
+            "GET",
+            "/health"
+          ],
+          "argument": {
+            "kind": "none"
+          }
+        },
+        {
+          "line": 10,
+          "column": 5,
+          "keyword": "Then",
+          "text": "the response status is 200",
+          "sentence": "the response status is {int}",
+          "values": [
+            "200"
+          ],
+          "argument": {
+            "kind": "none"
+          }
+        }
+      ]
+    }
+  ],
+  "rules": [
+    {
+      "line": 12,
+      "column": 3,
+      "title": "a repeated subscription is a conflict",
+      "tags": [],
+      "background": {
+        "line": 14,
+        "column": 5,
+        "steps": [
+          {
+            "line": 15,
+            "column": 7,
+            "keyword": "Given",
+            "text": "the client sends POST \"/subscriptions\" with JSON:",
+            "sentence": "the client sends {word} {string} with JSON:",
+            "values": [
+              "POST",
+              "/subscriptions"
+            ],
+            "argument": {
+              "kind": "doc-string",
+              "content": "{\"userId\": \"alice\"}",
+              "mediaType": "json"
+            }
+          }
+        ]
+      },
+      "scenarios": [
+        {
+          "line": 21,
+          "column": 5,
+          "title": "POST again answers 409",
+          "tags": [
+            "@requirement:REQ-2",
+            "@requirement:REQ-3"
+          ],
+          "example": {
+            "line": 29,
+            "column": 9,
+            "values": [
+              {
+                "name": "method",
+                "value": "POST"
+              },
+              {
+                "name": "status",
+                "value": "409"
+              }
+            ]
+          },
+          "steps": [
+            {
+              "line": 22,
+              "column": 7,
+              "keyword": "When",
+              "text": "the client sends POST \"/subscriptions\"",
+              "sentence": "the client sends {word} {string}",
+              "values": [
+                "POST",
+                "/subscriptions"
+              ],
+              "argument": {
+                "kind": "none"
+              }
+            },
+            {
+              "line": 23,
+              "column": 7,
+              "keyword": "Then",
+              "text": "the response status is 409",
+              "sentence": "the response status is {int}",
+              "values": [
+                "409"
+              ],
+              "argument": {
+                "kind": "none"
+              }
+            },
+            {
+              "line": 24,
+              "column": 7,
+              "keyword": "And",
+              "text": "the subscription is billed once",
+              "sentence": null,
+              "values": [],
+              "argument": {
+                "kind": "none"
+              }
+            }
+          ]
+        },
+        {
+          "line": 21,
+          "column": 5,
+          "title": "PUT again answers 405",
+          "tags": [
+            "@requirement:REQ-2",
+            "@requirement:REQ-3"
+          ],
+          "example": {
+            "line": 30,
+            "column": 9,
+            "values": [
+              {
+                "name": "method",
+                "value": "PUT"
+              },
+              {
+                "name": "status",
+                "value": "405"
+              }
+            ]
+          },
+          "steps": [
+            {
+              "line": 22,
+              "column": 7,
+              "keyword": "When",
+              "text": "the client sends PUT \"/subscriptions\"",
+              "sentence": "the client sends {word} {string}",
+              "values": [
+                "PUT",
+                "/subscriptions"
+              ],
+              "argument": {
+                "kind": "none"
+              }
+            },
+            {
+              "line": 23,
+              "column": 7,
+              "keyword": "Then",
+              "text": "the response status is 405",
+              "sentence": "the response status is {int}",
+              "values": [
+                "405"
+              ],
+              "argument": {
+                "kind": "none"
+              }
+            },
+            {
+              "line": 24,
+              "column": 7,
+              "keyword": "And",
+              "text": "the subscription is billed once",
+              "sentence": null,
+              "values": [],
+              "argument": {
+                "kind": "none"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "line": 32,
+      "column": 3,
+      "title": "concurrent requests",
+      "tags": [],
+      "background": null,
+      "scenarios": [
+        {
+          "line": 34,
+          "column": 5,
+          "title": "two requests at once",
+          "tags": [],
+          "example": null,
+          "steps": [
+            {
+              "line": 35,
+              "column": 7,
+              "keyword": "When",
+              "text": "the client sends these requests concurrently:",
+              "sentence": "the client sends these requests concurrently:",
+              "values": [],
+              "argument": {
+                "kind": "data-table",
+                "rows": [
+                  [
+                    "method",
+                    "path"
+                  ],
+                  [
+                    "POST",
+                    "/subscriptions"
+                  ],
+                  [
+                    "POST",
+                    "/subscriptions"
+                  ]
+                ]
+              }
+            },
+            {
+              "line": 39,
+              "column": 7,
+              "keyword": "Then",
+              "text": "the flow is sealed by the terminal responses",
+              "sentence": "the flow is sealed by the terminal response(s)",
+              "values": [],
+              "argument": {
+                "kind": "none"
+              }
+            },
+            {
+              "line": 40,
+              "column": 7,
+              "keyword": "*",
+              "text": "the response has 2 items at /subscriptions",
+              "sentence": "the response has {int} item(s) at {pointer}",
+              "values": [
+                "2",
+                "/subscriptions"
+              ],
+              "argument": {
+                "kind": "none"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
