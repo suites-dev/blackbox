@@ -1,0 +1,40 @@
+import { createRequire } from 'node:module';
+
+import { OFFERED_CAPABILITIES } from '../step-runtime/capabilities.js';
+import { createStepLibrary } from '../step-runtime/registry.js';
+import { barrierSteps } from './steps/barrier.js';
+import { gatedSteps } from './steps/gated.js';
+import { responseSteps } from './steps/response.js';
+import { setupSteps } from './steps/setup.js';
+import { stateSteps } from './steps/state.js';
+import { stimulusSteps } from './steps/stimulus.js';
+
+// src/library and dist/library sit at the same depth below the package root.
+const manifest = createRequire(import.meta.url)('../../package.json') as {
+  readonly name: string;
+  readonly version: string;
+};
+
+/**
+ * The shared, reviewed step vocabulary (hard rule 3). It is closed: projects
+ * cannot add steps, and the compiler resolves every feature step against it.
+ * v1 covers setup, stimulus, completion barriers, and response and state
+ * claims. Effects claims and participant commands are not part of v1: they
+ * are listed with the capability they need, which this runtime does not
+ * offer, so a feature that uses them does not compile and says why.
+ */
+const definitions = [
+  ...setupSteps,
+  ...stimulusSteps,
+  ...barrierSteps,
+  ...responseSteps,
+  ...stateSteps,
+  ...gatedSteps,
+];
+
+export const library = createStepLibrary({
+  name: manifest.name,
+  version: manifest.version,
+  definitions,
+  capabilities: OFFERED_CAPABILITIES,
+});

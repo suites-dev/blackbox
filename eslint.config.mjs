@@ -228,6 +228,53 @@ const RESTRICTED_SYNTAX = [
   },
 ];
 
+// The shared step library (packages/playwright/src/library) decides claims,
+// so it is held to hard rules 4 and 5 of the step library design: a step may
+// not swallow a failed claim (catch, expect.soft, settled promises) and may
+// not change runner policy (timeouts, retries, slow, configure, fixed waits).
+// A polling barrier's only deadline is the one the reviewed feature states, so
+// a literal `timeout` value is refused as well. Tests and the test-only
+// testing/ helpers are exempt: they judge the steps, they are not steps.
+const STEP_LIBRARY_FILES = ['packages/playwright/src/library/**/*.ts'];
+const STEP_LIBRARY_EXEMPT = ['**/*.test.ts', '**/testing/**'];
+const SWALLOWS =
+  'A library step may not swallow a failure: a failed claim must fail the step (step library hard rule 4).';
+const POLICY =
+  'A library step may not change runner policy or wait on a timer (step library hard rule 5).';
+
+const STEP_LIBRARY_PROPERTIES = [
+  ['soft', `expect.soft: ${SWALLOWS}`],
+  ['catch', `.catch(): ${SWALLOWS}`],
+  ['allSettled', `Promise.allSettled: ${SWALLOWS}`],
+  ['setTimeout', `test.setTimeout: ${POLICY}`],
+  ['slow', `test.slow: ${POLICY}`],
+  ['configure', `describe.configure / expect.configure: ${POLICY}`],
+  ['waitForTimeout', `waitForTimeout: ${POLICY}`],
+  ['toPass', `toPass retries a block: ${POLICY} Use a polling barrier step.`],
+].map(([property, message]) => ({ property, message }));
+
+const STEP_LIBRARY_GLOBALS = ['setTimeout', 'setInterval', 'setImmediate'].map((name) => ({
+  name,
+  message: `${name}: ${POLICY}`,
+}));
+
+const STEP_LIBRARY_SYNTAX = [
+  { selector: 'CatchClause', message: `catch: ${SWALLOWS}` },
+  {
+    selector: 'CallExpression[callee.property.name="then"][arguments.length>1]',
+    message: `.then(onFulfilled, onRejected): ${SWALLOWS}`,
+  },
+  {
+    selector:
+      'Property:matches([key.name="timeout"], [key.value="timeout"])[value.type="Literal"]',
+    message: `A literal timeout: ${POLICY} Only a deadline written in the feature may bound a barrier.`,
+  },
+  {
+    selector: 'ImportDeclaration[source.value=/^(node:)?timers/]',
+    message: `Timers: ${POLICY}`,
+  },
+];
+
 /** @type {import('eslint').Linter.Config[]} */
 export default [
   { ignores: IGNORE_PATTERNS },
@@ -439,6 +486,17 @@ export default [
       '@typescript-eslint/no-unsafe-return': 'off',
       'no-console': 'off',
       'import-x/no-extraneous-dependencies': 'off',
+    },
+  },
+
+  // The shared step library: see STEP_LIBRARY_FILES above.
+  {
+    files: STEP_LIBRARY_FILES,
+    ignores: STEP_LIBRARY_EXEMPT,
+    rules: {
+      'no-restricted-properties': ['error', ...STEP_LIBRARY_PROPERTIES],
+      'no-restricted-globals': ['error', ...STEP_LIBRARY_GLOBALS],
+      'no-restricted-syntax': ['error', ...RESTRICTED_SYNTAX, ...STEP_LIBRARY_SYNTAX],
     },
   },
 

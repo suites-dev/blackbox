@@ -310,6 +310,17 @@ module.exports = {
       to: { path: '^packages/instrumentation-runtime-[^/]+/' },
     },
     {
+      name: 'playwright-registry-is-library-only',
+      severity: 'error',
+      comment:
+        'Step definitions come from one shared, reviewed step library. Only that library may build a vocabulary; everything else receives a finished, closed StepLibrary.',
+      from: {
+        path: inPackage('playwright'),
+        pathNot: '^packages/playwright/src/(library|step-runtime)/',
+      },
+      to: { path: '^packages/playwright/src/step-runtime/registry\\.ts$' },
+    },
+    {
       name: 'command-does-not-import-command',
       severity: 'error',
       comment:
