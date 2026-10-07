@@ -37,7 +37,7 @@ function progress(events: string[]) {
 it('gives every command its own activity and trace, and records it without its arguments', async () => {
   const runs: ParticipantActivityInput[] = [];
   const events: string[] = [];
-  const exec = participantExec(attempt(runs, 0), progress(events));
+  const { exec } = participantExec(attempt(runs, 0), progress(events));
   const first = await exec('ts-auth-service', ['seed', '--password', 'hunter2']);
   const second = await exec('ts-auth-service', ['seed']);
   expect(first).toMatchObject({
@@ -64,7 +64,23 @@ it('gives every command its own activity and trace, and records it without its a
 
 it('records a failed command as a failed activity and still returns its outcome', async () => {
   const events: string[] = [];
-  const result = await participantExec(attempt([], 7), progress(events))('db', ['false']);
+  const result = await participantExec(attempt([], 7), progress(events)).exec('db', ['false']);
   expect(result.exitCode).toBe(7);
   expect(events[1]).toBe(`activity:failed:${result.activityId}; exit 7; root-span-exported`);
+});
+
+it('expires retained exec handles without starting or recording another activity', async () => {
+  const runs: ParticipantActivityInput[] = [];
+  const events: string[] = [];
+  const commands = participantExec(attempt(runs, 0), progress(events));
+  const retainedExec = commands.exec;
+  await retainedExec('db', ['seed']);
+  commands.close();
+  commands.close();
+
+  await expect(retainedExec('db', ['seed'])).rejects.toThrow(
+    'This Blackbox attempt has expired. Activity execution is no longer available.',
+  );
+  expect(runs).toHaveLength(1);
+  expect(events).toHaveLength(2);
 });

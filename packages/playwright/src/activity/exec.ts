@@ -19,8 +19,14 @@ export type ParticipantExec = (
 export function participantExec(
   attempt: RunningBlackboxAttempt,
   progress: AttemptProgress,
-): ParticipantExec {
-  return async (participant, argv) => {
+): { readonly exec: ParticipantExec; readonly close: () => void } {
+  let active = true;
+  const exec: ParticipantExec = async (participant, argv) => {
+    if (!active) {
+      throw new Error(
+        'This Blackbox attempt has expired. Activity execution is no longer available.',
+      );
+    }
     const activityId = randomUUID();
     const trace = createAttemptTraceContext();
     progress.emit(
@@ -55,4 +61,10 @@ export function participantExec(
       throw error;
     }
   };
+  return Object.freeze({
+    exec,
+    close: () => {
+      active = false;
+    },
+  });
 }

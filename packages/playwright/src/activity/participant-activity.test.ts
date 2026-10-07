@@ -81,6 +81,7 @@ it('runs the command in the participant with TRACEPARENT and exports its root sp
     sandbox: sandbox('exits', executions),
     ingestToken: 'ingest-token',
     sessionId: 'session-1',
+    executionId: 'execution-1',
     service: 'ts-auth-service',
     activity,
   });
@@ -88,7 +89,10 @@ it('runs the command in the participant with TRACEPARENT and exports its root sp
     {
       service: 'ts-auth-service',
       argv: activity.argv,
-      environment: { TRACEPARENT: traceparent },
+      environment: {
+        TRACEPARENT: traceparent,
+        OTEL_NODE_RESOURCE_DETECTORS: 'env,host',
+      },
       stdin: 'closed',
     },
   ]);
@@ -100,7 +104,12 @@ it('runs the command in the participant with TRACEPARENT and exports its root sp
   });
   const export_ = posted.at(-1)!;
   expect(export_.headers.authorization).toBe('Bearer ingest-token');
-  const span = JSON.parse(export_.body).resourceSpans[0].scopeSpans[0].spans[0];
+  const resource = JSON.parse(export_.body).resourceSpans[0];
+  expect(resource.resource.attributes).toContainEqual({
+    key: 'blackbox.execution.id',
+    value: { stringValue: 'execution-1' },
+  });
+  const span = resource.scopeSpans[0].spans[0];
   // The exported root span is the parent named by TRACEPARENT, so children join it.
   expect(span).toMatchObject({
     traceId: 'a'.repeat(32),
@@ -122,6 +131,7 @@ it('reports a root span the collector rejected instead of claiming the link', as
       sandbox: sandbox('exits', []),
       ingestToken: 'wrong-token',
       sessionId: 'session-1',
+      executionId: 'execution-1',
       service: 'ts-auth-service',
       activity,
     });
@@ -140,6 +150,7 @@ it('fails when the command cannot start in the participant', async () => {
       sandbox: sandbox('unknown-service', []),
       ingestToken: 'ingest-token',
       sessionId: 'session-1',
+      executionId: 'execution-1',
       service: 'missing-service',
       activity: { ...activity, participant: 'missing' },
     }),
@@ -153,6 +164,7 @@ it('runs a catalog participant in its Compose service and refuses undeclared one
   const { runActivity } = participantActivities({
     sandbox: sandbox('exits', executions),
     sessionId: 'session-1',
+    executionId: 'execution-1',
     authorization: { kind: 'split-bearer-tokens', ingestToken: 'ingest', controlToken: 'control' },
     plan: {
       metadata: {
@@ -165,6 +177,10 @@ it('runs a catalog participant in its Compose service and refuses undeclared one
   });
   await runActivity({ ...activity, participant: 'user' });
   expect(executions.map(({ service }) => service)).toEqual(['ts-user-service']);
+  expect(JSON.parse(posted.at(-1)!.body).resourceSpans[0].resource.attributes).toContainEqual({
+    key: 'blackbox.execution.id',
+    value: { stringValue: 'execution-1' },
+  });
   await expect(runActivity({ ...activity, participant: 'ts-user-service' })).rejects.toThrow(
     'Blackbox participant "ts-user-service" is not declared by the catalog entry; ' +
       'declared: auth, user',

@@ -106,14 +106,19 @@ mkdir -p "$RUN_RESULT_ROOT"
 
 mkdir -p "$CONSUMER_ROOT/.blackbox/catalog" "$CONSUMER_ROOT/.blackbox/drivers"
 mkdir -p "$CONSUMER_ROOT/tests/playwright"
+mkdir -p "$CONSUMER_ROOT/tests/playwright-features"
 mkdir -p "$CONSUMER_ROOT/reporters"
 cp "$E2E_ROOT/blackbox.config.yaml" "$CONSUMER_ROOT/blackbox.config.yaml"
 cp "$E2E_ROOT/.blackbox/catalog/"*.yml "$CONSUMER_ROOT/.blackbox/catalog/"
 cp "$E2E_ROOT/.blackbox/drivers/"*.mjs "$CONSUMER_ROOT/.blackbox/drivers/"
 cp -R "$E2E_ROOT/sut" "$CONSUMER_ROOT/sut"
 cp "$E2E_ROOT/playwright.config.ts" "$CONSUMER_ROOT/playwright.config.ts"
+cp "$E2E_ROOT/playwright-features.config.ts" "$CONSUMER_ROOT/playwright-features.config.ts"
 cp "$E2E_ROOT/reporters/"*.ts "$CONSUMER_ROOT/reporters/"
 cp "$E2E_ROOT/tests/playwright/"*.ts "$CONSUMER_ROOT/tests/playwright/"
+cp "$E2E_ROOT/tests/playwright-features/"*.ts "$CONSUMER_ROOT/tests/playwright-features/"
+cp "$E2E_ROOT/tests/playwright-features/"*.golden "$CONSUMER_ROOT/tests/playwright-features/"
+cp "$SCRIPT_DIR/"playwright-features*.mjs "$CONSUMER_ROOT/"
 cp "$SCRIPT_DIR/playwright-boundary.mjs" "$CONSUMER_ROOT/playwright-boundary.mjs"
 cp "$SCRIPT_DIR/playwright-evidence.mjs" "$CONSUMER_ROOT/playwright-evidence.mjs"
 cp "$SCRIPT_DIR/playwright-report-proof.mjs" "$CONSUMER_ROOT/playwright-report-proof.mjs"
@@ -156,6 +161,11 @@ BLACKBOX_E2E_RESULTS_ROOT="$RUN_RESULT_ROOT" \
 
 recover_sandboxes
 node "$CONSUMER_ROOT/playwright-verify.mjs" >"$RUN_RESULT_ROOT/receipt.json"
+
+# Run the setup and retention contract after the original eight-case proof.
+# Its runner owns recovery and keeps each invocation under test-results/features.
+BLACKBOX_E2E_FIXTURE_TOKEN="$FIXTURE_TOKEN" \
+  node "$CONSUMER_ROOT/playwright-features.mjs"
 
 printf '%s\n' \
   'Playwright journey passed' \

@@ -34,6 +34,7 @@ function nanos(iso: string): string {
 /** Same root-span shape as `capsule run`, so readers join activities the same way. */
 function rootSpanRequest(input: {
   readonly sessionId: string;
+  readonly executionId: string;
   readonly activity: ParticipantActivityInput;
   readonly startedAt: string;
   readonly completedAt: string;
@@ -48,6 +49,7 @@ function rootSpanRequest(input: {
           attributes: [
             attribute('service.name', 'blackbox-playwright'),
             attribute('blackbox.session.id', input.sessionId),
+            attribute('blackbox.execution.id', input.executionId),
           ],
         },
         scopeSpans: [
@@ -141,6 +143,7 @@ export type ParticipantActivityRunner = (
 export function participantActivities(input: {
   readonly sandbox: ActivitySandbox;
   readonly sessionId: string;
+  readonly executionId: string;
   readonly authorization: TelemetryAuthorization;
   readonly plan: {
     readonly metadata: {
@@ -161,6 +164,7 @@ export function participantActivities(input: {
         sandbox: input.sandbox,
         ingestToken: input.authorization.ingestToken,
         sessionId: input.sessionId,
+        executionId: input.executionId,
         service: participants[activity.participant].service,
         activity,
       });
@@ -176,6 +180,7 @@ export async function runParticipantActivity(input: {
   readonly sandbox: ActivitySandbox;
   readonly ingestToken: string;
   readonly sessionId: string;
+  readonly executionId: string;
   readonly service: string;
   readonly activity: ParticipantActivityInput;
 }): Promise<ParticipantActivityOutcome> {
@@ -186,7 +191,11 @@ export async function runParticipantActivity(input: {
     kind: 'container-stream-exec',
     service: input.service,
     argv: input.activity.argv,
-    environment: { TRACEPARENT: input.activity.traceparent },
+    environment: {
+      TRACEPARENT: input.activity.traceparent,
+      // Node's process detector exports argv, which can contain setup credentials.
+      OTEL_NODE_RESOURCE_DETECTORS: 'env,host',
+    },
     terminal: { kind: 'captured' },
     stdin: 'closed',
     onOutput: (event) => {
@@ -207,6 +216,7 @@ export async function runParticipantActivity(input: {
     ingestToken: input.ingestToken,
     body: rootSpanRequest({
       sessionId: input.sessionId,
+      executionId: input.executionId,
       activity: input.activity,
       startedAt,
       completedAt,

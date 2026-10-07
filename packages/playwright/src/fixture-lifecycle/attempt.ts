@@ -115,11 +115,13 @@ export async function runAttemptFixture(input: AttemptFixtureInput): Promise<voi
       `${attempt.sandbox.sandboxId}; ${attempt.sandbox.entrypoint.url}`,
     );
     report.emit('execution', 'started', 'test fixtures, hooks and body');
+    const commands = participantExec(attempt, report);
     try {
       await report.flush();
       report.lifecycle('ready', attempt.sandbox.catalogEntry);
-      await input.use(attempt, participantExec(attempt, report));
+      await input.use(attempt, commands.exec);
     } finally {
+      commands.close();
       const reason = stopReason(input.testInfo.status);
       report.emit('execution', 'info', input.testInfo.status ?? 'unknown');
       await finishAttempt(attempt, report, reason, input.policy);

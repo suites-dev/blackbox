@@ -158,6 +158,12 @@ participant, a missing executable) rejects. Commands are not routed through
 catalog drivers: `capsule run --via <driver>` driver preparation is not available
 to Playwright tests yet.
 
+Use this API for preparation, such as seeding a user before a login test. Each
+command has purpose `setup`; its successful exit or exported root span does not
+prove a business effect or complete telemetry capture. The command handle expires
+when the attempt ends, so saving `sandbox.exec` for a later test or `afterAll`
+hook cannot execute against an old sandbox.
+
 ## Execution reporting
 
 Playwright's native reporter owns test progress, steps, colors, errors, and the
@@ -214,6 +220,11 @@ After cleanup, each attempt is copied to
 `sandbox/` the sandbox record and retained telemetry. Retention is off by default,
 never overwrites an existing directory, and fails the attempt if it cannot write.
 `capsule report` does not read these directories yet.
+
+Retention preserves raw evidence. Open `attempt.json` to inspect the test identity
+and recorded events; use the files under `sandbox/` for the sandbox lifecycle and
+telemetry. There is no saved-attempt browser or comparison command, and this
+option does not archive Playwright's HTML report.
 
 The retained telemetry summary reads request/span counters from the lifecycle
 record without loading raw trace fragments. Collector shutdown is reported from
