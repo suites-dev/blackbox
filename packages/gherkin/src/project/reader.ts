@@ -76,13 +76,10 @@ export class ConfigReader {
     return text;
   }
 
-  /** Globs inside the project directory; `**` and `*` are the only wildcards. */
-  globs(value: unknown, path: string, required: boolean): readonly string[] {
-    if (value === undefined && !required) {
-      return [];
-    }
-    if (!Array.isArray(value) || (required && value.length === 0)) {
-      this.report(path, required ? 'must be a non-empty array of globs' : 'must be an array of globs');
+  /** A non-empty list of globs inside the project directory; `**` and `*` are the only wildcards. */
+  globs(value: unknown, path: string): readonly string[] {
+    if (!Array.isArray(value) || value.length === 0) {
+      this.report(path, 'must be a non-empty array of globs');
       return [];
     }
     return value.map((glob: unknown, index) => {

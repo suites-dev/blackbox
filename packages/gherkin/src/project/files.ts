@@ -3,8 +3,7 @@ import { join, relative, sep } from 'node:path';
 
 // Project paths in blackbox.feature.yaml are `/`-separated globs relative to
 // the project directory. Only `*` (within one segment) and `**` (any number of
-// segments) are special, the same subset as the repository's spec/code
-// separation check, so one pattern means the same thing to every check.
+// segments) are special.
 
 /** Translates a `*` / `**` glob to an anchored regular expression. */
 export function globToRegExp(glob: string): RegExp {
@@ -34,19 +33,15 @@ export const toPosix = (path: string): string => path.split(sep).join('/');
 /** Directories no project scan descends into. */
 const SKIPPED = new Set(['.git', 'node_modules']);
 
-/**
- * Every file below `root`, as sorted `/`-separated paths relative to it.
- * `.git`, `node_modules` and the given directories (absolute) are skipped.
- */
-export async function projectFiles(root: string, skip: readonly string[] = []): Promise<readonly string[]> {
-  const skipped = new Set(skip);
+/** Every file below `root`, as sorted `/`-separated paths relative to it; `.git` and `node_modules` are skipped. */
+export async function projectFiles(root: string): Promise<readonly string[]> {
   const files: string[] = [];
   const visit = async (directory: string): Promise<void> => {
     const entries = await readdir(directory, { withFileTypes: true });
     for (const entry of entries) {
       const path = join(directory, entry.name);
       if (entry.isDirectory()) {
-        if (!SKIPPED.has(entry.name) && !skipped.has(path)) {
+        if (!SKIPPED.has(entry.name)) {
           await visit(path);
         }
       } else if (entry.isFile()) {

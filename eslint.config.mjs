@@ -228,50 +228,6 @@ const RESTRICTED_SYNTAX = [
   },
 ];
 
-// The shared Gherkin step library (packages/gherkin/src/library) decides
-// claims, so it is held to hard rules 4 and 5 of the Gherkin input design: a
-// step may not swallow a failed claim (catch, expect.soft, settled promises)
-// and may not change runner policy (timeouts, retries, slow, configure, fixed
-// waits). A polling barrier's only deadline is the one the reviewed feature
-// states, so a literal `timeout` value is refused as well. Tests and the
-// test-only testing/ helpers are exempt: they judge the steps, they are not steps.
-const GHERKIN_LIBRARY_FILES = ['packages/gherkin/src/library/**/*.ts'];
-const GHERKIN_LIBRARY_EXEMPT = ['**/*.test.ts', '**/testing/**'];
-const SWALLOWS = 'A library step may not swallow a failure: a failed claim must fail the step (Gherkin hard rule 4).';
-const POLICY = 'A library step may not change runner policy or wait on a timer (Gherkin hard rule 5).';
-
-const GHERKIN_LIBRARY_PROPERTIES = [
-  ['soft', `expect.soft: ${SWALLOWS}`],
-  ['catch', `.catch(): ${SWALLOWS}`],
-  ['allSettled', `Promise.allSettled: ${SWALLOWS}`],
-  ['setTimeout', `test.setTimeout: ${POLICY}`],
-  ['slow', `test.slow: ${POLICY}`],
-  ['configure', `describe.configure / expect.configure: ${POLICY}`],
-  ['waitForTimeout', `waitForTimeout: ${POLICY}`],
-  ['toPass', `toPass retries a block: ${POLICY} Use a polling barrier step.`],
-].map(([property, message]) => ({ property, message }));
-
-const GHERKIN_LIBRARY_GLOBALS = ['setTimeout', 'setInterval', 'setImmediate'].map((name) => ({
-  name,
-  message: `${name}: ${POLICY}`,
-}));
-
-const GHERKIN_LIBRARY_SYNTAX = [
-  { selector: 'CatchClause', message: `catch: ${SWALLOWS}` },
-  {
-    selector: 'CallExpression[callee.property.name="then"][arguments.length>1]',
-    message: `.then(onFulfilled, onRejected): ${SWALLOWS}`,
-  },
-  {
-    selector: 'Property:matches([key.name="timeout"], [key.value="timeout"])[value.type="Literal"]',
-    message: `A literal timeout: ${POLICY} Only a deadline written in the feature may bound a barrier.`,
-  },
-  {
-    selector: 'ImportDeclaration[source.value=/^(node:)?timers/]',
-    message: `Timers: ${POLICY}`,
-  },
-];
-
 /** @type {import('eslint').Linter.Config[]} */
 export default [
   { ignores: IGNORE_PATTERNS },
@@ -483,17 +439,6 @@ export default [
       '@typescript-eslint/no-unsafe-return': 'off',
       'no-console': 'off',
       'import-x/no-extraneous-dependencies': 'off',
-    },
-  },
-
-  // The shared Gherkin step library: see GHERKIN_LIBRARY_FILES above.
-  {
-    files: GHERKIN_LIBRARY_FILES,
-    ignores: GHERKIN_LIBRARY_EXEMPT,
-    rules: {
-      'no-restricted-properties': ['error', ...GHERKIN_LIBRARY_PROPERTIES],
-      'no-restricted-globals': ['error', ...GHERKIN_LIBRARY_GLOBALS],
-      'no-restricted-syntax': ['error', ...RESTRICTED_SYNTAX, ...GHERKIN_LIBRARY_SYNTAX],
     },
   },
 

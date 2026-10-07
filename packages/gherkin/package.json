@@ -3,7 +3,7 @@
   "version": "0.0.1-alpha.0",
   "private": true,
   "type": "module",
-  "description": "Compiles human-authored Gherkin feature files into native Blackbox Playwright tests.",
+  "description": "Parses and validates human-authored Gherkin feature files for Blackbox.",
   "files": [
     "dist",
     "README.md",
@@ -33,28 +33,11 @@
     "lint": "eslint .",
     "test": "vitest run --config vitest.config.ts"
   },
-  "blackbox": {
-    "cli": {
-      "apiVersion": 1,
-      "pluginId": "gherkin",
-      "topic": "feature"
-    }
-  },
-  "oclif": {
-    "commands": {
-      "strategy": "explicit",
-      "target": "./dist/cli/command-registry.js",
-      "identifier": "COMMANDS"
-    },
-    "topicSeparator": " "
-  },
   "dependencies": {
     "@cucumber/cucumber-expressions": "20.1.0",
     "@cucumber/gherkin": "42.0.1",
     "@cucumber/messages": "34.2.1",
-    "@oclif/core": "^5.1.0",
     "@suites/blackbox-catalog": "workspace:*",
-    "@suites/blackbox-playwright": "workspace:*",
     "yaml": "2.9.1"
   },
   "devDependencies": {

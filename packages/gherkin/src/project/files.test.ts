@@ -2,8 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { acceptedFeatures, globToRegExp } from './files.js';
 
-// Requirements (task 2.4): project globs use only `*` and `**`, the subset the
-// spec/code separation check uses.
+// Requirements (task 2.4): project globs use only `*` and `**`.
 
 describe('project globs', () => {
   it('match `*` within one segment and `**` across segments, and nothing else as a wildcard', () => {

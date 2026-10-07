@@ -1,28 +1,12 @@
-// Runtime for generated feature tests only. Hand-written tests use
-// @suites/blackbox-playwright directly; nothing here registers steps.
-import { library } from './library/index.js';
-import { createStepRunner } from './runtime/run-step.js';
-import { test } from './runtime/scenario-test.js';
+// Reads Gherkin feature projects. It never imports Playwright or the step library.
 
-export { sandboxCredentials } from './runtime/credentials.js';
-export type {
-  CredentialSource,
-  ResolvedCredential,
-  SandboxCredentialSpec,
-  SandboxCredentials,
-} from './runtime/credentials.js';
-export { sandboxEnvironment } from './runtime/environment.js';
-export type { EnvironmentSource, SandboxEnvironmentSpec } from './runtime/environment.js';
-export { test };
-export type { StepRunner, StepSite } from './runtime/run-step.js';
-export type {
-  DataTableArgument,
-  DocStringArgument,
-  NoArgument,
-  ScenarioWorld,
-  StepArgument,
-  StepFixtures,
-} from './runtime/step-types.js';
-
-/** Runs one compiled step against the shared library. Called only by generated code. */
-export const runStep = createStepRunner(library, test.step);
+export {
+  GHERKIN_CONFIG_FILE,
+  GherkinConfigError,
+  loadGherkinProject,
+  parseGherkinProject,
+  type CredentialSource,
+  type EnvironmentSource,
+  type GherkinProject,
+  type SandboxProfile,
+} from './project/config.js';

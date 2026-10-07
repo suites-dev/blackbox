@@ -1,15 +1,34 @@
 import { readFileSync } from 'node:fs';
-import { basename, dirname, relative, resolve, sep } from 'node:path';
+import { basename, dirname, resolve } from 'node:path';
 
 import { parse } from 'yaml';
 
-import type { SandboxProfile } from '../compiler/planning/model.js';
-import type { CredentialSource } from '../runtime/credentials.js';
-import type { EnvironmentSource } from '../runtime/environment.js';
 import { ConfigReader, isObject, type JsonObject } from './reader.js';
 
 /** The protected project file every `blackbox feature` command reads. */
 export const GHERKIN_CONFIG_FILE = 'blackbox.feature.yaml';
+
+/** A Sandbox environment variable whose value is read from the runner's environment. */
+export interface EnvironmentSource {
+  readonly fromEnv: string;
+}
+
+/**
+ * A named credential in a Sandbox profile. v1 credentials are bearer tokens
+ * read from a runner environment variable; the profile names the variable,
+ * never the value.
+ */
+export interface CredentialSource {
+  readonly scheme: 'bearer';
+  readonly fromEnv: string;
+}
+
+/** A Sandbox profile from the protected project file. It names variables, never values. */
+export interface SandboxProfile {
+  readonly environment: Readonly<Record<string, EnvironmentSource>>;
+  /** Named credentials the profile's steps may present to the system under test. */
+  readonly credentials: Readonly<Record<string, CredentialSource>>;
+}
 
 /**
  * A Gherkin project, read from blackbox.feature.yaml. Every path in the file is
@@ -22,11 +41,7 @@ export interface GherkinProject {
   readonly blackboxConfigFile: string;
   /** Accepted feature files, as globs relative to the root. */
   readonly features: readonly string[];
-  /** Git-ignored directory for generated tests and the compile manifest. */
-  readonly outputDir: string;
   readonly sandboxProfiles: Readonly<Record<string, SandboxProfile>>;
-  /** Extra path classes for `check-change`, as globs relative to the root. */
-  readonly changes: { readonly spec: readonly string[]; readonly neutral: readonly string[] };
 }
 
 export class GherkinConfigError extends Error {
@@ -39,14 +54,7 @@ export class GherkinConfigError extends Error {
   }
 }
 
-const KEYS = [
-  'schemaVersion',
-  'blackboxConfigFile',
-  'features',
-  'outputDir',
-  'sandboxes',
-  'changes',
-] as const;
+const KEYS = ['schemaVersion', 'blackboxConfigFile', 'features', 'sandboxes'] as const;
 const PROFILE_NAME = /^[A-Za-z0-9][A-Za-z0-9._-]*$/u;
 const CREDENTIAL_NAME = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/u;
 const ENV_KEY = /^[A-Za-z_][A-Za-z0-9_]*$/u;
@@ -96,34 +104,18 @@ function profilesOf(reader: ConfigReader, value: unknown): Record<string, Sandbo
   );
 }
 
-function insideRoot(root: string, path: string): boolean {
-  const fromRoot = relative(root, path);
-  return fromRoot !== '' && fromRoot !== '..' && !fromRoot.startsWith(`..${sep}`);
-}
-
 function read(reader: ConfigReader, document: JsonObject, configFile: string): GherkinProject {
   const root = dirname(configFile);
   const at = (path: string) => resolve(root, path);
   if (document.schemaVersion !== 1) {
     reader.report('schemaVersion', 'must be 1');
   }
-  const output = reader.relativePath(document.outputDir, 'outputDir');
-  const outputDir = at(output);
-  if (output !== '' && !insideRoot(root, outputDir)) {
-    reader.report('outputDir', 'must be a directory inside the project directory');
-  }
-  const changes = document.changes === undefined ? {} : reader.object(document.changes, 'changes', ['spec', 'neutral']);
   return {
     root,
     configFile,
     blackboxConfigFile: at(reader.relativePath(document.blackboxConfigFile, 'blackboxConfigFile')),
-    features: reader.globs(document.features, 'features', true),
-    outputDir,
+    features: reader.globs(document.features, 'features'),
     sandboxProfiles: profilesOf(reader, document.sandboxes),
-    changes: {
-      spec: reader.globs(changes === null ? undefined : changes.spec, 'changes.spec', false),
-      neutral: reader.globs(changes === null ? undefined : changes.neutral, 'changes.neutral', false),
-    },
   };
 }
 

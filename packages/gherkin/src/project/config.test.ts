@@ -7,10 +7,10 @@ import { describe, expect, it } from 'vitest';
 import { GherkinConfigError, loadGherkinProject, parseGherkinProject } from './config.js';
 
 // Requirements (task 2.4, report section 4): blackbox.feature.yaml is the one
-// protected project file. It holds the feature globs, the output
-// path, the change classes, and the Sandbox profiles with their named
-// credentials, which name environment variables and never hold a value.
-// Anything it does not document is refused.
+// protected project file. It holds the feature globs and the Sandbox profiles
+// with their named credentials, which name environment variables and never
+// hold a value. Anything it does not document is refused, including the
+// generated-output and change-class settings this file no longer has.
 
 const ROOT = '/project';
 const FILE = join(ROOT, 'blackbox.feature.yaml');
@@ -19,14 +19,12 @@ const VALID = {
   schemaVersion: 1,
   blackboxConfigFile: 'blackbox.config.yaml',
   features: ['features/**/*.feature'],
-  outputDir: '.features-gen',
   sandboxes: {
     default: {
       environment: { FIXTURE_CONTROL_TOKEN: { fromEnv: 'BLACKBOX_E2E_FIXTURE_TOKEN' } },
       credentials: { 'fixture-control': { scheme: 'bearer', fromEnv: 'BLACKBOX_E2E_FIXTURE_TOKEN' } },
     },
   },
-  changes: { neutral: ['**/*.md'] },
 };
 
 function problems(document: unknown): readonly string[] {
@@ -48,26 +46,27 @@ describe('a valid project file', () => {
       configFile: FILE,
       blackboxConfigFile: join(ROOT, 'blackbox.config.yaml'),
       features: ['features/**/*.feature'],
-      outputDir: join(ROOT, '.features-gen'),
       sandboxProfiles: VALID.sandboxes,
-      changes: { spec: [], neutral: ['**/*.md'] },
     });
   });
 
-  it('defaults changes, environment and credentials to empty', () => {
-    const { changes, ...required } = VALID;
-    const project = parseGherkinProject({ ...required, sandboxes: { bare: {} } }, FILE);
-    expect(project).toMatchObject({ changes: { spec: [], neutral: [] } });
+  it('defaults environment and credentials to empty', () => {
+    const project = parseGherkinProject({ ...VALID, sandboxes: { bare: {} } }, FILE);
     expect(project.sandboxProfiles).toEqual({ bare: { environment: {}, credentials: {} } });
-    expect(changes).toBeDefined();
   });
 });
 
 describe('a refused project file', () => {
   it('names unknown settings, so a misspelled key is never silently dropped', () => {
+    const known = '(known: schemaVersion, blackboxConfigFile, features, sandboxes)';
     expect(problems({ ...VALID, retries: 2, sandboxs: {} })).toEqual([
-      'retries: is not a known setting (known: schemaVersion, blackboxConfigFile, features, outputDir, sandboxes, changes)',
-      'sandboxs: is not a known setting (known: schemaVersion, blackboxConfigFile, features, outputDir, sandboxes, changes)',
+      `retries: is not a known setting ${known}`,
+      `sandboxs: is not a known setting ${known}`,
+    ]);
+    expect(problems({ ...VALID, outputDir: '.features-gen', changes: { neutral: [] }, drafts: [] })).toEqual([
+      `outputDir: is not a known setting ${known}`,
+      `changes: is not a known setting ${known}`,
+      `drafts: is not a known setting ${known}`,
     ]);
   });
 
@@ -98,19 +97,17 @@ describe('a refused project file', () => {
     ]);
   });
 
-  it('refuses missing settings, absolute paths, globs outside the project and output outside it', () => {
+  it('refuses missing settings, absolute paths and globs outside the project', () => {
     expect(
       problems({
         ...VALID,
         schemaVersion: 2,
         blackboxConfigFile: '/etc/blackbox.config.yaml',
         features: ['../shared/**/*.feature'],
-        outputDir: '..',
         sandboxes: {},
       }),
     ).toEqual([
       'schemaVersion: must be 1',
-      'outputDir: must be a directory inside the project directory',
       'blackboxConfigFile: must be a relative path with "/" separators',
       'features[0]: must stay inside the project directory and be normalized',
       'sandboxes: must define at least one Sandbox profile',
@@ -126,7 +123,6 @@ describe('names that address the prototype chain', () => {
     "schemaVersion": 1,
     "blackboxConfigFile": "blackbox.config.yaml",
     "features": ["features/**/*.feature"],
-    "outputDir": ".features-gen",
     "sandboxes": {
       "__proto__": { "environment": { "polluted": { "fromEnv": "X" } } },
       "constructor": {},
@@ -172,7 +168,7 @@ describe('blackbox.feature.yaml read from disk', () => {
 
   it('reads a YAML project file', async () => {
     expect(
-      await load('schemaVersion: 1\nblackboxConfigFile: blackbox.config.yaml\nfeatures: ["features/**/*.feature"]\noutputDir: .features-gen\nsandboxes:\n  default: {}\n'),
+      await load('schemaVersion: 1\nblackboxConfigFile: blackbox.config.yaml\nfeatures: ["features/**/*.feature"]\nsandboxes:\n  default: {}\n'),
     ).toEqual([]);
   });
 
@@ -180,7 +176,7 @@ describe('blackbox.feature.yaml read from disk', () => {
     expect(await load('features: [unclosed\n')).toEqual([expect.stringMatching(/^is not valid YAML: /u)]);
     const before = Object.getOwnPropertyNames(Object.prototype).sort();
     expect(
-      await load('schemaVersion: 1\nblackboxConfigFile: blackbox.config.yaml\nfeatures: ["f/*.feature"]\noutputDir: out\nsandboxes:\n  __proto__: { environment: { polluted: { fromEnv: X } } }\n  default: {}\n'),
+      await load('schemaVersion: 1\nblackboxConfigFile: blackbox.config.yaml\nfeatures: ["f/*.feature"]\nsandboxes:\n  __proto__: { environment: { polluted: { fromEnv: X } } }\n  default: {}\n'),
     ).toEqual(['sandboxes.__proto__: is a reserved name; choose another name']);
     expect(Object.getOwnPropertyNames(Object.prototype).sort()).toEqual(before);
   });

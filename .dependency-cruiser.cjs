@@ -128,8 +128,6 @@ const ENTRY_POINTS = [
   // its reporter option loads the observer by filesystem path.
   '^packages/playwright/src/testing/reporting/playwright\\.config\\.ts$',
   '^packages/playwright/src/testing/reporting/progress-observer\\.ts$',
-  // Generated feature tests in playwright.test.ts import this runtime by file URL.
-  '^packages/gherkin/src/compiler/testing/playwright-runtime\\.ts$',
   // Maintainer script run by hand to refresh the recorded capsule fixture
   // (see the README next to it); nothing imports it.
   '^packages/capsule/src/cli/operations/inspection/testing/fixtures/sanitize-recording\\.mjs$',
@@ -173,7 +171,7 @@ const TIERS = [
   },
   {
     name: 'extensions',
-    why: 'opt-in authoring layers built on a composition root, such as Gherkin input on native Playwright',
+    why: 'opt-in authoring layers, such as reading and validating Gherkin features; above composition, so a composition root never imports one',
     packages: ['gherkin'],
   },
   {
@@ -315,14 +313,6 @@ module.exports = {
         pathNot: ['^packages/playwright/', '^packages/instrumentation-runtime-[^/]+/'],
       },
       to: { path: '^packages/instrumentation-runtime-[^/]+/' },
-    },
-    {
-      name: 'gherkin-registry-is-library-only',
-      severity: 'error',
-      comment:
-        'Hard rule 3: step definitions come from one shared, reviewed step library. Only that library may build a vocabulary; the compiler and generated-code runtime receive a finished, closed StepLibrary.',
-      from: { path: inPackage('gherkin'), pathNot: '^packages/gherkin/src/(library|runtime)/' },
-      to: { path: '^packages/gherkin/src/runtime/registry\\.ts$' },
     },
     {
       name: 'command-does-not-import-command',
