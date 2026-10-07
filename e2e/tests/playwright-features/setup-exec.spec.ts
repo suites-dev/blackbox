@@ -1,6 +1,4 @@
-import { mkdir, writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
-
+import type { TestInfo } from '@playwright/test';
 import {
   expect,
   test,
@@ -142,27 +140,21 @@ async function expectSeedTrace(
   return observed[0];
 }
 
-async function writeReceipt(
+async function attachReceipt(
   sandbox: BlackboxSandbox,
   telemetry: BlackboxTelemetry,
-  outputDirectory: string,
+  testInfo: TestInfo,
   evidence: { readonly activities: readonly BlackboxActivity[]; readonly traceLinks: TraceLinks },
 ): Promise<void> {
-  const receiptsDirectory = process.env.BLACKBOX_FEATURE_RECEIPTS_DIR;
-  expect(receiptsDirectory).toBeTruthy();
-  if (receiptsDirectory === undefined) {
-    throw new Error('BLACKBOX_FEATURE_RECEIPTS_DIR is required');
-  }
-  await mkdir(receiptsDirectory, { recursive: true });
-  await writeFile(
-    join(receiptsDirectory, 'setup-exec.json'),
-    JSON.stringify(
+  await testInfo.attach('blackbox-feature-receipt:setup-exec', {
+    contentType: 'application/json',
+    body: JSON.stringify(
       {
         sandboxId: sandbox.sandboxId,
         executionId: sandbox.executionId,
         sessionId: telemetry.sessionId,
         artifactDirectory: sandbox.artifactDirectory,
-        outputDirectory,
+        outputDirectory: testInfo.outputPath(),
         secret: credential,
         traceLinks: evidence.traceLinks,
         activities: evidence.activities.map(({ activityId, traceId, traceparent, exitCode }) => ({
@@ -176,7 +168,7 @@ async function writeReceipt(
       null,
       2,
     ),
-  );
+  });
 }
 
 test.system({ kind: 'subsystem', id: 'payment-mock' }, (system) => {
@@ -236,7 +228,7 @@ test.system({ kind: 'subsystem', id: 'payment-mock' }, (system) => {
           'Blackbox participant "undeclared-participant" is not declared by the catalog entry',
         );
 
-        await writeReceipt(sandbox, telemetry, testInfo.outputDir, {
+        await attachReceipt(sandbox, telemetry, testInfo, {
           activities: [seeded, failed],
           traceLinks,
         });

@@ -25,16 +25,16 @@ export async function filesUnder(root) {
 }
 
 export async function snapshotTree(root) {
-  const snapshot = {};
+  const snapshot = new Map();
   for (const path of await filesUnder(root)) {
     const bytes = await readFile(path);
-    snapshot[relative(root, path)] = {
+    snapshot.set(relative(root, path), {
       bytes: bytes.length,
       sha256: createHash('sha256').update(bytes).digest('hex'),
-    };
+    });
   }
-  assert(Object.keys(snapshot).length > 0, `Empty artifact tree: ${root}`);
-  return snapshot;
+  assert(snapshot.size > 0, `Empty artifact tree: ${root}`);
+  return Object.fromEntries(snapshot);
 }
 
 export function assertSameTree(actual, expected, message) {

@@ -45,6 +45,22 @@ function reportFixture(mode = 'retained-second') {
   };
 }
 
+test('snapshot safely tracks prototype-sensitive file names', async (t) => {
+  const root = await mkdtemp(join(tmpdir(), 'blackbox-feature-names-'));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const names = ['__proto__', 'constructor', 'toString'];
+  for (const name of names) await writeFile(join(root, name), 'retained evidence');
+  const snapshot = await snapshotTree(root);
+  assert.equal(Object.getPrototypeOf(snapshot), Object.prototype);
+  assert.deepEqual(Object.keys(snapshot).sort(), names.sort());
+  for (const name of names) {
+    assert(Object.hasOwn(snapshot, name));
+    assert.equal(snapshot[name].bytes, Buffer.byteLength('retained evidence'));
+    assert.match(snapshot[name].sha256, /^[a-f0-9]{64}$/u);
+  }
+  assertSameTree(snapshot, JSON.parse(JSON.stringify(snapshot)), 'Snapshot JSON lost filenames');
+});
+
 test('feature discovery rejects omitted tests, unexpected retries and skipped execution', () => {
   const report = reportFixture();
   verifyRunReport(report, 'retained-second', 0);

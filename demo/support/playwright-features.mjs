@@ -88,7 +88,6 @@ function runPlaywright(mode, directory) {
         ...process.env,
         BLACKBOX_FEATURE_MODE: mode,
         BLACKBOX_FEATURE_RESULTS_ROOT: directory,
-        BLACKBOX_FEATURE_RECEIPTS_DIR: join(directory, 'receipts'),
         BLACKBOX_FEATURE_OUTPUT_DIR: outputDirectory,
       },
       stdio: ['ignore', 'pipe', 'pipe'],
@@ -144,10 +143,25 @@ async function inspectRun(mode, directory, exitCode) {
   const report = JSON.parse(await readFile(join(directory, 'results.json'), 'utf8'));
   const attempts = verifyRunReport(report, mode, exitCode);
   const names = mode === 'retained-first' ? ['retention', 'setup-exec'] : ['retention'];
+  const receiptsDirectory = join(directory, 'receipts');
+  await mkdir(receiptsDirectory, { recursive: false });
   const receipts = await Promise.all(
-    names.map(async (name) =>
-      JSON.parse(await readFile(join(directory, 'receipts', `${name}.json`), 'utf8')),
-    ),
+    names.map(async (name) => {
+      const attachments = attempts
+        .flatMap((attempt) => attempt.attachments)
+        .filter((attachment) => attachment.name === `blackbox-feature-receipt:${name}`);
+      assert.equal(attachments.length, 1, `No unique ${name} feature receipt attachment`);
+      assert.equal(attachments[0].contentType, 'application/json');
+      assert.equal(
+        typeof attachments[0].body,
+        'string',
+        'Feature receipt must be an inline attachment',
+      );
+      const text = Buffer.from(attachments[0].body, 'base64').toString('utf8');
+      const receipt = JSON.parse(text);
+      await writeFile(join(receiptsDirectory, `${name}.json`), text, { flag: 'wx' });
+      return receipt;
+    }),
   );
   const records = await sandboxRecords(outputDirectory);
   assert.equal(records.length, receipts.length, 'Unexpected physical feature sandbox count');

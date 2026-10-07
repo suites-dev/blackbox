@@ -20,7 +20,6 @@ test.system({ kind: 'subsystem', id: 'payment-mock' }, (system) => {
       'Scenario: finished attempts retain their real telemetry',
       async ({ request, sandbox, telemetry }, testInfo) => {
         const mode = requiredEnvironment('BLACKBOX_FEATURE_MODE');
-        const receipts = requiredEnvironment('BLACKBOX_FEATURE_RECEIPTS_DIR');
         const traceId = randomBytes(16).toString('hex');
         const traceparent = `00-${traceId}-${randomBytes(8).toString('hex')}-01`;
         const retainedDirectory = join(
@@ -40,8 +39,10 @@ test.system({ kind: 'subsystem', id: 'payment-mock' }, (system) => {
           traceId,
           collisionSentinel: `owned-retention-collision:${sandbox.sandboxId}`,
         };
-        await mkdir(receipts, { recursive: true });
-        await writeFile(join(receipts, 'retention.json'), JSON.stringify(receipt, null, 2));
+        await testInfo.attach('blackbox-feature-receipt:retention', {
+          contentType: 'application/json',
+          body: JSON.stringify(receipt, null, 2),
+        });
         const response = await request.post(
           new URL('/v1/payment_intents', sandbox.entrypoint.url).href,
           {
