@@ -64,3 +64,31 @@ export function observationCompleteness(input: {
       return incomplete(`capsule ${input.state}`);
   }
 }
+
+/**
+ * The status of a capsule from its state and its collector session read: a
+ * stopped capsule whose session record is corrupt is incomplete, as `show`
+ * states it; otherwise {@link observationCompleteness}.
+ */
+export function sessionCompleteness(input: {
+  readonly state: CapsuleSessionState;
+  readonly session:
+    | { readonly kind: 'collector-session-found'; readonly lifecycle: CollectorLifecycleRecord }
+    | { readonly kind: 'collector-session-corrupt'; readonly error: { readonly name: string } }
+    | { readonly kind: 'collector-session-missing' }
+    | null;
+}): ObservationCompleteness {
+  const { session } = input;
+  if (
+    input.state === 'stopped' &&
+    session !== null &&
+    session.kind === 'collector-session-corrupt'
+  ) {
+    return incomplete(`collector session corrupt: ${session.error.name}`);
+  }
+  return observationCompleteness({
+    state: input.state,
+    lifecycle:
+      session !== null && session.kind === 'collector-session-found' ? session.lifecycle : null,
+  });
+}

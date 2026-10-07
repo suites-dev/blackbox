@@ -109,10 +109,10 @@ function activityRow(a, open, d, root) {
   details.open = open.includes(details.id);
   const summary = n('summary'),
     target = a.target.kind === 'host' ? 'Host' : 'Driver · ' + a.target.driverId,
-    command = a.argv.map((value) => JSON.stringify(value)).join(' '),
+    evidence = evidenceInfo(a, d),
     named = a.name && a.name.kind === 'provided',
-    heading = named ? a.name.value : command || '(empty command)',
-    supporting = named ? command || '(empty command)' : date(a.startedAt);
+    heading = named ? a.name.value : 'Activity ' + String(a.sequence).padStart(2, '0'),
+    supporting = evidence.label + ' · ' + shortId(a.activityId);
   add(
     summary,
     n('span', 'sequence', String(a.sequence).padStart(2, '0')),
@@ -122,7 +122,7 @@ function activityRow(a, open, d, root) {
       n('strong', '', heading),
       n('small', '', supporting),
     ),
-    add(n('span', 'activity-badges'), purposeBadge(a.purpose), durationBadge(a),
+    add(n('span', 'activity-badges'), badge(evidence.label, 'purpose purpose-' + a.purpose), durationBadge(a),
       activityBadge(a), ...telemetryBadges(d, a)),
   );
   const body = n('div', 'activity-body');
@@ -135,19 +135,22 @@ function activityRow(a, open, d, root) {
           duration(a.startedAt, a.completedAt),
       'muted',
     ),
-    n('h4', '', 'Command'),
-    n('pre', '', command),
+    p(evidence.note),
   );
   if (a.kind === 'failed' || a.kind === 'interrupted')
     add(body, n('h4', '', a.kind === 'interrupted' ? 'Interruption' : 'Failure'),
       n('pre', '', a.error.name + ': ' + a.error.message));
+  if (a.kind === 'completed')
+    add(body, n('h4', '', evidence.kind === 'response' ? 'Response' : evidence.kind === 'state-check' ? 'State check output' : 'Preparation result'));
   if (a.kind === 'completed') addOutcome(body, a.outcome,
     { stdout: streamRedactions(d, a, 'stdout'), stderr: streamRedactions(d, a, 'stderr') });
   addTelemetryScope(body, a.telemetry);
   const telemetry = rawTelemetry(d, a, root);
   if (telemetry) add(body, telemetry);
-  const windowTelemetry = activityWindowTelemetry(d, a, root);
-  if (windowTelemetry) add(body, windowTelemetry);
+  const caused = causedTraces(a, d);
+  if (caused) add(body, caused);
+  const limitations = activityLimitations(a, d);
+  if (limitations) add(body, limitations);
   add(summary, icon('chevron'));
   add(details, summary, body);
   return details;

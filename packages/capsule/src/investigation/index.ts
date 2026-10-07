@@ -1,4 +1,14 @@
-export { observationCompleteness, type ObservationCompleteness } from './completeness.js';
+export {
+  observationCompleteness,
+  sessionCompleteness,
+  type ObservationCompleteness,
+} from './completeness.js';
+export {
+  statusDocument,
+  treeDocument,
+  type SpanNodeDocument,
+  type StatusDocument,
+} from './tree-document.js';
 export {
   buildSpanTree,
   compareSpans,
@@ -16,7 +26,13 @@ export {
   type CausalityTrace,
   type TracePlacement,
 } from './causality.js';
-export { investigationAttributeKeys, spanFailure, spanResult, spanTitle } from './span-title.js';
+export {
+  investigationAttributeKeys,
+  rawPathText,
+  spanFailure,
+  spanResult,
+  spanTitle,
+} from './span-title.js';
 export { projectInvestigationSpans } from './spans.js';
 export type { CapsuleReportSpan } from '../reporting/telemetry-types.js';
 export { activityContext, type ActivityContext } from './context.js';
