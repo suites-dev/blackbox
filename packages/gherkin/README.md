@@ -1,7 +1,6 @@
 # @suites/blackbox-gherkin
 
-> Private preview package. Not published: it runs from this repository's workspace. Consumer distribution
-> comes later.
+> Alpha package. The API may change before the first stable release.
 
 Reads and validates human-authored Gherkin `.feature` files. It does not generate or run tests, and it never
 imports Playwright or the step library: the sentences a feature may use arrive as plain data, and the outline

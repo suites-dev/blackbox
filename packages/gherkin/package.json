@@ -1,7 +1,6 @@
 {
   "name": "@suites/blackbox-gherkin",
   "version": "0.0.1-alpha.0",
-  "private": true,
   "type": "module",
   "description": "Parses and validates human-authored Gherkin feature files for Blackbox.",
   "files": [
@@ -49,6 +48,10 @@
   "license": "Apache-2.0",
   "engines": {
     "node": ">=22.15"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
   },
   "repository": {
     "type": "git",
