@@ -1,92 +1,90 @@
 # @suites/blackbox-gherkin
 
-> Private preview package. Not published: it runs from this repository's workspace, where the root
-> manifest adds the `blackbox feature` commands to the CLI. Consumer distribution comes later.
+> Private preview package. Not published: it runs from this repository's workspace. Consumer distribution
+> comes later.
 
-Compiles human-authored Gherkin `.feature` files into native Playwright tests that declare their boundary
-through the public `test.system(...).sandbox(...)` facade of `@suites/blackbox-playwright`.
+Reads and validates human-authored Gherkin `.feature` files. It does not generate or run tests, and it never
+imports Playwright or the step library: the sentences a feature may use arrive as plain data, and the outline
+of each feature leaves as plain data for whatever emits or compares a Playwright suite.
 
-## What the compiler does
+## API
 
-- Parses features with the official Cucumber parser (`@cucumber/gherkin`) and compiles each pickle to one
-  `suite.test(...)`. A `Background:` becomes an attempt-scoped `suite.beforeEach`, a `Rule:` a nested
-  `suite.describe`, and each `Scenario Outline` row a separate test titled
-  `Scenario: <name> [<header>=<value>, …]`.
-- Accepts exactly three tag namespaces. Any other tag is a compile error that names the tag and its
-  `file:line:column`, so no tag can change runner policy, select scenarios or change a verdict.
+| Export                                    | What it does                                                                                                 |
+| ----------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `loadGherkinProject(path)`                | Reads and checks the project file `blackbox.feature.yaml`. Throws `GherkinConfigError` naming every problem. |
+| `validate(project, sentences, catalog)`   | Checks every accepted feature and the project. Resolves to every error, empty when valid. Writes nothing.    |
+| `outline(project, sentences)`             | Resolves to the outline of every accepted feature, in path order. Writes nothing.                            |
+| `outlineFeature(source, file, sentences)` | The outline of one feature source. Throws `InvalidFeatureError` when it does not parse.                      |
+| `formatValidationError(error)`            | Prints an error as `file:line:column: message`.                                                              |
 
-  | Tag | Where | Rule |
-  | --- | --- | --- |
-  | `@system:<id>` | Feature, exactly once | A catalog entry from `blackbox.config.yaml`; its kind is read from the catalog. |
-  | `@sandbox:<profile>` | Feature, exactly once | A Sandbox profile from project configuration. It names environment variables, never values. |
-  | `@requirement:REQ-<n>` | Optional on Feature, Rule or Scenario | Traceability only. Emitted as `requirement` annotations; a scenario carries the union of its levels. |
+## What `validate` checks
 
-- Resolves every step against one closed, shared step library. An undefined or ambiguous step, a step whose
-  doc string or data table does not match, and a step that needs a capability this runtime does not offer
-  (effects claims, participant exec) are compile errors. A scenario must make a claim, and an effects claim
-  needs a completion barrier before it.
-- Checks the values a step is written with, at its `.feature` position: JSON doc strings and table cells,
-  request paths on the Sandbox entrypoint's origin, JSON Pointer syntax, the HTTP method of a JSON request,
-  and barrier deadlines from 1 to 3600 seconds. A mistake costs a compile, not a Sandbox acquisition.
-- Runs each step as a native step whose location is the `.feature` line; a failing step is reported there
-  too, not at the generated file.
-- Writes all generated tests or none into a git-ignored output directory, together with
-  `compile-manifest.json`: per scenario its ID, `.feature` location, selection, requirement IDs and barrier
-  deadlines, plus the step library identity and the hashes of each feature and generated file.
+Every error carries a `code`, the `file` relative to the project directory, and a `line` and `column`.
 
-## Step library v1
+- **Syntax**: features are parsed with the official Cucumber parser (`@cucumber/gherkin`) and declare a Feature
+  with at least one scenario. A scenario has steps, a Scenario Outline has Examples rows, and titles are unique.
+- **Tags**: only `@system:<id>` and `@sandbox:<profile>` (each exactly once, on the Feature) and
+  `@requirement:REQ-<n>` (on a Feature, Rule or Scenario). `@system:` names a catalog entry and `@sandbox:` a
+  profile of the project file. Any other tag is an error, so no tag can change runner policy, select scenarios or
+  change a verdict.
+- **Sentences and values**: every step, in every Examples row, matches exactly one sentence, with values its
+  parameter types accept and the doc string or data table the sentence takes.
+- **Capabilities**: a sentence that needs a capability the runtime does not offer is an error.
+- **Barriers**: a step whose sentence needs a completion barrier has a barrier step before it, in a Background or
+  the scenario.
+- **Then**: every scenario has at least one Then step of its own (an `And` or `But` after a Then counts).
+- **No Gherkin runner**: no project source imports `@cucumber/cucumber`, `playwright-bdd` or a similar runner
+  that defines its own steps.
+- **No copy of the step library**: no package manifest, override, resolution, patch or `pnpm-workspace.yaml`
+  entry points the step library at a fork or patches it, from the project directory up to the repository root. A
+  local tarball passes only when it is a pack of the library at the sentence list's version.
 
-`src/library/` is the one shared vocabulary. It covers setup through the application, JSON stimuli
-(single and concurrent), completion barriers (a synchronous seal, and polling an inspection endpoint
-within a deadline written in the feature), response claims, and state claims that read an inspection
-endpoint with a named credential. Response and state claims address members by JSON Pointer: a member
-equal to a JSON value, the number of items in an array, and, for responses, a value other than null. Effects claims
-(`the effects satisfy:`, waiting for #26) and participant commands (`the {string} participant runs SQL:`) are not
-part of v1: they are listed with the capability they need, so a feature that uses one fails to compile naming it. Every step definition is frozen where it is declared, body included, so code
-loaded into a run cannot replace a step, and the library hash covers the step bodies.
+## Sentence list
 
-A named credential such as `"fixture-control"` is defined by the feature's Sandbox profile in
-`blackbox.feature.yaml` as a bearer token read from a runner environment variable; features name
-credentials, never values, and a credential the profile does not define is a compile error. Requests go
-only to the Sandbox entrypoint's origin and do not follow redirects. Library code may not catch,
-use `expect.soft`, or set timeouts, retries or timers (enforced by the repository ESLint configuration).
+The step library produces this shape; `validate` and `outline` only read it.
 
-The package root export is the runtime for generated files only. Only `src/library/` may build a step
-vocabulary (dependency-cruiser rule `gherkin-registry-is-library-only`).
+```ts
+interface SentenceList {
+  readonly library: { readonly name: string; readonly version: string };
+  readonly capabilities: readonly string[];
+  readonly sentences: readonly Sentence[];
+}
 
-## Project file and commands
+interface Sentence {
+  readonly expression: string; // a Cucumber expression
+  readonly parameterTypes: readonly { readonly name: string; readonly pattern: string }[];
+  readonly argument: 'none' | 'doc-string' | 'data-table';
+  readonly requires: string | null; // a capability
+  readonly barrier: boolean;
+  readonly needsBarrier: boolean;
+  readonly example: string;
+}
+```
 
-`blackbox.feature.yaml` is the project's protected spec file. Its paths are relative to its directory,
-and it refuses any key it does not document:
+## Outline
+
+Per feature: `file`, `title`, `tags`, the Feature `background`, `scenarios` and `rules` (each with its own
+`background` and `scenarios`). A scenario has a `title`, its `tags`, the Examples row it was expanded from (or
+null) and its own ordered steps. A step has its `keyword`, `text`, the matched `sentence` expression (or null),
+the parameter `values` as text, and its doc string or data table. Every node has its `.feature` `line` and
+`column`.
+
+## Project file
+
+`blackbox.feature.yaml` is the project's protected spec file. Its paths are relative to its directory, and it
+refuses any key it does not document:
 
 ```yaml
 schemaVersion: 1
 blackboxConfigFile: blackbox.config.yaml
 features:
   - features/**/*.feature
-outputDir: .features-gen
 sandboxes:
   default:
     environment:
       FIXTURE_CONTROL_TOKEN: { fromEnv: BLACKBOX_E2E_FIXTURE_TOKEN }
     credentials:
       fixture-control: { scheme: bearer, fromEnv: BLACKBOX_E2E_FIXTURE_TOKEN }
-changes:
-  spec: []
-  neutral:
-    - "**/*.md"
 ```
 
-The generated tests are native Playwright tests: run them with `playwright test` from a config whose `testDir` is `outputDir`, built with
-`defineConfig` from `@suites/blackbox-playwright/config`. Playwright's own verdicts decide the run.
-
-| Command | What it does |
-| --- | --- |
-| `blackbox feature compile` | Compiles the accepted features into generated tests and `compile-manifest.json`. Prints each scenario with its requirement IDs and barrier deadlines. |
-| `blackbox feature check` | Fails on project step files, imports of Cucumber, playwright-bdd or the generated-code runtime, patches or forks of the step library or its runtime, and tracked generated tests. A local tarball (`file:….tgz`) passes only when it is a pack of that package at this release, as the unpublished alpha is installed. |
-| `blackbox feature check-change --base <ref>` | Fails when one change touches spec paths (features, this file, the step-library dependency and its patches) and code paths. |
-| `blackbox feature steps` | Lists the step library with an example sentence per step. |
-
-Every command takes `--config <path>` (default `blackbox.feature.yaml`) and exits 1 when its check fails,
-2 when the project file is missing or invalid.
-
+Sandbox profiles name environment variables, never values.
