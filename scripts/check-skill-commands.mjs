@@ -179,7 +179,7 @@ function runnerProblem(text) {
   for (const match of text.matchAll(/\b(?:npm\s+exec|npx)\b([^;&|)`]*)/g)) {
     const tokens = match[1].trim().split(/\s+/);
     const at = tokens.indexOf('blackbox');
-    if (at !== -1 && !tokens.slice(0, at).some((token) => /^--no(?:-install)?$/.test(token))) {
+    if (at !== -1 && !tokens.slice(0, at).some((token) => token === '--no')) {
       return match[0].trim().replace(/\s+/g, ' ');
     }
   }

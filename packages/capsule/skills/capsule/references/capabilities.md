@@ -15,4 +15,4 @@ from a configured protocol or runtime name.
 <!-- skill-lint: not-available -->
 
 Older docs name `blackbox observations` and `blackbox history`; they are hidden, unsupported commands.
-Use `blackbox capsule show` instead.
+Use `blackbox capsule show <id>` instead.

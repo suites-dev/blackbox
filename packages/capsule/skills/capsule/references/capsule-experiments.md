@@ -50,7 +50,7 @@ Read the activity's `context` line to see whether trace context was carried (`se
 state`, `untraced: no driver, so no trace context was sent`, `not sent: driver ... declares no propagation`, or
 `injection failed`). Read the `observed` status too: `provisional (capsule running)` means more telemetry may still arrive,
 `complete` means the capsule stopped and every collector run drained, and `incomplete (<reason>)` means it stopped without
-that guarantee. Treat `provisional` and `incomplete` as insufficient for absence or exact-count claims. `capsule show` reports
+that guarantee. Treat `provisional` and `incomplete` as insufficient for absence or exact-count claims. `capsule show <id>` reports
 what was observed, not whether the system behaved correctly.
 
 Known initial state, isolation, a unique visible business identifier, and appropriate completion conditions may support

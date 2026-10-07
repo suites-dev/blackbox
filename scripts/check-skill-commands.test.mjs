@@ -150,6 +150,9 @@ test('negative control: a command that can download a missing CLI fails', () => 
   assert.deepEqual(messages(check('```sh\nnpx blackbox skills list\n```')), [
     '2: may download a missing CLI, use --no: npx blackbox skills list',
   ]);
+  assert.deepEqual(messages(check('Run `npm exec --no-install -- blackbox --help`.')), [
+    '1: may download a missing CLI, use --no: npm exec --no-install -- blackbox --help',
+  ]);
   assert.deepEqual(check('Run `npx playwright test`.'), []);
   assert.deepEqual(check(good), []);
 });
@@ -165,7 +168,9 @@ test('negative control: a flag on a topic-only invocation fails', () => {
 test('negative control: a mistyped root flag fails', () => {
   assert.deepEqual(check('`blackbox --help`'), []);
   assert.deepEqual(check('`blackbox --version`'), []);
-  assert.deepEqual(messages(check('`blackbox --jzon`')), ['1: unknown flag --jzon: blackbox --jzon']);
+  assert.deepEqual(messages(check('`blackbox --jzon`')), [
+    '1: unknown flag --jzon: blackbox --jzon',
+  ]);
 });
 
 test('negative control: only a blackbox.config.yaml block is checked as a catalog', () => {
