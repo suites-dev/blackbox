@@ -183,3 +183,12 @@ test('negative control: only a blackbox.config.yaml block is checked as a catalo
     '3: unknown top-level catalog field on',
   ]);
 });
+
+test('negative control: a malformed or miscased long flag fails', () => {
+  assert.deepEqual(check('`blackbox capsule up shop --json`'), []);
+  for (const flag of ['--JSON', '--j_son', '---json']) {
+    assert.deepEqual(messages(check(`\`blackbox capsule up shop ${flag}\``)), [
+      `1: unknown flag ${flag}: blackbox capsule up shop ${flag}`,
+    ]);
+  }
+});

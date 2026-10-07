@@ -123,7 +123,7 @@ function flagProblem(flags, rest) {
     if (token === '--') return undefined;
     if (!token.startsWith('--')) continue;
     const name = token.slice(2).split('=')[0];
-    if (!/^[a-z][a-z0-9-]*$/.test(name) || GLOBAL_FLAGS.has(name)) continue;
+    if (GLOBAL_FLAGS.has(name)) continue;
     if (!flags.has(name)) return `unknown flag --${name}`;
   }
   return undefined;
