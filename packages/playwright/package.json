@@ -18,6 +18,12 @@
   ],
   "types": "./dist/index.d.ts",
   "exports": {
+    "./suite": {
+      "blackbox-source": "./src/suite/index.ts",
+      "types": "./dist/suite/index.d.ts",
+      "import": "./dist/suite/index.js",
+      "default": "./dist/suite/index.js"
+    },
     "./config": {
       "blackbox-source": "./src/config.ts",
       "types": "./dist/config.d.ts",

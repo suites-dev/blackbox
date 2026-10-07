@@ -1,4 +1,10 @@
 export { expect } from './effects/expect.js';
 export { test } from './fixtures.js';
+export { runSentence } from './suite/run-sentence.js';
+export { sandboxCredentials } from './step-runtime/credentials.js';
+export { sandboxEnvironment } from './step-runtime/environment.js';
 export type { EffectContractBuilder } from './effects/contract.js';
 export type { BlackboxEffects, BlackboxSandbox, BlackboxTelemetry } from './types.js';
+export type { SandboxCredentialSpec } from './step-runtime/credentials.js';
+export type { SandboxEnvironmentSpec } from './step-runtime/environment.js';
+export type { StepArgument, StepFixtures } from './step-runtime/step-types.js';

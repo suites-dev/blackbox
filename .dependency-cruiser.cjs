@@ -128,6 +128,10 @@ const ENTRY_POINTS = [
   // its reporter option loads the observer by filesystem path.
   '^packages/playwright/src/testing/reporting/playwright\\.config\\.ts$',
   '^packages/playwright/src/testing/reporting/progress-observer\\.ts$',
+  // skeleton-run.test.ts hands this config to a native Playwright subprocess,
+  // and the rendered suite it runs imports this runtime by file path.
+  '^packages/playwright/src/suite/testing/skeleton\\.config\\.ts$',
+  '^packages/playwright/src/suite/testing/skeleton-runtime\\.fixture\\.ts$',
   // Maintainer script run by hand to refresh the recorded capsule fixture
   // (see the README next to it); nothing imports it.
   '^packages/capsule/src/cli/operations/inspection/testing/fixtures/sanitize-recording\\.mjs$',
