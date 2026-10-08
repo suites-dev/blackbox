@@ -165,6 +165,28 @@ The Blackbox reporter also adds a readable `blackbox-diagnostics` attachment.
 Container health polling and detailed startup events stay in these attachments,
 not the live console. Native reporters may display attachments for failed tests.
 
+Playwright clears `test-results/` and its HTML report on every run. To keep
+attempt evidence across runs, enable retention in the Playwright configuration:
+
+```ts
+export default defineConfig({
+  blackboxConfigFile: './blackbox.config.yaml',
+  use: { blackboxRetainAttempts: true },
+});
+```
+
+After cleanup, each attempt is copied to
+`.blackbox/experiments/<sandboxId>/` (a `playwright-<uuid>` directory) beside
+`blackbox.config.yaml`: `attempt.json` holds the final attempt document and
+`sandbox/` the sandbox record and retained telemetry. Retention is off by default,
+never overwrites an existing directory, and fails the attempt if it cannot write.
+`capsule report` does not read these directories yet.
+
+Retention preserves raw evidence. Open `attempt.json` to inspect the test identity
+and recorded events; use the files under `sandbox/` for the sandbox lifecycle and
+telemetry. There is no saved-attempt browser or comparison command, and this
+option does not archive Playwright's HTML report.
+
 The retained telemetry summary reads request/span counters from the lifecycle
 record without loading raw trace fragments. Collector shutdown is reported from
 its retained status. Neither a span count nor a

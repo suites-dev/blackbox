@@ -7,6 +7,7 @@ import { AttemptReport } from '../reporting/attempt.js';
 import { reported } from '../reporting/events.js';
 import { reportObservations } from '../reporting/observations.js';
 import type { BlackboxAttemptRuntime, RunningBlackboxAttempt } from '../runtime/acquisition.js';
+import { retainAttempt, retainedAttemptDirectory } from '../retention/retention.js';
 import type { BlackboxTestOptions } from '../types.js';
 import {
   acquireWithinTestTimeout,
@@ -76,6 +77,19 @@ async function finishAttempt(
   await reportObservations(report, attempt);
 }
 
+/** Attach the final document, then copy the attempt out of Playwright's output when asked. */
+async function closeReport(report: AttemptReport, input: AttemptFixtureInput): Promise<void> {
+  const document = await report.finish();
+  const sandboxId = report.sandboxId();
+  if (input.blackboxRetainAttempts && sandboxId !== null) {
+    await retainAttempt({
+      directory: retainedAttemptDirectory(configFilePath(input.testInfo), sandboxId),
+      recordDirectory: input.testInfo.outputPath('blackbox'),
+      document,
+    });
+  }
+}
+
 export async function runAttemptFixture(input: AttemptFixtureInput): Promise<void> {
   const report = new AttemptReport(input.testInfo);
   report.protect(input.blackboxEnvironment);
@@ -113,6 +127,6 @@ export async function runAttemptFixture(input: AttemptFixtureInput): Promise<voi
     report.emit('attempt', 'failed', 'setup or teardown failed; see test error');
     throw error;
   } finally {
-    await report.finish();
+    await closeReport(report, input);
   }
 }
