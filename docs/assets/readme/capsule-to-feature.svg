@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="625" viewBox="0 0 960 625" role="img" aria-labelledby="title desc">
+<title id="title">From Capsule investigation to accepted Feature</title><desc id="desc">A Capsule supports act, inspect, investigate, and retry. A candidate expectation then requires review and acceptance before Playwright verification.</desc>
+<defs><marker id="arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 8 4 0 8Z" fill="#E67189"/></marker></defs>
+<rect width="960" height="625" fill="#0F0F12"/>
+<text x="34" y="34" fill="#EF9DAB" font-family="Geist, Inter, Arial, sans-serif" font-size="13" font-weight="600" letter-spacing="1.5">SUITES / BLACKBOX</text>
+<text x="34" y="76" fill="#F4F4F5" font-family="Geist, Inter, Arial, sans-serif" font-size="27" font-weight="600">From Capsule investigation to accepted Feature</text>
+<text x="34" y="105" fill="#A1A1AA" font-family="Geist, Inter, Arial, sans-serif" font-size="16" font-weight="400">Experiments inform expectations; review makes them accepted behavior.</text>
+<rect x="34" y="130" width="892" height="125" rx="18" fill="#17171C" stroke="#E67189" stroke-opacity="0.42" stroke-width="1.5"/>
+<svg x="55" y="143" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#EF9DAB" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="18" height="12" rx="6"/><path d="M12 6v12"/></svg>
+<text x="92" y="163" fill="#EF9DAB" font-family="Geist, Inter, Arial, sans-serif" font-size="16" font-weight="600">Capsule · bounded experiment</text>
+<rect x="55" y="181" width="174" height="48" rx="18" fill="#202027" stroke="#8B8B94" stroke-opacity="0.44" stroke-width="1.5"/>
+<svg x="67" y="193" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#A1A1AA" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 6 5 6-5 6M13 18h6"/></svg>
+<text x="98" y="211" fill="#F4F4F5" font-family="Geist, Inter, Arial, sans-serif" font-size="16" font-weight="600">Act</text>
+<path d="M229 205 H262" fill="none" stroke="#E67189" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="272" y="181" width="174" height="48" rx="18" fill="#202027" stroke="#8B8B94" stroke-opacity="0.44" stroke-width="1.5"/>
+<svg x="284" y="193" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#A1A1AA" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10" cy="10" r="7"/><path d="m15 15 7 7"/></svg>
+<text x="315" y="211" fill="#F4F4F5" font-family="Geist, Inter, Arial, sans-serif" font-size="16" font-weight="600">Inspect</text>
+<path d="M446 205 H479" fill="none" stroke="#E67189" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="489" y="181" width="174" height="48" rx="18" fill="#202027" stroke="#8B8B94" stroke-opacity="0.44" stroke-width="1.5"/>
+<svg x="501" y="193" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#A1A1AA" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4v8h7m-7 0v8h12M11 8v8"/><circle cx="16" cy="12" r="3"/><circle cx="19" cy="20" r="2"/></svg>
+<text x="532" y="211" fill="#F4F4F5" font-family="Geist, Inter, Arial, sans-serif" font-size="16" font-weight="600">Investigate</text>
+<path d="M663 205 H696" fill="none" stroke="#E67189" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="706" y="181" width="174" height="48" rx="18" fill="#202027" stroke="#8B8B94" stroke-opacity="0.44" stroke-width="1.5"/>
+<svg x="718" y="193" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#A1A1AA" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h12a4 4 0 0 1 4 4M4 8l4-4M4 8l4 4m16 4H8a4 4 0 0 1-4-4m16 4-4-4m4 4-4 4"/></svg>
+<text x="749" y="211" fill="#F4F4F5" font-family="Geist, Inter, Arial, sans-serif" font-size="16" font-weight="600">Retry</text>
+<path d="M480 255 V281" fill="none" stroke="#8B8B94" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="192" y="288" width="576" height="64" rx="18" fill="#17171C" stroke="#8B8B94" stroke-opacity="0.44" stroke-width="1.5"/>
+<svg x="212" y="306" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#A1A1AA" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 3h16v13l-5 5H4V3Zm11 18v-5h5M8 8h8M8 12h5"/></svg>
+<text x="250" y="314" fill="#F4F4F5" font-family="Geist, Inter, Arial, sans-serif" font-size="18" font-weight="600">Candidate expectation</text>
+<text x="250" y="337" fill="#A1A1AA" font-family="Geist, Inter, Arial, sans-serif" font-size="14" font-weight="400">Hypothesis from observed behavior</text>
+<path d="M480 352 V375" fill="none" stroke="#8B8B94" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="192" y="377" width="576" height="64" rx="18" fill="#17171C" stroke="#E67189" stroke-opacity="0.42" stroke-width="1.5"/>
+<svg x="212" y="395" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#EF9DAB" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="7" r="4"/><path d="M4 22v-3a8 8 0 0 1 16 0v3"/></svg>
+<text x="250" y="403" fill="#EF9DAB" font-family="Geist, Inter, Arial, sans-serif" font-size="18" font-weight="600">Review and accept</text>
+<text x="250" y="426" fill="#A1A1AA" font-family="Geist, Inter, Arial, sans-serif" font-size="14" font-weight="400">Developer-controlled specification change</text>
+<path d="M480 441 V464" fill="none" stroke="#E67189" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="192" y="466" width="576" height="64" rx="18" fill="#17171C" stroke="#8B8B94" stroke-opacity="0.44" stroke-width="1.5"/>
+<svg x="212" y="484" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#A1A1AA" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 2 8 3v7c0 4-5 8-8 10-3-2-8-6-8-10V5l8-3Z"/><path d="m7 12 3 3 7-7"/></svg>
+<text x="250" y="492" fill="#F4F4F5" font-family="Geist, Inter, Arial, sans-serif" font-size="18" font-weight="600">Accepted Feature</text>
+<text x="250" y="515" fill="#A1A1AA" font-family="Geist, Inter, Arial, sans-serif" font-size="14" font-weight="400">Contract for repeatable verification</text>
+<path d="M480 530 V547" fill="none" stroke="#8B8B94" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<svg x="347" y="562" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#86EFAC" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m8 6-6 6 6 6m8-12 6 6-6 6M14 3l-4 18"/></svg>
+<text x="385" y="581" fill="#86EFAC" font-family="Geist, Inter, Arial, sans-serif" font-size="18" font-weight="600">Playwright verification</text>
+</svg>

@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="543" viewBox="0 0 960 543" role="img" aria-labelledby="title desc">
+<title id="title">Configure the system boundary</title><desc id="desc">blackbox.config.yaml selects a system boundary, drivers for action and state inspection, and instrumentation for runtime observations; Capsule or Playwright executes against that configuration.</desc>
+<defs><marker id="arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 8 4 0 8Z" fill="#E67189"/></marker></defs>
+<rect width="960" height="543" fill="#0F0F12"/>
+<text x="34" y="34" fill="#EF9DAB" font-family="Geist, Inter, Arial, sans-serif" font-size="13" font-weight="600" letter-spacing="1.5">SUITES / BLACKBOX</text>
+<text x="34" y="76" fill="#F4F4F5" font-family="Geist, Inter, Arial, sans-serif" font-size="27" font-weight="600">Configure the system boundary</text>
+<text x="34" y="105" fill="#A1A1AA" font-family="Geist, Inter, Arial, sans-serif" font-size="16" font-weight="400">The selected boundary includes participants needed to establish the claim.</text>
+<rect x="233" y="132" width="494" height="70" rx="18" fill="#17171C" stroke="#E67189" stroke-opacity="0.42" stroke-width="1.5"/>
+<svg x="261" y="155" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#EF9DAB" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16M4 12h16M4 19h16"/><circle cx="8" cy="5" r="2" fill="#17171C"/><circle cx="16" cy="12" r="2" fill="#17171C"/><circle cx="9" cy="19" r="2" fill="#17171C"/></svg>
+<text x="301" y="175" fill="#F4F4F5" font-family="Geist Mono, SFMono-Regular, Consolas, monospace" font-size="21" font-weight="600">blackbox.config.yaml</text>
+<path d="M480 202 V230" fill="none" stroke="#8B8B94" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M171 230 H789" fill="none" stroke="#8B8B94" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M168 230 V257" fill="none" stroke="#8B8B94" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="34" y="265" width="268" height="130" rx="18" fill="#17171C" stroke="#8B8B94" stroke-opacity="0.44" stroke-width="1.5"/>
+<svg x="51" y="280" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#EF9DAB" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 9 5v9l-9 5-9-5V8l9-5ZM3 8l9 5 9-5M12 13v9M8 5l9 5"/></svg>
+<text x="90" y="299" fill="#EF9DAB" font-family="Geist, Inter, Arial, sans-serif" font-size="16" font-weight="600">System boundary</text>
+<text x="51" y="336" fill="#F4F4F5" font-family="Geist, Inter, Arial, sans-serif" font-size="16" font-weight="400">Services and</text>
+<text x="51" y="361" fill="#F4F4F5" font-family="Geist, Inter, Arial, sans-serif" font-size="16" font-weight="400">dependencies</text>
+<path d="M480 230 V257" fill="none" stroke="#8B8B94" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="346" y="265" width="268" height="130" rx="18" fill="#17171C" stroke="#8B8B94" stroke-opacity="0.44" stroke-width="1.5"/>
+<svg x="363" y="280" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#EF9DAB" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 6 5 6-5 6M13 18h6"/></svg>
+<text x="402" y="299" fill="#EF9DAB" font-family="Geist, Inter, Arial, sans-serif" font-size="16" font-weight="600">Drivers</text>
+<text x="363" y="336" fill="#F4F4F5" font-family="Geist, Inter, Arial, sans-serif" font-size="16" font-weight="400">Actions and state</text>
+<text x="363" y="361" fill="#F4F4F5" font-family="Geist, Inter, Arial, sans-serif" font-size="16" font-weight="400">inspection</text>
+<path d="M792 230 V257" fill="none" stroke="#8B8B94" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="658" y="265" width="268" height="130" rx="18" fill="#17171C" stroke="#8B8B94" stroke-opacity="0.44" stroke-width="1.5"/>
+<svg x="675" y="280" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#EF9DAB" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4v8h7m-7 0v8h12M11 8v8"/><circle cx="16" cy="12" r="3"/><circle cx="19" cy="20" r="2"/></svg>
+<text x="714" y="299" fill="#EF9DAB" font-family="Geist, Inter, Arial, sans-serif" font-size="16" font-weight="600">Instrumentation</text>
+<text x="675" y="336" fill="#F4F4F5" font-family="Geist, Inter, Arial, sans-serif" font-size="16" font-weight="400">Runtime</text>
+<text x="675" y="361" fill="#F4F4F5" font-family="Geist, Inter, Arial, sans-serif" font-size="16" font-weight="400">observations</text>
+<path d="M168 395 V424" fill="none" stroke="#8B8B94" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M480 395 V424" fill="none" stroke="#8B8B94" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M792 395 V424" fill="none" stroke="#8B8B94" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M168 424 H792" fill="none" stroke="#8B8B94" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M480 424 V450" fill="none" stroke="#E67189" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="225" y="459" width="510" height="60" rx="18" fill="#17171C" stroke="#E67189" stroke-opacity="0.42" stroke-width="1.5"/>
+<svg x="264" y="476" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#EF9DAB" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m8 6-6 6 6 6m8-12 6 6-6 6M14 3l-4 18"/></svg>
+<text x="305" y="496" fill="#F4F4F5" font-family="Geist, Inter, Arial, sans-serif" font-size="19" font-weight="600">Capsule or Playwright execution</text>
+</svg>

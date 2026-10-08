@@ -1,143 +1,380 @@
 <p align="center">
-  <img width="90" src="https://raw.githubusercontent.com/suites-dev/suites/master/logo.png" alt="Suites logo" />
+  <img width="80" src="https://raw.githubusercontent.com/suites-dev/suites/master/logo.png" alt="Suites logo" />
 </p>
 
-<h1 align="center">Suites - Blackbox</h1>
+<h1 align="center">Suites / Blackbox</h1>
 
-**A system verification framework for developers and coding agents.**
+**A system testing framework for executable specifications and runtime verification, built for developers and coding
+agents.**
 
-Blackbox helps developers and coding agents construct a **verification machine**: an isolated, controlled environment
-that makes system behavior easier to observe, check, and reason about.
+Blackbox turns accepted specifications into repeatable verification against real applications and subsystems. Coding
+agents can execute the specified behavior, inspect what happened, investigate failures, repair the implementation, and
+rerun against the same accepted expectations.
 
-It gives coding agents the verification infrastructure they are missing today. Instead of relying on test output, logs,
-or inference alone, an agent can execute or investigate a real system, inspect runtime evidence, receive deterministic
-findings, repair the implementation or its verification setup, and rerun against the same accepted behavior.
+Expected behavior can be expressed directly in native Playwright tests or through optional executable Feature files
+that generate a native suite. Each test attempt runs in a fresh isolated Sandbox, using response, state, and runtime
+evidence to evaluate the specified claims.
 
-Blackbox runs a full application or subsystem in an isolated test environment through native Playwright system tests or
-an interactive CLI sandbox called a Capsule. It uses OpenTelemetry at test-time to observe runtime activity such as HTTP
-calls, database operations, and cache access, then turns those observations into structured effects and evidence that
-developers and agents can use to evaluate claims about the system.
+## Spec-Driven Verification
 
-> **Alpha preview:** Blackbox is being developed in public and has not been published to npm. Install from source.
-> APIs and formats may change. Playwright Sandbox fixtures are an early preview. See
-> [alpha availability](docs/alpha-status.md).
+Spec-Driven Verification checks a running system against an accepted specification. That specification can come from
+product requirements, acceptance criteria, an API contract (like Swagger and OpenAPI), a Markdown document, or any 
+other source of agreed behavior.
 
-## Investigate a real system
+**Accepted behavior defines the checks; each execution supplies evidence.**
 
-Blackbox works with an application or subsystem you define in a YAML catalog. The catalog describes its services,
-dependencies, entrypoint, and instrumentation; Docker Compose provides the environment.
+Developers and coding agents turn those requirements into executable expectations for review. They can write native
+Playwright tests directly or generate suites from optional Feature files. Blackbox runs the selected application or
+subsystem and gathers evidence for the specified claims.
 
-A **Capsule is the laboratory**: the controlled environment, execution tools, observation infrastructure, and retained
-record. An **experiment** is the procedure you carry out there: known initial state, a deliberate stimulus,
-measurements,
-and criteria for answering a question. One execution of that procedure is a **trial**.
+The example below follows the optional Feature-file workflow, from a Markdown specification through review and suite
+generation to runtime verification:
 
-You can send HTTP requests, prepare data, inspect a database, or trigger a worker using tools such as `curl`, `psql`,
-and `redis-cli`. Blackbox records these commands as activities and collects supported runtime observations through
-OpenTelemetry. The [verification model](docs/verification-machine.md) explains how these parts fit together.
+<p align="center">
+  <img width="800" src="docs/assets/readme/specification-to-evidence.svg" alt="create-new-product.md becomes an accepted new-product.feature and generated new-product.spec.ts. Playwright runs the product subsystem, with product-service connected to PostgreSQL and Redis, before Blackbox verifies the execution report." />
+</p>
 
-```mermaid
-flowchart LR
-    Question["Question + claim"] --> Protocol["Plan state, stimulus, measurements"]
-    Protocol --> Trial["Run a trial"]
-    Capsule["Capsule: controlled environment"] --> Trial
-    Trial --> Evidence["Evidence: response, state, telemetry"]
-    Evidence --> Finding["Assess the claim within its scope"]
-    Finding --> Next["Investigate, repair, or rerun"]
-    Next --> Protocol
+
+Specifications in any format can become stale as implementation evolves. Blackbox keeps their accepted expectations
+in the verification loop: review checks that executable expectations preserve the intended behavior, and repeated
+execution makes departures from that behavior visible.
+
+This also fits spec-driven development (SDD) workflows such as Spec Kit, Kiro and Openspec. SDD guides 
+specification, clarification, planning, and implementation; Blackbox provides executable verification of the accepted
+system behavior.
+
+[Spec-Driven workflows integration](docs/integrations/spec-driven-workflows.md)
+
+## Behavior-driven verification
+
+[Behavior-driven development (BDD)](https://cucumber.io/docs/bdd/) uses concrete examples to establish a shared
+understanding of expected behavior. Blackbox adopts that approach to verifying real applications and subsystems:
+scenarios establish initial conditions, perform an action, and check the required outcomes.
+
+**These specifications describe what the running system must do:** its responses, state changes, and required runtime
+effects, such as serving a product from cache. Their meaning should remain stable when classes, functions, or code
+organization change while the required behavior stays the same. Native Playwright tests can express these expectations
+directly.
+
+### Express scenarios with executable Feature files
+
+For this optional workflow, Blackbox adopts [Gherkin from Cucumber](https://cucumber.io/docs/gherkin/reference/).
+A `Feature` describes a capability, a `Rule` groups scenarios illustrating a business rule, and each `Scenario` states
+initial conditions (`Given`), an action (`When`), and expected outcomes (`Then`).
+
+The agent drafts or refines the specification into Blackbox’s closed executable vocabulary for review. Supported steps
+have defined setup, action, and verification semantics, without a separate
+regex step-definition layer. Existing Gherkin may need refinement to use that vocabulary.
+
+The following example connects the source specification, reviewed Feature, and native Playwright suite around the same
+response and required cache behavior:
+
+<p align="center">
+  <img width="800" src="docs/assets/readme/specification-triangle.svg" alt="product-cache.md drives a reviewed product-cache.feature and its native product-cache.spec.ts suite. Review preserves intent, generation preserves alignment, and execution supplies evidence for the specified behavior." />
+</p>
+
+<details>
+<summary>View the specification and tests</summary>
+
+**Specification · `product-cache.md`**
+
+```markdown
+# Product details
+
+## Business rule
+
+Cached product details are served from cache.
+
+## Acceptance example
+
+A product is already cached. When a client requests its details:
+
+- The response status is 200.
+- The product is returned from cache.
 ```
 
-This supports a **feedback loop**, like flight control: act, measure, compare with the intended behavior, and adjust.
-The Capsule supplies the controlled environment and operating tools; explicit checks make the evidence actionable.
-You can [reduce the system under test](docs/configuration.md#reduce-the-system-under-test) to focus an investigation,
-use [drivers to seed data or run migrations](docs/drivers.md#seed-data-and-run-migrations), then rerun after a change.
+**Feature · `features/product-cache.feature`**
 
-For example, investigating subscription creation can involve three distinct pieces of evidence:
+The reviewed Feature expresses the same business rule and acceptance example:
 
-| Question                     | What to inspect                                                               |
-| ---------------------------- | ----------------------------------------------------------------------------- |
-| What did the caller receive? | The HTTP client's response and exit result.                                   |
-| Which services participated? | The instrumented application's traces.                                        |
-| What state was saved?        | A database query or application state endpoint, recorded as another activity. |
+```gherkin
+Feature: Product details
 
-Each piece answers a different question. Blackbox keeps their identities and results available so you can follow
-a finding back to its evidence. A response or state read can be useful evidence even without a connected trace.
-An asynchronous handoff can also break trace continuity while the work continues.
-The [Redis walkthrough](docs/trace-continuity.md)
-shows Blackbox retaining both the command execution and a consumer's separate downstream trace in one session.
+  Rule: Cached product details are served from cache
 
-Execution identity defines the evidence scope. Known state and isolation reduce alternative explanations; trace
-propagation adds structure inside that scope. Claims about occurrence, absence, or exact counts require different
-levels of evidence. A finding can be supported, refuted, or left unresolved because the evidence is insufficient.
-
-## Keep the evidence after the environment stops
-
-A Capsule owns a temporary runtime environment and the retained record of work performed there. Stopping it releases
-its owned containers and related resources. Your activities, observations, and lifecycle records remain available.
-
-Use the local report viewer while you work, or export an HTML or JSON snapshot for later inspection:
-
-```sh
-blackbox capsule report serve --session "$SESSION_ID" --open
-blackbox capsule report export --session "$SESSION_ID" --format html
+    Scenario: Return product details from cache
+      Given the product is already cached
+      When the client requests product details
+      Then the response status is 200
+      And the product is returned from cache
 ```
 
-These commands use the CLI and session created in [getting started](docs/getting-started.md).
-See [Capsule experiments](docs/experiments.md) and [reports](docs/reports.md) for the full workflow.
+**Native suite · `product-cache.spec.ts`**
 
-## Work with your tools and your coding agent
+Generation preserves the `Feature → Rule → Scenario → steps` nesting and names. Within each scenario, `Given` arranges
+the initial state, `When` applies the stimulus, and `Then` asserts the expected outcomes, following Arrange–Act–Assert
+(AAA). `And` continues the preceding step type. The selected system and its isolated Sandbox provide the execution
+context around that hierarchy.
 
-Blackbox runs commands you supply. Drivers can prepare an endpoint, add trace context, or run a tool inside a
-participant container. Activity results and observation queries are available as JSON, so scripts and agents can
-inspect an exact session, activity, or trace.
+The planned native expression below retains the same capability, business rule, scenario, and steps. The existing
+[Playwright E2E suite](https://github.com/suites-dev/blackbox/blob/8017b623d5c5da5f162f3ee828a703cb814ea1cf/e2e/tests/playwright/subscription-system.spec.ts)
+illustrates the underlying system-test structure. This example requires a cache-only fixture: product 42 is present in
+the cache and absent from the backing store, so its returned value can establish the response source.
 
-A useful agent task is:
+```ts
+import { randomUUID } from 'node:crypto';
+import { expect, test } from '@suites/blackbox-playwright';
 
-> Investigate why creating a subscription makes an unexpected downstream request. Start the configured system in
-> a Capsule, reproduce the request, inspect the relevant observations, and explain what the evidence establishes.
-> Save a report and stop the Capsule when finished.
+test
+.system('products-system')
+.feature('Product details')
+.run(({ sandbox }) => {
+  sandbox.describe('Rule: Cached product details are served from cache', ({ suite }) => {
+    suite.test(
+      'Scenario: Return product details from cache',
+      async ({ activities, request, sandbox, effects }) => {
+        const product = { id: '42', name: `Cached product ${randomUUID()}` };
+        const url = (path: string) => new URL(path, sandbox.entrypoint.url).href;
 
-Exploration discovers behavior. Confirmation checks independently accepted expectations against fresh evidence.
-Recording a flow does not automatically make it correct. Agent explanations remain interpretations of the evidence;
-a successful command does not establish every downstream consequence.
-See [runtime evidence](docs/runtime-evidence.md) for observation and correlation limits.
+        await test.step('Given the product is already cached', () =>
+          activities.setup.request('seed cache-only product', request, async (scoped) => {
+            const seeded = await scoped.post(url('/__fixtures/products/cache-only'), {
+              data: product,
+            });
+            expect(seeded.status()).toBe(204);
+          }));
 
-## Get started
+        const response = await test.step('When the client requests product details', () =>
+          activities.stimulus.request('request product details', request, (scoped) =>
+            scoped.get(url('/products/42')),
+          ));
 
-The default package is [`@suites/blackbox`](packages/blackbox/README.md): core
-composition, Skills, Catalog, Discovery, and the `$blackbox` agent skill.
-Install [`@suites/blackbox-cli`](packages/cli/README.md) explicitly for the
-`blackbox` command; the main package has no launcher. Capsule and Playwright
-are separate adapters (`@suites/blackbox-capsule`, `@suites/blackbox-playwright`).
-The [installation guide](docs/installation.md) explains package selection and the
-current source-only setup; no npm release is implied.
+        await test.step('Then the response status is 200', async () => {
+          expect(response.status()).toBe(200);
+        });
 
-[Install Blackbox](docs/installation.md), then follow [your first Capsule](docs/getting-started.md).
-The tutorial uses an included subscription application with Node services, PostgreSQL, Redis, and LocalStack.
-A guided demo also walks through HTTP and database drivers, observations, and reports.
+        await test.step('And the product is returned from cache', async () => {
+          expect(await response.json()).toEqual(product);
 
-| Guide                                                    | What you'll learn                                                                 |
-| -------------------------------------------------------- | --------------------------------------------------------------------------------- |
-| [The verification machine](docs/verification-machine.md) | Understand Capsules, experiments, trials, evidence, and claim assessment.         |
-| [Getting started](docs/getting-started.md)               | Run an application, send a request, inspect the result, and stop the Capsule.     |
-| [Configuration](docs/configuration.md)                   | Define your system, participants, drivers, and Node instrumentation.              |
-| [Instrumentation and adapters](docs/instrumentation.md)  | Load Node instrumentation into your services and understand the observation path. |
-| [Drivers](docs/drivers.md)                               | Connect tools to participants and carry trace context.                            |
-| [Capsule experiments](docs/experiments.md)               | Organize actions and query an experiment.                                         |
-| [Runtime evidence](docs/runtime-evidence.md)             | Understand observations, propagation, and missing evidence.                       |
-| [Trace continuity and Redis](docs/trace-continuity.md)   | Follow unlinked async work across a shared-state boundary.                        |
-| [Completion barriers](docs/completion-barriers.md)       | Seal asynchronous work before asserting absence or exact effect counts.           |
-| [Reports](docs/reports.md)                               | Browse a live experiment and export snapshots.                                    |
-| [CLI reference](docs/cli.md)                             | Find commands and options.                                                        |
+          await expect(effects).toSatisfy((e) => [
+            e.exists(e.cache({ actor: 'catalog-api', operation: 'GET' })),
+          ]);
+        });
+      },
+    );
+  });
+});
+```
 
-Follow the [roadmap](docs/roadmap.md) for the next seven work items and [agent skill setup](docs/agent-skills.md) for
-Codex, Claude Code, and Cursor.
+**Draft, review, generate, and run**
 
-## Community
+The agent drafts the Feature from the specification for review. Once its expectations are accepted, it validates the
+Feature, generates the native suite, and runs it against the selected application or subsystem:
 
-Blackbox is open source. Questions, reproducible bug reports, and contributions are welcome.
-See [Support](SUPPORT.md), [Contributing](CONTRIBUTING.md), and the [Code of Conduct](CODE_OF_CONDUCT.md).
+```console
+$ blackbox spec feature draft --file product-cache.md
+$ blackbox feature validate --file features/product-cache.feature
+$ blackbox feature suite emit --file features/product-cache.feature
+$ npx playwright test
+```
 
-## License
+</details>
 
-[Apache-2.0](LICENSE).
+The project-owned fixture endpoint seeds the cache and removes any backing-store copy of the product. Setup remains
+separate from the stimulus. The final claim combines that controlled initial state, the returned product, and cache-read
+evidence from the same execution; observing a cache read alone would not establish that the product was served from it.
+
+**Keep specifications connected as the system evolves.** Review checks that executable expectations remain faithful to
+the accepted specification. Repeated execution checks those expectations against the running system. When intended
+behavior changes, revise the specification and its executable expectations together.
+
+For the Feature workflow, `blackbox feature suite check` also detects deterministic drift between the accepted Feature
+and its generated suite. After reviewing changes to the Feature, regenerate the suite and verify the new expectations.
+Review maintains meaning, generation keeps the derived suite aligned, and execution supplies evidence for the exercised
+claims.
+
+[Executable specifications](docs/specifications/index.md) ·
+[Feature files](docs/specifications/feature-files.md)
+
+## Let your coding agent run Blackbox
+
+Ask your coding agent to set up Blackbox in your repository, starting with:
+
+```bash
+$ npx @suites/blackbox-cli onboarding start
+```
+
+Blackbox provides a full skill system out of the box to let coding agents handle the operational work, from initial
+setup to execution, investigation, and verification. The skills provide the procedures and context, while Blackbox’s CLI
+returns structured feedback the agent can act on.
+
+### Agent Onboarding
+
+During onboarding, the agent inspects the repository, discovers services and dependencies, and derives the system
+topology. It identifies useful application and subsystem boundaries, then creates or updates the Blackbox configuration
+and supporting files.
+
+<p align="center">
+  <img width="800" src="docs/assets/readme/onboarding-discovery.svg" alt="Agent onboarding discovers services and dependencies, derives system boundaries, then creates and validates Blackbox configuration." />
+  <br />
+  <sub>The agent derives runnable boundaries from the repository’s services and dependencies.</sub>
+</p>
+
+The result describes what to run, how to start it, and how to act on and observe it. The agent reuses existing project
+files where appropriate. For a Node application with an HTTP service, the setup could look like this:
+
+<p align="center">
+  <img width="800" src="docs/assets/readme/onboarding-files.svg" alt="Example project tree with blackbox.config.yaml and .blackbox catalog, driver, and instrumentation files." />
+  <br />
+  <sub>Configuration references the files that start, drive, and observe the system.</sub>
+</p>
+
+`blackbox.config.yaml` is the configuration authority and references the supporting files. Capsules and Playwright use
+that configuration to run the selected system and collect evidence.
+
+[Initial setup](docs/getting-started/agent-onboarding.md) ·
+[Agent skills](docs/agents/skills.md)
+
+## Inspect the result and its evidence
+
+Playwright remains the test runner. Blackbox adds execution context and evidence to its terminal and HTML reports.
+For the cache scenario, a report can look like this:
+
+<p align="center">
+  <img width="800" src="docs/assets/readme/illustrative-report.svg" alt="Illustrative Product details report showing the cache scenario, steps L6 to L9, response and cache observations, coverage, and one passed result." />
+  <br />
+  <sub>Claims and coverage appear alongside evidence from the same attempt.</sub>
+</p>
+
+Claims are supported, refuted, or unresolved according to the available response, state, and runtime evidence. In this
+example, the response establishes the status code. The cache claim combines the controlled initial state, returned
+product, and runtime evidence from the same execution.
+
+Different claims require different evidence. Observing a database operation does not establish that a transaction
+committed. Observing a message being published does not establish that a consumer completed its work. An operation that
+was not observed is not automatically evidence that it never happened.
+
+Blackbox keeps those limits explicit so a passing verification does not claim more than the execution established.
+
+For suites generated from Feature files, **Executable Feature Coverage** shows which executable Feature lines and
+Examples rows were actually exercised by the run. It measures coverage of the executable Feature; an exercised line
+still needs evidence to support its claim.
+
+The HTML report connects scenarios, Sandbox execution, claims, observations, and retained evidence, including the
+associated Feature when present:
+
+```console
+$ npx playwright show-report
+```
+
+[Reports](docs/playwright/reports.md) ·
+[Verification](docs/verification/index.md) ·
+[Evidence](docs/verification/evidence.md) ·
+[Evidence qualification](docs/verification/evidence-qualification.md)
+
+## Investigate with Capsules
+
+When a claim is refuted or unresolved, the agent can use a Capsule to investigate. Capsules also support experiments
+with candidate expectations before they become accepted behavior.
+
+| Mode                   | Purpose                                                                      |
+|------------------------|------------------------------------------------------------------------------|
+| Playwright system test | Repeat accepted expectations against a fresh isolated Sandbox.               |
+| Capsule                | Act on a running system, inspect evidence, test a hypothesis, and try again. |
+
+A Capsule is a bounded interactive experiment. The agent can inspect what happened, change the implementation, and
+repeat the experiment. When the investigation suggests a new expectation, it goes through review before becoming part
+of the accepted specification. The example below carries that expectation into an accepted Feature and its Playwright
+suite:
+
+<p align="center">
+  <img width="800" src="docs/assets/readme/capsule-to-feature.svg" alt="Capsule investigation moves from act, inspect, investigate, and retry to a candidate expectation, review, accepted Feature, and Playwright verification." />
+  <br />
+  <sub>Candidate expectations require review before joining the accepted specification.</sub>
+</p>
+
+**Observed behavior is not automatically accepted behavior.** A Capsule can validate or challenge a candidate
+expectation; the accepted specification remains the source of what the implementation must satisfy.
+
+Stopping the environment does not discard the experiment. Its activities, observations, and evidence remain available
+for inspection and reporting.
+
+[Capsules](docs/capsules/index.md) ·
+[Experiments](docs/capsules/experiments.md) ·
+[Capsule reports](docs/capsules/reports.md) ·
+[Playwright verification](docs/playwright/index.md)
+
+---
+
+## Run the system your claim requires
+
+Blackbox can run a full application or a smaller subsystem. Use the smallest real system boundary that can answer the
+claim being checked, including every participant needed to establish the behavior.
+
+A focused boundary lowers startup cost, memory use, and unrelated runtime noise. It also reduces the number of competing
+explanations when an execution fails. A cross-service workflow still needs the participants required to establish that
+workflow.
+
+The agent configures these boundaries during discovery. Configuration selects the system, drivers provide controlled
+ways to act on it and inspect state, and instrumentation provides supported runtime observations:
+
+<p align="center">
+  <img width="800" src="docs/assets/readme/system-boundary.svg" alt="blackbox.config.yaml selects system boundary, drivers, and instrumentation for Capsule or Playwright execution." />
+  <br />
+  <sub>Capsules and Playwright share the configured boundary, drivers, and instrumentation.</sub>
+</p>
+
+Use unit tests for the behavior of a function or class. Use Blackbox when the claim concerns a running application or
+subsystem, including when an internal implementation change could affect that behavior.
+
+[System boundaries](docs/systems/system-boundaries.md) ·
+[Configuration](docs/systems/blackbox-config.md) ·
+[Systems](docs/systems/index.md) ·
+[Drivers](docs/systems/drivers.md) ·
+[Instrumentation](docs/systems/instrumentation.md)
+
+---
+
+## Keep verification consistent locally and in CI
+
+Local iteration and CI use the same accepted expectations. An agent can focus on selected scenarios and Capsule
+experiments during development, while CI runs the suite selected by the repository's verification policy.
+
+Every physical Playwright attempt gets a fresh Sandbox. Isolation enables parallel execution; CPU, memory, and container
+resources determine how much concurrency is practical.
+
+For repositories using the Feature workflow, three checks protect different parts of verification:
+
+| Check                                              | What it establishes                                                                              |
+|----------------------------------------------------|--------------------------------------------------------------------------------------------------|
+| `blackbox feature suite check`                     | The generated suite matches the accepted Feature and current compiler inputs.                    |
+| `blackbox feature verify`                          | Required scenarios ran, verdicts are supported, and runner policy matches the accepted baseline. |
+| `blackbox feature change check --base origin/main` | Changes to accepted Features satisfy the repository's specification-change policy.               |
+
+For generated Feature suites, CI checks that the suite is current, runs it, and verifies the completed execution:
+
+```console
+$ blackbox feature suite check
+$ npx playwright test
+$ blackbox feature verify
+```
+
+The generated suite is derived from the accepted Feature. Source-specification-to-Feature alignment is a separate
+semantic question from deterministic Feature-to-suite drift. Repositories that protect specifications separately from
+implementation changes can also use `feature change check` against their chosen base branch.
+
+[CI verification](docs/playwright/ci.md) ·
+[Specification drift](docs/specifications/drift.md)
+
+---
+
+## Alpha and next steps
+
+Blackbox is under active development. The executable Feature workflow described here is upcoming. APIs, command names,
+and report formats may change before the stable release.
+
+Start with [coding-agent onboarding](#let-your-coding-agent-run-blackbox), or explore the guides below.
+
+[Getting started](docs/getting-started/index.md) ·
+[Initial setup](docs/getting-started/agent-onboarding.md) ·
+[CLI reference](docs/reference/cli/index.md)

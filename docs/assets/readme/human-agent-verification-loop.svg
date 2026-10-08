@@ -1,0 +1,83 @@
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox="0 0 1200 500"
+  role="img"
+  aria-labelledby="loop-title loop-description"
+>
+  <title id="loop-title">Human-agent behavioral verification loop</title>
+  <desc id="loop-description">
+    A person approves Gherkin, effect claims, and analysis policy as feedforward
+    guidance for a coding agent. The agent realizes or repairs a system or E2E
+    suite. Blackbox captures fresh runtime evidence and returns deterministic
+    findings as feedback. Proposed changes to human intent return to the person.
+  </desc>
+
+  <defs>
+    <linearGradient id="loop-background" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#081120" />
+      <stop offset="1" stop-color="#0f172a" />
+    </linearGradient>
+    <marker id="loop-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0 0 10 5 0 10Z" fill="#94a3b8" />
+    </marker>
+    <marker id="loop-feedforward" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0 0 10 5 0 10Z" fill="#fbbf24" />
+    </marker>
+    <marker id="loop-feedback" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0 0 10 5 0 10Z" fill="#4ade80" />
+    </marker>
+  </defs>
+
+  <rect x="6" y="6" width="1188" height="488" rx="16" fill="url(#loop-background)" stroke="#334155" />
+
+  <g font-family="'Hanken Grotesk Local', 'Hanken Grotesk', Inter, ui-sans-serif, system-ui, sans-serif">
+    <text x="34" y="44" fill="#f8fafc" font-size="24" font-weight="800">
+      Guidance before action, findings after execution
+    </text>
+    <text x="34" y="69" fill="#cbd5e1" font-size="15">
+      The repair loop moves quickly without moving product authority.
+    </text>
+
+    <g text-anchor="middle">
+      <rect x="34" y="118" width="230" height="150" rx="11" fill="#3b2f0b" stroke="#fbbf24" stroke-width="2" />
+      <text x="149" y="147" fill="#fde68a" font-size="14" font-weight="800">PERSON APPROVED</text>
+      <text x="149" y="181" fill="#fef3c7" font-size="20" font-weight="800">Human intent</text>
+      <text x="149" y="211" fill="#fde68a" font-size="15">Gherkin + effect claims</text>
+      <text x="149" y="233" fill="#fde68a" font-size="15">+ analysis policy</text>
+
+      <rect x="316" y="118" width="220" height="150" rx="11" fill="#421622" stroke="#db486f" stroke-width="2" />
+      <text x="426" y="147" fill="#ef9dab" font-size="14" font-weight="800">GENERATOR</text>
+      <text x="426" y="188" fill="#fdf3f5" font-size="21" font-weight="800">Coding agent</text>
+      <text x="426" y="222" fill="#f6c9d1" font-size="15">realizes or repairs</text>
+
+      <rect x="588" y="118" width="244" height="150" rx="11" fill="#172554" stroke="#60a5fa" stroke-width="2" />
+      <text x="710" y="147" fill="#93c5fd" font-size="14" font-weight="800">EXECUTION</text>
+      <text x="710" y="181" fill="#eff6ff" font-size="20" font-weight="800">System or E2E suite</text>
+      <text x="710" y="215" fill="#bfdbfe" font-size="15">runs the application</text>
+      <text x="710" y="237" fill="#bfdbfe" font-size="15">and native assertions</text>
+
+      <rect x="884" y="118" width="282" height="150" rx="11" fill="#12302a" stroke="#34d399" stroke-width="2" />
+      <text x="1025" y="147" fill="#6ee7b7" font-size="14" font-weight="800">BLACKBOX</text>
+      <text x="1025" y="180" fill="#ecfdf5" font-size="18" font-weight="800">Runtime captures evidence</text>
+      <line x1="914" y1="197" x2="1136" y2="197" stroke="#2f6b57" />
+      <text x="1025" y="225" fill="#ecfdf5" font-size="18" font-weight="800">Analyzer returns findings</text>
+      <text x="1025" y="249" fill="#a7f3d0" font-size="14">same sealed inputs, same result</text>
+    </g>
+
+    <line x1="264" y1="193" x2="306" y2="193" stroke="#fbbf24" stroke-width="2.5" marker-end="url(#loop-feedforward)" />
+    <text x="285" y="178" text-anchor="middle" fill="#fde68a" font-size="14" font-weight="800">FEEDFORWARD</text>
+
+    <line x1="536" y1="193" x2="578" y2="193" stroke="#94a3b8" stroke-width="2.5" marker-end="url(#loop-arrow)" />
+    <line x1="832" y1="193" x2="874" y2="193" stroke="#60a5fa" stroke-width="2.5" marker-end="url(#loop-arrow)" />
+
+    <path d="M1025 268V338H390V278" fill="none" stroke="#4ade80" stroke-width="3" marker-end="url(#loop-feedback)" />
+    <rect x="590" y="316" width="272" height="42" rx="8" fill="#14301f" stroke="#4ade80" />
+    <text x="726" y="333" text-anchor="middle" fill="#86efac" font-size="14" font-weight="800">DETERMINISTIC FEEDBACK</text>
+    <text x="726" y="352" text-anchor="middle" fill="#bbf7d0" font-size="14">finding becomes a repair problem</text>
+
+    <path d="M462 268V418H149V278" fill="none" stroke="#fbbf24" stroke-width="2" stroke-dasharray="7 6" marker-end="url(#loop-feedforward)" />
+    <rect x="145" y="395" width="286" height="46" rx="8" fill="#3b2f0b" stroke="#a16207" />
+    <text x="288" y="414" text-anchor="middle" fill="#fde68a" font-size="13" font-weight="800">PROPOSED INTENT OR POLICY CHANGE</text>
+    <text x="288" y="432" text-anchor="middle" fill="#fef3c7" font-size="14">the person decides</text>
+  </g>
+</svg>
