@@ -62,3 +62,28 @@ it('keeps invalid requests and authored exceptions inside the typed protocol', a
     error: { name: 'Error', message: 'authored failure' },
   });
 });
+
+it('reports the served catalog key for a driver without a name', async () => {
+  const definition = defineDriver({
+    kind: 'project-driver',
+    prepare: () => Promise.reject(new Error('authored failure')),
+  });
+  await expect(run(definition)).resolves.toMatchObject({
+    kind: 'driver-prepare-failed',
+    driver: { kind: 'available', name: 'http-driver' },
+    error: { message: 'authored failure' },
+  });
+  await expect(run(definition, '{}')).resolves.toMatchObject({
+    kind: 'driver-prepare-failed',
+    driver: { kind: 'unavailable' },
+  });
+  await expect(
+    run({ kind: 'project-driver', prepare: () => driverPreparation() }),
+  ).resolves.toMatchObject({ kind: 'driver-prepare-succeeded', driver: { name: 'http-driver' } });
+});
+
+it('refuses a default export whose name is present but not a driver name', async () => {
+  await expect(
+    run({ kind: 'project-driver', name: undefined, prepare: () => driverPreparation() }),
+  ).resolves.toMatchObject({ kind: 'driver-prepare-failed', driver: { kind: 'unavailable' } });
+});

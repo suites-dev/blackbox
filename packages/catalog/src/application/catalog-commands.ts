@@ -126,7 +126,9 @@ export async function runCatalogValidate(
   try {
     referenceIssues = [
       ...(await validateReferencedInputs({ catalog: loaded })),
-      ...activationAdapterIssues({ catalog: loaded, adapters: input.activationAdapters }),
+      ...('activationAdapters' in input
+        ? activationAdapterIssues({ catalog: loaded, adapters: input.activationAdapters })
+        : []),
     ];
   } catch (error) {
     return {

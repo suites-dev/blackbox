@@ -2,9 +2,10 @@ import { realpath } from 'node:fs/promises';
 import { isAbsolute, posix, relative, resolve, sep } from 'node:path';
 
 import type { CatalogSandboxInput } from '@suites/blackbox-catalog';
-import type {
-  RuntimeActivationAdapter,
-  RuntimeActivationValuePart,
+import {
+  unavailableRuntimeActivationAdapterMessage,
+  type RuntimeActivationAdapter,
+  type RuntimeActivationValuePart,
 } from '@suites/blackbox-instrumentation';
 import type {
   SandboxCollectorRuntime,
@@ -82,9 +83,7 @@ function adapterFor(input: {
     (candidate) => candidate.runtime === input.runtime && candidate.adapter === input.adapter,
   );
   if (selected === undefined) {
-    throw new Error(
-      `Activation adapter ${JSON.stringify(input.adapter)} for runtime ${JSON.stringify(input.runtime)} is unavailable`,
-    );
+    throw new Error(unavailableRuntimeActivationAdapterMessage(input));
   }
   return selected;
 }

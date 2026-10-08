@@ -1,10 +1,11 @@
-import { mkdir, mkdtemp, symlink, unlink, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, rm, symlink, unlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { expect, it } from 'vitest';
 
-import { runCatalogList, runCatalogValidate } from './catalog-commands.js';
+import { runCatalogList, runCatalogValidate } from '../index.js';
+import { makeValidProject, validCatalog } from '../test-fixtures/catalog-project.js';
 
 // What the Node runtime plugin registers with the CLI.
 const nodeAdapters = [
@@ -12,76 +13,68 @@ const nodeAdapters = [
   { runtime: 'node', adapter: 'node-esm' },
 ] as const;
 
-const validCatalog = `schemaVersion: 1
-catalog:
-  default: orders
-  entries:
-    orders:
-      kind: system
-      acquisition:
-        adapter: docker-compose@1
-        files: [.blackbox/compose/orders.yml]
-      entrypoint:
-        participant: api
-        protocol: http
-        containerPort: 3000
-        readiness: { path: /health, timeoutMs: 60000 }
-      participants:
-        api: { service: api, role: entrypoint, runtime: node, activation: node-runtime }
-      drivers:
-        http:
-          kind: project-driver
-          runtime: node
-          ref: .blackbox/drivers/http.mjs
-          target: { kind: participant, participant: api, protocol: http, containerPort: 3000 }
-          execution: { kind: host }
-          propagation: { kind: w3c-trace-context-propagation, carrier: http-headers }
-      observation:
-        policyId: orders-v1
-        boundaries:
-          - { id: effects.http, kind: http, authoritativeFor: [HTTP effects] }
-        requiredBoundaries: [effects.http]
-        terminalObservationWindowMs: 1000
-        redaction:
-          requestBodies: not-captured
-          headers: [authorization]
-          dynamicIdentifiers: normalized
-activations:
-  node-runtime:
-    ref: .blackbox/instrumentation/bootstrap.mjs
-    adapter: node-preload
-    version: 1
-`;
+it.each([{}, { activationAdapters: nodeAdapters }])(
+  'validates the canonical project-root configuration and referenced files with adapter options %j',
+  async (options) => {
+    const projectDirectory = await makeValidProject();
+    try {
+      await expect(runCatalogValidate({ projectDirectory, ...options })).resolves.toEqual({
+        kind: 'catalog-validate-success',
+        ok: true,
+        operation: 'catalog.validate',
+        exitClass: 'success',
+        configFile: join(projectDirectory, 'blackbox.config.yaml'),
+        schemaVersion: 1,
+        defaultEntry: 'orders',
+        entryCount: 1,
+      });
+    } finally {
+      await rm(projectDirectory, { recursive: true, force: true });
+    }
+  },
+);
 
-async function makeValidProject(): Promise<string> {
-  const directory = await mkdtemp(join(tmpdir(), 'blackbox-catalog-command-'));
-  await mkdir(join(directory, '.blackbox/compose'), { recursive: true });
-  await mkdir(join(directory, '.blackbox/instrumentation'), { recursive: true });
-  await mkdir(join(directory, '.blackbox/drivers'), { recursive: true });
-  await Promise.all([
-    writeFile(join(directory, 'blackbox.config.yaml'), validCatalog, 'utf8'),
-    writeFile(join(directory, '.blackbox/compose/orders.yml'), 'services: {}\n', 'utf8'),
-    writeFile(join(directory, '.blackbox/instrumentation/bootstrap.mjs'), 'export {};\n', 'utf8'),
-    writeFile(join(directory, '.blackbox/drivers/http.mjs'), 'export {};\n', 'utf8'),
-  ]);
-  return directory;
-}
-
-it('validates the canonical project-root configuration and referenced files', async () => {
+it('rejects configured activations when the caller explicitly supplies no adapters', async () => {
   const projectDirectory = await makeValidProject();
+  try {
+    await expect(
+      runCatalogValidate({ projectDirectory, activationAdapters: [] }),
+    ).resolves.toMatchObject({
+      ok: false,
+      kind: 'catalog-command-user-error',
+      classification: 'referenced-input-invalid',
+      diagnostics: [
+        {
+          kind: 'semantic',
+          instancePath: '/catalog/entries/orders/participants/api/activation',
+          message:
+            'activation "node-runtime" uses adapter "node-preload", which no installed runtime ' +
+            'plugin provides; installed adapters: none',
+        },
+      ],
+    });
+  } finally {
+    await rm(projectDirectory, { recursive: true, force: true });
+  }
+});
 
-  await expect(
-    runCatalogValidate({ projectDirectory, activationAdapters: nodeAdapters }),
-  ).resolves.toEqual({
-    kind: 'catalog-validate-success',
-    ok: true,
-    operation: 'catalog.validate',
-    exitClass: 'success',
-    configFile: join(projectDirectory, 'blackbox.config.yaml'),
-    schemaVersion: 1,
-    defaultEntry: 'orders',
-    entryCount: 1,
-  });
+it('reports referenced-input problems before adapter diagnostics', async () => {
+  const projectDirectory = await makeValidProject();
+  try {
+    await unlink(join(projectDirectory, '.blackbox/compose/orders.yml'));
+    await expect(
+      runCatalogValidate({ projectDirectory, activationAdapters: [] }),
+    ).resolves.toMatchObject({
+      ok: false,
+      classification: 'referenced-input-invalid',
+      diagnostics: [
+        { instancePath: '/catalog/entries/orders/acquisition/files/0' },
+        { instancePath: '/catalog/entries/orders/participants/api/activation' },
+      ],
+    });
+  } finally {
+    await rm(projectDirectory, { recursive: true, force: true });
+  }
 });
 
 it('returns structured invalid-config diagnostics without printing or exiting', async () => {

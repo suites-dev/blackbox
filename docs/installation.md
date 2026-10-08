@@ -108,17 +108,17 @@ Skip this section if you only use host commands without `--via`. To use or autho
 project drivers, install their SDK alongside the project's driver modules. The
 guided demo handles this step automatically for its own run.
 
-For a source installation, first package the SDK and its telemetry dependency from
-your completed build:
+For a source installation, first package the SDK and its two Blackbox dependencies
+from your completed build. Pack them into a directory outside the checkout and keep
+it: the project's driver package refers to these files on every later install.
 
 ```sh
-mkdir -p "$blackbox_checkout/.blackbox/driver-packages"
-pnpm --config.ignore-scripts=true --dir "$blackbox_checkout/packages/telemetry" \
-  pack --pack-destination "$blackbox_checkout/.blackbox/driver-packages"
-pnpm --config.ignore-scripts=true --dir "$blackbox_checkout/packages/cli-contract" \
-  pack --pack-destination "$blackbox_checkout/.blackbox/driver-packages"
-pnpm --config.ignore-scripts=true --dir "$blackbox_checkout/packages/driver" \
-  pack --pack-destination "$blackbox_checkout/.blackbox/driver-packages"
+blackbox_packages="${XDG_CACHE_HOME:-$HOME/.cache}/blackbox/packages"
+mkdir -p "$blackbox_packages"
+for package in telemetry cli-contract driver; do
+  pnpm --config.ignore-scripts=true --dir "$blackbox_checkout/packages/$package" \
+    pack --pack-destination "$blackbox_packages"
+done
 ```
 
 For the included application, enter its project directory:
@@ -127,21 +127,55 @@ For the included application, enter its project directory:
 cd "$blackbox_checkout/e2e"
 ```
 
-For your own application, use its project directory instead. Then install both local packages and prepare the runtime:
+For your own application, use its project directory instead. Then install the three local packages and prepare the runtime:
 
 ```sh
 npm install --prefix .blackbox/drivers --ignore-scripts --no-audit --no-fund \
-  "$blackbox_checkout/.blackbox/driver-packages/suites-blackbox-telemetry-0.0.1-alpha.0.tgz" \
-  "$blackbox_checkout/.blackbox/driver-packages/suites-blackbox-cli-contract-0.0.1-alpha.0.tgz" \
-  "$blackbox_checkout/.blackbox/driver-packages/suites-blackbox-driver-0.0.1-alpha.0.tgz"
-npm pkg set --prefix .blackbox/drivers \
-  'overrides.@suites/blackbox-telemetry=$@suites/blackbox-telemetry'
+  "$blackbox_packages/suites-blackbox-telemetry-0.0.1-alpha.0.tgz" \
+  "$blackbox_packages/suites-blackbox-cli-contract-0.0.1-alpha.0.tgz" \
+  "$blackbox_packages/suites-blackbox-driver-0.0.1-alpha.0.tgz"
 blackbox driver install --runtime node --json
 ```
 
 The filenames above match the first alpha. Use the filenames printed by `pack` if
-your checkout has a different version. Keep the tarballs available for subsequent dependency installs.
-The override keeps the SDK's telemetry dependency pointed at the local package during later installs.
+your checkout has a different version. Because the SDK's Blackbox dependencies are
+installed as direct dependencies, npm resolves them to the local files on later
+installs too, so no `overrides` entry is needed. If an older guide had you add one,
+npm releases before 9.3.0 fail on it with `Invalid comparator: file:…`;
+`driver install` then names the minimum npm version. Remove the `overrides` entry
+from `.blackbox/drivers/package.json` or upgrade npm (Node.js 22 ships npm 10).
 
 For the included application, the project directory is `$blackbox_checkout/e2e`; its driver modules are already
 provided. Continue with the [subscription investigation](experiments.md).
+
+## Install the Playwright package from source
+
+Until the alpha is published, a Playwright project installs `@suites/blackbox-playwright`
+and the eight Blackbox packages it depends on from tarballs packed from your completed
+build. Pack them into the same directory as the driver SDK:
+
+```sh
+blackbox_packages="${XDG_CACHE_HOME:-$HOME/.cache}/blackbox/packages"
+mkdir -p "$blackbox_packages"
+for package in telemetry cli-contract skills catalog instrumentation \
+  instrumentation-runtime-node otel-collector sandbox playwright; do
+  pnpm --config.ignore-scripts=true --dir "$blackbox_checkout/packages/$package" \
+    pack --pack-destination "$blackbox_packages"
+done
+```
+
+Then, from your Playwright project's directory, install Playwright Test and all nine
+tarballs in one command, so npm resolves every Blackbox dependency to its local file
+instead of the registry:
+
+```sh
+cd path/to/your-playwright-project
+npm install --save-dev --no-audit --no-fund '@playwright/test@^1.61.0' \
+  "$blackbox_packages"/suites-blackbox-{telemetry,cli-contract,skills,catalog}-0.0.1-alpha.0.tgz \
+  "$blackbox_packages"/suites-blackbox-{instrumentation,inst-runtime-node,otel-collector}-0.0.1-alpha.0.tgz \
+  "$blackbox_packages"/suites-blackbox-{sandbox,playwright}-0.0.1-alpha.0.tgz
+```
+
+Keep the packed files: the project's `package.json` refers to them. Write the tests as
+shown in the [Playwright package](../packages/playwright/README.md); the project also
+needs a `blackbox.config.yaml` catalog, as described in [configuration](configuration.md).

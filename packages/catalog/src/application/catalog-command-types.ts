@@ -4,13 +4,10 @@ import type { CatalogActivationAdapter } from './activation-adapters.js';
 export type CatalogCommandOperation = 'catalog.validate' | 'catalog.list';
 export type CatalogCommandExitClass = 'success' | 'user-error' | 'operational-error';
 export type CatalogCommandUserFailureClassification =
-  | 'config-missing'
-  | 'config-invalid'
-  | 'referenced-input-invalid';
+  'config-missing' | 'config-invalid' | 'referenced-input-invalid';
 export type CatalogCommandOperationalFailureClassification = 'filesystem-error';
 export type CatalogCommandFailureClassification =
-  | CatalogCommandUserFailureClassification
-  | CatalogCommandOperationalFailureClassification;
+  CatalogCommandUserFailureClassification | CatalogCommandOperationalFailureClassification;
 
 export interface CatalogCommandDiagnostic {
   readonly kind: 'yaml' | 'schema' | 'semantic' | 'filesystem';
@@ -66,7 +63,9 @@ export interface RunCatalogCommandInput {
   readonly projectDirectory: string;
 }
 
-export interface RunCatalogValidateInput extends RunCatalogCommandInput {
-  /** Activation adapters the installed runtime plugins provide. */
-  readonly activationAdapters: readonly CatalogActivationAdapter[];
-}
+/** Omit activationAdapters to validate the document and referenced files without checking adapter availability. */
+export type RunCatalogValidateInput =
+  | RunCatalogCommandInput
+  | (RunCatalogCommandInput & {
+      readonly activationAdapters: readonly CatalogActivationAdapter[];
+    });

@@ -75,6 +75,20 @@ async function installLocked(
     throw error;
   }
   const installation = await input.packageManager({ directory });
+  if (installation.kind === 'package-manager-unsupported') {
+    return failed(
+      directory,
+      {
+        kind: 'driver-package-manager-unsupported',
+        packageManager: installation.packageManager,
+        version: installation.version,
+        minimumVersion: installation.minimumVersion,
+        exitCode: installation.exitCode,
+        stderr: installation.stderr,
+      },
+      `npm ${installation.version} cannot install ${packagePath}: its "overrides" point at a local file: package, which npm reads from ${installation.minimumVersion} on. Use npm ${installation.minimumVersion} or newer, or remove "overrides" from that package.json.`,
+    );
+  }
   if (installation.kind === 'package-manager-install-failed') {
     return failed(
       directory,

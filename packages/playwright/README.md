@@ -15,6 +15,9 @@ npm install --save-dev @suites/blackbox-playwright@next @playwright/test
 
 Application code imports directly from the adapter paths below.
 
+Until the alpha is published, install it and its Blackbox dependencies from source as
+described in [installation](../../docs/installation.md#install-the-playwright-package-from-source).
+
 ## Use
 
 Configure the catalog once in `playwright.config.ts`. The path is resolved

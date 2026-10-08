@@ -1,5 +1,6 @@
 import type { Readable } from 'node:stream';
 
+import type { DriverDefinition } from '../../model/definition.js';
 import type { DriverPrepareResponse } from '../../model/preparation.js';
 import { decodeDriverPrepareRequest } from '../../protocol/decode.js';
 import { isDriverDefinition } from './definition-validation.js';
@@ -32,19 +33,27 @@ function failure(
   };
 }
 
-export async function runNodeDriverProcess(input: RunNodeDriverProcessInput): Promise<void> {
-  let response: DriverPrepareResponse;
-  if (!isDriverDefinition(input.definition)) {
-    response = failure(new Error('Invalid project driver default export'), {
-      kind: 'unavailable',
-    });
-  } else {
-    try {
-      const request = decodeDriverPrepareRequest(await readInput(input.input));
-      response = (await prepareDriver({ definition: input.definition, request })).response;
-    } catch (error) {
-      response = failure(error, { kind: 'available', name: input.definition.name });
-    }
+async function preparationResponse(
+  definition: DriverDefinition,
+  stream: Readable,
+): Promise<DriverPrepareResponse> {
+  // A named driver reports its name; one without a name reports the catalog key it served.
+  let driverName = 'name' in definition ? definition.name : null;
+  try {
+    const request = decodeDriverPrepareRequest(await readInput(stream));
+    driverName ??= request.driverId;
+    return (await prepareDriver({ definition, request })).response;
+  } catch (error) {
+    return failure(
+      error,
+      driverName === null ? { kind: 'unavailable' } : { kind: 'available', name: driverName },
+    );
   }
+}
+
+export async function runNodeDriverProcess(input: RunNodeDriverProcessInput): Promise<void> {
+  const response = isDriverDefinition(input.definition)
+    ? await preparationResponse(input.definition, input.input)
+    : failure(new Error('Invalid project driver default export'), { kind: 'unavailable' });
   input.output.write(`${JSON.stringify(response)}\n`);
 }

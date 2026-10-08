@@ -2,7 +2,10 @@ export {
   installInstrumentation,
   instrumentationDirectoryRelativePath,
 } from './installation/install.js';
-export { isRuntimeActivationAdapter } from './activation/model.js';
+export {
+  isRuntimeActivationAdapter,
+  unavailableRuntimeActivationAdapterMessage,
+} from './activation/model.js';
 export type {
   InstallInstrumentationInput,
   InstalledInstrumentationFile,
