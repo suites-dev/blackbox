@@ -14,6 +14,13 @@ Use the application's supported completion signal or a bounded poll over read-on
 
 A fixed sleep is not an observation that distributed work is settled. Repeating a non-idempotent request until a desired result appears can create the effect being asserted. Keep diagnostic polling separate from the product action and avoid allowing repeated queries to inflate effect counts.
 
+## What `--wait` does
+
+`capsule run --wait <ms>` waits after the child exits for its telemetry to arrive. It stops when no new span
+has arrived for 750 ms or at the cap (default 5000; `0` does not wait). If the cap ends it while spans were
+still arriving, the run says so. It waits for telemetry only: it does not wait for a queue, worker or
+scheduled job, and it never changes the observation status. Use a bounded inspection for business completion.
+
 ## Isolate and correlate
 
 Use unique test data and an owned queue or namespace where the acquisition driver supports it. Understand visibility timeouts, redelivery, deduplication, retries, delayed jobs, and fixture reset. Preserve application retry behavior instead of disabling it to make a test stable.

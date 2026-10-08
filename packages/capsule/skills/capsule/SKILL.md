@@ -9,6 +9,34 @@ Read [capabilities](references/capabilities.md),
 [permissions](references/permissions.md) and the
 [validation sequence](diagrams/capsule-sequence.mmd).
 
+## Commands
+
+Run them as `blackbox capsule <command>` (the same commands also exist without `capsule`; `systems`
+and `open` exist only without it). Check `--help` for anything not listed.
+
+| Command         | Args                                    | Flags that matter                                                                                                                                                       | ID                                                                                            |
+| --------------- | --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| `up`            | `[system]` (catalog default if omitted) | `--title`, `--description`, `--env KEY=VALUE` (repeatable), `--json`                                                                                                    | Returns `sessionId` (also `capsule`); makes it current                                        |
+| `run`           | `-- <command...>`                       | `--via <driver>`, `--session <id>`, `--name`, `--purpose setup\|stimulus\|inspection` (default `stimulus`), `--wait <ms>`, `--allow-untraced`, `--raw-output`, `--json` | Takes a capsule ID (`--session`, else `BLACKBOX_CAPSULE`, else current); returns `activityId` |
+| `show`          | `<id>` (required)                       | `--session`, `--timeline`, `--spans`, `--full`, `--json`                                                                                                                | Takes a capsule, activity (6+ char prefix) or trace ID                                        |
+| `report`        | `[capsule]`                             | `--format html\|json`, `--output` (needs `--format`), `--json`                                                                                                          | Takes a capsule ID; writes under `.blackbox/reports/`                                         |
+| `report export` | none                                    | `--session <id>` and `--format html\|json` (both required), `--output` (`-` is JSON on stdout)                                                                          | Takes a capsule ID                                                                            |
+| `report serve`  | none                                    | `--session <id>`, `--port`, `--open`                                                                                                                                    | Takes a capsule ID; stays up until Ctrl-C                                                     |
+| `down`          | `[capsule]`                             | `--session`, `--json`                                                                                                                                                   | Takes a capsule ID; clears it as current                                                      |
+| `ls`            | none                                    | `--all` (include stopped), `--json`                                                                                                                                     | Lists capsule IDs                                                                             |
+| `systems`       | none                                    | `--json`                                                                                                                                                                | Lists the catalog systems to pass to `up`                                                     |
+
+Find the `<system>` for `up` with `blackbox systems`. After `down`, confirm cleanup with
+`blackbox capsule ls` (running only; the stopped capsule must be gone) and `ls --all` (still retained
+as evidence). `use <id>` makes a capsule current, `open [id]` opens the viewer, and the hidden
+`history` is `ls --all`; build no procedure on them. Always pass explicit IDs.
+
+`--allow-untraced` needs `--via`. Without it, a driver run is refused when trace-context injection
+fails; with it the run proceeds untraced. Use it only when the task accepts that gap.
+
+Never use `--raw-output`: it prints child output with credentials unredacted (see #140). Default
+`--json` output is redacted. `--wait` is explained in [async](references/async-workflows.md).
+
 ## Procedure
 
 1. Confirm explicit scope for code execution, local resource creation and any
