@@ -15,6 +15,7 @@ import type { CapsuleProgressEvent } from '../progress/events.js';
 import type { CapsuleRecordedError } from '../model/recorded-error.js';
 import type { CapsuleSessionState } from '../model/session-state.js';
 import type { CapsuleSessionRecord } from '../records.js';
+import type { CapsuleReportCausality } from './causality/types.js';
 import type { CapsuleActivityTelemetry, CapsuleReportSpan } from './telemetry-types.js';
 import type {
   CollectorActivityReadResult,
@@ -59,8 +60,7 @@ export interface CapsuleReportCollectorRun {
   readonly startedAt: string;
   readonly updatedAt: string;
   readonly stopped:
-    | { readonly kind: 'not-stopped' }
-    | { readonly kind: 'stopped'; readonly at: string };
+    { readonly kind: 'not-stopped' } | { readonly kind: 'stopped'; readonly at: string };
   readonly receiver: 'ready' | 'draining' | 'stopped' | 'failed' | 'interrupted';
   readonly instrumentation: CollectorInstrumentationStatus;
   readonly shutdown: 'not-started' | 'draining' | 'complete' | 'timed-out' | 'interrupted';
@@ -160,7 +160,11 @@ export type CapsuleReportObservationPolicy =
       readonly boundaries: readonly CapsuleReportPolicyBoundary[];
     };
 
-export interface CapsuleReportDocument {
+/**
+ * The report's operational body. Reports written before the causal fields existed lack
+ * them; a reader must accept those.
+ */
+export interface CapsuleReportBody {
   readonly schemaVersion: 1;
   readonly kind: 'capsule-operational-report';
   /** When this snapshot was written; absent from reports written before it was recorded. */
@@ -199,6 +203,9 @@ export interface CapsuleReportDocument {
     readonly entries: readonly CapsuleReportRedaction[];
   };
 }
+
+/** A Capsule's operational report: its body and its causal view (status, causes, limitations). */
+export type CapsuleReportDocument = CapsuleReportBody & CapsuleReportCausality;
 
 /** Presentation-neutral data safe for a standalone HTML renderer. */
 export type CapsuleHtmlReportData = CapsuleReportDocument;

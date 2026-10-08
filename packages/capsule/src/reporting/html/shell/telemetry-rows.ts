@@ -70,17 +70,16 @@ function rawTelemetry(d, a, root) {
   );
   return block;
 }
-function sessionTraceTelemetry(trace, root, context) {
+function sessionTraceTelemetry(trace, root, notes) {
   const block = n('div', 'session-trace');
-  const association = context.kind === 'activity-window'
-    ? { kind: 'temporal-activity', activityId: context.activityId, traceId: trace.traceId }
-    : { kind: 'session-only', traceId: trace.traceId };
+  const association = { kind: 'session-only', traceId: trace.traceId };
   add(
     block,
     add(n('div', 'session-trace-head'),
       n('strong', '', 'Trace ' + trace.traceId),
-      badge(context.kind === 'activity-window' ? 'temporal window' : 'session only', 'warn')),
+      badge('no known cause', 'warn')),
   );
+  add(block, ...notes);
   if (trace.kind === 'unavailable') {
     add(block, p('Telemetry ' + trace.reason + '.', 'telemetry-empty'));
     return block;
@@ -93,48 +92,34 @@ function sessionTraceTelemetry(trace, root, context) {
   }
   return block;
 }
-function activityWindowTelemetry(d, a, root) {
-  if (d.observations.kind !== 'collector-session-found') return null;
-  const traces = d.observations.traces.sessionOnly.filter(trace =>
-    trace.association.kind === 'activity-window' &&
-    trace.association.activityId === a.activityId);
-  if (!traces.length) return null;
-  const block = n('div', 'raw-telemetry temporal-observations');
-  add(block, n('h4', '', 'Observed after this activity'),
-    p('Same activity time window · temporal only · no causal relationship established.',
-      'telemetry-caption'));
-  for (const trace of [...traces].sort(compareTraceStarts))
-    add(block, sessionTraceTelemetry(trace, root, trace.association));
-  return block;
-}
 function isReadinessProbe(trace) {
   return trace.kind === 'available' && trace.spans.some((span) =>
     ['user_agent.original', 'http.user_agent'].some((key) =>
       spanAttribute(span, key).startsWith('blackbox-readiness/')));
 }
-function readinessProbes(probes, root) {
+function readinessProbes(probes, root, d) {
   const details = n('details', 'session-trace readiness-probes'), summary = n('summary');
   add(summary, n('strong', '', probes.length + ' readiness probe traces'),
     badge('Blackbox readiness probes', 'neutral'));
   add(details, summary,
     p('Requests Blackbox sent to the entrypoint while it waited for readiness, collapsed into one row.',
       'telemetry-caption'));
-  for (const trace of probes) add(details, sessionTraceTelemetry(trace, root, trace.association));
+  for (const trace of probes) add(details, sessionTraceTelemetry(trace, root, uncausedNotes(d, uncausedEntry(d, trace))));
   return details;
 }
 function sessionObservations(d, root) {
   const section = n('section', 'section');
   section.id = 'session-observations';
-  add(section, title('UNCORRELATED TELEMETRY', 'Session observations',
-    'Retained traces without exact activity correlation. Temporal placement is descriptive, not causal.'));
+  add(section, title('NO KNOWN CAUSE', 'Traces with no known cause',
+    'Retained traces that no trace context links to an activity. They are listed in time order for display only; the time does not make an activity their cause.'));
   const panel = n('div', 'panel session-observations');
   const traces = d.observations.kind === 'collector-session-found'
     ? d.observations.traces.sessionOnly : [];
-  if (!traces.length) add(panel, p('No session-only traces were retained.', 'empty'));
+  if (!traces.length) add(panel, p('No traces without a known cause were retained.', 'empty'));
   const probes = traces.filter(isReadinessProbe);
-  if (probes.length) add(panel, readinessProbes([...probes].sort(compareTraceStarts), root));
+  if (probes.length) add(panel, readinessProbes([...probes].sort(compareTraceStarts), root, d));
   for (const trace of [...traces].filter((trace) => !isReadinessProbe(trace)).sort(compareTraceStarts))
-    add(panel, sessionTraceTelemetry(trace, root, trace.association));
+    add(panel, sessionTraceTelemetry(trace, root, uncausedNotes(d, uncausedEntry(d, trace))));
   add(section, panel);
   return section;
 }

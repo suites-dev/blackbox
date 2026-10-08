@@ -2,9 +2,9 @@ import { expect, it } from 'vitest';
 
 import { renderCapsuleHtml } from '../../index.js';
 import { completedHostActivity } from '../../persistence/testing/record.fixture.js';
-import type { CapsuleReportDocument } from '../types.js';
+import type { CapsuleReportBody } from '../types.js';
 
-function report(): CapsuleReportDocument {
+function report(): CapsuleReportBody {
   return {
     schemaVersion: 1,
     kind: 'capsule-operational-report',
@@ -85,13 +85,13 @@ function report(): CapsuleReportDocument {
   };
 }
 
-it('labels session-only traces and exposes capture lifecycle failures', () => {
+it('labels traces with no known cause and exposes capture lifecycle failures', () => {
   const html = renderCapsuleHtml({ report: report() });
   expect(html).toContain('Session-only traces have no exact activity correlation.');
   expect(html).toContain('No causal relationship is claimed.');
-  expect(html).toContain('Observed after this activity');
-  expect(html).toContain('temporal only');
-  expect(html).toContain('Session observations');
+  expect(html).not.toContain('Observed after this activity');
+  expect(html).not.toContain('temporal only');
+  expect(html).toContain('Traces with no known cause');
   expect(html).toContain('consume redis job');
   expect(html).toContain('redis-proof-consumer');
   expect(html).toContain('instrumentation not activated');

@@ -1,8 +1,8 @@
-import type { CapsuleReportDocument } from '../reporting/types.js';
+import type { CapsuleReportBody } from '../reporting/types.js';
 import { completedDriverActivity } from '../persistence/testing/record.fixture.js';
 
 /** A valid stopped-capsule report, as the operational report schema describes it. */
-export function report(): CapsuleReportDocument {
+export function report(): CapsuleReportBody {
   return {
     schemaVersion: 1,
     kind: 'capsule-operational-report',

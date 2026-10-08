@@ -79,12 +79,11 @@ describe('activity and overview span counts', () => {
     ],
   };
 
-  it('counts system spans apart from Blackbox spans and names the window traces', () => {
+  it('counts system spans apart from Blackbox spans and never counts a time window', () => {
     const script = `${helpers}${capsuleActivityListScript}`;
     const data = JSON.stringify(blackboxOnly);
     expect(evaluate(script, `telemetryBadges(${data}, { activityId: 'b' })`)).toEqual([
       { badge: '0 system spans', tone: 'warn' },
-      { badge: '1 trace in its time window', tone: 'neutral' },
     ]);
     expect(evaluate(script, `telemetryBadges(${data}, { activityId: 'a' })`)).toEqual([
       { badge: '2 system spans', tone: 'good' },

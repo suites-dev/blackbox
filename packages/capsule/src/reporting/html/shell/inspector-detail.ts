@@ -37,9 +37,7 @@ function inspectSpan(root, span, selection, presentation) {
   );
   const association = selection.kind === 'exact-activity'
     ? ['Activity correlation', 'Exact · ' + selection.activityId]
-    : selection.kind === 'temporal-activity'
-      ? ['Activity association', 'Temporal only · ' + selection.activityId]
-      : ['Activity association', 'Session only · no exact activity'];
+    : ['Activity correlation', 'No known cause · no trace context links it to an activity'];
   const rows = [
     association,
     ['Original OTEL operation', span.operation],

@@ -74,11 +74,16 @@ const PLAIN_SEGMENT = /^(?:[a-z]{1,16}(?:[-_][a-z]{1,16}){0,3}|v\d{1,3})$/u;
  * `/password-reset/{…}`.
  */
 function routeText(entry: { readonly key: string; readonly value: string }): string {
-  const route = entry.value.split(/[?#]/u, 1)[0] ?? '';
-  if (entry.key === 'http.route') {
-    return route;
-  }
-  return route
+  return entry.key === 'http.route' ? withoutQuery(entry.value) : rawPathText(entry.value);
+}
+
+function withoutQuery(value: string): string {
+  return value.split(/[?#]/u, 1)[0] ?? '';
+}
+
+/** A raw path as titles print it: no query or fragment, every non-word segment `{…}`. */
+export function rawPathText(value: string): string {
+  return withoutQuery(value)
     .split('/')
     .map((segment) => (segment === '' || PLAIN_SEGMENT.test(segment) ? segment : '{…}'))
     .join('/');
