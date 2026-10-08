@@ -34,7 +34,6 @@ generation to runtime verification:
   <img width="800" src="docs/assets/readme/specification-to-evidence.svg" alt="create-new-product.md becomes an accepted new-product.feature and generated new-product.spec.ts. Playwright runs the product subsystem, with product-service connected to PostgreSQL and Redis, before Blackbox verifies the execution report." />
 </p>
 
-
 Specifications in any format can become stale as implementation evolves. Blackbox keeps their accepted expectations
 in the verification loop: review checks that executable expectations preserve the intended behavior, and repeated
 execution makes departures from that behavior visible.
@@ -44,6 +43,46 @@ specification, clarification, planning, and implementation; Blackbox provides ex
 system behavior.
 
 [Spec-Driven workflows integration](docs/integrations/spec-driven-workflows.md)
+
+
+## Installation - let your coding agent run Blackbox
+
+Ask your coding agent to set up Blackbox in your repository, starting with:
+
+```bash
+$ npx @suites/blackbox-cli onboarding start
+```
+
+Blackbox provides a full skill system out of the box to let coding agents handle the operational work, from initial
+setup to execution, investigation, and verification. The skills provide the procedures and context, while Blackbox’s CLI
+returns structured feedback the agent can act on.
+
+### Agent Onboarding
+
+During onboarding, the agent inspects the repository, discovers services and dependencies, and derives the system
+topology. It identifies useful application and subsystem boundaries, then creates or updates the Blackbox configuration
+and supporting files.
+
+<p align="center">
+  <img width="800" src="docs/assets/readme/onboarding-discovery.svg" alt="Agent onboarding discovers services and dependencies, derives system boundaries, then creates and validates Blackbox configuration." />
+  <br />
+  <sub>The agent derives runnable boundaries from the repository’s services and dependencies.</sub>
+</p>
+
+The result describes what to run, how to start it, and how to act on and observe it. The agent reuses existing project
+files where appropriate. For a Node application with an HTTP service, the setup could look like this:
+
+<p align="center">
+  <img width="800" src="docs/assets/readme/onboarding-files.svg" alt="Example project tree with blackbox.config.yaml and .blackbox catalog, driver, and instrumentation files." />
+  <br />
+  <sub>Configuration references the files that start, drive, and observe the system.</sub>
+</p>
+
+`blackbox.config.yaml` is the configuration authority and references the supporting files. Capsules and Playwright use
+that configuration to run the selected system and collect evidence.
+
+[Initial setup](docs/getting-started/agent-onboarding.md) ·
+[Agent skills](docs/agents/skills.md)
 
 ## Behavior-driven verification
 
@@ -196,44 +235,18 @@ claims.
 [Executable specifications](docs/specifications/index.md) ·
 [Feature files](docs/specifications/feature-files.md)
 
-## Let your coding agent run Blackbox
+## Developer-agent verification loop
 
-Ask your coding agent to set up Blackbox in your repository, starting with:
-
-```bash
-$ npx @suites/blackbox-cli onboarding start
-```
-
-Blackbox provides a full skill system out of the box to let coding agents handle the operational work, from initial
-setup to execution, investigation, and verification. The skills provide the procedures and context, while Blackbox’s CLI
-returns structured feedback the agent can act on.
-
-### Agent Onboarding
-
-During onboarding, the agent inspects the repository, discovers services and dependencies, and derives the system
-topology. It identifies useful application and subsystem boundaries, then creates or updates the Blackbox configuration
-and supporting files.
+The developer approves the specification, behavioral claims, and verification policy. The coding agent uses that
+guidance to implement the behavior, prepare system tests, and investigate failures.
 
 <p align="center">
-  <img width="800" src="docs/assets/readme/onboarding-discovery.svg" alt="Agent onboarding discovers services and dependencies, derives system boundaries, then creates and validates Blackbox configuration." />
-  <br />
-  <sub>The agent derives runnable boundaries from the repository’s services and dependencies.</sub>
+  <img width="800" src="docs/assets/readme/human-agent-verification-loop.svg" alt="The developer approves intent and policy, the coding agent prepares and repairs system tests, and Blackbox returns runtime evidence and findings. Proposed changes to intent or policy return to the developer for review." />
 </p>
 
-The result describes what to run, how to start it, and how to act on and observe it. The agent reuses existing project
-files where appropriate. For a Node application with an HTTP service, the setup could look like this:
-
-<p align="center">
-  <img width="800" src="docs/assets/readme/onboarding-files.svg" alt="Example project tree with blackbox.config.yaml and .blackbox catalog, driver, and instrumentation files." />
-  <br />
-  <sub>Configuration references the files that start, drive, and observe the system.</sub>
-</p>
-
-`blackbox.config.yaml` is the configuration authority and references the supporting files. Capsules and Playwright use
-that configuration to run the selected system and collect evidence.
-
-[Initial setup](docs/getting-started/agent-onboarding.md) ·
-[Agent skills](docs/agents/skills.md)
+Blackbox turns fresh runtime evidence into findings the agent can inspect and act on. The agent repairs the
+implementation and reruns verification against the same accepted expectations. Proposed changes to the specification
+or verification policy return to the developer for review.
 
 ## Inspect the result and its evidence
 
