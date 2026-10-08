@@ -127,7 +127,11 @@ test('copies the main package skill for all hosts without copying other skills',
     };
     assert.equal(record.sourcePackage, '@suites/blackbox');
     assert.equal(record.version, manifest.version);
-    const expectedFiles = ['SKILL.md', 'references/skill-installation.md'];
+    const expectedFiles = [
+      'SKILL.md',
+      'references/onboarding.md',
+      'references/skill-installation.md',
+    ];
     assert.deepEqual(Object.keys(record.files).sort(), expectedFiles);
     for (const file of expectedFiles) {
       const expected = await readFile(new URL(file, blackboxSkill.source));
