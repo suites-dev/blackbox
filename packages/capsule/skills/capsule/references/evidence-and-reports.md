@@ -33,9 +33,27 @@ A query extracts facts. It does not authenticate bytes, validate the full eviden
 
 For each fact you report, keep the exact file or report identity, schema version, relevant JSON pointer or visible section, and bounded conclusion. State the projection or truncation that affects interpretation.
 
+## Report status, causality and limitations
+
+The HTML report and the JSON export state the same causal view as `capsule show`.
+
+- **Status** comes first: `provisional` (capsule still running), `complete` (stopped and every collector run drained) or `incomplete (<reason>)`. JSON has `status` and, for `incomplete`, `reason`.
+- **Activities** carry `activityCausality`: per activity, the trace `context` that was carried and `causedTraces`, meaning traces whose ID matches the activity's trace context.
+- **No known cause** (`uncaused` in JSON): traces that no trace context links to any activity. The HTML labels them "no known cause".
+- **Limitations** (`limitations`, also per activity) list what Blackbox cannot say: for example `observation-provisional`, `observation-incomplete`, `causality-unknown`, `untraced`, `context-not-carried`, `context-injection-failed`, `orphan-span`, `observation-unavailable`. They are not findings; carry them into your result.
+
+A trace that overlaps an activity in time is not caused by it. Only matching trace context shows that an activity caused a trace. Report an overlapping trace as "no known cause", never as a result of the activity.
+
+Treat `provisional` and `incomplete` as insufficient for absence or exact-count claims.
+
+## Known gaps
+
+- `complete` means the collector drained, not that every library was instrumented (#143). A call through an uninstrumented client, such as a database driver that emits no spans, is absent from a `complete` report. Do not read a missing span as "nothing happened".
+- Cleanup reporting is limited (#89, #90): `capsule down` does not yet verify with Docker what it removed, and a failed `up` does not yet explain which participant failed or prove cleanup. Check `blackbox capsule ls` and your own Docker view when cleanup matters.
+
 ## Read reports as projections
 
-Reports are read-only projections of retained records. Use `blackbox capsule report serve --session <id>` for the local viewer or `blackbox capsule report export --session <id> --format json` (or `--format html`) for a snapshot of a running or stopped capsule. `blackbox capsule report <id>` writes both formats to `.blackbox/reports/`; pass the capsule ID explicitly, since `capsule down` clears the current capsule when it names the stopped one. Use `blackbox capsule show <id>` for the terminal view of the same records, including its `provisional`, `complete` or `incomplete` status. Rendering must not mutate source evidence or strengthen its authority. Reporting on a test run, as opposed to a capsule, is planned and has no command yet.
+Reports are read-only projections of retained records. Use `blackbox capsule report serve --session <id>` for the local viewer or `blackbox capsule report export --session <id> --format json` (or `--format html`) for a snapshot of a running or stopped capsule. `blackbox capsule report <id>` writes both formats to `.blackbox/reports/`; pass the capsule ID explicitly, since `capsule down` clears the current capsule when it names the stopped one. Use `blackbox capsule show <id>` for the terminal view of the same records, including its status (see above). Rendering must not mutate source evidence or strengthen its authority. Reporting on a test run, as opposed to a capsule, is planned and has no command yet.
 
 A report command succeeding means that output was written. It does not mean the application passed or every selected test ran. Confirm the report names the requested source ID. Read any version, unsupported-section, or data warnings before summarizing.
 
