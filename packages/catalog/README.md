@@ -75,15 +75,15 @@ Docker Compose lifecycle.
 `runCatalogValidate()` goes beyond document validation: it also checks that
 referenced Compose, driver, and activation paths exist, resolve inside the real
 project directory, and point to regular files. Given the installed activation
-adapters (the CLI passes the ones its plugins registered, when any are), it also refuses a
-participant whose activation no adapter loads for its runtime, with the same
-message Capsule startup gives. `runCatalogList()` validates the document but
+adapters (the CLI passes the ones its plugins registered), it also refuses a
+participant whose activation no adapter loads for its runtime, naming the
+incompatible runtime or unavailable adapter. `runCatalogList()` validates the document but
 intentionally does not inspect those referenced files.
 
 API callers can omit `activationAdapters` to validate only the document and
-referenced files, or pass `{ kind: 'not-checked' }` explicitly. Pass
-`{ kind: 'installed', adapters }` to also check adapter availability; an empty
-`adapters` list rejects any participant that declares an activation.
+referenced files. Pass `activationAdapters: [{ runtime: 'node', adapter: 'node-preload' }]`
+to also check adapter availability. An explicit empty list rejects any participant
+that declares an activation, including when the CLI has no registered adapters.
 
 A future Playwright integration may consume the same catalog contract. No
 Playwright fixture, adapter, or public Playwright API is implemented here today.

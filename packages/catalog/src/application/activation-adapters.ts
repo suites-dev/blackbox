@@ -1,58 +1,81 @@
-import { unavailableRuntimeActivationAdapterMessage } from '@suites/blackbox-instrumentation';
+import type { CatalogValidationIssue, LoadedCatalog } from '../model/catalog-types.js';
 
-import type {
-  BlackboxConfig,
-  CatalogEntry,
-  CatalogValidationIssue,
-} from '../model/catalog-types.js';
-import type {
-  CatalogActivationAdapters,
-  CatalogRuntimeActivationAdapter,
-} from './catalog-command-types.js';
-
-function entryIssues(input: {
-  readonly config: BlackboxConfig;
-  readonly entryId: string;
-  readonly entry: CatalogEntry;
-  readonly adapters: readonly CatalogRuntimeActivationAdapter[];
-}): CatalogValidationIssue[] {
-  const issues: CatalogValidationIssue[] = [];
-  for (const [participantId, participant] of Object.entries(input.entry.participants)) {
-    if (participant.activation.kind === 'unconfigured') {
-      continue;
-    }
-    const { adapter } = input.config.activations[participant.activation.activationId];
-    const runtime = participant.runtime;
-    if (!input.adapters.some((c) => c.runtime === runtime && c.adapter === adapter)) {
-      issues.push({
-        kind: 'semantic',
-        instancePath: `/catalog/entries/${input.entryId}/participants/${participantId}/activation`,
-        message: unavailableRuntimeActivationAdapterMessage({ runtime, adapter }),
-      });
-    }
-  }
-  return issues;
+/** An activation adapter that an installed runtime plugin provides for one runtime. */
+export interface CatalogActivationAdapter {
+  readonly runtime: string;
+  readonly adapter: string;
 }
 
-/**
- * Participants whose activation no installed adapter loads for their runtime. Capsule startup
- * and Playwright setup refuse the same participants with the same message.
- */
-export function unavailableActivationAdapterIssues(input: {
-  readonly config: BlackboxConfig;
-  readonly adapters: readonly CatalogRuntimeActivationAdapter[];
-}): CatalogValidationIssue[] {
-  return Object.entries(input.config.catalog.entries).flatMap(([entryId, entry]) =>
-    entryIssues({ config: input.config, entryId, entry, adapters: input.adapters }),
+export function isCatalogActivationAdapter(value: unknown): value is CatalogActivationAdapter {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'runtime' in value &&
+    typeof value.runtime === 'string' &&
+    'adapter' in value &&
+    typeof value.adapter === 'string'
   );
 }
 
+function sortedEntries<Value>(record: Readonly<Record<string, Value>>): [string, Value][] {
+  return Object.entries(record).sort(([left], [right]) => left.localeCompare(right));
+}
+
+function installedList(adapters: readonly CatalogActivationAdapter[]): string {
+  return adapters.length === 0
+    ? 'none'
+    : adapters.map(({ adapter, runtime }) => `${adapter} (${runtime})`).join(', ');
+}
+
 /**
- * The check for the adapters the CLI plugins registered. With none registered there is no runtime
- * plugin to compare against (a Playwright project, for one, brings its own), so nothing is checked.
+ * Acquisition installs an activation through the adapter registered for the
+ * participant's runtime and adapter name, so a pair no installed plugin
+ * provides would fail at the first acquisition.
  */
-export function registeredActivationAdapters(
-  adapters: readonly CatalogRuntimeActivationAdapter[],
-): CatalogActivationAdapters {
-  return adapters.length === 0 ? { kind: 'not-checked' } : { kind: 'installed', adapters };
+export function activationAdapterIssues(input: {
+  readonly catalog: LoadedCatalog;
+  readonly adapters: readonly CatalogActivationAdapter[];
+}): readonly CatalogValidationIssue[] {
+  const { config } = input.catalog;
+  const issues: CatalogValidationIssue[] = [];
+  for (const [entryId, entry] of sortedEntries(config.catalog.entries)) {
+    for (const [participantId, participant] of sortedEntries(entry.participants)) {
+      if (participant.activation.kind !== 'configured') {
+        continue;
+      }
+      const activationId = participant.activation.activationId;
+      const { adapter } = config.activations[activationId];
+      if (
+        input.adapters.some(
+          (candidate) => candidate.adapter === adapter && candidate.runtime === participant.runtime,
+        )
+      ) {
+        continue;
+      }
+      const path = `/catalog/entries/${entryId}/participants/${participantId}`;
+      const runtimes = input.adapters
+        .filter((candidate) => candidate.adapter === adapter)
+        .map(({ runtime }) => JSON.stringify(runtime));
+      issues.push(
+        runtimes.length > 0
+          ? {
+              kind: 'semantic',
+              instancePath: `${path}/runtime`,
+              message:
+                `runtime ${JSON.stringify(participant.runtime)} cannot use activation ` +
+                `${JSON.stringify(activationId)}: adapter ${JSON.stringify(adapter)} activates ` +
+                `runtime ${runtimes.join(', ')}`,
+            }
+          : {
+              kind: 'semantic',
+              instancePath: `${path}/activation`,
+              message:
+                `activation ${JSON.stringify(activationId)} uses adapter ${JSON.stringify(adapter)}, ` +
+                `which no installed runtime plugin provides; installed adapters: ` +
+                installedList(input.adapters),
+            },
+      );
+    }
+  }
+  return issues;
 }

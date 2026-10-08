@@ -72,6 +72,11 @@ Sandbox option `{ environment: blackboxEnvironment }`. Relative `request` and
 against `sandbox.entrypoint.url`. Playwright's root `baseURL` remains whatever the
 project configured.
 
+The Sandbox `environment` is the Compose substitution environment for that group.
+Progress and diagnostics redact the values of entries whose names mark a credential,
+such as `TOKEN`, `PASSWORD`, `SECRET`, `KEY`, `AUTH` or `CREDENTIALS` segments.
+Other values, such as a feature flag `TT_PRICE_STOPPED=1`, are shown as given.
+
 A string passed to `test.system(...)` selects a catalog entry with kind `system`.
 Use an object to select either kind explicitly:
 

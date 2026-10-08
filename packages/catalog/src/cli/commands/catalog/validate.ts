@@ -1,7 +1,6 @@
 import { Command, Flags } from '@oclif/core';
-import { registeredActivationAdapters, runCatalogValidate } from '@suites/blackbox-catalog';
 import { readRuntimeActivationAdapters } from '@suites/blackbox-cli-contract';
-import { isRuntimeActivationAdapter } from '@suites/blackbox-instrumentation';
+import { isCatalogActivationAdapter, runCatalogValidate } from '@suites/blackbox-catalog';
 import { renderCatalogOutput } from '../../catalog-output.js';
 
 export default class CatalogValidate extends Command {
@@ -13,10 +12,7 @@ export default class CatalogValidate extends Command {
       mode: flags.json ? 'json' : 'human',
       result: await runCatalogValidate({
         projectDirectory: process.cwd(),
-        // The adapters installed plugins registered: the ones `capsule up` starts participants with.
-        activationAdapters: registeredActivationAdapters(
-          readRuntimeActivationAdapters(isRuntimeActivationAdapter),
-        ),
+        activationAdapters: readRuntimeActivationAdapters(isCatalogActivationAdapter),
       }),
     });
     if (output.failed) {

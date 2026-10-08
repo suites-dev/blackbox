@@ -1,16 +1,13 @@
 import type { CatalogEntrySummary } from '../model/catalog-types.js';
+import type { CatalogActivationAdapter } from './activation-adapters.js';
 
 export type CatalogCommandOperation = 'catalog.validate' | 'catalog.list';
 export type CatalogCommandExitClass = 'success' | 'user-error' | 'operational-error';
 export type CatalogCommandUserFailureClassification =
-  | 'config-missing'
-  | 'config-invalid'
-  | 'referenced-input-invalid'
-  | 'activation-adapter-unavailable';
+  'config-missing' | 'config-invalid' | 'referenced-input-invalid';
 export type CatalogCommandOperationalFailureClassification = 'filesystem-error';
 export type CatalogCommandFailureClassification =
-  | CatalogCommandUserFailureClassification
-  | CatalogCommandOperationalFailureClassification;
+  CatalogCommandUserFailureClassification | CatalogCommandOperationalFailureClassification;
 
 export interface CatalogCommandDiagnostic {
   readonly kind: 'yaml' | 'schema' | 'semantic' | 'filesystem';
@@ -66,21 +63,9 @@ export interface RunCatalogCommandInput {
   readonly projectDirectory: string;
 }
 
-/** The runtime and activation adapter pair that one installed activation adapter serves. */
-export interface CatalogRuntimeActivationAdapter {
-  readonly runtime: string;
-  readonly adapter: string;
-}
-
-/**
- * The activation adapters validation checks participants against. The CLI passes the adapters
- * its plugins registered, which are the ones Capsule startup uses.
- */
-export type CatalogActivationAdapters =
-  | { readonly kind: 'not-checked' }
-  | { readonly kind: 'installed'; readonly adapters: readonly CatalogRuntimeActivationAdapter[] };
-
 /** Omit activationAdapters to validate the document and referenced files without checking adapter availability. */
 export type RunCatalogValidateInput =
   | RunCatalogCommandInput
-  | (RunCatalogCommandInput & { readonly activationAdapters: CatalogActivationAdapters });
+  | (RunCatalogCommandInput & {
+      readonly activationAdapters: readonly CatalogActivationAdapter[];
+    });

@@ -69,7 +69,6 @@
   "dependencies": {
     "@oclif/core": "^5.1.0",
     "@suites/blackbox-cli-contract": "workspace:*",
-    "@suites/blackbox-instrumentation": "workspace:*",
     "@suites/blackbox-skills": "workspace:*",
     "@suites/blackbox-telemetry": "workspace:*",
     "ajv": "8.20.0",

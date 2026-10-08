@@ -1,7 +1,7 @@
 import { dirname, isAbsolute, resolve } from 'node:path';
 
 import type { TestInfo } from '@playwright/test';
-import type { SandboxStopReason } from '@suites/blackbox-sandbox';
+import { recoverSandbox, type SandboxStopReason } from '@suites/blackbox-sandbox';
 
 import { AttemptReport } from '../reporting/attempt.js';
 import { reported } from '../reporting/events.js';
@@ -84,6 +84,7 @@ export async function runAttemptFixture(input: AttemptFixtureInput): Promise<voi
       runtime: input.runtime,
       testInfo: input.testInfo,
       cleanupTimeoutMs: input.policy.sandboxCleanupTimeoutMs,
+      recoverSandbox,
       request: {
         selection: input.catalogEntry,
         configFile: configFilePath(input.testInfo),

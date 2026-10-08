@@ -10,13 +10,12 @@ import type {
   RunCatalogCommandInput,
   RunCatalogValidateInput,
 } from './catalog-command-types.js';
-import { unavailableActivationAdapterIssues } from './activation-adapters.js';
+import { activationAdapterIssues } from './activation-adapters.js';
 import { validateReferencedInputs } from './referenced-inputs.js';
 import type { CatalogValidationIssue, LoadedCatalog } from '../model/catalog-types.js';
 import { CatalogValidationError } from '../schema/catalog-validation.js';
 
 export type {
-  CatalogActivationAdapters,
   CatalogCommandDiagnostic,
   CatalogCommandExitClass,
   CatalogCommandFailure,
@@ -30,7 +29,6 @@ export type {
   CatalogListSuccess,
   CatalogValidateResult,
   CatalogValidateSuccess,
-  CatalogRuntimeActivationAdapter,
   RunCatalogCommandInput,
   RunCatalogValidateInput,
 } from './catalog-command-types.js';
@@ -126,7 +124,12 @@ export async function runCatalogValidate(
 
   let referenceIssues: readonly CatalogValidationIssue[];
   try {
-    referenceIssues = await validateReferencedInputs({ catalog: loaded });
+    referenceIssues = [
+      ...(await validateReferencedInputs({ catalog: loaded })),
+      ...('activationAdapters' in input
+        ? activationAdapterIssues({ catalog: loaded, adapters: input.activationAdapters })
+        : []),
+    ];
   } catch (error) {
     return {
       kind: 'catalog-command-operational-error',
@@ -153,25 +156,6 @@ export async function runCatalogValidate(
       classification: 'referenced-input-invalid',
       configFile,
       diagnostics: referenceIssues.map((issue) => ({ ...issue })),
-    };
-  }
-
-  const adapterIssues =
-    'activationAdapters' in input && input.activationAdapters.kind === 'installed'
-      ? unavailableActivationAdapterIssues({
-          config: loaded.config,
-          adapters: input.activationAdapters.adapters,
-        })
-      : [];
-  if (adapterIssues.length > 0) {
-    return {
-      kind: 'catalog-command-user-error',
-      ok: false,
-      operation: 'catalog.validate',
-      exitClass: 'user-error',
-      classification: 'activation-adapter-unavailable',
-      configFile,
-      diagnostics: adapterIssues.map((issue) => ({ ...issue })),
     };
   }
 
