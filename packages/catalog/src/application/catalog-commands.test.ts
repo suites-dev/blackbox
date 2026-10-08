@@ -1,10 +1,10 @@
-import { mkdir, mkdtemp, symlink, unlink, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, rm, symlink, unlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { expect, it } from 'vitest';
 
-import { runCatalogList, runCatalogValidate } from './catalog-commands.js';
+import { runCatalogList, runCatalogValidate } from '../index.js';
 
 const validCatalog = `schemaVersion: 1
 catalog:
@@ -63,22 +63,26 @@ async function makeValidProject(): Promise<string> {
   return directory;
 }
 
-it('validates the canonical project-root configuration and referenced files', async () => {
-  const projectDirectory = await makeValidProject();
-
-  await expect(
-    runCatalogValidate({ projectDirectory, activationAdapters: notChecked }),
-  ).resolves.toEqual({
-    kind: 'catalog-validate-success',
-    ok: true,
-    operation: 'catalog.validate',
-    exitClass: 'success',
-    configFile: join(projectDirectory, 'blackbox.config.yaml'),
-    schemaVersion: 1,
-    defaultEntry: 'orders',
-    entryCount: 1,
-  });
-});
+it.each([{}, { activationAdapters: notChecked }])(
+  'validates the canonical project-root configuration and referenced files with adapter options %j',
+  async (options) => {
+    const projectDirectory = await makeValidProject();
+    try {
+      await expect(runCatalogValidate({ projectDirectory, ...options })).resolves.toEqual({
+        kind: 'catalog-validate-success',
+        ok: true,
+        operation: 'catalog.validate',
+        exitClass: 'success',
+        configFile: join(projectDirectory, 'blackbox.config.yaml'),
+        schemaVersion: 1,
+        defaultEntry: 'orders',
+        entryCount: 1,
+      });
+    } finally {
+      await rm(projectDirectory, { recursive: true, force: true });
+    }
+  },
+);
 
 it('returns structured invalid-config diagnostics without printing or exiting', async () => {
   const projectDirectory = await mkdtemp(join(tmpdir(), 'blackbox-catalog-invalid-'));

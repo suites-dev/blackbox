@@ -157,7 +157,7 @@ export async function runCatalogValidate(
   }
 
   const adapterIssues =
-    input.activationAdapters.kind === 'installed'
+    'activationAdapters' in input && input.activationAdapters.kind === 'installed'
       ? unavailableActivationAdapterIssues({
           config: loaded.config,
           adapters: input.activationAdapters.adapters,

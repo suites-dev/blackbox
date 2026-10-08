@@ -80,6 +80,11 @@ participant whose activation no adapter loads for its runtime, with the same
 message Capsule startup gives. `runCatalogList()` validates the document but
 intentionally does not inspect those referenced files.
 
+API callers can omit `activationAdapters` to validate only the document and
+referenced files, or pass `{ kind: 'not-checked' }` explicitly. Pass
+`{ kind: 'installed', adapters }` to also check adapter availability; an empty
+`adapters` list rejects any participant that declares an activation.
+
 A future Playwright integration may consume the same catalog contract. No
 Playwright fixture, adapter, or public Playwright API is implemented here today.
 

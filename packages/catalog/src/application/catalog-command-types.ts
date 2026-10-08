@@ -80,6 +80,7 @@ export type CatalogActivationAdapters =
   | { readonly kind: 'not-checked' }
   | { readonly kind: 'installed'; readonly adapters: readonly CatalogRuntimeActivationAdapter[] };
 
-export interface RunCatalogValidateInput extends RunCatalogCommandInput {
-  readonly activationAdapters: CatalogActivationAdapters;
-}
+/** Omit activationAdapters to validate the document and referenced files without checking adapter availability. */
+export type RunCatalogValidateInput =
+  | RunCatalogCommandInput
+  | (RunCatalogCommandInput & { readonly activationAdapters: CatalogActivationAdapters });
