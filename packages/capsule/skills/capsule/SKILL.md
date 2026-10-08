@@ -11,8 +11,9 @@ Read [capabilities](references/capabilities.md),
 
 ## Commands
 
-Run them as `blackbox capsule <command>` (the same commands also exist without `capsule`; `systems`
-and `open` exist only without it). Check `--help` for anything not listed.
+Run them as `blackbox capsule <command>`. `up`, `run`, `show`, `down`, `ls`, `use` and `report` also exist
+without `capsule`; `report export` and `report serve` exist only as `capsule report export|serve`, and
+`systems` and `open` only without `capsule`. Check `--help` for anything not listed.
 
 | Command         | Args                                    | Flags that matter                                                                                                                                                       | ID                                                                                            |
 | --------------- | --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
