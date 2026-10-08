@@ -36,12 +36,12 @@ docker volume ls -q --filter "label=com.docker.compose.project=<project>"
 2. **Choose a small boundary.** The smallest system or subsystem that contains one accepted behavior.
 3. **Write `blackbox.config.yaml`** at the repo root, with ordered Compose files under `.blackbox/catalog/`. Use the
    catalog skill and the installed schema. `drivers` and `observation` are required on every entry (`drivers: {}`
-   is valid). For Node services add instrumentation with `blackbox inst install --runtime node` and an activation.
+   is valid). For Node services add instrumentation with `blackbox inst install --runtime node` and an activation, after checking that `blackbox inst install --help` exists (the Node instrumentation integration is a separate package; if it is missing, report it as a blocker).
 4. **Validate statically.** `blackbox catalog validate --json`, then `blackbox systems`. This proves the files parse,
    not that anything starts.
-5. **One Capsule run.** With the capsule skill: `blackbox capsule up <system> --json`, one `capsule run` with an
+5. **One Capsule run.** With the capsule skill: `blackbox capsule up <system> --json --non-interactive` (in a terminal, interactive rendering omits the Compose project name), one `capsule run` with an
    explicit `--session`, then inspect.
-6. **Inspect, stop, then report.** `blackbox capsule show <id>` while it runs, then `down <id>` (`down` accepts only a `running` or `stop-failed` capsule; after a `start-failed` `up`, startup already tried its own cleanup, so skip `down` and use the Docker check),
+6. **Inspect, stop, then report.** `blackbox capsule show <id>` while it runs, then `down <id>` (`down` accepts `running`, `stop-failed` and `manager-failed` capsules; the last retries the cleanup. After a `start-failed` `up`, startup already tried its own cleanup, so skip `down` and use the Docker check),
    then `blackbox capsule show <id>` and `blackbox capsule report <id>` again. A report written while the capsule
    runs is `provisional` and does not draw the final evidence: `down` drains the collector, and only the report
    after `down` can be `complete`. Judge absence and exact-count expectations only from that one.
