@@ -15,8 +15,8 @@ is the only project-authored Blackbox topology authority.
    `packages/catalog/schema/blackbox-config-v1.json`. Do not assume an online
    schema or copied example matches the installed package.
 2. Map the approved behavioral boundary to a `system` or `subsystem`, ordered
-   Compose acquisition files, `isolation`, participants, entrypoint/readiness,
-   drivers, observation policy and root activations, using supported fields only.
+   Compose acquisition files, participants, entrypoint/readiness, drivers,
+   observation policy and root activations, using supported fields only.
 3. Verify every participant-to-service mapping, driver target and execution
    location. Check build/start source, file containment, protocol/port and
    activation compatibility. A Node driver runtime does not identify the SUT's

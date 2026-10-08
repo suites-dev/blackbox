@@ -10,6 +10,7 @@ import {
   type AttemptEvent,
   type AttemptProgress,
 } from './events.js';
+import { SecretValues } from './redaction/secret-environment.js';
 import { reportText } from './text.js';
 import { sandboxLifecycleEnabled } from './options.js';
 
@@ -17,7 +18,7 @@ import { sandboxLifecycleEnabled } from './options.js';
 export class AttemptReport implements AttemptProgress {
   private readonly started = Date.now();
   private readonly events: AttemptEvent[] = [];
-  private readonly secrets = new Set<string>();
+  private readonly secrets = new SecretValues();
   private pending = Promise.resolve();
   private attachmentFailure: unknown = null;
   private dropped = 0;
@@ -44,12 +45,13 @@ export class AttemptReport implements AttemptProgress {
     };
   }
 
-  protect(values: Readonly<Record<string, string>>): void {
-    for (const value of Object.values(values)) {
-      if (value.length > 0) {
-        this.secrets.add(value);
-      }
-    }
+  /** The sandbox that owns this attempt, once acquisition has named it. */
+  sandboxId(): string | null {
+    return this.identity.kind === 'acquired' ? this.identity.sandboxId : null;
+  }
+
+  protect(environment: Readonly<Record<string, string>>): void {
+    this.secrets.protect(environment);
   }
 
   lifecycle(
@@ -66,11 +68,7 @@ export class AttemptReport implements AttemptProgress {
   }
 
   private sanitize(detail: string): string {
-    let sanitized = detail;
-    for (const value of [...this.secrets].sort((a, b) => b.length - a.length)) {
-      sanitized = sanitized.replaceAll(value, '[REDACTED]');
-    }
-    return reportText(sanitized);
+    return reportText(this.secrets.redact(detail));
   }
 
   emit(phase: string, status: AttemptEvent['status'], detail: string): void {
@@ -110,27 +108,30 @@ export class AttemptReport implements AttemptProgress {
     }
   }
 
-  async finish(): Promise<void> {
+  /** Attach the final attempt document and return the attached body. */
+  async finish(): Promise<string> {
     const output = realpathSync(this.testInfo.outputPath());
     const path = relative(realpathSync(process.cwd()), output);
     this.emit('artifacts', 'info', path.startsWith('..') ? output : path);
     this.closed = true;
     await this.flush();
+    const document = JSON.stringify({
+      schemaVersion: 1,
+      owner: {
+        testId: this.testInfo.testId,
+        retry: this.testInfo.retry,
+        workerIndex: this.testInfo.workerIndex,
+        parallelIndex: this.testInfo.parallelIndex,
+        outputDirectory: output,
+      },
+      identity: this.identity,
+      events: this.events,
+      omittedObservations: this.dropped,
+    });
     await this.testInfo.attach(attemptAttachment, {
       contentType: 'application/json',
-      body: JSON.stringify({
-        schemaVersion: 1,
-        owner: {
-          testId: this.testInfo.testId,
-          retry: this.testInfo.retry,
-          workerIndex: this.testInfo.workerIndex,
-          parallelIndex: this.testInfo.parallelIndex,
-          outputDirectory: output,
-        },
-        identity: this.identity,
-        events: this.events,
-        omittedObservations: this.dropped,
-      }),
+      body: document,
     });
+    return document;
   }
 }

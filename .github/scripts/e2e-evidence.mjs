@@ -5,7 +5,11 @@ import { createReadStream } from 'node:fs';
 import * as fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { capsuleEvidenceRoots, capsuleEvidenceSources, requireCapsuleSuccessEvidence } from './capsule-evidence-sources.mjs';
+import {
+  capsuleEvidenceRoots,
+  capsuleEvidenceSources,
+  requireCapsuleSuccessEvidence,
+} from './capsule-evidence-sources.mjs';
 
 const SOURCES = ['e2e/.blackbox/runs', 'e2e/.blackbox/reports', 'e2e/test-results'];
 
@@ -85,7 +89,8 @@ export async function retainE2eEvidence({
 } = {}) {
   root = await fs.realpath(root);
   const output = await containedPath(root, outputDir);
-  const protectedSources = project === 'capsule' ? [...capsuleEvidenceRoots, 'e2e/.blackbox/tmp'] : SOURCES;
+  const protectedSources =
+    project === 'capsule' ? [...capsuleEvidenceRoots, 'e2e/.blackbox/tmp'] : SOURCES;
   for (const source of protectedSources) {
     const absolute = path.join(root, source);
     if (output === absolute || output.startsWith(`${absolute}${path.sep}`)) {
@@ -155,6 +160,14 @@ export async function retainE2eEvidence({
     }
     if (project !== 'capsule' && ['success', 'failure'].includes(testOutcome)) {
       const required = ['e2e/test-results/junit.xml', 'e2e/test-results/results.json'];
+      if (project === 'playwright' && testOutcome === 'success') {
+        required.push(
+          'e2e/test-results/features/receipt.json',
+          'e2e/test-results/features/run-result.json',
+          'e2e/test-results/features/acceptance.actual.txt',
+          'e2e/test-results/features/acceptance.expected.txt',
+        );
+      }
       const missing = required.filter(
         (name) =>
           !before.entries.some(
@@ -163,6 +176,16 @@ export async function retainE2eEvidence({
       );
       if (missing.length)
         throw new Error(`Missing required Playwright reports: ${missing.join(', ')}`);
+      if (
+        project === 'playwright' &&
+        testOutcome === 'success' &&
+        !before.entries.some(
+          (entry) =>
+            entry.path === 'e2e/test-results/features/golden-diff.txt' && entry.type === 'file',
+        )
+      ) {
+        throw new Error('Missing required Playwright golden comparison: golden-diff.txt');
+      }
     }
     receipt.status = 'complete';
   } catch (error) {

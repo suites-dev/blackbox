@@ -1,12 +1,26 @@
 import { spawn } from 'node:child_process';
 
+import { npmCommand } from './npm/npm-command.js';
+import { minimumNpmVersion, npmTooOldForFileOverrides, readNpmVersion } from './npm/npm-version.js';
 import type { PackageManagerInstaller, PackageManagerInstallResult } from './types.js';
 
-function npmCommand(args: readonly string[]): { command: string; args: readonly string[] } {
-  return {
-    command: process.platform === 'win32' ? 'npm.cmd' : 'npm',
-    args,
-  };
+/** A failed install, or an unsupported npm when an old npm tripped over a `file:` override. */
+async function failedInstall(
+  exitCode: number,
+  stderr: string,
+): Promise<PackageManagerInstallResult> {
+  const version = stderr.includes('Invalid comparator') ? await readNpmVersion() : 'unknown';
+  if (npmTooOldForFileOverrides({ stderr, version })) {
+    return {
+      kind: 'package-manager-unsupported',
+      packageManager: 'npm',
+      version,
+      minimumVersion: minimumNpmVersion,
+      exitCode,
+      stderr,
+    };
+  }
+  return { kind: 'package-manager-install-failed', packageManager: 'npm', exitCode, stderr };
 }
 
 function completion(
@@ -52,20 +66,15 @@ export const installDriverDependencies: PackageManagerInstaller = async ({ direc
       });
     });
     child.once('close', (code) => {
-      complete(
-        code === 0
-          ? {
-              kind: 'package-manager-install-succeeded',
-              packageManager: 'npm',
-              exitCode: 0,
-              stderr,
-            }
-          : {
-              kind: 'package-manager-install-failed',
-              packageManager: 'npm',
-              exitCode: code ?? 1,
-              stderr,
-            },
-      );
+      if (code === 0) {
+        complete({
+          kind: 'package-manager-install-succeeded',
+          packageManager: 'npm',
+          exitCode: 0,
+          stderr,
+        });
+        return;
+      }
+      void failedInstall(code ?? 1, stderr).then(complete);
     });
   });

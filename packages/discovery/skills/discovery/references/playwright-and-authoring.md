@@ -23,7 +23,7 @@ For each expectation, choose an appropriate source. An HTTP response is a native
 
 Inspect the installed Alpha package exports, the project's Playwright version, existing configuration and fixtures, and current public documentation before importing helpers or adding Blackbox-specific hooks. Historical examples may name APIs that are not in the installed release. Keep the system selection in the catalog and use the actual integration’s public SUT-selection API; do not introduce a second SUT ID authority in test metadata.
 
-Use Playwright's normal command, typically the project's existing `npx playwright test` invocation. Keep Capsule usable without Playwright setup. Do not add a `blackbox test`, suite runner, or other wrapper.
+Use Playwright's normal command, typically the project's existing `npx playwright test` invocation. Keep Capsule usable without Playwright setup. Do not add a `blackbox test`, suite runner, or other wrapper. <!-- skill-lint: not-available -->
 
 An action boundary should identify the operation whose runtime effects are being assessed. Await evidence retrieval and use the public matcher or projection supported by the installed package. Do not convert a retrieval error into an empty list or a bare user-filtered array into complete capture. Read exact evidence fields through their versioned public schema.
 

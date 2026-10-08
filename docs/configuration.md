@@ -30,10 +30,12 @@ instrumentation into application processes, and drivers prepare the commands you
 | Entry `entrypoint`                      | Defines the participant, protocol, container port, and HTTP readiness check.                                                          |
 | Entry `drivers`                         | Maps driver names to project modules, targets, execution locations, and propagation declarations.                                     |
 | Entry `observation`                     | Declares the observation policy and boundaries. A declaration does not establish capture completeness or implement effect evaluation. |
-| Root `activations`                      | Maps activation names to project-owned bootstrap files and adapters.                                                                  |
+| Root `activations`                      | Optional. Maps activation names to project-owned bootstrap files and adapters; omit it when nothing is activated.                     |
 
 Compose describes how services run. The catalog describes how Blackbox selects and operates them. Referenced paths
-must stay inside the project. Catalog validation also requires referenced Compose and activation files to exist.
+must stay inside the project. Catalog validation also requires referenced Compose and activation files to exist,
+and every participant with an activation to declare a runtime that an installed adapter of that name activates. For
+example, `node-preload` activates `runtime: node` only, so a `runtime: java` participant that uses it is refused.
 
 ## Reduce the system under test
 
@@ -105,7 +107,11 @@ blackbox catalog validate --json
 blackbox catalog ls --json
 ```
 
-A successful validation returns `ok: true`. Listing returns catalog entries without acquiring Docker resources.
+A successful validation returns `ok: true`. When a runtime adapter plugin such as `@suites/blackbox-inst-runtime-node`
+is installed, validation also checks that one of its adapters can load each configured activation for its
+participant's runtime, and refuses the participant with the reason `capsule up` would give, for example
+`Activation adapter "node-preload" for runtime "java" is unavailable`.
+Listing returns catalog entries without acquiring Docker resources.
 For the included application, install instrumentation as shown in the quickstart before validation.
 Starting the application and receiving observations are separate steps.
 

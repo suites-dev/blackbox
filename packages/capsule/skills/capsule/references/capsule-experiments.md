@@ -14,10 +14,15 @@ as a requirement only when the claim actually needs it.
 A title or description is not an assertion. Discovery can suggest expectations; confirmation requires independently
 accepted expectations and fresh evidence. Do not accept whatever happened merely because it was recorded.
 
-Reuse the root catalog and supported acquisition path. Current commands are `capsule up <system>`,
-`capsule run --session <id>`, `observations --session <id>`, `capsule down --session <id>`, and
-`capsule report serve|export --session <id>`. Inspect installed help for other flags. There are no current
-`capsule curl`, `capsule effects`, or `capsule checkpoint` operations.
+Reuse the root catalog and supported acquisition path. Current commands are `blackbox capsule up <system> --json`,
+`blackbox capsule run --session <id> -- <command...>`, `blackbox capsule show <id>`, `blackbox capsule down <id>`, and
+`blackbox capsule report <id>`; `blackbox capsule report export --session <id> --format json` and
+`blackbox capsule report serve --session <id>` give a snapshot or the live viewer. Inspect installed help for other flags.
+
+<!-- skill-lint: not-available -->
+
+There are no current `blackbox capsule curl`, `blackbox capsule effects`, `blackbox capsule exec` or `blackbox capsule checkpoint` operations.
+Run a command with `blackbox capsule run`.
 
 ## Preserve command and evidence identities
 
@@ -26,15 +31,27 @@ timestamp, or the newest retained run. Use `--purpose setup|stimulus|inspection`
 not restrict side effects. Drivers can prepare HTTP requests, database seeding or migrations, and Redis stimuli by
 selecting targets, execution locations, connection settings, and supported context propagation.
 
-Keep distinct the CLI status, delegated process output and exit, propagation outcome, received telemetry, state reads,
+`capsule run` exits with the child's exit code (`125` is a Blackbox failure, but a child can also exit `125`, `126` or `127`),
+so with `--json` read the single result document rather than the exit code alone. Keep distinct the CLI status, delegated
+process output and exit, propagation outcome, received telemetry, state reads,
 and your interpretation. A successful command does not establish every downstream consequence. Failed commands do not
 erase other evidence.
 
 ## Inspect the whole execution when correlation has gaps
 
-Session queries expose execution-scoped telemetry. Activity queries select correlated observations; trace queries select
-an exact trace identity. An async handoff can leave relevant downstream work on another trace. Inspect the session as
-well, preserving that limitation instead of inventing parentage or dropping the evidence.
+`blackbox capsule show <capsule-id>` shows the whole capsule (add `--timeline` for activities and traces in time order),
+`blackbox capsule show <activity-id>` shows one activity (a prefix of 6 or more characters works) with its span tree, and
+`blackbox capsule show <trace-id>` shows an exact trace (add `--spans` for one row per span). An async handoff can leave
+relevant downstream work on another trace. Under an activity, `later in this capsule, no known cause` lists other traces
+that began in its time window; they happened in the same capsule, but no trace context links them to the activity. Keep that
+limitation instead of inventing parentage or dropping the evidence.
+
+Read the activity's `context` line to see whether trace context was carried (`sent (w3c, ...)`, `not carried: ... is shared
+state`, `untraced: no driver, so no trace context was sent`, `not sent: driver ... declares no propagation`, or
+`injection failed`). Read the `observed` status too: `provisional (capsule running)` means more telemetry may still arrive,
+`complete` means the capsule stopped and every collector run drained, and `incomplete (<reason>)` means it stopped without
+that guarantee. Treat `provisional` and `incomplete` as insufficient for absence or exact-count claims. `capsule show <id>` reports
+what was observed, not whether the system behaved correctly.
 
 Known initial state, isolation, a unique visible business identifier, and appropriate completion conditions may support
 a behavioral claim across traces. Shared session membership alone does not attribute every span to a specific action.

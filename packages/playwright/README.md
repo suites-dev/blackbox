@@ -15,6 +15,9 @@ npm install --save-dev @suites/blackbox-playwright@next @playwright/test
 
 Application code imports directly from the adapter paths below.
 
+Until the alpha is published, install it and its Blackbox dependencies from source as
+described in [installation](../../docs/installation.md#install-the-playwright-package-from-source).
+
 ## Use
 
 Configure the catalog once in `playwright.config.ts`. The path is resolved
@@ -68,6 +71,11 @@ Sandbox option `{ environment: blackboxEnvironment }`. Relative `request` and
 `page` URLs no longer target the Sandbox automatically; resolve them explicitly
 against `sandbox.entrypoint.url`. Playwright's root `baseURL` remains whatever the
 project configured.
+
+The Sandbox `environment` is the Compose substitution environment for that group.
+Progress and diagnostics redact the values of entries whose names mark a credential,
+such as `TOKEN`, `PASSWORD`, `SECRET`, `KEY`, `AUTH` or `CREDENTIALS` segments.
+Other values, such as a feature flag `TT_PRICE_STOPPED=1`, are shown as given.
 
 A string passed to `test.system(...)` selects a catalog entry with kind `system`.
 Use an object to select either kind explicitly:
@@ -159,6 +167,28 @@ are bounded; the attempt document records how many were omitted.
 The Blackbox reporter also adds a readable `blackbox-diagnostics` attachment.
 Container health polling and detailed startup events stay in these attachments,
 not the live console. Native reporters may display attachments for failed tests.
+
+Playwright clears `test-results/` and its HTML report on every run. To keep
+attempt evidence across runs, enable retention in the Playwright configuration:
+
+```ts
+export default defineConfig({
+  blackboxConfigFile: './blackbox.config.yaml',
+  use: { blackboxRetainAttempts: true },
+});
+```
+
+After cleanup, each attempt is copied to
+`.blackbox/experiments/<sandboxId>/` (a `playwright-<uuid>` directory) beside
+`blackbox.config.yaml`: `attempt.json` holds the final attempt document and
+`sandbox/` the sandbox record and retained telemetry. Retention is off by default,
+never overwrites an existing directory, and fails the attempt if it cannot write.
+`capsule report` does not read these directories yet.
+
+Retention preserves raw evidence. Open `attempt.json` to inspect the test identity
+and recorded events; use the files under `sandbox/` for the sandbox lifecycle and
+telemetry. There is no saved-attempt browser or comparison command, and this
+option does not archive Playwright's HTML report.
 
 The retained telemetry summary reads request/span counters from the lifecycle
 record without loading raw trace fragments. Collector shutdown is reported from

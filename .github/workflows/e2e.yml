@@ -111,7 +111,7 @@ jobs:
         run: docker rm --force blackbox-test-registry
 
       - name: Upload the test registry storage
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ env.BUILD_ARTIFACT }}
           path: ${{ runner.temp }}/registry-storage
@@ -193,7 +193,7 @@ jobs:
           pnpm-version: ${{ env.PNPM_VERSION }}
 
       - name: Download the test registry storage
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v8
         with:
           name: ${{ env.BUILD_ARTIFACT }}
           path: ${{ runner.temp }}/registry-storage
@@ -280,7 +280,7 @@ jobs:
           pnpm-version: ${{ env.PNPM_VERSION }}
 
       - name: Download the test registry storage
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v8
         with:
           name: ${{ env.BUILD_ARTIFACT }}
           path: ${{ runner.temp }}/registry-storage
@@ -340,7 +340,7 @@ jobs:
           pnpm-version: ${{ env.PNPM_VERSION }}
 
       - name: Download the test registry storage
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v8
         with:
           name: ${{ env.BUILD_ARTIFACT }}
           path: ${{ runner.temp }}/registry-storage
@@ -413,7 +413,7 @@ jobs:
           pnpm-version: ${{ env.PNPM_VERSION }}
 
       - name: Download the test registry storage
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v8
         with:
           name: ${{ env.BUILD_ARTIFACT }}
           path: ${{ runner.temp }}/registry-storage

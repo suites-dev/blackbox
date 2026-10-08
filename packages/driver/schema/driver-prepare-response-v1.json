@@ -35,7 +35,8 @@
         "kind": { "const": "available" },
         "name": {
           "type": "string",
-          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+          "description": "The catalog driver key the module served; equal to the authored name when the module has one.",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
         }
       }
     },

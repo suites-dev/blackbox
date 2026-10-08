@@ -14,8 +14,9 @@ Read [capabilities](references/capabilities.md),
 1. Confirm explicit scope for code execution, local resource creation and any
    external service. Explain possible image pulls/builds, mounts, listeners and
    cleanup. Verify static preflight and a real terminal predicate first.
-2. Acquire the selected entry with the installed command profile. Retain the
-   returned Capsule/session ID from JSON, including any admitted failed startup.
+2. Acquire the selected entry with the installed command profile
+   (`blackbox capsule up <system> --json`). Retain the returned Capsule/session ID
+   (`sessionId`) from JSON, including any admitted failed startup.
    Never choose the newest session or rely on mutable current-Capsule state.
 3. Observe supported readiness. Run migrations/seeding/reset as separate `setup`
    activities. Use unique data for each physical attempt.

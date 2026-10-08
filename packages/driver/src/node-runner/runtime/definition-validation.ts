@@ -8,8 +8,7 @@ export function isDriverDefinition(value: unknown): value is DriverDefinition {
   const record = value as Record<string, unknown>;
   return (
     record.kind === 'project-driver' &&
-    typeof record.name === 'string' &&
-    isDriverName(record.name) &&
+    (!('name' in record) || isDriverName(record.name)) &&
     typeof record.prepare === 'function'
   );
 }
