@@ -40,7 +40,7 @@ docker volume ls -q --filter "label=com.docker.compose.project=<project>"
    not that anything starts.
 5. **One Capsule run.** With the capsule skill: `blackbox capsule up <system> --json`, one `capsule run` with an
    explicit `--session`, then inspect.
-6. **Inspect, stop, then report.** `blackbox capsule show <id>` while it runs, then `down <id>` (also on failure),
+6. **Inspect, stop, then report.** `blackbox capsule show <id>` while it runs, then `down <id>` (`down` accepts only a `running` or `stop-failed` capsule; after a `start-failed` `up`, startup already tried its own cleanup, so skip `down` and use the Docker check),
    then `blackbox capsule show <id>` and `blackbox capsule report <id>` again. A report written while the capsule
    runs is `provisional` and does not draw the final evidence: `down` drains the collector, and only the report
    after `down` can be `complete`. Judge absence and exact-count expectations only from that one.
