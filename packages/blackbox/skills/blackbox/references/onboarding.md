@@ -20,7 +20,7 @@ All of these, each with its own evidence:
 A config file, a passing `catalog validate` or an installed package is not done.
 
 Docker check, with the project name from the `up` JSON (`composeProject`) or, after a failed `up`, from its
-`Compose configured: <project>` progress line. Run it after `down` and after a failed `up` that got as far as `Compose configured:`; all three must be empty. A failure
+`Compose configured: <project>` progress line (printed by `up --json --non-interactive`; terminal rendering omits it). Run it after `down` and after a failed `up` that got as far as `Compose configured:`; all three must be empty. A failure
 earlier (for example `manager-failed` at `manager-handshake`) created no Compose project, so there is nothing to check:
 
 ```sh
@@ -34,7 +34,8 @@ docker volume ls -q --filter "label=com.docker.compose.project=<project>"
 1. **Understand how the system runs.** Follow discovery's initial setup: inventory, Compose files, Dockerfiles,
    readiness, state and reset. Do not run package scripts to find out.
 2. **Choose a small boundary.** The smallest system or subsystem that contains one accepted behavior.
-3. **Write `blackbox.config.yaml`** at the repo root, with ordered Compose files under `.blackbox/catalog/`. Use the
+3. **Write `blackbox.config.yaml`** at the repo root, with ordered, project-relative Compose files. Reference the project's existing Compose files in place (moving one can
+   change its relative build, bind-mount and `env_file` paths); use `.blackbox/catalog/` only for files you create. Use the
    catalog skill and the installed schema. `drivers` and `observation` are required on every entry (`drivers: {}`
    is valid). For Node services add instrumentation with `blackbox inst install --runtime node` and an activation, after checking that `blackbox inst install --help` exists (the Node instrumentation integration is a separate package; if it is missing, report it as a blocker).
 4. **Validate statically.** `blackbox catalog validate --json`, then `blackbox systems`. This proves the files parse,
