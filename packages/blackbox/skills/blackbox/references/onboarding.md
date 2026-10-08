@@ -8,14 +8,25 @@ first, and report a missing one as a blocker.
 
 All of these, each with its own evidence:
 
-1. The system starts locally (`capsule up` returns a `sessionId`).
+1. The system starts locally: `capsule up --json` exits 0 with `kind: capsule-started`. A failed `up` exits 125 but can
+   still return a `sessionId`; that is a retained failure, not a start.
 2. It is a fresh capsule acquired for this run.
 3. One action was issued (`capsule run`), with its `activityId`.
 4. Evidence was collected (`capsule show`, report export).
 5. The result was inspected against the accepted expectation, with the report status and limitations stated.
-6. Cleanup was confirmed (`capsule down`, then `capsule ls` and `capsule ls --all`).
+6. Cleanup was confirmed: `capsule down --json` returns `cleanup: complete`, `capsule ls --all` shows `stopped`, and
+   Docker shows nothing left for the capsule's Compose project (below). `ls` reads recorded state, not Docker.
 
 A config file, a passing `catalog validate` or an installed package is not done.
+
+Docker check, with the project name from the `up` JSON (`composeProject`) or, after a failed `up`, from its
+`Compose configured: <project>` progress line. Run it after `down` and after any failed `up`; all three must be empty:
+
+```sh
+docker ps -a --filter "label=com.docker.compose.project=<project>" --format '{{.Names}}'
+docker network ls --filter "label=com.docker.compose.project=<project>" --format '{{.Name}}'
+docker volume ls -q --filter "label=com.docker.compose.project=<project>"
+```
 
 ## Path
 
