@@ -24,7 +24,9 @@ interface DeclarationState {
   phase: 'idle' | 'system' | 'sandbox';
 }
 
-type UseBlackboxOptions = (options: BlackboxTestOptions) => void;
+type UseBlackboxOptions = (
+  options: Pick<BlackboxTestOptions, 'catalogEntry' | 'blackboxEnvironment'>,
+) => void;
 
 function createUseBlackboxOptions<
   TestArgs extends object,

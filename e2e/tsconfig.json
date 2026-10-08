@@ -22,6 +22,12 @@
     "allowArbitraryExtensions": true,
     "types": ["node"]
   },
-  "include": ["playwright.config.ts", "tests/playwright/**/*.ts", "reporters/**/*.ts"],
+  "include": [
+    "playwright.config.ts",
+    "playwright-features.config.ts",
+    "tests/playwright/**/*.ts",
+    "tests/playwright-features/**/*.ts",
+    "reporters/**/*.ts"
+  ],
   "exclude": ["node_modules"]
 }
