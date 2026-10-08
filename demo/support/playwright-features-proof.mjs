@@ -4,8 +4,6 @@ import { lstat, readFile, readdir, writeFile } from 'node:fs/promises';
 import { join, relative } from 'node:path';
 
 export const retentionTitle = 'Scenario: finished attempts retain their real telemetry';
-export const execTitle =
-  'Scenario: container setup seeds state and produces linked activity evidence';
 
 export async function filesUnder(root) {
   const files = [];
@@ -47,7 +45,7 @@ function collectSpecs(suite) {
 
 export function verifyRunReport(report, mode, exitCode) {
   const specs = (report.suites ?? []).flatMap(collectSpecs);
-  const expected = mode === 'retained-first' ? [execTitle, retentionTitle] : [retentionTitle];
+  const expected = [retentionTitle];
   assert.deepEqual(
     specs.map(({ title }) => title).sort(),
     expected.sort(),
@@ -147,25 +145,12 @@ export async function verifyFinishedSandbox(directory, receipt) {
     lifecycle.telemetry.acceptedSpans,
     'Retained artifact lost accepted telemetry spans',
   );
-  const traces = receipt.activities?.map(({ traceId }) => traceId) ?? [receipt.traceId];
   assert(
-    traces.length > 0 && traces.every((traceId) => spans.some((span) => span.traceId === traceId)),
-    'Retained artifact lacks the test activity trace',
+    typeof receipt.traceId === 'string' &&
+      receipt.traceId.length > 0 &&
+      spans.some((span) => span.traceId === receipt.traceId),
+    'Retained artifact lacks the test request trace',
   );
-  if (receipt.traceLinks !== undefined) {
-    const { rootSpanId, clientSpanId, serverSpanId } = receipt.traceLinks;
-    const root = spans.find(({ spanId }) => spanId === rootSpanId);
-    const client = spans.find(({ spanId }) => spanId === clientSpanId);
-    const server = spans.find(({ spanId }) => spanId === serverSpanId);
-    assert(
-      root !== undefined && client !== undefined && server !== undefined,
-      'Retained activity is missing the root/client/server trace chain',
-    );
-    assert.equal(client.parentSpanId, root.spanId, 'Retained client lost its activity parent');
-    assert.equal(server.parentSpanId, client.spanId, 'Retained server lost its HTTP client parent');
-    assert.equal(client.traceId, root.traceId);
-    assert.equal(server.traceId, root.traceId);
-  }
   return { record, fragmentCount: fragmentFiles.length, spanCount: spans.length };
 }
 
@@ -183,43 +168,17 @@ export async function verifyRetainedAttempt(directory, receipt, attachedDocument
     'Retained sandbox must copy every source file byte-for-byte',
   );
   const evidence = await verifyFinishedSandbox(join(directory, 'sandbox'), receipt);
-  for (const activity of receipt.activities ?? []) {
-    for (const status of ['started', activity.exitCode === 0 ? 'completed' : 'failed']) {
-      assert.equal(
-        document.events.filter(
-          (event) =>
-            event.phase === 'activity' &&
-            event.status === status &&
-            event.detail.startsWith(`${activity.activityId};`),
-        ).length,
-        1,
-        `Missing retained ${status} event for ${activity.activityId}`,
-      );
-    }
-  }
-  if (receipt.secret !== undefined) {
-    assert(!documentText.includes(receipt.secret), 'Retained report leaked a command argument');
-  }
   return { ...evidence, snapshot: await snapshotTree(directory) };
 }
 
 /** IDs, paths, timestamps and telemetry batching are kept in the raw receipts. */
 export function featureGolden(proof, recovery) {
-  const lines = ['Playwright packed-consumer setup and retention'];
+  const lines = ['Playwright packed-consumer attempt retention'];
   for (const run of proof.runs) {
     lines.push(
       `${run.mode}: tests=${run.specs} exit=${run.exitCode} retained=${run.retained.length}`,
     );
   }
-  const exec = proof.runs[0].receipts.find((receipt) => Array.isArray(receipt.activities));
-  assert(exec !== undefined, 'Golden requires observed setup activities');
-  for (const activity of exec.activities) {
-    lines.push(
-      `setup activity: exit=${activity.exitCode} events=started,${activity.exitCode === 0 ? 'completed' : 'failed'}`,
-    );
-  }
-  assert(exec.traceLinks !== undefined, 'Golden requires observed root/client/server links');
-  lines.push('setup trace parents: activity-root -> http-client -> payment-server');
   lines.push(
     `normal output cleared by second run: ${proof.outputClearedBetweenRuns}`,
     `retained reports, sandbox metadata and telemetry preserved byte-for-byte: ${proof.retainedBytesSurvived}`,
@@ -267,7 +226,7 @@ export function featureError(error, seen = new Set()) {
 
 export function incompleteFeatureGolden(observedRuns, recovery, error) {
   return [
-    'Playwright packed-consumer setup and retention',
+    'Playwright packed-consumer attempt retention',
     'INCOMPLETE: feature acceptance failed; remaining claims are unverified',
     ...observedRuns.map(
       (run) => `${run.mode}: exit=${run.exitCode ?? 'not-observed'} validation=${run.status}`,

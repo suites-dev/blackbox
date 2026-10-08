@@ -79,7 +79,6 @@ export async function startRespondingAttempt(
       readTrace: () =>
         Promise.reject(new Error('Telemetry traces are not used by this native-runner fixture')),
     },
-    runActivity: () => Promise.reject(new Error('not used by this fixture')),
     effects: {
       sessionId: `session-${executionId}`,
       executionId,

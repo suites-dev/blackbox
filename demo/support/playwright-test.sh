@@ -162,7 +162,7 @@ BLACKBOX_E2E_RESULTS_ROOT="$RUN_RESULT_ROOT" \
 recover_sandboxes
 node "$CONSUMER_ROOT/playwright-verify.mjs" >"$RUN_RESULT_ROOT/receipt.json"
 
-# Run the setup and retention contract after the original eight-case proof.
+# Run the retention contract after the original eight-case proof.
 # Its runner owns recovery and keeps each invocation under test-results/features.
 BLACKBOX_E2E_FIXTURE_TOKEN="$FIXTURE_TOKEN" \
   node "$CONSUMER_ROOT/playwright-features.mjs"

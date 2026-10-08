@@ -6,7 +6,6 @@ import test from 'node:test';
 
 import {
   assertSameTree,
-  execTitle,
   featureError,
   featureGolden,
   goldenDifference,
@@ -61,10 +60,17 @@ test('snapshot safely tracks prototype-sensitive file names', async (t) => {
   assertSameTree(snapshot, JSON.parse(JSON.stringify(snapshot)), 'Snapshot JSON lost filenames');
 });
 
-test('feature discovery rejects omitted tests, unexpected retries and skipped execution', () => {
+test('retention discovery requires one test per run and rejects omissions, retries and skips', () => {
   const report = reportFixture();
-  verifyRunReport(report, 'retained-second', 0);
-  assert.throws(() => verifyRunReport(report, 'retained-first', 0), /Feature discovery drift/u);
+  for (const mode of ['retained-first', 'retained-second', 'default-off']) {
+    verifyRunReport(report, mode, 0);
+  }
+  const missing = reportFixture();
+  missing.suites = [];
+  assert.throws(() => verifyRunReport(missing, 'retained-first', 0), /Feature discovery drift/u);
+  const additional = reportFixture();
+  additional.suites[0].specs.push(structuredClone(additional.suites[0].specs[0]));
+  assert.throws(() => verifyRunReport(additional, 'retained-first', 0), /Feature discovery drift/u);
   const results = report.suites[0].specs[0].tests[0].results;
   results.push(structuredClone(results[0]));
   assert.throws(() => verifyRunReport(report, 'retained-second', 0), /once without retries/u);
@@ -170,8 +176,12 @@ test('retention proof compares complete metadata and telemetry bytes, then detec
   );
 });
 
-test('retention proof rejects lost fragments, foreign ownership and missing activity telemetry', async (t) => {
+test('retention proof rejects lost fragments, foreign ownership and missing request telemetry', async (t) => {
   const fixture = await artifactFixture(t);
+  await assert.rejects(
+    verifyFinishedSandbox(fixture.source, { ...fixture.receipt, traceId: '' }),
+    /lacks the test request trace/u,
+  );
   const fragment = JSON.parse(await readFile(fixture.fragmentPath, 'utf8'));
   fragment.sessionId = 'foreign-session';
   await writeFile(fixture.fragmentPath, JSON.stringify(fragment));
@@ -183,7 +193,7 @@ test('retention proof rejects lost fragments, foreign ownership and missing acti
   await writeFile(fixture.fragmentPath, JSON.stringify(fragment));
   await assert.rejects(
     verifyFinishedSandbox(fixture.source, fixture.receipt),
-    /lacks the test activity trace/u,
+    /lacks the test request trace/u,
   );
   await rm(fixture.fragmentPath);
   await assert.rejects(
@@ -212,20 +222,15 @@ test('retention proof rejects snapshots taken before collector drain or sandbox 
   );
 });
 
-test('feature golden preserves test counts, command failures and retention outcomes', () => {
+test('retention golden preserves run counts, failed writes and retention outcomes', async () => {
   const runs = ['retained-first', 'retained-second', 'default-off', 'write-failure'].map(
     (mode, index) => ({
       mode,
-      specs: index === 0 ? 2 : 1,
+      specs: 1,
       exitCode: index === 3 ? 1 : 0,
-      retained: index < 2 ? Array(index === 0 ? 2 : 1).fill({}) : [],
-      receipts: [],
+      retained: index < 2 ? [{}] : [],
     }),
   );
-  runs[0].receipts.push({
-    activities: [{ exitCode: 0 }, { exitCode: 23 }],
-    traceLinks: { rootSpanId: 'root', clientSpanId: 'client', serverSpanId: 'server' },
-  });
   const proof = {
     runs,
     outputClearedBetweenRuns: true,
@@ -233,10 +238,16 @@ test('feature golden preserves test counts, command failures and retention outco
     defaultOffUnchanged: true,
     writeFailurePreserved: true,
   };
-  const recovery = { recoveries: Array(5).fill({}) };
+  const recovery = { recoveries: Array(4).fill({}) };
   const golden = featureGolden(proof, recovery);
+  assert.equal(
+    golden,
+    await readFile(
+      new URL('../../e2e/tests/playwright-features/acceptance.golden', import.meta.url),
+      'utf8',
+    ),
+  );
   assert.equal(goldenDifference(golden, golden), '');
-  assert.match(golden, /exit=23 events=started,failed/u);
   runs[3].exitCode = 0;
   assert.match(
     goldenDifference(featureGolden(proof, recovery), golden),
@@ -246,15 +257,12 @@ test('feature golden preserves test counts, command failures and retention outco
     goldenDifference(featureGolden(proof, recovery), golden),
     /\+ write-failure: tests=1 exit=0/u,
   );
-  const first = reportFixture();
-  first.suites[0].specs.push({ ...first.suites[0].specs[0], title: execTitle });
-  verifyRunReport(first, 'retained-first', 0);
 });
 
 test('startup and semantic failures still persist expected, incomplete actual and golden diff', async (t) => {
   const root = await mkdtemp(join(tmpdir(), 'blackbox-feature-failure-'));
   t.after(() => rm(root, { recursive: true, force: true }));
-  const expected = 'Playwright packed-consumer setup and retention\nverified success\n';
+  const expected = 'Playwright packed-consumer attempt retention\nverified success\n';
   for (const observed of [[], [{ mode: 'retained-first', exitCode: 1, status: 'failed' }]]) {
     const actual = incompleteFeatureGolden(
       observed,

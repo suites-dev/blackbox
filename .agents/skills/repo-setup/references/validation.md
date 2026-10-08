@@ -84,11 +84,11 @@ The E2E config uses fully parallel tests with two workers. Its live evidence rec
 acquisition start/completion times on the reporter's monotonic clock; acceptance
 requires overlapping acquisition on distinct workers within a file and across files.
 Worker counts alone do not establish concurrent sandbox execution.
-After the original eight scenarios, the same command runs the public setup-command
-and retention contracts from `e2e/tests/playwright-features/`. These use real
-participant containers and successive Playwright invocations. They check command
-side effects, trace ownership, expired handles, retention across output cleanup,
-the default-off option, and retention write failures. Their stable acceptance
+After the original eight scenarios, the same command runs the public retention
+contract from `e2e/tests/playwright-features/`. These use real
+participant containers and successive Playwright invocations. They check retained telemetry
+ownership and bytes, retention across output cleanup, the default-off option, and
+retention write failures. Their stable acceptance
 summary must match `acceptance.golden`; changing a golden never replaces its
 semantic assertions or negative controls.
 Evidence under `e2e/test-results/features/` includes the golden actual/expected/diff,

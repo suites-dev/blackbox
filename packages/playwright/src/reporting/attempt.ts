@@ -35,10 +35,7 @@ export class AttemptReport implements AttemptProgress {
 
   constructor(private readonly testInfo: TestInfo) {}
 
-  acquired(
-    sandbox: Pick<BlackboxSandbox, 'sandboxId' | 'executionId' | 'catalogEntry'>,
-    telemetry: Pick<BlackboxTelemetry, 'sessionId'>,
-  ): void {
+  acquired(sandbox: BlackboxSandbox, telemetry: BlackboxTelemetry): void {
     this.identity = {
       kind: 'acquired',
       sandboxId: sandbox.sandboxId,

@@ -1,13 +1,10 @@
-Playwright packed-consumer setup and retention
-retained-first: tests=2 exit=0 retained=2
+Playwright packed-consumer attempt retention
+retained-first: tests=1 exit=0 retained=1
 retained-second: tests=1 exit=0 retained=1
 default-off: tests=1 exit=0 retained=0
 write-failure: tests=1 exit=1 retained=0
-setup activity: exit=0 events=started,completed
-setup activity: exit=23 events=started,failed
-setup trace parents: activity-root -> http-client -> payment-server
 normal output cleared by second run: true
 retained reports, sandbox metadata and telemetry preserved byte-for-byte: true
 default option leaves retained tree unchanged: true
 collision fails teardown and preserves existing evidence: true
-owned sandboxes recovered without Docker resources: 5
+owned sandboxes recovered without Docker resources: 4

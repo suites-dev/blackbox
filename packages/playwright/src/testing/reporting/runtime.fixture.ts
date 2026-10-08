@@ -34,7 +34,6 @@ function runningAttempt(input: BlackboxAttemptInput) {
       entrypoint: { url: 'http://127.0.0.1:1', host: '127.0.0.1', port: 1, protocol: 'http' },
       containers: new Map(),
     },
-    runActivity: () => Promise.reject(new Error('not used by this fixture')),
     effects: { sessionId: executionId, executionId },
     telemetry: {
       sessionId: executionId,

@@ -69,7 +69,7 @@ test('Playwright evidence uses its own transport identity and output directory',
     'acceptance.actual.txt': 'retained evidence survives a second run\n',
     'acceptance.expected.txt': 'retained evidence survives a second run\n',
     'golden-diff.txt': '',
-    'retained/.hidden/trace:activity.json': '{"traceId":"synthetic-trace"}',
+    'retained/.hidden/trace:request.json': '{"traceId":"synthetic-trace"}',
   };
   for (const [name, value] of Object.entries(features)) {
     await write(root, `e2e/test-results/features/${name}`, value);
@@ -111,11 +111,11 @@ test('Playwright evidence uses its own transport identity and output directory',
   await assert.rejects(fs.stat(path.resolve(root, untrustedOutput)), /ENOENT/);
 });
 
-test('Playwright success requires feature evidence while failures retain partial output', async (t) => {
+test('Playwright success requires retention evidence while failures retain partial output', async (t) => {
   const root = await workspace(t);
   await write(root, 'e2e/test-results/junit.xml', '<testsuites/>');
   await write(root, 'e2e/test-results/results.json', '{"status":"passed"}');
-  await write(root, 'e2e/test-results/features/retained-first/raw.txt', 'setup failed');
+  await write(root, 'e2e/test-results/features/retained-first/raw.txt', 'retention failed');
   const success = await retainE2eEvidence({
     root,
     project: 'playwright',

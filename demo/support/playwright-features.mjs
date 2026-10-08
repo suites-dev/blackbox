@@ -78,7 +78,6 @@ function runPlaywright(mode, directory) {
   assert(!interrupted, 'Playwright features interrupted before next invocation');
   const log = createWriteStream(join(directory, 'execution.txt'), { flags: 'wx' });
   const arguments_ = ['test', '--config', join(consumerRoot, 'playwright-features.config.ts')];
-  if (mode !== 'retained-first') arguments_.push('retention.spec.ts');
   return new Promise((resolve, reject) => {
     let failure;
     let closed = false;
@@ -142,7 +141,7 @@ function attemptDocument(attempts, sandboxId) {
 async function inspectRun(mode, directory, exitCode) {
   const report = JSON.parse(await readFile(join(directory, 'results.json'), 'utf8'));
   const attempts = verifyRunReport(report, mode, exitCode);
-  const names = mode === 'retained-first' ? ['retention', 'setup-exec'] : ['retention'];
+  const names = ['retention'];
   const receiptsDirectory = join(directory, 'receipts');
   await mkdir(receiptsDirectory, { recursive: false });
   const receipts = await Promise.all(
@@ -386,4 +385,4 @@ try {
   );
   throw error;
 }
-process.stdout.write(`Playwright setup and retention journeys passed: ${resultsRoot}\n`);
+process.stdout.write(`Playwright attempt retention journeys passed: ${resultsRoot}\n`);

@@ -8,19 +8,21 @@ import {
 } from '@suites/blackbox-catalog';
 import { startSandbox, type SandboxHandle, type SandboxStopReason } from '@suites/blackbox-sandbox';
 
-import type { BlackboxCatalogSelection, BlackboxEffects, BlackboxTelemetry } from '../types.js';
+import type {
+  BlackboxCatalogSelection,
+  BlackboxEffects,
+  BlackboxEntrypoint,
+  BlackboxSandbox,
+  BlackboxTelemetry,
+} from '../types.js';
 import { createUnavailableBlackboxEffects } from '../effects/runtime.js';
 import { reported, type AttemptProgress } from '../reporting/events.js';
 import { verifyRequiredActivations } from './activation.js';
 import { resolveCollectorRuntime } from './collector-runtime.js';
 import { awaitReadiness } from './readiness.js';
-import { publicSandbox, startAttemptSandbox, type AttemptSandbox } from './sandbox-start.js';
+import { startAttemptSandbox } from './sandbox-start.js';
 import { createSandboxTelemetry, type TelemetryAuthorization } from './telemetry.js';
 import { publicTelemetry } from './telemetry-handle.js';
-import {
-  participantActivities,
-  type ParticipantActivityRunner,
-} from '../activity/participant-activity.js';
 
 export interface BlackboxAttemptInput {
   readonly selection: BlackboxCatalogSelection;
@@ -30,15 +32,11 @@ export interface BlackboxAttemptInput {
   readonly progress: AttemptProgress;
 }
 
-export type { AttemptSandbox } from './sandbox-start.js';
-
 export interface RunningBlackboxAttempt {
-  readonly sandbox: AttemptSandbox;
+  readonly sandbox: BlackboxSandbox;
   readonly telemetry: BlackboxTelemetry;
   readonly effects: BlackboxEffects;
   stop(reason: SandboxStopReason): Promise<void>;
-  /** Run one setup command in a participant and export its activity root span. */
-  readonly runActivity: ParticipantActivityRunner;
 }
 
 export interface BlackboxAttemptRuntime {
@@ -103,6 +101,23 @@ function authorization(ports: BlackboxAcquisitionPorts): TelemetryAuthorization 
     kind: 'split-bearer-tokens',
     ingestToken: ports.randomToken(),
     controlToken: ports.randomToken(),
+  };
+}
+
+function entrypoint(input: {
+  readonly plan: CatalogSandboxInput;
+  readonly sandbox: SandboxHandle;
+}): BlackboxEntrypoint {
+  const declared = input.plan.endpoints.find((candidate) => candidate.name === 'entrypoint');
+  const mapped = input.sandbox.endpoints.get('entrypoint');
+  if (declared === undefined || mapped === undefined) {
+    throw new Error('Selected catalog entry did not produce the required entrypoint endpoint');
+  }
+  return {
+    url: `${declared.protocol}://${mapped.host}:${mapped.port}`,
+    host: mapped.host,
+    port: mapped.port,
+    protocol: declared.protocol,
   };
 }
 
@@ -196,6 +211,19 @@ export async function acquireBlackboxAttempt(
       }),
     );
     await verifyReadiness({ plan, sandbox, ports, progress: input.progress });
+    const selectedEntrypoint = entrypoint({ plan, sandbox });
+    const publicSandbox = Object.freeze({
+      sandboxId: sandbox.sandboxId,
+      executionId,
+      catalogEntry: Object.freeze({
+        id: plan.catalogEntryId,
+        kind: plan.metadata.kind,
+      }),
+      projectName: sandbox.projectName,
+      artifactDirectory: input.artifactDirectory,
+      entrypoint: Object.freeze(selectedEntrypoint),
+      containers: sandbox.containers,
+    }) satisfies BlackboxSandbox;
     const exposedTelemetry = publicTelemetry({
       sandbox,
       recordDirectory,
@@ -203,19 +231,12 @@ export async function acquireBlackboxAttempt(
       executionId,
     });
     return {
-      sandbox: publicSandbox({ plan, sandbox, executionId, artifactDirectory: recordDirectory }),
+      sandbox: publicSandbox,
       telemetry: exposedTelemetry,
       effects: ports.createEffects({ sessionId, executionId, telemetry: exposedTelemetry }),
       async stop(reason): Promise<void> {
         await sandbox.stop({ reason });
       },
-      ...participantActivities({
-        sandbox,
-        sessionId,
-        executionId,
-        plan,
-        authorization: collectorAuthorization,
-      }),
     };
   } catch (cause) {
     return cleanupAfterSetupFailure({ sandbox, cause, progress: input.progress });
