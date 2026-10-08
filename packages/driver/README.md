@@ -5,7 +5,8 @@
 This is a public alpha authoring package. Its contract may change between alpha
 releases. For the end-user workflow, read
 [Drivers and command execution](../../docs/drivers.md); this page describes the
-maintainer boundary.
+maintainer boundary. Until the alpha is published, install the SDK into a project from
+source as described in [installation](../../docs/installation.md#install-the-sdk-for-project-drivers).
 
 ```text
 CLI + catalog + Capsule context
@@ -42,7 +43,7 @@ Those boundaries keep drivers as adapters rather than project-specific actions. 
 
 ## Author a Node driver
 
-A project module default-exports a definition. Its `name` must match the selected catalog driver ID, and `prepare()` must return a complete preparation. This minimal adapter assumes its catalog entry declares `propagation-not-requested`:
+A project module default-exports a definition, and `prepare()` must return a complete preparation. A definition with a `name` serves only the catalog driver ID equal to that name. Leave `name` out to let one module serve several catalog driver IDs; `request.driverId` tells `prepare()` which one was selected. This minimal adapter assumes its catalog entry declares `propagation-not-requested`:
 
 ```js
 import { defineDriver } from '@suites/blackbox-driver';

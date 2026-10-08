@@ -5,7 +5,7 @@
   "description": "Language-neutral schema for a Blackbox catalog authored as YAML or JSON.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schemaVersion", "catalog", "activations"],
+  "required": ["schemaVersion", "catalog"],
   "properties": {
     "schemaVersion": {
       "const": 1,
@@ -172,6 +172,7 @@
     },
     "activations": {
       "type": "object",
+      "description": "Activations participants can name. Optional: an absent key means no activations.",
       "propertyNames": { "$ref": "#/$defs/identifier" },
       "additionalProperties": { "$ref": "#/$defs/activation" }
     },

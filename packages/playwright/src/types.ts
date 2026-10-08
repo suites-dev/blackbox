@@ -58,6 +58,12 @@ export interface BlackboxTestOptions {
   readonly catalogEntry: BlackboxCatalogSelection;
   /** Compose substitution environment supplied to the selected sandbox. */
   readonly blackboxEnvironment: Readonly<Record<string, string>>;
+  /**
+   * Copy each finished attempt (sandbox record, telemetry and attempt document) to
+   * `.blackbox/experiments/<sandboxId>/` beside the Blackbox configuration, where the
+   * next Playwright run does not clear it. Default: false.
+   */
+  readonly blackboxRetainAttempts: boolean;
 }
 
 export interface BlackboxTestFixtures {

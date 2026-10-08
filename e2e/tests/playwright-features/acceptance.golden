@@ -1,0 +1,10 @@
+Playwright packed-consumer attempt retention
+retained-first: tests=1 exit=0 retained=1
+retained-second: tests=1 exit=0 retained=1
+default-off: tests=1 exit=0 retained=0
+write-failure: tests=1 exit=1 retained=0
+normal output cleared by second run: true
+retained reports, sandbox metadata and telemetry preserved byte-for-byte: true
+default option leaves retained tree unchanged: true
+collision fails teardown and preserves existing evidence: true
+owned sandboxes recovered without Docker resources: 4

@@ -9,7 +9,7 @@ export class InvalidDriverDefinitionError extends Error {
 }
 
 export function defineDriver(definition: DriverDefinition): Readonly<DriverDefinition> {
-  if (!isDriverName(definition.name)) {
+  if ('name' in definition && !isDriverName(definition.name)) {
     throw new InvalidDriverDefinitionError(
       'Driver name must be a lowercase slug such as postgres-driver',
     );
