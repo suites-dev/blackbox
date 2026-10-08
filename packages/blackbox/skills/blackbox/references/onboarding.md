@@ -20,7 +20,8 @@ All of these, each with its own evidence:
 A config file, a passing `catalog validate` or an installed package is not done.
 
 Docker check, with the project name from the `up` JSON (`composeProject`) or, after a failed `up`, from its
-`Compose configured: <project>` progress line. Run it after `down` and after any failed `up`; all three must be empty:
+`Compose configured: <project>` progress line. Run it after `down` and after a failed `up` that got as far as `Compose configured:`; all three must be empty. A failure
+earlier (for example `manager-failed` at `manager-handshake`) created no Compose project, so there is nothing to check:
 
 ```sh
 docker ps -a --filter "label=com.docker.compose.project=<project>" --format '{{.Names}}'
