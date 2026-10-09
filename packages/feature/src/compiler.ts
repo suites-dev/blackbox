@@ -347,19 +347,12 @@ const charMap: Record<string, string> = {
   '<': '\\u003C',
   '>': '\\u003E',
   '/': '\\u002F',
-  '\\': '\\\\',
-  '\b': '\\b',
-  '\f': '\\f',
-  '\n': '\\n',
-  '\r': '\\r',
-  '\t': '\\t',
-  '\0': '\\0',
   '\u2028': '\\u2028',
   '\u2029': '\\u2029',
 };
 
 function escapeUnsafeJsChars(value: string): string {
-  return value.replace(/[<>/\\\b\f\n\r\t\0\u2028\u2029]/gu, (char) => charMap[char] ?? char);
+  return value.replace(/[<>/\u2028\u2029]/gu, (char) => charMap[char] ?? char);
 }
 
 function quote(value: string): string {

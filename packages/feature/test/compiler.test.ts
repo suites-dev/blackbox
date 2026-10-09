@@ -10,6 +10,33 @@ import { compileFeature } from '../src/index.js';
 
 const clients = { api: { from: '../clients.js', export: 'api' } } as const;
 
+describe('Feature compiler literal safety', () => {
+  it('keeps generated literals safe without changing their runtime values', () => {
+    const value = '</script> "quoted" \\path\n\u2028\u2029';
+    const featureName = 'Escaping </script> "quoted" \\path';
+    const source = [
+      `Feature: ${featureName}`,
+      '  Scenario: Send a literal value',
+      '    When client "api" sends POST "/echo" with JSON:',
+      '      """json',
+      `      ${JSON.stringify({ value })}`,
+      '      """',
+      '    Then the response status is 200',
+    ].join('\n');
+    const result = compileFeature({ source, clients });
+
+    expect(result.diagnostics).toEqual([]);
+    expectValidTypeScript(result.code, 'safe-literals.generated.ts');
+    expect(result.code).not.toContain('</script>');
+    expect(result.code).toContain('\\u003C');
+    const title = /suite\.describe\(("(?:\\.|[^"\\])*")/u.exec(result.code);
+    const body = /data: (\{[^\n]*?\})/u.exec(result.code);
+    if (!title || !body) {throw new Error('Generated suite is missing the title or JSON body.');}
+    expect(JSON.parse(title[1])).toBe(`Feature: ${featureName}`);
+    expect(JSON.parse(body[1])).toEqual({ value });
+  });
+});
+
 describe('Feature compiler snapshots', () => {
   it('compiles hierarchy, backgrounds, tags, tables, doc strings, and outline rows', () => {
     const result = compileFeature({ source: orderPricing, uri: 'order-pricing.feature', clients });
