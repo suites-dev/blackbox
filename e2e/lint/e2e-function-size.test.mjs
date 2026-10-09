@@ -28,6 +28,7 @@ test('allows long direct synchronous Blackbox suite declaration callbacks', () =
     `system.sandbox('suite', ${callback(100)});`,
     `system.sandbox('suite', {}, ${callback(100)});`,
     `sandbox.describe('suite', ${callback(100)});`,
+    `suite.describe('suite', ${callback(100)});`,
   ];
   for (const source of sources) {
     assert.deepEqual(messages(source), []);
@@ -59,6 +60,7 @@ test('rejects unrelated describe, async suite, and callback in the wrong positio
     `test.system('suite', ${callback(81, { async: true })});`,
     `system.sandbox('suite', ${callback(81, { async: true })});`,
     `sandbox.describe('suite', ${callback(81, { async: true })});`,
+    `suite.describe('suite', ${callback(81, { async: true })});`,
     `test.system(${callback(81)}, 'suite');`,
   ];
   for (const source of sources) {

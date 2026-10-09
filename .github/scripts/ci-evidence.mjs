@@ -1097,6 +1097,8 @@ export function approvedCliCommand(command) {
       return ['pnpm', 'test:e2e:playwright'];
     case 'pnpm\0test:e2e:skills':
       return ['pnpm', 'test:e2e:skills'];
+    case 'node\0e2e/feature-cli/run.mjs\0--repeat\x002':
+      return ['node', 'e2e/feature-cli/run.mjs', '--repeat', '2'];
     case 'pnpm\0test:sandbox:docker':
       return ['pnpm', 'test:sandbox:docker'];
     case 'pnpm\0typecheck':

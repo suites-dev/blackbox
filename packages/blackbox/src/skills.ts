@@ -4,7 +4,7 @@ export const blackboxSkill = {
   name: 'blackbox',
   source: new URL('../skills/blackbox/', import.meta.url),
   dependencies: [],
-  integrations: ['discovery', 'catalog', 'capsule'],
+  integrations: ['discovery', 'catalog'],
 } as const satisfies SkillDefinition;
 
 export const skillModule = {

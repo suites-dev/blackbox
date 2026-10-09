@@ -393,6 +393,78 @@ jobs:
             [[ "$outcome" == success ]] || exit 1
           done
 
+  feature-cli:
+    name: Feature CLI generated skeleton journey
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.target_branch || github.ref }}
+
+      - name: Setup toolchain
+        id: setup
+        uses: ./.github/actions/setup
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          pnpm-version: ${{ env.PNPM_VERSION }}
+
+      - name: Download the test registry storage
+        uses: actions/download-artifact@v8
+        with:
+          name: ${{ env.BUILD_ARTIFACT }}
+          path: ${{ runner.temp }}/registry-storage
+
+      - name: Serve the test registry
+        uses: ./.github/actions/registry
+        with:
+          storage: ${{ runner.temp }}/registry-storage
+
+      - name: Qualify journey evidence checks
+        id: controls
+        run: node --test 'e2e/feature-cli/*.test.mjs'
+
+      - name: Run the Feature CLI journey twice
+        id: feature
+        timeout-minutes: 30
+        run: >-
+          node .github/scripts/ci-evidence.mjs run --lane feature-cli --project skeleton
+          --evidence-dir ci-evidence/feature-cli/skeleton
+          -- node e2e/feature-cli/run.mjs --repeat 2
+
+      - name: Retain Feature CLI evidence
+        id: evidence
+        if: always()
+        uses: ./.github/actions/ci-evidence
+        with:
+          lane: feature-cli
+          project: skeleton
+          evidence-dir: ci-evidence/feature-cli/skeleton
+          setup-result: ${{ steps.setup.outcome }}
+          result: ${{ steps.feature.outcome }}
+          command: node e2e/feature-cli/run.mjs --repeat 2
+          expected: |
+            log=ci-evidence/feature-cli/skeleton/logs/command.log
+            logs?=.blackbox/tmp/ci-feature-cli
+
+      - name: Stop the registry
+        if: always()
+        run: docker rm --force blackbox-test-registry
+
+      - name: Enforce lane outcomes
+        if: always()
+        env:
+          OUTCOMES: >-
+            ${{ steps.setup.outcome }} ${{ steps.controls.outcome }}
+            ${{ steps.feature.outcome }} ${{ steps.evidence.outcome }}
+        run: |
+          for outcome in $OUTCOMES; do
+            [[ "$outcome" == success ]] || exit 1
+          done
+
   playwright:
     name: Playwright system tests
     needs: build
@@ -584,7 +656,7 @@ jobs:
   gate:
     name: E2E Gate
     if: always()
-    needs: [build, transport, demo, storyboard, journeys, playwright, skills, sandbox]
+    needs: [build, transport, demo, storyboard, journeys, playwright, feature-cli, skills, sandbox]
     runs-on: ubuntu-24.04
     steps:
       # Every lane always runs, so anything but success fails the gate. A matrix
@@ -597,6 +669,7 @@ jobs:
           DEMO_RESULT: ${{ needs.demo.result }}
           STORYBOARD_RESULT: ${{ needs.storyboard.result }}
           JOURNEYS_RESULT: ${{ needs.journeys.result }}
+          FEATURE_CLI_RESULT: ${{ needs.feature-cli.result }}
           PLAYWRIGHT_RESULT: ${{ needs.playwright.result }}
           SKILLS_RESULT: ${{ needs.skills.result }}
           SANDBOX_RESULT: ${{ needs.sandbox.result }}
@@ -604,7 +677,7 @@ jobs:
           failed=0
           for lane in "build=$BUILD_RESULT" "transport=$TRANSPORT_RESULT" "demo=$DEMO_RESULT" \
             "storyboard=$STORYBOARD_RESULT" "journeys=$JOURNEYS_RESULT" \
-            "playwright=$PLAYWRIGHT_RESULT" "skills=$SKILLS_RESULT" "sandbox=$SANDBOX_RESULT"; do
+            "feature-cli=$FEATURE_CLI_RESULT" "playwright=$PLAYWRIGHT_RESULT" "skills=$SKILLS_RESULT" "sandbox=$SANDBOX_RESULT"; do
             name="${lane%%=*}"
             result="${lane#*=}"
             if [[ "$result" != success ]]; then

@@ -470,6 +470,21 @@ test('the CLI approves the sandbox Docker lane command and nothing appended to i
   }
 });
 
+test('the CLI approves only the fixed two-pass Feature journey', () => {
+  assert.deepEqual(
+    approvedCliCommand(['node', 'e2e/feature-cli/run.mjs', '--repeat', '2']),
+    ['node', 'e2e/feature-cli/run.mjs', '--repeat', '2'],
+  );
+  for (const command of [
+    ['node', 'e2e/feature-cli/run.mjs'],
+    ['node', 'e2e/feature-cli/run.mjs', '--repeat', '1'],
+    ['node', 'e2e/feature-cli/run.mjs', '--repeat', '2', '--update'],
+    ['node', '../e2e/feature-cli/run.mjs', '--repeat', '2'],
+  ]) {
+    assert.throws(() => approvedCliCommand(command), /not an approved repository check/);
+  }
+});
+
 test('the CLI refuses journey runs that do not name exactly one shipped golden', () => {
   const refused = [
     // Journey grammar, but no such golden.

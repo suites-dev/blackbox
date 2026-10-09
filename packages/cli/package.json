@@ -67,6 +67,12 @@
       "driver": {
         "description": "Install the project-owned driver runtime."
       },
+      "feature": {
+        "description": "Work with executable feature specifications."
+      },
+      "spec": {
+        "description": "Draft candidate specifications for review."
+      },
       "inst": {
         "description": "Install project-local runtime instrumentation."
       }

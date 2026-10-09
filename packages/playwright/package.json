@@ -49,6 +49,7 @@
     "@suites/blackbox-inst-runtime-node": "workspace:*",
     "@suites/blackbox-instrumentation": "workspace:*",
     "@suites/blackbox-otel-collector": "workspace:*",
+    "@suites/blackbox-report-server": "workspace:*",
     "@suites/blackbox-sandbox": "workspace:*"
   },
   "peerDependencies": {

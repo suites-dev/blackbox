@@ -34,7 +34,13 @@ export function selectionValue(selection: unknown): Readonly<SelectedSystem> {
 }
 
 export function environmentValue(options: unknown): Readonly<Record<string, string>> {
-  if (options === undefined) {
+  if (
+    options === undefined ||
+    (options !== null &&
+      typeof options === 'object' &&
+      !('environment' in options) &&
+      'clients' in options)
+  ) {
     return Object.freeze({});
   }
   if (options === null || typeof options !== 'object' || !('environment' in options)) {

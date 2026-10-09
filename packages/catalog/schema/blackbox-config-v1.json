@@ -82,7 +82,7 @@
           "minItems": 1,
           "items": { "$ref": "#/$defs/relativePath" },
           "description": "Ordered Compose files; later files may override earlier files.",
-          "examples": [[".blackbox/compose/system.yml"]]
+          "examples": [[".blackbox/catalog/system.yml"]]
         }
       }
     },

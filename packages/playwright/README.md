@@ -5,18 +5,19 @@ and Sandbox configuration. Every physical test attempt, including a retry, runs
 in a fresh Sandbox. Tests keep their native Playwright callbacks, hooks, steps,
 reporters, and parallel scheduling.
 
-## Install
+Clients can wrap HTTP, messaging, database, or project-owned SDKs. Start with the
+[Playwright guide](../../docs/playwright/README.md) for syntax and configuration,
+or [clients and fixtures](../../docs/playwright/clients-and-fixtures.md) for shared
+setup. The [testing guides](../../docs/guides/README.md) cover HTTP APIs,
+asynchronous flows, and PostgreSQL and Redis seeding and state assertions.
 
-Install the Blackbox adapter with Playwright:
+## Prerequisites
 
-```sh
-npm install --save-dev @suites/blackbox-playwright@next @playwright/test
-```
-
-Application code imports directly from the adapter paths below.
-
-Until the alpha is published, install it and its Blackbox dependencies from source as
-described in [installation](../../docs/installation.md#install-the-playwright-package-from-source).
+This alpha is available in the source workspace. The package requires Node.js
+22.15 or later and `@playwright/test` 1.61 or later within major version 1.
+The examples assume the Blackbox workspace packages have been built, Docker is
+available, and `blackbox.config.yaml` declares the selected system. Application
+code imports directly from the adapter paths below.
 
 ## Use
 
@@ -44,29 +45,16 @@ export default defineConfig({
 });
 ```
 
-```ts
-import { expect, test } from '@suites/blackbox-playwright';
+Then [write a native test](../../docs/playwright/README.md#add-clients-and-a-test).
+Register your SDK clients in `system.sandbox(...)`; Blackbox readies them before
+per-test hooks and disposes them during cleanup. The [async guide](../../docs/guides/testing-async-flows.md)
+contains a complete Redis-to-PostgreSQL example.
 
-test.system('subscription-system', (system) => {
-  system.sandbox('default', { environment: { FEATURE_MODE: 'stable' } }, (suite) => {
-    suite.describe('health', () => {
-      suite.test('reports ready', async ({ request, sandbox, telemetry, effects }) => {
-        const url = new URL('/health', sandbox.entrypoint.url).href;
-        const response = await test.step('When health is requested', () => request.get(url));
+## Migrate the flat fixture API
 
-        expect(response.ok()).toBe(true);
-        expect(sandbox.catalogEntry.id).toBe('subscription-system');
-        expect(telemetry.executionId).toBe(sandbox.executionId);
-        expect(effects.executionId).toBe(sandbox.executionId);
-      });
-    });
-  });
-});
-```
-
-This is a breaking migration from the flat fixture API. Replace
+Replace
 `test.use({ catalogEntry, blackboxEnvironment })` plus root `test(...)` calls with
-`test.system(...).sandbox(...)` groups, and pass `blackboxEnvironment` as the
+`test.system(...)` and nested `system.sandbox(...)` groups, and pass `blackboxEnvironment` as the
 Sandbox option `{ environment: blackboxEnvironment }`. Relative `request` and
 `page` URLs no longer target the Sandbox automatically; resolve them explicitly
 against `sandbox.entrypoint.url`. Playwright's root `baseURL` remains whatever the
@@ -104,8 +92,10 @@ enters the native test callback.
 
 The Sandbox declaration callback is synchronous. Use `suite.describe`,
 `suite.test`, `suite.beforeEach`, and `suite.afterEach` inside it. Test and
-per-test hook callbacks receive the normal Playwright fixtures plus `sandbox`,
-`telemetry`, and `effects`. Continue to use `test.step(...)` for native steps.
+per-test hook callbacks receive the normal Playwright fixtures plus `clients`,
+`step`, `sandbox`, `telemetry`, and `effects`. Use the attempt-bound `step(...)`
+fixture for native Playwright steps with local asynchronous context. Step titles
+alone do not propagate tracing into application requests.
 Sandbox-scoped `beforeAll` and `afterAll` hooks are unavailable because there is
 no group-level live Sandbox. Root Playwright `beforeAll` and `afterAll` hooks can
 still perform setup unrelated to a Sandbox.
@@ -116,6 +106,8 @@ reasons. Setup failure also attempts cleanup before surfacing the error.
 
 ## Fixtures
 
+- `clients` exposes the typed clients registered in the Sandbox declaration.
+- `step` creates a native Playwright step with context bound to this attempt.
 - Playwright's configured `baseURL` remains unchanged. Build request and page
   URLs explicitly with `new URL(path, sandbox.entrypoint.url).href`.
 - `sandbox` exposes read-only attempt, catalog, entrypoint, container, and
@@ -131,14 +123,14 @@ reasons. Setup failure also attempts cleanup before surfacing the error.
 ## Execution reporting
 
 Playwright's native reporter owns test progress, steps, colors, errors, and the
-final summary. The example above has this native title hierarchy:
+final summary. The async guide produces this title hierarchy:
 
 ```text
-system "subscription-system"
+system "job-system"
 └─ sandbox "default"
-   └─ health
-      └─ reports ready
-         └─ When health is requested
+   └─ processes a queued job
+      ├─ Queue a job
+      └─ Wait for completion
 ```
 
 The grouping does not change the existing `blackbox-progress`,
@@ -147,9 +139,9 @@ short messages through the test's captured stdout, so Playwright associates them
 with the right parallel attempt:
 
 ```text
-Blackbox: sandbox ready for system "subscription-system"
+Blackbox: sandbox ready for system "job-system"
 ... native Playwright test and step output ...
-Blackbox: sandbox cleaned up for system "subscription-system"
+Blackbox: sandbox cleaned up for system "job-system"
 ```
 
 Ready means acquisition, instrumentation, and application readiness have passed.
@@ -172,9 +164,16 @@ Playwright clears `test-results/` and its HTML report on every run. To keep
 attempt evidence across runs, enable retention in the Playwright configuration:
 
 ```ts
+import { defineConfig } from '@suites/blackbox-playwright/config';
+
+const use = {
+  trace: 'retain-on-failure' as const,
+  blackboxRetainAttempts: true,
+};
+
 export default defineConfig({
   blackboxConfigFile: './blackbox.config.yaml',
-  use: { blackboxRetainAttempts: true },
+  use,
 });
 ```
 

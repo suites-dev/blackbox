@@ -1,0 +1,335 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Feature compiler diagnostics > rejects malformed Gherkin, invalid JSON, and unbound clients 1`] = `
+{
+  "invalidJson": {
+    "code": "",
+    "diagnostics": [
+      {
+        "code": "FEATURE_JSON_INVALID",
+        "column": 5,
+        "line": 3,
+        "message": "Doc String must contain valid JSON.",
+      },
+    ],
+  },
+  "malformed": {
+    "code": "",
+    "diagnostics": [
+      {
+        "code": "FEATURE_SYNTAX",
+        "column": 1,
+        "line": 1,
+        "message": "Parser errors:
+(1:1): expected: #EOF, #Language, #TagLine, #FeatureLine, #Comment, #Empty, got 'not a Gherkin document'",
+      },
+    ],
+  },
+  "unbound": {
+    "code": "",
+    "diagnostics": [
+      {
+        "code": "CLIENT_UNKNOWN",
+        "column": 5,
+        "line": 3,
+        "message": "Step refers to unbound client "api".",
+      },
+    ],
+  },
+}
+`;
+
+exports[`Feature compiler diagnostics > rejects the natural-language async Redis feature without emitting a suite 1`] = `
+{
+  "code": "",
+  "diagnostics": [
+    {
+      "code": "FEATURE_STEP_UNSUPPORTED",
+      "column": 5,
+      "line": 9,
+      "message": "Unsupported Feature step: "the proof queue is empty".",
+    },
+    {
+      "code": "FEATURE_STEP_UNSUPPORTED",
+      "column": 7,
+      "line": 13,
+      "message": "Unsupported Feature step: "I queue proof \\"proof-1001\\"".",
+    },
+    {
+      "code": "FEATURE_STEP_UNSUPPORTED",
+      "column": 7,
+      "line": 14,
+      "message": "Unsupported Feature step: "within 30 seconds the public API accepts proof \\"proof-1001\\"".",
+    },
+    {
+      "code": "FEATURE_STEP_UNSUPPORTED",
+      "column": 7,
+      "line": 15,
+      "message": "Unsupported Feature step: "the proof queue is empty".",
+    },
+    {
+      "code": "FEATURE_STEP_UNSUPPORTED",
+      "column": 7,
+      "line": 18,
+      "message": "Unsupported Feature step: "I queue these proofs:".",
+    },
+    {
+      "code": "FEATURE_STEP_UNSUPPORTED",
+      "column": 7,
+      "line": 22,
+      "message": "Unsupported Feature step: "within 30 seconds the public API accepts each proof:".",
+    },
+    {
+      "code": "FEATURE_STEP_UNSUPPORTED",
+      "column": 7,
+      "line": 26,
+      "message": "Unsupported Feature step: "the proof queue is empty".",
+    },
+  ],
+}
+`;
+
+exports[`Feature compiler snapshots > compiles exact-state assertions in the full E2E Feature 1`] = `
+"import { expect, test } from '@suites/blackbox-playwright';
+import { api as client_api } from "../clients.js";
+
+test.system({ kind: 'system', id: "subscription-system" }, (system) => {
+  system.sandbox("default", { clients: { "api": client_api } }, (suite) => {
+    suite.describe("Feature: Subscription activation", { tag: ["@sync"] }, () => {
+      suite.beforeEach("Background: The subscription system starts fresh", async ({ clients, step }) => {
+        await step("Given client \\"api\\" has sent POST \\"/fixture/reset\\" with JSON and received 200:", async () => {
+          const response = await clients.api.post("/fixture/reset", { data: {"profile":"fresh"} });
+          expect(response.status()).toBe(200);
+        });
+      });
+      suite.describe("Rule: Full-path subscriptions settle their downstream state before returning", () => {
+        suite.test("Scenario: Alice activates a subscription through the full path", async ({ clients, step }) => {
+          const response0 = await step("When client \\"api\\" sends POST \\"/subscriptions\\" with JSON:", () => clients.api.post("/subscriptions", { data: {"userId":"alice","paymentMethodId":"pm_alice_primary"} }));
+          await step("Then the response status is 201", async () => {
+            expect(response0.status()).toBe(201);
+          });
+          await step("And the response JSON contains these fields:", async () => {
+            expect(await response0.json()).toMatchObject({ "userId": "alice", "tier": "pro", "subscription": {"id":"subscription_alice","status":"active"}, "paymentIntentId": "pi_alice1", "orderId": "order_alice" });
+          });
+          await step("And client \\"api\\" GET \\"/fixture/state\\" returns 200 with JSON exactly:", async () => {
+            const response = await clients.api.get("/fixture/state");
+            expect(response.status()).toBe(200);
+            expect(await response.json()).toEqual({"fraudAudit":[{"decision":"approved","hintProfile":"long","id":"1","userId":"alice"}],"payment":{"paymentIntents":[{"id":"pi_alice1","paymentMethodId":"pm_alice_primary","status":"succeeded","userId":"alice"}],"refunds":[]},"queueDepth":1,"redis":{"hint:long:alice":"1","user:alice:tier":"pro"},"subscriptions":[{"id":"subscription_alice","orderId":"order_alice","paymentIntentId":"pi_alice1","status":"active","tier":"pro","userId":"alice"}]});
+          });
+        });
+      });
+      suite.describe("Rule: Local-only subscriptions retain no payment or order state", { tag: ["@local-only"] }, () => {
+        suite.describe("Scenario Outline: Activate local-only user <userId>", () => {
+          suite.describe("Examples: Seeded local-only users", () => {
+            const outlineRows1 = [{"userId":"dora"},{"userId":"eve"}];
+            outlineRows1.forEach((row, rowIndex) => {
+              suite.test(\`Scenario: Activate local-only user \${row["userId"]} [Examples 1: Seeded local-only users, row \${rowIndex + 1}]\`, async ({ clients, step }) => {
+                const response2 = await step(\`When client "api" sends POST "/subscriptions" with JSON:\`, () => clients.api.post(\`/subscriptions\`, { data: JSON.parse(\`{"userId":"\${JSON.stringify(String(row["userId"])).slice(1, -1)}","paymentMethodId":"pm_\${JSON.stringify(String(row["userId"])).slice(1, -1)}_unused"}\`) }));
+                await step(\`Then the response status is 201\`, async () => {
+                  expect(response2.status()).toBe(201);
+                });
+                await step(\`And the response JSON contains:\`, async () => {
+                  expect(await response2.json()).toMatchObject(JSON.parse(\`{"userId":"\${JSON.stringify(String(row["userId"])).slice(1, -1)}","tier":"pro","subscription":{"id":"subscription_\${JSON.stringify(String(row["userId"])).slice(1, -1)}","status":"active"},"paymentIntentId":null,"orderId":null}\`));
+                });
+                await step(\`And client "api" GET "/fixture/state" returns 200 with JSON exactly:\`, async () => {
+                  const response = await clients.api.get(\`/fixture/state\`);
+                  expect(response.status()).toBe(200);
+                  expect(await response.json()).toEqual(JSON.parse(\`{"fraudAudit":[],"payment":{"paymentIntents":[],"refunds":[]},"queueDepth":0,"redis":{"reg:\${JSON.stringify(String(row["userId"])).slice(1, -1)}":"1","user:\${JSON.stringify(String(row["userId"])).slice(1, -1)}:tier":"pro"},"subscriptions":[{"id":"subscription_\${JSON.stringify(String(row["userId"])).slice(1, -1)}","orderId":null,"paymentIntentId":null,"status":"active","tier":"pro","userId":"\${JSON.stringify(String(row["userId"])).slice(1, -1)}"}]}\`));
+                });
+              });
+            });
+          });
+        });
+      });
+      suite.describe("Rule: Unknown users cannot create subscriptions", { tag: ["@validation"] }, () => {
+        suite.test("Scenario: An unknown user leaves the system unchanged", async ({ clients, step }) => {
+          const response3 = await step("When client \\"api\\" sends POST \\"/subscriptions\\" with JSON:", () => clients.api.post("/subscriptions", { data: {"userId":"ghost-user","paymentMethodId":"pm_ghost"} }));
+          await step("Then the response status is 404", async () => {
+            expect(response3.status()).toBe(404);
+          });
+          await step("And the response JSON contains:", async () => {
+            expect(await response3.json()).toMatchObject({"outcome":"unknown-user","userId":"ghost-user"});
+          });
+          await step("But client \\"api\\" GET \\"/fixture/state\\" returns 200 with JSON exactly:", async () => {
+            const response = await clients.api.get("/fixture/state");
+            expect(response.status()).toBe(200);
+            expect(await response.json()).toEqual({"fraudAudit":[],"payment":{"paymentIntents":[],"refunds":[]},"queueDepth":0,"redis":{},"subscriptions":[]});
+          });
+        });
+      });
+      suite.describe("Rule: A subscription can be created only once", () => {
+        suite.beforeEach("Background: Carol already has a subscription", async ({ clients, step }) => {
+          await step("Given client \\"api\\" has sent POST \\"/subscriptions\\" with JSON and received 201:", async () => {
+            const response = await clients.api.post("/subscriptions", { data: {"userId":"carol","paymentMethodId":"pm_carol_primary"} });
+            expect(response.status()).toBe(201);
+          });
+        });
+
+        suite.test("Scenario: A repeated request retains only the original downstream state", async ({ clients, step }) => {
+          const response4 = await step("When client \\"api\\" sends POST \\"/subscriptions\\" with JSON:", () => clients.api.post("/subscriptions", { data: {"userId":"carol","paymentMethodId":"pm_carol_secondary"} }));
+          await step("Then the response status is 409", async () => {
+            expect(response4.status()).toBe(409);
+          });
+          await step("And the response JSON contains:", async () => {
+            expect(await response4.json()).toMatchObject({"outcome":"duplicate-subscription","userId":"carol"});
+          });
+          await step("And client \\"api\\" GET \\"/fixture/state\\" returns 200 with JSON exactly:", async () => {
+            const response = await clients.api.get("/fixture/state");
+            expect(response.status()).toBe(200);
+            expect(await response.json()).toEqual({"fraudAudit":[{"decision":"approved","hintProfile":"long","id":"1","userId":"carol"}],"payment":{"paymentIntents":[{"id":"pi_carol1","paymentMethodId":"pm_carol_primary","status":"succeeded","userId":"carol"}],"refunds":[]},"queueDepth":1,"redis":{"hint:long:carol":"1","user:carol:tier":"pro"},"subscriptions":[{"id":"subscription_carol","orderId":"order_carol","paymentIntentId":"pi_carol1","status":"active","tier":"pro","userId":"carol"}]});
+          });
+        });
+      });
+    });
+  });
+});
+"
+`;
+
+exports[`Feature compiler snapshots > compiles hierarchy, backgrounds, tags, tables, doc strings, and outline rows 1`] = `
+"import { expect, test } from '@suites/blackbox-playwright';
+import { api as client_api } from "../clients.js";
+
+test.system({ kind: 'subsystem', id: "orders" }, (system) => {
+  system.sandbox("default", { clients: { "api": client_api } }, (suite) => {
+    suite.describe("Feature: Order pricing", { tag: ["@sync"] }, () => {
+      suite.beforeEach("Background: A product is available", async ({ clients, step }) => {
+        await step("Given client \\"api\\" has sent POST \\"/products\\" with JSON and received 201:", async () => {
+          const response = await clients.api.post("/products", { data: {"sku":"keyboard","price":100,"stock":3} });
+          expect(response.status()).toBe(201);
+        });
+      });
+      suite.describe("Rule: Valid quantities produce a quote", () => {
+        suite.test("Scenario: Quote two keyboards", async ({ clients, step }) => {
+          const response0 = await step("When client \\"api\\" sends POST \\"/quotes\\" with JSON:", () => clients.api.post("/quotes", { data: {"sku":"keyboard","quantity":2} }));
+          await step("Then the response status is 200", async () => {
+            expect(response0.status()).toBe(200);
+          });
+          await step("* the response JSON contains these fields:", async () => {
+            expect(await response0.json()).toMatchObject({ "sku": "keyboard", "quantity": 2, "total": 200 });
+          });
+        });
+      });
+      suite.describe("Rule: Quantities must be positive", { tag: ["@validation"] }, () => {
+        suite.beforeEach("Background: Only one item is available", async ({ clients, step }) => {
+          await step("Given client \\"api\\" has sent PATCH \\"/products/keyboard\\" with JSON and received 200:", async () => {
+            const response = await clients.api.patch("/products/keyboard", { data: {"stock":1} });
+            expect(response.status()).toBe(200);
+          });
+        });
+
+        suite.describe("Scenario Outline: Reject quantity <quantity>", () => {
+          suite.describe("Examples: Rejected quantities", () => {
+            const outlineRows1 = [{"quantity":0,"status":422,"code":"INVALID_QUANTITY"},{"quantity":2,"status":409,"code":"INSUFFICIENT_STOCK"}];
+            outlineRows1.forEach((row, rowIndex) => {
+              suite.test(\`Scenario: Reject quantity \${row["quantity"]} [Examples 1: Rejected quantities, row \${rowIndex + 1}]\`, async ({ clients, step }) => {
+                const response2 = await step(\`When client "api" sends POST "/quotes" with JSON:\`, () => clients.api.post(\`/quotes\`, { data: JSON.parse(\`{"sku":"keyboard","quantity":\${JSON.stringify(row["quantity"])}}\`) }));
+                await step(\`Then the response status is \${row["status"]}\`, async () => {
+                  expect(response2.status()).toBe(Number(row["status"]));
+                });
+                await step(\`But the response JSON contains:\`, async () => {
+                  expect(await response2.json()).toMatchObject(JSON.parse(\`{"code":"\${JSON.stringify(String(row["code"])).slice(1, -1)}"}\`));
+                });
+              });
+            });
+          });
+        });
+      });
+    });
+  });
+});
+"
+`;
+
+exports[`Feature compiler snapshots > compiles the E2E subscription Outline with placeholders embedded in JSON strings 1`] = `
+"import { expect, test } from '@suites/blackbox-playwright';
+import { api as client_api } from "../clients.js";
+
+test.system({ kind: 'subsystem', id: "subscription-system" }, (system) => {
+  system.sandbox("default", { clients: { "api": client_api } }, (suite) => {
+    suite.describe("Feature: Subscription activation", () => {
+      suite.describe("Rule: Local-only subscriptions retain no payment or order state", () => {
+        suite.describe("Scenario Outline: Activate local-only user <userId>", () => {
+          suite.describe("Examples: Seeded local-only users", () => {
+            const outlineRows0 = [{"userId":"dora"},{"userId":"eve"}];
+            outlineRows0.forEach((row, rowIndex) => {
+              suite.test(\`Scenario: Activate local-only user \${row["userId"]} [Examples 1: Seeded local-only users, row \${rowIndex + 1}]\`, async ({ clients, step }) => {
+                const response1 = await step(\`When client "api" sends POST "/subscriptions" with JSON:\`, () => clients.api.post(\`/subscriptions\`, { data: JSON.parse(\`{"userId":"\${JSON.stringify(String(row["userId"])).slice(1, -1)}","paymentMethodId":"pm_\${JSON.stringify(String(row["userId"])).slice(1, -1)}_unused","state":{"reg:\${JSON.stringify(String(row["userId"])).slice(1, -1)}":"1"}}\`) }));
+                await step(\`Then the response status is 201\`, async () => {
+                  expect(response1.status()).toBe(201);
+                });
+                await step(\`And the response JSON contains:\`, async () => {
+                  expect(await response1.json()).toMatchObject(JSON.parse(\`{"userId":"\${JSON.stringify(String(row["userId"])).slice(1, -1)}","tier":"pro","subscription":{"id":"subscription_\${JSON.stringify(String(row["userId"])).slice(1, -1)}","status":"active"},"paymentIntentId":null,"orderId":null}\`));
+                });
+              });
+            });
+          });
+        });
+      });
+    });
+  });
+});
+"
+`;
+
+exports[`Feature compiler snapshots > preserves escaping, And/But/* titles, multiple Act/Assert phases, and duplicate row identity 1`] = `
+"import { expect, test } from '@suites/blackbox-playwright';
+import { api as client_api } from "../clients.js";
+
+test.system({ kind: 'subsystem', id: "escape-tests" }, (system) => {
+  system.sandbox("default", { clients: { "api": client_api } }, (suite) => {
+    suite.describe("Feature: Escaping \\\\ and quotes \\" safely", { tag: ["@sync"] }, () => {
+      suite.describe("Rule: Preserve authored step keywords and row identity", () => {
+        suite.describe("Scenario Outline: Return a value for <value>", () => {
+          suite.describe("Examples: First duplicate block", () => {
+            const outlineRows0 = [{"value":"same","status":200},{"value":"same","status":200}];
+            outlineRows0.forEach((row, rowIndex) => {
+              suite.test(\`Scenario: Return a value for \${row["value"]} [Examples 1: First duplicate block, row \${rowIndex + 1}]\`, async ({ clients, step }) => {
+                const response1 = await step(\`When client "api" sends POST "/values" with JSON:\`, () => clients.api.post(\`/values\`, { data: JSON.parse(\`{"value":"\${JSON.stringify(String(row["value"])).slice(1, -1)}"}\`) }));
+                await step(\`Then the response status is \${row["status"]}\`, async () => {
+                  expect(response1.status()).toBe(Number(row["status"]));
+                });
+                await step(\`And the response JSON contains these fields:\`, async () => {
+                  expect(await response1.json()).toMatchObject(JSON.parse(\`{"value":"\${JSON.stringify(String(row["value"])).slice(1, -1)}"}\`));
+                });
+                await step(\`But the response JSON contains:\`, async () => {
+                  expect(await response1.json()).toMatchObject(JSON.parse(\`{"value":"\${JSON.stringify(String(row["value"])).slice(1, -1)}"}\`));
+                });
+                await step(\`* client "api" has sent POST "/audit" with JSON and received 204:\`, async () => {
+                  const response = await clients.api.post(\`/audit\`, { data: JSON.parse(\`{"label":"quote and tick: \\\` and interpolation: \\\${literal}"}\`) });
+                  expect(response.status()).toBe(204);
+                });
+              });
+            });
+          });
+        });
+
+        suite.describe("Scenario Outline: Return a value for <value>", () => {
+          suite.describe("Examples: Second duplicate block", () => {
+            const outlineRows2 = [{"value":"same","status":200}];
+            outlineRows2.forEach((row, rowIndex) => {
+              suite.test(\`Scenario: Return a value for \${row["value"]} [Examples 2: Second duplicate block, row \${rowIndex + 1}]\`, async ({ clients, step }) => {
+                const response3 = await step(\`When client "api" sends POST "/values" with JSON:\`, () => clients.api.post(\`/values\`, { data: JSON.parse(\`{"value":"\${JSON.stringify(String(row["value"])).slice(1, -1)}"}\`) }));
+                await step(\`Then the response status is \${row["status"]}\`, async () => {
+                  expect(response3.status()).toBe(Number(row["status"]));
+                });
+                await step(\`And the response JSON contains these fields:\`, async () => {
+                  expect(await response3.json()).toMatchObject(JSON.parse(\`{"value":"\${JSON.stringify(String(row["value"])).slice(1, -1)}"}\`));
+                });
+                await step(\`But the response JSON contains:\`, async () => {
+                  expect(await response3.json()).toMatchObject(JSON.parse(\`{"value":"\${JSON.stringify(String(row["value"])).slice(1, -1)}"}\`));
+                });
+                await step(\`* client "api" has sent POST "/audit" with JSON and received 204:\`, async () => {
+                  const response = await clients.api.post(\`/audit\`, { data: JSON.parse(\`{"label":"quote and tick: \\\` and interpolation: \\\${literal}"}\`) });
+                  expect(response.status()).toBe(204);
+                });
+              });
+            });
+          });
+        });
+      });
+    });
+  });
+});
+"
+`;

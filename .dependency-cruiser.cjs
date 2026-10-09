@@ -170,6 +170,11 @@ const TIERS = [
     packages: ['capsule', 'playwright'],
   },
   {
+    name: 'extensions',
+    why: 'authoring extensions built on a public composition contract',
+    packages: ['feature'],
+  },
+  {
     name: 'host',
     why: 'the CLI binary, which loads plugins at runtime instead of importing them',
     packages: ['cli'],

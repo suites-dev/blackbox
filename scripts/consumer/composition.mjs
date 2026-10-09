@@ -8,6 +8,7 @@ export const consumerPackages = [
   '@suites/blackbox-capsule',
   '@suites/blackbox-cli',
   '@suites/blackbox-driver',
+  '@suites/blackbox-feature',
   '@suites/blackbox-inst-runtime-node',
   '@suites/blackbox-playwright',
 ];

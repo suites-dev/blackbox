@@ -1,3 +1,5 @@
+import { createAttemptStep } from './steps/step-context.js';
+import { runClients } from './clients/clients.js';
 import {
   test as playwrightTest,
   type PlaywrightTestArgs,
@@ -17,6 +19,7 @@ import {
 } from './runtime/acquisition.js';
 import { createSystemTestFacade } from './system-test.js';
 import type {
+  BlackboxStep,
   BlackboxNativeTestArgs,
   BlackboxNativeWorkerArgs,
   BlackboxSystemTest,
@@ -36,6 +39,7 @@ interface SelectedAttemptFixture {
 type AttemptFixture = UnselectedAttemptFixture | SelectedAttemptFixture;
 
 interface PrivateFixtures {
+  readonly clients: Readonly<Record<string, unknown>>;
   readonly _blackboxTestScope: undefined;
   readonly _blackboxAttempt: AttemptFixture;
 }
@@ -63,6 +67,19 @@ function selectedAttempt(
   return fixture.attempt;
 }
 
+async function stepFixture(
+  { _blackboxAttempt }: Pick<PrivateFixtures, '_blackboxAttempt'>,
+  use: (step: BlackboxStep) => Promise<void>,
+): Promise<void> {
+  const attempt = selectedAttempt(_blackboxAttempt, 'step');
+  const fixture = createAttemptStep(playwrightTest.step.bind(playwrightTest), attempt);
+  try {
+    await use(fixture.step);
+  } finally {
+    fixture.revoke();
+  }
+}
+
 export function createBlackboxTest(
   runtime: BlackboxAttemptRuntime,
   policy: BlackboxFixturePolicy = defaultPolicy,
@@ -72,6 +89,7 @@ export function createBlackboxTest(
     catalogEntry: [{ kind: 'unselected' }, { option: true }],
     blackboxEnvironment: [Object.freeze({}), { option: true }],
     blackboxRetainAttempts: [false, { option: true }],
+    blackboxClients: [{}, { option: true }],
     _blackboxTestScope: [
       async ({ catalogEntry: _catalogEntry }, use, testInfo) => {
         testScopes.add(testInfo);
@@ -84,7 +102,11 @@ export function createBlackboxTest(
       { auto: true, timeout: 0 },
     ],
     _blackboxAttempt: [
-      async ({ catalogEntry, blackboxEnvironment, blackboxRetainAttempts }, use, testInfo) => {
+      async (
+        { catalogEntry, blackboxEnvironment, blackboxRetainAttempts, blackboxClients },
+        use,
+        testInfo,
+      ) => {
         if (catalogEntry.kind === 'unselected') {
           await use({ kind: 'unselected' });
           return;
@@ -101,6 +123,7 @@ export function createBlackboxTest(
           catalogEntry,
           blackboxEnvironment,
           blackboxRetainAttempts,
+          blackboxClients,
           use: async (attempt) => {
             await use({ kind: 'selected', attempt });
           },
@@ -109,6 +132,17 @@ export function createBlackboxTest(
       // The helper enforces the test deadline and bounds every sandbox cleanup wait.
       { auto: true, timeout: 0 },
     ],
+    clients: [
+      async ({ _blackboxAttempt, blackboxClients }, use) => {
+        if (_blackboxAttempt.kind === 'unselected') {
+          await use(Object.freeze({}));
+        } else {
+          await runClients(blackboxClients ?? {}, _blackboxAttempt.attempt.sandbox, use);
+        }
+      },
+      { auto: true },
+    ],
+    step: stepFixture,
     sandbox: async ({ _blackboxAttempt }, use) => {
       await use(selectedAttempt(_blackboxAttempt, 'sandbox').sandbox);
     },

@@ -20,6 +20,7 @@ const packedPackages = [
   '@suites/blackbox-cli-contract',
   '@suites/blackbox-discovery',
   '@suites/blackbox-driver',
+  '@suites/blackbox-feature',
   '@suites/blackbox-inst-runtime-node',
   '@suites/blackbox-instrumentation',
   '@suites/blackbox-otel-collector',
