@@ -231,7 +231,7 @@ function assertClient(name: string, step: Step, context: CompilerContext): void 
 }
 
 function jsonExpression(value: string, step: Step, context: CompilerContext): string {
-  try { return JSON.stringify(JSON.parse(value)); }
+  try { return escapeUnsafeJsChars(JSON.stringify(JSON.parse(value))); }
   catch {
     context.diagnostics.push(diagnostic('FEATURE_JSON_INVALID', 'Doc String must contain valid JSON.', step.location?.line ?? 1, step.location?.column ?? 1));
     return 'null';
@@ -343,8 +343,27 @@ function diagnostic(code: string, message: string, line: number, column: number)
   return { code, message, line, column };
 }
 
+const charMap: Record<string, string> = {
+  '<': '\\u003C',
+  '>': '\\u003E',
+  '/': '\\u002F',
+  '\\': '\\\\',
+  '\b': '\\b',
+  '\f': '\\f',
+  '\n': '\\n',
+  '\r': '\\r',
+  '\t': '\\t',
+  '\0': '\\0',
+  '\u2028': '\\u2028',
+  '\u2029': '\\u2029',
+};
+
+function escapeUnsafeJsChars(value: string): string {
+  return value.replace(/[<>/\\\b\f\n\r\t\0\u2028\u2029]/gu, (char) => charMap[char] ?? char);
+}
+
 function quote(value: string): string {
-  return JSON.stringify(value);
+  return escapeUnsafeJsChars(JSON.stringify(value));
 }
 
 function localName(value: string): string {
