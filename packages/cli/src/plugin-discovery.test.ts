@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
@@ -27,6 +27,7 @@ async function projectFixture(): Promise<string> {
       type: 'module',
       main: 'index.js',
       blackbox: { cli: { apiVersion: 1, pluginId: 'zeta', topic: 'zeta' } },
+      oclif: { topics: { zeta: { description: 'Commands from the selected plugin.' } } },
     })}\n`,
   );
   await writeFile(
@@ -45,6 +46,19 @@ void test('discovers only package-owned CLI plugins declared by the project', as
     throw new Error('expected a project plugin result');
   }
   assert.deepEqual(result.names, ['@suites/blackbox-zeta']);
+  const selected = result.packages[0];
+  assert.ok(selected);
+  const oclif = selected.pjson.oclif;
+  assert.ok(oclif && typeof oclif === 'object' && !Array.isArray(oclif));
+  assert.deepEqual((oclif as Record<string, unknown>).topics, {
+    zeta: { description: 'Commands from the selected plugin.' },
+  });
+});
+
+void test('the CLI host does not declare selected plugins or their topics', async () => {
+  const manifest = JSON.parse(await readFile(new URL('./package.json', import.meta.url), 'utf8'));
+  assert.equal(manifest.oclif.topics, undefined);
+  assert.equal(manifest.blackbox, undefined);
 });
 
 void test('discovers consumer plugins above an installed CLI package, not its build dependencies', async (t) => {

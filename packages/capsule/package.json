@@ -67,7 +67,15 @@
       "target": "./dist/cli/command-registry.js",
       "identifier": "COMMANDS"
     },
-    "topicSeparator": " "
+    "topicSeparator": " ",
+    "topics": {
+      "capsule": {
+        "description": "Start, drive, inspect and report on capsules."
+      },
+      "capsule:report": {
+        "description": "Write, serve or export a capsule report."
+      }
+    }
   },
   "dependencies": {
     "@oclif/core": "^5.1.0",

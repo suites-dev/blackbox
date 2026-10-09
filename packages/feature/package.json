@@ -36,7 +36,12 @@
       "target": "./dist/cli/command-registry.js",
       "identifier": "COMMANDS"
     },
-    "topicSeparator": " "
+    "topicSeparator": " ",
+    "topics": {
+      "feature": {
+        "description": "Work with executable feature specifications."
+      }
+    }
   },
   "dependencies": {
     "@cucumber/cucumber-expressions": "20.1.0",

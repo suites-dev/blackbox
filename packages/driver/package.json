@@ -56,7 +56,12 @@
       "target": "./dist/cli/command-registry.js",
       "identifier": "COMMANDS"
     },
-    "topicSeparator": " "
+    "topicSeparator": " ",
+    "topics": {
+      "driver": {
+        "description": "Install the project-owned driver runtime."
+      }
+    }
   },
   "dependencies": {
     "@oclif/core": "^5.1.0",
