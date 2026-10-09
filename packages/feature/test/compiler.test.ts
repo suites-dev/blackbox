@@ -121,13 +121,11 @@ describe('Feature compiler snapshots', () => {
 describe('Feature compiler diagnostics', () => {
   it('catches a lost response binding in the generated-code typecheck negative control', () => {
     const result = compileFeature({ source: orderPricing, uri: 'order-pricing.feature', clients });
-    const wrongResponseBinding = result.code.replace(
-      'const response0 = await step(',
-      'const lostResponse = await step(',
-    );
+    const reference = [...result.code.matchAll(/\bresponse\d+\b/gu)][1] as RegExpMatchArray & { index: number };
+    const wrongResponseBinding = `${result.code.slice(0, reference.index)}lostResponse${result.code.slice(reference.index + reference[0].length)}`;
     expect(wrongResponseBinding).not.toBe(result.code);
     expect(generatedCodeDiagnostics(wrongResponseBinding)).toEqual(
-      expect.arrayContaining([expect.stringContaining("Cannot find name 'response0'")]),
+      expect.arrayContaining([expect.stringMatching(/Cannot find name 'response\d+'/u)]),
     );
   });
 

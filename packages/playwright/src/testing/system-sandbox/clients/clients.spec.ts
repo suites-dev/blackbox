@@ -1,3 +1,5 @@
+import { setTimeout as delay } from 'node:timers/promises';
+
 import { expect } from '@playwright/test';
 import { defineClient } from '../../../clients/clients.js';
 import { createBlackboxSystemTest } from '../../../fixtures.js';
@@ -5,6 +7,7 @@ import { currentStepContext } from '../../../steps/step-context.js';
 import { record, startRespondingAttempt } from '../runtime.fixture.js';
 
 const failReadiness = process.env.BLACKBOX_SYSTEM_SANDBOX_SCENARIO === 'client-readiness-failure';
+const scenario = process.env.BLACKBOX_SYSTEM_SANDBOX_SCENARIO;
 const events: string[] = [];
 const test = createBlackboxSystemTest({
   async start(input) {
@@ -45,24 +48,52 @@ const api = defineClient(
   {
     target: { participant: 'api', containerPort: 3000 },
     env: ['TOKEN'] as const,
-    create: (_sdk, { endpoint, env }) => {
+    create: async (_sdk, { endpoint, env }) => {
       expect(env.TOKEN).toBe('secret');
-      events.push('create');
+      if (scenario === 'client-create-late') {
+        events.push('create:start');
+        await delay(400);
+        events.push('create:finish');
+      } else {
+        events.push('create');
+      }
       return { url: endpoint.url };
     },
     ready: () => {
       events.push('ready');
+      if (scenario === 'client-readiness-timeout') {
+        return new Promise<void>(() => undefined);
+      }
+      if (scenario === 'client-healthy-short-timeout') {
+        return delay(20);
+      }
       if (failReadiness) {
         throw new Error('client readiness deliberately failed');
       }
+      return undefined;
     },
     dispose: () => {
+      if (scenario === 'client-readiness-timeout' || scenario === 'client-create-late') {
+        events.push('dispose:start');
+        const disposal = scenario === 'client-readiness-timeout' ? delay(400) : Promise.resolve();
+        return disposal.then(() => {
+          events.push('dispose:finish');
+        });
+      }
       events.push('dispose');
+      return undefined;
     },
   },
 );
 test.system('orders', (system) => {
   system.sandbox('clients', { clients: { api } }, (suite) => {
+    if (
+      scenario === 'client-readiness-timeout' ||
+      scenario === 'client-create-late' ||
+      scenario === 'client-healthy-short-timeout'
+    ) {
+      suite.describe.configure({ timeout: scenario === 'client-healthy-short-timeout' ? 100 : 300 });
+    }
     suite.beforeEach(async ({ clients, step }) => {
       expect(events).toEqual(['create', 'ready']);
       expect(clients.api.url).toMatch(/^http:\/\/127\.0\.0\.1:/u);

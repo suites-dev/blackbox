@@ -171,8 +171,83 @@ it('continues disposal after a client exceeds its cleanup budget', async () => {
       { first: definition('first', false), second: definition('second', true) },
       sandbox,
       () => Promise.resolve(),
-      20,
+      { cleanupTimeoutMs: 20, setupTimeoutMs: Number.POSITIVE_INFINITY },
     ),
   ).rejects.toThrow('client disposal exceeded');
   expect(disposed).toEqual(['second', 'first']);
+});
+
+it('bounds readiness by the test setup deadline and disposes the created client', async () => {
+  const disposed: string[] = [];
+  const use = vi.fn(() => Promise.resolve());
+  const definition = defineClient(
+    {},
+    {
+      target: { participant: 'api', containerPort: 3000 },
+      env: [] as const,
+      create: () => ({ name: 'api' }),
+      ready: () => new Promise<void>(() => undefined),
+      dispose: (client) => {
+        disposed.push(client.name);
+      },
+    },
+  );
+
+  await expect(
+    runClients({ api: definition }, sandbox, use, {
+      cleanupTimeoutMs: 25_000,
+      setupTimeoutMs: 15,
+    }),
+  ).rejects.toThrow('Blackbox client setup exceeded the Playwright test timeout');
+  expect(use).not.toHaveBeenCalled();
+  expect(disposed).toEqual(['api']);
+});
+
+it('disposes a client that resolves after its setup deadline', async () => {
+  const disposed: string[] = [];
+  const definition = defineClient(
+    {},
+    {
+      target: { participant: 'api', containerPort: 3000 },
+      env: [] as const,
+      create: () =>
+        new Promise<{ name: string }>((resolve) => {
+          setTimeout(() => {
+            resolve({ name: 'late' });
+          }, 30);
+        }),
+      ready: () => undefined,
+      dispose: (client) => {
+        disposed.push(client.name);
+      },
+    },
+  );
+  await expect(
+    runClients({ api: definition }, sandbox, () => Promise.resolve(), {
+      cleanupTimeoutMs: 25_000,
+      setupTimeoutMs: 10,
+    }),
+  ).rejects.toThrow('Blackbox client setup exceeded the Playwright test timeout');
+  expect(disposed).toEqual(['late']);
+});
+
+it('bounds cleanup grace when client creation never settles', async () => {
+  const dispose = vi.fn();
+  const definition = defineClient(
+    {},
+    {
+      target: { participant: 'api', containerPort: 3000 },
+      env: [] as const,
+      create: () => new Promise<object>(() => undefined),
+      ready: () => undefined,
+      dispose,
+    },
+  );
+  await expect(
+    runClients({ api: definition }, sandbox, () => Promise.resolve(), {
+      cleanupTimeoutMs: 20,
+      setupTimeoutMs: 10,
+    }),
+  ).rejects.toThrow('late client could not be disposed');
+  expect(dispose).not.toHaveBeenCalled();
 });

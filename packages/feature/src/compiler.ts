@@ -192,9 +192,9 @@ function emitStep(step: Step, context: CompilerContext, dynamicRow = false, dyna
     assertClient(client, step, context);
     const body = doc ? `, { data: ${dynamicRow ? rowJsonExpression(doc, step, context, dynamicHeaders) : jsonExpression(doc, step, context)} }` : '';
     const response = `clients.${client}.${method.toLowerCase()}(${stringExpression(path, dynamicRow)}${body})`;
-    if (expectedStatus) {return `await step(${stringExpression(title, dynamicRow)}, async () => {\n  const response = await ${response};\n  expect(response.status()).toBe(${expectedStatus});\n});`;}
     const variable = `response${context.counter++}`;
     context.lastResponse = variable;
+    if (expectedStatus) {return `const ${variable} = await step(${stringExpression(title, dynamicRow)}, async () => {\n  const response = await ${response};\n  expect(response.status()).toBe(${expectedStatus});\n  return response;\n});`;}
     return `const ${variable} = await step(${stringExpression(title, dynamicRow)}, () => ${response});`;
   }
   const status = /^the response status is (\d{3}|<[^>]+>)$/u.exec(text);
@@ -322,7 +322,15 @@ function parseExampleValue(value: string): string | number | boolean | null {
 
 function stringExpression(value: string, dynamicRow: boolean): string {
   if (!dynamicRow) {return quote(value);}
-  return templateString(value.replace(/<([^>]+)>/gu, (_match, name: string) => `__BLACKBOX_DYNAMIC_${name}__`));
+  const placeholders: { readonly marker: string; readonly name: string }[] = [];
+  const marked = value.replace(/<([^>]+)>/gu, (_match, name: string) => {
+    const marker = `__BLACKBOX_DYNAMIC_VALUE-${placeholders.length}__`;
+    placeholders.push({ marker, name });
+    return marker;
+  });
+  let template = templateString(marked);
+  for (const { marker, name } of placeholders) {template = template.replace(marker, () => `\${row[${quote(name)}]}`);}
+  return template;
 }
 
 function templateString(value: string): string {
