@@ -67,7 +67,7 @@ real PostgreSQL/RabbitMQ fixtures, and assertion goldens belong to
 `packages/playwright/tests/effects`. Build dependencies with
 `pnpm --filter @suites/blackbox-playwright... build`, then run
 `pnpm --filter @suites/blackbox-playwright test:effects`. This Docker-backed lane
-runs eight package integration cases and recovers its owned sandboxes before
+runs ten package integration cases and recovers its owned sandboxes before
 removing its temporary project. Goldens retain the contracts, verdicts, and distinct
 semantic witnesses; runtime identities and repeated copies are omitted.
 Inspect snapshot diffs before accepting updates. Package resolution guards and the

@@ -56,6 +56,7 @@ export function createUnavailableBlackboxActivities(): BlackboxActivities {
   const actions = Object.freeze({
     run: unavailable,
     request: unavailable,
+    browser: unavailable,
   }) as BlackboxActivityActions;
   return Object.freeze({ setup: actions, stimulus: actions, inspection: actions });
 }
