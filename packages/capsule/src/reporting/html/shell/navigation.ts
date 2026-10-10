@@ -33,7 +33,7 @@ function reportNav(d) {
     p('Experiment', 'rail-label'),
     navLink('overview', 'Overview', null, 'grid'),
     navLink('activities', 'Activities', d.activities.length, 'terminal'),
-    navLink('session-observations', 'Session observations',
+    navLink('session-observations', 'No known cause',
       d.observations.kind === 'collector-session-found'
         ? d.observations.traces.sessionOnly.length : 0, 'branch'),
     navLink('timeline', 'Startup timeline', d.progress.length, 'clock'),

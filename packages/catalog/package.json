@@ -64,7 +64,12 @@
       "target": "./dist/cli/command-registry.js",
       "identifier": "COMMANDS"
     },
-    "topicSeparator": " "
+    "topicSeparator": " ",
+    "topics": {
+      "catalog": {
+        "description": "Inspect and validate the project catalog."
+      }
+    }
   },
   "dependencies": {
     "@oclif/core": "^5.1.0",

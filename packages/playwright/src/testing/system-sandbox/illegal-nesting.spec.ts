@@ -21,11 +21,28 @@ function declareLeaf(system: SystemScope, title: string): void {
 
 function nestedSandbox(): void {
   test.system('orders', (system) => {
-    system.sandbox('outer', () => {
+    system.sandbox('outer', (suite) => {
+      suite.test('outer body must not run', () => {
+        throw new Error('Outer sandbox body must not execute');
+      });
       system.sandbox('nested', (suite) => {
         suite.test('must never be discovered', () => {
           throw new Error('Nested sandbox body must not execute');
         });
+      });
+    });
+  });
+}
+
+function nestedFacade(extended: boolean): void {
+  const otherTest = extended ? test.extend({}) : createBlackboxSystemTest(systemSandboxRuntime);
+  test.system('orders', (system) => {
+    system.sandbox('outer', (suite) => {
+      suite.test('outer body must not run', () => {
+        throw new Error('Outer sandbox body must not execute');
+      });
+      otherTest.system('orders', (otherSystem) => {
+        declareLeaf(otherSystem, 'nested facade guard bypass probe');
       });
     });
   });
@@ -91,6 +108,12 @@ function invalidEnvironment(): void {
 switch (process.env.BLACKBOX_SYSTEM_SANDBOX_SCENARIO) {
   case 'nested-sandbox':
     nestedSandbox();
+    break;
+  case 'nested-independent-facade':
+    nestedFacade(false);
+    break;
+  case 'nested-extended-facade':
+    nestedFacade(true);
     break;
   case 'async-system':
     asyncSystem();

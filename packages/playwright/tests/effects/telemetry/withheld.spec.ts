@@ -8,13 +8,13 @@ test.system('effects-withheld', (system) => {
     });
     sandbox.test(
       '@withheld successful action stays inconclusive under positive and negated matchers',
-      async ({ activities, effects, request, sandbox }) => {
-        const response = await activities.stimulus.request(
+      async ({ step, effects, request, sandbox }) => {
+        const response = await step.stimulus(
           'insert while application telemetry is withheld',
-          request,
-          (scoped) =>
-            scoped.post(new URL('/records/401', sandbox.entrypoint.url).href, {
+          ({ headers }) =>
+            request.post(new URL('/records/401', sandbox.entrypoint.url).href, {
               data: { value: 'executed-without-instrumentation' },
+              headers,
             }),
         );
         expect(response.status()).toBe(201);

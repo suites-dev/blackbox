@@ -31,4 +31,4 @@ Read [Compose commands](../../references/docker-compose.md),
 Use `task.kind: preflight` and no live execution. Static success means the checked
 configuration is valid, not that acquisition, readiness, instrumentation or
 behavior works. Return exact blockers and the proposed live probe. Do not invent
-`setup check` or `capsule test` commands.
+`setup check` or `capsule test` commands. <!-- skill-lint: not-available -->

@@ -16,6 +16,7 @@ export {
   readCapsuleTraces,
 } from './session/observations.js';
 export { projectCapsuleReport } from './reporting/document.js';
+export { causalityFromTraces } from './reporting/causality/core.js';
 export { serializeCapsuleReportDocument } from './reporting/serialization.js';
 export { renderCapsuleHtml } from './reporting/html.js';
 export { capsuleReportClientView } from './reporting/html/client-view.js';
@@ -108,6 +109,7 @@ export type {
   CapsuleReportActivity,
   CapsuleReportArtifact,
   CapsuleReportAvailability,
+  CapsuleReportBody,
   CapsuleReportDocument,
   CapsuleReportFailureRecord,
   CapsuleHtmlReportData,
@@ -118,6 +120,16 @@ export type {
   CapsuleReportResult,
   SerializeCapsuleReportDocumentInput,
 } from './reporting/types.js';
+export type {
+  CapsuleReportActivityCausality,
+  CapsuleReportCausality,
+  CapsuleReportCausedTrace,
+  CapsuleReportEvidence,
+  CapsuleReportLimitation,
+  CapsuleReportStatus,
+  CapsuleReportUncausedTrace,
+  TraceSpans,
+} from './reporting/causality/types.js';
 export type { CapsuleHtmlInput } from './reporting/html.js';
 export type {
   CapsuleRegistryEntry,

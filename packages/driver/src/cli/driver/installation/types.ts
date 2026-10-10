@@ -16,6 +16,14 @@ export type PackageManagerInstallResult =
       readonly packageManager: 'npm';
       readonly exitCode: number;
       readonly stderr: string;
+    }
+  | {
+      readonly kind: 'package-manager-unsupported';
+      readonly packageManager: 'npm';
+      readonly version: string;
+      readonly minimumVersion: string;
+      readonly exitCode: number;
+      readonly stderr: string;
     };
 
 export type PackageManagerInstaller = (
@@ -42,6 +50,14 @@ export type DriverRuntimeInstallationFailure =
   | {
       readonly kind: 'driver-package-manager-failed';
       readonly packageManager: 'npm';
+      readonly exitCode: number;
+      readonly stderr: string;
+    }
+  | {
+      readonly kind: 'driver-package-manager-unsupported';
+      readonly packageManager: 'npm';
+      readonly version: string;
+      readonly minimumVersion: string;
       readonly exitCode: number;
       readonly stderr: string;
     }

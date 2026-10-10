@@ -2,7 +2,7 @@ import { realpathSync } from 'node:fs';
 import { relative } from 'node:path';
 
 import type { TestInfo } from '@playwright/test';
-import type { EffectAssertionReport, EffectAssertionReporter } from '../effects/runtime.js';
+import type { EffectAssertionReport } from '../effects/runtime.js';
 import type { BlackboxSandbox, BlackboxTelemetry } from '../types.js';
 
 import { effectAttachment, effectAttachmentBody } from './effects/attachment.js';
@@ -12,13 +12,15 @@ import {
   type AttemptEvent,
   type AttemptProgress,
 } from './events.js';
-import { reportTextResult } from './text.js';
+import { SecretValues } from './redaction/secret-environment.js';
+import { reportText, reportTextLimit } from './text.js';
+import { sandboxLifecycleEnabled } from './options.js';
 
 /** Attachments use Playwright's worker transport and remain available to other reporters. */
-export class AttemptReport implements AttemptProgress, EffectAssertionReporter {
+export class AttemptReport implements AttemptProgress {
   private readonly started = Date.now();
   private readonly events: AttemptEvent[] = [];
-  private readonly secrets = new Set<string>();
+  private readonly secrets = new SecretValues();
   private pending = Promise.resolve();
   private attachmentFailure: unknown = null;
   private dropped = 0;
@@ -46,24 +48,45 @@ export class AttemptReport implements AttemptProgress, EffectAssertionReporter {
     };
   }
 
-  protect(values: Readonly<Record<string, string>>): void {
-    for (const value of Object.values(values)) {
-      if (value.length > 0) {
-        this.secrets.add(value);
-      }
-    }
+  /** The sandbox that owns this attempt, once acquisition has named it. */
+  sandboxId(): string | null {
+    return this.identity.kind === 'acquired' ? this.identity.sandboxId : null;
   }
 
-  private sanitizeResult(detail: string): ReturnType<typeof reportTextResult> {
-    let sanitized = detail;
-    for (const value of [...this.secrets].sort((a, b) => b.length - a.length)) {
-      sanitized = sanitized.replaceAll(value, '[REDACTED]');
+  protect(environment: Readonly<Record<string, string>>): void {
+    this.secrets.protect(environment);
+  }
+
+  lifecycle(
+    status: 'ready' | 'cleaned up' | 'cleanup failed',
+    catalog: BlackboxSandbox['catalogEntry'],
+  ): void {
+    if (sandboxLifecycleEnabled(this.testInfo.config)) {
+      // Worker stdout is attributed to this attempt by Playwright and rendered
+      // by its native reporter, including cursor handling and parallel output.
+      process.stdout.write(
+        `${this.sanitize(`Blackbox: sandbox ${status} for ${catalog.kind} ${JSON.stringify(catalog.id)}`)}\n`,
+      );
     }
-    return reportTextResult(sanitized);
   }
 
   private sanitize(detail: string): string {
-    return this.sanitizeResult(detail).text;
+    return reportText(this.secrets.redact(detail));
+  }
+
+  async effectAssertion(report: EffectAssertionReport): Promise<void> {
+    this.effectAssertions++;
+    await this.testInfo.attach(effectAttachment, {
+      contentType: 'application/json',
+      body: effectAttachmentBody({
+        sequence: this.effectAssertions,
+        report,
+        sanitize: (value) => {
+          const redacted = this.secrets.redact(value);
+          return { text: reportText(redacted), truncated: redacted.length > reportTextLimit };
+        },
+      }),
+    });
   }
 
   emit(phase: string, status: AttemptEvent['status'], detail: string): void {
@@ -96,18 +119,6 @@ export class AttemptReport implements AttemptProgress, EffectAssertionReporter {
       });
   }
 
-  async effectAssertion(report: EffectAssertionReport): Promise<void> {
-    this.effectAssertions++;
-    await this.testInfo.attach(effectAttachment, {
-      contentType: 'application/json',
-      body: effectAttachmentBody({
-        sequence: this.effectAssertions,
-        report,
-        sanitize: (value) => this.sanitizeResult(value),
-      }),
-    });
-  }
-
   async flush(): Promise<void> {
     await this.pending;
     if (this.attachmentFailure !== null) {
@@ -115,27 +126,30 @@ export class AttemptReport implements AttemptProgress, EffectAssertionReporter {
     }
   }
 
-  async finish(): Promise<void> {
+  /** Attach the final attempt document and return the attached body. */
+  async finish(): Promise<string> {
     const output = realpathSync(this.testInfo.outputPath());
     const path = relative(realpathSync(process.cwd()), output);
     this.emit('artifacts', 'info', path.startsWith('..') ? output : path);
     this.closed = true;
     await this.flush();
+    const document = JSON.stringify({
+      schemaVersion: 1,
+      owner: {
+        testId: this.testInfo.testId,
+        retry: this.testInfo.retry,
+        workerIndex: this.testInfo.workerIndex,
+        parallelIndex: this.testInfo.parallelIndex,
+        outputDirectory: output,
+      },
+      identity: this.identity,
+      events: this.events,
+      omittedObservations: this.dropped,
+    });
     await this.testInfo.attach(attemptAttachment, {
       contentType: 'application/json',
-      body: JSON.stringify({
-        schemaVersion: 1,
-        owner: {
-          testId: this.testInfo.testId,
-          retry: this.testInfo.retry,
-          workerIndex: this.testInfo.workerIndex,
-          parallelIndex: this.testInfo.parallelIndex,
-          outputDirectory: output,
-        },
-        identity: this.identity,
-        events: this.events,
-        omittedObservations: this.dropped,
-      }),
+      body: document,
     });
+    return document;
   }
 }

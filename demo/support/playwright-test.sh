@@ -105,15 +105,24 @@ RUN_RESULT_ROOT="$CONSUMER_ROOT/test-results"
 mkdir -p "$RUN_RESULT_ROOT"
 
 mkdir -p "$CONSUMER_ROOT/.blackbox/catalog" "$CONSUMER_ROOT/.blackbox/drivers"
+mkdir -p "$CONSUMER_ROOT/.blackbox/clients"
 mkdir -p "$CONSUMER_ROOT/tests/playwright"
+mkdir -p "$CONSUMER_ROOT/tests/playwright-features"
 mkdir -p "$CONSUMER_ROOT/reporters"
 cp "$E2E_ROOT/blackbox.config.yaml" "$CONSUMER_ROOT/blackbox.config.yaml"
 cp "$E2E_ROOT/.blackbox/catalog/"*.yml "$CONSUMER_ROOT/.blackbox/catalog/"
 cp "$E2E_ROOT/.blackbox/drivers/"*.mjs "$CONSUMER_ROOT/.blackbox/drivers/"
+cp "$E2E_ROOT/.blackbox/clients/public-api.ts" "$CONSUMER_ROOT/.blackbox/clients/"
+cp "$E2E_ROOT/.blackbox/clients/payment-mock.ts" "$CONSUMER_ROOT/.blackbox/clients/"
 cp -R "$E2E_ROOT/sut" "$CONSUMER_ROOT/sut"
 cp "$E2E_ROOT/playwright.config.ts" "$CONSUMER_ROOT/playwright.config.ts"
+cp "$E2E_ROOT/playwright-features.config.ts" "$CONSUMER_ROOT/playwright-features.config.ts"
 cp "$E2E_ROOT/reporters/"*.ts "$CONSUMER_ROOT/reporters/"
 cp "$E2E_ROOT/tests/playwright/"*.ts "$CONSUMER_ROOT/tests/playwright/"
+cp "$E2E_ROOT/tests/playwright-features/"*.ts "$CONSUMER_ROOT/tests/playwright-features/"
+cp "$E2E_ROOT/tests/playwright-features/"*.golden "$CONSUMER_ROOT/tests/playwright-features/"
+cp "$SCRIPT_DIR/"playwright-features*.mjs "$CONSUMER_ROOT/"
+cp "$SCRIPT_DIR/playwright-boundary.mjs" "$CONSUMER_ROOT/playwright-boundary.mjs"
 cp "$SCRIPT_DIR/playwright-evidence.mjs" "$CONSUMER_ROOT/playwright-evidence.mjs"
 cp "$SCRIPT_DIR/playwright-report-proof.mjs" "$CONSUMER_ROOT/playwright-report-proof.mjs"
 cp "$SCRIPT_DIR/playwright-recover.mjs" "$CONSUMER_ROOT/playwright-recover.mjs"
@@ -135,11 +144,19 @@ jq -e '
   (.entries | any(.id == "payment-mock" and .kind == "subsystem"))
 ' "$RUN_RESULT_ROOT/catalog.json" >/dev/null
 
+node "$CONSUMER_ROOT/playwright-boundary.mjs" >"$RUN_RESULT_ROOT/package-boundary.json"
+
 PLAYWRIGHT_BIN="$CONSUMER_ROOT/node_modules/.bin/playwright"
 if [[ ! -x "$PLAYWRIGHT_BIN" ]]; then
   echo 'playwright-test: registry consumer did not install Playwright' >&2
   exit 1
 fi
+
+BLACKBOX_E2E_FIXTURE_TOKEN="$FIXTURE_TOKEN" \
+BLACKBOX_E2E_RESULTS_ROOT="$RUN_RESULT_ROOT" \
+  "$PLAYWRIGHT_BIN" test --config "$CONSUMER_ROOT/playwright.config.ts" \
+    --list --reporter=line >"$RUN_RESULT_ROOT/discovery.txt"
+test -s "$RUN_RESULT_ROOT/discovery.txt"
 
 # tee retains evidence but must not hide an interactive terminal from Playwright.
 if [[ -t 1 && -z "${PLAYWRIGHT_FORCE_TTY:-}" ]]; then
@@ -153,6 +170,11 @@ BLACKBOX_E2E_RESULTS_ROOT="$RUN_RESULT_ROOT" \
 
 recover_sandboxes
 node "$CONSUMER_ROOT/playwright-verify.mjs" >"$RUN_RESULT_ROOT/receipt.json"
+
+# Run the retention contract after the original eight-case proof.
+# Its runner owns recovery and keeps each invocation under test-results/features.
+BLACKBOX_E2E_FIXTURE_TOKEN="$FIXTURE_TOKEN" \
+  node "$CONSUMER_ROOT/playwright-features.mjs"
 
 printf '%s\n' \
   'Playwright journey passed' \

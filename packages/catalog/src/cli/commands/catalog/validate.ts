@@ -1,5 +1,6 @@
 import { Command, Flags } from '@oclif/core';
-import { runCatalogValidate } from '@suites/blackbox-catalog';
+import { readRuntimeActivationAdapters } from '@suites/blackbox-cli-contract';
+import { isCatalogActivationAdapter, runCatalogValidate } from '@suites/blackbox-catalog';
 import { renderCatalogOutput } from '../../catalog-output.js';
 
 export default class CatalogValidate extends Command {
@@ -9,7 +10,10 @@ export default class CatalogValidate extends Command {
     const { flags } = await this.parse(CatalogValidate);
     const output = renderCatalogOutput({
       mode: flags.json ? 'json' : 'human',
-      result: await runCatalogValidate({ projectDirectory: process.cwd() }),
+      result: await runCatalogValidate({
+        projectDirectory: process.cwd(),
+        activationAdapters: readRuntimeActivationAdapters(isCatalogActivationAdapter),
+      }),
     });
     if (output.failed) {
       this.error(output.text, { exit: 1 });

@@ -3,9 +3,8 @@ import { Help } from '@oclif/core';
 import { ROOT_HELP_ORDER } from './command-registry.js';
 
 /**
- * Root help lists every visible command by its full name (for example
- * `capsule report serve`) instead of topics, so the whole surface is readable
- * in one screen.
+ * Root help lists every visible command by its full name instead of topics,
+ * so the whole surface is readable in one screen.
  */
 export default class BlackboxHelp extends Help {
   protected override async showRootHelp(): Promise<void> {

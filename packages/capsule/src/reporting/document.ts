@@ -1,11 +1,14 @@
 import { projectActivityTelemetry } from './telemetry.js';
+import { projectCausality } from './causality/project.js';
 import { projectObservations } from './observations.js';
 import type { CapsuleProgressEvent } from '../progress/events.js';
 import type { CapsuleSessionState } from '../model/session-state.js';
 import { evidenceUpdatedAt, projectObservationPolicy } from './policy.js';
 import { infrastructureContainers } from './resources.js';
 import { createRedactionContext, redactActivities, redactError, redactText } from './redaction.js';
+import type { CapsuleReportCausality } from './causality/types.js';
 import type {
+  CapsuleReportBody,
   CapsuleReportDocument,
   CapsuleReportLifecycle,
   CapsuleReportProjectionInput,
@@ -199,7 +202,14 @@ export function projectCapsuleReport(input: CapsuleReportProjectionInput): Capsu
               context,
             }),
           },
-  } satisfies Omit<CapsuleReportDocument, 'redactions'>;
+    ...projectCausality({
+      state: input.record.state,
+      observations: input.observations,
+      traceObservations: input.traceObservations,
+      activities: input.activities,
+      context,
+    }),
+  } satisfies Omit<CapsuleReportBody, 'redactions'> & CapsuleReportCausality;
   return {
     ...document,
     redactions: { count: context.entries.length, entries: context.entries },

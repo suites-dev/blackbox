@@ -8,10 +8,11 @@ test.system('effects-acceptance', (system) => {
     });
     sandbox.test(
       'PostgreSQL activity is observed while its operation remains unknown',
-      async ({ activities, effects, request, sandbox }) => {
-        const response = await activities.stimulus.request('insert record 101', request, (scoped) =>
-          scoped.post(new URL('/records/101', sandbox.entrypoint.url).href, {
+      async ({ step, effects, request, sandbox }) => {
+        const response = await step.stimulus('insert record 101', ({ headers }) =>
+          request.post(new URL('/records/101', sandbox.entrypoint.url).href, {
             data: { value: 'persisted-101' },
+            headers,
           }),
         );
         expect(await json<{ row: { id: number; value: string } }>(response, 201)).toEqual({
@@ -26,10 +27,9 @@ test.system('effects-acceptance', (system) => {
           /Scope .*: inconclusive/,
         );
 
-        const inspection = await activities.inspection.request(
+        const inspection = await step(
           'read record 101 independently',
-          request,
-          (scoped) => scoped.get(new URL('/records/101', sandbox.entrypoint.url).href),
+          () => request.get(new URL('/records/101', sandbox.entrypoint.url).href),
         );
         expect(await json(inspection, 200)).toEqual({
           row: { id: 101, value: 'persisted-101' },
@@ -39,11 +39,10 @@ test.system('effects-acceptance', (system) => {
 
     sandbox.test(
       'forbidden database activity produces a definite matcher failure',
-      async ({ activities, effects, request, sandbox }) => {
-        const response = await activities.stimulus.request(
+      async ({ step, effects, request, sandbox }) => {
+        const response = await step.stimulus(
           'insert forbidden record',
-          request,
-          (scoped) => scoped.post(new URL('/records/201', sandbox.entrypoint.url).href),
+          ({ headers }) => request.post(new URL('/records/201', sandbox.entrypoint.url).href, { headers }),
         );
         expect(response.status()).toBe(201);
         await expect(expect(effects).toSatisfy((e) => [e.absent(e.db({}))])).rejects.toThrow(

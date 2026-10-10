@@ -10,6 +10,7 @@ import {
   inspectComposeStartup,
 } from './observation/observation-inspector.js';
 import { observeComposeStartup } from './observation/startup-observer.js';
+import { upUnlessParticipantExits } from './observation/participant-exit.js';
 import { inspectComposeResources } from './resources/resource-inspector.js';
 import { writeTelemetryComposeOverride } from '../telemetry/compose-override.js';
 import { composeTelemetryController } from '../telemetry/compose-controller.js';
@@ -54,6 +55,13 @@ function selectedServices(request: ComposeStartRequest): string[] | undefined {
     services.push(request.telemetry.collector.service);
   }
   return services;
+}
+
+/** Services whose exit fails startup: the selected participants and the collector. */
+function requiredServiceNames(request: ComposeStartRequest): readonly string[] {
+  return request.telemetry.kind === 'enabled'
+    ? [...selectedServiceNames(request), request.telemetry.collector.service]
+    : selectedServiceNames(request);
 }
 
 function selectedServiceNames(request: ComposeStartRequest): readonly string[] {
@@ -144,9 +152,27 @@ function requiredContainer(
   return container;
 }
 
+/** Takes the project down outside a started environment, as Testcontainers does after a failed `up()`. */
+async function composeDown(input: {
+  readonly client: Awaited<ReturnType<typeof getContainerRuntimeClient>>;
+  readonly request: ComposeStartRequest;
+  readonly composeFiles: readonly string[];
+}): Promise<void> {
+  await input.client.compose.down(
+    {
+      filePath: input.request.projectDirectory,
+      files: [...input.composeFiles],
+      projectName: input.request.projectName,
+      environment: { ...composeEnvironment(input.request) },
+    },
+    { removeVolumes: true, timeout: 0 },
+  );
+}
+
 export class TestcontainersComposeDriver implements ComposeSandboxDriver {
   async start(request: ComposeStartRequest): Promise<StartedComposeSandbox> {
     const client = await getContainerRuntimeClient();
+    const observation = composeObservationClient(client.container.dockerode);
     const composeFiles = await composeFilesFor(request, client.container.dockerode);
     const environment = new DockerComposeEnvironment(request.projectDirectory, [
       ...composeFiles,
@@ -157,19 +183,22 @@ export class TestcontainersComposeDriver implements ComposeSandboxDriver {
       .withDefaultWaitStrategy(new SandboxReadinessWaitStrategy())
       .withStartupTimeout(request.startupTimeoutMs);
     const services = selectedServices(request);
+    const inspect = ({ signal }: { readonly signal: AbortSignal }) =>
+      inspectComposeStartup({ docker: observation, projectName: request.projectName, signal });
     const observer = observeComposeStartup({
       mode: request.observation,
       now: Date.now,
       intervalMs: 500,
       awaiting: request.endpoints.map(({ service, containerPort }) => ({ service, containerPort })),
-      inspect: ({ signal }) =>
-        inspectComposeStartup({
-          docker: composeObservationClient(client.container.dockerode),
-          projectName: request.projectName,
-          signal,
-        }),
+      inspect,
     });
-    const started = await environment.up(services).finally(() => observer.stop());
+    const started = await upUnlessParticipantExits({
+      up: () => environment.up(services),
+      requiredServices: requiredServiceNames(request),
+      inspect,
+      down: () => composeDown({ client, request, composeFiles }),
+      intervalMs: 500,
+    }).finally(() => observer.stop());
     const containers = await afterStartOrCleanup({
       started,
       operation: () => inspectSelectedContainers({

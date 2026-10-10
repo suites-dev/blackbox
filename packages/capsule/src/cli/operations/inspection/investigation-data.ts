@@ -1,8 +1,8 @@
 import {
-  observationCompleteness,
   projectInvestigationSpans,
   readCapsuleObservations,
   readCapsuleTraces,
+  sessionCompleteness,
   type CapsuleActivityReport,
   type CapsuleObservationsResult,
   type CapsuleReportSpan,
@@ -35,19 +35,10 @@ export function completenessOf(
   capsule: CapsuleSummary,
   session: CapsuleObservationsResult | null,
 ): ObservationCompleteness {
-  if (
-    capsule.state === 'stopped' &&
-    session !== null &&
-    session.kind === 'collector-session-corrupt'
-  ) {
-    return {
-      status: 'incomplete',
-      reason: `collector session corrupt: ${session.error.name}`,
-    };
-  }
-  const lifecycle =
-    session !== null && session.kind === 'collector-session-found' ? session.lifecycle : null;
-  return observationCompleteness({ state: capsule.state, lifecycle });
+  return sessionCompleteness({
+    state: capsule.state,
+    session: session !== null && isSessionResult(session) ? session : null,
+  });
 }
 
 /** The capsule's session observation read (lifecycle and trace IDs), or null when unreadable. */

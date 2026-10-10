@@ -1,5 +1,7 @@
 import { defineConfig as playwrightConfig, type PlaywrightTestConfig } from '@playwright/test';
 
+import { sandboxLifecycleConfigured, sandboxLifecycleMetadataKey } from './reporting/options.js';
+
 export type BlackboxPlaywrightConfig = PlaywrightTestConfig & {
   readonly blackboxConfigFile: string;
 };
@@ -12,6 +14,10 @@ export function defineConfig(input: BlackboxPlaywrightConfig) {
   }
   return playwrightConfig({
     ...config,
-    metadata: { ...config.metadata, blackboxConfigFile },
+    metadata: {
+      ...config.metadata,
+      blackboxConfigFile,
+      [sandboxLifecycleMetadataKey]: sandboxLifecycleConfigured(config.reporter),
+    },
   });
 }

@@ -5,7 +5,7 @@ import { cloneAndFreeze } from '../runtime/freeze-request.js';
 import type { PrepareDriverInput, PreparedDriver } from '../runtime/runner-types.js';
 
 export async function prepareDriver(input: PrepareDriverInput): Promise<PreparedDriver> {
-  if (input.definition.name !== input.request.driverId) {
+  if ('name' in input.definition && input.definition.name !== input.request.driverId) {
     throw new Error(
       `Driver definition name ${input.definition.name} does not match ${input.request.driverId}`,
     );
@@ -18,7 +18,7 @@ export async function prepareDriver(input: PrepareDriverInput): Promise<Prepared
   const response = {
     kind: 'driver-prepare-succeeded',
     protocolVersion: 1,
-    driver: { kind: 'available', name: input.definition.name },
+    driver: { kind: 'available', name: input.request.driverId },
     preparation,
   } satisfies DriverPrepareResponse;
   return { response, preparation };

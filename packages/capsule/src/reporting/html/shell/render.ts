@@ -42,7 +42,7 @@ function render(root, d, state = {}) {
     ),
   );
   add(workspace, sections, inspector());
-  add(content, hero(d), metrics(d), notice, workspace);
+  add(content, hero(d), statusBanner(d), metrics(d), notice, workspace);
   add(main, topbar(d), content);
   add(view, reportNav(d), main);
   root.replaceChildren(view);

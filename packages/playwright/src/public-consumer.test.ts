@@ -18,13 +18,6 @@ const typescriptCli = fileURLToPath(new URL('../bin/tsc', import.meta.resolve('t
 
 const validSpec = `
 import { expect, test } from '@suites/blackbox-playwright';
-import type {
-  BlackboxActivities, BlackboxActivityActions, BlackboxActivityContext, BlackboxScopedRequest,
-} from '@suites/blackbox-playwright';
-
-const stimulus = (activities: BlackboxActivities): BlackboxActivityActions => activities.stimulus;
-const createOrder = (request: BlackboxScopedRequest) => request.post('/orders');
-const traceHeaders = (context: BlackboxActivityContext) => context.headers;
 
 const extended = test.extend<{ readonly tenant: string }>({
   tenant: async ({}, use) => {
@@ -44,16 +37,11 @@ extended.system('orders', (system) => {
       expect(effects.executionId).toBe(telemetry.executionId);
     });
     sandbox.describe('Rule: independent Playwright consumer', () => {
-      sandbox.test('Scenario: inferred fixtures are available', async ({ activities, effects, request, sandbox }) => {
+      sandbox.test('Scenario: inferred fixtures are available', async ({ request, sandbox }) => {
         await test.step('use native and Blackbox fixtures', async () => {
           expect(request).toBeDefined();
           expect(sandbox.entrypoint.url).toContain('http');
         });
-        await stimulus(activities).request('create order', request, createOrder);
-        await stimulus(activities).run('custom action', async (context) => {
-          expect(traceHeaders(context)).toHaveProperty('traceparent');
-        });
-        await expect(effects).toSatisfy((e) => [e.exists(e.http({ method: 'POST' }))]);
       });
     });
   });
@@ -93,18 +81,18 @@ export default defineConfig({
   testMatch: 'journey.spec.ts',
   reporter: [
     ['line'],
-    ['@suites/blackbox-playwright/reporter'],
+    ['@suites/blackbox-playwright/reporter', { sandboxLifecycle: true }],
   ],
 });
 `;
 
-const invalidCatalogConfig = `
+const invalidReporterConfig = `
 import { defineConfig } from '@suites/blackbox-playwright/config';
 
 export default defineConfig({
-  blackboxConfigFile: ' ',
+  blackboxConfigFile: './blackbox.config.yaml',
   testDir: '.',
-  reporter: [['@suites/blackbox-playwright/reporter']],
+  reporter: [['@suites/blackbox-playwright/reporter', { sandboxLifecycle: 'yes' }]],
 });
 `;
 
@@ -143,7 +131,7 @@ async function createConsumer(context: TestContext): Promise<string> {
     writeFile(join(project, 'journey.spec.ts'), validSpec),
     writeFile(join(project, 'types-negative.ts'), negativeTypes),
     writeFile(join(project, 'playwright.config.ts'), validConfig),
-    writeFile(join(project, 'invalid-catalog.config.ts'), invalidCatalogConfig),
+    writeFile(join(project, 'invalid-reporter.config.ts'), invalidReporterConfig),
     writeFile(join(project, 'blackbox.config.yaml'), 'systems: {}\n'),
     writeFile(
       join(project, 'tsconfig.json'),
@@ -191,19 +179,19 @@ test('independent Playwright consumer compiles and discovers a journey', async (
       'journey.spec.ts',
       'types-negative.ts',
       'playwright.config.ts',
-      'invalid-catalog.config.ts',
+      'invalid-reporter.config.ts',
     ].map((file) => readFile(join(project, file), 'utf8')),
   );
   assert.doesNotMatch(consumerSources.join('\n'), /@suites\/blackbox\/playwright/u);
 
   const invalid = await run(
     process.execPath,
-    [playwrightCli, 'test', '--config', 'invalid-catalog.config.ts', '--list'],
+    [playwrightCli, 'test', '--config', 'invalid-reporter.config.ts', '--list'],
     project,
   );
   assert.equal(invalid.kind, 'failure');
   assert.match(
     `${invalid.stdout}\n${invalid.stderr}`,
-    /blackboxConfigFile must name the project Blackbox configuration file/u,
+    /Blackbox reporter sandboxLifecycle must be a boolean/u,
   );
 });

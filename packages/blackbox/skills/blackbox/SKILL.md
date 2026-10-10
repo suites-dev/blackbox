@@ -13,7 +13,7 @@ do not turn an explanation or inspection request into a live experiment.
 ## Check what is available
 
 Use the project's installed `blackbox` executable through its existing package
-manager, for example `pnpm exec blackbox`. Do not use a command that downloads a
+manager, for example `pnpm exec blackbox` or `npm exec --no -- blackbox`. Do not use a command that downloads a
 missing CLI on demand. From the target project, inspect:
 
 ```sh
@@ -50,6 +50,10 @@ procedure from this table or guess paths inside `node_modules`.
 These are independent, optional integrations, not a mandatory sequence. Route a
 direct Catalog or Capsule request directly when its prerequisites are satisfied;
 do not require Discovery for either. Discovery owns its own subsequent routing.
+
+For "set up Blackbox for this repo", follow [onboarding](references/onboarding.md): it takes
+a repo with no config to one real verification against a running system, using these
+skills in order. Config or package installation alone is not done.
 For another contributed skill, use its available description and instructions when
 they match the request. Never route back to `blackbox` as its own specialist.
 

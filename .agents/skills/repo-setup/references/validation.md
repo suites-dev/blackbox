@@ -62,17 +62,6 @@ Node's test runner; do not send it Vitest flags. Build before targeted CLI tests
 that exercise generated executable output. A filename alone does not establish
 which lane discovers it.
 
-Effects engine behavior is covered by `packages/effects` tests. Matcher behavior,
-real PostgreSQL/RabbitMQ fixtures, and assertion goldens belong to
-`packages/playwright/tests/effects`. Build dependencies with
-`pnpm --filter @suites/blackbox-playwright... build`, then run
-`pnpm --filter @suites/blackbox-playwright test:effects`. This Docker-backed lane
-runs eight package integration cases and recovers its owned sandboxes before
-removing its temporary project. Goldens retain the contracts, verdicts, and distinct
-semantic witnesses; runtime identities and repeated copies are omitted.
-Inspect snapshot diffs before accepting updates. Package resolution guards and the
-standalone packed-effects consumer have been removed by user direction.
-
 For package skill exports, assets, or CLI composition changes, also run
 `pnpm test:e2e:skills`. It packs the main package and its core dependency closure
 into an isolated consumer declaring `@suites/blackbox` and `@suites/blackbox-cli`, and exercises public
@@ -95,10 +84,16 @@ The E2E config uses fully parallel tests with two workers. Its live evidence rec
 acquisition start/completion times on the reporter's monotonic clock; acceptance
 requires overlapping acquisition on distinct workers within a file and across files.
 Worker counts alone do not establish concurrent sandbox execution.
-The maintainer-only live recorder also observes the native `Start sandbox` and
-`Clean up sandbox` steps for every physical attempt. Acceptance requires one
-successful, ordered pair with native start times, durations, errors, and reporter
-callback chronology. These lifecycle steps do not count as business steps.
+After the original eight scenarios, the same command runs the public retention
+contract from `e2e/tests/playwright-features/`. These use real
+participant containers and successive Playwright invocations. They check retained telemetry
+ownership and bytes, retention across output cleanup, the default-off option, and
+retention write failures. Their stable acceptance
+summary must match `acceptance.golden`; changing a golden never replaces its
+semantic assertions or negative controls.
+Evidence under `e2e/test-results/features/` includes the golden actual/expected/diff,
+per-invocation reports and logs, retained artifacts, and cleanup receipts. The
+existing Playwright evidence archive preserves this directory on success or failure.
 Keep consumer journeys explicit in their `.spec.ts` files. E2E inherits the
 repository ESLint configuration. Playwright spec files replace the general file
 and function line limits with an 80 code-token-line executable-function limit.
@@ -111,10 +106,10 @@ Run `pnpm --dir e2e run test:lint` to verify the local rule and
 `pnpm --dir e2e run lint` for consumer test/config/reporter/lint sources. Keep
 both separate from the repository's `pnpm lint`; CI runs all three as separate
 named steps in the lint job.
-The console uses Playwright's native list reporter with step printing. Verify the
-native `Start sandbox` and `Clean up sandbox` steps, no legacy Blackbox lifecycle
-stdout, no streamed container polling, and retained `blackbox-diagnostics`
-attachments. User and application stdout remains ordinary Playwright output.
+The console uses Playwright's native list reporter. Verify ready/cleanup messages
+in each attempt's captured stdout, no streamed container polling, and retained
+`blackbox-diagnostics` attachments. Lifecycle messages can be disabled using the
+Blackbox reporter's `sandboxLifecycle` option without suppressing test stdout.
 
 For documentation-only changes, check formatting, relative links, and operational
 commands against source/help. Do not run root `pnpm format` as a targeted formatter:

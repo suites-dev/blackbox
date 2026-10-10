@@ -1,5 +1,8 @@
 .blackbox/*
 !.blackbox/catalog/
+!.blackbox/clients/
+.blackbox/clients/*
+!.blackbox/clients/*.ts
 !.blackbox/drivers/
 .blackbox/drivers/*
 !.blackbox/drivers/*.mjs

@@ -1,0 +1,70 @@
+Feature CLI journey
+Scope: generated declarations, step titles, client readiness, Sandbox acquisition and cleanup.
+Business step bodies: empty; business semantics are not tested.
+subscription-activation: file validate; suite emit; pristine suite validate
+  overwrite refused; drift rejected; restored suite validated
+  declaration/step-title structure matches 5 hand-authored cases; changed-title control rejected
+payment-refunds: file validate; suite emit; pristine suite validate
+  overwrite refused; drift rejected; restored suite validated
+  declaration/step-title structure matches 2 hand-authored cases; changed-title control rejected
+redis-proof-delivery: unsupported async vocabulary rejected; no suite written
+nested sandbox: collection rejected; 0 executed tests; 0 Sandbox records; Docker resources unchanged
+Feature: Subscription activation / Rule: Full-path subscriptions settle their downstream state before returning / Scenario: Alice activates a subscription through the full path
+  Background: The subscription system starts fresh
+    Given client "api" has sent POST "/fixture/reset" with JSON and received 200:
+  When client "api" sends POST "/subscriptions" with JSON:
+  Then the response status is 201
+  And the response JSON contains these fields:
+  And client "api" GET "/fixture/state" returns 200 with JSON exactly:
+Feature: Subscription activation / Rule: Local-only subscriptions retain no payment or order state / Scenario Outline: Activate local-only user <userId> / Scenario: Activate local-only user dora [1:Seeded local-only users:1]
+  Background: The subscription system starts fresh
+    Given client "api" has sent POST "/fixture/reset" with JSON and received 200:
+  When client "api" sends POST "/subscriptions" with JSON:
+  Then the response status is 201
+  And the response JSON contains:
+  And client "api" GET "/fixture/state" returns 200 with JSON exactly:
+Feature: Subscription activation / Rule: Local-only subscriptions retain no payment or order state / Scenario Outline: Activate local-only user <userId> / Scenario: Activate local-only user eve [1:Seeded local-only users:2]
+  Background: The subscription system starts fresh
+    Given client "api" has sent POST "/fixture/reset" with JSON and received 200:
+  When client "api" sends POST "/subscriptions" with JSON:
+  Then the response status is 201
+  And the response JSON contains:
+  And client "api" GET "/fixture/state" returns 200 with JSON exactly:
+Feature: Subscription activation / Rule: Unknown users cannot create subscriptions / Scenario: An unknown user leaves the system unchanged
+  Background: The subscription system starts fresh
+    Given client "api" has sent POST "/fixture/reset" with JSON and received 200:
+  When client "api" sends POST "/subscriptions" with JSON:
+  Then the response status is 404
+  And the response JSON contains:
+  But client "api" GET "/fixture/state" returns 200 with JSON exactly:
+Feature: Subscription activation / Rule: A subscription can be created only once / Scenario: A repeated request retains only the original downstream state
+  Background: The subscription system starts fresh
+    Given client "api" has sent POST "/fixture/reset" with JSON and received 200:
+  Background: Carol already has a subscription
+    Given client "api" has sent POST "/subscriptions" with JSON and received 201:
+  When client "api" sends POST "/subscriptions" with JSON:
+  Then the response status is 409
+  And the response JSON contains:
+  And client "api" GET "/fixture/state" returns 200 with JSON exactly:
+Feature: Payment refunds / Rule: A refund must reference an existing payment / Scenario: An unknown payment cannot be refunded
+  Background: The payment subsystem starts fresh
+    Given client "payments" has sent POST "/fixture/reset" with JSON and received 200:
+  When client "payments" sends POST "/v1/refunds" with JSON:
+  Then the response status is 404
+  And the response JSON contains:
+  But client "payments" GET "/fixture/state" returns 200 with JSON exactly:
+Feature: Payment refunds / Rule: Each payment can be refunded only once / Scenario: A repeated refund retains exactly one refund
+  Background: The payment subsystem starts fresh
+    Given client "payments" has sent POST "/fixture/reset" with JSON and received 200:
+  Background: Alice has a succeeded payment
+    Given client "payments" has sent POST "/v1/payment_intents" with JSON and received 201:
+  When client "payments" sends POST "/v1/refunds" with JSON:
+  Then the response status is 201
+  * the response JSON contains these fields:
+  When client "payments" sends POST "/v1/refunds" with JSON:
+  Then the response status is 409
+  And the response JSON contains:
+  And client "payments" GET "/fixture/state" returns 200 with JSON exactly:
+Playwright: 7 discovered, 7 passed, 0 skipped, 0 retried
+Sandbox: 7 distinct records and Compose projects; completed; cleanup complete
+Docker: 0 owned containers, networks, or volumes remain

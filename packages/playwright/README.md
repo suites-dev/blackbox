@@ -5,19 +5,19 @@ and Sandbox configuration. Every physical test attempt, including a retry, runs
 in a fresh Sandbox. Tests keep their native Playwright callbacks, hooks, steps,
 reporters, and parallel scheduling.
 
-## Install
+Clients can wrap HTTP, messaging, database, or project-owned SDKs. Start with the
+[Playwright guide](../../docs/playwright/README.md) for syntax and configuration,
+or [clients and fixtures](../../docs/playwright/clients-and-fixtures.md) for shared
+setup. The [testing guides](../../docs/guides/README.md) cover HTTP APIs,
+asynchronous flows, and PostgreSQL and Redis seeding and state assertions.
 
-Install the Blackbox adapter with Playwright:
+## Prerequisites
 
-```sh
-npm install --save-dev @suites/blackbox-playwright@next @playwright/test
-```
-
-Application code imports directly from the adapter paths below.
-
-For reusable activity helpers, import `BlackboxActivities`,
-`BlackboxActivityActions`, `BlackboxActivityContext` and `BlackboxScopedRequest`
-as types from `@suites/blackbox-playwright`. Inline callbacks also infer these types.
+This alpha is available in the source workspace. The package requires Node.js
+22.15 or later and `@playwright/test` 1.61 or later within major version 1.
+The examples assume the Blackbox workspace packages have been built, Docker is
+available, and `blackbox.config.yaml` declares the selected system. Application
+code imports directly from the adapter paths below.
 
 ## Use
 
@@ -34,41 +34,36 @@ export default defineConfig({
   fullyParallel: true,
   reporter: [
     ['list', { printSteps: true }],
-    ['@suites/blackbox-playwright/reporter'],
+    [
+      '@suites/blackbox-playwright/reporter',
+      {
+        sandboxLifecycle: true,
+      },
+    ],
     ['html', { open: 'never' }],
   ],
 });
 ```
 
-```ts
-import { expect, test } from '@suites/blackbox-playwright';
+Then [write a native test](../../docs/playwright/README.md#add-clients-and-a-test).
+Register your SDK clients in `system.sandbox(...)`; Blackbox readies them before
+per-test hooks and disposes them during cleanup. The [async guide](../../docs/guides/testing-async-flows.md)
+contains a complete Redis-to-PostgreSQL example.
 
-test.system('subscription-system', (system) => {
-  system.sandbox('default', { environment: { FEATURE_MODE: 'stable' } }, (suite) => {
-    suite.describe('health', () => {
-      suite.test('reports ready', async ({ activities, request, sandbox, telemetry, effects }) => {
-        const url = new URL('/health', sandbox.entrypoint.url).href;
-        const response = await test.step('When health is requested', () =>
-          activities.stimulus.request('request health', request, (scoped) => scoped.get(url)));
+## Migrate the flat fixture API
 
-        expect(response.ok()).toBe(true);
-        await expect(effects).toSatisfy((e) => [e.exists(e.http({ method: 'GET' }))]);
-        expect(sandbox.catalogEntry.id).toBe('subscription-system');
-        expect(telemetry.executionId).toBe(sandbox.executionId);
-        expect(effects.executionId).toBe(sandbox.executionId);
-      });
-    });
-  });
-});
-```
-
-This is a breaking migration from the flat fixture API. Replace
+Replace
 `test.use({ catalogEntry, blackboxEnvironment })` plus root `test(...)` calls with
-`test.system(...).sandbox(...)` groups, and pass `blackboxEnvironment` as the
+`test.system(...)` and nested `system.sandbox(...)` groups, and pass `blackboxEnvironment` as the
 Sandbox option `{ environment: blackboxEnvironment }`. Relative `request` and
 `page` URLs no longer target the Sandbox automatically; resolve them explicitly
 against `sandbox.entrypoint.url`. Playwright's root `baseURL` remains whatever the
 project configured.
+
+The Sandbox `environment` is the Compose substitution environment for that group.
+Progress and diagnostics redact the values of entries whose names mark a credential,
+such as `TOKEN`, `PASSWORD`, `SECRET`, `KEY`, `AUTH` or `CREDENTIALS` segments.
+Other values, such as a feature flag `TT_PRICE_STOPPED=1`, are shown as given.
 
 A string passed to `test.system(...)` selects a catalog entry with kind `system`.
 Use an object to select either kind explicitly:
@@ -97,8 +92,11 @@ enters the native test callback.
 
 The Sandbox declaration callback is synchronous. Use `suite.describe`,
 `suite.test`, `suite.beforeEach`, and `suite.afterEach` inside it. Test and
-per-test hook callbacks receive the normal Playwright fixtures plus `sandbox`,
-`telemetry`, and `effects`. Continue to use `test.step(...)` for native steps.
+per-test hook callbacks receive the normal Playwright fixtures plus `clients`,
+`step`, `sandbox`, `telemetry`, and `effects`. Use the attempt-bound `step(...)`
+fixture for native Playwright steps with local asynchronous context. Mark the
+action whose effects matter with `step.stimulus(...)` and pass its W3C headers to
+the client request. Step titles alone do not propagate tracing into the system.
 Sandbox-scoped `beforeAll` and `afterAll` hooks are unavailable because there is
 no group-level live Sandbox. Root Playwright `beforeAll` and `afterAll` hooks can
 still perform setup unrelated to a Sandbox.
@@ -109,130 +107,55 @@ reasons. Setup failure also attempts cleanup before surfacing the error.
 
 ## Fixtures
 
+- `clients` exposes the typed clients registered in the Sandbox declaration.
+- `step` creates a native Playwright step with context bound to this attempt.
+  `step.stimulus('place order', ({ headers }) => clients.api.post('/orders',
+  { data: order, headers }))` marks an owned action. Ordinary `step(...)` remains
+  useful for setup and inspection. A custom transport can pass the same headers
+  at its entrypoint; Blackbox cannot inject them into arbitrary SDK calls.
 - Playwright's configured `baseURL` remains unchanged. Build request and page
   URLs explicitly with `new URL(path, sandbox.entrypoint.url).href`.
 - `sandbox` exposes read-only attempt, catalog, entrypoint, container, and
   artifact identity. Lifecycle control remains fixture-owned.
 - `telemetry` exposes the attempt identity, live collector status, and raw
   retained session or trace reads.
-- `effects` exposes the attempt identity and the contract-evaluation boundary.
-  `expect(effects).toSatisfy(...)` evaluates an immutable contract against the
-  attempt's completed stimulus activities. It retries only while retained
-  activity telemetry is still inconclusive; elapsed time never turns missing
-  evidence into a pass or a definite absence.
-- `activities` records explicitly named `setup`, `stimulus`, and `inspection`
-  actions. Each purpose supports `request` and custom `run` actions.
-  Only stimuli feed the default `effects` selection, so fixture setup and state
-  inspection cannot silently satisfy a behavior assertion.
-
-Direct HTTP calls receive canonical W3C propagation without changing the native
-Playwright request fixture:
-
-```ts
-const response = await activities.stimulus.request('create subscription', request, (scoped) =>
-  scoped.post(new URL('/subscriptions', sandbox.entrypoint.url).href, {
-    data: { userId: 'alice' },
-  }),
-);
-```
-
-Use `activities.inspection.request(...)` for fixture state endpoints and other
-authoritative reads. A successful state read remains a separate result; observed
-attempt effects do not prove that state is durable.
-
-## Validate the internal effects pipeline
-
-Playwright owns activity selection, collector reads, effects handles and the
-`toSatisfy` matcher. It delegates OTLP projection, contract compilation and
-evaluation to the standalone [`@suites/blackbox-effects`](../effects/README.md)
-package through its public entrypoint. The
-[pipeline tests](src/effects/testing/pipeline.test.ts) exercise this path through
-a real loopback collector with synthetic OTLP inputs, including nested cases and
-their assertions. They do not replace a released-package Playwright acceptance run.
-
-From the repository root, after installing and building workspace dependencies:
-
-```sh
-pnpm --filter @suites/blackbox-playwright test
-```
-
-The Docker-backed matcher cases live in [`tests/effects`](tests/effects), beside
-this package. They exercise PostgreSQL, RabbitMQ, request activity, inspection
-isolation, and withheld telemetry:
-
-```sh
-pnpm --filter @suites/blackbox-playwright... build
-pnpm --filter @suites/blackbox-playwright test:effects
-```
-
-The suite compares assertion contracts, verdicts, and semantic witnesses with
-checked-in [`goldens`](tests/effects/goldens). Generated trace IDs are excluded.
-Native reports remain under `.blackbox/tmp/playwright-effects.*`; the runner
-recovers owned sandboxes and removes its temporary fixture project on exit.
-Use `test:effects --update-snapshots` only for a reviewed behavior change.
-Business examples remain in `e2e/tests/playwright`, using registry-installed
-packages to create subscriptions and payments and inspect their resulting state.
-Their HTTP effects match service and method: this raw Node HTTP fixture emits
-`url.path`, but no `http.route` template. A request path is not treated as a route
-template, and missing route evidence stays inconclusive.
-
-[The composition factory](src/effects/scoped-effects.ts) takes an immutable,
-registry-owned selection. Stimulus selections exclude setup and inspection;
-combining purposes requires an explicit procedure selection. Collector shutdown
-and activity completion never establish telemetry completeness. Observed positive
-evidence can satisfy a contract, definite contradictions can fail it, and missing
-evidence stays inconclusive under both positive and negated assertions.
-
-The initial projection recognizes structured HTTP, RPC, database, cache, and
-messaging operations. A database namespace is not a table; Redis keys remain
-unknown without a supported key convention. SQL text, span names, `lab.*`
-annotations, parent links, and timestamps do not supply missing semantics.
-Effects describe observed operations, not durable state; state inspection remains
-a separate activity. With no completeness or ordering attestation, absence,
-exact counts, and universal ordering generally remain inconclusive.
-
-The internal admission boundary rejects oversized selections rather than sampling:
-eight selected traces, 256 distinct span identities, 256 KiB of selected payloads
-including repeated arrivals, and 32 KiB per record. Each registry permits 256
-activity registrations. [The named limits](src/activities/limits.ts) apply to this
-initial integration and do not establish production load capacity.
-
-The public activity fixture connects request and custom execution to the trusted
-registry within each system/sandbox attempt. The internal factory remains outside
-the authoring API. Shared sandboxes must not imply shared effects selections.
-Published-release acceptance still requires the selected registry and version;
-local packed candidates establish only candidate behavior.
+- `effects` exposes the attempt identity and evaluates immutable contracts
+  against OTLP observations owned by completed stimulus steps. Use
+  `expect(effects).toSatisfy(...)`. Missing or incomplete observation remains
+  inconclusive, including under negation; an observed operation does not prove
+  durable state.
 
 ## Execution reporting
 
 Playwright's native reporter owns test progress, steps, colors, errors, and the
-final summary. The fixture emits Sandbox setup and cleanup through Playwright's
-public `test.step` API, so lifecycle duration and failure appear with the same
-attempt as the test's business steps. The example above has this native title
-hierarchy:
+final summary. The async guide produces this title hierarchy:
 
 ```text
-system "subscription-system"
+system "job-system"
 └─ sandbox "default"
-   └─ health
-      └─ reports ready
-         ├─ Before Hooks
-         │  └─ Fixture "Blackbox sandbox"
-         │     └─ Start sandbox
-         ├─ When health is requested
-         └─ After Hooks
-            └─ Fixture "Blackbox sandbox"
-               └─ Clean up sandbox
+   └─ processes a queued job
+      ├─ Queue a job
+      └─ Wait for completion
 ```
 
 The grouping does not change the existing `blackbox-progress`,
-`blackbox-attempt`, or `blackbox-diagnostics` attachments. `Start sandbox`
-completes only after acquisition, instrumentation, activation, and application
-readiness pass. `Clean up sandbox` covers fixture-owned teardown. Playwright
-records each step's duration and associates any setup or cleanup error with that
-step. Native lifecycle reporting does not depend on the Blackbox reporter. Use
-any native reporter alongside Blackbox; if no terminal reporter is configured,
-Playwright adds its default one.
+`blackbox-attempt`, or `blackbox-diagnostics` attachments. Blackbox also adds two
+short messages through the test's captured stdout, so Playwright associates them
+with the right parallel attempt:
+
+```text
+Blackbox: sandbox ready for system "job-system"
+... native Playwright test and step output ...
+Blackbox: sandbox cleaned up for system "job-system"
+```
+
+Ready means acquisition, instrumentation, and application readiness have passed.
+Cleanup failure prints `sandbox cleanup failed` instead of claiming success.
+Set `sandboxLifecycle: false` to suppress these messages while retaining diagnostics.
+The option defaults to `true` when the Blackbox reporter is configured; without
+that reporter, fixtures do not print lifecycle messages. Use any native reporter
+alongside Blackbox. If no terminal reporter is configured, Playwright adds its
+default one.
 
 Fixtures attach sanitized `blackbox-progress` events and a final
 `blackbox-attempt` JSON document to Playwright results, including failures.
@@ -242,35 +165,41 @@ The Blackbox reporter also adds a readable `blackbox-diagnostics` attachment.
 Container health polling and detailed startup events stay in these attachments,
 not the live console. Native reporters may display attachments for failed tests.
 
-Every final `expect(effects).toSatisfy(...)` decision also attaches a
-`blackbox-effects` JSON document, whether the assertion passes, fails, or stays
-inconclusive. Open the test in Playwright's HTML report to inspect the attachment,
-or read it from the result's `attachments` array when using Playwright's JSON
-reporter. Repeated assertions have an attempt-local sequence number.
+Playwright clears `test-results/` and its HTML report on every run. To keep
+attempt evidence across runs, enable retention in the Playwright configuration:
 
-The document keeps the compiled contract beside its finding indexes, projected
-effects and relations, and activity ownership. Admitted observations include
-bounded excerpts with trace/span IDs, service, span kind/status, and supported
-HTTP, RPC, database, cache, and messaging operation fields. Arbitrary attributes,
-headers, bodies, SQL text, and span names are not attached. Protected environment
-values and common credential forms are redacted before Playwright stores the
-document.
+```ts
+import { defineConfig } from '@suites/blackbox-playwright/config';
 
-`evidence.omitted` reports entries excluded by the attachment's display bounds,
-and `display.truncatedStrings` reports shortened strings. These are presentation
-limits only. They do not make capture complete or change the matcher result. Use
-`projection.quality` and the contract assessment to understand admitted coverage
-and uncertainty. When no observation was admitted, `evidence.kind` is
-`not-admitted` and the assertion diagnostic explains why; negating the matcher
-does not turn that inconclusive result into a pass.
+const use = {
+  trace: 'retain-on-failure' as const,
+  blackboxRetainAttempts: true,
+};
+
+export default defineConfig({
+  blackboxConfigFile: './blackbox.config.yaml',
+  use,
+});
+```
+
+After cleanup, each attempt is copied to
+`.blackbox/experiments/<sandboxId>/` (a `playwright-<uuid>` directory) beside
+`blackbox.config.yaml`: `attempt.json` holds the final attempt document and
+`sandbox/` the sandbox record and retained telemetry. Retention is off by default,
+never overwrites an existing directory, and fails the attempt if it cannot write.
+`capsule report` does not read these directories yet.
+
+Retention preserves raw evidence. Open `attempt.json` to inspect the test identity
+and recorded events; use the files under `sandbox/` for the sandbox lifecycle and
+telemetry. There is no saved-attempt browser or comparison command, and this
+option does not archive Playwright's HTML report.
 
 The retained telemetry summary reads request/span counters from the lifecycle
 record without loading raw trace fragments. Collector shutdown is reported from
 its retained status. Neither a span count nor a
 completed collector shutdown proves that a business workflow finished; the test
-must await its completion boundary before asserting behavior. The internal effect
-evaluator returns scope, witness, and uncertainty diagnostics in the
-`blackbox-effects` attachment.
+must await its completion boundary before asserting behavior. Effect contract
+diagnostics will be added with the effect evaluator.
 
-Accepted baselines, drivers, and shared worker sandboxes remain outside this
-package's current surface.
+Effect projection, accepted baselines, drivers, and shared worker
+sandboxes are intentionally outside this package's current surface.

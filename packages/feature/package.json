@@ -1,0 +1,77 @@
+{
+  "name": "@suites/blackbox-feature",
+  "version": "0.0.1-alpha.0",
+  "type": "module",
+  "description": "Compiles Gherkin Feature files into native Blackbox Playwright suites.",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "blackbox-source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "prebuild": "rimraf dist",
+    "build": "tsc --project tsconfig.build.json",
+    "prepack": "pnpm build",
+    "lint": "eslint src",
+    "test": "vitest run --config vitest.config.ts"
+  },
+  "blackbox": {
+    "cli": {
+      "apiVersion": 1,
+      "pluginId": "feature",
+      "topic": "feature"
+    }
+  },
+  "oclif": {
+    "commands": {
+      "strategy": "explicit",
+      "target": "./dist/cli/command-registry.js",
+      "identifier": "COMMANDS"
+    },
+    "topicSeparator": " ",
+    "topics": {
+      "feature": {
+        "description": "Work with executable feature specifications."
+      }
+    }
+  },
+  "dependencies": {
+    "@cucumber/cucumber-expressions": "20.1.0",
+    "@cucumber/gherkin": "42.0.1",
+    "@cucumber/messages": "34.2.1",
+    "@oclif/core": "^5.1.0",
+    "@suites/blackbox-playwright": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "rimraf": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=22.15"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/suites-dev/blackbox.git",
+    "directory": "packages/feature"
+  },
+  "homepage": "https://github.com/suites-dev/blackbox/tree/main/packages/feature#readme",
+  "bugs": {
+    "url": "https://github.com/suites-dev/blackbox/issues"
+  },
+  "author": "Suites"
+}

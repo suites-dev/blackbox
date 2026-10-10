@@ -1,3 +1,5 @@
+import type { BlackboxNativeStep, BlackboxStep } from './steps/types.js';
+import type { ClientRegistry, RegisteredClients } from './clients/types.js';
 import type { CatalogEntryKind } from '@suites/blackbox-catalog';
 import type {
   Fixtures,
@@ -7,7 +9,6 @@ import type {
   PlaywrightWorkerOptions,
   TestDetails,
   TestInfo,
-  TestStepInfo,
   TestType,
 } from '@playwright/test';
 import type {
@@ -16,7 +17,7 @@ import type {
 } from '@suites/blackbox-otel-collector';
 import type { SandboxContainer, SandboxTelemetryStatus } from '@suites/blackbox-sandbox';
 
-import type { BlackboxActivities } from './activities/public-types.js';
+export type { BlackboxNativeStep, BlackboxStep, BlackboxStepOptions, BlackboxStimulusScope } from './steps/types.js';
 
 export type BlackboxCatalogSelection =
   { readonly kind: 'unselected' } | { readonly kind: CatalogEntryKind; readonly id: string };
@@ -28,7 +29,9 @@ export interface BlackboxEntrypoint {
   readonly protocol: string;
 }
 
-export interface BlackboxSandbox {
+export interface BlackboxSandbox extends Partial<
+  Record<'clientServices', Readonly<Record<string, string>>>
+> {
   readonly sandboxId: string;
   readonly executionId: string;
   readonly catalogEntry: {
@@ -55,11 +58,17 @@ export interface BlackboxEffects {
   readonly executionId: string;
 }
 
-export interface BlackboxTestOptions {
+export interface BlackboxTestOptions extends Partial<Record<'blackboxClients', ClientRegistry>> {
   /** Catalog entry selected for every test in the current Playwright scope. */
   readonly catalogEntry: BlackboxCatalogSelection;
   /** Compose substitution environment supplied to the selected sandbox. */
   readonly blackboxEnvironment: Readonly<Record<string, string>>;
+  /**
+   * Copy each finished attempt (sandbox record, telemetry and attempt document) to
+   * `.blackbox/experiments/<sandboxId>/` beside the Blackbox configuration, where the
+   * next Playwright run does not clear it. Default: false.
+   */
+  readonly blackboxRetainAttempts: boolean;
 }
 
 export interface BlackboxTestFixtures {
@@ -69,8 +78,7 @@ export interface BlackboxTestFixtures {
   readonly telemetry: BlackboxTelemetry;
   /** Attempt-scoped handle for evaluating normalized behavioral contracts. */
   readonly effects: BlackboxEffects;
-  /** Explicit propagated setup, stimulus, and inspection actions for this attempt. */
-  readonly activities: BlackboxActivities;
+  readonly step: BlackboxStep;
 }
 
 export type BlackboxSystemSelection =
@@ -80,10 +88,10 @@ export type BlackboxSystemSelection =
       readonly id: string;
     };
 
-export interface BlackboxSandboxOptions {
-  /** Compose substitution environment supplied only to this sandbox group. */
+export type BlackboxSandboxOptions = Partial<{
   readonly environment: Readonly<Record<string, string>>;
-}
+  readonly clients: ClientRegistry;
+}>;
 
 export type BlackboxNativeTestArgs = PlaywrightTestArgs &
   PlaywrightTestOptions &
@@ -95,14 +103,6 @@ export type BlackboxTestBody<TestArgs extends object, WorkerArgs extends object>
   args: TestArgs & WorkerArgs,
   testInfo: TestInfo,
 ) => unknown;
-
-export type BlackboxStepOptions = Parameters<TestType<object, object>['step']>[2];
-
-export type BlackboxStep = <T>(
-  title: string,
-  body: (step: TestStepInfo) => T | Promise<T>,
-  options?: BlackboxStepOptions,
-) => Promise<T>;
 
 export interface BlackboxSandboxTestModifier<TestArgs extends object, WorkerArgs extends object> {
   (title: string, body: BlackboxTestBody<TestArgs, WorkerArgs>): void;
@@ -142,10 +142,20 @@ export interface BlackboxSandboxSuite<TestArgs extends object, WorkerArgs extend
   /** Registers an attempt-scoped native hook. */
   readonly afterEach: TestType<TestArgs, WorkerArgs>['afterEach'];
   /** Runs a native Playwright step from a test or attempt-scoped hook. */
-  readonly step: BlackboxStep;
+  readonly step: BlackboxNativeStep;
 }
 
 export interface BlackboxSystemScope<TestArgs extends object, WorkerArgs extends object> {
+  sandbox<const Definitions extends ClientRegistry>(
+    name: string,
+    options: BlackboxSandboxOptions & { readonly clients: Definitions },
+    callback: (
+      suite: BlackboxSandboxSuite<
+        TestArgs & { readonly clients: RegisteredClients<Definitions> },
+        WorkerArgs
+      >,
+    ) => unknown,
+  ): void;
   sandbox(
     name: string,
     callback: (suite: BlackboxSandboxSuite<TestArgs, WorkerArgs>) => unknown,
@@ -182,7 +192,7 @@ export interface BlackboxSystemTest<
   describe: BlackboxRootDescribe;
   beforeAll: BlackboxRootSuiteHook<TestArgs, WorkerArgs>;
   afterAll: BlackboxRootSuiteHook<TestArgs, WorkerArgs>;
-  step: BlackboxStep;
+  step: BlackboxNativeStep;
   extend<T extends object, W extends object = object>(
     fixtures: Fixtures<T, W, TestArgs, WorkerArgs>,
   ): BlackboxSystemTest<TestArgs & T, WorkerArgs & W>;

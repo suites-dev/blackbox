@@ -1,3 +1,4 @@
+import { clientPlan, clientServices } from './clients/client-targets.js';
 import { randomBytes, randomUUID } from 'node:crypto';
 
 import {
@@ -6,7 +7,12 @@ import {
   type CatalogSandboxInput,
   type LoadedCatalog,
 } from '@suites/blackbox-catalog';
-import { startSandbox, type SandboxHandle, type SandboxStopReason } from '@suites/blackbox-sandbox';
+import {
+  sandboxTelemetryStorageDirectory,
+  startSandbox,
+  type SandboxHandle,
+  type SandboxStopReason,
+} from '@suites/blackbox-sandbox';
 
 import type {
   BlackboxCatalogSelection,
@@ -15,7 +21,6 @@ import type {
   BlackboxSandbox,
   BlackboxTelemetry,
 } from '../types.js';
-import type { BlackboxActivities } from '../activities/public-types.js';
 import { createAttemptEffects } from '../effects/attempt-effects.js';
 import { reported, type AttemptProgress } from '../reporting/events.js';
 import { verifyRequiredActivations } from './activation.js';
@@ -23,9 +28,11 @@ import { resolveCollectorRuntime } from './collector-runtime.js';
 import { awaitReadiness } from './readiness.js';
 import { startAttemptSandbox } from './sandbox-start.js';
 import { createSandboxTelemetry, type TelemetryAuthorization } from './telemetry.js';
-import { publicAttempt } from './telemetry-handle.js';
+import { publicTelemetry } from './telemetry-handle.js';
 
-export interface BlackboxAttemptInput {
+export interface BlackboxAttemptInput extends Partial<
+  Record<'clientTargets', Parameters<typeof clientPlan>[1]>
+> {
   readonly selection: BlackboxCatalogSelection;
   readonly configFile: string;
   readonly environment: Readonly<Record<string, string>>;
@@ -37,7 +44,6 @@ export interface RunningBlackboxAttempt {
   readonly sandbox: BlackboxSandbox;
   readonly telemetry: BlackboxTelemetry;
   readonly effects: BlackboxEffects;
-  readonly activities: BlackboxActivities;
   stop(reason: SandboxStopReason): Promise<void>;
 }
 
@@ -58,9 +64,10 @@ export interface BlackboxAcquisitionPorts {
   readonly createEffects: (input: {
     readonly sessionId: string;
     readonly executionId: string;
+    readonly telemetry: BlackboxTelemetry;
     readonly storageDirectory: string;
     readonly entrypointUrl: string;
-  }) => { readonly effects: BlackboxEffects; readonly activities: BlackboxActivities };
+  }) => BlackboxEffects;
 }
 
 const productionPorts = {
@@ -73,7 +80,7 @@ const productionPorts = {
   awaitReadiness,
   randomId: randomUUID,
   randomToken: () => randomBytes(32).toString('base64url'),
-  createEffects: createAttemptEffects,
+  createEffects: (input) => createAttemptEffects(input).effects,
 } satisfies BlackboxAcquisitionPorts;
 
 function selectedPlan(input: {
@@ -192,7 +199,7 @@ export async function acquireBlackboxAttempt(
   const collectorAuthorization = authorization(ports);
   const sandbox = await reported(input.progress, 'acquisition', plan.services.join(', '), () =>
     startAttemptSandbox({
-      plan,
+      plan: clientPlan(plan, input.clientTargets ?? []),
       sessionId,
       executionId,
       authorization: collectorAuthorization,
@@ -215,15 +222,35 @@ export async function acquireBlackboxAttempt(
     );
     await verifyReadiness({ plan, sandbox, ports, progress: input.progress });
     const selectedEntrypoint = entrypoint({ plan, sandbox });
-    return publicAttempt({
-      plan,
+    const publicSandbox = Object.freeze({
+      sandboxId: sandbox.sandboxId,
+      executionId,
+      catalogEntry: Object.freeze({
+        id: plan.catalogEntryId,
+        kind: plan.metadata.kind,
+      }),
+      projectName: sandbox.projectName,
+      artifactDirectory: input.artifactDirectory,
+      entrypoint: Object.freeze(selectedEntrypoint),
+      containers: sandbox.containers,
+      clientServices: clientServices(plan),
+    }) satisfies BlackboxSandbox;
+    const exposedTelemetry = publicTelemetry({
       sandbox,
-      artifactDirectory: recordDirectory,
+      recordDirectory,
       sessionId,
       executionId,
-      createEffects: ports.createEffects,
-      entrypoint: selectedEntrypoint,
     });
+    return {
+      sandbox: publicSandbox,
+      telemetry: exposedTelemetry,
+      effects: ports.createEffects({ sessionId, executionId, telemetry: exposedTelemetry,
+        storageDirectory: sandboxTelemetryStorageDirectory({ recordDirectory, sandboxId: executionId }),
+        entrypointUrl: selectedEntrypoint.url }),
+      async stop(reason): Promise<void> {
+        await sandbox.stop({ reason });
+      },
+    };
   } catch (cause) {
     return cleanupAfterSetupFailure({ sandbox, cause, progress: input.progress });
   }

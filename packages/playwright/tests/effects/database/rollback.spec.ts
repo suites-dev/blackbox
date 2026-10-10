@@ -8,19 +8,17 @@ test.system('effects-acceptance', (system) => {
     });
     sandbox.test(
       'database activity remains observable after rollback while state is absent',
-      async ({ activities, effects, request, sandbox }) => {
-        const response = await activities.stimulus.request(
+      async ({ step, effects, request, sandbox }) => {
+        const response = await step.stimulus(
           'insert then roll back',
-          request,
-          (scoped) => scoped.post(new URL('/records/301/rollback', sandbox.entrypoint.url).href),
+          ({ headers }) => request.post(new URL('/records/301/rollback', sandbox.entrypoint.url).href, { headers }),
         );
         expect(await json(response, 200)).toEqual({ id: 301, rolledBack: true });
         await expect(effects).toSatisfy((e) => [e.exists(e.db({}))]);
 
-        const inspection = await activities.inspection.request(
+        const inspection = await step(
           'read rolled-back record independently',
-          request,
-          (scoped) => scoped.get(new URL('/records/301', sandbox.entrypoint.url).href),
+          () => request.get(new URL('/records/301', sandbox.entrypoint.url).href),
         );
         expect(await json(inspection, 200)).toEqual({ row: null });
       },

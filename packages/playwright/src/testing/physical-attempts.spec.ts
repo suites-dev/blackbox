@@ -3,7 +3,6 @@ import { randomUUID } from 'node:crypto';
 import { expect as playwrightExpect } from '@playwright/test';
 
 import { createBlackboxTest } from '../fixtures.js';
-import { createUnavailableBlackboxActivities } from '../effects/attempt-effects.js';
 import type { BlackboxAttemptRuntime } from '../runtime/acquisition.js';
 
 function record(value: object): void {
@@ -51,7 +50,6 @@ const runtime = {
         sessionId: `session-${executionId}`,
         executionId,
       },
-      activities: createUnavailableBlackboxActivities(),
       stop: (reason) => {
         record({ kind: 'stop', executionId, reason });
         return Promise.resolve();

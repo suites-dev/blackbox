@@ -28,11 +28,6 @@ function durationBadge(a) {
 function activityTelemetry(d, a) {
   return d.activityTelemetry.find((item) => item.activityId === a.activityId);
 }
-function windowTraceCount(d, a) {
-  if (d.observations.kind !== 'collector-session-found') return 0;
-  return d.observations.traces.sessionOnly.filter((trace) =>
-    trace.association.kind === 'activity-window' && trace.association.activityId === a.activityId).length;
-}
 function telemetryBadges(d, a) {
   const telemetry = activityTelemetry(d, a), badges = [];
   if (telemetry && telemetry.kind === 'available') {
@@ -40,8 +35,6 @@ function telemetryBadges(d, a) {
     const system = telemetry.spans.filter((span) => span.service !== 'blackbox-capsule').length;
     badges.push(badge(system + (system === 1 ? ' system span' : ' system spans'), system > 0 ? 'good' : 'warn'));
   } else if (telemetry && telemetry.reason === 'corrupt') badges.push(badge('telemetry unreadable', 'bad'));
-  const window = windowTraceCount(d, a);
-  if (window > 0) badges.push(badge(window + (window === 1 ? ' trace' : ' traces') + ' in its time window'));
   return badges;
 }
 function defaultOpenActivity(d, open) {
@@ -64,7 +57,7 @@ function activities(d, open, root) {
     title(
       'RECORDED INVOCATIONS',
       'Activity timeline',
-      'Recorded commands, execution locations, propagation outcomes, and raw telemetry.',
+      'What each activity provides, what it caused by trace context, and what remains a limitation. Command lines are not shown.',
     ),
   );
   const panel = n('div', 'activity-list');

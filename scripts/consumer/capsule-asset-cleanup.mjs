@@ -1,3 +1,3 @@
-import { cleanupCapsuleAssets } from './capsule-assets.mjs';
+import { cleanupCapsuleAssets } from './capsule-asset-boundary.mjs';
 
 await cleanupCapsuleAssets();

@@ -9,13 +9,13 @@ test.system('effects-acceptance', (system) => {
     });
     sandbox.test(
       'RabbitMQ activity is observed while send remains unknown',
-      async ({ activities, effects, request, sandbox }) => {
-        const response = await activities.stimulus.request(
+      async ({ step, effects, request, sandbox }) => {
+        const response = await step.stimulus(
           'publish alpha message',
-          request,
-          (scoped) =>
-            scoped.post(new URL('/publish/alpha', sandbox.entrypoint.url).href, {
+          ({ headers }) =>
+            request.post(new URL('/publish/alpha', sandbox.entrypoint.url).href, {
               data: { value: 'rabbit-accepted' },
+              headers,
             }),
         );
         const published = await json<{
@@ -38,16 +38,15 @@ test.system('effects-acceptance', (system) => {
           /Scope .*: inconclusive/,
         );
 
-        const delivery = await activities.inspection.request(
+        const delivery = await step(
           'read alpha delivery independently',
-          request,
-          async (scoped) => {
+          async () => {
             const url = new URL(
               `/deliveries/${encodeURIComponent(published.messageId)}`,
               sandbox.entrypoint.url,
             ).href;
             for (let attempt = 0; attempt < 20; attempt += 1) {
-              const candidate = await scoped.get(url);
+              const candidate = await request.get(url);
               const body = (await candidate.json()) as { delivery: unknown };
               if (body.delivery) {
                 return body;

@@ -1,16 +1,34 @@
 import { capsuleReportClientView } from './html/client-view.js';
 import { escapeHtml } from './html/format.js';
-import type { CapsuleReportDocument } from './types.js';
+import type { CapsuleReportActivity, CapsuleReportBody } from './types.js';
 
 export interface CapsuleHtmlInput {
-  readonly report: CapsuleReportDocument;
+  /** A report written before the causal fields existed renders too. */
+  readonly report: CapsuleReportBody;
+}
+
+/** The activity with every command line emptied: the report shows none and embeds none. */
+function withoutArgv(activity: CapsuleReportActivity): CapsuleReportActivity {
+  if (activity.kind !== 'completed') {
+    return { ...activity, argv: [] };
+  }
+  const { outcome } = activity;
+  const emptied =
+    outcome.kind === 'driver-completed'
+      ? { ...outcome, process: { ...outcome.process, argv: [] } }
+      : 'argv' in outcome
+        ? { ...outcome, argv: [] }
+        : outcome;
+  return { ...activity, argv: [], outcome: emptied };
 }
 
 /** Render a portable Capsule projection without reading or mutating evidence. */
 export function renderCapsuleHtml(input: CapsuleHtmlInput): string {
   const { report } = input;
   const { artifactRoot: _artifactRoot, ...safeSession } = report.session;
-  const data = JSON.stringify({ ...report, session: safeSession })
+  // Command lines are never shown: the embedded copy carries no argv at all.
+  const activities = report.activities.map(withoutArgv);
+  const data = JSON.stringify({ ...report, activities, session: safeSession })
     .replaceAll('<', '\\u003c')
     .replaceAll('\u2028', '\\u2028')
     .replaceAll('\u2029', '\\u2029');

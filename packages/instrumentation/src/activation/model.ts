@@ -26,6 +26,14 @@ export interface RuntimeActivationAdapter {
 }
 
 
+/** Why a participant cannot start: no installed adapter loads its activation for its runtime. */
+export function unavailableRuntimeActivationAdapterMessage(input: {
+  readonly runtime: string;
+  readonly adapter: string;
+}): string {
+  return `Activation adapter ${JSON.stringify(input.adapter)} for runtime ${JSON.stringify(input.runtime)} is unavailable`;
+}
+
 export function isRuntimeActivationAdapter(value: unknown): value is RuntimeActivationAdapter {
   if (typeof value !== 'object' || value === null) {return false;}
   const record = value as Record<string, unknown>;

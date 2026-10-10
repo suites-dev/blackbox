@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="504" viewBox="0 0 960 504" role="img" aria-labelledby="title desc">
+<title id="title">Agent onboarding</title><desc id="desc">The agent inspects a repository, discovers services and dependencies, derives system boundaries, then creates and validates Blackbox configuration.</desc>
+<defs><marker id="arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 8 4 0 8Z" fill="#E67189"/></marker></defs>
+<rect width="960" height="504" fill="#0F0F12"/>
+<text x="34" y="34" fill="#EF9DAB" font-family="Geist, Inter, Arial, sans-serif" font-size="13" font-weight="600" letter-spacing="1.5">SUITES / BLACKBOX</text>
+<text x="34" y="76" fill="#F4F4F5" font-family="Geist, Inter, Arial, sans-serif" font-size="27" font-weight="600">Agent onboarding</text>
+<text x="34" y="106" fill="#A1A1AA" font-family="Geist, Inter, Arial, sans-serif" font-size="16" font-weight="400">Discovery turns existing project files into a runnable system map.</text>
+<rect x="153" y="136" width="654" height="66" rx="18" fill="#17171C" stroke="#8B8B94" stroke-opacity="0.44" stroke-width="1.5"/>
+<svg x="176" y="144" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#EF9DAB" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="7" width="16" height="14" rx="4"/><path d="M12 3v4M1 12v5m22-5v5M9 16h6"/><circle cx="9" cy="12" r=".7"/><circle cx="15" cy="12" r=".7"/><circle cx="12" cy="2" r="1"/></svg>
+<text x="214" y="163" fill="#F4F4F5" font-family="Geist, Inter, Arial, sans-serif" font-size="17" font-weight="600">Your repository</text>
+<text x="214" y="187" fill="#A1A1AA" font-family="Geist, Inter, Arial, sans-serif" font-size="15" font-weight="400">Existing application and project files</text>
+<path d="M480 202 V219" fill="none" stroke="#E67189" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="153" y="222" width="654" height="66" rx="18" fill="#17171C" stroke="#8B8B94" stroke-opacity="0.44" stroke-width="1.5"/>
+<svg x="176" y="230" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#A1A1AA" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10" cy="10" r="7"/><path d="m15 15 7 7"/></svg>
+<text x="214" y="249" fill="#F4F4F5" font-family="Geist, Inter, Arial, sans-serif" font-size="17" font-weight="600">Discover services</text>
+<text x="214" y="273" fill="#A1A1AA" font-family="Geist, Inter, Arial, sans-serif" font-size="15" font-weight="400">Services and dependencies</text>
+<path d="M480 288 V305" fill="none" stroke="#E67189" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="153" y="308" width="654" height="66" rx="18" fill="#17171C" stroke="#8B8B94" stroke-opacity="0.44" stroke-width="1.5"/>
+<svg x="176" y="316" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#A1A1AA" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 9 5v9l-9 5-9-5V8l9-5ZM3 8l9 5 9-5M12 13v9M8 5l9 5"/></svg>
+<text x="214" y="335" fill="#F4F4F5" font-family="Geist, Inter, Arial, sans-serif" font-size="17" font-weight="600">Derive topology</text>
+<text x="214" y="359" fill="#A1A1AA" font-family="Geist, Inter, Arial, sans-serif" font-size="15" font-weight="400">System and subsystem boundaries</text>
+<path d="M480 374 V391" fill="none" stroke="#E67189" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="153" y="394" width="654" height="66" rx="18" fill="#17171C" stroke="#E67189" stroke-opacity="0.42" stroke-width="1.5"/>
+<svg x="176" y="402" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#EF9DAB" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16M4 12h16M4 19h16"/><circle cx="8" cy="5" r="2" fill="#17171C"/><circle cx="16" cy="12" r="2" fill="#17171C"/><circle cx="9" cy="19" r="2" fill="#17171C"/></svg>
+<text x="214" y="421" fill="#EF9DAB" font-family="Geist, Inter, Arial, sans-serif" font-size="17" font-weight="600">Configure Blackbox</text>
+<text x="214" y="445" fill="#A1A1AA" font-family="Geist, Inter, Arial, sans-serif" font-size="15" font-weight="400">Create and validate Blackbox configuration</text>
+</svg>

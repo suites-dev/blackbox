@@ -1,3 +1,4 @@
+import { rawPathText } from '../../investigation/span-title.js';
 import type { CapsuleReportSpan } from '../telemetry-types.js';
 import { array, object, string, safeText, type Context } from './fields.js';
 
@@ -30,8 +31,16 @@ const allowedAttributes = new Set([
   'db.collection.name',
 ]);
 
-/** A full URL keeps its scheme, host and path; its query and fragment can carry credentials. */
-function withoutQuery(key: string, value: string): string {
+/**
+ * A raw path shows as titles print it (segments that are not plain words become
+ * `{…}`); a full URL keeps its scheme, host and path, never its query or fragment,
+ * which can carry credentials.
+ */
+function shownValue(key: string, value: string): string {
+  if (key === 'url.path') {
+    // A raw path can carry IDs and tokens: it is shown by the investigation title rule.
+    return rawPathText(value);
+  }
   return key === 'url.full' ? (value.split(/[?#]/u, 1)[0] ?? '') : value;
 }
 
@@ -54,7 +63,7 @@ export function attributes(
     return [
       {
         key,
-        value: typeof value === 'string' ? safeText(withoutQuery(key, value), context) : value,
+        value: typeof value === 'string' ? safeText(shownValue(key, value), context) : value,
       },
     ];
   });

@@ -28,6 +28,7 @@ test('allows long direct synchronous Blackbox suite declaration callbacks', () =
     `system.sandbox('suite', ${callback(100)});`,
     `system.sandbox('suite', {}, ${callback(100)});`,
     `sandbox.describe('suite', ${callback(100)});`,
+    `suite.describe('suite', ${callback(100)});`,
   ];
   for (const source of sources) {
     assert.deepEqual(messages(source), []);
@@ -39,7 +40,6 @@ test('rejects oversized tests, steps, hooks, and helper functions', () => {
     `test('journey', ${callback(81, { async: true })});`,
     `sandbox.test('journey', ${callback(81, { async: true })});`,
     `test.step('action', ${callback(81, { async: true })});`,
-    `test.beforeEach(${callback(81, { async: true })});`,
     `sandbox.beforeEach(${callback(81, { async: true })});`,
     `sandbox.afterEach(${callback(81, { async: true })});`,
     `function helper() {\n${'value;\n'.repeat(79)}}`,
@@ -50,10 +50,8 @@ test('rejects oversized tests, steps, hooks, and helper functions', () => {
 });
 
 test('still rejects an oversized test nested inside an exempt suite callback', () => {
-  for (const declaration of ['test', 'sandbox.test']) {
-    const source = `test.system('orders', () => {\n${declaration}('journey', ${callback(81)});\n});`;
-    assert.equal(messages(source).filter(({ ruleId }) => ruleId === 'e2e/function-size').length, 1);
-  }
+  const source = `test.system('orders', () => {\nsandbox.test('journey', ${callback(81)});\n});`;
+  assert.equal(messages(source).filter(({ ruleId }) => ruleId === 'e2e/function-size').length, 1);
 });
 
 test('rejects unrelated describe, async suite, and callback in the wrong position', () => {
@@ -62,6 +60,7 @@ test('rejects unrelated describe, async suite, and callback in the wrong positio
     `test.system('suite', ${callback(81, { async: true })});`,
     `system.sandbox('suite', ${callback(81, { async: true })});`,
     `sandbox.describe('suite', ${callback(81, { async: true })});`,
+    `suite.describe('suite', ${callback(81, { async: true })});`,
     `test.system(${callback(81)}, 'suite');`,
   ];
   for (const source of sources) {

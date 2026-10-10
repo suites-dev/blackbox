@@ -47,7 +47,7 @@ export async function resetCapsuleDemo(input) {
   await stopPreviousSessions(input);
   const drivers = join(runtime, 'drivers');
   const driversExist = await directoryExists(drivers);
-  for (const name of ['reports', 'experiments', 'tmp', 'instrumentation', 'clients']) {
+  for (const name of ['reports', 'experiments', 'tmp', 'instrumentation']) {
     await rm(join(runtime, name), { recursive: true, force: true });
   }
   if (driversExist) {

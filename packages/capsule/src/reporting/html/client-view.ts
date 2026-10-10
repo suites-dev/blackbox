@@ -1,4 +1,5 @@
 import { capsuleActivityListScript } from './activities/list.js';
+import { capsuleCausalityScript } from './causality/view.js';
 import { capsuleActivityRowScript } from './activities/row.js';
 import { capsuleObservationPolicyScript } from './observations/policy.js';
 import { capsuleObservationSummaryScript } from './observations/summary.js';
@@ -24,6 +25,7 @@ const duration=(start,end)=>{const elapsed=Math.max(0,(end===null?Date.now():Dat
 function assertReport(d){if(!d||d.kind!=='capsule-operational-report'||d.schemaVersion!==1||!d.session||!Array.isArray(d.progress)||!Array.isArray(d.activities)||!Array.isArray(d.activityTelemetry)||!d.resources)throw new Error('Invalid Capsule report document.')}
 function navLink(id,label,count,glyph){const link=n('a','');link.href='#'+id;link.dataset.reportNav=id;add(link,icon(glyph),n('span','nav-label',label));if(count!==null)add(link,n('span','nav-count',count));return link}
 ${capsuleShellScript}
+${capsuleCausalityScript}
 function hero(d){const x=n('section','report-hero');const hasDescription=d.session.description.kind==='provided';add(x,p('CAPSULE · OPERATIONAL EXPERIMENT','eyebrow'),n('h1','',d.session.title),p(d.session.sessionId,'session-id'),p(hasDescription?d.session.description.value:'No description was recorded for this session.',hasDescription?'lede':'lede muted'));const meta=n('div','hero-meta');for(const [label,value] of [['System',d.session.system],['Admitted',date(d.session.admittedAt)],['Updated',date(d.session.updatedAt)],...(d.generatedAt?[['Generated',date(d.generatedAt)]]:[])]){const item=n('span','',label+' ');add(item,n('strong','',value));add(meta,item)}add(x,meta);return x}
 function metrics(d){const x=n('div','metrics');for(const [value,label] of [[d.activities.length,'recorded activities'],[d.progress.length,'startup events'],[d.resources.containers.length,'containers'],[d.redactions.count,'redactions applied']]){const item=n('div','metric');add(item,n('strong','',value),n('span','',label));add(x,item)}return x}
 function summaryCard(name){const card=n('div','summary-card');add(card,n('h3','',name));return card}

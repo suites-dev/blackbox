@@ -11,7 +11,7 @@ set -Eeuo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd -- "$SCRIPT_DIR/../.." && pwd)"
-PACKAGES=(cli-contract telemetry skills cli catalog discovery blackbox)
+PACKAGES=(cli-contract telemetry skills cli catalog discovery driver instrumentation otel-collector sandbox report-server blackbox)
 
 for command in pnpm jq node diff; do
   command -v "$command" >/dev/null 2>&1 || {
@@ -94,7 +94,7 @@ cd "$PROJECT"
 NODE_ENV=production "$BLACKBOX" skills list --json >"$WORK_ROOT/list.json"
 jq -e '.skills == [
   {name: "blackbox", dependencies: [], integrations: [
-    {name: "discovery", available: true}, {name: "catalog", available: true}, {name: "capsule", available: false}
+    {name: "discovery", available: true}, {name: "catalog", available: true}
   ]},
   {name: "catalog", dependencies: [], integrations: []},
   {name: "discovery", dependencies: [], integrations: [
@@ -158,19 +158,21 @@ cp -R "$PACKED_SKILL" .claude/skills/discovery
 jq -e '.ok and ([.destinations[].outcome] == ["adopted"])' "$WORK_ROOT/adopt.json" >/dev/null ||
   fail "adoption: $(cat "$WORK_ROOT/adopt.json")"
 
-# Installing the main package and CLI must not pull execution adapters or Docker.
+# The main composition exposes core capabilities; execution adapters remain optional.
 node --input-type=module -e '
   import assert from "node:assert/strict";
   import { createRequire } from "node:module";
   const fromMain = createRequire(import.meta.resolve("@suites/blackbox"));
-  for (const name of ["@suites/blackbox-capsule", "@suites/blackbox-playwright", "@suites/blackbox-inst-runtime-node", "@suites/blackbox-sandbox"]) {
+  for (const name of ["@suites/blackbox-capsule", "@suites/blackbox-playwright", "@suites/blackbox-feature", "@suites/blackbox-inst-runtime-node"]) {
     assert.throws(() => fromMain.resolve(name), {code: "MODULE_NOT_FOUND"});
   }
 '
 "$BLACKBOX" --help >"$WORK_ROOT/core-help.txt"
 grep -F 'skills install' "$WORK_ROOT/core-help.txt" >/dev/null || fail "core skills command missing"
 grep -F 'catalog validate' "$WORK_ROOT/core-help.txt" >/dev/null || fail "core catalog command missing"
-if grep -F 'capsule up' "$WORK_ROOT/core-help.txt"; then fail "absent Capsule exposed commands"; fi
+if grep -F 'capsule up' "$WORK_ROOT/core-help.txt" >/dev/null; then
+  fail "optional execution command leaked into core help"
+fi
 
 # Removing the main bundle from a custom composition removes its contributions,
 # while both packages and old skill copies remain on disk. Do not reinstall:

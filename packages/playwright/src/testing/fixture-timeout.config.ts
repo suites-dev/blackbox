@@ -1,5 +1,3 @@
-import { join } from 'node:path';
-
 import { defineConfig } from '../config.js';
 
 export default defineConfig({
@@ -8,5 +6,5 @@ export default defineConfig({
   testMatch: 'fixture-timeout.spec.ts',
   workers: 1,
   outputDir: process.env.BLACKBOX_PLAYWRIGHT_OUTPUT_DIR,
-  reporter: [['line'], [join(import.meta.dirname, 'reporting/progress-observer.ts')]],
+  reporter: [['line']],
 });

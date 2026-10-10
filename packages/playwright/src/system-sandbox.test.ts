@@ -90,6 +90,11 @@ it.each([
     scenario: 'nested-sandbox',
     message: /sandbox declarations cannot be nested/u,
   },
+  ...['nested-independent-facade', 'nested-extended-facade'].map((scenario) => ({
+    file: 'illegal-nesting.spec.ts',
+    scenario,
+    message: /test\.system declarations cannot be nested/u,
+  })),
   {
     file: 'illegal-nesting.spec.ts',
     scenario: 'async-system',
@@ -134,7 +139,8 @@ it.each([
   {
     file: 'nested-root-hook.spec.ts',
     scenario: 'default',
-    message: /test\.beforeAll must be registered outside test\.system(?: and sandbox)? declarations/u,
+    message:
+      /test\.beforeAll must be registered outside test\.system(?: and sandbox)? declarations/u,
   },
 ])(
   'rejects invalid declaration $scenario in $file before acquisition',
@@ -148,6 +154,7 @@ it.each([
     expect(run.code, run.output).toBe(1);
     expect(run.output).toMatch(message);
     expect(eventsOf(run, 'start')).toHaveLength(0);
+    expect(run.output).not.toContain('Outer sandbox body must not execute');
   },
 );
 

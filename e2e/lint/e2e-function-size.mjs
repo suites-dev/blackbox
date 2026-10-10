@@ -1,5 +1,10 @@
 const maximumCodeLines = 80;
-const suiteCallbacks = new Set(['test.system', 'system.sandbox', 'sandbox.describe']);
+const suiteCallbacks = new Set([
+  'test.system',
+  'system.sandbox',
+  'sandbox.describe',
+  'suite.describe',
+]);
 
 function calleeName(node) {
   const parent = node.parent;

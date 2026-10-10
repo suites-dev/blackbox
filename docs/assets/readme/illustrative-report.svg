@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="850" viewBox="0 0 960 850" role="img" aria-labelledby="title desc">
+<title id="title">Illustrative verification report</title><desc id="desc">Illustrative Product details report. The cached product Rule has one passing scenario; lines 6 through 9 cover setup, stimulus, and two claims. Responses and a catalog-api cache GET are shown as observations, followed by feature coverage.</desc>
+<defs><marker id="arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 8 4 0 8Z" fill="#E67189"/></marker></defs>
+<rect width="960" height="850" fill="#0F0F12"/>
+<text x="34" y="34" fill="#EF9DAB" font-family="Geist, Inter, Arial, sans-serif" font-size="13" font-weight="600" letter-spacing="1.5">SUITES / BLACKBOX</text>
+<text x="34" y="76" fill="#F4F4F5" font-family="Geist, Inter, Arial, sans-serif" font-size="27" font-weight="600">Illustrative verification report</text>
+<text x="34" y="105" fill="#A1A1AA" font-family="Geist, Inter, Arial, sans-serif" font-size="15" font-weight="400">Example presentation · not an execution receipt</text>
+<rect x="34" y="126" width="892" height="110" rx="18" fill="#17171C" stroke="#E67189" stroke-opacity="0.42" stroke-width="1.5"/>
+<svg x="55" y="139" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#EF9DAB" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H5v20h14V7l-5-5ZM14 2v6h5M8 12h8M8 16h8"/></svg>
+<text x="92" y="158" fill="#F4F4F5" font-family="Geist, Inter, Arial, sans-serif" font-size="20" font-weight="600">Feature  Product details</text>
+<text x="55" y="185" fill="#A1A1AA" font-family="Geist Mono, SFMono-Regular, Consolas, monospace" font-size="15" font-weight="400">features/product-cache.feature</text>
+<svg x="55" y="197" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#EF9DAB" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 2 8 3v7c0 4-5 8-8 10-3-2-8-6-8-10V5l8-3Z"/><path d="m7 12 3 3 7-7"/></svg>
+<text x="92" y="217" fill="#EF9DAB" font-family="Geist, Inter, Arial, sans-serif" font-size="17" font-weight="600">Rule  Cached product details are served from cache</text>
+<rect x="34" y="252" width="892" height="66" rx="18" fill="#17171C" stroke="#8B8B94" stroke-opacity="0.44" stroke-width="1.5"/>
+<svg x="55" y="258" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#86EFAC" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12 5 5L20 5"/></svg>
+<text x="92" y="278" fill="#86EFAC" font-family="Geist, Inter, Arial, sans-serif" font-size="18" font-weight="600">Scenario: Return product details from cache</text>
+<text x="55" y="301" fill="#A1A1AA" font-family="Geist Mono, SFMono-Regular, Consolas, monospace" font-size="14" font-weight="400">Sandbox  bbx-sbx-01K7…</text>
+<rect x="34" y="334" width="540" height="440" rx="18" fill="#17171C" stroke="#8B8B94" stroke-opacity="0.44" stroke-width="1.5"/>
+<svg x="54" y="345" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#EF9DAB" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 9 5v9l-9 5-9-5V8l9-5ZM3 8l9 5 9-5M12 13v9M8 5l9 5"/></svg>
+<text x="88" y="364" fill="#EF9DAB" font-family="Geist, Inter, Arial, sans-serif" font-size="14" font-weight="600" letter-spacing="1.1">Setup</text>
+<circle cx="60" cy="388" r="4" fill="#86EFAC"/>
+<text x="74" y="393" fill="#F4F4F5" font-family="Geist, Inter, Arial, sans-serif" font-size="14" font-weight="400">L6  Given the product is already cached</text>
+<svg x="54" y="433" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#EF9DAB" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 6 5 6-5 6M13 18h6"/></svg>
+<text x="88" y="452" fill="#EF9DAB" font-family="Geist, Inter, Arial, sans-serif" font-size="14" font-weight="600" letter-spacing="1.1">Stimulus</text>
+<circle cx="60" cy="476" r="4" fill="#86EFAC"/>
+<text x="74" y="481" fill="#F4F4F5" font-family="Geist, Inter, Arial, sans-serif" font-size="14" font-weight="400">L7  When the client requests product details</text>
+<svg x="54" y="521" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#EF9DAB" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 2 8 3v7c0 4-5 8-8 10-3-2-8-6-8-10V5l8-3Z"/><path d="m7 12 3 3 7-7"/></svg>
+<text x="88" y="540" fill="#EF9DAB" font-family="Geist, Inter, Arial, sans-serif" font-size="14" font-weight="600" letter-spacing="1.1">Claims</text>
+<circle cx="60" cy="564" r="4" fill="#86EFAC"/>
+<text x="74" y="569" fill="#F4F4F5" font-family="Geist, Inter, Arial, sans-serif" font-size="14" font-weight="400">L8  Then the response status is 200</text>
+<circle cx="60" cy="590" r="4" fill="#86EFAC"/>
+<text x="74" y="595" fill="#F4F4F5" font-family="Geist, Inter, Arial, sans-serif" font-size="14" font-weight="400">L9  And the product is returned from cache</text>
+<svg x="54" y="641" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#EF9DAB" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4v8h7m-7 0v8h12M11 8v8"/><circle cx="16" cy="12" r="3"/><circle cx="19" cy="20" r="2"/></svg>
+<text x="88" y="660" fill="#EF9DAB" font-family="Geist, Inter, Arial, sans-serif" font-size="14" font-weight="600" letter-spacing="1.1">Observations</text>
+<circle cx="60" cy="684" r="4" fill="#93C5FD"/>
+<text x="74" y="689" fill="#F4F4F5" font-family="Geist, Inter, Arial, sans-serif" font-size="14" font-weight="400">GET /products/42  →  200</text>
+<circle cx="60" cy="710" r="4" fill="#93C5FD"/>
+<text x="74" y="715" fill="#F4F4F5" font-family="Geist, Inter, Arial, sans-serif" font-size="14" font-weight="400">Returned product matches cache-only fixture</text>
+<circle cx="60" cy="736" r="4" fill="#93C5FD"/>
+<text x="74" y="741" fill="#F4F4F5" font-family="Geist, Inter, Arial, sans-serif" font-size="14" font-weight="400">catalog-api cache GET</text>
+<rect x="590" y="334" width="336" height="212" rx="18" fill="#17171C" stroke="#8B8B94" stroke-opacity="0.44" stroke-width="1.5"/>
+<svg x="608" y="345" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#EF9DAB" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 3h16v13l-5 5H4V3Zm11 18v-5h5M8 8h8M8 12h5"/></svg>
+<text x="645" y="365" fill="#EF9DAB" font-family="Geist, Inter, Arial, sans-serif" font-size="14" font-weight="600" letter-spacing="1">Feature coverage</text>
+<text x="610" y="406" fill="#A1A1AA" font-family="Geist, Inter, Arial, sans-serif" font-size="15" font-weight="400">Executable lines</text>
+<text x="838" y="406" fill="#F4F4F5" font-family="Geist, Inter, Arial, sans-serif" font-size="17" font-weight="600">4 / 4</text>
+<text x="610" y="452" fill="#A1A1AA" font-family="Geist, Inter, Arial, sans-serif" font-size="15" font-weight="400">Scenarios</text>
+<text x="838" y="452" fill="#F4F4F5" font-family="Geist, Inter, Arial, sans-serif" font-size="17" font-weight="600">1 / 1</text>
+<text x="610" y="498" fill="#A1A1AA" font-family="Geist, Inter, Arial, sans-serif" font-size="15" font-weight="400">Claims</text>
+<text x="838" y="498" fill="#F4F4F5" font-family="Geist, Inter, Arial, sans-serif" font-size="17" font-weight="600">2 / 2</text>
+<rect x="590" y="562" width="336" height="90" rx="18" fill="#17171C" stroke="#E67189" stroke-opacity="0.42" stroke-width="1.5"/>
+<svg x="612" y="577" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#86EFAC" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12 5 5L20 5"/></svg>
+<text x="651" y="596" fill="#86EFAC" font-family="Geist, Inter, Arial, sans-serif" font-size="23" font-weight="600">1 passed</text>
+<text x="612" y="624" fill="#A1A1AA" font-family="Geist, Inter, Arial, sans-serif" font-size="14" font-weight="400">Illustrative result</text>
+<text x="34" y="815" fill="#A1A1AA" font-family="Geist, Inter, Arial, sans-serif" font-size="14" font-weight="400">Evidence is scoped to this attempt; observations alone do not establish every claim.</text>
+</svg>

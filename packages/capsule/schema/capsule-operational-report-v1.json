@@ -129,7 +129,12 @@
       "items": {
         "$ref": "#/$defs/activityTelemetry"
       }
-    }
+    },
+    "status": { "enum": ["provisional", "complete", "incomplete"] },
+    "reason": { "type": "string" },
+    "activityCausality": { "type": "array", "items": { "$ref": "#/$defs/activityCausality" } },
+    "uncaused": { "type": "array", "items": { "$ref": "#/$defs/uncausedTrace" } },
+    "limitations": { "type": "array", "items": { "$ref": "#/$defs/limitation" } }
   },
   "$defs": {
     "reportSession": {
@@ -786,6 +791,163 @@
             "reason": {
               "enum": ["not-retained", "corrupt"]
             }
+          }
+        }
+      ]
+    },
+    "spanNode": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["spanId", "service", "kind", "title", "result", "failure", "orphan", "children"],
+      "properties": {
+        "spanId": { "type": "string" },
+        "service": { "type": "string" },
+        "kind": { "type": "string" },
+        "title": { "type": "string" },
+        "result": { "type": "string" },
+        "failure": { "type": ["string", "null"] },
+        "orphan": { "enum": ["not-yet-observed", "not-retained", null] },
+        "children": { "type": "array", "items": { "$ref": "#/$defs/spanNode" } }
+      }
+    },
+    "causedTrace": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["traceId", "spanCount", "services", "tree"],
+      "properties": {
+        "traceId": { "type": "string" },
+        "spanCount": { "type": "integer", "minimum": 0 },
+        "services": { "type": "array", "items": { "type": "string" } },
+        "tree": { "type": "array", "items": { "$ref": "#/$defs/spanNode" } }
+      }
+    },
+    "activityContext": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "carrier"],
+          "properties": { "kind": { "const": "sent" }, "carrier": { "type": "string" } }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "resource"],
+          "properties": { "kind": { "const": "not-carried" }, "resource": { "type": "string" } }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind"],
+          "properties": { "kind": { "const": "untraced" } }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind"],
+          "properties": { "kind": { "const": "not-sent" } }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "carrier", "message"],
+          "properties": {
+            "kind": { "const": "injection-failed" },
+            "carrier": { "type": "string" },
+            "message": { "type": "string" }
+          }
+        }
+      ]
+    },
+    "activityCausality": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["activityId", "evidence", "context", "causedTraces", "limitations"],
+      "properties": {
+        "activityId": { "type": "string" },
+        "evidence": { "enum": ["state-preparation", "response", "state-check"] },
+        "context": { "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/activityContext" }] },
+        "causedTraces": { "type": "array", "items": { "$ref": "#/$defs/causedTrace" } },
+        "limitations": { "type": "array", "items": { "$ref": "#/$defs/limitation" } }
+      }
+    },
+    "uncausedTrace": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["trace", "placedAfter", "rootService", "rootTitle"],
+      "properties": {
+        "trace": { "type": "string" },
+        "placedAfter": { "type": ["string", "null"] },
+        "rootService": { "type": "string" },
+        "rootTitle": { "type": "string" }
+      }
+    },
+    "limitation": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind"],
+          "properties": { "kind": { "const": "observation-provisional" } }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "reason"],
+          "properties": {
+            "kind": { "const": "observation-incomplete" },
+            "reason": { "type": "string" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "trace"],
+          "properties": { "kind": { "const": "causality-unknown" }, "trace": { "type": "string" } }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind"],
+          "properties": { "kind": { "const": "untraced" } }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "resource"],
+          "properties": {
+            "kind": { "const": "context-not-carried" },
+            "resource": { "type": "string" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "carrier", "message"],
+          "properties": {
+            "kind": { "const": "context-injection-failed" },
+            "carrier": { "type": "string" },
+            "message": { "type": "string" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "spanId", "trace"],
+          "properties": {
+            "kind": { "const": "orphan-span" },
+            "spanId": { "type": "string" },
+            "trace": { "type": "string" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "trace", "reason"],
+          "properties": {
+            "kind": { "const": "observation-unavailable" },
+            "trace": { "type": "string" },
+            "reason": { "enum": ["not-retained", "corrupt"] }
           }
         }
       ]

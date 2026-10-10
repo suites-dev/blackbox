@@ -36,14 +36,18 @@ interface SchemaCatalogEntryFields {
 
 type SchemaCatalogEntry = SchemaCatalogEntryFields;
 
-export interface SchemaBlackboxConfig {
+interface SchemaBlackboxConfigFields {
   readonly schemaVersion: 1;
   readonly catalog: {
     readonly default: string;
     readonly entries: Readonly<Record<string, SchemaCatalogEntry>>;
   };
-  readonly activations: Readonly<Record<string, Activation>>;
 }
+
+/** The root activations key is optional; an absent key means no activations. */
+export type SchemaBlackboxConfig =
+  | (SchemaBlackboxConfigFields & { readonly activations: Readonly<Record<string, Activation>> })
+  | SchemaBlackboxConfigFields;
 
 function decodeParticipant(participant: SchemaParticipant): Participant {
   return {
@@ -85,6 +89,6 @@ export function decodeCatalogConfig(config: SchemaBlackboxConfig): BlackboxConfi
         ]),
       ),
     },
-    activations: config.activations,
+    activations: 'activations' in config ? config.activations : {},
   };
 }

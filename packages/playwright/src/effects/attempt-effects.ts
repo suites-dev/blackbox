@@ -1,5 +1,6 @@
 import { AttemptActivities } from '../activities/execution/attempt-activities.js';
-import type { BlackboxActivities, BlackboxActivityActions } from '../activities/public-types.js';
+import type { BlackboxActivities, BlackboxActivityContext } from '../activities/public-types.js';
+import type { BlackboxEffects } from '../types.js';
 import {
   evaluateBlackboxEffects,
   createBlackboxEffects,
@@ -8,6 +9,20 @@ import {
 } from './runtime.js';
 import { createScopedBlackboxEffects } from './scoped-effects.js';
 
+const attempts = new WeakMap<BlackboxEffects, AttemptActivities>();
+
+export function runEffectStimulus<T>(
+  effects: BlackboxEffects,
+  title: string,
+  action: (context: BlackboxActivityContext) => T | Promise<T>,
+): Promise<T> {
+  const attempt = attempts.get(effects);
+  if (attempt === undefined) {
+    return Promise.reject(new Error('This Blackbox attempt does not provide stimulus execution.'));
+  }
+  return attempt.runStimulus(title, action);
+}
+
 export function createAttemptEffects(input: {
   readonly sessionId: string;
   readonly executionId: string;
@@ -15,6 +30,7 @@ export function createAttemptEffects(input: {
   readonly entrypointUrl: string;
 }): {
   readonly effects: ReturnType<typeof createBlackboxEffects>;
+  /** Internal harness for lower-level selection tests; not a Playwright fixture. */
   readonly activities: BlackboxActivities;
 } {
   const attempt = new AttemptActivities(input);
@@ -41,21 +57,9 @@ export function createAttemptEffects(input: {
   });
   registerBlackboxEffectsClose(effects, () => {
     attempt.close();
+    attempts.delete(effects);
   });
   markBlackboxEffectsLive(effects);
-  return {
-    effects,
-    activities: attempt.activities,
-  };
-}
-
-export function createUnavailableBlackboxActivities(): BlackboxActivities {
-  const unavailable = (): never => {
-    throw new Error('The configured Blackbox runtime does not provide activity execution.');
-  };
-  const actions = Object.freeze({
-    run: unavailable,
-    request: unavailable,
-  }) as BlackboxActivityActions;
-  return Object.freeze({ setup: actions, stimulus: actions, inspection: actions });
+  attempts.set(effects, attempt);
+  return { effects, activities: attempt.activities };
 }

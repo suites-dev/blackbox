@@ -22,6 +22,7 @@ async function fixture(context) {
     await mkdir(join(runtime, name), { recursive: true });
   }
   await writeFile(join(runtime, 'drivers', 'postgres.mjs'), 'project driver');
+  await writeFile(join(runtime, 'clients', 'public-api.ts'), 'project client');
   await writeFile(join(runtime, 'drivers', 'package.json'), 'generated package');
   await mkdir(join(runtime, 'drivers', 'node_modules'));
   await writeFile(join(projectDirectory, 'blackbox.config.yaml'), 'catalog');
@@ -47,11 +48,19 @@ void test('reset releases an active session before deleting only demo outputs an
     stopped.push(sessionId);
   } });
   assert.deepEqual(stopped, ['bright-river-ada-123456789012']);
-  assert.deepEqual((await readdir(input.runtime)).sort(), ['compose', 'drivers']);
+  assert.deepEqual((await readdir(input.runtime)).sort(), ['clients', 'compose', 'drivers']);
+  assert.equal(
+    await readFile(join(input.runtime, 'clients', 'public-api.ts'), 'utf8'),
+    'project client',
+  );
   assert.deepEqual(await readdir(join(input.runtime, 'drivers')), ['postgres.mjs']);
   assert.equal(await readFile(join(input.runtime, 'compose', 'sut.yaml'), 'utf8'), 'compose');
   assert.equal(await readFile(join(input.projectDirectory, 'blackbox.config.yaml'), 'utf8'), 'catalog');
   await resetCapsuleDemo({ ...input, stopSession: async () => assert.fail('No active session') });
+  assert.equal(
+    await readFile(join(input.runtime, 'clients', 'public-api.ts'), 'utf8'),
+    'project client',
+  );
 });
 
 void test('failed cleanup preserves artifacts and temporary manager coordinates', async (context) => {

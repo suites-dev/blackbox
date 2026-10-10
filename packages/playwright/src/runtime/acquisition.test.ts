@@ -12,7 +12,7 @@ import {
   type BlackboxAttemptInput,
   type BlackboxAcquisitionPorts,
 } from './acquisition.js';
-import { createAttemptEffects } from '../effects/attempt-effects.js';
+import { createBlackboxEffects } from '../effects/runtime.js';
 import { catalog } from '../testing/catalog-fixture.js';
 import { silentProgress } from '../reporting/events.js';
 
@@ -129,8 +129,12 @@ function runtimeFixture(input: {
       return value;
     },
     randomToken: () => 'test-token',
-    createEffects: ({ sessionId, executionId, storageDirectory, entrypointUrl }) =>
-      createAttemptEffects({ sessionId, executionId, storageDirectory, entrypointUrl }),
+    createEffects: ({ sessionId, executionId }) =>
+      createBlackboxEffects({
+        sessionId,
+        executionId,
+        evaluator: { evaluate: () => Promise.resolve({ kind: 'satisfied' }) },
+      }),
   } satisfies BlackboxAcquisitionPorts;
   return { ports, starts, stops, readiness };
 }
@@ -150,7 +154,10 @@ function attemptInput(
 
 it('acquires an independent catalog-selected sandbox for each physical attempt', async () => {
   const fixture = runtimeFixture({ catalog: catalog(), readinessFailure: null });
-  const request = attemptInput({ kind: 'system', id: 'orders' }, { DEMO: 'yes' });
+  const request = {
+    ...attemptInput({ kind: 'system', id: 'orders' }, { DEMO: 'yes' }),
+    clientTargets: [{ participant: 'api', containerPort: 4321 }],
+  };
   const first = await acquireBlackboxAttempt(request, fixture.ports);
   const second = await acquireBlackboxAttempt(request, fixture.ports);
   expect(first.sandbox.executionId).not.toBe(second.sandbox.executionId);
@@ -158,6 +165,11 @@ it('acquires an independent catalog-selected sandbox for each physical attempt',
   expect(first.effects.sessionId).toBe(first.telemetry.sessionId);
   expect(second.effects.executionId).toBe(second.sandbox.executionId);
   expect(fixture.starts).toHaveLength(2);
+  expect(fixture.starts[0].sandbox.endpoints).toContainEqual({
+    name: 'blackbox-client-0',
+    service: 'api',
+    containerPort: 4321,
+  });
   expect(fixture.starts[0].sandbox.serviceSelection).toEqual({
     kind: 'selected',
     services: ['api'],

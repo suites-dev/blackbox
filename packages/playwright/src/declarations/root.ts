@@ -5,7 +5,7 @@ import type {
   BlackboxRootDescribe,
   BlackboxRootSuiteArgs,
   BlackboxRootSuiteHook,
-  BlackboxStep,
+  BlackboxNativeStep,
 } from '../types.js';
 import type { InternalTest } from './native.js';
 import { declarationError, ensureSynchronous } from './validation.js';
@@ -152,6 +152,6 @@ export function createRootStep<
   TestArgs extends object,
   WorkerArgs extends object,
   InternalArgs extends object,
->(nativeTest: InternalTest<TestArgs, WorkerArgs, InternalArgs>): BlackboxStep {
+>(nativeTest: InternalTest<TestArgs, WorkerArgs, InternalArgs>): BlackboxNativeStep {
   return nativeTest.step.bind(nativeTest);
 }

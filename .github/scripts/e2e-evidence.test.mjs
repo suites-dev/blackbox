@@ -63,6 +63,17 @@ test('Playwright evidence uses its own transport identity and output directory',
   const root = await workspace(t);
   await write(root, 'e2e/test-results/junit.xml', '<testsuites/>');
   await write(root, 'e2e/test-results/results.json', '{"status":"passed"}');
+  const features = {
+    'receipt.json': '{"kind":"playwright-feature-e2e-proof","status":"complete"}',
+    'run-result.json': '{"status":"complete"}',
+    'acceptance.actual.txt': 'retained evidence survives a second run\n',
+    'acceptance.expected.txt': 'retained evidence survives a second run\n',
+    'golden-diff.txt': '',
+    'retained/.hidden/trace:request.json': '{"traceId":"synthetic-trace"}',
+  };
+  for (const [name, value] of Object.entries(features)) {
+    await write(root, `e2e/test-results/features/${name}`, value);
+  }
   const outputDir = '.blackbox/tmp/ci-playwright-e2e-transport';
   const untrustedOutput = `../${path.basename(root)}-untrusted-output`;
   const wrapper = fileURLToPath(new URL('./playwright-e2e-evidence.mjs', import.meta.url));
@@ -82,7 +93,48 @@ test('Playwright evidence uses its own transport identity and output directory',
   assert.equal(receipt.status, 'complete');
   assert.equal(receipt.purpose, 'playwright-harness-evidence-transport');
   assert.ok((await fs.stat(path.join(root, outputDir, 'evidence.tar'))).size > 0);
+  const extracted = path.join(root, 'extracted');
+  await fs.mkdir(extracted);
+  const extraction = spawnSync('tar', [
+    '-xf',
+    path.join(root, outputDir, 'evidence.tar'),
+    '-C',
+    extracted,
+  ]);
+  assert.equal(extraction.status, 0, extraction.stderr.toString());
+  for (const [name, value] of Object.entries(features)) {
+    assert.equal(
+      await fs.readFile(path.join(extracted, 'e2e/test-results/features', name), 'utf8'),
+      value,
+    );
+  }
   await assert.rejects(fs.stat(path.resolve(root, untrustedOutput)), /ENOENT/);
+});
+
+test('Playwright success requires retention evidence while failures retain partial output', async (t) => {
+  const root = await workspace(t);
+  await write(root, 'e2e/test-results/junit.xml', '<testsuites/>');
+  await write(root, 'e2e/test-results/results.json', '{"status":"passed"}');
+  await write(root, 'e2e/test-results/features/retained-first/raw.txt', 'retention failed');
+  const success = await retainE2eEvidence({
+    root,
+    project: 'playwright',
+    testOutcome: 'success',
+    outputDir: '.blackbox/tmp/success',
+  });
+  assert.equal(success.status, 'failed');
+  assert.match(success.error, /features\/receipt\.json/);
+  assert.ok(success.archive.sha256);
+  const failure = await retainE2eEvidence({
+    root,
+    project: 'playwright',
+    testOutcome: 'failure',
+    outputDir: '.blackbox/tmp/failure',
+  });
+  assert.equal(failure.status, 'complete');
+  assert.ok(
+    failure.entries.some((entry) => entry.path.endsWith('features/retained-first/raw.txt')),
+  );
 });
 
 test('missing mandatory reports fail retention but preserve available evidence and receipt', async (t) => {
@@ -395,7 +447,10 @@ test('the CLI approves one journey run for every golden the checkout ships', asy
       journey,
     ]);
   }
-  assert.deepEqual(approvedCliCommand(['pnpm', 'test:e2e:journeys']), ['pnpm', 'test:e2e:journeys']);
+  assert.deepEqual(approvedCliCommand(['pnpm', 'test:e2e:journeys']), [
+    'pnpm',
+    'test:e2e:journeys',
+  ]);
 });
 
 test('the CLI approves the sandbox Docker lane command and nothing appended to it', () => {
@@ -407,7 +462,66 @@ test('the CLI approves the sandbox Docker lane command and nothing appended to i
     ['pnpm', 'test:sandbox:docker', '--', '--reporter=dot'],
     ['pnpm', 'test:sandbox:docker', 'src/acquisition'],
   ]) {
-    assert.throws(() => approvedCliCommand(command), /not an approved repository check/, command.join(' '));
+    assert.throws(
+      () => approvedCliCommand(command),
+      /not an approved repository check/,
+      command.join(' '),
+    );
+  }
+});
+
+test('the effects integration command is exact and wired into the Playwright E2E gate', async () => {
+  const command = ['pnpm', '--filter', '@suites/blackbox-playwright', 'test:effects'];
+  assert.deepEqual(approvedCliCommand(command), command);
+  assert.throws(
+    () => approvedCliCommand([...command, '--grep', 'one test']),
+    /not an approved repository check/,
+  );
+  const workflow = await fs.readFile(new URL('../workflows/e2e.yml', import.meta.url), 'utf8');
+  const playwrightJob = workflow.split('\n  playwright:\n')[1]?.split('\n  skills:\n')[0];
+  assert.ok(playwrightJob, 'Playwright E2E job must exist');
+  assert.match(playwrightJob, /-- pnpm --filter @suites\/blackbox-playwright test:effects/u);
+  assert.match(playwrightJob, /steps\.effects_tests\.outcome/u);
+  assert.match(playwrightJob, /steps\.effects_evidence\.outcome/u);
+});
+
+test('the CLI approves only the sequential Feature journey passes', async () => {
+  const workflow = await fs.readFile(new URL('../workflows/e2e.yml', import.meta.url), 'utf8');
+  const featureJob = workflow.split('\n  feature-cli:\n')[1]?.split('\n  playwright:\n')[0];
+  assert.ok(featureJob, 'Feature CLI job must exist');
+  assert.doesNotMatch(featureJob, /\n    strategy:/u, 'Passes must share one runner');
+  assert.deepEqual(
+    [...featureJob.matchAll(/      - name: Run Feature CLI journey pass ([12])/gu)].map(
+      (match) => match[1],
+    ),
+    ['1', '2'],
+  );
+  assert.equal(
+    [...featureJob.matchAll(/-- node e2e\/feature-cli\/run\.mjs --repeat 1/gu)].length,
+    2,
+  );
+  assert.match(featureJob, /project: skeleton-pass-1/u);
+  assert.match(featureJob, /project: skeleton-pass-2/u);
+  assert.match(
+    featureJob,
+    /if: \$\{\{ steps\.feature_first\.outcome == 'success' && steps\.evidence_first\.outcome == 'success' \}\}/u,
+  );
+  for (const repeat of ['1', '2']) {
+    assert.deepEqual(approvedCliCommand(['node', 'e2e/feature-cli/run.mjs', '--repeat', repeat]), [
+      'node',
+      'e2e/feature-cli/run.mjs',
+      '--repeat',
+      repeat,
+    ]);
+  }
+  for (const command of [
+    ['node', 'e2e/feature-cli/run.mjs'],
+    ['node', 'e2e/feature-cli/run.mjs', '--repeat', '3'],
+    ['node', 'e2e/feature-cli/run.mjs', '--repeat', '01'],
+    ['node', 'e2e/feature-cli/run.mjs', '--repeat', '2', '--update'],
+    ['node', '../e2e/feature-cli/run.mjs', '--repeat', '2'],
+  ]) {
+    assert.throws(() => approvedCliCommand(command), /not an approved repository check/);
   }
 });
 
@@ -423,7 +537,11 @@ test('the CLI refuses journey runs that do not name exactly one shipped golden',
     ['node', 'test:e2e:journeys', '00-surface'],
   ];
   for (const command of refused) {
-    assert.throws(() => approvedCliCommand(command), /not an approved repository check/, command.join(' '));
+    assert.throws(
+      () => approvedCliCommand(command),
+      /not an approved repository check/,
+      command.join(' '),
+    );
   }
 });
 

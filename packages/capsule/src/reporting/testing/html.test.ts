@@ -7,12 +7,12 @@ import {
   completedDriverActivity,
   completedHostActivity,
 } from '../../persistence/testing/record.fixture.js';
-import type { CapsuleReportDocument } from '../types.js';
+import type { CapsuleReportBody } from '../types.js';
 
 const hostile = '<script>alert("x&y")</script>\'';
 const escaped = '&lt;script&gt;alert(&quot;x&amp;y&quot;)&lt;/script&gt;&#39;';
 
-function document(): CapsuleReportDocument {
+function document(): CapsuleReportBody {
   return {
     schemaVersion: 1,
     kind: 'capsule-operational-report',
@@ -68,7 +68,7 @@ function hostileActivity() {
   };
 }
 
-function hostileDocument(): CapsuleReportDocument {
+function hostileDocument(): CapsuleReportBody {
   const base = document();
   return {
     ...base,
@@ -185,7 +185,7 @@ describe('Capsule-owned HTML renderer', () => {
           },
         },
       ],
-    } satisfies CapsuleReportDocument;
+    } satisfies CapsuleReportBody;
     const html = renderCapsuleHtml({ report });
     expect(html).toContain('"sequence":2');
     expect(html).toContain('"signal":"SIGTERM"');
@@ -218,7 +218,7 @@ describe('Capsule acquisition report presentation', () => {
           },
         },
       ],
-    } satisfies CapsuleReportDocument;
+    } satisfies CapsuleReportBody;
     const html = renderCapsuleHtml({ report });
     expect(html).toContain('"kind":"acquisition-observation"');
     expect(html).toContain('"state":"running","health":"healthy"');

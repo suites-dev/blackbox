@@ -80,6 +80,13 @@ export class AttemptActivities {
     this.#active = false;
   }
 
+  runStimulus<T>(
+    name: string,
+    action: (context: BlackboxActivityContext) => T | Promise<T>,
+  ): Promise<T> {
+    return this.#run('stimulus', name, action);
+  }
+
   completedStimuli(): CompletedStimuli {
     if (this.#completedStimuli.length === 0) {
       return { kind: 'none' };
@@ -104,7 +111,7 @@ export class AttemptActivities {
   async #run<T>(
     purpose: ActivityPurpose,
     name: string,
-    action: (context: BlackboxActivityContext) => Promise<T>,
+    action: (context: BlackboxActivityContext) => T | Promise<T>,
   ): Promise<T> {
     this.#assertActive();
     const activity = this.#registry.begin({ purpose, name });

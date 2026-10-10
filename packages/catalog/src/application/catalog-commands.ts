@@ -8,7 +8,9 @@ import type {
   CatalogListResult,
   CatalogValidateResult,
   RunCatalogCommandInput,
+  RunCatalogValidateInput,
 } from './catalog-command-types.js';
+import { activationAdapterIssues } from './activation-adapters.js';
 import { validateReferencedInputs } from './referenced-inputs.js';
 import type { CatalogValidationIssue, LoadedCatalog } from '../model/catalog-types.js';
 import { CatalogValidationError } from '../schema/catalog-validation.js';
@@ -28,6 +30,7 @@ export type {
   CatalogValidateResult,
   CatalogValidateSuccess,
   RunCatalogCommandInput,
+  RunCatalogValidateInput,
 } from './catalog-command-types.js';
 
 function canonicalConfigFile(projectDirectory: string): string {
@@ -108,7 +111,7 @@ function loadingFailure(
  * It never writes to stdout/stderr and never terminates the process.
  */
 export async function runCatalogValidate(
-  input: RunCatalogCommandInput,
+  input: RunCatalogValidateInput,
 ): Promise<CatalogValidateResult> {
   const { projectDirectory } = input;
   const configFile = canonicalConfigFile(projectDirectory);
@@ -121,7 +124,12 @@ export async function runCatalogValidate(
 
   let referenceIssues: readonly CatalogValidationIssue[];
   try {
-    referenceIssues = await validateReferencedInputs({ catalog: loaded });
+    referenceIssues = [
+      ...(await validateReferencedInputs({ catalog: loaded })),
+      ...('activationAdapters' in input
+        ? activationAdapterIssues({ catalog: loaded, adapters: input.activationAdapters })
+        : []),
+    ];
   } catch (error) {
     return {
       kind: 'catalog-command-operational-error',
