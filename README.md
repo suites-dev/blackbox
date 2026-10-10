@@ -10,6 +10,8 @@ Blackbox is a verification framework for **people building software with coding 
 
 **Specifications define intent. Executions produce evidence. Verification connects them.**
 
+**CLI + agent skills** guide setup and investigation. **Native Playwright or optional Gherkin** carries reviewed expectations. **Sandboxes and evidence** make each execution inspectable.
+
 [Start with your agent](#start-with-your-agent) · [Verify a specification](docs/guides/verify-a-specification.md) · [Documentation](docs/README.md)
 
 ## Verify behavior, not implementation
