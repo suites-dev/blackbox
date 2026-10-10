@@ -10,6 +10,10 @@ application. Follow this guide when adapting the same process to your repository
 For its create/read rule, the agent must account for the API, PostgreSQL, Redis,
 and evidence that a cache-hit retrieval avoids a database read.
 
+This candidate-alpha integration requires the pending typed Playwright client API.
+Its execution steps require compatible builds containing that API; this checkout
+does not yet supply them. See [current availability](../../README.md#alpha-and-further-guides).
+
 ## Give the agent the specification
 
 Supply the accepted document, ticket, or API contract. For the product example,
@@ -48,11 +52,12 @@ packages already installed in your test project:
 | `@playwright/test`             | Supplies Playwright; the adapter requires version 1.61 or later within major version 1. |
 | `typescript` and `@types/node` | Check the TypeScript test project.                                                      |
 
-For a first run with the candidate implementation, use the
-[source-checkout walkthrough](../guides/verify-a-specification.md#run-the-supplied-example),
-which supplies the matching packages and complete example. This guide does not
-specify a published package version for installing the candidate into an external
-project.
+For a first run with the candidate implementation, follow the
+[source-checkout prerequisites](../guides/verify-a-specification.md#run-the-supplied-example).
+That walkthrough requires both the matching packages and the complete product
+sample; their presence cannot be inferred from this guide being in the checkout.
+This guide does not specify a published package version for installing the
+candidate into an external project.
 
 Select `@suites/blackbox-inst-runtime-node` explicitly when the project needs its
 Node instrumentation installer, and `@suites/blackbox-feature` when compiling
@@ -62,6 +67,14 @@ Run this guide's commands from **your application's test-project root**. The
 product sample's commands have their own working directory, `e2e/product-cache/`.
 
 ## Let the agent discover and configure the boundary
+
+The agent derives the system topology from the repository and chooses the
+smallest real boundary that can establish the accepted claims. That boundary
+must include every participant needed for the behavior and its observations.
+
+<p align="center">
+  <img width="800" src="../assets/readme/onboarding-discovery.svg" alt="Agent onboarding discovers services and dependencies, derives system boundaries, then creates and validates Blackbox configuration." />
+</p>
 
 Inspect the available skills and install the onboarding skills for your host:
 
@@ -82,6 +95,18 @@ to your agent, give it the accepted specification and this task:
 > observation clients. Create or update the configuration and validate it.
 > Prepare the first executable business scenarios for review, identifying any
 > claim the available observations cannot establish.
+
+The agent reuses existing project files where appropriate. For a Node application
+with an HTTP service, the configuration and its supporting files can look like this:
+
+<p align="center">
+  <img width="800" src="../assets/readme/onboarding-files.svg" alt="Example project tree with blackbox.config.yaml and .blackbox catalog, driver, and instrumentation files." />
+</p>
+
+`blackbox.config.yaml` is the configuration authority. Capsules and Playwright
+use the [configured system boundary](../assets/readme/system-boundary.svg), drivers,
+and instrumentation to run and observe the selected system. Native test clients
+and business scenarios accompany those configuration files.
 
 Review the resulting artifacts with the agent:
 

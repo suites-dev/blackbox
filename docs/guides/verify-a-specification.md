@@ -10,6 +10,11 @@ system testing, and evidence. The supplied application has one product service,
 PostgreSQL, and Redis. You can follow it with native Playwright or an optional
 Feature file; both paths verify the same rule.
 
+This candidate-alpha walkthrough requires the pending typed Playwright client API
+and the `e2e/product-cache/` sample, which are not yet included in this checkout.
+Read the journey here; run its commands only from a checkout containing those
+dependencies. See [current availability](../../README.md#alpha-and-further-guides).
+
 ![The specification guides setup, reviewed tests, the product system, and the execution report.](../assets/guides/product-cache-journey.svg)
 
 ## Start with the accepted behavior
@@ -65,8 +70,9 @@ The supplied example already contains that setup. Its main artifacts are:
 
 ### Run the supplied example
 
-Use a Blackbox source checkout containing this guide, Node.js 22.15 or later,
-pnpm 9.15.4, and a running Docker engine with Compose. The first run needs network
+Use a Blackbox source checkout containing the typed client API and the complete
+`e2e/product-cache/` sample, plus the Feature compiler if you choose that path.
+You need Node.js 22.15 or later, pnpm 9.15.4, and a running Docker engine with Compose. The first run needs network
 access to obtain dependencies and images. No browser download is needed for these
 API tests.
 

@@ -4,13 +4,30 @@ Your developer and coding agent have agreed that creation must store a product i
 PostgreSQL and Redis, and that a valid-cache retrieval must avoid PostgreSQL.
 This page expresses that same rule in Gherkin and runs it as native Playwright.
 
+<p align="center">
+  <img width="800" src="../assets/readme/specification-to-evidence.svg" alt="The accepted Markdown specification guides a reviewed Feature and generated Playwright suite. The Sandbox runs product-service with PostgreSQL and Redis, and the execution report presents assertions and attempt diagnostics." />
+</p>
+
 Complete [the sample preparation](../guides/verify-a-specification.md#run-the-supplied-example)
 first. Continue from `e2e/product-cache/` with the supplied `api` client and runner.
 You do not need to run the native authoring path first.
 
 ## Draft from the accepted specification
 
-Give the agent [the source specification](../../e2e/product-cache/specs/create-product.md):
+The [source specification](../../e2e/product-cache/specs/create-product.md) states
+the accepted behavior independently of its implementation:
+
+```markdown
+# Product creation and retrieval
+
+## Rule: Persist products and serve valid cache entries
+
+Creating a product persists it in PostgreSQL and populates Redis.
+Retrieving it while its cached entry is valid returns the cached product
+without reading PostgreSQL.
+```
+
+Give that specification to the agent:
 
 > Draft scenarios for this rule using Blackbox's supported HTTP sentences and our
 > existing client. Keep creation and cached retrieval as separate Arrange, Act,
@@ -141,6 +158,82 @@ The destination must not already exist. Compare that candidate with
 [`product-cache.generated.spec.ts`](../../e2e/product-cache/tests/product-cache.generated.spec.ts).
 It preserves the Feature and Rule groups, both Scenario tests, and their ordered
 steps. The `.preview.ts` suffix keeps the candidate out of test discovery.
+
+<details>
+<summary>Inspect the complete generated Playwright suite</summary>
+
+<!-- prettier-ignore -->
+```ts
+import { expect, test } from '@suites/blackbox-playwright';
+import { api as client_api } from ".\u002Fclients.js";
+
+test.system({ kind: 'system', id: "product-system" }, (system) => {
+  system.sandbox("default", { clients: { "api": client_api } }, (suite) => {
+    suite.describe("Feature: Product creation and retrieval", () => {
+      suite.describe("Rule: Persist products and serve valid cache entries", () => {
+        suite.test("Scenario: Create a new product", async ({ clients, step }) => {
+          await step("Given client \"api\" GET \"\u002Ffixture\u002Fproducts\u002Fproduct-1\" returns 200 with JSON exactly:", async () => {
+            const response = await clients.api.get("\u002Ffixture\u002Fproducts\u002Fproduct-1");
+            expect(response.status()).toBe(200);
+            expect(await response.json()).toEqual({"postgres":null,"redis":null});
+          });
+          const response0 = await step("When client \"api\" sends POST \"\u002Fproducts\" with JSON:", () => clients.api.post("\u002Fproducts", { data: {"id":"product-1","name":"Field notebook","priceCents":1299} }));
+          await step("Then the response status is 201", async () => {
+            expect(response0.status()).toBe(201);
+          });
+          await step("And the response JSON contains:", async () => {
+            expect(await response0.json()).toMatchObject({"id":"product-1","name":"Field notebook","priceCents":1299});
+          });
+          await step("And client \"api\" GET \"\u002Ffixture\u002Fproducts\u002Fproduct-1\" returns 200 with JSON exactly:", async () => {
+            const response = await clients.api.get("\u002Ffixture\u002Fproducts\u002Fproduct-1");
+            expect(response.status()).toBe(200);
+            expect(await response.json()).toEqual({"postgres":{"id":"product-1","name":"Field notebook","priceCents":1299},"redis":{"id":"product-1","name":"Field notebook","priceCents":1299}});
+          });
+        });
+
+        suite.test("Scenario: Retrieve a product from its valid cache entry", async ({ clients, step }) => {
+          const response1 = await step("Given client \"api\" sends POST \"\u002Ffixture\u002Fobservations\u002Fcalibrate\" with JSON:", () => clients.api.post("\u002Ffixture\u002Fobservations\u002Fcalibrate", { data: {} }));
+          await step("And the response status is 200", async () => {
+            expect(response1.status()).toBe(200);
+          });
+          await step("And the response JSON contains:", async () => {
+            expect(await response1.json()).toMatchObject({"applicationPostgresSelects":1,"applicationPostgresStatements":1,"applicationPostgresPlans":1,"redisGets":1,"retrievals":1});
+          });
+          const response2 = await step("And client \"api\" has sent POST \"\u002Fproducts\" with JSON and received 201:", async () => {
+            const response = await clients.api.post("\u002Fproducts", { data: {"id":"product-1","name":"Field notebook","priceCents":1299} });
+            expect(response.status()).toBe(201);
+            return response;
+          });
+          await step("And client \"api\" GET \"\u002Ffixture\u002Fproducts\u002Fproduct-1\" returns 200 with JSON exactly:", async () => {
+            const response = await clients.api.get("\u002Ffixture\u002Fproducts\u002Fproduct-1");
+            expect(response.status()).toBe(200);
+            expect(await response.json()).toEqual({"postgres":{"id":"product-1","name":"Field notebook","priceCents":1299},"redis":{"id":"product-1","name":"Field notebook","priceCents":1299}});
+          });
+          const response3 = await step("And client \"api\" has sent POST \"\u002Ffixture\u002Fobservations\u002Fstart\" with JSON and received 200:", async () => {
+            const response = await clients.api.post("\u002Ffixture\u002Fobservations\u002Fstart", { data: {"productId":"product-1"} });
+            expect(response.status()).toBe(200);
+            return response;
+          });
+          const response4 = await step("When client \"api\" sends GET \"\u002Fproducts\u002Fproduct-1\"", () => clients.api.get("\u002Fproducts\u002Fproduct-1"));
+          await step("Then the response status is 200", async () => {
+            expect(response4.status()).toBe(200);
+          });
+          await step("And the response JSON contains:", async () => {
+            expect(await response4.json()).toMatchObject({"id":"product-1","name":"Field notebook","priceCents":1299});
+          });
+          await step("And client \"api\" GET \"\u002Ffixture\u002Fobservations\u002Fresult\" returns 200 with JSON exactly:", async () => {
+            const response = await clients.api.get("\u002Ffixture\u002Fobservations\u002Fresult");
+            expect(response.status()).toBe(200);
+            expect(await response.json()).toEqual({"productId":"product-1","applicationPostgresSelects":0,"applicationPostgresStatements":0,"applicationPostgresPlans":0,"redisGets":1,"retrievals":1});
+          });
+        });
+      });
+    });
+  });
+});
+```
+
+</details>
 
 ## Execute and return to the evidence
 

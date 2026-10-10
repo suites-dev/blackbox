@@ -9,7 +9,9 @@ Blackbox adopts Gherkin through Cucumber's parser and generates native Playwrigh
 suites from supported sentences. Feature files are optional. You can express the
 same accepted behavior directly in [native Playwright](../playwright/README.md).
 
-![An accepted specification can guide a reviewed Feature or a handwritten suite; both reach the same execution and evidence.](../assets/guides/authoring-paths.svg)
+<p align="center">
+  <img width="800" src="../assets/readme/specification-triangle.svg" alt="The accepted product specification guides a reviewed optional Feature. Generation preserves its rule, scenarios, and Arrange–Act–Assert structure in Playwright. Execution checks PostgreSQL persistence, Redis state, and cache-hit behavior." />
+</p>
 
 Begin with [the product verification walkthrough](../guides/verify-a-specification.md).
 At scenario review, follow [the Feature authoring path](drafting-feature-files.md),
@@ -34,6 +36,21 @@ The current compiler has a [defined HTTP vocabulary](reference.md#sentence-refer
 The product example uses protected, project-owned HTTP endpoints to inspect
 PostgreSQL and Redis. Use native tests when your observations need direct SDK calls
 or other operations outside that vocabulary.
+
+## Bring findings back to review
+
+A [Capsule experiment](../../packages/capsule/skills/capsule/references/capsule-experiments.md)
+can investigate a failure or explore a candidate expectation before it becomes
+part of the specification. Observed behavior does not become accepted behavior
+automatically: review the finding against the intended outcome, then express any
+accepted change in the Feature or native suite.
+
+<p align="center">
+  <img width="800" src="../assets/readme/capsule-to-feature.svg" alt="A Capsule investigation leads to a candidate expectation, developer review, and an accepted Feature with its Playwright suite." />
+</p>
+
+The figure follows the optional Feature path. Native tests can carry the same
+reviewed expectation into repeatable verification.
 
 [Author the product Feature](drafting-feature-files.md) ·
 [Maintain the generated suite](generating-test-suites.md) ·
