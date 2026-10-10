@@ -1,38 +1,35 @@
 # Blackbox documentation
 
-**Spec-Driven Verification for agentic software engineering.**
+**Spec-Driven Verification:** start with an accepted requirement, run your actual system, and check whether it behaved as expected.
 
-Blackbox connects **accepted specifications** to **executable behavioral checks** and evidence from running systems. The specification says what must hold; coding agents use Blackbox to investigate whether the implementation holds up, repair failures, and rerun the same expectations.
+<p align="center">
+  <img width="790" src="assets/guides/product-cache-journey.svg" alt="An accepted product specification becomes reviewed tests. Playwright runs an isolated product service with PostgreSQL and Redis and produces evidence." />
+</p>
 
-## Start with one accepted rule
+The running example is simple to state but easy to implement incorrectly: **creating a product must persist it and cache it; retrieving a valid cached value must not read PostgreSQL**.
 
-The [product-cache walkthrough](guides/verify-a-specification.md) follows an actual business rule through system setup, native or optional Feature authoring, PostgreSQL and Redis state checks, a database-operation observation, and a deliberately introduced defect:
+## Choose where to begin
 
-> Creating a product persists it and populates Redis. Retrieving a cached product must not read PostgreSQL.
+| I want to… | Read |
+| --- | --- |
+| Follow the whole example | [Verify a specification](guides/verify-a-specification.md) |
+| Connect my own app with an agent | [Get started with my repository](playwright/connect-your-application.md) |
+| Write TypeScript tests | [Native Playwright](playwright/README.md) |
+| Write a reviewed Gherkin Feature | [Feature files](features/README.md) |
+| Diagnose a real behavioral difference | [Repair from evidence](guides/repair-from-evidence.md) |
 
-Or [connect your own repository](playwright/connect-your-application.md). The complete runnable example depends on the pending [Feature/Playwright API](https://github.com/suites-dev/blackbox/pull/181) and `e2e/product-cache/` sample, so check prerequisites before executing its commands.
+## Understand what Blackbox checks
 
-## Understand the model
+<p align="center">
+  <img width="790" src="assets/guides/authoring-paths.svg" alt="Native Playwright and optional Gherkin authoring both lead to the same Sandbox execution and report." />
+</p>
 
-- [Spec-Driven Verification](concepts/spec-driven-verification.md): accepted intent, behavioral claims, executable expectations, runtime conformance, and drift.
-- [Behavioral evidence](concepts/behavioral-evidence.md): outcomes, state, runtime effects, completion, observer limits, and uncertainty.
-- [Specification sources and SDD](integrations/README.md): Markdown, native Playwright, optional Features, and an existing workflow such as Spec Kit.
+[Spec-Driven Verification](concepts/spec-driven-verification.md) explains why the spec remains the source of expected behavior. [Evidence](concepts/behavioral-evidence.md) explains why some expectations need a response, others need a database read, and still others need to observe downstream activity.
 
-## Follow the workflow
+## Go deeper only when you need it
 
-| Task                                    | Guide                                                              |
-| --------------------------------------- | ------------------------------------------------------------------ |
-| Verify a product requirement end to end | [Verify a specification](guides/verify-a-specification.md)         |
-| Prepare a system in your repository     | [Connect your application](playwright/connect-your-application.md) |
-| Write native system tests               | [Playwright](playwright/README.md)                                 |
-| Review a Gherkin Feature                | [Feature authoring](features/drafting-feature-files.md)            |
-| Keep the emitted TypeScript aligned     | [Suite drift](features/generating-test-suites.md)                  |
-| Investigate a violation and repair      | [Repair from evidence](guides/repair-from-evidence.md)             |
+[HTTP](guides/testing-http-apis.md) · [PostgreSQL](guides/testing-postgres.md) · [Redis](guides/testing-redis.md) · [Async completion](guides/testing-async-flows.md) · [Clients and fixtures](playwright/clients-and-fixtures.md) · [Feature syntax](features/reference.md) · [Spec Kit integration](integrations/spec-kit.md)
 
-## Choose evidence for the claim
+The example's protected `/fixture/` endpoints are application-owned, not automatic Blackbox APIs. [Capsules](../packages/capsule/README.md) support interactive investigation.
 
-[HTTP output](guides/testing-http-apis.md) · [PostgreSQL state](guides/testing-postgres.md) · [Redis and cache-only retrieval](guides/testing-redis.md) · [Asynchronous completion](guides/testing-async-flows.md)
-
-Use the [client and fixture reference](playwright/clients-and-fixtures.md) or [Feature language reference](features/reference.md) for exact syntax. For interactive investigation, see [Capsules](../packages/capsule/README.md).
-
-A sample-specific inspection endpoint is not a built-in Blackbox API. A green response alone does not establish all state and effect claims; a missing span does not establish absence.
+**Candidate alpha:** these walkthroughs refer to the pending [Feature/Playwright implementation](https://github.com/suites-dev/blackbox/pull/181) and `e2e/product-cache/` sample. Check [prerequisites](guides/verify-a-specification.md#run-the-supplied-example) before running their commands.
