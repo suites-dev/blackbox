@@ -1,5 +1,7 @@
 # Follow a specification through verification
 
+![An accepted product requirement leads to reviewed system tests and a controlled product-service, PostgreSQL, and Redis execution.](../assets/guides/product-cache-journey.svg)
+
 These guides follow **Spec-Driven Verification**:
 accepted behavior → behavioral claims → executable expectations →
 running-system evidence → implementation repair.

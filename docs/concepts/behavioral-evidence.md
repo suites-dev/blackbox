@@ -12,10 +12,10 @@ Call the requirement a *claim* if you like: something the spec says must be true
 
 The product example checks three useful kinds of evidence:
 
-| What we check | Example | What it answers |
-| --- | --- | --- |
-| **Outcome** | HTTP status and body | What did the caller receive? |
-| **State** | PostgreSQL row or Redis value | What was stored? |
+| What we check                    | Example                                | What it answers              |
+| -------------------------------- | -------------------------------------- | ---------------------------- |
+| **Outcome**                      | HTTP status and body                   | What did the caller receive? |
+| **State**                        | PostgreSQL row or Redis value          | What was stored?             |
 | **Runtime activity** (*effects*) | SQL query, Redis GET, outgoing request | What did the application do? |
 
 These are **options, not a required checklist**. A response assertion may fully answer one spec; another spec may require all three.
@@ -24,18 +24,20 @@ An observed `INSERT` doesn't mean the transaction committed. Finding a value in 
 
 ## HTTP isn't the only entrypoint
 
-| Entry point | Immediate result | Another thing a spec might require |
-| --- | --- | --- |
-| HTTP | Status, headers, body | Persisted state, downstream activity |
+| Entry point    | Immediate result                                         | Another thing a spec might require      |
+| -------------- | -------------------------------------------------------- | --------------------------------------- |
+| HTTP           | Status, headers, body                                    | Persisted state, downstream activity    |
 | Queue consumer | Handler outcome or broker-specific acknowledgment/offset | Business completion, duplicate handling |
-| CLI | Exit code, stdout, stderr | Files, database rows, network effects |
-| Scheduled job | Scheduler/job status, when exposed | Actual completion of delegated work |
+| CLI            | Exit code, stdout, stderr                                | Files, database rows, network effects   |
+| Scheduled job  | Scheduler/job status, when exposed                       | Actual completion of delegated work     |
 
 There is **no universal queue response** like HTTP. Receiving, processing, acknowledging, and completing downstream work can happen at different points.
 
 These rows explain how to **design an observation**; the current product walkthrough uses HTTP and is not evidence that Blackbox ships ready-made adapters for every row.
 
-## How can we check something *didn't* happen?
+## Why absence is harder than presence
+
+How can we check something that *didn't* happen?
 
 A cached retrieval **must not read PostgreSQL**. Finding no SQL span in OpenTelemetry isn't enough: the right process might not be instrumented, or traces might be missing.
 

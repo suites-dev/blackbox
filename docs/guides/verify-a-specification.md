@@ -31,10 +31,10 @@ The source specification is
 The developer approves the rule. The agent proposes concrete checks and
 identifies how to observe each result:
 
-| What the spec requires | What we'll actually check |
-| --- | --- |
-| **Save the product** | The expected PostgreSQL row, read after creation |
-| **Populate the cache** | The expected value in Redis |
+| What the spec requires      | What we'll actually check                                                                            |
+| --------------------------- | ---------------------------------------------------------------------------------------------------- |
+| **Save the product**        | The expected PostgreSQL row, read after creation                                                     |
+| **Populate the cache**      | The expected value in Redis                                                                          |
 | **Serve a valid cache hit** | The correct response, one Redis GET, and **zero application PostgreSQL operations** during retrieval |
 
 The last requirement says something **must not happen**. So the example

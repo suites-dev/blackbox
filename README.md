@@ -131,17 +131,19 @@ A result is useful when it tells the agent **what differed from the spec**. In t
 
 There are three different questions:
 
-| Question | How we answer it |
-| --- | --- |
-| Did the test capture what we actually meant? | **Review** the test against the spec |
-| Does generated TypeScript still match its Feature? | **Check for drift** in the generated suite |
-| Does the running implementation behave as required? | **Run the test** and examine its results |
+| Question                                            | How we answer it                           |
+| --------------------------------------------------- | ------------------------------------------ |
+| Did the test capture what we actually meant?        | **Review** the test against the spec       |
+| Does generated TypeScript still match its Feature?  | **Check for drift** in the generated suite |
+| Does the running implementation behave as required? | **Run the test** and examine its results   |
 
 A passing test establishes the assertions that actually ran—not that every requirement has been checked. Runtime observations, including OpenTelemetry, can help answer harder questions; they are **one evidence source**, not a requirement for every test.
 
 [Spec-Driven Verification](docs/concepts/spec-driven-verification.md) · [Evidence and limits](docs/concepts/behavioral-evidence.md) · [CI and suite drift](docs/features/generating-test-suites.md)
 
 ---
+
+## Alpha and further guides
 
 **Candidate alpha:** the Feature compiler and typed Playwright clients depend on [PR #181](https://github.com/suites-dev/blackbox/pull/181). The `e2e/product-cache/` sample is not yet on this documentation branch. The workflows above are documented for the candidate implementation; don't treat them as a runnable release until those dependencies land.
 

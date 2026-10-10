@@ -10,13 +10,13 @@ The running example is simple to state but easy to implement incorrectly: **crea
 
 ## Choose where to begin
 
-| I want to… | Read |
-| --- | --- |
-| Follow the whole example | [Verify a specification](guides/verify-a-specification.md) |
-| Connect my own app with an agent | [Get started with my repository](playwright/connect-your-application.md) |
-| Write TypeScript tests | [Native Playwright](playwright/README.md) |
-| Write a reviewed Gherkin Feature | [Feature files](features/README.md) |
-| Diagnose a real behavioral difference | [Repair from evidence](guides/repair-from-evidence.md) |
+| I want to…                            | Read                                                                     |
+| ------------------------------------- | ------------------------------------------------------------------------ |
+| Follow the whole example              | [Verify a specification](guides/verify-a-specification.md)               |
+| Connect my own app with an agent      | [Get started with my repository](playwright/connect-your-application.md) |
+| Write TypeScript tests                | [Native Playwright](playwright/README.md)                                |
+| Write a reviewed Gherkin Feature      | [Feature files](features/README.md)                                      |
+| Diagnose a real behavioral difference | [Repair from evidence](guides/repair-from-evidence.md)                   |
 
 ## Understand what Blackbox checks
 

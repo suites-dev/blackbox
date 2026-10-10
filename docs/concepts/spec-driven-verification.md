@@ -41,11 +41,11 @@ Feature: Product creation
 
 ## Three different ways things drift
 
-| Relationship | What can go wrong? | How to check |
-| --- | --- | --- |
-| **Spec → test** | We miss or misunderstand a requirement | Review against the accepted spec |
-| **Feature → generated suite** | The TypeScript no longer matches the Feature | Deterministic generation check |
-| **Test → system** | The implementation no longer behaves as expected | Run against the isolated system |
+| Relationship                  | What can go wrong?                               | How to check                     |
+| ----------------------------- | ------------------------------------------------ | -------------------------------- |
+| **Spec → test**               | We miss or misunderstand a requirement           | Review against the accepted spec |
+| **Feature → generated suite** | The TypeScript no longer matches the Feature     | Deterministic generation check   |
+| **Test → system**             | The implementation no longer behaves as expected | Run against the isolated system  |
 
 For the Feature path, the candidate compiler can check the generated suite:
 
