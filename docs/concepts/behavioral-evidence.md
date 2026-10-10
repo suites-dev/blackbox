@@ -1,79 +1,77 @@
-# What counts as evidence?
+# How do you know the test checked the right thing?
 
-Suppose the specification says **a product must be saved**. Would HTTP `201` convince you? Or would you also check the database?
+An agent can write an implementation, send an HTTP request, and see `200`. But **is that the result the specification required?** And what might be missing behind the response?
 
-Call the requirement a *claim* if you like: something the spec says must be true. **Evidence** means what we actually observed that helps check it.
+This is the *test oracle problem*: generating test inputs is different from deciding whether the observed behavior was correct. Historically, a human could inspect the system and judge. As coding agents do more implementation work, we need more of that judgment expressed in **reviewed checks and trustworthy observations**.
+
+Blackbox helps build those checks. It does **not** automatically invent a correct oracle from arbitrary prose. [Research background: *The Oracle Problem in Software Testing: A Survey*](https://ieeexplore.ieee.org/document/6963470).
 
 ## The same response, different behavior
 
+Our example specification says creating a product stores it in PostgreSQL and Redis, and a valid cache hit **must not read PostgreSQL**.
+
 <p align="center">
-  <img width="790" src="../assets/guides/product-cache-evidence.svg" alt="Both versions return the expected product, but the broken cache path also queries PostgreSQL and violates the requirement." />
+  <img width="790" src="../assets/guides/product-cache-evidence.svg" alt="Both implementations return the same product; one violates the accepted behavior by reading PostgreSQL despite a valid cache entry." />
 </p>
 
-The product example checks three useful kinds of evidence:
+The product can be correct in the response **and** wrong in how it was retrieved. The test needs the observations required by the rule:
 
-| What we check                    | Example                                | What it answers              |
-| -------------------------------- | -------------------------------------- | ---------------------------- |
-| **Outcome**                      | HTTP status and body                   | What did the caller receive? |
-| **State**                        | PostgreSQL row or Redis value          | What was stored?             |
-| **Runtime activity** (*effects*) | SQL query, Redis GET, outgoing request | What did the application do? |
+| What we check | Example | What it answers |
+| --- | --- | --- |
+| **Outcome** | HTTP status and JSON body | What did the caller receive? |
+| **State** | PostgreSQL row or Redis value | What was actually stored? |
+| **Runtime activity** (*effects*) | SQL query, Redis GET, outgoing request | What did the running system do? |
 
-These are **options, not a required checklist**. A response assertion may fully answer one spec; another spec may require all three.
+These are **choices, not a mandatory checklist**. The specification decides which matter.
 
-An observed `INSERT` doesn't mean the transaction committed. Finding a value in Redis doesn't mean the application's retrieval used that value. Choose an observation that answers the exact question.
+An observed `INSERT` doesn't establish that a transaction committed. Finding a product in Redis doesn't establish that the application served it from Redis. Choose the observer that answers the *specific* question.
 
-## HTTP isn't the only entrypoint
+## The outcome depends on how the system is entered
 
-| Entry point    | Immediate result                                         | Another thing a spec might require      |
-| -------------- | -------------------------------------------------------- | --------------------------------------- |
-| HTTP           | Status, headers, body                                    | Persisted state, downstream activity    |
-| Queue consumer | Handler outcome or broker-specific acknowledgment/offset | Business completion, duplicate handling |
-| CLI            | Exit code, stdout, stderr                                | Files, database rows, network effects   |
-| Scheduled job  | Scheduler/job status, when exposed                       | Actual completion of delegated work     |
+| Entry point | Immediate result | What may need another check |
+| --- | --- | --- |
+| HTTP | Status, headers, response | Persisted state, downstream calls |
+| Queue consumer | Handler result, acknowledgment or offset commit, depending on broker | Business completion, duplicate handling |
+| CLI | Exit status, stdout, stderr | Files, database changes, external effects |
+| Scheduled job | Scheduler/job result, when available | Work completed by another process |
 
-There is **no universal queue response** like HTTP. Receiving, processing, acknowledging, and completing downstream work can happen at different points.
+A queue consumer has **no universal HTTP-like response**. Receipt, processing, acknowledgment, and downstream completion can be separate events.
 
-These rows explain how to **design an observation**; the current product walkthrough uses HTTP and is not evidence that Blackbox ships ready-made adapters for every row.
+These are principles for designing a test, **not promises** that the current alpha provides built-in drivers for every entrypoint.
 
 ## Why absence is harder than presence
 
-How can we check something that *didn't* happen?
+To assert that cached retrieval never read PostgreSQL, a missing OpenTelemetry SQL span isn't enough. That process may not be instrumented; the observer may have missed the call.
 
-A cached retrieval **must not read PostgreSQL**. Finding no SQL span in OpenTelemetry isn't enough: the right process might not be instrumented, or traces might be missing.
+The [product-cache test](../guides/testing-redis.md#observe-the-retrieval-within-a-bounded-window) instead:
 
-The [product-cache walkthrough](../guides/testing-redis.md#observe-the-retrieval-within-a-bounded-window) uses a stronger method:
-
-1. Make a **known cache miss** and check that the observer can detect its SQL query.
-2. Establish a cached product and start a measurement window.
-3. Retrieve it once and compare the observed Redis and application PostgreSQL operations.
+1. **Calibrates** its observer with a known database read.
+2. Establishes stored and cached product state.
+3. Measures exactly one cache-hit retrieval in a bounded, isolated window.
 
 ```text
-Valid cache hit:          Redis GET 1  | PostgreSQL statements 0
-Deliberate cache bypass:  Redis GET 1  | PostgreSQL statements 1
+Expected valid cache hit:  Redis GET 1  | PostgreSQL statements 0
+Deliberate cache bypass:   Redis GET 1  | PostgreSQL statements 1
 ```
 
-These are expected example measurements, **not live results pasted from a report**. The absence check depends on the sample's isolated window, application database role, and correct counter calibration.
+These are *expected example measurements*, not a screenshot of a completed run. The assertion depends on correct calibration, application-role filtering, and a window without unrelated traffic.
 
-## Wait for the right completion
+## Wait until the behavior is actually complete
 
-A response may arrive before background work finishes. A queue acknowledgment doesn't necessarily mean an invoice was created. When the spec permits eventual completion, the test should wait for the **specific outcome** it requires.
+A response may precede asynchronous work. A queue acknowledgment doesn't necessarily mean an invoice was created. A specification that allows eventual completion needs a **specific result and a deadline**.
 
 <p align="center">
-  <img width="790" src="../assets/guides/async-completion.svg" alt="Conceptual queue example: submit a job, let the worker process it, and poll the matching stored result rather than treating submission as completion." />
+  <img width="790" src="../assets/guides/async-completion.svg" alt="Conceptual queued work is verified by checking that the matching record reaches completed status rather than trusting submission alone." />
 </p>
 
-The [async test guide](../guides/testing-async-flows.md) shows how to wait for an expected state with Playwright. The picture is conceptual, not a demonstration of a shipped queue driver.
+The [async guide](../guides/testing-async-flows.md) uses Playwright polling for a documented state condition. The diagram is conceptual, not a shipped queue driver.
 
-## Know what the run did and didn't establish
+## Read the result without overstating it
 
-Check that the scenario started in a known state, executed the intended action, reached the required completion point, and collected observations that actually cover the behavior.
+A result can support one expectation but leave another unanswered because observation was unavailable or the test failed before reaching it. The same Sandbox also doesn't guarantee two observed operations caused one another; request identity, timing, and completion matter.
 
-One claim can be supported while another remains **unresolved** because no suitable observer ran, or an earlier test step failed. That isn't automatically evidence that the behavior didn't occur.
+**Supported, refuted, and unresolved** are useful terms for what the collected information establishes. They are **not** a universal three-valued result API shipped by this alpha. Blackbox's current native path uses Playwright assertions and retained diagnostics.
 
-Current Blackbox tests use Playwright's real assertion results and retained diagnostics. *Supported, refuted, and unresolved* are helpful ways to describe evidence—not a guarantee that the alpha produces a universal three-valued verdict.
+OpenTelemetry contributes runtime observations where instrumentation exists. It isn't Blackbox's definition, and an attempted payment span is not proof of a settled payment. System tests provide evidence for **specific executions**, not formal guarantees for every possible behavior.
 
-## Where telemetry fits
-
-OpenTelemetry can show supported network and database activity in instrumented processes. It's a valuable **source of runtime observations**, not the center of the product or proof of every business outcome. A payment-request span, for example, isn't proof that money settled.
-
-[PostgreSQL](../guides/testing-postgres.md) · [Redis and absence](../guides/testing-redis.md) · [Evidence-led repair](../guides/repair-from-evidence.md)
+[Why verification matters now](why-verification-now.md) · [PostgreSQL](../guides/testing-postgres.md) · [Redis](../guides/testing-redis.md) · [Repair the cache bug](../guides/repair-from-evidence.md)
