@@ -1,13 +1,18 @@
 # Review the behavior, then execute it
 
-The product specification requires creation to persist a product in PostgreSQL
-and cache it in Redis. A subsequent cached retrieval must avoid PostgreSQL. A
-Feature gives the developer and coding agent a shared place to review those
-expectations before running them.
+A Feature is a **reviewable expression of executable expectations derived
+from accepted behavior**. In the product example, creation must persist
+in PostgreSQL and populate Redis; cache-hit retrieval must avoid PostgreSQL.
+Its scenarios should make those distinct claims explicit.
 
-Blackbox adopts Gherkin through Cucumber's parser and generates native Playwright
-suites from supported sentences. Feature files are optional. You can express the
-same accepted behavior directly in [native Playwright](../playwright/README.md).
+As SDD makes specifications central, Gherkin gives developers and agents
+a shared surface to review concrete behavior. But **the original
+specification remains authoritative**, and an emitted test does not
+automatically prove that every requirement was represented.
+
+Blackbox parses Gherkin with Cucumber and compiles supported sentences
+into native Playwright. Features are optional; the same accepted claims
+can be verified with [native Playwright](../playwright/README.md).
 
 <p align="center">
   <img width="800" src="../assets/readme/specification-triangle.svg" alt="The accepted product specification guides a reviewed optional Feature. Generation preserves its rule, scenarios, and Arrange–Act–Assert structure in Playwright. Execution checks PostgreSQL persistence, Redis state, and cache-hit behavior." />
@@ -17,6 +22,17 @@ Begin with [the product verification walkthrough](../guides/verify-a-specificati
 At scenario review, follow [the Feature authoring path](drafting-feature-files.md),
 then return to its shared evidence and [implementation repair](../guides/repair-from-evidence.md).
 The application, rule, and evidence stay the same whichever authoring path you use.
+
+## A Feature bridges intent and execution
+
+The accepted specification states *what software must do*. A Feature selects
+concrete executable examples of that intent. The compiler checks supported
+language and emits a suite; it cannot certify semantic completeness of the
+original human requirements.
+
+An existing SDD workflow may own the specification independently of
+Blackbox. See [Spec Kit integration](../integrations/spec-kit.md) and the
+[verification model](../concepts/spec-driven-verification.md).
 
 ## Keep the specification connected to the system
 

@@ -1,9 +1,13 @@
 # Connect your application to an accepted requirement
 
-Give your coding agent a requirement before asking it to configure Blackbox. The
-agent needs to discover the system that performs the behavior and the observation
-surfaces that can establish the result. You will finish with a configured boundary,
-clients, and a concrete plan for the first business scenario.
+Start with **accepted behavior**, not a Compose file. Give the agent the
+specification and ask which running-system evidence could establish its
+claims. Then discover the smallest runnable boundary, prepare the Sandbox,
+and connect its action and observation clients.
+
+The end product is not merely a healthy system. It is **reviewed executable
+verification** that measures what the specification requires.
+[Why this ordering matters](../concepts/spec-driven-verification.md).
 
 The [product walkthrough](../guides/verify-a-specification.md) supplies a complete
 application. Follow this guide when adapting the same process to your repository.
@@ -32,6 +36,20 @@ Review this mapping along with the scenario. An HTTP response does not answer al
 three questions, and a missing database span alone does not establish absence of
 a read. If a required observation is unavailable, keep that claim explicit while
 the agent prepares the missing observation surface.
+
+## Produce a claim-to-evidence map
+
+Before creating configuration, the agent should return
+**claim → initial state → stimulus → required evidence → completion → limitations**.
+
+For this example C1 requires a committed PostgreSQL row, C2 a Redis value,
+and C3 a calibrated, bounded database/cache-operation observation. Missing
+observation must be an unresolved setup requirement, not an inadequate
+substitute HTTP assertion.
+
+Review this evidence plan before accepting new scenarios. The source spec
+remains authoritative even when the current implementation disagrees.
+[Evidence model](../concepts/behavioral-evidence.md).
 
 ## Prepare the test project
 
@@ -88,13 +106,13 @@ pnpm exec blackbox skills install catalog --codex
 Use `--claude` or `--cursor` instead when appropriate. Once the skills are available
 to your agent, give it the accepted specification and this task:
 
-> Set up Blackbox to verify this specification. Discover the services,
-> dependencies, and startup requirements; choose the smallest runnable boundary
-> that can establish the accepted claims. Reuse our existing startup definitions.
-> Identify readiness, migrations, deterministic setup, and the action and
-> observation clients. Create or update the configuration and validate it.
-> Prepare the first executable business scenarios for review, identifying any
-> claim the available observations cannot establish.
+> Set up Blackbox for this accepted specification. Identify each claim,
+> its completion condition, and evidence requirements. Discover services and
+> dependencies, choose the smallest runnable boundary, and reuse existing
+> startup definitions. Prepare the Sandbox, action and observation clients,
+> readiness, migrations, and deterministic state. Produce reviewed scenarios
+> and list claims that remain unobservable. Do not change expected behavior
+> to match the implementation.
 
 The agent reuses existing project files where appropriate. For a Node application
 with an HTTP service, the configuration and its supporting files can look like this:
@@ -218,7 +236,8 @@ pnpm exec playwright show-report playwright-report
 Expect one discovered test, a ready Sandbox, a passing readiness step, and
 successful cleanup. A failure before the authored step belongs to acquisition,
 instrumentation, or client readiness; inspect `blackbox-diagnostics` on that
-attempt. A passing readiness check establishes connectivity.
+attempt. **A passing readiness check establishes connectivity, not the accepted
+business behavior.**
 
 ## Verify the accepted behavior in your project
 

@@ -1,14 +1,16 @@
 # Verify a specification against your system
 
-You have asked your coding agent to implement product creation and retrieval.
-Before accepting the change, you want to know whether the running system satisfies
-the behavior you agreed on. A successful HTTP request answers only part of that
-question.
+You and your coding agent have an **accepted specification**: product creation
+must persist to PostgreSQL and populate Redis; retrieving a cached product must
+not read PostgreSQL. Blackbox lets the agent turn that rule into executable
+expectations, run the real system, and inspect the evidence needed for each
+claim before accepting or repairing the implementation.
 
-This walkthrough carries one specification through setup, executable expectations,
-system testing, and evidence. The supplied application has one product service,
-PostgreSQL, and Redis. You can follow it with native Playwright or an optional
-Feature file; both paths verify the same rule.
+This is **Spec-Driven Verification**, not simply test generation. Follow one
+requirement from accepted intent through claim selection, system setup, native
+Playwright or optional Gherkin, evidence review, and an unchanged-expectation
+repair. The selected application contains a product service, PostgreSQL,
+and Redis. [Read the model](../concepts/spec-driven-verification.md).
 
 This candidate-alpha walkthrough requires the pending typed Playwright client API
 and the `e2e/product-cache/` sample, which are not yet included in this checkout.
@@ -41,14 +43,36 @@ For this example, the claims are:
 The walkthrough tests sequential creation and immediate retrieval. Expiry,
 updates, invalidation, and concurrent requests are separate requirements.
 
+## Establish the evidence contract
+
+The three claims do not share one universal oracle. Before writing a test,
+agree on the observation that would support or refute each one:
+
+| Claim | Required observation | Completion and coverage boundary |
+| --- | --- | --- |
+| C1 — persistence | Expected committed PostgreSQL row, independently read | After creation, through a separate observation connection |
+| C2 — cache population | Expected Redis value | After creation, before retrieval changes the cache |
+| C3 — cache-only retrieval | Correct response, one Redis GET, and **zero application PostgreSQL operations** | A calibrated window containing one selected application retrieval |
+
+C3 is an **absence requirement**. Merely failing to find a SQL span is not
+enough: the observer must demonstrably detect database work and cover the
+relevant process and period. The sample calibrates its observer with a known
+cache miss and measures the cache-hit request in isolation.
+
+Reviewing these claims belongs to the human/SDD process. The agent proposes
+tests but cannot prove it represented every nuance of arbitrary prose.
+See [behavioral evidence](../concepts/behavioral-evidence.md).
+
 ## Let the agent prepare the system
 
 Give your agent the specification and a concrete task:
 
-> Prepare Blackbox to verify this rule. Discover the product service and its
-> PostgreSQL and Redis dependencies. Configure an isolated system, connect the
-> clients, and identify how each required outcome will be observed. Write the
-> scenarios without changing the accepted behavior.
+> Set up Blackbox to verify this accepted specification. Discover the product
+> service, PostgreSQL, and Redis; select the smallest runnable boundary that
+> preserves the required behavior. Configure the Sandbox and its clients.
+> Map C1, C2, and C3 to observations and completion boundaries. Prepare the
+> scenarios for my review. Do not change the accepted behavior to match the
+> current implementation.
 
 In your own repository, follow [agent-assisted setup](../playwright/connect-your-application.md).
 The agent derives the topology and creates or reuses the configuration and test
@@ -255,6 +279,21 @@ steps after that throwing assertion may not have run; do not count them as passe
 You now have a specification connected to executable checks and evidence from a
 real system. Continue directly to **[repairing an implementation defect against
 these same expectations](repair-from-evidence.md)**.
+
+## Qualify the result, not merely the process
+
+A real Playwright pass means that its **executed assertions passed**. It
+doesn't mean every statement in `specs/create-product.md` was represented, or
+that all external effects were observed.
+
+Distinguish a supported claim, a contradictory observation, and a claim
+**not evaluated** because an earlier step failed, an observer was absent,
+or completion never occurred. These are evidence-reasoning categories, not
+a three-valued result automatically promised by the alpha.
+
+Keep attempt identity, initial state, observed values, and the calibrated
+window with each finding so a reviewer can follow the result back to the
+accepted rule. [Evidence guidance](../concepts/behavioral-evidence.md).
 
 ## Resolve a first-run failure
 

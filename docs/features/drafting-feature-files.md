@@ -1,8 +1,14 @@
 # Express the product rule as a Feature
 
-Your developer and coding agent have agreed that creation must store a product in
-PostgreSQL and Redis, and that a valid-cache retrieval must avoid PostgreSQL.
-This page expresses that same rule in Gherkin and runs it as native Playwright.
+Start with the **accepted product specification**, not arbitrary test steps.
+Creation must persist in PostgreSQL and Redis, and valid-cache retrieval
+must avoid PostgreSQL. This page turns those claims into reviewed Gherkin
+scenarios and generates a native Playwright suite.
+
+The `Feature → Rule → Scenario` hierarchy gives SDD teams a shared way to
+review concrete behaviors. It **does not replace the source specification
+or guarantee every requirement was captured**. Native Playwright is
+another first-class executable authoring path.
 
 <p align="center">
   <img width="800" src="../assets/readme/specification-to-evidence.svg" alt="The accepted Markdown specification guides a reviewed Feature and generated Playwright suite. The Sandbox runs product-service with PostgreSQL and Redis, and the execution report presents assertions and attempt diagnostics." />
@@ -11,6 +17,17 @@ This page expresses that same rule in Gherkin and runs it as native Playwright.
 Complete [the sample preparation](../guides/verify-a-specification.md#run-the-supplied-example)
 first. Continue from `e2e/product-cache/` with the supplied `api` client and runner.
 You do not need to run the native authoring path first.
+
+## Decide what the Feature must establish
+
+A complete check of this selected rule needs separate persistence, cache
+population, and cache-only retrieval claims. The last requires an observer
+that can detect a database read within a bounded window, not merely a
+correct response. Unsupported Gherkin sentences require clarification
+or a native test; do not silently drop their meaning.
+
+[Evidence sufficiency](../concepts/behavioral-evidence.md) ·
+[Full verification journey](../guides/verify-a-specification.md).
 
 ## Draft from the accepted specification
 
