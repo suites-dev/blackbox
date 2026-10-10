@@ -28,6 +28,11 @@ The source specification is
 > while its cached entry is valid returns the cached product without reading
 > PostgreSQL.
 
+The implementation might use different classes, SQL libraries,
+or cache internals tomorrow. The requirement still matters: **persist,
+cache, and avoid a database read on a valid cache hit**. That's why we
+check observable behavior rather than particular implementation methods.
+
 The developer approves the rule. The agent proposes concrete checks and
 identifies how to observe each result:
 

@@ -10,6 +10,11 @@ check**; executable expectations → implementation needs **runtime
 execution**. This guide protects the middle relationship, then reruns
 the last one.
 
+The payoff grows as agents iterate: **review the expected behavior
+once, then run the same check against every new implementation**. A
+deterministic drift check catches an outdated generated suite cheaply.
+The running system still needs to be executed for behavioral confirmation.
+
 Complete [the Feature path](drafting-feature-files.md) first. Keep commands in
 `e2e/product-cache/`. Native tests use the same review, execution, and repair loop;
 this generated-file check is additional work for the Feature authoring path.

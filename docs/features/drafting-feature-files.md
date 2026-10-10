@@ -18,6 +18,20 @@ Complete [the sample preparation](../guides/verify-a-specification.md#run-the-su
 first. Continue from `e2e/product-cache/` with the supplied `api` client and runner.
 You do not need to run the native authoring path first.
 
+## Let the compiler constrain the agent
+
+Gherkin makes business scenarios readable. Blackbox's **supported step
+vocabulary** makes them executable: a step must match a known operation
+and input shape, or validation fails before a Sandbox starts.
+
+That gives a coding agent specific feedback instead of encouraging it
+to invent arbitrary step definitions or bury assumptions in generated
+TypeScript. The accepted source specification still determines whether
+the scenario expresses the **right** behavior; valid syntax alone cannot
+answer that question.
+
+[Why Features are useful for coding agents](README.md#why-a-feature-helps-coding-agents).
+
 ## Decide what the Feature must establish
 
 A complete check of this selected rule needs separate persistence, cache
