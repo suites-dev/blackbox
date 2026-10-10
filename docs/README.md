@@ -1,60 +1,37 @@
 # Blackbox documentation
 
-**Spec-Driven Verification:** start with an accepted requirement, run your actual system, and check
-whether it behaved as expected.
+**Start with a specification. Let your agent discover, rehearse, and verify the behavior against a running system.**
 
-<p align="center">
-  <img width="790" src="assets/guides/product-cache-journey.svg" alt="An accepted product specification becomes reviewed tests. Playwright runs an isolated product service with PostgreSQL and Redis and produces evidence." />
-</p>
+![From developer-approved behavior through Capsule investigation to native Playwright verification.](assets/readme/spec-to-verification-workflow.svg)
 
-The running example is simple to state but easy to implement incorrectly: **creating a product must
-persist it and cache it; retrieving a valid cached value must not read PostgreSQL**.
+## Start here
 
-## Choose where to begin
+The [complete developer workflow](guides/from-spec-to-verification.md) follows three stages:
 
-| I want to…                            | Read                                                                     |
-| ------------------------------------- | ------------------------------------------------------------------------ |
-| Follow the whole example              | [Verify a specification](guides/verify-a-specification.md)               |
-| Connect my own app with an agent      | [Get started with my repository](playwright/connect-your-application.md) |
-| Write TypeScript tests                | [Native Playwright](playwright/README.md)                                |
-| Write a reviewed Gherkin Feature      | [Feature files](features/README.md)                                      |
-| Diagnose a real behavioral difference | [Repair from evidence](guides/repair-from-evidence.md)                   |
+1. **Define:** give the agent an accepted requirement, review its concrete Feature scenarios, and approve what should happen.
+2. **Explore:** let the agent discover the relevant system, reuse or create the Catalog, and rehearse the behavior in a Capsule. Review the Capsule HTML report.
+3. **Verify:** create repeatable Playwright tests using either deterministic Feature compilation or project-owned TypeScript, then inspect results and repair against unchanged expectations.
 
-## Why this matters when agents write the code
+**New to Blackbox?** Follow the [product-cache specification](guides/verify-a-specification.md) to see why a correct HTTP response can still hide an incorrect database read.
 
-[Read the motivation](concepts/why-verification-now.md): faster implementation makes accepted specs,
-constrained executable checks, and evidence more important. **A test must judge the running
-behavior, not just the code the agent produced.**
+## Choose your task
 
-## Understand what Blackbox checks
+| What you need | Guide |
+| --- | --- |
+| Integrate an existing repository | [Agent-assisted setup](playwright/connect-your-application.md) |
+| Understand Gherkin and supported steps | [Feature authoring](features/README.md) |
+| Compile a reviewed Feature | [Generated suite and drift checks](features/generating-test-suites.md) |
+| Write project-owned SDK assertions | [Native Playwright](playwright/README.md) |
+| Understand the separate editable scaffold design | [Editable scaffolds (planned)](playwright/editable-scaffolds.md) |
+| Discover or investigate with the real system | [Capsule experiments](guides/investigate-with-capsule.md) |
+| Repair a regression without changing its spec | [Evidence-led repair](guides/repair-from-evidence.md) |
 
-<p align="center">
-  <img width="790" src="assets/guides/authoring-paths.svg" alt="Native Playwright and optional Gherkin authoring both lead to the same Sandbox execution and report." />
-</p>
+## Why the workflow matters
 
-[Spec-Driven Verification](concepts/spec-driven-verification.md) explains why the spec remains the
-source of expected behavior. [Evidence](concepts/behavioral-evidence.md) explains why some
-expectations need a response, others need a database read, and still others need to observe
-downstream activity.
+As coding agents take on more implementation work, **approved specifications become a stable reference for what the system should do**. Checks must compare that behavior with the actual running implementation, not just inspect code or trust a green status.
 
-## Investigate and confirm
+[Why verification matters now](concepts/why-verification-now.md) · [Spec-Driven Verification](concepts/spec-driven-verification.md) · [What counts as evidence](concepts/behavioral-evidence.md)
 
-[Capsule experiments](guides/investigate-with-capsule.md) let an agent narrow an unfamiliar failure;
-[Playwright](playwright/README.md) preserves reviewed expectations as repeatable checks. Both run
-against a selected real system, but they are separate attempts.
+For exact interfaces, see [Feature syntax](features/reference.md), [Playwright clients and fixtures](playwright/clients-and-fixtures.md), [HTTP](guides/testing-http-apis.md), [PostgreSQL](guides/testing-postgres.md), [Redis](guides/testing-redis.md), [async completion](guides/testing-async-flows.md), and [Spec Kit integration](integrations/spec-kit.md).
 
-## Go deeper only when you need it
-
-[HTTP](guides/testing-http-apis.md) · [PostgreSQL](guides/testing-postgres.md) ·
-[Redis](guides/testing-redis.md) · [Async completion](guides/testing-async-flows.md) ·
-[Clients and fixtures](playwright/clients-and-fixtures.md) · [Feature syntax](features/reference.md)
-· [Spec Kit integration](integrations/spec-kit.md)
-
-The example's protected `/fixture/` endpoints are application-owned, not automatic Blackbox APIs.
-[Capsules](../packages/capsule/README.md) support interactive investigation.
-
-**Candidate alpha:** these walkthroughs refer to the pending
-[Feature/Playwright implementation](https://github.com/suites-dev/blackbox/pull/181) and
-`e2e/product-cache/` sample. Check
-[prerequisites](guides/verify-a-specification.md#run-the-supplied-example) before running their
-commands.
+**Alpha availability:** the Feature compiler and typed Playwright clients depend on [PR #181](https://github.com/suites-dev/blackbox/pull/181), and the `e2e/product-cache/` example hasn't landed on this docs branch. Automated Feature drafting, direct Feature execution in a Capsule, and editable scaffold generation are **planned**. See the [workflow's status notes](guides/from-spec-to-verification.md).

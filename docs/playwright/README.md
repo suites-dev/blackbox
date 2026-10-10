@@ -1,5 +1,16 @@
 # Express accepted behavior in native Playwright
 
+Native tests are where an agent can express project-specific behaviors
+using real SDK calls and assertions. After a [Capsule rehearsal](../guides/investigate-with-capsule.md),
+the agent can turn the observed preconditions and effects into repeatable checks
+against a fresh Sandbox.
+
+**Two contracts must stay separate:** a Feature-compiled suite is deterministic
+and must not be hand-edited. An editable Playwright **scaffold generator is planned**;
+today the agent can write and maintain a project-owned native suite directly.
+See [Editable scaffolds](editable-scaffolds.md) and the
+[full spec-first workflow](../guides/from-spec-to-verification.md).
+
 Native Playwright is a **first-class Spec-Driven Verification path**.
 Write executable expectations in TypeScript, operate the application
 through your project's SDKs, and assert the response, state, and bounded

@@ -12,6 +12,25 @@ and a **defined set of executable sentences** to make the example testable. Feat
   <img width="790" src="../assets/readme/specification-triangle.svg" alt="The accepted product specification stays connected to a reviewed Feature and its generated native Playwright suite." />
 </p>
 
+## When to create the Feature
+
+In the [spec-first workflow](../guides/from-spec-to-verification.md), the
+coding agent **drafts a Feature from the accepted requirement and asks
+the developer to review it before using it as a test contract**. Only
+then does it discover the required running-system boundary and rehearse
+the behavior in a Capsule.
+
+The future `blackbox feature file draft <spec> --output <feature>` command
+is **registered but currently unavailable**. Until an authoring provider
+is implemented, the agent writes the `.feature` file normally and
+validates its supported sentences. Native Playwright remains another
+valid way to express accepted expectations.
+
+After Capsule investigation, a Feature can be compiled **deterministically**
+when every step is supported. Richer tests can be written as native
+TypeScript; a separate [editable scaffold generator](../playwright/editable-scaffolds.md)
+is planned, not a reason to edit a generated Feature suite.
+
 ## Why a Feature helps coding agents
 
 Free-form prose is great for discussing requirements but leaves a lot of room for interpretation. A

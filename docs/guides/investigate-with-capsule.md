@@ -1,13 +1,14 @@
 # Investigate with a Capsule, confirm with Playwright
 
-A failing system test tells you *what didn't match the expectation*. It may not tell you why. That's
-where a **Capsule** helps your coding agent investigate the running system before changing the
-implementation.
+A Capsule is the coding agent's **laboratory**. Before writing the final system test, the agent can
+rehearse a reviewed scenario, check whether the selected services are sufficient, and find out
+which actions and observations really work. After a failed Playwright test, it can return to
+a Capsule to investigate why.
 
-A Capsule is a bounded, isolated environment for running commands, inspecting results, and recording
-runtime observations. **Playwright** is where you preserve reviewed expectations as repeatable
-system tests. They both use Blackbox's underlying system setup; they are **different executions**,
-not two views of a shared live container.
+A Capsule is a bounded, isolated environment for running commands, inspecting results, and
+retaining evidence. **Playwright** preserves the accepted behavior as repeatable system tests.
+They use the same underlying Blackbox setup but are **different executions**, not one shared
+live container. [See the full developer workflow](from-spec-to-verification.md).
 
 <p align="center">
   <img width="790" src="../assets/readme/capsule-to-feature.svg" alt="The agent investigates a system in a Capsule, proposes a candidate expectation, obtains review, and preserves the accepted behavior in Playwright." />
@@ -66,6 +67,18 @@ A useful experiment records:
 | Cleanup result                            | Shows whether Blackbox released owned resources                               |
 
 Stopping the Capsule releases its resources but preserves the retained record and report.
+
+## What a Capsule does not execute
+
+A Capsule can start the selected system and perform the proposed
+Given/When/Then actions through supported commands and drivers. It
+**does not currently run a Gherkin `.feature` file as a test suite**.
+The agent interprets the reviewed scenario into controlled experiments,
+records actual activity IDs, and inspects the resulting HTML report.
+
+The experiment helps the agent design a dependable test, but the
+**final pass/fail assertion belongs in Playwright**. See the two authoring
+paths in [From spec to verification](from-spec-to-verification.md).
 
 ## From an observation to an accepted check
 
