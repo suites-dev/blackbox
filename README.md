@@ -77,6 +77,7 @@ test.system('product-system', (system) => {
       const product = { id: 'product-1', name: 'Field notebook', priceCents: 1299 };
       const response = await clients.api.post('/products', { data: product });
       expect(response.status()).toBe(201);
+      expect(await response.json()).toMatchObject(product);
       const state = await clients.api.get('/fixture/products/product-1');
       expect(await state.json()).toEqual({ postgres: product, redis: product });
     });
