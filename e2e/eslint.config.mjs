@@ -11,7 +11,11 @@ const e2eLintPlugin = {
 export default [
   ...repositoryConfig,
   {
-    files: ['tests/playwright/*.spec.ts', 'tests/playwright-features/*.spec.ts'],
+    files: [
+      'tests/playwright/*.spec.ts',
+      'tests/playwright-features/*.spec.ts',
+      'tests/features-suites/*.spec.ts',
+    ],
     plugins: {
       e2e: e2eLintPlugin,
     },

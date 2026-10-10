@@ -1,3 +1,4 @@
+import { clientPlan, clientServices } from './clients/client-targets.js';
 import { randomBytes, randomUUID } from 'node:crypto';
 
 import {
@@ -24,7 +25,9 @@ import { startAttemptSandbox } from './sandbox-start.js';
 import { createSandboxTelemetry, type TelemetryAuthorization } from './telemetry.js';
 import { publicTelemetry } from './telemetry-handle.js';
 
-export interface BlackboxAttemptInput {
+export interface BlackboxAttemptInput extends Partial<
+  Record<'clientTargets', Parameters<typeof clientPlan>[1]>
+> {
   readonly selection: BlackboxCatalogSelection;
   readonly configFile: string;
   readonly environment: Readonly<Record<string, string>>;
@@ -189,7 +192,7 @@ export async function acquireBlackboxAttempt(
   const collectorAuthorization = authorization(ports);
   const sandbox = await reported(input.progress, 'acquisition', plan.services.join(', '), () =>
     startAttemptSandbox({
-      plan,
+      plan: clientPlan(plan, input.clientTargets ?? []),
       sessionId,
       executionId,
       authorization: collectorAuthorization,
@@ -223,6 +226,7 @@ export async function acquireBlackboxAttempt(
       artifactDirectory: input.artifactDirectory,
       entrypoint: Object.freeze(selectedEntrypoint),
       containers: sandbox.containers,
+      clientServices: clientServices(plan),
     }) satisfies BlackboxSandbox;
     const exposedTelemetry = publicTelemetry({
       sandbox,

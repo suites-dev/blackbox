@@ -47,7 +47,12 @@
       "target": "./dist/cli/command-registry.js",
       "identifier": "COMMANDS"
     },
-    "topicSeparator": " "
+    "topicSeparator": " ",
+    "topics": {
+      "inst": {
+        "description": "Install project-local runtime instrumentation."
+      }
+    }
   },
   "dependencies": {
     "@oclif/core": "^5.1.0",

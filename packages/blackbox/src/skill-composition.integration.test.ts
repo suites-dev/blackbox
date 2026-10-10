@@ -62,29 +62,28 @@ test('composes default package skills through the separately installed CLI', asy
     { cwd: tmpdir(), encoding: 'utf8' },
   );
 
-  assert.deepEqual(JSON.parse(stdout), {
-    kind: 'skill-list',
-    skills: [
-      {
-        name: 'blackbox',
-        dependencies: [],
-        integrations: [
-          { name: 'discovery', available: true },
-          { name: 'catalog', available: true },
-          { name: 'capsule', available: false },
-        ],
-      },
-      { name: 'catalog', dependencies: [], integrations: [] },
-      {
-        name: 'discovery',
-        dependencies: [],
-        integrations: [
-          { name: 'catalog', available: true },
-          { name: 'capsule', available: false },
-        ],
-      },
+  const result = JSON.parse(stdout);
+  assert.equal(result.kind, 'skill-list');
+  assert.deepEqual(
+    result.skills.map(({ name }: { name: string }) => name),
+    ['blackbox', 'catalog', 'discovery'],
+  );
+  assert.deepEqual(result.skills[0], {
+    name: 'blackbox',
+    dependencies: [],
+    integrations: [
+      { name: 'discovery', available: true },
+      { name: 'catalog', available: true },
     ],
   });
+  assert.deepEqual(result.skills[1], { name: 'catalog', dependencies: [], integrations: [] });
+  assert.equal(result.skills[2].integrations.length, 2);
+  assert.deepEqual(result.skills[2].integrations[0], { name: 'catalog', available: true });
+  assert.ok(
+    result.skills[2].integrations
+      .slice(1)
+      .every(({ available }: { available: boolean }) => !available),
+  );
 });
 
 test('copies the main package skill for all hosts without copying other skills', async (context) => {

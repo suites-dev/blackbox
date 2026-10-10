@@ -5,12 +5,20 @@
   "private": true,
   "description": "Project fixture for the CLI journeys and the demo: the YAML catalog, the project-authored drivers, and the Compose system under test.",
   "dependencies": {
+    "@playwright/test": "1.63.0",
     "@suites/blackbox": "workspace:*",
     "@suites/blackbox-catalog": "workspace:*",
-    "@suites/blackbox-cli": "workspace:*"
+    "@suites/blackbox-cli": "workspace:*",
+    "@suites/blackbox-playwright": "workspace:*",
+    "pg": "8.23.1",
+    "redis": "4.7.1"
   },
   "scripts": {
-    "lint": "eslint tests/playwright tests/playwright-features reporters playwright.config.ts playwright-features.config.ts lint",
+    "lint": "eslint tests/playwright tests/playwright-features tests/features-suites feature-cli .blackbox/clients reporters playwright.config.ts playwright-features.config.ts lint",
     "test:lint": "node --test 'lint/*.test.mjs'"
+  },
+  "devDependencies": {
+    "@types/pg": "8.23.1",
+    "typescript": "catalog:"
   }
 }

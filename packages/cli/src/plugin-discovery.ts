@@ -133,7 +133,7 @@ export async function discoverProjectCliPlugins(
   installationDirectory = startDirectory,
 ): Promise<CliPluginDiscovery | null> {
   // A source checkout is a deliberate composition root. Its workspace
-  // manifest owns the feature packages even when a nested harness manifest
+  // manifest owns the contributing packages even when a nested harness manifest
   // still lists only a subset of the current command surface.
   const workspace = await workspaceRoot(installationDirectory);
   const sourceRoot =

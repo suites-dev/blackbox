@@ -470,6 +470,46 @@ test('the CLI approves the sandbox Docker lane command and nothing appended to i
   }
 });
 
+test('the CLI approves only the sequential Feature journey passes', async () => {
+  const workflow = await fs.readFile(new URL('../workflows/e2e.yml', import.meta.url), 'utf8');
+  const featureJob = workflow.split('\n  feature-cli:\n')[1]?.split('\n  playwright:\n')[0];
+  assert.ok(featureJob, 'Feature CLI job must exist');
+  assert.doesNotMatch(featureJob, /\n    strategy:/u, 'Passes must share one runner');
+  assert.deepEqual(
+    [...featureJob.matchAll(/      - name: Run Feature CLI journey pass ([12])/gu)].map(
+      (match) => match[1],
+    ),
+    ['1', '2'],
+  );
+  assert.equal(
+    [...featureJob.matchAll(/-- node e2e\/feature-cli\/run\.mjs --repeat 1/gu)].length,
+    2,
+  );
+  assert.match(featureJob, /project: skeleton-pass-1/u);
+  assert.match(featureJob, /project: skeleton-pass-2/u);
+  assert.match(
+    featureJob,
+    /if: \$\{\{ steps\.feature_first\.outcome == 'success' && steps\.evidence_first\.outcome == 'success' \}\}/u,
+  );
+  for (const repeat of ['1', '2']) {
+    assert.deepEqual(approvedCliCommand(['node', 'e2e/feature-cli/run.mjs', '--repeat', repeat]), [
+      'node',
+      'e2e/feature-cli/run.mjs',
+      '--repeat',
+      repeat,
+    ]);
+  }
+  for (const command of [
+    ['node', 'e2e/feature-cli/run.mjs'],
+    ['node', 'e2e/feature-cli/run.mjs', '--repeat', '3'],
+    ['node', 'e2e/feature-cli/run.mjs', '--repeat', '01'],
+    ['node', 'e2e/feature-cli/run.mjs', '--repeat', '2', '--update'],
+    ['node', '../e2e/feature-cli/run.mjs', '--repeat', '2'],
+  ]) {
+    assert.throws(() => approvedCliCommand(command), /not an approved repository check/);
+  }
+});
+
 test('the CLI refuses journey runs that do not name exactly one shipped golden', () => {
   const refused = [
     // Journey grammar, but no such golden.

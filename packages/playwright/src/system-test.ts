@@ -24,8 +24,12 @@ interface DeclarationState {
   phase: 'idle' | 'system' | 'sandbox';
 }
 
+// Native describe callbacks run synchronously. Share their phase across independently
+// created facades so a second test instance cannot bypass declaration nesting guards.
+const declarationState = { phase: 'idle' as DeclarationState['phase'] } satisfies DeclarationState;
+
 type UseBlackboxOptions = (
-  options: Pick<BlackboxTestOptions, 'catalogEntry' | 'blackboxEnvironment'>,
+  options: Pick<BlackboxTestOptions, 'catalogEntry' | 'blackboxEnvironment' | 'blackboxClients'>,
 ) => void;
 
 function createUseBlackboxOptions<
@@ -51,6 +55,7 @@ interface SandboxGroupInput<TestArgs extends object, WorkerArgs extends object> 
   readonly selected: Readonly<SelectedSystem>;
   readonly name: string;
   readonly environment: Readonly<Record<string, string>>;
+  readonly clients: BlackboxSandboxOptions['clients'];
   readonly callback: (suite: BlackboxSandboxSuite<TestArgs, WorkerArgs>) => unknown;
   readonly useBlackboxOptions: UseBlackboxOptions;
 }
@@ -92,11 +97,12 @@ function createSandboxDeclaration<
       selected: context.selected,
       name: sandboxName,
       environment: environmentValue(options),
+      clients: options === undefined ? undefined : options.clients,
       callback,
       useBlackboxOptions: context.useBlackboxOptions,
     });
   }
-  return sandbox;
+  return sandbox as BlackboxSystemScope<TestArgs, WorkerArgs>['sandbox'];
 }
 
 function declareSandboxGroup<
@@ -111,6 +117,7 @@ function declareSandboxGroup<
     input.useBlackboxOptions({
       catalogEntry: input.selected,
       blackboxEnvironment: input.environment,
+      blackboxClients: input.clients ?? {},
     });
     input.state.phase = 'sandbox';
     let active = true;
@@ -204,5 +211,5 @@ export function createSystemTestFacade<
 >(
   nativeTest: InternalTest<TestArgs, WorkerArgs, InternalArgs>,
 ): BlackboxSystemTest<TestArgs, WorkerArgs> {
-  return createFacade(nativeTest, { phase: 'idle' }, createUseBlackboxOptions(nativeTest));
+  return createFacade(nativeTest, declarationState, createUseBlackboxOptions(nativeTest));
 }

@@ -105,12 +105,15 @@ RUN_RESULT_ROOT="$CONSUMER_ROOT/test-results"
 mkdir -p "$RUN_RESULT_ROOT"
 
 mkdir -p "$CONSUMER_ROOT/.blackbox/catalog" "$CONSUMER_ROOT/.blackbox/drivers"
+mkdir -p "$CONSUMER_ROOT/.blackbox/clients"
 mkdir -p "$CONSUMER_ROOT/tests/playwright"
 mkdir -p "$CONSUMER_ROOT/tests/playwright-features"
 mkdir -p "$CONSUMER_ROOT/reporters"
 cp "$E2E_ROOT/blackbox.config.yaml" "$CONSUMER_ROOT/blackbox.config.yaml"
 cp "$E2E_ROOT/.blackbox/catalog/"*.yml "$CONSUMER_ROOT/.blackbox/catalog/"
 cp "$E2E_ROOT/.blackbox/drivers/"*.mjs "$CONSUMER_ROOT/.blackbox/drivers/"
+cp "$E2E_ROOT/.blackbox/clients/public-api.ts" "$CONSUMER_ROOT/.blackbox/clients/"
+cp "$E2E_ROOT/.blackbox/clients/payment-mock.ts" "$CONSUMER_ROOT/.blackbox/clients/"
 cp -R "$E2E_ROOT/sut" "$CONSUMER_ROOT/sut"
 cp "$E2E_ROOT/playwright.config.ts" "$CONSUMER_ROOT/playwright.config.ts"
 cp "$E2E_ROOT/playwright-features.config.ts" "$CONSUMER_ROOT/playwright-features.config.ts"
@@ -148,6 +151,12 @@ if [[ ! -x "$PLAYWRIGHT_BIN" ]]; then
   echo 'playwright-test: registry consumer did not install Playwright' >&2
   exit 1
 fi
+
+BLACKBOX_E2E_FIXTURE_TOKEN="$FIXTURE_TOKEN" \
+BLACKBOX_E2E_RESULTS_ROOT="$RUN_RESULT_ROOT" \
+  "$PLAYWRIGHT_BIN" test --config "$CONSUMER_ROOT/playwright.config.ts" \
+    --list --reporter=line >"$RUN_RESULT_ROOT/discovery.txt"
+test -s "$RUN_RESULT_ROOT/discovery.txt"
 
 # tee retains evidence but must not hide an interactive terminal from Playwright.
 if [[ -t 1 && -z "${PLAYWRIGHT_FORCE_TTY:-}" ]]; then

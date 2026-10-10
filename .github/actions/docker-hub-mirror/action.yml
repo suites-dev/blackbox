@@ -1,0 +1,24 @@
+name: Configure Docker Hub mirror
+description: Prefer Google's public cache for Docker Hub images on disposable E2E runners.
+
+runs:
+  using: composite
+  steps:
+    - name: Configure Docker daemon mirror
+      shell: bash
+      run: |
+        set -euo pipefail
+        mirror=https://mirror.gcr.io
+        config=$(mktemp)
+        trap 'rm -f "$config"' EXIT
+        if [[ -f /etc/docker/daemon.json ]]; then
+          jq --arg mirror "$mirror" \
+            '."registry-mirrors" = ((."registry-mirrors" // []) + [$mirror] | unique)' \
+            /etc/docker/daemon.json >"$config"
+        else
+          jq -n --arg mirror "$mirror" '{"registry-mirrors": [$mirror]}' >"$config"
+        fi
+        sudo install -D -m 0644 "$config" /etc/docker/daemon.json
+        sudo systemctl restart docker
+        docker info --format '{{json .RegistryConfig.Mirrors}}' \
+          | jq -e --arg mirror "$mirror" 'map(rtrimstr("/")) | index($mirror) != null'

@@ -56,6 +56,9 @@ jobs:
           persist-credentials: false
           ref: ${{ github.event_name == 'workflow_dispatch' && inputs.target_branch || github.ref }}
 
+      - name: Configure Docker Hub mirror
+        uses: ./.github/actions/docker-hub-mirror
+
       - name: Setup toolchain
         uses: ./.github/actions/setup
         with:
@@ -185,6 +188,9 @@ jobs:
           persist-credentials: false
           ref: ${{ github.event_name == 'workflow_dispatch' && inputs.target_branch || github.ref }}
 
+      - name: Configure Docker Hub mirror
+        uses: ./.github/actions/docker-hub-mirror
+
       - name: Setup toolchain
         id: setup
         uses: ./.github/actions/setup
@@ -272,6 +278,9 @@ jobs:
           persist-credentials: false
           ref: ${{ github.event_name == 'workflow_dispatch' && inputs.target_branch || github.ref }}
 
+      - name: Configure Docker Hub mirror
+        uses: ./.github/actions/docker-hub-mirror
+
       - name: Setup toolchain
         id: setup
         uses: ./.github/actions/setup
@@ -331,6 +340,9 @@ jobs:
         with:
           persist-credentials: false
           ref: ${{ github.event_name == 'workflow_dispatch' && inputs.target_branch || github.ref }}
+
+      - name: Configure Docker Hub mirror
+        uses: ./.github/actions/docker-hub-mirror
 
       - name: Setup toolchain
         id: setup
@@ -393,6 +405,122 @@ jobs:
             [[ "$outcome" == success ]] || exit 1
           done
 
+  feature-contract:
+    name: Feature CLI contract checks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.target_branch || github.ref }}
+
+      - name: Setup toolchain
+        uses: ./.github/actions/setup
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          pnpm-version: ${{ env.PNPM_VERSION }}
+
+      - name: Qualify journey evidence checks
+        run: node --test 'e2e/feature-cli/*.test.mjs'
+
+  feature-cli:
+    name: Feature CLI generated skeleton journey
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.target_branch || github.ref }}
+
+      - name: Configure Docker Hub mirror
+        uses: ./.github/actions/docker-hub-mirror
+
+      - name: Setup toolchain
+        id: setup
+        uses: ./.github/actions/setup
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          pnpm-version: ${{ env.PNPM_VERSION }}
+
+      - name: Download the test registry storage
+        uses: actions/download-artifact@v8
+        with:
+          name: ${{ env.BUILD_ARTIFACT }}
+          path: ${{ runner.temp }}/registry-storage
+
+      - name: Serve the test registry
+        uses: ./.github/actions/registry
+        with:
+          storage: ${{ runner.temp }}/registry-storage
+
+      - name: Run Feature CLI journey pass 1
+        id: feature_first
+        timeout-minutes: 30
+        run: >-
+          node .github/scripts/ci-evidence.mjs run --lane feature-cli --project skeleton-pass-1
+          --evidence-dir ci-evidence/feature-cli/skeleton-pass-1
+          -- node e2e/feature-cli/run.mjs --repeat 1
+
+      - name: Retain Feature CLI pass 1 evidence
+        id: evidence_first
+        if: always()
+        uses: ./.github/actions/ci-evidence
+        with:
+          lane: feature-cli
+          project: skeleton-pass-1
+          evidence-dir: ci-evidence/feature-cli/skeleton-pass-1
+          setup-result: ${{ steps.setup.outcome }}
+          result: ${{ steps.feature_first.outcome }}
+          command: node e2e/feature-cli/run.mjs --repeat 1
+          expected: |
+            log=ci-evidence/feature-cli/skeleton-pass-1/logs/command.log
+            logs?=.blackbox/tmp/ci-feature-cli
+
+      - name: Run Feature CLI journey pass 2
+        id: feature_second
+        if: ${{ steps.feature_first.outcome == 'success' && steps.evidence_first.outcome == 'success' }}
+        timeout-minutes: 30
+        run: >-
+          node .github/scripts/ci-evidence.mjs run --lane feature-cli --project skeleton-pass-2
+          --evidence-dir ci-evidence/feature-cli/skeleton-pass-2
+          -- node e2e/feature-cli/run.mjs --repeat 1
+
+      - name: Retain Feature CLI pass 2 evidence
+        id: evidence_second
+        if: ${{ always() && steps.feature_second.outcome != 'skipped' }}
+        uses: ./.github/actions/ci-evidence
+        with:
+          lane: feature-cli
+          project: skeleton-pass-2
+          evidence-dir: ci-evidence/feature-cli/skeleton-pass-2
+          setup-result: ${{ steps.setup.outcome }}
+          result: ${{ steps.feature_second.outcome }}
+          command: node e2e/feature-cli/run.mjs --repeat 1
+          expected: |
+            log=ci-evidence/feature-cli/skeleton-pass-2/logs/command.log
+            logs?=.blackbox/tmp/ci-feature-cli
+
+      - name: Stop the registry
+        if: always()
+        run: docker rm --force blackbox-test-registry
+
+      - name: Enforce lane outcomes
+        if: always()
+        env:
+          OUTCOMES: >-
+            ${{ steps.setup.outcome }}
+            ${{ steps.feature_first.outcome }} ${{ steps.evidence_first.outcome }}
+            ${{ steps.feature_second.outcome }} ${{ steps.evidence_second.outcome }}
+        run: |
+          for outcome in $OUTCOMES; do
+            [[ "$outcome" == success ]] || exit 1
+          done
+
   playwright:
     name: Playwright system tests
     needs: build
@@ -404,6 +532,9 @@ jobs:
         with:
           persist-credentials: false
           ref: ${{ github.event_name == 'workflow_dispatch' && inputs.target_branch || github.ref }}
+
+      - name: Configure Docker Hub mirror
+        uses: ./.github/actions/docker-hub-mirror
 
       - name: Setup toolchain
         id: setup
@@ -539,6 +670,9 @@ jobs:
           persist-credentials: false
           ref: ${{ github.event_name == 'workflow_dispatch' && inputs.target_branch || github.ref }}
 
+      - name: Configure Docker Hub mirror
+        uses: ./.github/actions/docker-hub-mirror
+
       - name: Setup toolchain
         id: setup
         uses: ./.github/actions/setup
@@ -584,7 +718,19 @@ jobs:
   gate:
     name: E2E Gate
     if: always()
-    needs: [build, transport, demo, storyboard, journeys, playwright, skills, sandbox]
+    needs:
+      [
+        build,
+        transport,
+        demo,
+        storyboard,
+        journeys,
+        playwright,
+        feature-contract,
+        feature-cli,
+        skills,
+        sandbox,
+      ]
     runs-on: ubuntu-24.04
     steps:
       # Every lane always runs, so anything but success fails the gate. A matrix
@@ -597,6 +743,8 @@ jobs:
           DEMO_RESULT: ${{ needs.demo.result }}
           STORYBOARD_RESULT: ${{ needs.storyboard.result }}
           JOURNEYS_RESULT: ${{ needs.journeys.result }}
+          FEATURE_CONTRACT_RESULT: ${{ needs.feature-contract.result }}
+          FEATURE_CLI_RESULT: ${{ needs.feature-cli.result }}
           PLAYWRIGHT_RESULT: ${{ needs.playwright.result }}
           SKILLS_RESULT: ${{ needs.skills.result }}
           SANDBOX_RESULT: ${{ needs.sandbox.result }}
@@ -604,7 +752,7 @@ jobs:
           failed=0
           for lane in "build=$BUILD_RESULT" "transport=$TRANSPORT_RESULT" "demo=$DEMO_RESULT" \
             "storyboard=$STORYBOARD_RESULT" "journeys=$JOURNEYS_RESULT" \
-            "playwright=$PLAYWRIGHT_RESULT" "skills=$SKILLS_RESULT" "sandbox=$SANDBOX_RESULT"; do
+            "feature-contract=$FEATURE_CONTRACT_RESULT" "feature-cli=$FEATURE_CLI_RESULT" "playwright=$PLAYWRIGHT_RESULT" "skills=$SKILLS_RESULT" "sandbox=$SANDBOX_RESULT"; do
             name="${lane%%=*}"
             result="${lane#*=}"
             if [[ "$result" != success ]]; then

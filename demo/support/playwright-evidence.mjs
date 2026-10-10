@@ -104,6 +104,8 @@ export async function boundary(consumerRootValue) {
   const projectFiles = [
     'blackbox.config.yaml',
     '.blackbox/catalog/subscription-system.yml',
+    '.blackbox/clients/public-api.ts',
+    '.blackbox/clients/payment-mock.ts',
     '.blackbox/instrumentation/instrumentation.js',
     '.blackbox/instrumentation/package.json',
     'playwright.config.ts',

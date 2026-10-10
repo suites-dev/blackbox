@@ -103,6 +103,7 @@ export async function runAttemptFixture(input: AttemptFixtureInput): Promise<voi
         selection: input.catalogEntry,
         configFile: configFilePath(input.testInfo),
         environment: input.blackboxEnvironment,
+        clientTargets: Object.values(input.blackboxClients ?? {}).map(({ target }) => target),
         artifactDirectory: input.testInfo.outputPath('blackbox'),
         progress: report,
       },

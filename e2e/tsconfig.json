@@ -27,7 +27,9 @@
     "playwright-features.config.ts",
     "tests/playwright/**/*.ts",
     "tests/playwright-features/**/*.ts",
-    "reporters/**/*.ts"
+    "reporters/**/*.ts",
+    "tests/features-suites/**/*.ts",
+    ".blackbox/clients/**/*.ts"
   ],
   "exclude": ["node_modules"]
 }
