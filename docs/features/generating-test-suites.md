@@ -25,6 +25,21 @@ A generated test is not the authority for changing requirements. If a
 reviewed Feature changes, regenerate its suite rather than editing the
 output by hand.
 
+## Don't confuse generated suites with editable scaffolds
+
+The approved Feature can lead to two different kinds of Playwright
+code. The supported-steps compiler emits a **complete, deterministic**
+suite. It is derived output: don't ask an agent to edit or complete it.
+
+A separate [editable Playwright scaffold](../playwright/editable-scaffolds.md)
+is a **planned** authoring tool for project-specific setup and SDK
+assertions. It would be owned by the project, rather than protected
+by this byte-level drift check. Today the agent can author the native
+test directly.
+
+Both choices fit the [spec-first developer journey](../guides/from-spec-to-verification.md);
+only the deterministic route uses the command on this page.
+
 ## Check for drift
 
 ```sh

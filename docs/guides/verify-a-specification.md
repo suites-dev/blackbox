@@ -33,6 +33,20 @@ or cache internals tomorrow. The requirement still matters: **persist,
 cache, and avoid a database read on a valid cache hit**. That's why we
 check observable behavior rather than particular implementation methods.
 
+**Begin with the developer's approval.** The agent drafts a reviewable
+Feature for this rule before deciding what infrastructure to create. A
+Feature-drafting CLI command is planned but currently unavailable; the
+agent can write the file as a normal project artifact. The developer
+reviews whether the scenarios preserve the accepted behavior.
+
+Only then does the agent discover the product service, PostgreSQL,
+Redis, and observers needed to execute those approved scenarios.
+The agent may rehearse the actions in a [Capsule](investigate-with-capsule.md),
+show the Capsule HTML report, and use those findings to prepare the
+final tests. A Capsule **does not directly run a `.feature` file**.
+
+[Follow the complete developer workflow](from-spec-to-verification.md).
+
 The developer approves the rule. The agent proposes concrete checks and
 identifies how to observe each result:
 

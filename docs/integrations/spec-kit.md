@@ -16,6 +16,19 @@ The proposed `blackbox-spec-kit` extension is a thin handoff. **It is not publis
 
 Do not automatically rewrite `spec.md` after a failed runtime check. Fix the implementation when it contradicts accepted behavior, or return a proposed requirement change for explicit review.
 
+## Fit into the developer's verification journey
+
+Spec Kit supplies the accepted `spec.md`. The agent proposes a
+reviewable Feature for developer approval, then discovers and rehearses
+the system in a Capsule. When it is ready to make the check repeatable,
+it either compiles supported Feature steps deterministically or authors
+project-owned native Playwright. The proposed editable scaffold
+generator is a **separate future capability**.
+
+This is the same [spec-first workflow](../guides/from-spec-to-verification.md)
+that works for ordinary Markdown; there is no reason to fork the
+verification runtime for Spec Kit.
+
 ## The handoff
 
 Spec Kit keeps `spec.md` and its approval process. The agent proposes

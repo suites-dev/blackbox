@@ -25,6 +25,13 @@ The **spec** describes what should happen. The **test** expresses a concrete exa
 tells us whether that example held in one real execution. A passing test cannot prove that every
 requirement in the source document has been covered.
 
+The full [developer journey](../guides/from-spec-to-verification.md)
+places human review before system discovery. The agent then uses
+Capsule experiments to learn which observations actually work before
+turning the approved behavior into repeatable Playwright checks.
+Capsule exploration is useful, but isn't mandatory when the selected
+system and assertions are already known.
+
 ## Write checks in two ways
 
 <p align="center">

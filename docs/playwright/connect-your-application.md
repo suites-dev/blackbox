@@ -20,6 +20,20 @@ does not yet supply them. See [current availability](../../README.md#alpha-and-f
 
 ## Give the agent the specification
 
+In the spec-first workflow, the agent **drafts concrete
+scenarios and seeks developer approval before creating infrastructure**.
+That review answers *what behavior must be checked*. Repository discovery
+then answers *what must run to check it*.
+
+The Feature-drafting CLI command is not implemented yet; drafting a
+`.feature` file in the repository and presenting it for review is a
+valid manual/agent step. A native Playwright test can also be authored
+directly when the behavior needs more than the supported Gherkin
+vocabulary.
+
+[From specification to verification](../guides/from-spec-to-verification.md).
+
+
 Supply the accepted document, ticket, or API contract. For the product example,
 the [specification](../../e2e/product-cache/specs/create-product.md) requires
 creation to persist and cache the product, followed by cache-only retrieval.
