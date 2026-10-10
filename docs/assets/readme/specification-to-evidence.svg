@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1120" height="912" viewBox="0 0 1120 912" role="img" aria-labelledby="pipeline-title pipeline-desc">
   <title id="pipeline-title">From specification files to an execution report</title>
-  <desc id="pipeline-desc">The agent drafts new-product.feature from create-new-product.md. The Feature contains Given, When, and Then steps. The developer reviews and accepts the Feature after static validation. The accepted Feature generates new-product.spec.ts. Playwright executes the product subsystem configured in product-subsystem.yaml: product-service connected to PostgreSQL and Redis. Blackbox evaluates the completed execution and its retained evidence. The illustrative successful Execution Report checks that required scenarios executed, runtime claims are supported, and evidence is linked to the run. Source document content is represented by blurred placeholder lines. CLI commands are shown without flags. The slowly moving dashed connectors stop when reduced motion is requested.</desc>
+  <desc id="pipeline-desc">This optional authoring path starts with the accepted create-product.md specification. A human or coding agent drafts product-cache.feature for review. The Feature contains Given, When, and Then steps. The developer reviews and accepts the Feature after static validation. The accepted Feature generates product-cache.generated.spec.ts. Playwright executes the product system selected in blackbox.config.yaml: product-service connected to PostgreSQL and Redis. Playwright reports the executed scenarios and assertions. The sample assertions check response, stored state, and retrieval counters. Blackbox attaches diagnostics and evidence for the attempt. The retrieval counters are measured by the isolated sample from Redis commandstats and application-role PostgreSQL pg_stat_statements; they are not a default normalized-effects evaluator. Opening the report does not perform completed-run Feature verification. Source document content is represented by blurred placeholder lines. CLI commands are shown without flags. The slowly moving dashed connectors stop when reduced motion is requested.</desc>
   <defs>
     <marker id="pipeline-arrow-neutral" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto"><path d="m0 0 8 4-8 4Z" fill="#8B8B94"/></marker>
     <marker id="pipeline-arrow-pink" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto"><path d="m0 0 8 4-8 4Z" fill="#E67189"/></marker>
@@ -14,7 +14,7 @@
     .heading { fill: #F4F4F5; font-size: 20px; font-weight: 575; }
     .body { fill: #A1A1AA; font-size: 16px; }
     .filename { fill: #EF9DAB; font-family: Geist Mono, Consolas, monospace; font-size: 17px; }
-    .command { fill: #F4F4F5; font-family: Geist Mono, Consolas, monospace; font-size: 16px; }
+    .command { fill: #F4F4F5; font-family: Geist Mono, Consolas, monospace; font-size: 15px; }
     .feature-step { fill: #A1A1AA; font-family: Geist Mono, Consolas, monospace; font-size: 17px; }
     .annotation { fill: #A1A1AA; font-size: 15px; }
     .number { fill: #8B8B94; font-size: 13px; font-weight: 600; letter-spacing: 1px; }
@@ -32,7 +32,7 @@
   <g id="stage-specification" data-stage="1">
     <rect x="44" y="28" width="336" height="160" rx="18" class="panel"/>
     <svg x="64" y="48" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#A1A1AA" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H5v20h14V7l-5-5ZM14 2v6h5M8 12h8M8 16h8"/></svg>
-    <text x="101" y="67" class="heading">create-new-product.md</text>
+    <text x="101" y="67" class="heading">create-product.md</text>
     <text x="354" y="68" class="number" text-anchor="end">01</text>
     <g class="document-lines" filter="url(#document-soften)" aria-hidden="true">
       <rect x="68" y="102" width="250" height="5" rx="2.5"/>
@@ -41,8 +41,8 @@
       <rect x="68" y="159" width="160" height="5" rx="2.5"/>
     </g>
   </g>
-  <g id="handoff-draft" data-command="blackbox spec feature draft">
-    <text x="560" y="94" class="command" text-anchor="middle">$ blackbox spec feature draft</text>
+  <g id="handoff-draft" data-action="human-or-agent-draft">
+    <text x="560" y="94" class="command" text-anchor="middle">Human or coding agent</text>
     <path d="M384 120 H726" class="flow" stroke="#8B8B94"/>
     <path d="M726 120 H732" class="arrow" stroke="#8B8B94" marker-end="url(#pipeline-arrow-neutral)"/>
     <text x="560" y="149" class="annotation" text-anchor="middle">Draft candidate expectations</text>
@@ -50,18 +50,18 @@
   <g id="stage-draft" data-stage="2">
     <rect x="740" y="28" width="336" height="160" rx="18" class="panel"/>
     <svg x="760" y="48" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#A1A1AA" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 3h16v13l-5 5H4V3Zm11 18v-5h5M8 8h8M8 12h5"/></svg>
-    <text x="797" y="67" class="heading">new-product.feature</text>
+    <text x="797" y="67" class="heading">product-cache.feature</text>
     <text x="1050" y="68" class="number" text-anchor="end">02</text>
     <text x="764" y="111" class="feature-step">Given ..</text>
     <text x="764" y="137" class="feature-step">When ..</text>
     <text x="764" y="163" class="feature-step">Then ..</text>
   </g>
-  <g id="handoff-review" data-command="blackbox feature validate">
+  <g id="handoff-review" data-command="blackbox feature file validate">
     <path d="M908 192 V262" class="flow" stroke="#8B8B94"/>
     <path d="M908 298 V317" class="flow" stroke="#E67189"/>
     <path d="M908 317 V321" class="arrow" stroke="#E67189" marker-end="url(#pipeline-arrow-pink)"/>
     <text x="873" y="212" class="annotation" text-anchor="end">Static validation</text>
-    <text x="873" y="237" class="command" text-anchor="end">$ blackbox feature validate</text>
+    <text x="873" y="237" class="command" text-anchor="end">$ blackbox feature file validate</text>
     <svg x="896" y="270" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#EF9DAB" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="7" r="4"/><path d="M4 22v-3a8 8 0 0 1 16 0v3"/></svg>
     <text x="873" y="290" class="body" text-anchor="end" style="fill:#EF9DAB;font-weight:575">Developer reviews and accepts</text>
   </g>
@@ -70,7 +70,7 @@
     <svg x="760" y="348" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#EF9DAB" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 2 8 3v7c0 4-5 8-8 10-3-2-8-6-8-10V5l8-3Z"/><path d="m7 12 3 3 7-7"/></svg>
     <text x="797" y="367" class="heading">Accepted Feature</text>
     <text x="1050" y="368" class="number" text-anchor="end">03</text>
-    <text x="764" y="411" class="filename">new-product.feature</text>
+    <text x="764" y="411" class="filename">product-cache.feature</text>
     <text x="764" y="453" class="body">Reviewed executable expectations</text>
   </g>
   <g id="handoff-compile" data-command="blackbox feature suite emit">
@@ -84,12 +84,12 @@
     <svg x="64" y="348" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#93C5FD" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m8 6-6 6 6 6m8-12 6 6-6 6M14 3l-4 18"/></svg>
     <text x="101" y="367" class="heading">Playwright suite</text>
     <text x="354" y="368" class="number" text-anchor="end">04</text>
-    <text x="68" y="422" class="filename" style="fill:#93C5FD">new-product.spec.ts</text>
+    <text x="68" y="422" class="filename" style="fill:#93C5FD;font-size:14px">product-cache.generated.spec.ts</text>
   </g>
-  <g id="handoff-execute" data-command="npx playwright test">
+  <g id="handoff-execute" data-command="pnpm exec playwright test">
     <path d="M212 492 V615" class="flow" stroke="#8B8B94"/>
     <path d="M212 615 V621" class="arrow" stroke="#8B8B94" marker-end="url(#pipeline-arrow-neutral)"/>
-    <text x="248" y="545" class="command" text-anchor="start">$ npx playwright test</text>
+    <text x="248" y="545" class="command" text-anchor="start">$ pnpm exec playwright test</text>
     <text x="248" y="574" class="annotation">Execute each test attempt</text>
   </g>
   <g id="stage-execution-evidence" data-stage="5">
@@ -97,7 +97,7 @@
     <svg x="64" y="648" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#93C5FD" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="2" width="8" height="6" rx="1"/><rect x="2" y="16" width="7" height="6" rx="1"/><rect x="15" y="16" width="7" height="6" rx="1"/><path d="M12 8v4H5.5v4M12 12h6.5v4"/></svg>
     <text x="101" y="667" class="heading">System topology</text>
     <text x="354" y="668" class="number" text-anchor="end">05</text>
-    <text x="68" y="706" class="filename" style="fill:#93C5FD">product-subsystem.yaml</text>
+    <text x="68" y="706" class="filename" style="fill:#93C5FD">blackbox.config.yaml</text>
     <g id="product-topology" aria-label="product-service connects to PostgreSQL and Redis">
       <rect x="128" y="730" width="168" height="44" rx="9" class="topology-node"/>
       <text x="212" y="758" text-anchor="middle" class="topology-label">product-service</text>
@@ -111,9 +111,9 @@
       <text x="272" y="839" class="topology-label">Redis</text>
     </g>
   </g>
-  <g id="handoff-verify" data-command="blackbox feature verify">
-    <text x="560" y="747" class="command" text-anchor="middle">$ blackbox feature verify</text>
-    <text x="560" y="776" class="annotation" text-anchor="middle">Evaluate completed run + evidence</text>
+  <g id="handoff-verify" data-command="pnpm exec playwright show-report">
+    <text x="560" y="747" class="command" text-anchor="middle">$ pnpm exec playwright show-report</text>
+    <text x="560" y="776" class="annotation" text-anchor="middle">Inspect assertions + attempt evidence</text>
     <path d="M384 803 H726" class="flow" stroke="#93C5FD"/>
     <path d="M726 803 H732" class="arrow" stroke="#93C5FD" marker-end="url(#pipeline-arrow-blue)"/>
   </g>
@@ -124,12 +124,12 @@
     <text x="1050" y="668" class="number" text-anchor="end">06</text>
     <circle cx="779" cy="714" r="11" fill="#86EFAC" fill-opacity=".08" stroke="#86EFAC" stroke-opacity=".4"/>
     <path d="m774 714 3.5 3.5 6.5-7" fill="none" stroke="#86EFAC" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-    <text x="801" y="720" class="report-line">Required scenarios executed</text>
+    <text x="801" y="720" class="report-line">Scenario results</text>
     <circle cx="779" cy="770" r="11" fill="#86EFAC" fill-opacity=".08" stroke="#86EFAC" stroke-opacity=".4"/>
     <path d="m774 770 3.5 3.5 6.5-7" fill="none" stroke="#86EFAC" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-    <text x="801" y="776" class="report-line">Runtime claims supported</text>
+    <text x="801" y="776" class="report-line">Response + state + runtime</text>
     <circle cx="779" cy="826" r="11" fill="#86EFAC" fill-opacity=".08" stroke="#86EFAC" stroke-opacity=".4"/>
     <path d="m774 826 3.5 3.5 6.5-7" fill="none" stroke="#86EFAC" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-    <text x="801" y="832" class="report-line">Evidence linked to this run</text>
+    <text x="801" y="832" class="report-line">Attempt diagnostics</text>
   </g>
 </svg>

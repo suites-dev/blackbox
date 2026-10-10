@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1120" height="584" viewBox="0 0 1120 584" role="img" aria-labelledby="loop-title loop-description">
   <title id="loop-title">Human-agent behavioral verification loop</title>
-  <desc id="loop-description">A person approves the specification, effect claims, and analysis policy as feedforward guidance for a coding agent. The agent realizes or repairs a system or E2E suite. Blackbox captures fresh runtime evidence and returns deterministic findings to the agent as feedback. Proposed changes to human intent or policy return to the person, who decides. The two slowly moving dashed return paths stop when reduced motion is requested.</desc>
+  <desc id="loop-description">A person approves the specification, expected outcomes, and verification policy. The coding agent implements or repairs the application and prepares its system or E2E suite. Playwright runs assertions and Blackbox retains runtime evidence and diagnostics tied to that attempt. Results guide investigation and repair. Proposed changes to human intent or policy return to the person, who decides. The two slowly moving dashed return paths stop when reduced motion is requested.</desc>
   <defs>
     <marker id="loop-arrow-neutral" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto"><path d="m0 0 8 4-8 4Z" fill="#8B8B94"/></marker>
     <marker id="loop-arrow-pink" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto"><path d="m0 0 8 4-8 4Z" fill="#E67189"/></marker>
@@ -35,12 +35,12 @@
     <rect x="740" y="28" width="336" height="196" rx="18" class="panel"/>
     <svg x="760" y="48" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#EF9DAB" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="7" width="16" height="14" rx="4"/><path d="M12 3v4M1 12v5m22-5v5M9 16h6"/><circle cx="9" cy="12" r=".7"/><circle cx="15" cy="12" r=".7"/><circle cx="12" cy="2" r="1"/></svg>
     <text x="797" y="67" class="heading" data-max-width="255">Coding agent</text>
-    <text x="764" y="109" class="role" data-max-width="288">GENERATOR</text>
-    <text x="764" y="151" class="body" data-max-width="288">realizes or repairs</text>
+    <text x="764" y="109" class="role" data-max-width="288">IMPLEMENT + TEST</text>
+    <text x="764" y="151" class="body" data-max-width="288">implements or repairs</text>
   </g>
 
   <g id="loop-feedforward">
-    <text x="560" y="71" class="flow-label" fill="#EF9DAB" text-anchor="middle" data-max-width="304">Feedforward</text>
+    <text x="560" y="71" class="flow-label" fill="#EF9DAB" text-anchor="middle" data-max-width="304">Accepted expectations</text>
     <path d="M384 92 H732" class="arrow" stroke="#E67189" marker-end="url(#loop-arrow-pink)"/>
   </g>
 
@@ -65,10 +65,10 @@
     <rect x="44" y="344" width="336" height="212" rx="18" class="panel"/>
     <svg x="64" y="364" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#93C5FD" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4v8h7m-7 0v8h12M11 8v8"/><circle cx="16" cy="12" r="3"/><circle cx="19" cy="20" r="2"/></svg>
     <text x="101" y="383" class="heading" data-max-width="255">Blackbox</text>
-    <text x="68" y="425" class="heading" style="font-size:18px" data-max-width="288">Runtime captures evidence</text>
+    <text x="68" y="425" class="heading" style="font-size:18px" data-max-width="288">Runtime retains evidence</text>
     <path d="M68 447 H356" class="arrow" stroke="#FFFFFF" stroke-opacity=".13"/>
-    <text x="68" y="480" class="heading" style="font-size:18px" data-max-width="288">Analyzer returns findings</text>
-    <text x="68" y="515" class="annotation" data-max-width="288">same sealed inputs, same result</text>
+    <text x="68" y="480" class="heading" style="font-size:18px" data-max-width="288">Assertions report results</text>
+    <text x="68" y="515" class="annotation" data-max-width="288">results tied to this attempt</text>
   </g>
   <g id="loop-capture">
     <text x="560" y="425" class="annotation" text-anchor="middle" data-max-width="304">Fresh runtime evidence</text>
@@ -78,7 +78,7 @@
   <g id="loop-feedback">
     <path d="M212 340 V292 Q212 276 228 276 H780 Q796 276 796 260 V238" class="flow" stroke="#93C5FD"/>
     <path d="M796 238 V232" class="arrow" stroke="#93C5FD" marker-end="url(#loop-arrow-blue)"/>
-    <text x="504" y="254" class="flow-label" fill="#93C5FD" text-anchor="middle" data-max-width="420">Deterministic feedback</text>
-    <text x="504" y="305" class="annotation" text-anchor="middle" data-max-width="420">finding becomes a repair problem</text>
+    <text x="504" y="254" class="flow-label" fill="#93C5FD" text-anchor="middle" data-max-width="420">Results + runtime evidence</text>
+    <text x="504" y="305" class="annotation" text-anchor="middle" data-max-width="420">failure guides the next repair</text>
   </g>
 </svg>

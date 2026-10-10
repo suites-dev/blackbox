@@ -15,47 +15,50 @@ Expected behavior can be expressed directly in native Playwright tests or throug
 that generate a native suite. Each test attempt runs in a fresh isolated Sandbox, using response, state, and runtime
 evidence to evaluate the specified claims.
 
-## Spec-Driven Verification
+## Blackbox and Spec-Driven Verification
 
 Spec-Driven Verification checks a running system against an accepted specification. That specification can come from
-product requirements, acceptance criteria, an API contract (like Swagger and OpenAPI), a Markdown document, or any 
+product requirements, acceptance criteria, an API contract (like Swagger and OpenAPI), a Markdown document, or any
 other source of agreed behavior.
 
-**Accepted behavior defines the checks; each execution supplies evidence.**
-
 Developers and coding agents turn those requirements into executable expectations for review. They can write native
-Playwright tests directly or generate suites from optional Feature files. Blackbox runs the selected application or
+Playwright tests directly or generate suites from Feature files. Blackbox runs the selected application or
 subsystem and gathers evidence for the specified claims.
 
-The example below follows the optional Feature-file workflow, from a Markdown specification through review and suite
-generation to runtime verification:
-
 <p align="center">
-  <img width="800" src="docs/assets/readme/specification-to-evidence.svg" alt="create-new-product.md becomes an accepted new-product.feature and generated new-product.spec.ts. Playwright runs the product subsystem, with product-service connected to PostgreSQL and Redis, before Blackbox verifies the execution report." />
+  <img width="800" src="docs/assets/readme/specification-to-evidence.svg" alt="create-product.md guides a reviewed product-cache.feature and generated product-cache.generated.spec.ts. Playwright runs product-service with PostgreSQL and Redis; the execution report presents assertions and attempt diagnostics." />
 </p>
+
+The example follows a simple requirement: creating a product persists it in PostgreSQL and populates Redis. Retrieving
+it while cached must use Redis without reading PostgreSQL. A correct HTTP response alone cannot establish that rule;
+the test also needs state and runtime evidence. The figure shows the optional Feature route from specification to
+execution. Native Playwright can express the same expectations directly.
 
 Specifications in any format can become stale as implementation evolves. Blackbox keeps their accepted expectations
 in the verification loop: review checks that executable expectations preserve the intended behavior, and repeated
 execution makes departures from that behavior visible.
 
-This also fits spec-driven development (SDD) workflows such as Spec Kit, Kiro and Openspec. SDD guides 
-specification, clarification, planning, and implementation; Blackbox provides executable verification of the accepted
-system behavior.
+[Start the tutorial](docs/guides/verify-a-specification.md) · [Documentation](docs/README.md) · [Feature workflow](docs/features/README.md)
 
-[Spec-Driven workflows integration](docs/integrations/spec-driven-workflows.md)
+## Onboarding | Your agent handles the setup
 
+Ask your coding agent to set up Blackbox for your repository. Blackbox's skill
+system guides repository discovery, topology design, and configuration; the CLI
+returns structured information the agent can use to check its work.
 
-## Installation - let your coding agent run Blackbox
+With `@suites/blackbox-cli` and `@suites/blackbox` installed in your project, inspect
+the available skills and install the entry skill for your agent, for example Codex:
 
-Ask your coding agent to set up Blackbox in your repository, starting with:
-
-```bash
-$ npx @suites/blackbox-cli onboarding start
+```sh
+pnpm exec blackbox skills list
+pnpm exec blackbox skills install blackbox --codex
 ```
 
-Blackbox provides a full skill system out of the box to let coding agents handle the operational work, from initial
-setup to execution, investigation, and verification. The skills provide the procedures and context, while Blackbox’s CLI
-returns structured feedback the agent can act on.
+Use `--claude` or `--cursor` for those hosts. Follow the
+[skill installation guide](packages/blackbox/skills/blackbox/references/skill-installation.md)
+for the discovery and catalog skills the entry workflow uses. Playwright and
+Feature support are selected separately; the [application setup guide](docs/playwright/connect-your-application.md)
+explains the required packages. These docs describe the candidate alpha implementation.
 
 ### Agent Onboarding
 
@@ -81,187 +84,272 @@ files where appropriate. For a Node application with an HTTP service, the setup 
 `blackbox.config.yaml` is the configuration authority and references the supporting files. Capsules and Playwright use
 that configuration to run the selected system and collect evidence.
 
-[Initial setup](docs/getting-started/agent-onboarding.md) ·
-[Agent skills](docs/agents/skills.md)
+[Agent onboarding skill](packages/blackbox/skills/blackbox/SKILL.md) ·
+[Agent skills](packages/skills/README.md)
 
-## Behavior-driven verification
+## Blackbox and Behavior-driven development
 
-[Behavior-driven development (BDD)](https://cucumber.io/docs/bdd/) uses concrete examples to establish a shared
-understanding of expected behavior. Blackbox adopts that approach to verifying real applications and subsystems:
-scenarios establish initial conditions, perform an action, and check the required outcomes.
+Blackbox adopts Gherkin (Cucumber) to express behavior as `Features`, `Rules`, and
+`Scenarios`. `Given`, `When`, and `Then` correspond to `Arrange`, `Act`, and `Assert`: establish
+a known precondition, exercise the system, and check the specified outcome.
+Feature files are optional; native Playwright tests can express the same approach
+directly with your project's SDKs.
 
-**These specifications describe what the running system must do:** its responses, state changes, and required runtime
-effects, such as serving a product from cache. Their meaning should remain stable when classes, functions, or code
-organization change while the required behavior stays the same. Native Playwright tests can express these expectations
-directly.
-
-### Express scenarios with executable Feature files
-
-For this optional workflow, Blackbox adopts [Gherkin from Cucumber](https://cucumber.io/docs/gherkin/reference/).
-A `Feature` describes a capability, a `Rule` groups scenarios illustrating a business rule, and each `Scenario` states
-initial conditions (`Given`), an action (`When`), and expected outcomes (`Then`).
-
-The agent drafts or refines the specification into Blackbox’s closed executable vocabulary for review. Supported steps
-have defined setup, action, and verification semantics, without a separate
-regex step-definition layer. Existing Gherkin may need refinement to use that vocabulary.
-
-The following example connects the source specification, reviewed Feature, and native Playwright suite around the same
-response and required cache behavior:
+The specification stays focused on observable system behavior. Client definitions
+and test setup hold the connection details. Generated suites preserve the
+Feature → Rule → Scenario nesting, Background hooks, and authored step order, so
+reviewers can follow an expectation into the test that executes it.
 
 <p align="center">
-  <img width="800" src="docs/assets/readme/specification-triangle.svg" alt="product-cache.md drives a reviewed product-cache.feature and its native product-cache.spec.ts suite. Review preserves intent, generation preserves alignment, and execution supplies evidence for the specified behavior." />
+  <img width="800" src="docs/assets/readme/specification-triangle.svg" alt="The accepted product specification guides a reviewed optional Feature. Generation preserves its rule, scenarios, and Arrange–Act–Assert structure in Playwright. Execution checks PostgreSQL persistence, Redis state, and cache-hit behavior." />
 </p>
 
-<details>
-<summary>View the specification and tests</summary>
+Keeping a specification current takes three checks: review the scenarios against
+the accepted intent, check that generated code still matches the Feature, and run
+the assertions against the system. Each catches a different kind of drift.
+Blackbox does not automatically prove that a prose document is fully covered.
 
-**Specification · `product-cache.md`**
+<details>
+<summary>See the product specification, Feature, and generated Playwright suite</summary>
+
+[`specs/create-product.md`](e2e/product-cache/specs/create-product.md) defines the behavior:
 
 ```markdown
-# Product details
+# Product creation and retrieval
 
-## Business rule
+## Rule: Persist products and serve valid cache entries
 
-Cached product details are served from cache.
-
-## Acceptance example
-
-A product is already cached. When a client requests its details:
-
-- The response status is 200.
-- The product is returned from cache.
+Creating a product persists it in PostgreSQL and populates Redis.
+Retrieving it while its cached entry is valid returns the cached product
+without reading PostgreSQL.
 ```
 
-**Feature · `features/product-cache.feature`**
-
-The reviewed Feature expresses the same business rule and acceptance example:
+The [complete Feature](e2e/product-cache/tests/product-cache.feature) expresses
+creation and cached retrieval as separate scenarios under that rule. Fixture
+endpoints belong to this small example application: they expose real stored state
+and isolated database/cache operation counters through the compiler's supported
+HTTP sentences.
 
 ```gherkin
-Feature: Product details
+@system:product-system @sandbox:default
+Feature: Product creation and retrieval
+  Rule: Persist products and serve valid cache entries
+    Scenario: Create a new product
+      Given client "api" GET "/fixture/products/product-1" returns 200 with JSON exactly:
+        """json
+        { "postgres": null, "redis": null }
+        """
+      When client "api" sends POST "/products" with JSON:
+        """json
+        { "id": "product-1", "name": "Field notebook", "priceCents": 1299 }
+        """
+      Then the response status is 201
+      And the response JSON contains:
+        """json
+        { "id": "product-1", "name": "Field notebook", "priceCents": 1299 }
+        """
+      And client "api" GET "/fixture/products/product-1" returns 200 with JSON exactly:
+        """json
+        {
+          "postgres": { "id": "product-1", "name": "Field notebook", "priceCents": 1299 },
+          "redis": { "id": "product-1", "name": "Field notebook", "priceCents": 1299 }
+        }
+        """
 
-  Rule: Cached product details are served from cache
-
-    Scenario: Return product details from cache
-      Given the product is already cached
-      When the client requests product details
+    Scenario: Retrieve a product from its valid cache entry
+      Given client "api" sends POST "/fixture/observations/calibrate" with JSON:
+        """json
+        {}
+        """
+      And the response status is 200
+      And the response JSON contains:
+        """json
+        {
+          "applicationPostgresSelects": 1,
+          "applicationPostgresStatements": 1,
+          "applicationPostgresPlans": 1,
+          "redisGets": 1,
+          "retrievals": 1
+        }
+        """
+      And client "api" has sent POST "/products" with JSON and received 201:
+        """json
+        { "id": "product-1", "name": "Field notebook", "priceCents": 1299 }
+        """
+      And client "api" GET "/fixture/products/product-1" returns 200 with JSON exactly:
+        """json
+        {
+          "postgres": { "id": "product-1", "name": "Field notebook", "priceCents": 1299 },
+          "redis": { "id": "product-1", "name": "Field notebook", "priceCents": 1299 }
+        }
+        """
+      And client "api" has sent POST "/fixture/observations/start" with JSON and received 200:
+        """json
+        { "productId": "product-1" }
+        """
+      When client "api" sends GET "/products/product-1"
       Then the response status is 200
-      And the product is returned from cache
+      And the response JSON contains:
+        """json
+        { "id": "product-1", "name": "Field notebook", "priceCents": 1299 }
+        """
+      And client "api" GET "/fixture/observations/result" returns 200 with JSON exactly:
+        """json
+        {
+          "productId": "product-1",
+          "applicationPostgresSelects": 0,
+          "applicationPostgresStatements": 0,
+          "applicationPostgresPlans": 0,
+          "redisGets": 1,
+          "retrievals": 1
+        }
+        """
 ```
 
-**Native suite · `product-cache.spec.ts`**
+The [generated suite](e2e/product-cache/tests/product-cache.generated.spec.ts)
+preserves the same hierarchy and steps:
 
-Generation preserves the `Feature → Rule → Scenario → steps` nesting and names. Within each scenario, `Given` arranges
-the initial state, `When` applies the stimulus, and `Then` asserts the expected outcomes, following Arrange–Act–Assert
-(AAA). `And` continues the preceding step type. The selected system and its isolated Sandbox provide the execution
-context around that hierarchy.
-
-The planned native expression below retains the same capability, business rule, scenario, and steps. The existing
-[Playwright E2E suite](https://github.com/suites-dev/blackbox/blob/8017b623d5c5da5f162f3ee828a703cb814ea1cf/e2e/tests/playwright/subscription-system.spec.ts)
-illustrates the underlying system-test structure. This example requires a cache-only fixture: product 42 is present in
-the cache and absent from the backing store, so its returned value can establish the response source.
-
+<!-- prettier-ignore -->
 ```ts
-import { randomUUID } from 'node:crypto';
 import { expect, test } from '@suites/blackbox-playwright';
+import { api as client_api } from "./clients.js";
 
-test
-.system('products-system')
-.feature('Product details')
-.run(({ sandbox }) => {
-  sandbox.describe('Rule: Cached product details are served from cache', ({ suite }) => {
-    suite.test(
-      'Scenario: Return product details from cache',
-      async ({ activities, request, sandbox, effects }) => {
-        const product = { id: '42', name: `Cached product ${randomUUID()}` };
-        const url = (path: string) => new URL(path, sandbox.entrypoint.url).href;
-
-        await test.step('Given the product is already cached', () =>
-          activities.setup.request('seed cache-only product', request, async (scoped) => {
-            const seeded = await scoped.post(url('/__fixtures/products/cache-only'), {
-              data: product,
-            });
-            expect(seeded.status()).toBe(204);
-          }));
-
-        const response = await test.step('When the client requests product details', () =>
-          activities.stimulus.request('request product details', request, (scoped) =>
-            scoped.get(url('/products/42')),
-          ));
-
-        await test.step('Then the response status is 200', async () => {
-          expect(response.status()).toBe(200);
+test.system({ kind: 'system', id: "product-system" }, (system) => {
+  system.sandbox("default", { clients: { "api": client_api } }, (suite) => {
+    suite.describe("Feature: Product creation and retrieval", () => {
+      suite.describe("Rule: Persist products and serve valid cache entries", () => {
+        suite.test("Scenario: Create a new product", async ({ clients, step }) => {
+          await step("Given client \"api\" GET \"/fixture/products/product-1\" returns 200 with JSON exactly:", async () => {
+            const response = await clients.api.get("/fixture/products/product-1");
+            expect(response.status()).toBe(200);
+            expect(await response.json()).toEqual({"postgres":null,"redis":null});
+          });
+          const response0 = await step("When client \"api\" sends POST \"/products\" with JSON:", () => clients.api.post("/products", { data: {"id":"product-1","name":"Field notebook","priceCents":1299} }));
+          await step("Then the response status is 201", async () => {
+            expect(response0.status()).toBe(201);
+          });
+          await step("And the response JSON contains:", async () => {
+            expect(await response0.json()).toMatchObject({"id":"product-1","name":"Field notebook","priceCents":1299});
+          });
+          await step("And client \"api\" GET \"/fixture/products/product-1\" returns 200 with JSON exactly:", async () => {
+            const response = await clients.api.get("/fixture/products/product-1");
+            expect(response.status()).toBe(200);
+            expect(await response.json()).toEqual({"postgres":{"id":"product-1","name":"Field notebook","priceCents":1299},"redis":{"id":"product-1","name":"Field notebook","priceCents":1299}});
+          });
         });
 
-        await test.step('And the product is returned from cache', async () => {
-          expect(await response.json()).toEqual(product);
-
-          await expect(effects).toSatisfy((e) => [
-            e.exists(e.cache({ actor: 'catalog-api', operation: 'GET' })),
-          ]);
+        suite.test("Scenario: Retrieve a product from its valid cache entry", async ({ clients, step }) => {
+          const response1 = await step("Given client \"api\" sends POST \"/fixture/observations/calibrate\" with JSON:", () => clients.api.post("/fixture/observations/calibrate", { data: {} }));
+          await step("And the response status is 200", async () => {
+            expect(response1.status()).toBe(200);
+          });
+          await step("And the response JSON contains:", async () => {
+            expect(await response1.json()).toMatchObject({"applicationPostgresSelects":1,"applicationPostgresStatements":1,"applicationPostgresPlans":1,"redisGets":1,"retrievals":1});
+          });
+          await step("And client \"api\" has sent POST \"/products\" with JSON and received 201:", async () => {
+            const response = await clients.api.post("/products", { data: {"id":"product-1","name":"Field notebook","priceCents":1299} });
+            expect(response.status()).toBe(201);
+          });
+          await step("And client \"api\" GET \"/fixture/products/product-1\" returns 200 with JSON exactly:", async () => {
+            const response = await clients.api.get("/fixture/products/product-1");
+            expect(response.status()).toBe(200);
+            expect(await response.json()).toEqual({"postgres":{"id":"product-1","name":"Field notebook","priceCents":1299},"redis":{"id":"product-1","name":"Field notebook","priceCents":1299}});
+          });
+          await step("And client \"api\" has sent POST \"/fixture/observations/start\" with JSON and received 200:", async () => {
+            const response = await clients.api.post("/fixture/observations/start", { data: {"productId":"product-1"} });
+            expect(response.status()).toBe(200);
+          });
+          const response2 = await step("When client \"api\" sends GET \"/products/product-1\"", () => clients.api.get("/products/product-1"));
+          await step("Then the response status is 200", async () => {
+            expect(response2.status()).toBe(200);
+          });
+          await step("And the response JSON contains:", async () => {
+            expect(await response2.json()).toMatchObject({"id":"product-1","name":"Field notebook","priceCents":1299});
+          });
+          await step("And client \"api\" GET \"/fixture/observations/result\" returns 200 with JSON exactly:", async () => {
+            const response = await clients.api.get("/fixture/observations/result");
+            expect(response.status()).toBe(200);
+            expect(await response.json()).toEqual({"productId":"product-1","applicationPostgresSelects":0,"applicationPostgresStatements":0,"applicationPostgresPlans":0,"redisGets":1,"retrievals":1});
+          });
         });
-      },
-    );
+      });
+    });
   });
 });
 ```
 
-**Draft, review, generate, and run**
-
-The agent drafts the Feature from the specification for review. Once its expectations are accepted, it validates the
-Feature, generates the native suite, and runs it against the selected application or subsystem:
-
-```console
-$ blackbox spec feature draft --file product-cache.md
-$ blackbox feature validate --file features/product-cache.feature
-$ blackbox feature suite emit --file features/product-cache.feature
-$ npx playwright test
-```
+The cache-miss calibration checks that the observer detects a database read.
+Creation and state inspection then establish the cached product before the
+retrieval window. The final assertions check that retrieval's response, Redis
+GET count, and absence of application PostgreSQL statements. See the
+[walkthrough](docs/guides/verify-a-specification.md) for setup and evidence interpretation.
 
 </details>
 
-The project-owned fixture endpoint seeds the cache and removes any backing-store copy of the product. Setup remains
-separate from the stimulus. The final claim combines that controlled initial state, the returned product, and cache-read
-evidence from the same execution; observing a cache read alone would not establish that the product was served from it.
+From the prepared example's `e2e/product-cache/` directory, validate the reviewed
+Feature, check its generated suite, and execute it with Playwright:
 
-**Keep specifications connected as the system evolves.** Review checks that executable expectations remain faithful to
-the accepted specification. Repeated execution checks those expectations against the running system. When intended
-behavior changes, revise the specification and its executable expectations together.
+```sh
+pnpm exec blackbox feature file validate tests/product-cache.feature --clients tests/clients.ts
+pnpm exec blackbox feature suite validate tests/product-cache.feature --clients tests/clients.ts --output tests/product-cache.generated.spec.ts
+pnpm --dir .. exec playwright test --config product-cache/playwright.config.ts --project feature
+```
 
-For the Feature workflow, `blackbox feature suite check` also detects deterministic drift between the accepted Feature
-and its generated suite. After reviewing changes to the Feature, regenerate the suite and verify the new expectations.
-Review maintains meaning, generation keeps the derived suite aligned, and execution supplies evidence for the exercised
-claims.
+The current compiler supports a [closed HTTP vocabulary](docs/features/reference.md#sentence-reference).
+A human or coding agent drafts and reviews scenarios; automatic CLI drafting and
+completed-run Feature verification are not yet available.
 
-[Executable specifications](docs/specifications/index.md) ·
-[Feature files](docs/specifications/feature-files.md)
+[Author a Feature](docs/features/drafting-feature-files.md) ·
+[Generate suites and check drift](docs/features/generating-test-suites.md)
+
+## Write system tests with native Playwright
+
+Use native tests when you want to author TypeScript directly or combine HTTP,
+database, cache, and messaging operations. Register your project's SDK clients
+with `defineClient`; Blackbox resolves their Sandbox endpoints and handles
+readiness and disposal. Their methods and types remain available in the test.
+
+Handwritten and generated suites use the same per-attempt Sandbox, fixtures,
+`step` function, assertions, and reports. A project can use either path or both.
+
+| What you want to establish                                       | Guide                                                 |
+| ---------------------------------------------------------------- | ----------------------------------------------------- |
+| The API returns the specified response                           | [HTTP requests](docs/guides/testing-http-apis.md)     |
+| The application commits the expected row                         | [PostgreSQL state](docs/guides/testing-postgres.md)   |
+| A cached retrieval uses Redis without a database read            | [Redis behavior](docs/guides/testing-redis.md)        |
+| An eventual outcome reaches its accepted state within a deadline | [Bounded polling](docs/guides/testing-async-flows.md) |
+
+[Verify the product rule](docs/guides/verify-a-specification.md) ·
+[Clients and fixtures](docs/playwright/clients-and-fixtures.md)
 
 ## Developer-agent verification loop
 
-The developer approves the specification, behavioral claims, and verification policy. The coding agent uses that
+The developer approves the specification, expected outcomes, and verification policy. The coding agent uses that
 guidance to implement the behavior, prepare system tests, and investigate failures.
 
 <p align="center">
   <img width="800" src="docs/assets/readme/human-agent-verification-loop.svg" alt="The developer approves intent and policy, the coding agent prepares and repairs system tests, and Blackbox returns runtime evidence and findings. Proposed changes to intent or policy return to the developer for review." />
 </p>
 
-Blackbox turns fresh runtime evidence into findings the agent can inspect and act on. The agent repairs the
-implementation and reruns verification against the same accepted expectations. Proposed changes to the specification
+Test results and retained runtime evidence give the agent a concrete failure to investigate. The agent repairs the
+implementation and reruns verification against the same accepted expectations. In the
+[product repair walkthrough](docs/guides/repair-from-evidence.md), the response remains correct while runtime evidence
+reveals an unnecessary PostgreSQL read. Proposed changes to the specification
 or verification policy return to the developer for review.
 
 ## Inspect the result and its evidence
 
 Playwright remains the test runner. Blackbox adds execution context and evidence to its terminal and HTML reports.
-For the cache scenario, a report can look like this:
+Both authoring workflows use that reporting path. The report keeps the authored
+steps with the result; Blackbox attaches lifecycle diagnostics and an attempt
+record. Retention can preserve the Sandbox's artifacts and telemetry for later
+inspection.
 
-<p align="center">
-  <img width="800" src="docs/assets/readme/illustrative-report.svg" alt="Illustrative Product details report showing the cache scenario, steps L6 to L9, response and cache observations, coverage, and one passed result." />
-  <br />
-  <sub>Claims and coverage appear alongside evidence from the same attempt.</sub>
-</p>
-
-Claims are supported, refuted, or unresolved according to the available response, state, and runtime evidence. In this
-example, the response establishes the status code. The cache claim combines the controlled initial state, returned
-product, and runtime evidence from the same execution.
+Response and state assertions work today. Feature coverage, completed-run claim
+qualification, and the richer [report illustration](docs/assets/readme/illustrative-report.svg)
+remain under development. The alpha effects matcher fails as inconclusive unless
+a runtime supplies an evaluator; registering an SDK does not automatically add
+trace propagation or normalized effect assertions.
 
 Different claims require different evidence. Observing a database operation does not establish that a transaction
 committed. Observing a message being published does not establish that a consumer completed its work. An operation that
@@ -269,29 +357,23 @@ was not observed is not automatically evidence that it never happened.
 
 Blackbox keeps those limits explicit so a passing verification does not claim more than the execution established.
 
-For suites generated from Feature files, **Executable Feature Coverage** shows which executable Feature lines and
-Examples rows were actually exercised by the run. It measures coverage of the executable Feature; an exercised line
-still needs evidence to support its claim.
+From `e2e/product-cache/`, open the native HTML report to inspect test results,
+steps, and attached Blackbox diagnostics:
 
-The HTML report connects scenarios, Sandbox execution, claims, observations, and retained evidence, including the
-associated Feature when present:
-
-```console
-$ npx playwright show-report
+```sh
+pnpm --dir .. exec playwright show-report product-cache/playwright-report
 ```
 
-[Reports](docs/playwright/reports.md) ·
-[Verification](docs/verification/index.md) ·
-[Evidence](docs/verification/evidence.md) ·
-[Evidence qualification](docs/verification/evidence-qualification.md)
+[Playwright reporting](docs/guides/repair-from-evidence.md#keep-attempt-evidence) ·
+[Telemetry and effects fixtures](docs/playwright/clients-and-fixtures.md)
 
 ## Investigate with Capsules
 
-When a claim is refuted or unresolved, the agent can use a Capsule to investigate. Capsules also support experiments
+When a test fails or its evidence leaves a question unresolved, the agent can use a Capsule to investigate. Capsules also support experiments
 with candidate expectations before they become accepted behavior.
 
 | Mode                   | Purpose                                                                      |
-|------------------------|------------------------------------------------------------------------------|
+| ---------------------- | ---------------------------------------------------------------------------- |
 | Playwright system test | Repeat accepted expectations against a fresh isolated Sandbox.               |
 | Capsule                | Act on a running system, inspect evidence, test a hypothesis, and try again. |
 
@@ -312,10 +394,9 @@ expectation; the accepted specification remains the source of what the implement
 Stopping the environment does not discard the experiment. Its activities, observations, and evidence remain available
 for inspection and reporting.
 
-[Capsules](docs/capsules/index.md) ·
-[Experiments](docs/capsules/experiments.md) ·
-[Capsule reports](docs/capsules/reports.md) ·
-[Playwright verification](docs/playwright/index.md)
+[Capsules](packages/capsule/README.md) ·
+[Playwright testing](docs/playwright/README.md) ·
+[Authoring Features](docs/features/drafting-feature-files.md)
 
 ---
 
@@ -340,11 +421,10 @@ ways to act on it and inspect state, and instrumentation provides supported runt
 Use unit tests for the behavior of a function or class. Use Blackbox when the claim concerns a running application or
 subsystem, including when an internal implementation change could affect that behavior.
 
-[System boundaries](docs/systems/system-boundaries.md) ·
-[Configuration](docs/systems/blackbox-config.md) ·
-[Systems](docs/systems/index.md) ·
-[Drivers](docs/systems/drivers.md) ·
-[Instrumentation](docs/systems/instrumentation.md)
+[Catalog and system selection](packages/catalog/README.md) ·
+[Configuration schema](packages/catalog/schema/blackbox-config-v1.json) ·
+[Drivers](packages/driver/README.md) ·
+[Node instrumentation](packages/instrumentation-runtime-node/README.md)
 
 ---
 
@@ -356,38 +436,31 @@ experiments during development, while CI runs the suite selected by the reposito
 Every physical Playwright attempt gets a fresh Sandbox. Isolation enables parallel execution; CPU, memory, and container
 resources determine how much concurrency is practical.
 
-For repositories using the Feature workflow, three checks protect different parts of verification:
+Run native suites with the same Playwright configuration locally and in CI. For generated suites, also check that
+the committed TypeScript still matches the reviewed Feature and compiler inputs. From the
+prepared product example:
 
-| Check                                              | What it establishes                                                                              |
-|----------------------------------------------------|--------------------------------------------------------------------------------------------------|
-| `blackbox feature suite check`                     | The generated suite matches the accepted Feature and current compiler inputs.                    |
-| `blackbox feature verify`                          | Required scenarios ran, verdicts are supported, and runner policy matches the accepted baseline. |
-| `blackbox feature change check --base origin/main` | Changes to accepted Features satisfy the repository's specification-change policy.               |
-
-For generated Feature suites, CI checks that the suite is current, runs it, and verifies the completed execution:
-
-```console
-$ blackbox feature suite check
-$ npx playwright test
-$ blackbox feature verify
+```sh
+pnpm exec blackbox feature suite validate tests/product-cache.feature --clients tests/clients.ts --output tests/product-cache.generated.spec.ts
+pnpm --dir .. exec playwright test --config product-cache/playwright.config.ts --project feature
 ```
 
-The generated suite is derived from the accepted Feature. Source-specification-to-Feature alignment is a separate
-semantic question from deterministic Feature-to-suite drift. Repositories that protect specifications separately from
-implementation changes can also use `feature change check` against their chosen base branch.
+The drift check compares generated bytes; Playwright executes the assertions. Keep normal TypeScript checks in the
+project's validation workflow. Review changes to accepted expectations before replacing a generated suite.
 
-[CI verification](docs/playwright/ci.md) ·
-[Specification drift](docs/specifications/drift.md)
+[Playwright configuration](docs/playwright/README.md) ·
+[Check generated-suite drift](docs/features/generating-test-suites.md#check-for-drift)
 
 ---
 
 ## Alpha and next steps
 
-Blackbox is under active development. The executable Feature workflow described here is upcoming. APIs, command names,
-and report formats may change before the stable release.
+Blackbox is under active development. Native Playwright testing and Feature validation, generation, and drift checks
+are implemented in this branch. Automatic Feature drafting, completed-run verification, and Feature coverage remain
+unavailable while their contracts are developed.
 
-Start with [coding-agent onboarding](#let-your-coding-agent-run-blackbox), or explore the guides below.
+Start with [coding-agent onboarding](#agent-onboarding), or follow either authoring guide:
 
-[Getting started](docs/getting-started/index.md) ·
-[Initial setup](docs/getting-started/agent-onboarding.md) ·
-[CLI reference](docs/reference/cli/index.md)
+[Playwright guide](docs/playwright/README.md) ·
+[Feature guide](docs/features/README.md) ·
+[CLI reference](packages/cli/README.md)

@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="268" viewBox="0 0 1000 268" role="img" aria-labelledby="title desc">
+<title id="title">Verify the committed subscription</title>
+<desc id="desc">The test commits an eligible user through its PostgreSQL pool. The public API performs the subscription operation. A separate test connection checks exactly one committed active subscription for that user.</desc>
+<defs><marker id="arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto"><path d="m0 0 8 4-8 4Z" fill="#93C5FD"/></marker></defs>
+<style>
+text { font-family: Geist, Inter, Arial, sans-serif; }
+.mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+.flow { fill: none; stroke: #93C5FD; stroke-width: 1.5; stroke-dasharray: 6 10; animation: flow 16s linear infinite; }
+@keyframes flow { from { stroke-dashoffset: 0; } to { stroke-dashoffset: -128; } }
+@media (prefers-reduced-motion: reduce) { .flow { animation: none; } }
+</style>
+<rect width="1000" height="268" fill="#0F0F12"/>
+<rect x="24" y="24" width="296" height="220" rx="16" fill="#17171C" stroke="#3F3F46" stroke-width="1.3"/>
+<svg x="44" y="44" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#EF9DAB" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 4 16 4 16 0V5M4 12c0 4 16 4 16 0"/></svg>
+<text x="80" y="61" font-size="15" font-weight="550" fill="#F4F4F5">Given · test connection</text>
+<path d="M44 86H300" stroke="#303038"/>
+<text x="44" y="118" font-size="17" fill="#EF9DAB" font-weight="550">Commit an eligible user</text>
+<text x="44" y="151" font-size="14" fill="#D4D4D8" class="mono">tier = pro</text>
+<text x="44" y="178" font-size="14" fill="#D4D4D8" class="mono">execution_path = local-only</text>
+<text x="44" y="205" font-size="14" fill="#D4D4D8" class="mono">subscriptions for user = 0</text>
+<rect x="352" y="24" width="296" height="220" rx="16" fill="#17171C" stroke="#3F3F46" stroke-width="1.3"/>
+<svg x="372" y="44" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#F4F4F5" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="7" rx="2"/><rect x="3" y="14" width="18" height="7" rx="2"/><path d="M7 6.5h.01M7 17.5h.01M11 6.5h6M11 17.5h6"/></svg>
+<text x="408" y="61" font-size="15" font-weight="550" fill="#F4F4F5">When · public-api</text>
+<path d="M372 86H628" stroke="#303038"/>
+<text x="372" y="118" font-size="17" fill="#F4F4F5" font-weight="550">POST /subscriptions</text>
+<text x="372" y="151" font-size="14" fill="#D4D4D8" class="mono">HTTP 201</text>
+<text x="372" y="178" font-size="14" fill="#D4D4D8" class="mono">Application inserts</text>
+<text x="372" y="205" font-size="14" fill="#D4D4D8" class="mono">and commits the subscription</text>
+<rect x="680" y="24" width="296" height="220" rx="16" fill="#17171C" stroke="#3F3F46" stroke-width="1.3"/>
+<svg x="700" y="44" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#93C5FD" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 4 16 4 16 0V5M4 12c0 4 16 4 16 0"/></svg>
+<text x="736" y="61" font-size="15" font-weight="550" fill="#F4F4F5">Then · test connection</text>
+<path d="M700 86H956" stroke="#303038"/>
+<text x="700" y="118" font-size="17" fill="#93C5FD" font-weight="550">Read the committed row</text>
+<text x="700" y="151" font-size="14" fill="#D4D4D8" class="mono">1 row · same user · tier pro</text>
+<text x="700" y="178" font-size="14" fill="#D4D4D8" class="mono">status = active</text>
+<text x="700" y="205" font-size="14" fill="#D4D4D8" class="mono">payment / order IDs = null</text>
+<path d="M325 134H347" class="flow" marker-end="url(#arrow)"/>
+<path d="M653 134H675" class="flow" marker-end="url(#arrow)"/>
+</svg>

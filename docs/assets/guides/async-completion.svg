@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="580" viewBox="0 0 960 580" role="img" aria-labelledby="title desc">
+<title id="title">Correlate submission with completion</title><desc id="desc">The test pushes a unique job ID to Redis. The worker consumes it and writes completed to PostgreSQL after finishing its work. The test polls for that same ID for up to ten seconds. Queue acknowledgement proves only submission.</desc>
+<defs><marker id="arrow-EF9DAB" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto"><path d="m0 0 8 4-8 4Z" fill="#EF9DAB"/></marker><marker id="arrow-93C5FD" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto"><path d="m0 0 8 4-8 4Z" fill="#93C5FD"/></marker><marker id="arrow-A1A1AA" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto"><path d="m0 0 8 4-8 4Z" fill="#A1A1AA"/></marker></defs>
+<style>
+text { font-family: Geist, Inter, Arial, sans-serif; }
+.panel { fill: #17171C; stroke: #3F3F46; stroke-width: 1.3; }
+.flow { fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 6 10; animation: flow 16s linear infinite; }
+@keyframes flow { from { stroke-dashoffset: 0; } to { stroke-dashoffset: -128; } }
+@media (prefers-reduced-motion: reduce) { .flow { animation: none; } }
+</style>
+<rect width="960" height="580" fill="#0F0F12"/>
+<rect x="24" y="24" width="200" height="66" rx="16" class="panel"/><svg x="44" y="44" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#EF9DAB" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m8 6-6 6 6 6m8-12 6 6-6 6M14 3l-4 18"/></svg><text x="80" y="63" font-size="19" fill="#F4F4F5" font-weight="575">Test</text>
+<rect x="266" y="24" width="200" height="66" rx="16" class="panel"/><svg x="286" y="44" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#EF9DAB" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 7 9-4 9 4-9 4-9-4Zm0 5 9 4 9-4M3 17l9 4 9-4"/></svg><text x="322" y="63" font-size="19" fill="#F4F4F5" font-weight="575">Redis</text>
+<rect x="508" y="24" width="200" height="66" rx="16" class="panel"/><svg x="528" y="44" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#EF9DAB" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="14" rx="2"/><path d="m8 9 3 3-3 3m5 0h3"/></svg><text x="564" y="63" font-size="19" fill="#F4F4F5" font-weight="575">Worker</text>
+<rect x="736" y="24" width="200" height="66" rx="16" class="panel"/><svg x="756" y="44" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#93C5FD" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 4 16 4 16 0V5M4 12c0 4 16 4 16 0"/></svg><text x="792" y="63" font-size="19" fill="#F4F4F5" font-weight="575">PostgreSQL</text>
+<path d="M124 98 V504" stroke="#3F3F46" stroke-width="1" stroke-dasharray="3 5"/>
+<path d="M366 98 V504" stroke="#3F3F46" stroke-width="1" stroke-dasharray="3 5"/>
+<path d="M608 98 V504" stroke="#3F3F46" stroke-width="1" stroke-dasharray="3 5"/>
+<path d="M836 98 V504" stroke="#3F3F46" stroke-width="1" stroke-dasharray="3 5"/>
+<path d="M124 148 H358" class="flow" stroke="#EF9DAB" marker-end="url(#arrow-EF9DAB)"/>
+<text x="144" y="132" font-size="16" fill="#EF9DAB" font-weight="400">Enqueue { id: jobId }</text>
+<path d="M366 201 H600" class="flow" stroke="#EF9DAB" marker-end="url(#arrow-EF9DAB)"/>
+<text x="393" y="185" font-size="16" fill="#EF9DAB" font-weight="400">Consume job</text>
+<rect x="104" y="233" width="750" height="270" rx="12" fill="#93C5FD" fill-opacity=".025" stroke="#93C5FD" stroke-opacity=".2"/>
+<text x="144" y="257" font-size="14" fill="#93C5FD" font-weight="400">POLL THE SAME jobId · up to 10 seconds</text>
+<path d="M124 292 H828" class="flow" stroke="#93C5FD" marker-end="url(#arrow-93C5FD)"/>
+<text x="144" y="281" font-size="16" fill="#F4F4F5" font-weight="400">Read status WHERE id = jobId</text>
+<path d="M836 332 H132" class="flow" stroke="#93C5FD" marker-end="url(#arrow-93C5FD)"/>
+<text x="144" y="320" font-size="16" fill="#A1A1AA" font-weight="400">Missing / pending: poll again</text>
+<path d="M608 378 H828" class="flow" stroke="#EF9DAB" marker-end="url(#arrow-EF9DAB)"/>
+<text x="610" y="366" font-size="16" fill="#EF9DAB" font-weight="400">Write completed</text>
+<path d="M124 424 H828" class="flow" stroke="#93C5FD" marker-end="url(#arrow-93C5FD)"/>
+<text x="144" y="412" font-size="16" fill="#F4F4F5" font-weight="400">Read status for the same job again</text>
+<path d="M836 472 H132" class="flow" stroke="#93C5FD" marker-end="url(#arrow-93C5FD)"/>
+<text x="144" y="460" font-size="16" fill="#93C5FD" font-weight="400">completed: the assertion passes</text>
+<svg x="28" y="534" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#93C5FD" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12 5 5L20 6"/></svg><text x="66" y="553" font-size="17" fill="#F4F4F5" font-weight="400">Missing or failed does not satisfy the assertion. An empty queue proves no completion.</text>
+</svg>

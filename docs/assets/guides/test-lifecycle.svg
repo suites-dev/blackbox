@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="354" viewBox="0 0 960 354" role="img" aria-labelledby="title desc">
+<title id="title">One Sandbox and client set per test attempt</title><desc id="desc">Acquire the Sandbox, create and ready the clients, run per-test hooks and the test, dispose clients in reverse creation order, then release the Sandbox and finalize diagnostics. Retries repeat this lifecycle. Cleanup is attempted on failure; cleanup errors fail the attempt.</desc>
+<defs><marker id="arrow-EF9DAB" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto"><path d="m0 0 8 4-8 4Z" fill="#EF9DAB"/></marker><marker id="arrow-93C5FD" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto"><path d="m0 0 8 4-8 4Z" fill="#93C5FD"/></marker><marker id="arrow-A1A1AA" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto"><path d="m0 0 8 4-8 4Z" fill="#A1A1AA"/></marker></defs>
+<style>
+text { font-family: Geist, Inter, Arial, sans-serif; }
+.panel { fill: #17171C; stroke: #3F3F46; stroke-width: 1.3; }
+.flow { fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 6 10; animation: flow 16s linear infinite; }
+@keyframes flow { from { stroke-dashoffset: 0; } to { stroke-dashoffset: -128; } }
+@media (prefers-reduced-motion: reduce) { .flow { animation: none; } }
+</style>
+<rect width="960" height="354" fill="#0F0F12"/>
+<rect x="32" y="24" width="256" height="122" rx="16" class="panel"/><svg x="52" y="44" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#93C5FD" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 7 9-4 9 4v10l-9 4-9-4V7Zm0 0 9 5 9-5M12 12v9"/></svg><text x="88" y="63" font-size="19" fill="#F4F4F5" font-weight="575">1  Acquire Sandbox</text><text x="54" y="98" font-size="17" fill="#93C5FD" font-weight="400">Selected catalog boundary</text>
+<rect x="352" y="24" width="256" height="122" rx="16" class="panel"/><svg x="372" y="44" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#93C5FD" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m8 6-6 6 6 6m8-12 6 6-6 6M14 3l-4 18"/></svg><text x="408" y="63" font-size="19" fill="#F4F4F5" font-weight="575">2  Ready clients</text><text x="374" y="98" font-size="17" fill="#93C5FD" font-weight="400">Create, then check readiness</text>
+<rect x="672" y="24" width="256" height="122" rx="16" class="panel"/><svg x="692" y="44" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#93C5FD" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12 5 5L20 6"/></svg><text x="728" y="63" font-size="19" fill="#F4F4F5" font-weight="575">3  Run the test</text><text x="694" y="98" font-size="17" fill="#93C5FD" font-weight="400">Per-test hooks</text><text x="694" y="124" font-size="17" fill="#A1A1AA" font-weight="400">and the test body</text>
+<path d="M296 85 H344" class="flow" stroke="#EF9DAB" marker-end="url(#arrow-EF9DAB)"/>
+<path d="M616 85 H664" class="flow" stroke="#EF9DAB" marker-end="url(#arrow-EF9DAB)"/>
+<path d="M800 154 V199 H648 V230" class="flow" stroke="#EF9DAB" marker-end="url(#arrow-EF9DAB)"/>
+<path d="M512 288 H440" class="flow" stroke="#EF9DAB" marker-end="url(#arrow-EF9DAB)"/>
+<rect x="520" y="238" width="408" height="92" rx="16" class="panel"/><svg x="540" y="258" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#EF9DAB" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 7a9 9 0 0 0-15-2L2 8m0-6v6h6m-4 9a9 9 0 0 0 15 2l3-3m0 6v-6h-6"/></svg><text x="576" y="277" font-size="19" fill="#F4F4F5" font-weight="575">4  Dispose clients</text><text x="542" y="312" font-size="17" fill="#EF9DAB" font-weight="400">Reverse order · bounded cleanup</text>
+<rect x="32" y="238" width="400" height="92" rx="16" class="panel"/><svg x="52" y="258" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#93C5FD" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 7 9-4 9 4v10l-9 4-9-4V7Zm0 0 9 5 9-5M12 12v9"/></svg><text x="88" y="277" font-size="19" fill="#F4F4F5" font-weight="575">5  Release Sandbox</text><text x="54" y="312" font-size="17" fill="#93C5FD" font-weight="400">Finalize diagnostics · retain if enabled</text>
+<text x="32" y="190" font-size="18" fill="#F4F4F5" font-weight="400">Every retry starts a fresh attempt.</text>
+<text x="32" y="215" font-size="16" fill="#A1A1AA" font-weight="400">Failures still trigger cleanup; cleanup errors remain errors.</text>
+</svg>
