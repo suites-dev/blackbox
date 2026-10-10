@@ -35,6 +35,32 @@ export interface CompileFeatureResult {
   readonly diagnostics: readonly FeatureDiagnostic[];
 }
 
+const exactJsonPattern = /^client "([\w$-]+)" GET "([^"\n]+)" returns (\d{3}) with JSON exactly:?$/u;
+const requestPattern = /^client "([\w$-]+)" (?:has sent|sends) (GET|POST|PUT|PATCH|DELETE) "([^"\n]+)"( with JSON)?(?: and received (\d{3}))?:?$/u;
+
+/** Read client references only from steps that the compiler can execute. */
+export function referencedClientNames(source: string, uri: string): ReadonlySet<string> {
+  let document: GherkinDocument;
+  try { document = parseGherkin(source, uri).document; }
+  catch { return new Set(); } // compileFeature reports the source syntax diagnostic.
+  const names = new Set<string>();
+  const visitSteps = (steps: readonly Step[]) => {
+    for (const step of steps) {
+      const match = exactJsonPattern.exec(step.text) ?? requestPattern.exec(step.text);
+      if (match) {names.add(match[1]);}
+    }
+  };
+  for (const child of document.feature?.children ?? []) {
+    if (child.background) {visitSteps(child.background.steps);}
+    if (child.scenario) {visitSteps(child.scenario.steps);}
+    for (const nested of child.rule?.children ?? []) {
+      if (nested.background) {visitSteps(nested.background.steps);}
+      if (nested.scenario) {visitSteps(nested.scenario.steps);}
+    }
+  }
+  return names;
+}
+
 /** Compile the explicitly supported HTTP vocabulary into native Playwright declarations. */
 export function compileFeature(options: CompileFeatureOptions): CompileFeatureResult {
   const uri = options.uri ?? 'inline.feature';
@@ -178,7 +204,7 @@ function emitStep(step: Step, context: CompilerContext, dynamicRow = false, dyna
   const text = step.text;
   const title = `${step.keyword}${text}`.trim();
   const doc = step.docString?.content;
-  const exactJson = /^client "([\w$-]+)" GET "([^"\n]+)" returns (\d{3}) with JSON exactly:?$/u.exec(text);
+  const exactJson = exactJsonPattern.exec(text);
   if (exactJson) {
     const [, client, path, expectedStatus] = exactJson;
     assertClient(client, step, context);
@@ -186,11 +212,12 @@ function emitStep(step: Step, context: CompilerContext, dynamicRow = false, dyna
     const expected = dynamicRow ? rowJsonExpression(doc, step, context, dynamicHeaders) : jsonExpression(doc, step, context);
     return `await step(${stringExpression(title, dynamicRow)}, async () => {\n  const response = await clients.${client}.get(${stringExpression(path, dynamicRow)});\n  expect(response.status()).toBe(${expectedStatus});\n  expect(await response.json()).toEqual(${expected});\n});`;
   }
-  const request = /^client "([\w$-]+)" (?:has sent|sends) (GET|POST|PUT|PATCH|DELETE) "([^"\n]+)"(?: with JSON)?(?: and received (\d{3}))?:?$/u.exec(text);
+  const request = requestPattern.exec(text);
   if (request) {
-    const [, client, method, path, expectedStatus] = request;
+    const [, client, method, path, withJson, expectedStatus] = request;
     assertClient(client, step, context);
-    const body = doc ? `, { data: ${dynamicRow ? rowJsonExpression(doc, step, context, dynamicHeaders) : jsonExpression(doc, step, context)} }` : '';
+    if (withJson && doc === undefined) {return unsupported(step, context, 'JSON request needs a JSON Doc String.');}
+    const body = doc !== undefined ? `, { data: ${dynamicRow ? rowJsonExpression(doc, step, context, dynamicHeaders) : jsonExpression(doc, step, context)} }` : '';
     const response = `clients.${client}.${method.toLowerCase()}(${stringExpression(path, dynamicRow)}${body})`;
     const variable = `response${context.counter++}`;
     context.lastResponse = variable;
@@ -220,7 +247,8 @@ function emitStep(step: Step, context: CompilerContext, dynamicRow = false, dyna
     }
     const response = context.lastResponse;
     if (!response) {return unsupported(step, context, 'Response JSON assertion has no preceding HTTP request in this scenario.');}
-    const expected = dynamicRow ? rowJsonExpression(`{ ${values.join(', ')} }`, step, context, dynamicHeaders) : `{ ${values.join(', ')} }`;
+    const value = `{ ${values.join(', ')} }`;
+    const expected = dynamicRow ? rowJsonExpression(value, step, context, dynamicHeaders) : jsonExpression(value, step, context);
     return `await step(${stringExpression(title, dynamicRow)}, async () => {\n  expect(await ${response}.json()).toMatchObject(${expected});\n});`;
   }
   return unsupported(step, context, `Unsupported Feature step: ${quote(text)}.`);
@@ -231,7 +259,7 @@ function assertClient(name: string, step: Step, context: CompilerContext): void 
 }
 
 function jsonExpression(value: string, step: Step, context: CompilerContext): string {
-  try { return escapeUnsafeJsChars(JSON.stringify(JSON.parse(value))); }
+  try { return `JSON.parse(${quote(JSON.stringify(JSON.parse(value)))})`; }
   catch {
     context.diagnostics.push(diagnostic('FEATURE_JSON_INVALID', 'Doc String must contain valid JSON.', step.location?.line ?? 1, step.location?.column ?? 1));
     return 'null';
@@ -303,7 +331,7 @@ function rowJsonExpression(
 
   let template = templateString(serialized);
   for (const { marker, replacement } of templateMarkers) {
-    template = template.replace(marker, replacement);
+    template = template.replace(marker, () => replacement);
   }
   return `JSON.parse(${template})`;
 }

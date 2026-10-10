@@ -64,6 +64,14 @@ async function createWithinDeadline(input: CreateWithinDeadlineInput): Promise<u
   const cleanupDeadline = Date.now() + Math.max(1, input.cleanupTimeoutMs);
   const lateCreation = await withinDeadline(creation, cleanupDeadline);
   if (lateCreation.kind === 'timeout') {
+    // Keep ownership after grace expires without delaying the caller's timeout.
+    void creation.then(
+      (client) => disposeWithinBudget(
+        () => input.definition.dispose(client),
+        Math.max(1, input.cleanupTimeoutMs),
+      ),
+      () => undefined,
+    ).catch(() => undefined);
     throw new AggregateError(
       [timeoutError, new Error('Client creation did not settle within the cleanup grace period')],
       'Blackbox client setup timed out and its late client could not be disposed',

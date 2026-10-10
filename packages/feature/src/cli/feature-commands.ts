@@ -2,7 +2,7 @@ import { Args, Command, Flags } from '@oclif/core';
 import { readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
-import { compileFeature, type FeatureClientBinding } from '../compiler.js';
+import { compileFeature, referencedClientNames, type FeatureClientBinding } from '../compiler.js';
 
 export class FeatureFileDraft extends Command {
   static override description = 'Draft candidate Feature expectations.';
@@ -113,7 +113,7 @@ export class FeatureRunVerify extends Command {
   }
 }
 
-async function compileFromFiles(
+export async function compileFromFiles(
   featurePath: string,
   clientsPath: string,
   outputPath: string | undefined,
@@ -125,7 +125,7 @@ async function compileFromFiles(
     readFile(clientsAbsolute, 'utf8'),
   ]);
   const names = exportedClientNames(clientSource);
-  const referencedNames = [...source.matchAll(/client "([\w$-]+)"/gu)].map((match) => match[1]);
+  const referencedNames = referencedClientNames(source, featureAbsolute);
   const moduleFrom = outputPath
     ? relativeImport(path.dirname(path.resolve(outputPath)), clientsAbsolute)
     : relativeImport(process.cwd(), clientsAbsolute);

@@ -17,8 +17,8 @@ it('retains the inline received response for the next JSON assertion', () => {
       """
 `,
   });
-  const expected = 'expect(await response1.json()).toMatchObject({"ok":true})';
-  const stale = 'expect(await response0.json()).toMatchObject({"ok":true})';
+  const expected = 'expect(await response1.json()).toMatchObject(JSON.parse("{\\"ok\\":true}"))';
+  const stale = 'expect(await response0.json()).toMatchObject(JSON.parse("{\\"ok\\":true}"))';
   const targetsLatestResponse = (code: string) => code.includes(expected) && !code.includes(stale);
   expect(result.diagnostics).toEqual([]);
   expect(targetsLatestResponse(result.code)).toBe(true);

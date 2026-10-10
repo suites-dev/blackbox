@@ -30,10 +30,13 @@ describe('Feature compiler literal safety', () => {
     expect(result.code).not.toContain('</script>');
     expect(result.code).toContain('\\u003C');
     const title = /suite\.describe\(("(?:\\.|[^"\\])*")/u.exec(result.code);
-    const body = /data: (\{[^\n]*?\})/u.exec(result.code);
+    const body = /data: JSON\.parse\(("(?:\\.|[^"\\])*")\)/u.exec(result.code);
     if (!title || !body) {throw new Error('Generated suite is missing the title or JSON body.');}
     expect(JSON.parse(title[1])).toBe(`Feature: ${featureName}`);
-    expect(JSON.parse(body[1])).toEqual({ value });
+    const serializedBody: unknown = JSON.parse(body[1]);
+    expect(typeof serializedBody).toBe('string');
+    if (typeof serializedBody !== 'string') {throw new Error('JSON body must be a serialized string.');}
+    expect(JSON.parse(serializedBody)).toEqual({ value });
   });
 });
 
