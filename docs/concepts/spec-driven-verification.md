@@ -35,6 +35,23 @@ The developer or organization's review process owns the accepted behavior. The a
 
 Blackbox owns **verification infrastructure**: system discovery and selection, managed environment setup, Sandbox lifecycle, action/observation clients, retained diagnostics, native Playwright integration, and available evidence sources.
 
+## Two different correctness questions
+
+**Specification adequacy:** Does the accepted document faithfully capture
+the intended business rules, conditions, constraints, and important edge
+cases? This is a requirements and review problem. Tests derived from the
+same flawed specification cannot, by themselves, reveal every missing rule.
+
+**Implementation conformance:** Does the running system satisfy the
+specific accepted behaviors expressed by executable checks under their
+observed conditions? Blackbox provides infrastructure and evidence for
+this second question.
+
+These are coupled but not interchangeable. A perfect run against
+incomplete expectations does not establish that the product is correct;
+a failing run does not by itself prove the original specification
+should be changed.
+
 ## Break a specification into claims
 
 The accepted [product-cache rule](../guides/verify-a-specification.md) says:

@@ -138,6 +138,8 @@ Run focused checks locally and the broader accepted suite in CI. With optional F
 
 [Specification walkthrough](docs/guides/verify-a-specification.md) · [Connect your application](docs/playwright/connect-your-application.md) · [Concepts](docs/concepts/README.md) · [Client and fixture API](docs/playwright/clients-and-fixtures.md) · [Feature reference](docs/features/reference.md) · [Spec Kit integration](docs/integrations/spec-kit.md)
 
+### Alpha and further guides
+
 **Candidate alpha:** the typed Playwright client API and Feature compiler depend on [PR #181](https://github.com/suites-dev/blackbox/pull/181), and the `e2e/product-cache/` sample has not landed on this documentation branch. The guides are technical references until those prerequisites are present. [Availability](docs/guides/verify-a-specification.md#run-the-supplied-example).
 
 [Contributing](CONTRIBUTING.md) · [License](LICENSE)
