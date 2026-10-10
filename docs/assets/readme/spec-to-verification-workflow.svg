@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1040 1010" width="1040" height="1010" role="img" aria-labelledby="workflow-title workflow-desc">
+<title id="workflow-title">Blackbox: from accepted specification to repeated system verification</title>
+<desc id="workflow-desc">Three stages. Define: developer supplies the specification, coding agent drafts a reviewed Feature, developer accepts the expectations. Prepare and rehearse: agent chooses the smallest sufficient system boundary, reuses or configures its Catalog, and performs Capsule experiments whose HTML report describes what was observed. Verify: either compile supported Feature sentences deterministically to a generated Playwright suite that must not be hand edited, or use a proposed editable Playwright scaffold for project-specific SDK operations. Both routes lead to a fresh Playwright Sandbox, its test report, and implementation repair against unchanged accepted expectations. The scaffold and automatic Feature drafting are planned rather than shipped.</desc>
+<defs><marker id="flow-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 1 L9 5 L0 9" fill="none" stroke="#858595" stroke-width="1.6"/></marker></defs>
+<rect width="1040" height="1010" fill="#0F0F12"/>
+<text x="40" y="48" font-family="Geist, Inter, Arial, sans-serif" font-size="27" font-weight="650" fill="#F4F4F5" text-anchor="start">One specification. One journey. Two ways to author tests.</text>
+<text x="40" y="76" font-family="Geist, Inter, Arial, sans-serif" font-size="17" font-weight="400" fill="#A1A1AA" text-anchor="start">Human-approved behavior → agent investigation → repeatable system checks</text>
+<path d="M40 98 H1000" stroke="#383840" stroke-width="1"/>
+<text x="40" y="133" font-family="Geist, Inter, Arial, sans-serif" font-size="17" font-weight="700" fill="#EF9DAB" text-anchor="start">01</text>
+<text x="84" y="133" font-family="Geist, Inter, Arial, sans-serif" font-size="16" font-weight="650" fill="#E4E4E7" text-anchor="start">DEFINE WHAT MUST HAPPEN</text>
+<rect x="40" y="155" width="286" height="112" rx="16" fill="#17171C" stroke="#3F3F46" stroke-width="1.35"/>
+<path d="M58 170 h36" stroke="#EF4779" stroke-width="3" stroke-linecap="round"/>
+<text x="58" y="208" font-family="Geist, Inter, Arial, sans-serif" font-size="20" font-weight="500" fill="#F4F4F5" text-anchor="start">Developer brings a spec</text>
+<text x="58" y="235" font-family="Geist, Inter, Arial, sans-serif" font-size="16" font-weight="400" fill="#B4B4C0" text-anchor="start">Markdown · SDD · API contract</text>
+<rect x="377" y="155" width="286" height="112" rx="16" fill="#17171C" stroke="#3F3F46" stroke-width="1.35"/>
+<path d="M395 170 h36" stroke="#EF4779" stroke-width="3" stroke-linecap="round"/>
+<text x="395" y="208" font-family="Geist, Inter, Arial, sans-serif" font-size="20" font-weight="500" fill="#F4F4F5" text-anchor="start">Agent drafts a Feature</text>
+<text x="395" y="235" font-family="Geist, Inter, Arial, sans-serif" font-size="16" font-weight="400" fill="#B4B4C0" text-anchor="start">Constrained Gherkin</text>
+<rect x="714" y="155" width="286" height="112" rx="16" fill="#17171C" stroke="#3F3F46" stroke-width="1.35"/>
+<path d="M732 170 h36" stroke="#EF4779" stroke-width="3" stroke-linecap="round"/>
+<text x="732" y="208" font-family="Geist, Inter, Arial, sans-serif" font-size="20" font-weight="500" fill="#F4F4F5" text-anchor="start">Developer reviews</text>
+<text x="732" y="235" font-family="Geist, Inter, Arial, sans-serif" font-size="16" font-weight="400" fill="#B4B4C0" text-anchor="start">Accepts expected behavior</text>
+<path d="M334 209 L368 209" stroke="#858595" stroke-width="2" stroke-linecap="round" fill="none" marker-end="url(#flow-arrow)"/>
+<path d="M671 209 L705 209" stroke="#858595" stroke-width="2" stroke-linecap="round" fill="none" marker-end="url(#flow-arrow)"/>
+<rect x="827" y="244" width="154" height="24" rx="12" fill="#3A2030" stroke="#A74366"/>
+<text x="904" y="261" font-family="Geist, Inter, Arial, sans-serif" font-size="11" font-weight="700" fill="#F4A1B7" text-anchor="middle">REVIEW CHECKPOINT</text>
+<path d="M40 291 H1000" stroke="#383840" stroke-width="1"/>
+<text x="40" y="324" font-family="Geist, Inter, Arial, sans-serif" font-size="17" font-weight="700" fill="#C4B5FD" text-anchor="start">02</text>
+<text x="84" y="324" font-family="Geist, Inter, Arial, sans-serif" font-size="16" font-weight="650" fill="#E4E4E7" text-anchor="start">PREPARE AND REHEARSE</text>
+<rect x="40" y="347" width="286" height="115" rx="16" fill="#17171C" stroke="#3F3F46" stroke-width="1.35"/>
+<path d="M58 362 h36" stroke="#C4B5FD" stroke-width="3" stroke-linecap="round"/>
+<text x="58" y="400" font-family="Geist, Inter, Arial, sans-serif" font-size="20" font-weight="500" fill="#F4F4F5" text-anchor="start">Discover the boundary</text>
+<text x="58" y="427" font-family="Geist, Inter, Arial, sans-serif" font-size="16" font-weight="400" fill="#B4B4C0" text-anchor="start">Reuse / configure Catalog</text>
+<rect x="377" y="347" width="286" height="115" rx="16" fill="#17171C" stroke="#3F3F46" stroke-width="1.35"/>
+<path d="M395 362 h36" stroke="#C4B5FD" stroke-width="3" stroke-linecap="round"/>
+<text x="395" y="400" font-family="Geist, Inter, Arial, sans-serif" font-size="20" font-weight="500" fill="#F4F4F5" text-anchor="start">Capsule experiment</text>
+<text x="395" y="427" font-family="Geist, Inter, Arial, sans-serif" font-size="16" font-weight="400" fill="#B4B4C0" text-anchor="start">Start · Act · Inspect</text>
+<rect x="714" y="347" width="286" height="115" rx="16" fill="#17171C" stroke="#3F3F46" stroke-width="1.35"/>
+<path d="M732 362 h36" stroke="#C4B5FD" stroke-width="3" stroke-linecap="round"/>
+<text x="732" y="400" font-family="Geist, Inter, Arial, sans-serif" font-size="20" font-weight="500" fill="#F4F4F5" text-anchor="start">Capsule HTML report</text>
+<text x="732" y="427" font-family="Geist, Inter, Arial, sans-serif" font-size="16" font-weight="400" fill="#B4B4C0" text-anchor="start">Observed work + limitations</text>
+<path d="M334 401 L368 401" stroke="#858595" stroke-width="2" stroke-linecap="round" fill="none" marker-end="url(#flow-arrow)"/>
+<path d="M671 401 L705 401" stroke="#858595" stroke-width="2" stroke-linecap="round" fill="none" marker-end="url(#flow-arrow)"/>
+<text x="40" y="501" font-family="Geist, Inter, Arial, sans-serif" font-size="16" font-weight="400" fill="#A1A1AA" text-anchor="start">Choose the smallest runnable system that still contains the behavior and observations you need.</text>
+<path d="M40 526 H1000" stroke="#383840" stroke-width="1"/>
+<text x="40" y="562" font-family="Geist, Inter, Arial, sans-serif" font-size="17" font-weight="700" fill="#93C5FD" text-anchor="start">03</text>
+<text x="84" y="562" font-family="Geist, Inter, Arial, sans-serif" font-size="16" font-weight="650" fill="#E4E4E7" text-anchor="start">MAKE THE CHECK REPEATABLE</text>
+<rect x="40" y="584" width="461" height="142" rx="16" fill="#17171C" stroke="#3F3F46" stroke-width="1.35"/>
+<path d="M58 600 h42" stroke="#EF9DAB" stroke-width="3" stroke-linecap="round"/>
+<text x="58" y="638" font-family="Geist, Inter, Arial, sans-serif" font-size="21" font-weight="550" fill="#F4F4F5" text-anchor="start">Deterministic Feature compiler</text>
+<text x="58" y="669" font-family="Geist, Inter, Arial, sans-serif" font-size="16" font-weight="400" fill="#B4B4C0" text-anchor="start">Supported steps → native Playwright</text>
+<text x="58" y="696" font-family="Geist, Inter, Arial, sans-serif" font-size="16" font-weight="500" fill="#EF9DAB" text-anchor="start">Generated file: do not edit</text>
+<rect x="539" y="584" width="461" height="142" rx="16" fill="#17171C" stroke="#3F3F46" stroke-width="1.35"/>
+<path d="M557 600 h42" stroke="#93C5FD" stroke-width="3" stroke-linecap="round"/>
+<text x="557" y="638" font-family="Geist, Inter, Arial, sans-serif" font-size="21" font-weight="550" fill="#F4F4F5" text-anchor="start">Editable Playwright scaffold</text>
+<text x="557" y="669" font-family="Geist, Inter, Arial, sans-serif" font-size="16" font-weight="400" fill="#B4B4C0" text-anchor="start">Agent adds project-specific SDK checks</text>
+<text x="557" y="696" font-family="Geist, Inter, Arial, sans-serif" font-size="16" font-weight="500" fill="#93C5FD" text-anchor="start">PLANNED · not a shipped command</text>
+<path d="M271 733 V750 H500 V775" stroke="#858595" stroke-width="2" fill="none"/>
+<path d="M769 733 V750 H540 V775" stroke="#858595" stroke-width="2" fill="none"/>
+<path d="M520 760 L520 788" stroke="#858595" stroke-width="2" stroke-linecap="round" fill="none" marker-end="url(#flow-arrow)"/>
+<rect x="240" y="796" width="560" height="85" rx="16" fill="#1E2027" stroke="#5B6577" stroke-width="1.4"/>
+<text x="520" y="832" font-family="Geist, Inter, Arial, sans-serif" font-size="22" font-weight="600" fill="#F4F4F5" text-anchor="middle">Playwright + fresh Sandbox</text>
+<text x="520" y="857" font-family="Geist, Inter, Arial, sans-serif" font-size="16" font-weight="400" fill="#B4B4C0" text-anchor="middle">Run the real system · evaluate accepted checks</text>
+<path d="M520 884 L520 905" stroke="#858595" stroke-width="2" stroke-linecap="round" fill="none" marker-end="url(#flow-arrow)"/>
+<rect x="240" y="918" width="560" height="69" rx="16" fill="#24202A" stroke="#A74366" stroke-width="1.4"/>
+<text x="520" y="945" font-family="Geist, Inter, Arial, sans-serif" font-size="20" font-weight="600" fill="#F4F4F5" text-anchor="middle">HTML report → repair → rerun</text>
+<text x="520" y="970" font-family="Geist, Inter, Arial, sans-serif" font-size="15" font-weight="400" fill="#C6B7C1" text-anchor="middle">Same expectation · updated implementation</text>
+</svg>
