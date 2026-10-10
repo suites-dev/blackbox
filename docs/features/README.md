@@ -34,6 +34,23 @@ An existing SDD workflow may own the specification independently of
 Blackbox. See [Spec Kit integration](../integrations/spec-kit.md) and the
 [verification model](../concepts/spec-driven-verification.md).
 
+## What the CLI does
+
+The Feature is reviewed first. In the candidate compiler, `feature file validate`
+checks that its sentences can be executed; `feature suite validate` checks
+that the existing generated TypeScript still matches the Feature. Neither
+command runs the system.
+
+```sh
+# Run from e2e/product-cache/ after PR #181 and the sample land
+pnpm exec blackbox feature file validate tests/product-cache.feature \
+  --clients tests/clients.ts
+pnpm exec blackbox feature suite validate tests/product-cache.feature \
+  --clients tests/clients.ts --output tests/product-cache.generated.spec.ts
+```
+
+Then [run the generated Playwright tests](drafting-feature-files.md#execute-and-return-to-the-evidence).
+
 ## Keep the specification connected to the system
 
 Three checks maintain different relationships:

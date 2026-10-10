@@ -102,6 +102,8 @@ positive milliseconds remain, `-1` means permanent, and `-2` means absent. Allow
 elapsed time rather than expecting an exact `300000` reading. A positive remaining
 TTL alone does not establish the original TTL or prove the eventual expiry.
 
+![A correct cache-hit response can still hide a PostgreSQL read; measured runtime operations distinguish the implementations.](../assets/guides/product-cache-evidence.svg)
+
 ## Observe the retrieval within a bounded window
 
 The canonical scenario uses the sample's protected observation operations in

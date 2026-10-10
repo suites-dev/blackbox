@@ -14,6 +14,12 @@ Complete [the Feature path](drafting-feature-files.md) first. Keep commands in
 `e2e/product-cache/`. Native tests use the same review, execution, and repair loop;
 this generated-file check is additional work for the Feature authoring path.
 
+![Review keeps the expected behavior aligned from the source spec through an optional Feature and its generated native suite.](../assets/readme/specification-triangle.svg)
+
+A generated test is not the authority for changing requirements. If a
+reviewed Feature changes, regenerate its suite rather than editing the
+output by hand.
+
 ## Check for drift
 
 ```sh

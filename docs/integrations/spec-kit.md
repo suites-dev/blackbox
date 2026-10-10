@@ -18,27 +18,14 @@ Do not automatically rewrite `spec.md` after a failed runtime check. Fix the imp
 
 ## The handoff
 
-```text
-             Spec Kit
-      clarify / specify / review
-                 |
-            active spec.md
-                 |
-        accepted behavioral claims
-                 |
-                 v
-              Blackbox
-       /                   \
- Native Playwright     Reviewed Feature
-       \                   /
-      selected system + Sandbox
-                 |
-       results + state + effects
-                 |
-       evidence-led repair loop
-```
+Spec Kit keeps `spec.md` and its approval process. The agent proposes
+checks from the accepted spec; Blackbox runs them against the system.
 
-Both authoring paths use the same runtime. A Feature is optional. Spec Kit is optional as well.
+![An accepted specification leads to native Playwright or an optional Gherkin Feature; both use a Blackbox Sandbox and shared reports.](../assets/guides/authoring-paths.svg)
+
+In a Spec Kit project this might begin with `specs/003-user-auth/spec.md`.
+In a plain Markdown project it might begin with `requirement.md`.
+**Everything after the reviewed expectations is the same Blackbox workflow.**
 
 ## Resolve the active specification
 

@@ -23,6 +23,8 @@ That is evidence under a particular isolation/visibility model, not
 a blanket proof of durability under every failure scenario.
 [Evidence model](../concepts/behavioral-evidence.md).
 
+![Arrange known database state, perform the application action, and inspect the resulting response and independently read stored state.](../assets/guides/state-testing.svg)
+
 ## Read the state the application wrote
 
 After creation, `GET /fixture/products/product-1` returns two independently read
