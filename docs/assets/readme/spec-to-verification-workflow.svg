@@ -1,0 +1,125 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="1180" viewBox="0 0 1100 1180" role="img" aria-labelledby="figure-title figure-desc">
+<title id="figure-title">From accepted specification to repeatable system verification</title><desc id="figure-desc">Three connected stages. Define: developer supplies a specification, an agent drafts behavioral examples, and the developer approves the expectations. Prepare: discover and configure the relevant real system, then optionally investigate unknown actions and observations in a Capsule with its own HTML report. A direct route skips investigation when the system and checks are known. Verify: compile supported Feature steps into unedited generated Playwright, or author native Playwright using project clients and assertions. A separate scaffold generator is planned. Both paths run through a fresh Sandbox, exercising I/O and checking outputs, state, and required operations. The Playwright HTML report guides implementation repair and rerunning the same expectations. This is the target workflow; availability is documented in the accompanying guide. Connectors move slowly; reduced motion keeps the complete diagram static.</desc>
+<defs>
+<symbol id="icon-file" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H5v20h14V7l-5-5ZM14 2v6h5M8 12h8M8 16h8"/></g></symbol>
+<symbol id="icon-person" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="12" cy="7" r="4"/><path d="M4 22v-3a8 8 0 0 1 16 0v3"/></g></symbol>
+<symbol id="icon-terminal" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="18" rx="3"/><path d="m6 8 4 4-4 4m7 0h5"/></g></symbol>
+<symbol id="icon-agent" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="7" width="16" height="14" rx="4"/><path d="M12 3v4M1 12v5m22-5v5M9 16h6"/><circle cx="9" cy="12" r=".7"/><circle cx="15" cy="12" r=".7"/><circle cx="12" cy="2" r="1"/></g></symbol>
+<symbol id="icon-check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="icon-topology" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="6" rx="1"/><rect x="2" y="16" width="7" height="6" rx="1"/><rect x="15" y="16" width="7" height="6" rx="1"/><path d="M12 8v4H5.5v4M12 12h6.5v4"/></g></symbol>
+<symbol id="icon-pg" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 4 16 4 16 0V5M4 12c0 4 16 4 16 0"/></g></symbol>
+<symbol id="icon-redis" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="m3 7 9-4 9 4-9 4-9-4Zm0 5 9 4 9-4M3 17l9 4 9-4"/></g></symbol>
+<symbol id="icon-code" viewBox="0 0 24 24"><path d="m8 6-6 6 6 6m8-12 6 6-6 6M14 3l-4 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="icon-box" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="m3 7 9-4 9 4v10l-9 4-9-4V7Zm0 0 9 5 9-5M12 12v9"/></g></symbol>
+<symbol id="icon-browser" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="18" rx="3"/><path d="M2 8h20M6 5.5h.01M9 5.5h.01m-2 9 3 3 7-7"/></g></symbol>
+<marker id="arrow-blue" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto"><path d="m0 0 8 4-8 4Z" fill="#93C5FD"/></marker>
+<marker id="arrow-pink" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto"><path d="m0 0 8 4-8 4Z" fill="#EF9DAB"/></marker>
+<marker id="arrow-green" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto"><path d="m0 0 8 4-8 4Z" fill="#86EFAC"/></marker>
+<marker id="arrow-muted" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto"><path d="m0 0 8 4-8 4Z" fill="#8B8B94"/></marker>
+<marker id="arrow-red" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto"><path d="m0 0 8 4-8 4Z" fill="#FF8F9B"/></marker>
+</defs><style>
+text { font-family:Geist,Inter,Arial,sans-serif; }
+.panel { fill:#17171C; stroke:#3F3F46; stroke-width:1.3; }
+.node { fill:#202027; stroke:#3F3F46; stroke-width:1.2; }
+.heading { fill:#F4F4F5; font-size:20px; font-weight:575; }
+.body { fill:#B4B4C0; font-size:17px; }
+.small { fill:#A1A1AA; font-size:15px; }
+.label { fill:#A1A1AA; font-size:14px; font-weight:600; letter-spacing:1px; }
+.mono { fill:#EF9DAB; font-family:Geist Mono,Consolas,monospace; font-size:16px; }
+.blue { fill:#93C5FD; } .pink { fill:#EF9DAB; } .green { fill:#86EFAC; } .red { fill:#FF8F9B; }
+.flow { fill:none; stroke-width:1.6; stroke-linecap:round; stroke-linejoin:round; stroke-dasharray:6 10; }
+@keyframes flow { from { stroke-dashoffset:0; } to { stroke-dashoffset:-64; } }
+@media (prefers-reduced-motion:no-preference) { .flow { animation:flow 12s linear infinite; } }
+</style>
+<rect width="1100" height="1180" fill="#0F0F12"/>
+<text x="36" y="39" class="label pink" >01  AGREE ON THE BEHAVIOR</text>
+<g data-panel="spec">
+<rect x="36" y="62" width="300" height="140" rx="14" class="panel" />
+</g>
+<g data-panel="examples">
+<rect x="400" y="62" width="300" height="140" rx="14" class="panel" />
+</g>
+<g data-panel="approval">
+<rect x="764" y="62" width="300" height="140" rx="14" class="panel" />
+</g>
+<use href="#icon-file" x="56" y="82" width="26" height="26" style="color:#EF9DAB" aria-hidden="true"/>
+<text x="96" y="104" class="heading" >Bring a specification</text>
+<text x="56" y="140" class="mono" >create-product.md</text>
+<text x="56" y="176" class="small" >Requirement · API contract · SDD</text>
+<use href="#icon-agent" x="420" y="82" width="26" height="26" style="color:#EF9DAB" aria-hidden="true"/>
+<text x="460" y="104" class="heading" >Draft the expectations</text>
+<text x="420" y="140" class="body" >Feature or native scenarios</text>
+<text x="420" y="176" class="small" >Behavior at the system boundary</text>
+<use href="#icon-person" x="784" y="82" width="26" height="26" style="color:#EF9DAB" aria-hidden="true"/>
+<text x="824" y="104" class="heading" >Developer approves</text>
+<text x="784" y="140" class="body" >Review what must hold</text>
+<text x="784" y="176" class="small" >The accepted behavior is explicit</text>
+<path d="M344 132 H390" class="flow" stroke="#EF9DAB" marker-end="url(#arrow-pink)" />
+<path d="M708 132 H754" class="flow" stroke="#EF9DAB" marker-end="url(#arrow-pink)" />
+<path d="M914 210 V234 H20 V382 H26" class="flow" stroke="#EF9DAB" marker-end="url(#arrow-pink)" />
+<text x="36" y="277" class="label blue" >02  PREPARE THE RELEVANT REAL SYSTEM</text>
+<g data-panel="discover">
+<rect x="36" y="308" width="300" height="148" rx="14" class="panel" />
+</g>
+<g data-panel="capsule">
+<rect x="400" y="308" width="300" height="148" rx="14" class="panel" />
+</g>
+<g data-panel="capsule-report">
+<rect x="764" y="308" width="300" height="148" rx="14" class="panel" />
+</g>
+<use href="#icon-topology" x="56" y="328" width="26" height="26" style="color:#93C5FD" aria-hidden="true"/>
+<text x="96" y="350" class="heading" >Agent handles setup</text>
+<text x="56" y="387" class="body" >Services · clients · observations</text>
+<text x="56" y="429" class="small" >Reuse or create the Catalog</text>
+<use href="#icon-box" x="420" y="328" width="26" height="26" style="color:#93C5FD" aria-hidden="true"/>
+<text x="460" y="350" class="heading" >Capsule investigation</text>
+<text x="420" y="387" class="body" >Exercise I/O · inspect results</text>
+<text x="420" y="429" class="small blue" >Optional: resolve unknowns</text>
+<use href="#icon-browser" x="784" y="328" width="26" height="26" style="color:#93C5FD" aria-hidden="true"/>
+<text x="824" y="350" class="heading" >Capsule HTML report</text>
+<text x="784" y="387" class="body" >What the experiment observed</text>
+<text x="784" y="429" class="small" >Review findings and limitations</text>
+<path d="M344 382 H390" class="flow" stroke="#93C5FD" marker-end="url(#arrow-blue)" />
+<path d="M708 382 H754" class="flow" stroke="#93C5FD" marker-end="url(#arrow-blue)" />
+<path d="M186 464 V500 H550 V554" class="flow" stroke="#8B8B94" marker-end="url(#arrow-muted)" />
+<text x="36" y="533" class="small" >Known system and checks: continue directly</text>
+<path d="M914 464 V500 H550" class="flow" stroke="#93C5FD" marker-end="url(#arrow-blue)" />
+<text x="36" y="588" class="label pink" >03  PRESERVE AND REPEAT THE CHECKS</text>
+<path d="M550 562 V604 H285 V632" class="flow" stroke="#EF9DAB" marker-end="url(#arrow-pink)" />
+<path d="M550 604 H815 V632" class="flow" stroke="#93C5FD" marker-end="url(#arrow-blue)" />
+<g data-panel="compiled">
+<rect x="36" y="646" width="498" height="154" rx="14" class="panel" />
+<use href="#icon-file" x="56" y="666" width="26" height="26" style="color:#EF9DAB" aria-hidden="true"/>
+<text x="96" y="688" class="heading" >Compile a reviewed Feature</text>
+<text x="56" y="724" class="body" >Supported steps → generated Playwright</text>
+<text x="56" y="760" class="small" >Regenerate and validate; keep output unedited</text>
+<text x="56" y="784" class="small pink" >Compiler API: not in this checkout</text>
+</g>
+<g data-panel="authored">
+<rect x="566" y="646" width="498" height="154" rx="14" class="panel" />
+<use href="#icon-code" x="586" y="666" width="26" height="26" style="color:#93C5FD" aria-hidden="true"/>
+<text x="626" y="688" class="heading" >Author native Playwright</text>
+<text x="586" y="724" class="body" >Project clients · actions · assertions</text>
+<text x="586" y="760" class="small" >Review the test against the accepted behavior</text>
+<text x="586" y="784" class="small blue" >Separate scaffold generator: planned</text>
+</g>
+<path d="M285 808 V831 H550 V860" class="flow" stroke="#EF9DAB" marker-end="url(#arrow-pink)" />
+<path d="M815 808 V831 H550" class="flow" stroke="#93C5FD" marker-end="url(#arrow-blue)" />
+<g data-panel="sandbox">
+<rect x="230" y="872" width="640" height="106" rx="14" class="panel" />
+<use href="#icon-box" x="252" y="892" width="26" height="26" style="color:#93C5FD" aria-hidden="true"/>
+<text x="292" y="914" class="heading" >Playwright runs a fresh Sandbox</text>
+<text x="252" y="951" class="body" >Exercise I/O · check outputs, state, and required operations</text>
+</g>
+<path d="M550 986 V1014" class="flow" stroke="#93C5FD" marker-end="url(#arrow-blue)" />
+<g data-panel="report">
+<rect x="230" y="1028" width="640" height="104" rx="14" class="panel" />
+<use href="#icon-browser" x="252" y="1048" width="26" height="26" style="color:#86EFAC" aria-hidden="true"/>
+<text x="292" y="1070" class="heading" >Playwright HTML report</text>
+<text x="252" y="1107" class="body" >Steps · assertion results · execution diagnostics</text>
+</g>
+<path d="M878 1080 H1028 V925 H880" class="flow" stroke="#EF9DAB" marker-end="url(#arrow-pink)" />
+<text x="919" y="988" class="small pink" >Repair</text>
+<text x="919" y="1012" class="small pink" >and rerun</text>
+<text x="550" y="1164" class="small" text-anchor="middle">Same accepted expectations · another implementation</text>
+</svg>

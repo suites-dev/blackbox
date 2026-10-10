@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="212" viewBox="0 0 960 212" role="img" aria-labelledby="title desc">
+<title id="title">Arrange, act, assert</title><desc id="desc">Commit a PostgreSQL seed or establish a known Redis precondition. Invoke the application through its own client. Assert the resulting response and state. Attempt teardown disposes clients and releases the isolated system.</desc>
+<defs><marker id="arrow-EF9DAB" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto"><path d="m0 0 8 4-8 4Z" fill="#EF9DAB"/></marker><marker id="arrow-93C5FD" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto"><path d="m0 0 8 4-8 4Z" fill="#93C5FD"/></marker><marker id="arrow-A1A1AA" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto"><path d="m0 0 8 4-8 4Z" fill="#A1A1AA"/></marker></defs>
+<style>
+text { font-family: Geist, Inter, Arial, sans-serif; }
+.panel { fill: #17171C; stroke: #3F3F46; stroke-width: 1.3; }
+.flow { fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 6 10; animation: flow 16s linear infinite; }
+@keyframes flow { from { stroke-dashoffset: 0; } to { stroke-dashoffset: -128; } }
+@media (prefers-reduced-motion: reduce) { .flow { animation: none; } }
+</style>
+<rect width="960" height="212" fill="#0F0F12"/>
+<rect x="24" y="24" width="272" height="154" rx="16" class="panel"/><svg x="44" y="44" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#EF9DAB" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 4 16 4 16 0V5M4 12c0 4 16 4 16 0"/></svg><text x="80" y="63" font-size="19" fill="#F4F4F5" font-weight="575">Arrange</text><text x="46" y="98" font-size="17" fill="#EF9DAB" font-weight="400">Known database or</text><text x="46" y="124" font-size="17" fill="#A1A1AA" font-weight="400">cache precondition</text>
+<rect x="344" y="24" width="272" height="154" rx="16" class="panel"/><svg x="364" y="44" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#F4F4F5" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h17m-7-7 7 7-7 7"/></svg><text x="400" y="63" font-size="19" fill="#F4F4F5" font-weight="575">Act</text><text x="366" y="98" font-size="17" fill="#F4F4F5" font-weight="400">Call the application</text><text x="366" y="124" font-size="17" fill="#A1A1AA" font-weight="400">operation under test</text>
+<rect x="664" y="24" width="272" height="154" rx="16" class="panel"/><svg x="684" y="44" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#93C5FD" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12 5 5L20 6"/></svg><text x="720" y="63" font-size="19" fill="#F4F4F5" font-weight="575">Assert</text><text x="686" y="98" font-size="17" fill="#93C5FD" font-weight="400">Response and stored state</text><text x="686" y="124" font-size="17" fill="#A1A1AA" font-weight="400">match the specification</text>
+<path d="M304 101 H336" class="flow" stroke="#EF9DAB" marker-end="url(#arrow-EF9DAB)"/>
+<path d="M624 101 H656" class="flow" stroke="#93C5FD" marker-end="url(#arrow-93C5FD)"/>
+</svg>

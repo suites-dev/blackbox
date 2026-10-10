@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="470" viewBox="0 0 960 470" role="img" aria-labelledby="title desc">
+<title id="title">Two authoring paths from an accepted specification</title><desc id="desc">Review connects accepted intent to either a Gherkin Feature or handwritten native tests. The Feature compiler emits native Playwright suites, and byte-level validation detects generated-file drift. Both paths use the same Sandbox, clients and reports.</desc>
+<defs><marker id="arrow-EF9DAB" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto"><path d="m0 0 8 4-8 4Z" fill="#EF9DAB"/></marker><marker id="arrow-93C5FD" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto"><path d="m0 0 8 4-8 4Z" fill="#93C5FD"/></marker><marker id="arrow-A1A1AA" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto"><path d="m0 0 8 4-8 4Z" fill="#A1A1AA"/></marker></defs>
+<style>
+text { font-family: Geist, Inter, Arial, sans-serif; }
+.panel { fill: #17171C; stroke: #3F3F46; stroke-width: 1.3; }
+.flow { fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 6 10; animation: flow 16s linear infinite; }
+@keyframes flow { from { stroke-dashoffset: 0; } to { stroke-dashoffset: -128; } }
+@media (prefers-reduced-motion: reduce) { .flow { animation: none; } }
+</style>
+<rect width="960" height="470" fill="#0F0F12"/>
+<rect x="320" y="24" width="320" height="110" rx="16" class="panel"/><svg x="340" y="44" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#EF9DAB" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H5v20h14V7l-5-5ZM14 2v6h5M8 12h8M8 16h8"/></svg><text x="376" y="63" font-size="19" fill="#F4F4F5" font-weight="575">Accepted specification</text><text x="342" y="98" font-size="17" fill="#EF9DAB" font-weight="400">Requirements · Markdown</text><text x="342" y="124" font-size="17" fill="#A1A1AA" font-weight="400">Acceptance criteria · APIs</text>
+<path d="M360 142 V164 H232 V212" class="flow" stroke="#EF9DAB" marker-end="url(#arrow-EF9DAB)"/>
+<path d="M600 142 V164 H728 V212" class="flow" stroke="#93C5FD" marker-end="url(#arrow-93C5FD)"/>
+<text x="232" y="197" font-size="16" fill="#EF9DAB" font-weight="400" text-anchor="middle">Draft + review</text>
+<text x="728" y="197" font-size="16" fill="#93C5FD" font-weight="400" text-anchor="middle">Author + review</text>
+<rect x="32" y="220" width="400" height="94" rx="16" class="panel"/><svg x="52" y="240" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#EF9DAB" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H5v20h14V7l-5-5ZM14 2v6h5M8 12h8M8 16h8"/></svg><text x="88" y="259" font-size="19" fill="#F4F4F5" font-weight="575">Optional Feature</text><text x="54" y="294" font-size="17" fill="#EF9DAB" font-weight="400">Supported Gherkin sentences</text>
+<rect x="528" y="220" width="400" height="94" rx="16" class="panel"/><svg x="548" y="240" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#93C5FD" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m8 6-6 6 6 6m8-12 6 6-6 6M14 3l-4 18"/></svg><text x="584" y="259" font-size="19" fill="#F4F4F5" font-weight="575">Native Playwright suite</text><text x="550" y="294" font-size="17" fill="#93C5FD" font-weight="400">Your SDKs, actions, and assertions</text>
+<path d="M232 322 V364" class="flow" stroke="#EF9DAB" marker-end="url(#arrow-EF9DAB)"/>
+<text x="252" y="350" font-size="16" fill="#EF9DAB" font-weight="400">Compile + check drift</text>
+<rect x="32" y="372" width="400" height="74" rx="16" class="panel"/><svg x="52" y="392" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#EF9DAB" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m8 6-6 6 6 6m8-12 6 6-6 6M14 3l-4 18"/></svg><text x="88" y="411" font-size="19" fill="#F4F4F5" font-weight="575">Generated Playwright suite</text>
+<path d="M440 409 H520" class="flow" stroke="#93C5FD" marker-end="url(#arrow-93C5FD)"/>
+<path d="M728 322 V364" class="flow" stroke="#93C5FD" marker-end="url(#arrow-93C5FD)"/>
+<rect x="528" y="372" width="400" height="74" rx="16" class="panel"/><svg x="548" y="392" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#93C5FD" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 7 9-4 9 4v10l-9 4-9-4V7Zm0 0 9 5 9-5M12 12v9"/></svg><text x="584" y="411" font-size="19" fill="#F4F4F5" font-weight="575">Sandbox · clients · reports</text>
+</svg>
