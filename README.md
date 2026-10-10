@@ -6,196 +6,243 @@
 
 **Spec-Driven Verification for agentic software engineering.**
 
-Coding agents can write and rewrite implementations faster than we can inspect every detail. **How
-do we know the running system still does what we intended?**
+Blackbox is a **system testing framework for developers and coding agents**. As agents write and
+rewrite more code, we need a repeatable way to check that the running system still does what we
+intended.
 
-Blackbox helps an agent take **accepted behavior**, prepare the relevant real system, experiment
-with it, and turn what it learns into **repeatable Playwright checks**. Developers approve the
-expectations and inspect the reports. The implementation can change; the required behavior stays in
-view.
+Start with an accepted specification. Let your agent prepare the relevant real system, turn its
+behavior into executable Playwright checks, and inspect the results. **The implementation can
+change. The accepted behavior must still hold.**
 
-[Start with a spec](#start-with-a-spec) ·
-[Full developer workflow](docs/guides/from-spec-to-verification.md) ·
-[Why this matters now](docs/concepts/why-verification-now.md)
+[Give your agent a specification](#give-your-agent-a-specification) ·
+[Developer walkthrough](docs/guides/from-spec-to-verification.md) · [Docs](docs/README.md)
 
-## The developer workflow
+## Why Blackbox?
+
+**The application runs its implementation. The test interacts with the application.** Blackbox tests
+enter through the running system's I/O interfaces, such as its HTTP API. They exercise the real
+services and resources needed for the behavior, then check outputs, stored state, and relevant
+runtime interactions.
+
+That boundary gives Blackbox its name. The test sends a request to the product API instead of
+importing `ProductService` and calling its methods. An agent can reorganize classes or replace an
+ORM while the same checks remain useful, provided the agreed interfaces and behavior stay the same.
+
+You may already call these integration tests. Blackbox gives coding agents the system setup,
+isolation, investigation, and reporting workflow to repeat them against an accepted specification.
+Client bindings and observation setup may still need maintenance; that is different from changing
+what counts as correct behavior.
+
+[How system boundaries keep expectations independent of implementation](docs/concepts/spec-driven-verification.md#why-the-testing-boundary-matters)
+
+## One rule, verified against the running system
+
+> Creating a product persists it in PostgreSQL and populates Redis. Retrieving it while its cached
+> entry is valid returns the cached product without reading PostgreSQL.
+
+The test creates and retrieves the product through HTTP, inspects stored state, and observes
+database and cache operations. A broken cache bypass can return the same product while violating the
+rule:
 
 <p align="center">
-  <img width="900" src="docs/assets/readme/spec-to-verification-workflow.svg" alt="Developer supplies a spec, agent drafts a Feature for approval, discovers and rehearses the system in a Capsule, then produces either a deterministic generated suite or a proposed editable scaffold. Playwright executes a fresh Sandbox and reports the result." />
+  <img width="900" src="docs/assets/guides/product-cache-evidence.svg" alt="The test enters product-service through HTTP. The real system includes PostgreSQL and Redis. Creation checks both stored values; cached retrieval checks the response and operations. A cache bypass returns the same product but reads PostgreSQL and fails the rule." />
 </p>
 
-**Three stages.** First, agree on the expected behavior. Then let the agent discover and exercise
-just enough of the real system to understand how to check it. Finally, keep that check so the next
-implementation can be verified again.
+Runtime observations, including OpenTelemetry where instrumented, help establish what happened.
+**The specification determines which observations become assertions.** A trace may help diagnose a
+failure without making every internal span part of the contract. A missing SQL span alone does not
+establish that no database read occurred.
 
-Capsule is the **laboratory** for investigation. Playwright is the **repeatable verification**. They
-use Blackbox's system infrastructure but run in separate environments.
+[How the example checks its evidence](docs/concepts/behavioral-evidence.md) ·
+[Complete product-cache walkthrough](docs/guides/verify-a-specification.md)
 
-The figure shows our **target workflow**, including planned capabilities. Existing commands and the
-gaps are distinguished in the [step-by-step guide](docs/guides/from-spec-to-verification.md).
+## From specification to repeatable verification
 
-## Start with a spec
+Agree on the behavior, let the agent prepare and explore the relevant system, then preserve the
+checks so another implementation can be verified against the same expectations.
+
+<p align="center">
+  <img width="900" src="docs/assets/readme/spec-to-verification-workflow.svg" alt="Developer supplies a specification and reviews the agent's proposed expectations. The agent discovers the required system and can investigate it in a Capsule with its own report. Generated or authored Playwright tests run in a fresh Sandbox, produce an HTML report, and guide implementation repair and reruns." />
+</p>
+
+Capsules give the agent a place to investigate uncertain actions and observations. Playwright makes
+accepted checks repeatable in a fresh Sandbox. They are separate executions; a known system can go
+straight to Playwright.
+
+The figure shows the **target workflow**.
+[The step-by-step guide](docs/guides/from-spec-to-verification.md) distinguishes available
+operations from planned automation.
+
+## Give your agent a specification
 
 Bring a Markdown requirement, acceptance criteria, API contract, or a specification from an SDD
-tool. Ask your coding agent:
-
-```text
-Use Suites Blackbox to verify this accepted specification.
-
-Draft a Feature with reviewable scenarios and show it to me for approval.
-Then discover the smallest real system needed to exercise the behavior.
-Reuse existing Blackbox setup where possible. Explore unclear steps and
-observations in a Capsule, and show me the Capsule report.
-
-After investigation, create repeatable Playwright checks. Use the
-deterministic Feature compiler when the vocabulary covers the behavior;
-otherwise author project-owned TypeScript tests. Run the tests, show the
-HTML report and what remains unverified, and repair the implementation
-against the same approved expectations.
-```
-
-Blackbox has a CLI and [agent skills](docs/playwright/connect-your-application.md) for discovery,
-Catalog setup, and Capsule investigation. With compatible packages installed:
+tool. With compatible Blackbox packages installed, add its skills to your agent:
 
 ```sh
-pnpm exec blackbox skills list
 pnpm exec blackbox skills install blackbox --codex
 pnpm exec blackbox skills install discovery --codex
 pnpm exec blackbox skills install catalog --codex
+pnpm exec blackbox skills install capsule --codex
 ```
 
-Use the relevant agent-host option instead of `--codex` where appropriate. Automated
-`feature file draft` is **reserved but unavailable**, so an agent currently drafts the Feature as a
-project file for review. The planned `npx @suites/blackbox-cli onboarding start` shortcut is **not
-shipped**.
+Use your agent's host option in place of `--codex`. Then give it the specification:
 
-## One spec, more than one check
+```text
+Use Suites Blackbox to verify this specification.
+Draft reviewable behavioral scenarios and show them to me for approval.
+Discover the real services, entrypoints, and observations needed to check them.
+Reuse or create the Blackbox configuration and clients. Use a Capsule to
+investigate unclear behavior and show me its report when useful.
+Turn the approved expectations into Playwright checks, run them, and show
+the HTML report and anything still unverified. Repair the implementation
+and rerun against the same expectations.
+```
 
-Suppose the accepted rule says:
+Your agent handles discovery and setup. You review the behavior and results. The work produces
+**reviewed scenarios, system configuration, client bindings, executable checks, and execution
+reports**. The [onboarding guide](docs/playwright/connect-your-application.md) explains these
+artifacts and the skills behind them.
 
-> Creating a product persists it in PostgreSQL and populates Redis. Retrieving it while cached **must not read PostgreSQL**.
+## Keep the behavior visible in the tests
 
-Both a correct implementation and a broken cache bypass can return the same HTTP response. The test
-must also check **stored state and what the application did**.
+Blackbox adopts **Gherkin from Cucumber** for its readable `Feature → Rule → Scenario` structure.
+Blackbox's constrained step vocabulary supplies executable meaning. A Feature remains useful across
+internal rewrites because its expectations describe system behavior; Gherkin syntax alone does not
+prevent stale specifications.
 
-<p align="center">
-  <img width="790" src="docs/assets/guides/product-cache-evidence.svg" alt="Both implementations return the expected product, but the broken version performs a PostgreSQL read despite a valid cached value." />
-</p>
-
-This is why Blackbox can collect more than outputs: **state observations** and supported **runtime
-effects** (including OpenTelemetry when instrumented). Each requirement determines which
-observations are relevant. A missing SQL span alone doesn't prove a database operation never
-happened.
-
-[How evidence supports a check](docs/concepts/behavioral-evidence.md) ·
-[Full product-cache example](docs/guides/verify-a-specification.md)
-
-## Review the Feature, then prepare the system
-
-A Feature makes the expected behavior understandable before an agent tests its own code. Gherkin
-gives it a readable `Feature → Rule → Scenario` form; Blackbox's supported sentences provide a
-constrained, validatable vocabulary.
+These **candidate-alpha excerpts** show the cache-hit part of the rule. Both omit the earlier setup
+that calibrates the observer, creates the product, and checks its PostgreSQL and Redis state. They
+are not standalone tests. See the
+[complete Feature](docs/features/drafting-feature-files.md#review-the-feature-rule-and-scenarios)
+and [native walkthrough](docs/guides/verify-a-specification.md#native-playwright).
 
 ```gherkin
 @system:product-system @sandbox:default
 Feature: Product creation and retrieval
   Rule: Persist products and serve valid cache entries
-    Scenario: Create a product
-      When client "api" sends POST "/products" with JSON:
+    Scenario: Retrieve a product from its valid cache entry
+      # Arrange: calibration and persisted/cache state checks omitted here.
+      Given client "api" has sent POST "/fixture/observations/start" with JSON and received 200:
+        """json
+        { "productId": "product-1" }
+        """
+      When client "api" sends GET "/products/product-1"
+      Then the response status is 200
+      And the response JSON contains:
         """json
         { "id": "product-1", "name": "Field notebook", "priceCents": 1299 }
         """
-      Then the response status is 201
+      And client "api" GET "/fixture/observations/result" returns 200 with JSON exactly:
+        """json
+        {
+          "productId": "product-1",
+          "applicationPostgresSelects": 0,
+          "applicationPostgresStatements": 0,
+          "applicationPostgresPlans": 0,
+          "redisGets": 1,
+          "retrievals": 1
+        }
+        """
 ```
 
-**This excerpt checks only status.** The approved, complete Feature must also represent the database
-and cache requirements. A developer reviews what the test means—not just whether it parses.
-[Why Features work well with agents](docs/features/README.md).
+<details>
+<summary>The same rule in native Playwright</summary>
 
-Once those expectations are understood, the agent identifies the **verification boundary**: the
-smallest real set of services and observations that can establish the behavior. For this rule that
-includes the product service, PostgreSQL, Redis, and a reliable observation of database reads.
+```ts
+import { expect, test } from '@suites/blackbox-playwright';
+import { api } from './clients.js';
+
+const product = { id: 'product-1', name: 'Field notebook', priceCents: 1299 };
+
+test.system('product-system', (system) => {
+  system.sandbox('default', { clients: { api } }, (suite) => {
+    suite.describe('Feature: Product creation and retrieval', () => {
+      suite.describe('Rule: Persist products and serve valid cache entries', () => {
+        suite.test(
+          'Scenario: Retrieve a product from its valid cache entry',
+          async ({ clients, step }) => {
+            // Arrange: calibration and persisted/cache state checks omitted here.
+            await step('Given a bounded observation of this retrieval', async () => {
+              const started = await clients.api.post('/fixture/observations/start', {
+                data: { productId: product.id },
+              });
+              expect(started.status()).toBe(200);
+            });
+
+            // Act through the running application's API.
+            const response = await step('When the product is retrieved once', () =>
+              clients.api.get('/products/product-1'),
+            );
+
+            // Assert the accepted outcome and runtime behavior.
+            await step(
+              'Then the cached product is returned without a PostgreSQL read',
+              async () => {
+                expect(response.status()).toBe(200);
+                expect(await response.json()).toMatchObject(product);
+                const inspection = await clients.api.get('/fixture/observations/result');
+                expect(inspection.status()).toBe(200);
+                expect(await inspection.json()).toEqual({
+                  productId: product.id,
+                  applicationPostgresSelects: 0,
+                  applicationPostgresStatements: 0,
+                  applicationPostgresPlans: 0,
+                  redisGets: 1,
+                  retrievals: 1,
+                });
+              },
+            );
+          },
+        );
+      });
+    });
+  });
+});
+```
+
+The `/fixture/` endpoints are sample-owned observation support. They expose real state and operation
+measurements over HTTP; they are not built-in Blackbox APIs. The complete example establishes the
+observation's scope before using a zero count as evidence.
+
+</details>
+
+Both forms preserve the rule, scenario nesting, and **Arrange → Act → Assert** sequence. There are
+two ways to maintain them:
+
+**Compile a reviewed Feature.** Supported sentences generate native Playwright tests. Regenerate and
+validate alignment with the Feature; keep generated output unedited.
+[Feature compilation](docs/features/generating-test-suites.md).
+
+**Author native Playwright.** Gherkin is optional. Use clients and assertions directly when the
+behavior needs richer interactions, and review the test against the accepted specification. A
+separate editable-scaffold generator is planned. [Native authoring](docs/playwright/README.md).
+
+## Inspect, repair, verify again
+
+Playwright starts a fresh Sandbox for each test attempt. Its HTML report presents test steps,
+assertion outcomes, and Blackbox diagnostics. If the cache rule fails, the agent can investigate the
+database access, repair the implementation, and run the same checks again.
 
 <p align="center">
-  <img width="790" src="docs/assets/readme/system-boundary.svg" alt="Blackbox configuration selects the required real services, action and inspection drivers, and optional runtime instrumentation." />
+  <img width="790" src="docs/assets/readme/human-agent-verification-loop.svg" alt="The developer approves behavior; the agent implements, inspects execution feedback, repairs the implementation, and reruns the same expectations." />
 </p>
 
-Reuse an existing Catalog where possible. Otherwise configure it and check the selected setup:
+A specification can evolve through review. An implementation should not redefine it accidentally. A
+passing test supports the behavior it checked under that execution's conditions.
 
-```sh
-pnpm exec blackbox catalog validate --json
-```
-
-Then, when useful, the agent **rehearses the scenario in a Capsule**: establishes state, performs
-the action, inspects responses and operations, and shares the **Capsule HTML report**.
-
-```sh
-# Example: replace product-system with a real Catalog ID
-pnpm exec blackbox capsule up product-system --json
-pnpm exec blackbox capsule run --session <session-id> -- <command...>
-pnpm exec blackbox capsule down <session-id>
-pnpm exec blackbox capsule report serve --session <session-id> --open
-```
-
-Use the returned session ID, not a guessed value. **Capsule currently executes commands and
-drivers—not Feature files directly.**
-[Investigate with a Capsule](docs/guides/investigate-with-capsule.md).
-
-## Two paths into repeatable Playwright tests
-
-After the agent understands the system, choose how to preserve the check:
-
-| Deterministic Feature compilation                                                                   | Editable Playwright scaffold                                                        |
-| --------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
-| Supported Gherkin sentences become **generated native Playwright**                                  | Agent fills in **project-specific TypeScript and SDK assertions**                   |
-| Regenerate and compare; **never hand-edit generated code**                                          | The authored file is editable and needs review against the accepted behavior        |
-| Compiler is implemented in [PR #181](https://github.com/suites-dev/blackbox/pull/181), pending here | **Planned generator**, not a shipped CLI command; native authoring works without it |
-
-The compiler needs the Feature, declared clients, and target system configuration. The editable path
-is for cases that require richer interactions or observations than today's HTTP-only Feature
-vocabulary.
-
-**Both paths run through Playwright and Blackbox Sandboxes.** A scaffold is not a half-generated
-Feature suite to patch. [How the two outputs differ](docs/playwright/editable-scaffolds.md) ·
-[Feature compiler](docs/features/generating-test-suites.md).
-
-## Run, inspect, repair, repeat
-
-The final Playwright run starts a **fresh Sandbox** for each physical test attempt; it does not
-reopen the Capsule. For the planned product-cache sample:
-
-```sh
-# From e2e/product-cache/ once the sample and PR #181 are available
-pnpm --dir .. exec playwright test --config product-cache/playwright.config.ts --project native
-pnpm --dir .. exec playwright show-report product-cache/playwright-report
-```
-
-The **Playwright HTML report** contains test steps, assertion outcomes, and Blackbox attempt
-diagnostics. If a cache-bypass bug reads PostgreSQL, the agent can follow the failure, repair the
-code, and rerun **without changing the approved expectations**.
-
-<p align="center">
-  <img width="790" src="docs/assets/readme/human-agent-verification-loop.svg" alt="The developer approves behavior; the agent implements, investigates execution results, repairs, and reruns the same expectations." />
-</p>
-
-A passing test supports **the behavior it actually checked in that execution**. It doesn't
-mathematically prove every possible execution correct or show that every sentence in the original
-spec was covered.
-
-[Get started with the product-cache walkthrough](docs/guides/verify-a-specification.md) ·
-[Repair from evidence](docs/guides/repair-from-evidence.md) · [Docs](docs/README.md)
-
----
+[Run the product-cache walkthrough](docs/guides/verify-a-specification.md) ·
+[Repair from evidence](docs/guides/repair-from-evidence.md)
 
 ## Alpha and further guides
 
-**Candidate alpha:** Feature compilation and typed Playwright clients depend on
-[PR #181](https://github.com/suites-dev/blackbox/pull/181); the referenced `e2e/product-cache/`
-sample isn't published on this branch. Automated Feature drafting, Feature execution inside
-Capsules, and editable-scaffold generation are **not shipped**. The documented workflow is our
-intended experience, not a claimed successful end-to-end run from this checkout.
+The typed clients and Feature compiler were implemented in
+[PR #181](https://github.com/suites-dev/blackbox/pull/181), which is merged but not included on this
+docs branch. The product-cache sample is also unpublished. Automated Feature drafting, direct
+Feature execution in Capsules, and scaffold generation are planned. The examples describe the
+intended experience, not an end-to-end run verified from this checkout.
 
-[Systems and Catalog](docs/playwright/connect-your-application.md) ·
-[Capsule experiments](docs/guides/investigate-with-capsule.md) ·
-[Feature vocabulary](docs/features/reference.md) · [Contributing](CONTRIBUTING.md) ·
+[Why verification matters now](docs/concepts/why-verification-now.md) ·
+[Systems and clients](docs/playwright/connect-your-application.md) ·
+[Capsules](docs/guides/investigate-with-capsule.md) ·
+[Evidence](docs/concepts/behavioral-evidence.md) · [Contributing](CONTRIBUTING.md) ·
 [License](LICENSE)

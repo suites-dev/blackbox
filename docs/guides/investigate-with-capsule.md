@@ -1,14 +1,14 @@
 # Investigate with a Capsule, confirm with Playwright
 
 A Capsule is the coding agent's **laboratory**. Before writing the final system test, the agent can
-rehearse a reviewed scenario, check whether the selected services are sufficient, and find out
-which actions and observations really work. After a failed Playwright test, it can return to
-a Capsule to investigate why.
+rehearse a reviewed scenario, check whether the selected services are sufficient, and find out which
+actions and observations really work. After a failed Playwright test, it can return to a Capsule to
+investigate why.
 
-A Capsule is a bounded, isolated environment for running commands, inspecting results, and
-retaining evidence. **Playwright** preserves the accepted behavior as repeatable system tests.
-They use the same underlying Blackbox setup but are **different executions**, not one shared
-live container. [See the full developer workflow](from-spec-to-verification.md).
+A Capsule is a bounded, isolated environment for running commands, inspecting results, and retaining
+evidence. **Playwright** preserves the accepted behavior as repeatable system tests. They use the
+same underlying Blackbox setup but are **different executions**, not one shared live container.
+[See the full developer workflow](from-spec-to-verification.md).
 
 <p align="center">
   <img width="790" src="../assets/readme/capsule-to-feature.svg" alt="The agent investigates a system in a Capsule, proposes a candidate expectation, obtains review, and preserves the accepted behavior in Playwright." />
@@ -26,6 +26,10 @@ Select the **smallest real system that can answer it**:
 - Keep the product service, Redis, PostgreSQL, and the observations needed to detect the read.
 - Omit unrelated services only if their removal doesn't change the behavior or hide evidence.
 - Record any external or replaced dependency. A test double changes what the result can establish.
+
+Run the real participants whose behavior the rule constrains. A mocked repository cannot establish
+whether the running application read PostgreSQL. Enter through the product API and observe its
+resource interactions; do not replace the behavior being investigated with a simulation.
 
 This is how we apply the idea of making
 [hard-to-verify problems more testable](https://www.kipiiler.me/blog/verification-systems-llms-ai-agents).
@@ -62,7 +66,7 @@ A useful experiment records:
 | ----------------------------------------- | ----------------------------------------------------------------------------- |
 | Known starting state                      | A previous attempt's data cannot be assumed                                   |
 | Stimulus and activity ID                  | Identifies the action being investigated                                      |
-| Response, state, and runtime observations | Shows *what* happened, not just whether a command exited successfully         |
+| Response, state, and runtime observations | Shows _what_ happened, not just whether a command exited successfully         |
 | Completion and observation limits         | Distinguishes a missing operation from an operation the observer couldn't see |
 | Cleanup result                            | Shows whether Blackbox released owned resources                               |
 
@@ -70,15 +74,14 @@ Stopping the Capsule releases its resources but preserves the retained record an
 
 ## What a Capsule does not execute
 
-A Capsule can start the selected system and perform the proposed
-Given/When/Then actions through supported commands and drivers. It
-**does not currently run a Gherkin `.feature` file as a test suite**.
-The agent interprets the reviewed scenario into controlled experiments,
-records actual activity IDs, and inspects the resulting HTML report.
+A Capsule can start the selected system and perform the proposed Given/When/Then actions through
+supported commands and drivers. It **does not currently run a Gherkin `.feature` file as a test
+suite**. The agent interprets the reviewed scenario into controlled experiments, records actual
+activity IDs, and inspects the resulting HTML report.
 
-The experiment helps the agent design a dependable test, but the
-**final pass/fail assertion belongs in Playwright**. See the two authoring
-paths in [From spec to verification](from-spec-to-verification.md).
+The experiment helps the agent design a dependable test, but the **final pass/fail assertion belongs
+in Playwright**. See the two authoring paths in
+[From spec to verification](from-spec-to-verification.md).
 
 ## From an observation to an accepted check
 

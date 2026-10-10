@@ -7,17 +7,17 @@ actions, fixture setup, or observations for which that vocabulary has no sentenc
 
 Blackbox should support both without making generated code a mutable source of truth:
 
-![After a reviewed specification and Capsule investigation, the agent may choose a deterministic Feature-generated Playwright suite or a separately owned editable scaffold.](../assets/readme/spec-to-verification-workflow.svg)
+![Reviewed behavior leads through system preparation and optional Capsule investigation to generated or authored native Playwright tests. A separate scaffold generator is planned.](../assets/readme/spec-to-verification-workflow.svg)
 
 ## Two distinct authoring contracts
 
-| Deterministic compiler                                                            | Editable scaffold (planned)                                                  |
-| --------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
-| Input is a reviewed Feature and its supported step vocabulary                     | Input is reviewed behavior and, when helpful, Capsule findings               |
-| Emits a **complete** native Playwright suite for supported operations             | Creates a **starting structure** for project-specific TypeScript             |
-| Output is derived and **must not be edited**                                      | Agent or developer edits and owns the test implementation                    |
-| Byte-level `feature suite validate` guards generated drift                        | Semantic review and traceability guard the relationship to the accepted spec |
-| Implemented in pending [PR #181](https://github.com/suites-dev/blackbox/pull/181) | Generator not implemented or given a final CLI name                          |
+| Deterministic compiler                                                    | Editable scaffold (planned)                                                  |
+| ------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| Input is a reviewed Feature and its supported step vocabulary             | Input is reviewed behavior and, when helpful, Capsule findings               |
+| Emits a **complete** native Playwright suite for supported operations     | Creates a **starting structure** for project-specific TypeScript             |
+| Output is derived and **must not be edited**                              | Agent or developer edits and owns the test implementation                    |
+| Byte-level `feature suite validate` guards generated drift                | Semantic review and traceability guard the relationship to the accepted spec |
+| Implemented in [PR #181](https://github.com/suites-dev/blackbox/pull/181) | Generator not implemented or given a final CLI name                          |
 
 **Don't emit a generated test and then ask the agent to fill in its internals.** That would destroy
 the deterministic relationship to the reviewed Feature while still giving the file the appearance of
@@ -39,8 +39,8 @@ experimental command sequence.
 ## A fail-closed starting structure
 
 The future scaffold should expose unimplemented checks as **failures or explicit unresolved work**,
-not quietly leave an empty passing test. For example, this is *illustrative project-owned
-TypeScript*, not generated output from a released command:
+not quietly leave an empty passing test. For example, this is _illustrative project-owned
+TypeScript_, not generated output from a released command:
 
 ```ts
 import { test } from '@suites/blackbox-playwright';
@@ -59,8 +59,8 @@ test.system('product-system', (system) => {
 ```
 
 Until the agent implements the observed preconditions and assertions, this test **must not pass**.
-The agent uses the application's own SDKs and observation methods; the actual expected result
-remains owned by the reviewed specification.
+The agent uses the SDK clients connected to system interfaces and observation endpoints; the actual
+expected result remains owned by the reviewed specification.
 
 ## How traceability should work
 

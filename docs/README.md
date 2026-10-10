@@ -1,17 +1,24 @@
 # Blackbox documentation
 
-**Start with a specification. Let your agent discover, rehearse, and verify the behavior against a
-running system.**
+**Start with a specification. Let your agent verify its behavior against the running system.**
 
-![From developer-approved behavior through Capsule investigation to native Playwright verification.](assets/readme/spec-to-verification-workflow.svg)
+Blackbox tests enter through the application's I/O interfaces and check required outputs, state, and
+runtime interactions. That boundary keeps accepted expectations independent of the internal code an
+agent may rewrite.
+[Why the name Blackbox matters](concepts/spec-driven-verification.md#why-the-testing-boundary-matters).
+
+![From developer-approved behavior through system preparation and optional Capsule investigation to repeatable Playwright verification.](assets/readme/spec-to-verification-workflow.svg)
 
 ## Start here
 
 The [complete developer workflow](guides/from-spec-to-verification.md) follows three stages:
 
-1. **Define:** give the agent an accepted requirement, review its concrete Feature scenarios, and approve what should happen.
-2. **Explore:** let the agent discover the relevant system, reuse or create the Catalog, and rehearse the behavior in a Capsule. Review the Capsule HTML report.
-3. **Verify:** create repeatable Playwright tests using either deterministic Feature compilation or project-owned TypeScript, then inspect results and repair against unchanged expectations.
+1. **Define:** give the agent an accepted requirement, review its concrete scenarios, and approve
+   what should happen. A Gherkin Feature is optional.
+2. **Prepare:** let the agent discover the relevant system and reuse or create its configuration.
+   When investigation is useful, rehearse the behavior in a Capsule and review its HTML report.
+3. **Verify:** create repeatable Playwright tests using either deterministic Feature compilation or
+   project-owned TypeScript, then inspect results and repair against unchanged expectations.
 
 **New to Blackbox?** Follow the [product-cache specification](guides/verify-a-specification.md) to
 see why a correct HTTP response can still hide an incorrect database read.
@@ -44,8 +51,8 @@ For exact interfaces, see [Feature syntax](features/reference.md),
 [Redis](guides/testing-redis.md), [async completion](guides/testing-async-flows.md), and
 [Spec Kit integration](integrations/spec-kit.md).
 
-**Alpha availability:** the Feature compiler and typed Playwright clients depend on
-[PR #181](https://github.com/suites-dev/blackbox/pull/181), and the `e2e/product-cache/` example
-hasn't landed on this docs branch. Automated Feature drafting, direct Feature execution in a
-Capsule, and editable scaffold generation are **planned**. See the
+**Alpha availability:** the Feature compiler and typed Playwright clients from merged
+[PR #181](https://github.com/suites-dev/blackbox/pull/181) are not included on this docs branch. The
+`e2e/product-cache/` example is unpublished. Automated Feature drafting, direct Feature execution in
+a Capsule, and editable scaffold generation are **planned**. See the
 [workflow's status notes](guides/from-spec-to-verification.md).

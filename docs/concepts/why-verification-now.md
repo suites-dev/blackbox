@@ -16,9 +16,18 @@ implementation against the behavior we agreed on?**
 An agent may replace a class, switch an ORM, or rewrite a service. Those changes shouldn't require
 rewriting a business rule that hasn't changed.
 
-A *specification* is where we state the intended behavior. An *executable check* tests a concrete
+A _specification_ is where we state the intended behavior. An _executable check_ tests a concrete
 example of it against the running system. That gives an agent a target more stable than a particular
 code structure.
+
+Blackbox makes this separation practical by testing through the running system's I/O interfaces. The
+test sends an HTTP request rather than importing the application's business class. It can check
+responses, stored state, and required runtime interactions while the agent reorganizes the code
+behind that interface. This is the idea behind the name **Blackbox**.
+
+The agreed interfaces and behavior define what must remain stable. Client bindings and observation
+setup may need maintenance without changing those expectations.
+[Why the testing boundary matters](spec-driven-verification.md#why-the-testing-boundary-matters).
 
 [Leonardo de Moura's essay on AI-generated software](https://leodemoura.github.io/blog/2026-2-28-when-ai-writes-the-worlds-software-who-verifies-it/)
 argues that specification becomes a core engineering discipline as implementation accelerates. It
@@ -58,7 +67,7 @@ remains first-class when a claim needs richer SDK calls.
 ## A passing response needs the right question
 
 Software testing has a classic problem: **how do you know whether a result is correct?** Researchers
-call this the *test oracle problem*. An agent that sees HTTP `200` has an observation, but it may
+call this the _test oracle problem_. An agent that sees HTTP `200` has an observation, but it may
 not have checked the full requirement.
 
 Consider the cache rule in our [product walkthrough](../guides/verify-a-specification.md). The right
@@ -97,7 +106,7 @@ or implies every software problem becomes cheap to verify.
   <img width="790" src="../assets/readme/capsule-to-feature.svg" alt="A Capsule supports experiments, while developer review determines which expectations become permanent executable tests." />
 </p>
 
-The payoff isn't *more tests for their own sake*. It's a coding agent that can implement, obtain
+The payoff isn't _more tests for their own sake_. It's a coding agent that can implement, obtain
 specific feedback, repair, and check again—**without redefining success each time**.
 
 [Give your agent the first task](../playwright/connect-your-application.md) ·

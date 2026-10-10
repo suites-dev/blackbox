@@ -1,78 +1,79 @@
 # Express the product rule as a Feature
 
-Start with the **accepted product specification**, not arbitrary test steps.
-Creation must persist in PostgreSQL and Redis, and valid-cache retrieval
-must avoid PostgreSQL. This page turns those claims into reviewed Gherkin
-scenarios and generates a native Playwright suite.
+Start with the **accepted product specification**, not arbitrary test steps. Creation must persist
+in PostgreSQL and Redis, and valid-cache retrieval must avoid PostgreSQL. This page turns those
+claims into reviewed Gherkin scenarios and generates a native Playwright suite.
 
-The `Feature → Rule → Scenario` hierarchy gives SDD teams a shared way to
-review concrete behaviors. It **does not replace the source specification
-or guarantee every requirement was captured**. Native Playwright is
-another first-class executable authoring path.
+The `Feature → Rule → Scenario` hierarchy gives SDD teams a shared way to review concrete behaviors.
+It **does not replace the source specification or guarantee every requirement was captured**. Native
+Playwright is another first-class executable authoring path.
+
+Describe the running system's contract, independently of its internal methods. In this example, the
+test creates and retrieves products through HTTP and inspects real state and operations. Changing
+the application's class structure need not change the expected persistence or cache behavior. Keep
+the fixture endpoints and client bindings that implement the check separate from the reviewed
+requirement.
 
 <p align="center">
   <img width="800" src="../assets/readme/specification-to-evidence.svg" alt="The accepted Markdown specification guides a reviewed Feature and generated Playwright suite. The Sandbox runs product-service with PostgreSQL and Redis, and the execution report presents assertions and attempt diagnostics." />
 </p>
 
 Complete [the sample preparation](../guides/verify-a-specification.md#run-the-supplied-example)
-first. Continue from `e2e/product-cache/` with the supplied `api` client and runner.
-You do not need to run the native authoring path first.
+first. Continue from `e2e/product-cache/` with the supplied `api` client and runner. You do not need
+to run the native authoring path first.
 
 ## Let the compiler constrain the agent
 
-Gherkin makes business scenarios readable. Blackbox's **supported step
-vocabulary** makes them executable: a step must match a known operation
-and input shape, or validation fails before a Sandbox starts.
+Gherkin makes business scenarios readable. Blackbox's **supported step vocabulary** makes them
+executable: a step must match a known operation and input shape, or validation fails before a
+Sandbox starts.
 
-That gives a coding agent specific feedback instead of encouraging it
-to invent arbitrary step definitions or bury assumptions in generated
-TypeScript. The accepted source specification still determines whether
-the scenario expresses the **right** behavior; valid syntax alone cannot
-answer that question.
+That gives a coding agent specific feedback instead of encouraging it to invent arbitrary step
+definitions or bury assumptions in generated TypeScript. The accepted source specification still
+determines whether the scenario expresses the **right** behavior; valid syntax alone cannot answer
+that question.
 
 [Why Features are useful for coding agents](README.md#why-a-feature-helps-coding-agents).
 
 ## Decide what the Feature must establish
 
-A complete check of this selected rule needs separate persistence, cache
-population, and cache-only retrieval claims. The last requires an observer
-that can detect a database read within a bounded window, not merely a
-correct response. Unsupported Gherkin sentences require clarification
-or a native test; do not silently drop their meaning.
+A complete check of this selected rule needs separate persistence, cache population, and cache-only
+retrieval claims. The last requires an observer that can detect a database read within a bounded
+window, not merely a correct response. Unsupported Gherkin sentences require clarification or a
+native test; do not silently drop their meaning.
 
 [Evidence sufficiency](../concepts/behavioral-evidence.md) ·
 [Full verification journey](../guides/verify-a-specification.md).
 
 ## Draft from the accepted specification
 
-The [source specification](../../e2e/product-cache/specs/create-product.md) states
-the accepted behavior independently of its implementation:
+The
+[accepted product specification](../guides/verify-a-specification.md#start-with-the-accepted-behavior)
+states the accepted behavior independently of its implementation:
 
 ```markdown
 # Product creation and retrieval
 
 ## Rule: Persist products and serve valid cache entries
 
-Creating a product persists it in PostgreSQL and populates Redis.
-Retrieving it while its cached entry is valid returns the cached product
-without reading PostgreSQL.
+Creating a product persists it in PostgreSQL and populates Redis. Retrieving it while its cached
+entry is valid returns the cached product without reading PostgreSQL.
 ```
 
 Give that specification to the agent:
 
-> Draft scenarios for this rule using Blackbox's supported HTTP sentences and our
-> existing client. Keep creation and cached retrieval as separate Arrange, Act,
-> Assert scenarios under the same Rule. Establish the database and cache state
-> before retrieval. Identify any clause the proposed assertions cannot establish.
+> Draft scenarios for this rule using Blackbox's supported HTTP sentences and our existing client.
+> Keep creation and cached retrieval as separate Arrange, Act, Assert scenarios under the same Rule.
+> Establish the database and cache state before retrieval. Identify any clause the proposed
+> assertions cannot establish.
 
-The agent authors a candidate for review. The current CLI validates and compiles
-Features; automatic CLI drafting is not available.
+The agent authors a candidate for review. The current CLI validates and compiles Features; automatic
+CLI drafting is not available.
 
 ## Review the Feature, Rule, and Scenarios
 
-The complete supplied
-[`product-cache.feature`](../../e2e/product-cache/tests/product-cache.feature)
-contains the two scenarios:
+The complete candidate `product-cache.feature` below contains both scenarios. The sample files are
+not yet published; see [current availability](../../README.md#alpha-and-further-guides).
 
 ```gherkin
 @system:product-system @sandbox:default
@@ -150,20 +151,19 @@ Feature: Product creation and retrieval
         """
 ```
 
-The Feature names the capability. The Rule states the accepted expectation. Each
-Scenario gives one concrete example, with setup before its action and assertions.
-Blackbox preserves that nesting and step order in the generated suite and report.
+The Feature names the capability. The Rule states the accepted expectation. Each Scenario gives one
+concrete example, with setup before its action and assertions. Blackbox preserves that nesting and
+step order in the generated suite and report.
 
-Creation checks the response and both stored values. Cached retrieval establishes
-those values first, opens a bounded observation window, performs one GET, and
-checks its response and database/cache observations. The calibration step first
-proves that a known cache miss registers a database read.
+Creation checks the response and both stored values. Cached retrieval establishes those values
+first, opens a bounded observation window, performs one GET, and checks its response and
+database/cache observations. The calibration step first proves that a known cache miss registers a
+database read.
 
-The `/fixture/` routes belong to this sample. Their authenticated HTTP responses
-expose actual state and operation counters. They let the current HTTP-only
-compiler express the claims without pretending it has native Redis or database
-sentences. Connection details and the fixture token live in
-[`clients.ts`](../../e2e/product-cache/tests/clients.ts).
+The `/fixture/` routes belong to this sample. Their authenticated HTTP responses expose actual state
+and operation counters. They let the current HTTP-only compiler express the claims without
+pretending it has native Redis or database sentences. Connection details and the fixture token live
+in [sample API client](../guides/testing-http-apis.md#connect-the-api-client).
 
 ## Validate and inspect the generated suite
 
@@ -186,9 +186,9 @@ pnpm exec blackbox feature suite emit tests/product-cache.feature --clients test
 ```
 
 The destination must not already exist. Compare that candidate with
-[`product-cache.generated.spec.ts`](../../e2e/product-cache/tests/product-cache.generated.spec.ts).
-It preserves the Feature and Rule groups, both Scenario tests, and their ordered
-steps. The `.preview.ts` suffix keeps the candidate out of test discovery.
+`e2e/product-cache/tests/product-cache.generated.spec.ts`. It preserves the Feature and Rule groups,
+both Scenario tests, and their ordered steps. The `.preview.ts` suffix keeps the candidate out of
+test discovery.
 
 <details>
 <summary>Inspect the complete generated Playwright suite</summary>
@@ -275,14 +275,14 @@ pnpm --dir .. exec playwright test --config product-cache/playwright.config.ts -
 pnpm --dir .. exec playwright show-report product-cache/playwright-report
 ```
 
-Expect **two scenarios**, each in its own isolated Sandbox. Open their steps and
-match the executed assertions to the accepted rule.
+Expect **two scenarios**, each in its own isolated Sandbox. Open their steps and match the executed
+assertions to the accepted rule.
 
-Continue at [Read the evidence](../guides/verify-a-specification.md#read-the-evidence).
-Then use the same Feature and generated assertions for the
-[cache-bypass failure and repair](../guides/repair-from-evidence.md). The authoring
-choice does not change what the system must do.
+Continue at [Read the evidence](../guides/verify-a-specification.md#read-the-evidence). Then use the
+same Feature and generated assertions for the
+[cache-bypass failure and repair](../guides/repair-from-evidence.md). The authoring choice does not
+change what the system must do.
 
-If validation rejects a sentence, use the [sentence reference](reference.md#sentence-reference).
-If execution fails, investigate the observed discrepancy before changing an
-expectation. For later reviewed edits, follow [Feature maintenance](generating-test-suites.md).
+If validation rejects a sentence, use the [sentence reference](reference.md#sentence-reference). If
+execution fails, investigate the observed discrepancy before changing an expectation. For later
+reviewed edits, follow [Feature maintenance](generating-test-suites.md).

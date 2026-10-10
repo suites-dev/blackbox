@@ -4,9 +4,10 @@ When an agent generates both the implementation **and** the test, you need a way
 it's checking**, not just whether the generated code compiles.
 
 A Feature makes an accepted example easy to read. Blackbox uses
-[Gherkin](https://cucumber.io/docs/gherkin/reference/) for its `Feature → Rule → Scenario` structure
-and a **defined set of executable sentences** to make the example testable. Features are
-**optional**—you can always write [native Playwright](../playwright/README.md).
+[Gherkin from Cucumber](https://cucumber.io/docs/gherkin/reference/) for its
+`Feature → Rule → Scenario` structure and a **defined set of executable sentences** to make the
+example testable. Features are **optional**—you can always write
+[native Playwright](../playwright/README.md).
 
 <p align="center">
   <img width="790" src="../assets/readme/specification-triangle.svg" alt="The accepted product specification stays connected to a reviewed Feature and its generated native Playwright suite." />
@@ -14,22 +15,20 @@ and a **defined set of executable sentences** to make the example testable. Feat
 
 ## When to create the Feature
 
-In the [spec-first workflow](../guides/from-spec-to-verification.md), the
-coding agent **drafts a Feature from the accepted requirement and asks
-the developer to review it before using it as a test contract**. Only
-then does it discover the required running-system boundary and rehearse
-the behavior in a Capsule.
+In the [spec-first workflow](../guides/from-spec-to-verification.md), the coding agent **drafts a
+Feature from the accepted requirement and asks the developer to review it before using it as a test
+contract**. Only then does it discover the required running-system boundary and rehearse the
+behavior in a Capsule.
 
-The future `blackbox feature file draft <spec> --output <feature>` command
-is **registered but currently unavailable**. Until an authoring provider
-is implemented, the agent writes the `.feature` file normally and
-validates its supported sentences. Native Playwright remains another
-valid way to express accepted expectations.
+The future `blackbox feature file draft <spec> --output <feature>` command is **registered but
+currently unavailable**. Until an authoring provider is implemented, the agent writes the `.feature`
+file normally and validates its supported sentences. Native Playwright remains another valid way to
+express accepted expectations.
 
-After Capsule investigation, a Feature can be compiled **deterministically**
-when every step is supported. Richer tests can be written as native
-TypeScript; a separate [editable scaffold generator](../playwright/editable-scaffolds.md)
-is planned, not a reason to edit a generated Feature suite.
+After Capsule investigation, a Feature can be compiled **deterministically** when every step is
+supported. Richer tests can be written as native TypeScript; a separate
+[editable scaffold generator](../playwright/editable-scaffolds.md) is planned, not a reason to edit
+a generated Feature suite.
 
 ## Why a Feature helps coding agents
 
@@ -37,9 +36,23 @@ Free-form prose is great for discussing requirements but leaves a lot of room fo
 small, validated language gives the agent useful boundaries:
 
 - **Readable:** a developer can inspect the expected behavior before a run.
-- **Constrained:** Blackbox knows the supported request and assertion sentences. Unsupported steps fail validation instead of silently acquiring made-up behavior.
-- **Actionable feedback:** a parser or compiler error can guide the agent to fix its scenario *before* starting the system.
-- **Durable:** the reviewed Feature remains understandable when the prompt, implementation, and generated TypeScript change.
+- **Constrained:** Blackbox knows the supported request and assertion sentences. Unsupported steps
+  fail validation instead of silently acquiring made-up behavior.
+- **Actionable feedback:** a parser or compiler error can guide the agent to fix its scenario
+  _before_ starting the system.
+- **Durable:** expectations describe the running system's behavior, so an internal rewrite need not
+  change the rule or its examples.
+
+Durability comes from what the Feature specifies. The product rule constrains persistence, caching,
+and retrieval through system interfaces; it need not name `ProductService` or a repository method.
+Its Playwright checks exercise those interfaces against the running application. **That testing
+boundary makes independence from the implementation practical.**
+
+Client bindings, fixture endpoints, and observers may need maintenance. If the agreed interfaces and
+behavior remain the same, maintaining them should preserve what counts as correct behavior. Gherkin
+alone cannot prevent semantic drift: review the expectations, validate generated alignment, and
+execute the tests.
+[How these relationships differ](../concepts/spec-driven-verification.md#three-different-ways-things-drift).
 
 Gherkin itself is a readable structure, **not a restricted execution language on its own**.
 Blackbox's supported step library gives its sentences executable meaning. This is our application of
@@ -71,8 +84,8 @@ was satisfied.
 
 ## Validate, generate, then execute
 
-In the **candidate alpha**, after [PR #181](https://github.com/suites-dev/blackbox/pull/181) and the
-product sample land, the path is:
+With the APIs from merged [PR #181](https://github.com/suites-dev/blackbox/pull/181) and the product
+sample available, the **candidate-alpha** path is:
 
 ```sh
 # Run from e2e/product-cache/

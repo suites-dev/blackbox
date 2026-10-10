@@ -2,20 +2,55 @@
 
 **Start with what we agreed the system should do. Run the system. Check what it actually did.**
 
-As agents take on more implementation work, **reviewing every code change becomes a less reliable
-way to preserve behavior**. A spec gives the implementation and its checker a shared, human-reviewed
-target. Its meaning should survive internal rewrites even when its examples or implementation
-details evolve.
+As agents take on more implementation work, we need a repeatable way to check behavior alongside
+code review. A spec gives the implementation and its checker a shared, human-reviewed target. Its
+meaning should survive changes to classes, functions, and internal organization.
 
 The specification may be Markdown, a ticket, an API contract, or a document owned by an SDD
 workflow. Blackbox doesn't replace it. It helps coding agents turn that accepted behavior into tests
 that exercise the real running application.
 
+## Why the testing boundary matters
+
+**The application runs its implementation. The test interacts with the application.** A Blackbox
+system test sends input through a running application's interface, such as HTTP. It does not import
+a business class into the test process and invoke its methods as the entrypoint.
+
+That is why the framework is called **Blackbox**. The checks describe what the system returns,
+changes, and does against the accepted behavior. Testing through those interfaces makes the
+separation between specification and implementation practical: an agent can change the code's
+internal structure while the same expectations continue to apply.
+
+For the product rule, the test creates and retrieves a product through the API, inspects its
+PostgreSQL and Redis state, and observes the database/cache operations during retrieval. The rule
+constrains those interactions. It need not name a service class or repository method.
+
+Some teams call these integration tests. The term includes both
+[code-level interactions and tests across live services](https://martinfowler.com/bliki/IntegrationTest.html).
+Blackbox's contribution is the system preparation, isolation, observation, and feedback workflow
+that lets agents repeat these checks against an accepted specification.
+
+Run the real participants needed inside the **verification boundary**. Record external or
+substituted dependencies and what their substitution leaves unverified. Removing PostgreSQL from the
+cache example would remove the very interaction the test must check.
+
+## Maintain the machinery without redefining success
+
+A Feature is durable when it describes system behavior, not merely because it uses Gherkin. If
+agreed interfaces and behavior stay the same, changing an ORM or reorganizing classes need not
+change the expectation. Client bindings, startup configuration, state readers, and instrumentation
+may still need maintenance.
+
+Keep that maintenance separate from changing the behavioral contract. An agent may repair an
+observer that stopped recording database reads; changing the expected read count to accept a cache
+bypass would change the requirement and needs review.
+
 ## One specification, three things to keep connected
 
 Suppose we agree:
 
-> Creating a product persists it in PostgreSQL and populates Redis. Retrieving a valid cached entry must not read PostgreSQL.
+> Creating a product persists it in PostgreSQL and populates Redis. Retrieving a valid cached entry
+> must not read PostgreSQL.
 
 <p align="center">
   <img width="790" src="../assets/readme/specification-triangle.svg" alt="An accepted product specification, optional Gherkin Feature, and generated Playwright suite preserve the same cache behavior." />
@@ -25,12 +60,10 @@ The **spec** describes what should happen. The **test** expresses a concrete exa
 tells us whether that example held in one real execution. A passing test cannot prove that every
 requirement in the source document has been covered.
 
-The full [developer journey](../guides/from-spec-to-verification.md)
-places human review before system discovery. The agent then uses
-Capsule experiments to learn which observations actually work before
-turning the approved behavior into repeatable Playwright checks.
-Capsule exploration is useful, but isn't mandatory when the selected
-system and assertions are already known.
+The full [developer journey](../guides/from-spec-to-verification.md) places human review before
+system discovery. The agent then uses Capsule experiments to learn which observations actually work
+before turning the approved behavior into repeatable Playwright checks. Capsule exploration is
+useful, but isn't mandatory when the selected system and assertions are already known.
 
 ## Write checks in two ways
 
@@ -38,8 +71,10 @@ system and assertions are already known.
   <img width="790" src="../assets/guides/authoring-paths.svg" alt="Accepted specifications can become direct native Playwright tests or optional reviewed Gherkin Features that compile to Playwright." />
 </p>
 
-- **Native Playwright:** TypeScript tests using the application's own HTTP, database, or other SDKs.
-- **Optional Gherkin Feature:** readable `Feature → Rule → Scenario` examples, reviewed before Blackbox generates a native suite.
+- **Native Playwright:** TypeScript tests using SDK clients to interact with the running system's
+  interfaces and inspect its resources.
+- **Optional Gherkin Feature:** readable `Feature → Rule → Scenario` examples, reviewed before
+  Blackbox generates a native suite.
 
 A short Feature can express a request and its response:
 
@@ -68,7 +103,7 @@ application's database operations.
 For the Feature path, the candidate compiler can check the generated suite:
 
 ```sh
-# In the product-cache sample, after PR #181 and the sample land
+# In the product-cache sample, with the PR #181 APIs and sample available
 pnpm exec blackbox feature suite validate tests/product-cache.feature \
   --clients tests/clients.ts --output tests/product-cache.generated.spec.ts
 ```

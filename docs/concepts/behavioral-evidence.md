@@ -1,16 +1,32 @@
-# How do you know the test checked the right thing?
+# Check the behavior the specification requires
 
 An agent can write an implementation, send an HTTP request, and see `200`. But **is that the result
 the specification required?** And what might be missing behind the response?
 
-This is the *test oracle problem*: generating test inputs is different from deciding whether the
+This is the _test oracle problem_: generating test inputs is different from deciding whether the
 observed behavior was correct. Historically, a human could inspect the system and judge. As coding
 agents do more implementation work, we need more of that judgment expressed in **reviewed checks and
 trustworthy observations**.
 
 Blackbox helps build those checks. It does **not** automatically invent a correct oracle from
 arbitrary prose.
-[Research background: *The Oracle Problem in Software Testing: A Survey*](https://ieeexplore.ieee.org/document/6963470).
+[Research background: _The Oracle Problem in Software Testing: A Survey_](https://ieeexplore.ieee.org/document/6963470).
+
+## Observe the running system through its boundaries
+
+Blackbox exercises the application through its I/O interfaces. Outputs, stored state, database
+access, cache operations, and outgoing requests can all provide evidence about that execution.
+Observing those interactions preserves the separation between the test and the application's
+internal classes or functions.
+
+For example, asserting that `CacheService.find()` was called would couple the test to one code
+structure. Checking that a valid cached retrieval did not access PostgreSQL expresses an interaction
+explicitly constrained by our accepted specification. The agent remains free to reorganize the
+implementation behind the same interfaces.
+
+**An observation becomes an assertion because the specification requires it.** Other trace details
+can help diagnose a failure without becoming part of the behavioral contract. See
+[why the testing boundary matters](spec-driven-verification.md#why-the-testing-boundary-matters).
 
 ## The same response, different behavior
 
@@ -18,7 +34,7 @@ Our example specification says creating a product stores it in PostgreSQL and Re
 cache hit **must not read PostgreSQL**.
 
 <p align="center">
-  <img width="790" src="../assets/guides/product-cache-evidence.svg" alt="Both implementations return the same product; one violates the accepted behavior by reading PostgreSQL despite a valid cache entry." />
+  <img width="900" src="../assets/guides/product-cache-evidence.svg" alt="The test reaches the real product system through HTTP and checks state and runtime interactions. Both retrieval implementations return the same product; a cache bypass violates the rule by reading PostgreSQL." />
 </p>
 
 The product can be correct in the response **and** wrong in how it was retrieved. The test needs the
@@ -28,13 +44,13 @@ observations required by the rule:
 | -------------------------------- | -------------------------------------- | ------------------------------- |
 | **Outcome**                      | HTTP status and JSON body              | What did the caller receive?    |
 | **State**                        | PostgreSQL row or Redis value          | What was actually stored?       |
-| **Runtime activity** (*effects*) | SQL query, Redis GET, outgoing request | What did the running system do? |
+| **Runtime activity** (_effects_) | SQL query, Redis GET, outgoing request | What did the running system do? |
 
 These are **choices, not a mandatory checklist**. The specification decides which matter.
 
 An observed `INSERT` doesn't establish that a transaction committed. Finding a product in Redis
 doesn't establish that the application served it from Redis. Choose the observer that answers the
-*specific* question.
+_specific_ question.
 
 ## The outcome depends on how the system is entered
 
@@ -68,7 +84,7 @@ Expected valid cache hit:  Redis GET 1  | PostgreSQL statements 0
 Deliberate cache bypass:   Redis GET 1  | PostgreSQL statements 1
 ```
 
-These are *expected example measurements*, not a screenshot of a completed run. The assertion
+These are _expected example measurements_, not a screenshot of a completed run. The assertion
 depends on correct calibration, application-role filtering, and a window without unrelated traffic.
 
 ## Wait until the behavior is actually complete
