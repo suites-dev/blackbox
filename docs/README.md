@@ -7,30 +7,43 @@ exercise the real system and check the evidence needed to tell the difference.
 
 ![An accepted product specification guides agent setup, executable expectations, a real PostgreSQL and Redis system, and its execution report.](assets/guides/product-cache-journey.svg)
 
-Start with **[Verify a specification against your system](guides/verify-a-specification.md)**.
-Follow one accepted rule through agent setup, reviewed system tests, and a report
-that shows what the execution established. The supplied product application keeps
-the example small: one service, PostgreSQL, and Redis.
-
-Then **[repair behavior from execution evidence](guides/repair-from-evidence.md)**.
-Introduce a cache-bypass defect that still returns the correct response. Give its
-failed verification to your coding agent, repair the implementation, and rerun the
-same accepted expectations.
-
 ## Follow the same rule through the whole journey
 
-| Your next task                                        | Where to go                                                        |
-| ----------------------------------------------------- | ------------------------------------------------------------------ |
-| Turn accepted behavior into a verified system test    | [The complete walkthrough](guides/verify-a-specification.md)       |
-| Investigate a failure and repair the implementation   | [The repair chapter](guides/repair-from-evidence.md)               |
-| Prepare your own repository with a coding agent       | [Connect your application](playwright/connect-your-application.md) |
-| Express the expectations in TypeScript                | [Native Playwright](playwright/README.md)                          |
-| Review a Gherkin Feature and generate its suite       | [Optional Feature authoring](features/drafting-feature-files.md)   |
-| Keep the reviewed Feature and generated suite aligned | [Feature maintenance](features/generating-test-suites.md)          |
+### Verify your first specification
 
-Native tests and optional Feature files are two ways to express expectations. They
-meet at the same Blackbox Sandbox, Playwright execution, and evidence review.
-Feature files are not required for specification-driven verification.
+Follow the product example from accepted behavior to a running system and its
+execution report. See what establishes persistence, cache population, and a
+retrieval without a database read.
+
+[Start the walkthrough →](guides/verify-a-specification.md)
+
+### Bring your own application
+
+Give your agent the requirement. It discovers the system, prepares the Blackbox
+configuration, and connects the clients and observations needed to verify it.
+
+[Set up your application →](playwright/connect-your-application.md)
+
+### Choose how to express the behavior
+
+**[Native Playwright](playwright/README.md)** lets you write the expectations
+directly in TypeScript with your project's SDKs.
+
+**[Optional Gherkin Features](features/drafting-feature-files.md)** give your team
+a shared place to review scenarios and generate their Playwright suite.
+
+Both paths meet at the same Sandbox, system execution, and evidence review.
+
+### Keep the rule verified as the code changes
+
+Use a failed execution to guide the agent's repair, then rerun the same accepted
+expectations. If you author Features, keep their generated suites aligned too.
+
+[Repair from evidence →](guides/repair-from-evidence.md)
+
+[Keep a Feature and its suite aligned →](features/generating-test-suites.md)
+
+## Choose evidence for the claim
 
 When a claim needs a closer look, follow the supporting guides for
 [HTTP responses](guides/testing-http-apis.md),
