@@ -1,8 +1,15 @@
 # Follow a specification through verification
 
-You have asked your coding agent to implement a requirement. These guides help
-you follow that requirement into executable expectations, a running system, and
-evidence you can use to accept or repair the implementation.
+These guides follow **Spec-Driven Verification**:
+accepted behavior → behavioral claims → executable expectations →
+running-system evidence → implementation repair.
+
+The specification is authoritative. Your coding agent can prepare the
+system, author scenarios for review, and investigate failures, but
+cannot silently redefine the accepted behavior to fit what it observed.
+
+[Verification model](../concepts/spec-driven-verification.md) ·
+[Evidence sufficiency](../concepts/behavioral-evidence.md).
 
 Start with [Verify a specification against your system](verify-a-specification.md).
 The supplied product application follows one accepted rule: creating a product

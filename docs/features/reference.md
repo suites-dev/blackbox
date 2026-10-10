@@ -4,6 +4,20 @@ Use this page to look up syntax after [running your first Feature](drafting-feat
 Blackbox parses Gherkin with Cucumber and compiles the supported HTTP sentences
 into native Playwright declarations. This page describes the current alpha compiler.
 
+## What the compiler can and cannot establish
+
+A successfully compiled Feature shows that its supported sentences
+mapped to native Playwright declarations. It doesn't prove that
+every part of the accepted specification was represented or that
+the running application satisfies the resulting checks.
+
+Features help an SDD workflow preserve reviewed scenarios. Native
+Playwright remains first-class when a claim requires an SDK operation
+beyond this compiler's HTTP vocabulary.
+
+[Spec-Driven Verification](../concepts/spec-driven-verification.md) ·
+[Evidence limits](../concepts/behavioral-evidence.md).
+
 ## Select the system and Sandbox
 
 Now connect the scenario to the system it should exercise. Put selectors on the

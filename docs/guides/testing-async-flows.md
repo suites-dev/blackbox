@@ -8,6 +8,23 @@ Some requirements allow an outcome to become visible later. For those, agree on
 the expected state and completion deadline, then use a bounded assertion to wait
 for that state. Keep the action and the observation tied to the same resource.
 
+## Completion depends on the entrypoint
+
+An HTTP response might precede work on a queue; a message might be
+acknowledged before a projection becomes visible; a scheduled job may
+return after merely enqueuing another task.
+
+The accepted specification must say what **business completion**
+means. For a queued invoice, it might require an authoritative invoice
+record and downstream publication evidence. Broker acknowledgment
+alone cannot establish all of those outcomes.
+
+The sample below uses HTTP and PostgreSQL. The queue and job examples
+are **evidence-design guidance**, not a claim that the alpha includes
+universal queue/scheduler adapters or effect matchers.
+
+[Outcomes and completion](../concepts/behavioral-evidence.md).
+
 ## Use Playwright's polling assertion
 
 `expect.poll` is a [native Playwright assertion](https://playwright.dev/docs/test-assertions#expectpoll).

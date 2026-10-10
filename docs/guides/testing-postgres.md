@@ -12,6 +12,17 @@ population and retrieval under one specification. Its
 the sample's protected inspection operation. This guide explains that evidence
 and shows how to make an equivalent observation with a native `pg` client.
 
+## State evidence is not an effect trace
+
+An instrumented `INSERT` can be attempted and later rolled back.
+C1 requires the committed product row after creation, which is why
+the sample reads state from a separate observation connection and
+checks the expected identity and fields.
+
+That is evidence under a particular isolation/visibility model, not
+a blanket proof of durability under every failure scenario.
+[Evidence model](../concepts/behavioral-evidence.md).
+
 ## Read the state the application wrote
 
 After creation, `GET /fixture/products/product-1` returns two independently read

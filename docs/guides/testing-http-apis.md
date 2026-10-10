@@ -10,6 +10,15 @@ for the complete runnable example. This guide explains its HTTP action and
 response checks. The [canonical native suite](../../e2e/product-cache/tests/product-cache.native.spec.ts)
 keeps them connected to the other accepted claims.
 
+## A response is an entrypoint outcome
+
+An HTTP status and body establish what the application returned at
+that boundary. They do **not** prove a committed database write,
+cache population, or the absence of a forbidden downstream operation.
+The accepted spec determines whether those require separate claims.
+
+[Outcome, state, and effect evidence](../concepts/behavioral-evidence.md).
+
 ## Connect the API client
 
 The sample's [client definition](../../e2e/product-cache/tests/clients.ts) binds

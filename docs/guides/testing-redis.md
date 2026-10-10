@@ -11,6 +11,20 @@ scenario. Its [native suite](../../e2e/product-cache/tests/product-cache.native.
 and optional Feature share the same sample-owned inspection and observation
 operations.
 
+## A cache hit is an absence claim too
+
+A valid Redis value establishes **C2: cache population**, but not
+**C3: no application PostgreSQL read during retrieval**. C3 needs
+a bounded observer whose ability to detect SQL has been demonstrated
+by a positive control. Missing SQL spans alone are not sufficient
+without coverage guarantees.
+
+The example's counters cover a single isolated retrieval and the
+application PostgreSQL role. Preserve that scope when adapting it
+to a system with concurrent or background traffic.
+
+[Why absence evidence needs calibration](../concepts/behavioral-evidence.md#why-absence-is-harder-than-presence).
+
 ## Establish the cached product before retrieval
 
 The [product service](../../e2e/product-cache/app/products.mjs) stores JSON under
