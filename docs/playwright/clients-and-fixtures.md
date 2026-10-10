@@ -1,16 +1,37 @@
 # Client and fixture reference
 
-Use this reference while turning an accepted requirement into a test or connecting
-another SDK. The [product walkthrough](../guides/verify-a-specification.md) follows
-one specification through setup, native or optional Feature authoring, execution,
-and evidence. Its [API client](../../e2e/product-cache/tests/clients.ts) is a
-complete starting point.
+Clients are **action and observation mechanisms** for executable
+specifications. Choose them because they can act at a relevant entrypoint
+or supply evidence for a behavioral claim, not merely because a service
+has an SDK.
+
+The [product walkthrough](../guides/verify-a-specification.md) requires
+HTTP stimuli and independent state/operation observations. Its
+[API client](../../e2e/product-cache/tests/clients.ts) is a starting
+point. A connected SDK is not itself a test oracle: the accepted
+specification still determines the expectation.
 
 The [PostgreSQL](../guides/testing-postgres.md) and [Redis](../guides/testing-redis.md)
 guides show native observation clients for the same product system. Choose a
 client because its action or observation helps establish a claim in your
 specification, then return to the walkthrough's
 [evidence checkpoint](../guides/verify-a-specification.md#read-the-evidence).
+
+## Action and observation are different responsibilities
+
+| Client role | What it can establish |
+| --- | --- |
+| **Action** | A request, message, or command was submitted to a named boundary |
+| **Outcome** | What the target reported through the client |
+| **State inspection** | What a separate resource exposed at a recorded moment |
+| **Runtime observation** | What an available observer recorded during the selected action |
+
+A queue acknowledgment may not establish downstream business completion.
+Instrumentation of the test runner does not automatically observe operations
+performed by an uninstrumented service. Keep the claim's evidence and
+completion requirements explicit.
+
+[Behavioral evidence model](../concepts/behavioral-evidence.md).
 
 ## Define a client
 

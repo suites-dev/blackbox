@@ -1,15 +1,31 @@
 # Express accepted behavior in native Playwright
 
-Write system tests directly in TypeScript when you want to use ordinary SDKs and
-assertions to verify your specification. Blackbox gives each attempt a fresh
-Sandbox, resolves its client endpoints, and adds execution diagnostics to the
-Playwright report.
+Native Playwright is a **first-class Spec-Driven Verification path**.
+Write executable expectations in TypeScript, operate the application
+through your project's SDKs, and assert the response, state, and bounded
+runtime operations the accepted specification requires. Blackbox supplies
+an isolated Sandbox per attempt, resolved client endpoints, and retained
+execution diagnostics.
+
+Gherkin Features are useful review surfaces in SDD, but **optional**.
+Whether native or generated, the human-approved behavior remains fixed
+while the agent investigates and repairs an implementation.
 
 The [product walkthrough](../guides/verify-a-specification.md) follows this
 accepted behavior: creating a product stores it in PostgreSQL and Redis; retrieving
 the cached product returns it without reading PostgreSQL. Use that complete
 walkthrough for setup, execution, and evidence. This page explains how its native
 test preserves the rule and how to apply that structure to another requirement.
+
+## Start from the claim, not the SDK
+
+Ask what each assertion must establish. In the product example,
+creation status does not establish a committed PostgreSQL row, and
+a cached Redis value does not establish that retrieval avoided PostgreSQL.
+Each claim needs an observable source, a known initial state, and an
+appropriate completion condition.
+
+[Behavioral evidence](../concepts/behavioral-evidence.md).
 
 ## Keep the rule visible in the test
 

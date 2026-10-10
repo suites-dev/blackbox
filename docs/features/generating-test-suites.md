@@ -1,8 +1,14 @@
 # Keep reviewed behavior in the suite you execute
 
-Your product Feature expresses the accepted PostgreSQL and Redis rule. Its
-Playwright suite must continue to execute those reviewed expectations after you
-edit the Feature. A stale generated file can leave CI running an earlier scenario.
+Generated Playwright is **derived output**, not a second mutable source
+of truth. If the reviewed Feature changes but TypeScript doesn't, CI may
+still execute an obsolete scenario.
+
+Keep three checks separate: source specification → expectations needs
+**semantic review**; Feature → TypeScript needs a **deterministic drift
+check**; executable expectations → implementation needs **runtime
+execution**. This guide protects the middle relationship, then reruns
+the last one.
 
 Complete [the Feature path](drafting-feature-files.md) first. Keep commands in
 `e2e/product-cache/`. Native tests use the same review, execution, and repair loop;
@@ -14,9 +20,10 @@ this generated-file check is additional work for the Feature authoring path.
 pnpm exec blackbox feature suite validate tests/product-cache.feature --clients tests/clients.ts --output tests/product-cache.generated.spec.ts
 ```
 
-A matching pair reports that the generated suite matches the Feature. Validation
-regenerates the TypeScript in memory and compares the bytes. It does not execute
-the system or decide whether the Feature covers the specification.
+A matching pair reports that the generated TypeScript matches the reviewed
+Feature. Validation regenerates the TypeScript in memory and compares bytes.
+It does **not** execute the system or establish whether the Feature captured
+every requirement in the source specification.
 
 Generated formatting is part of that comparison. Keep the generated suite outside
 automatic formatting and make expectation changes in the reviewed source.

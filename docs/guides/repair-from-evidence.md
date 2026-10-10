@@ -1,9 +1,13 @@
 # Repair behavior from execution evidence
 
-The product API returns `200` and the expected JSON. But the accepted specification
-also requires the cached retrieval to avoid PostgreSQL. In this chapter, you will
-introduce that implementation defect, inspect the failing evidence, and repair it
-without changing the specification or test expectations.
+**Do not move the goalposts when the coding agent's implementation fails.**
+The product API may return `200` and correct JSON while violating the
+specification: a valid-cache retrieval must avoid PostgreSQL.
+
+This chapter introduces that defect, measures it through a calibrated
+observation window, and repairs the implementation **without changing
+the accepted requirement or its reviewed expectations**. The evidence
+helps the agent investigate, not rewrite a more convenient spec.
 
 Complete [the first verification](verify-a-specification.md) and keep using its
 sample in `e2e/product-cache/`. The supplied implementation initially satisfies
@@ -19,7 +23,8 @@ while implementing or changing your own application.
 > PostgreSQL.
 
 The repair changes application code. The specification, native assertions, and
-reviewed Feature remain unchanged.
+reviewed Feature remain unchanged. Proposed changes to expected behavior
+require **separate human review**, not automatic agent adjustment.
 
 ## Introduce a cache-bypass defect
 
@@ -61,6 +66,22 @@ retrieval issued a PostgreSQL statement despite the valid cached entry.
 
 In either path, changing the expected database count to `1` would change the
 agreed behavior and conceal this defect.
+
+## Distinguish the failed claim from the passing claims
+
+The bad implementation still satisfies the HTTP response claim and the
+pre-retrieval state checks. It fails **C3: cache-only retrieval** because
+a measured PostgreSQL statement occurred in the isolated retrieval window.
+
+The observer was first checked against a known cache miss that must
+access PostgreSQL. That positive control supports the negative claim,
+within the application-role and observation-window limits. It does
+not establish that every cache path is defective or reveal an exact
+source line by itself.
+
+Keep the failed attempt and the repaired attempt separate; a step
+not reached after an earlier failure was not evaluated.
+[Evidence qualification](../concepts/behavioral-evidence.md).
 
 ## Give the agent the discrepancy and its evidence
 
