@@ -6,65 +6,66 @@
 
 **Spec-Driven Verification for agentic software engineering.**
 
-Blackbox helps **people building with coding agents** check whether a running application does what its specification says. It gives the agent a way to start the real system in isolation, run executable tests, and inspect what happened—not just whether a test process turned green.
+Coding agents can implement—and reimplement—features faster than teams can inspect every change. But a plausible implementation isn't the same as a working system. **How do you know it still does what you intended?**
 
-**The spec says what should happen. Blackbox helps check what actually happened.**
+Blackbox helps your coding agent turn **accepted behavior** into repeatable checks against the **running application**. It prepares isolated systems, executes native Playwright tests or reviewed Gherkin Features, and retains the results and observations needed to investigate failures.
 
-[Get started](#give-your-agent-a-spec) · [Worked example](docs/guides/verify-a-specification.md) · [Documentation](docs/README.md)
+**The implementation can change. The expected behavior stays in view.**
 
-## When a green response isn't enough
+[Give your agent a spec](#give-your-agent-a-spec) · [Follow a real example](docs/guides/verify-a-specification.md) · [Why verification matters now](docs/concepts/why-verification-now.md)
 
-Suppose your specification says:
+## A correct response can still be a broken feature
 
-> Creating a product stores it in PostgreSQL and Redis. When that product is cached, retrieving it must **not read PostgreSQL**.
+Consider one accepted rule:
 
-The API can return the right product while still reading the database unnecessarily. So we check the **response**, the **saved values**, and what the application **did during retrieval**.
+> Creating a product stores it in PostgreSQL and Redis. Retrieving that product while cached **must not read PostgreSQL**.
+
+An agent can write code that returns the correct product while quietly bypassing the cache. An HTTP response check passes. The *behavior* is wrong.
 
 <p align="center">
-  <img width="790" src="docs/assets/guides/product-cache-evidence.svg" alt="Creation persists and caches a product. A cached read returns the correct HTTP response, but a cache-bypass implementation also reads PostgreSQL and fails the behavioral requirement." />
+  <img width="790" src="docs/assets/guides/product-cache-evidence.svg" alt="Creation stores a product in PostgreSQL and Redis. A cache-bypass implementation still returns the right product but also reads PostgreSQL, violating the accepted rule." />
 </p>
 
-That's what *behavioral verification* means here. A **claim** is simply something the spec says must be true. **Evidence** is what we actually observed to check it.
+To check this rule, we need the response, the saved values, and a reliable observation of database activity during retrieval. **The specification tells us what to check; the running system supplies the results.**
 
-[How to choose evidence](docs/concepts/behavioral-evidence.md)
+[See how the evidence is checked](docs/concepts/behavioral-evidence.md)
 
 ## Give your agent a spec
 
-Blackbox comes with a **CLI and agent skills** for discovering the application's services, choosing what needs to run, configuring the test environment, and investigating failures.
-
-Copy this task into your coding agent:
+Blackbox's **CLI and agent skills** help discover services, configure a runnable system, connect clients, and investigate failures. Copy this task into your coding agent:
 
 ```text
-Set up Blackbox to verify the accepted spec in this repository.
-Discover the services needed for this behavior and prepare an isolated
-system. Write the tests for my review, then run one focused check.
-Show me the HTML report, what passed, what failed, and anything
-the test couldn't observe. Don't change the spec to fit the code.
+Use Suites Blackbox to verify the accepted specification in this repo.
+Discover the smallest real system needed for the behavior and configure it.
+Prepare executable checks for my review, then run one focused scenario.
+Show me the result, relevant evidence, and anything you couldn't check.
+Keep the accepted expectations unchanged when repairing implementation.
 ```
 
-The planned quick setup command is `npx @suites/blackbox-cli onboarding start`; **it is not yet shipped**. In a prepared source checkout, the existing skills workflow starts with:
+With compatible source packages installed, the current skills can be discovered and installed:
 
 ```sh
 pnpm exec blackbox skills list
 pnpm exec blackbox skills install blackbox --codex
 pnpm exec blackbox skills install discovery --codex
+pnpm exec blackbox skills install catalog --codex
 ```
 
-Use the [onboarding guide](docs/playwright/connect-your-application.md) for other agents, package prerequisites, and configuration.
+Use `--claude` or `--cursor` for those hosts. The planned shortcut, `npx @suites/blackbox-cli onboarding start`, **isn't shipped yet**. [Connect your own application](docs/playwright/connect-your-application.md).
 
 <p align="center">
-  <img width="760" src="docs/assets/readme/onboarding-discovery.svg" alt="An agent inspects the repository, discovers dependencies and system boundaries, then configures Blackbox." />
+  <img width="790" src="docs/assets/readme/onboarding-discovery.svg" alt="The agent discovers services and dependencies, chooses a useful system boundary, and prepares Blackbox configuration." />
 </p>
 
-## From specification to executable tests
+## Make the spec executable
 
-The original spec can live in Markdown, a ticket, an API contract, or an SDD workflow such as [Spec Kit](docs/integrations/spec-kit.md). **You keep ownership of the expected behavior.** The agent proposes concrete tests; you review them before using them to judge an implementation.
+Your source can be Markdown, acceptance criteria, an API contract, or an SDD workflow such as [Spec Kit](docs/integrations/spec-kit.md). **You approve the intended behavior**; the agent proposes the checks.
 
 <p align="center">
-  <img width="790" src="docs/assets/guides/authoring-paths.svg" alt="One accepted specification leads to reviewed native Playwright tests or an optional Gherkin Feature. Both execute in a Blackbox Sandbox and share reports." />
+  <img width="790" src="docs/assets/guides/authoring-paths.svg" alt="An accepted specification leads to native Playwright or an optional Gherkin Feature. Both run through the same Sandbox and reporting path." />
 </p>
 
-**Option A — a Feature file.** Write the behavior in readable Gherkin and generate native Playwright. This short excerpt checks the creation response; the [full Feature](docs/features/drafting-feature-files.md) also checks PostgreSQL, Redis, and cache-only retrieval.
+**Option A · Reviewed Feature.** Gherkin gives humans and agents a readable `Feature → Rule → Scenario` structure. Blackbox's **supported step vocabulary** turns that structure into a small, validated language that compiles to native Playwright.
 
 ```gherkin
 @system:product-system @sandbox:default
@@ -78,7 +79,9 @@ Feature: Product creation and retrieval
       Then the response status is 201
 ```
 
-**Option B — native Playwright.** Write TypeScript using your application's SDK clients and ordinary assertions. Both authoring paths get an independent Sandbox for each physical test attempt.
+This excerpt checks **only the response status**. The [full Feature](docs/features/drafting-feature-files.md) also checks storage and cache behavior. [Why a constrained Feature language?](docs/features/README.md#why-a-feature-helps-coding-agents)
+
+**Option B · Native Playwright.** Write TypeScript with your application's SDKs and ordinary assertions. No Feature file is required.
 
 ```ts
 import { expect, test } from '@suites/blackbox-playwright';
@@ -86,7 +89,7 @@ import { api } from './clients.js';
 
 test.system('product-system', (system) => {
   system.sandbox('default', { clients: { api } }, (suite) => {
-    // One fresh, isolated Sandbox per test attempt.
+    // Every physical test attempt gets its own isolated Sandbox.
     suite.test('creates and stores a product', async ({ clients }) => {
       const product = { id: 'product-1', name: 'Field notebook', priceCents: 1299 };
       const response = await clients.api.post('/products', { data: product });
@@ -99,52 +102,51 @@ test.system('product-system', (system) => {
 });
 ```
 
-The `/fixture/` route belongs to the **example application**, not Blackbox. The [complete native suite](docs/playwright/README.md) includes the separate cached-retrieval test.
+The `/fixture/` endpoint belongs to the **example application**, not Blackbox. The [complete native suite](docs/playwright/README.md) has another scenario for retrieving a cached product without a database read.
 
-## Run it. Inspect it. Repair it.
+## Run it, inspect it, repair it
 
-Blackbox's Sandbox starts the selected real application and its dependencies, readies clients, and releases them afterward. **Playwright runs the checks and creates the HTML report.**
+Playwright executes each check. Blackbox starts the selected application and dependencies in a fresh **Sandbox**, connects its clients, and records the attempt's results and diagnostics. This makes the check repeatable even as the agent rewrites the implementation.
 
-In the **product-cache sample**, after the pending Feature compiler and example are available, the Feature path is:
+In the **candidate product-cache sample**, the optional Feature workflow is:
 
 ```sh
-# Run from e2e/product-cache/
-pnpm exec blackbox feature file validate tests/product-cache.feature \
-  --clients tests/clients.ts
+# From e2e/product-cache/, once PR #181 and the sample are available:
+pnpm exec blackbox feature file validate tests/product-cache.feature --clients tests/clients.ts
 pnpm exec blackbox feature suite validate tests/product-cache.feature \
   --clients tests/clients.ts --output tests/product-cache.generated.spec.ts
 pnpm --dir .. exec playwright test --config product-cache/playwright.config.ts --project feature
 pnpm --dir .. exec playwright show-report product-cache/playwright-report
 ```
 
-For handwritten tests, select `--project native` instead. [Installation and runnable prerequisites](docs/guides/verify-a-specification.md#run-the-supplied-example) · [Feature generation](docs/features/generating-test-suites.md)
+For directly authored tests, run the `native` Playwright project instead. These commands are **not runnable from this docs-only branch yet**; see [prerequisites](docs/guides/verify-a-specification.md#run-the-supplied-example).
 
-A result is useful when it tells the agent **what differed from the spec**. In the deliberate cache-bypass exercise, the response still passes, but the database-read check fails. The agent repairs the code and reruns the **same expected behavior**.
+When a cache-bypass bug appears, the response still passes—but the database-read check fails. The agent can investigate, repair the code, and rerun **the same accepted expectation**.
 
 <p align="center">
-  <img width="790" src="docs/assets/readme/human-agent-verification-loop.svg" alt="The developer approves the expected behavior. An agent implements and repairs code, using Playwright results and Blackbox execution observations, without silently changing the spec." />
+  <img width="790" src="docs/assets/readme/human-agent-verification-loop.svg" alt="The developer approves expected behavior. The coding agent implements, checks runtime results, repairs, and reruns without silently changing the specification." />
 </p>
 
-[Follow the repair](docs/guides/repair-from-evidence.md) · [Investigate interactively with Capsules](packages/capsule/README.md)
+Use a [Capsule](docs/guides/investigate-with-capsule.md) to experiment when a failure needs investigation; use Playwright to keep accepted behavior under repeatable test and CI execution. [Walk through a deliberate defect and repair](docs/guides/repair-from-evidence.md).
 
-## Keep the spec connected as code changes
+## Check behavior, not code shape
 
-There are three different questions:
+An implementation can be replaced completely while its intended behavior stays the same. This is why the spec-to-test relationship matters:
 
-| Question                                            | How we answer it                           |
-| --------------------------------------------------- | ------------------------------------------ |
-| Did the test capture what we actually meant?        | **Review** the test against the spec       |
-| Does generated TypeScript still match its Feature?  | **Check for drift** in the generated suite |
-| Does the running implementation behave as required? | **Run the test** and examine its results   |
+| Question | What checks it? |
+| --- | --- |
+| Did we capture the behavior we meant? | **Review** executable expectations against the spec |
+| Does generated TypeScript match the reviewed Feature? | **Validate suite drift** |
+| Does the running implementation satisfy the checks? | **Run the system tests** |
 
-A passing test establishes the assertions that actually ran—not that every requirement has been checked. Runtime observations, including OpenTelemetry, can help answer harder questions; they are **one evidence source**, not a requirement for every test.
+A passing system test supports **the assertions it executed under the conditions it observed**—not mathematical proof of every possible execution or proof that the original spec is complete. Outputs, state reads, and runtime effects (including OpenTelemetry observations) are evidence sources chosen for the behavior being checked.
 
-[Spec-Driven Verification](docs/concepts/spec-driven-verification.md) · [Evidence and limits](docs/concepts/behavioral-evidence.md) · [CI and suite drift](docs/features/generating-test-suites.md)
+[Why verification matters in agentic development](docs/concepts/why-verification-now.md) · [Evidence and limitations](docs/concepts/behavioral-evidence.md) · [Generated-suite drift](docs/features/generating-test-suites.md)
 
 ---
 
 ## Alpha and further guides
 
-**Candidate alpha:** the Feature compiler and typed Playwright clients depend on [PR #181](https://github.com/suites-dev/blackbox/pull/181). The `e2e/product-cache/` sample is not yet on this documentation branch. The workflows above are documented for the candidate implementation; don't treat them as a runnable release until those dependencies land.
+**Candidate alpha:** the Feature compiler and typed Playwright clients depend on [PR #181](https://github.com/suites-dev/blackbox/pull/181). The referenced `e2e/product-cache/` sample isn't yet in this documentation branch. Treat its walkthrough as a technical preview, not a successful run recorded here.
 
-[All docs](docs/README.md) · [Contributing](CONTRIBUTING.md) · [License](LICENSE)
+[All documentation](docs/README.md) · [Contributing](CONTRIBUTING.md) · [License](LICENSE)
