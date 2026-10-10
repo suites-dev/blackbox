@@ -5,7 +5,9 @@ import { effectsGolden, json } from '../support.js';
 test.system('effects-acceptance', (system) => {
   system.sandbox('real dependencies', (sandbox) => {
     sandbox.afterEach(({ sandbox: _sandbox }, info) => {
-      effectsGolden(info);
+      // The destination is the claim. A consumer process span may arrive after
+      // the assertion and is not evidence that the publish was a traced send.
+      effectsGolden(info, { includeWitnessOperation: false });
     });
     sandbox.test(
       'RabbitMQ activity is observed while send remains unknown',

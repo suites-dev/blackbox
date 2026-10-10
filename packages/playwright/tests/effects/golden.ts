@@ -13,7 +13,10 @@ interface EffectReport {
   readonly evidence: EffectEvidenceArtifact;
 }
 
-export function effectsGolden(info: TestInfo): void {
+export function effectsGolden(
+  info: TestInfo,
+  options: { readonly includeWitnessOperation: boolean } = { includeWitnessOperation: true },
+): void {
   const reports = info.attachments.filter(({ name }) => name === 'blackbox-effects');
   expect(reports.length).toBeGreaterThan(0);
   const golden = reports.map(({ body }) => {
@@ -31,7 +34,7 @@ export function effectsGolden(info: TestInfo): void {
       .map(({ kind, actor, operation, target, outcome: observedOutcome }) => ({
         kind,
         actor,
-        operation,
+        ...(options.includeWitnessOperation ? { operation } : {}),
         target,
         outcome: observedOutcome,
       }));
