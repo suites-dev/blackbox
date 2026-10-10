@@ -29,6 +29,9 @@ appropriate completion condition.
 
 ## Keep the rule visible in the test
 
+![Arrange a known state, act through the application, and assert the result and independently observed state.](../assets/guides/state-testing.svg)
+
+
 Read the [accepted product specification](../../e2e/product-cache/specs/create-product.md)
 beside the [canonical native suite](../../e2e/product-cache/tests/product-cache.native.spec.ts).
 The suite groups the capability, rule, and scenarios with ordinary Playwright

@@ -28,40 +28,23 @@ The source specification is
 > while its cached entry is valid returns the cached product without reading
 > PostgreSQL.
 
-The specification could begin in Markdown, a ticket, an API contract, or another
-source of agreed behavior. The developer owns that expectation. The agent turns
-it into concrete scenarios for review and identifies the observations they need.
+The developer approves the rule. The agent proposes concrete checks and
+identifies how to observe each result:
 
-For this example, the claims are:
+| What the spec requires | What we'll actually check |
+| --- | --- |
+| **Save the product** | The expected PostgreSQL row, read after creation |
+| **Populate the cache** | The expected value in Redis |
+| **Serve a valid cache hit** | The correct response, one Redis GET, and **zero application PostgreSQL operations** during retrieval |
 
-| After this action        | The system must establish                                                      |
-| ------------------------ | ------------------------------------------------------------------------------ |
-| Create a product         | The expected row exists in PostgreSQL.                                         |
-| The same creation        | Its expected value exists in Redis.                                            |
-| Retrieve it while cached | The response contains that product, Redis is read, and PostgreSQL is not read. |
+The last requirement says something **must not happen**. So the example
+first checks that its database observer can detect a known SQL read, then
+measures one cache-hit retrieval in a controlled window. An absent trace
+span by itself would not be enough.
 
-The walkthrough tests sequential creation and immediate retrieval. Expiry,
-updates, invalidation, and concurrent requests are separate requirements.
-
-## Establish the evidence contract
-
-The three claims do not share one universal oracle. Before writing a test,
-agree on the observation that would support or refute each one:
-
-| Claim                     | Required observation                                                            | Completion and coverage boundary                                  |
-| ------------------------- | ------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
-| C1 — persistence          | Expected committed PostgreSQL row, independently read                           | After creation, through a separate observation connection         |
-| C2 — cache population     | Expected Redis value                                                            | After creation, before retrieval changes the cache                |
-| C3 — cache-only retrieval | Correct response, one Redis GET, and **zero application PostgreSQL operations** | A calibrated window containing one selected application retrieval |
-
-C3 is an **absence requirement**. Merely failing to find a SQL span is not
-enough: the observer must demonstrably detect database work and cover the
-relevant process and period. The sample calibrates its observer with a known
-cache miss and measures the cache-hit request in isolation.
-
-Reviewing these claims belongs to the human/SDD process. The agent proposes
-tests but cannot prove it represented every nuance of arbitrary prose.
-See [behavioral evidence](../concepts/behavioral-evidence.md).
+The walkthrough covers creation and immediate retrieval. Expiry,
+invalidation, and concurrent requests would need their own agreed rules.
+[Why these observations matter](../concepts/behavioral-evidence.md).
 
 ## Let the agent prepare the system
 
@@ -136,6 +119,8 @@ and releases the environment. The same test command runs your updated applicatio
 after an implementation change.
 
 ## Review the executable expectations
+
+![Reviewed native Playwright or optional Gherkin scenarios run through the same Sandbox and evidence path.](../assets/guides/authoring-paths.svg)
 
 The two scenarios keep Arrange, Act, and Assert visible:
 

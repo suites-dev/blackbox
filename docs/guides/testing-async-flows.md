@@ -10,6 +10,10 @@ for that state. Keep the action and the observation tied to the same resource.
 
 ## Completion depends on the entrypoint
 
+![Conceptual asynchronous path: a test submits a job, a worker processes it, and the test checks a matching completed database record.](../assets/guides/async-completion.svg)
+
+*This diagram illustrates a queue-style completion contract; it is not a built-in Blackbox queue adapter.*
+
 An HTTP response might precede work on a queue; a message might be
 acknowledged before a projection becomes visible; a scheduled job may
 return after merely enqueuing another task.

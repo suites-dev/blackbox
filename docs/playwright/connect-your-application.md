@@ -37,19 +37,12 @@ three questions, and a missing database span alone does not establish absence of
 a read. If a required observation is unavailable, keep that claim explicit while
 the agent prepares the missing observation surface.
 
-## Produce a claim-to-evidence map
+Before creating configuration, have the agent summarize each
+**expected behavior → action → observation → completion condition**.
+That short map tells you which dependencies really need to be started.
+A missing observer is a setup gap, not a reason to weaken the test.
 
-Before creating configuration, the agent should return
-**claim → initial state → stimulus → required evidence → completion → limitations**.
-
-For this example C1 requires a committed PostgreSQL row, C2 a Redis value,
-and C3 a calibrated, bounded database/cache-operation observation. Missing
-observation must be an unresolved setup requirement, not an inadequate
-substitute HTTP assertion.
-
-Review this evidence plan before accepting new scenarios. The source spec
-remains authoritative even when the current implementation disagrees.
-[Evidence model](../concepts/behavioral-evidence.md).
+[See the evidence model](../concepts/behavioral-evidence.md).
 
 ## Prepare the test project
 
@@ -149,6 +142,8 @@ Expect `"ok": true`. This establishes valid configuration. Running a scenario
 still needs to establish readiness, business outcomes, and cleanup.
 
 ## Bind a client to the selected service
+
+![Configuration selects the services needed for the rule, client actions and state reads, and optional runtime instrumentation.](../assets/readme/system-boundary.svg)
 
 Suppose discovery found a system named `product-system`, with API participant
 `product-service` on container port `3000`, and `GET /health` returning `200`. Replace
