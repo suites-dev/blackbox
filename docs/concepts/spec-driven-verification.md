@@ -2,6 +2,8 @@
 
 **Start with what we agreed the system should do. Run the system. Check what it actually did.**
 
+As agents take on more implementation work, **reviewing every code change becomes a less reliable way to preserve behavior**. A spec gives the implementation and its checker a shared, human-reviewed target. Its meaning should survive internal rewrites even when its examples or implementation details evolve.
+
 The specification may be Markdown, a ticket, an API contract, or a document owned by an SDD workflow. Blackbox doesn't replace it. It helps coding agents turn that accepted behavior into tests that exercise the real running application.
 
 ## One specification, three things to keep connected
@@ -72,3 +74,5 @@ When the reason for a failure is unclear, the agent can explore with a [Capsule]
 Blackbox can work from ordinary Markdown or integrate with an existing process such as [Spec Kit](../integrations/spec-kit.md). Spec Kit owns the specification; Blackbox owns the runtime check. The integration itself is planned, not shipped.
 
 **Specifications define intent. Executions produce evidence. Verification connects them.**
+
+[Why this matters in agentic development](why-verification-now.md) · [Investigate with a Capsule](../guides/investigate-with-capsule.md)

@@ -13,6 +13,8 @@ cannot silently redefine the accepted behavior to fit what it observed.
 [Verification model](../concepts/spec-driven-verification.md) ·
 [Evidence sufficiency](../concepts/behavioral-evidence.md).
 
+Use [Capsules to investigate and Playwright to confirm](investigate-with-capsule.md) when the cause of a failure isn't yet clear.
+
 Start with [Verify a specification against your system](verify-a-specification.md).
 The supplied product application follows one accepted rule: creating a product
 stores it in PostgreSQL and Redis; retrieving it while cached returns that

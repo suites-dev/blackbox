@@ -18,6 +18,10 @@ The running example is simple to state but easy to implement incorrectly: **crea
 | Write a reviewed Gherkin Feature      | [Feature files](features/README.md)                                      |
 | Diagnose a real behavioral difference | [Repair from evidence](guides/repair-from-evidence.md)                   |
 
+## Why this matters when agents write the code
+
+[Read the motivation](concepts/why-verification-now.md): faster implementation makes accepted specs, constrained executable checks, and evidence more important. **A test must judge the running behavior, not just the code the agent produced.**
+
 ## Understand what Blackbox checks
 
 <p align="center">
@@ -25,6 +29,10 @@ The running example is simple to state but easy to implement incorrectly: **crea
 </p>
 
 [Spec-Driven Verification](concepts/spec-driven-verification.md) explains why the spec remains the source of expected behavior. [Evidence](concepts/behavioral-evidence.md) explains why some expectations need a response, others need a database read, and still others need to observe downstream activity.
+
+## Investigate and confirm
+
+[Capsule experiments](guides/investigate-with-capsule.md) let an agent narrow an unfamiliar failure; [Playwright](playwright/README.md) preserves reviewed expectations as repeatable checks. Both run against a selected real system, but they are separate attempts.
 
 ## Go deeper only when you need it
 

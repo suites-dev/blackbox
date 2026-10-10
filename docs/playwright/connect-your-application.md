@@ -77,6 +77,21 @@ Features. Add the native SDK for each additional client, such as `pg` or `redis`
 Run this guide's commands from **your application's test-project root**. The
 product sample's commands have their own working directory, `e2e/product-cache/`.
 
+## Choose the smallest useful system—not simply the fewest containers
+
+An agent should build from the behavioral question outward. For the cache
+rule, it must keep the product API, PostgreSQL, Redis, and a reliable way to
+measure the application's database reads. Starting only the API would make
+the test fast but unable to answer the requirement.
+
+Exclude unrelated services when their absence doesn't change the behavior
+or remove necessary observations. Mark services that remain external and
+any doubles that substitute for real dependencies. A static dependency graph
+helps discovery, but cannot by itself establish behavioral equivalence.
+
+This targeted, controlled environment makes experiments and repeated checks
+more practical. [Capsule investigation and system boundaries](../guides/investigate-with-capsule.md).
+
 ## Let the agent discover and configure the boundary
 
 The agent derives the system topology from the repository and chooses the

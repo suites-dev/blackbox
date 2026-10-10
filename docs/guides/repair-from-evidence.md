@@ -83,6 +83,18 @@ Keep the failed attempt and the repaired attempt separate; a step
 not reached after an earlier failure was not evaluated.
 [Evidence qualification](../concepts/behavioral-evidence.md).
 
+## Give the agent a stable target
+
+The benefit of a reviewed specification is **not** that an agent never makes
+mistakes. It's that it can implement, observe a failing check, repair the code,
+and rerun **without moving the expected result**. We invest in the check once
+so the next implementation is faster to evaluate.
+
+If the existing report isn't enough to explain the failure, start a
+[bounded Capsule experiment](investigate-with-capsule.md). It may suggest a
+repair, but an experiment's observation doesn't automatically become a new
+requirement.
+
 ## Give the agent the discrepancy and its evidence
 
 Preserve this failed report before rerunning. Choose an unused
