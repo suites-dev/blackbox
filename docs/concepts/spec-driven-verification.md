@@ -60,11 +60,11 @@ The accepted [product-cache rule](../guides/verify-a-specification.md) says:
 
 That statement has several separately checkable claims:
 
-| Claim | Evidence required | Why the response alone is insufficient |
-| --- | --- | --- |
+| Claim                          | Evidence required                                                   | Why the response alone is insufficient                           |
+| ------------------------------ | ------------------------------------------------------------------- | ---------------------------------------------------------------- |
 | Creation persisted the product | Expected row read through a separate connection after the operation | A successful status could precede rollback or an incorrect write |
-| Creation populated Redis | Expected cached value read from Redis | Returning the product doesn't show its cache state |
-| Retrieval avoided PostgreSQL | Calibrated, bounded application SQL and Redis observations | Correct JSON can come from a bypassed cache |
+| Creation populated Redis       | Expected cached value read from Redis                               | Returning the product doesn't show its cache state               |
+| Retrieval avoided PostgreSQL   | Calibrated, bounded application SQL and Redis observations          | Correct JSON can come from a bypassed cache                      |
 
 The agent can **derive candidate claims** and propose a test for each, but no compiler can infer that it captured every nuance of arbitrary human prose. Human review remains necessary.
 
@@ -84,11 +84,11 @@ Gherkin is especially compatible with an SDD workflow in which specifications an
 
 ## Three different relationships need verification
 
-| Relationship | Question | How it is checked |
-| --- | --- | --- |
-| **Specification → executable expectations** | Do these scenarios faithfully represent the accepted requirements, including important edge cases? | Review, traceability, clarification; *not* a deterministic hash check |
-| **Feature → generated Playwright suite** | Does the TypeScript still match the reviewed Feature and compiler inputs? | Deterministic generated-suite drift check |
-| **Executable expectations → running implementation** | Did this particular attempt satisfy the authored assertions? | Playwright results and claim-appropriate evidence |
+| Relationship                                         | Question                                                                                           | How it is checked                                                     |
+| ---------------------------------------------------- | -------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| **Specification → executable expectations**          | Do these scenarios faithfully represent the accepted requirements, including important edge cases? | Review, traceability, clarification; *not* a deterministic hash check |
+| **Feature → generated Playwright suite**             | Does the TypeScript still match the reviewed Feature and compiler inputs?                          | Deterministic generated-suite drift check                             |
+| **Executable expectations → running implementation** | Did this particular attempt satisfy the authored assertions?                                       | Playwright results and claim-appropriate evidence                     |
 
 An automated Feature drift check is valuable but cannot say whether the human specification is complete. Likewise, passing all executed tests establishes *their* assertions under recorded conditions; it does not constitute a proof of every possible behavior of the application.
 

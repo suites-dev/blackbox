@@ -20,14 +20,14 @@ Or [connect your own repository](playwright/connect-your-application.md). The co
 
 ## Follow the workflow
 
-| Task | Guide |
-| --- | --- |
-| Verify a product requirement end to end | [Verify a specification](guides/verify-a-specification.md) |
-| Prepare a system in your repository | [Connect your application](playwright/connect-your-application.md) |
-| Write native system tests | [Playwright](playwright/README.md) |
-| Review a Gherkin Feature | [Feature authoring](features/drafting-feature-files.md) |
-| Keep the emitted TypeScript aligned | [Suite drift](features/generating-test-suites.md) |
-| Investigate a violation and repair | [Repair from evidence](guides/repair-from-evidence.md) |
+| Task                                    | Guide                                                              |
+| --------------------------------------- | ------------------------------------------------------------------ |
+| Verify a product requirement end to end | [Verify a specification](guides/verify-a-specification.md)         |
+| Prepare a system in your repository     | [Connect your application](playwright/connect-your-application.md) |
+| Write native system tests               | [Playwright](playwright/README.md)                                 |
+| Review a Gherkin Feature                | [Feature authoring](features/drafting-feature-files.md)            |
+| Keep the emitted TypeScript aligned     | [Suite drift](features/generating-test-suites.md)                  |
+| Investigate a violation and repair      | [Repair from evidence](guides/repair-from-evidence.md)             |
 
 ## Choose evidence for the claim
 

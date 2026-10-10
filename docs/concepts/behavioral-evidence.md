@@ -19,13 +19,13 @@ Select evidence because it answers the claim—not because instrumentation happe
 
 ## Different entrypoints have different outcomes
 
-| Entry point | Immediate outcome, when exposed | What this does not prove on its own |
-| --- | --- | --- |
-| HTTP | Status, headers, response body | Committed state, completed downstream work, or absence of a forbidden call |
-| Queue consumer | Handler result and broker-specific acknowledgment, negative acknowledgment, or offset commit | Business completion, exactly-once side effects, or downstream processing |
-| CLI | Exit status, stdout, stderr | Filesystem, database, or external changes unless separately checked |
-| Scheduled job | Invocation or job completion status if exposed | Delegated work finishing or correct persistent state |
-| Stream/event consumer | Offset/checkpoint or emitted record where available | Correct projections or absence of duplicated handling |
+| Entry point           | Immediate outcome, when exposed                                                              | What this does not prove on its own                                        |
+| --------------------- | -------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| HTTP                  | Status, headers, response body                                                               | Committed state, completed downstream work, or absence of a forbidden call |
+| Queue consumer        | Handler result and broker-specific acknowledgment, negative acknowledgment, or offset commit | Business completion, exactly-once side effects, or downstream processing   |
+| CLI                   | Exit status, stdout, stderr                                                                  | Filesystem, database, or external changes unless separately checked        |
+| Scheduled job         | Invocation or job completion status if exposed                                               | Delegated work finishing or correct persistent state                       |
+| Stream/event consumer | Offset/checkpoint or emitted record where available                                          | Correct projections or absence of duplicated handling                      |
 
 There is **no universal queue response** analogous to HTTP. Receipt by a broker, delivery to a consumer, processing by the application, and settlement/acknowledgment are distinct points. A business specification may demand evidence later than any one of these.
 

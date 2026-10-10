@@ -24,11 +24,11 @@ Consider this specification:
 
 A correct HTTP response alone cannot establish this rule:
 
-| Behavioral claim | Evidence it needs |
-| --- | --- |
-| Creation returns the expected product | Response status and body |
-| Creation persists and caches the product | Independent PostgreSQL and Redis state reads |
-| Cached retrieval avoids PostgreSQL | Bounded, **calibrated** observations of the application's database and cache operations |
+| Behavioral claim                         | Evidence it needs                                                                       |
+| ---------------------------------------- | --------------------------------------------------------------------------------------- |
+| Creation returns the expected product    | Response status and body                                                                |
+| Creation persists and caches the product | Independent PostgreSQL and Redis state reads                                            |
+| Cached retrieval avoids PostgreSQL       | Bounded, **calibrated** observations of the application's database and cache operations |
 
 The specification determines **what must hold**. Blackbox helps your agent construct and run checks that can evaluate those claims, not merely find a green response. [How evidence works](docs/concepts/behavioral-evidence.md).
 
