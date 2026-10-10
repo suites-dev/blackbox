@@ -6,13 +6,13 @@ The proposed `blackbox-spec-kit` extension is a thin handoff. **It is not publis
 
 ## Keep one owner for each artifact
 
-| Artifact or capability | Owner |
-| --- | --- |
-| `spec.md`, requirements, clarification, planning, tasks | Spec Kit and the project's reviewers |
-| Accepted meaning of the requirement | Developer or relevant human approval process |
-| Native tests or a reviewed executable Feature | Blackbox authoring path, derived from accepted behavior |
-| Sandbox, clients, evidence, runtime diagnostics, test execution | Blackbox |
-| Cross-artifact planning/implementation convergence | Spec Kit; Blackbox may contribute runtime findings |
+| Artifact or capability                                          | Owner                                                   |
+| --------------------------------------------------------------- | ------------------------------------------------------- |
+| `spec.md`, requirements, clarification, planning, tasks         | Spec Kit and the project's reviewers                    |
+| Accepted meaning of the requirement                             | Developer or relevant human approval process            |
+| Native tests or a reviewed executable Feature                   | Blackbox authoring path, derived from accepted behavior |
+| Sandbox, clients, evidence, runtime diagnostics, test execution | Blackbox                                                |
+| Cross-artifact planning/implementation convergence              | Spec Kit; Blackbox may contribute runtime findings      |
 
 Do not automatically rewrite `spec.md` after a failed runtime check. Fix the implementation when it contradicts accepted behavior, or return a proposed requirement change for explicit review.
 

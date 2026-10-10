@@ -48,10 +48,10 @@ updates, invalidation, and concurrent requests are separate requirements.
 The three claims do not share one universal oracle. Before writing a test,
 agree on the observation that would support or refute each one:
 
-| Claim | Required observation | Completion and coverage boundary |
-| --- | --- | --- |
-| C1 — persistence | Expected committed PostgreSQL row, independently read | After creation, through a separate observation connection |
-| C2 — cache population | Expected Redis value | After creation, before retrieval changes the cache |
+| Claim                     | Required observation                                                            | Completion and coverage boundary                                  |
+| ------------------------- | ------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| C1 — persistence          | Expected committed PostgreSQL row, independently read                           | After creation, through a separate observation connection         |
+| C2 — cache population     | Expected Redis value                                                            | After creation, before retrieval changes the cache                |
 | C3 — cache-only retrieval | Correct response, one Redis GET, and **zero application PostgreSQL operations** | A calibrated window containing one selected application retrieval |
 
 C3 is an **absence requirement**. Merely failing to find a SQL span is not

@@ -19,12 +19,12 @@ specification, then return to the walkthrough's
 
 ## Action and observation are different responsibilities
 
-| Client role | What it can establish |
-| --- | --- |
-| **Action** | A request, message, or command was submitted to a named boundary |
-| **Outcome** | What the target reported through the client |
-| **State inspection** | What a separate resource exposed at a recorded moment |
-| **Runtime observation** | What an available observer recorded during the selected action |
+| Client role             | What it can establish                                            |
+| ----------------------- | ---------------------------------------------------------------- |
+| **Action**              | A request, message, or command was submitted to a named boundary |
+| **Outcome**             | What the target reported through the client                      |
+| **State inspection**    | What a separate resource exposed at a recorded moment            |
+| **Runtime observation** | What an available observer recorded during the selected action   |
 
 A queue acknowledgment may not establish downstream business completion.
 Instrumentation of the test runner does not automatically observe operations
