@@ -56,6 +56,9 @@ jobs:
           persist-credentials: false
           ref: ${{ github.event_name == 'workflow_dispatch' && inputs.target_branch || github.ref }}
 
+      - name: Configure Docker Hub mirror
+        uses: ./.github/actions/docker-hub-mirror
+
       - name: Setup toolchain
         uses: ./.github/actions/setup
         with:
@@ -185,6 +188,9 @@ jobs:
           persist-credentials: false
           ref: ${{ github.event_name == 'workflow_dispatch' && inputs.target_branch || github.ref }}
 
+      - name: Configure Docker Hub mirror
+        uses: ./.github/actions/docker-hub-mirror
+
       - name: Setup toolchain
         id: setup
         uses: ./.github/actions/setup
@@ -272,6 +278,9 @@ jobs:
           persist-credentials: false
           ref: ${{ github.event_name == 'workflow_dispatch' && inputs.target_branch || github.ref }}
 
+      - name: Configure Docker Hub mirror
+        uses: ./.github/actions/docker-hub-mirror
+
       - name: Setup toolchain
         id: setup
         uses: ./.github/actions/setup
@@ -331,6 +340,9 @@ jobs:
         with:
           persist-credentials: false
           ref: ${{ github.event_name == 'workflow_dispatch' && inputs.target_branch || github.ref }}
+
+      - name: Configure Docker Hub mirror
+        uses: ./.github/actions/docker-hub-mirror
 
       - name: Setup toolchain
         id: setup
@@ -425,6 +437,9 @@ jobs:
           persist-credentials: false
           ref: ${{ github.event_name == 'workflow_dispatch' && inputs.target_branch || github.ref }}
 
+      - name: Configure Docker Hub mirror
+        uses: ./.github/actions/docker-hub-mirror
+
       - name: Setup toolchain
         id: setup
         uses: ./.github/actions/setup
@@ -517,6 +532,9 @@ jobs:
         with:
           persist-credentials: false
           ref: ${{ github.event_name == 'workflow_dispatch' && inputs.target_branch || github.ref }}
+
+      - name: Configure Docker Hub mirror
+        uses: ./.github/actions/docker-hub-mirror
 
       - name: Setup toolchain
         id: setup
@@ -651,6 +669,9 @@ jobs:
         with:
           persist-credentials: false
           ref: ${{ github.event_name == 'workflow_dispatch' && inputs.target_branch || github.ref }}
+
+      - name: Configure Docker Hub mirror
+        uses: ./.github/actions/docker-hub-mirror
 
       - name: Setup toolchain
         id: setup
