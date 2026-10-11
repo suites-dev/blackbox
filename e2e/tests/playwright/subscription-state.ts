@@ -1,4 +1,4 @@
-interface SubscriptionRow {
+export interface SubscriptionRow {
   readonly id: string;
   readonly userId: string;
   readonly tier: string;

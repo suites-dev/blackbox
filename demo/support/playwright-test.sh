@@ -112,8 +112,16 @@ mkdir -p "$CONSUMER_ROOT/reporters"
 cp "$E2E_ROOT/blackbox.config.yaml" "$CONSUMER_ROOT/blackbox.config.yaml"
 cp "$E2E_ROOT/.blackbox/catalog/"*.yml "$CONSUMER_ROOT/.blackbox/catalog/"
 cp "$E2E_ROOT/.blackbox/drivers/"*.mjs "$CONSUMER_ROOT/.blackbox/drivers/"
-cp "$E2E_ROOT/.blackbox/clients/public-api.ts" "$CONSUMER_ROOT/.blackbox/clients/"
-cp "$E2E_ROOT/.blackbox/clients/payment-mock.ts" "$CONSUMER_ROOT/.blackbox/clients/"
+cp "$E2E_ROOT/.blackbox/clients/"*.ts "$CONSUMER_ROOT/.blackbox/clients/"
+# Project-authored SDK adapters own their dependencies, outside the workspace.
+jq '{name: "blackbox-playwright-clients", private: true, type: "module",
+  dependencies: {pg: .dependencies.pg, redis: .dependencies.redis}}' \
+  "$E2E_ROOT/package.json" >"$CONSUMER_ROOT/.blackbox/clients/package.json"
+NPM_CONFIG_CACHE="$ASSET_ROOT/npm-cache" \
+  npm install --prefix "$CONSUMER_ROOT/.blackbox/clients" \
+    --registry "${BLACKBOX_TEST_REGISTRY:-http://127.0.0.1:4874/}" \
+    --ignore-scripts --no-audit --no-fund \
+    >"$RUN_RESULT_ROOT/client-install.txt" 2>&1
 cp -R "$E2E_ROOT/sut" "$CONSUMER_ROOT/sut"
 cp "$E2E_ROOT/playwright.config.ts" "$CONSUMER_ROOT/playwright.config.ts"
 cp "$E2E_ROOT/playwright-features.config.ts" "$CONSUMER_ROOT/playwright-features.config.ts"

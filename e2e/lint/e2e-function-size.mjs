@@ -1,24 +1,27 @@
 const maximumCodeLines = 80;
 const suiteCallbacks = new Set([
   'test.system',
+  'test.system.sandbox',
   'system.sandbox',
   'sandbox.describe',
   'suite.describe',
 ]);
 
-function calleeName(node) {
-  const parent = node.parent;
-  if (
-    parent?.type !== 'CallExpression' ||
-    parent.arguments.at(-1) !== node ||
-    parent.callee.type !== 'MemberExpression' ||
-    parent.callee.computed ||
-    parent.callee.object.type !== 'Identifier' ||
-    parent.callee.property.type !== 'Identifier'
-  ) {
+function memberName(node) {
+  if (node.type === 'Identifier') return node.name;
+  if (node.type !== 'MemberExpression' || node.computed || node.property.type !== 'Identifier') {
     return null;
   }
-  return `${parent.callee.object.name}.${parent.callee.property.name}`;
+  const object = memberName(node.object);
+  return object === null ? null : `${object}.${node.property.name}`;
+}
+
+function calleeName(node) {
+  const parent = node.parent;
+  if (parent?.type !== 'CallExpression' || parent.arguments.at(-1) !== node) {
+    return null;
+  }
+  return memberName(parent.callee);
 }
 
 function isSuiteDeclaration(node) {
