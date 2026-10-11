@@ -1,0 +1,84 @@
+[
+  {
+    "contract": {
+      "schemaVersion": 1,
+      "constraints": [
+        {
+          "node": "constraint",
+          "operator": "atLeast",
+          "count": 1,
+          "selector": {
+            "node": "selector",
+            "kind": "db"
+          }
+        }
+      ],
+      "omitted": {
+        "constraints": 0,
+        "selectorWhereEntries": 0
+      }
+    },
+    "evaluation": "satisfied",
+    "negated": false,
+    "outcome": "passed",
+    "witnesses": [
+      {
+        "kind": "db",
+        "actor": "app",
+        "operation": "unknown",
+        "target": "unknown",
+        "outcome": "unknown"
+      }
+    ]
+  },
+  {
+    "contract": {
+      "schemaVersion": 1,
+      "constraints": [
+        {
+          "node": "constraint",
+          "operator": "atLeast",
+          "count": 1,
+          "selector": {
+            "node": "selector",
+            "kind": "db",
+            "operation": "INSERT"
+          }
+        }
+      ],
+      "omitted": {
+        "constraints": 0,
+        "selectorWhereEntries": 0
+      }
+    },
+    "evaluation": "inconclusive",
+    "negated": false,
+    "outcome": "inconclusive",
+    "witnesses": []
+  },
+  {
+    "contract": {
+      "schemaVersion": 1,
+      "constraints": [
+        {
+          "node": "constraint",
+          "operator": "atLeast",
+          "count": 1,
+          "selector": {
+            "node": "selector",
+            "kind": "db",
+            "operation": "INSERT"
+          }
+        }
+      ],
+      "omitted": {
+        "constraints": 0,
+        "selectorWhereEntries": 0
+      }
+    },
+    "evaluation": "inconclusive",
+    "negated": true,
+    "outcome": "inconclusive",
+    "witnesses": []
+  }
+]

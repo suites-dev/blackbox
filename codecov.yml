@@ -72,6 +72,10 @@ component_management:
       name: skills
       paths:
         - packages/skills/**
+    - component_id: effects
+      name: effects
+      paths:
+        - packages/effects/**
     - component_id: telemetry
       name: telemetry
       paths:

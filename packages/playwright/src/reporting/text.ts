@@ -1,5 +1,7 @@
 import { stripVTControlCharacters } from 'node:util';
 
+export const reportTextLimit = 1000;
+
 export function reportText(input: string): string {
   let plain = '';
   for (const character of stripVTControlCharacters(input)) {
@@ -10,5 +12,5 @@ export function reportText(input: string): string {
     .replace(/\bBearer\s+\S+/giu, 'Bearer [REDACTED]')
     .replace(/(\b(?:password|token|secret|api[_-]?key)\s*[=:]\s*)[^\s&,;]+/giu, '$1[REDACTED]')
     .replace(/(https?:\/\/)[^/\s@]+@/giu, '$1[REDACTED]@')
-    .slice(0, 1000);
+    .slice(0, reportTextLimit);
 }
