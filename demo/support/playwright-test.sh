@@ -133,6 +133,7 @@ cp "$SCRIPT_DIR/"playwright-features*.mjs "$CONSUMER_ROOT/"
 cp "$SCRIPT_DIR/playwright-boundary.mjs" "$CONSUMER_ROOT/playwright-boundary.mjs"
 cp "$SCRIPT_DIR/playwright-evidence.mjs" "$CONSUMER_ROOT/playwright-evidence.mjs"
 cp "$SCRIPT_DIR/playwright-report-proof.mjs" "$CONSUMER_ROOT/playwright-report-proof.mjs"
+cp "$SCRIPT_DIR/playwright-action-proof.mjs" "$CONSUMER_ROOT/playwright-action-proof.mjs"
 cp "$SCRIPT_DIR/playwright-recover.mjs" "$CONSUMER_ROOT/playwright-recover.mjs"
 cp "$SCRIPT_DIR/playwright-verify.mjs" "$CONSUMER_ROOT/playwright-verify.mjs"
 # Reuse the package acceptance cases and automatic authoring proof without source-package imports. All

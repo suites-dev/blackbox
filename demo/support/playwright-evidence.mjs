@@ -4,6 +4,7 @@ import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 import { verifyAttemptReports, verifyParallelAcquisition } from './playwright-report-proof.mjs';
+import { verifyNativeActionReports } from './playwright-action-proof.mjs';
 
 const execute = promisify(execFile);
 const supportDirectory = dirname(fileURLToPath(import.meta.url));
@@ -208,7 +209,12 @@ export async function verify() {
     const expectedCatalog = catalogByFile[spec.file.split('/').at(-1)];
     assert(expectedCatalog !== undefined, `Unexpected scenario file: ${spec.file}`);
     return spec.tests.flatMap((test) =>
-      test.results.map((result) => ({ ...result, testId: spec.id, expectedCatalog })),
+      test.results.map((result) => ({
+        ...result,
+        testId: spec.id,
+        title: spec.title,
+        expectedCatalog,
+      })),
     );
   });
   assert(
@@ -225,6 +231,7 @@ export async function verify() {
   verifyParallelAcquisition(live);
   return {
     kind: 'playwright-e2e-proof',
+    actions: verifyNativeActionReports(attempts),
     reporting: verifyAttemptReports({
       attempts,
       records,
