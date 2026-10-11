@@ -19,47 +19,80 @@ agents.**
   <a href="docs/guides/README.md">Guides</a>
 </p>
 
-Blackbox turns accepted specs into verification against real applications and systems.
-Its skills and CLI help coding agents execute specified behavior, inspect what happened, investigate failures,
-repair the implementation, and rerun against the same accepted expectations.
+Blackbox turns accepted specs into verification against real applications and systems. Its skills and CLI guide
+coding agents through setup, execution, investigation, and repair against the same accepted expectations.
 
-Express expected behavior in native Playwright tests or optional executable Feature files that generate a suite.
-Each test runs the selected application and dependencies in a fresh isolated Sandbox, checking responses, state,
-and runtime evidence against the spec.
+Express those expectations in native Playwright tests or optional Feature files that generate a native suite.
+Blackbox runs the application and its dependencies in a fresh isolated **Sandbox** for each test.
 
 ## Blackbox and Spec-Driven Verification
 
 **Spec-Driven Verification checks a running system against an accepted spec.**
 
-The source can be product requirements, acceptance criteria, an OpenAPI contract, Markdown, or any agreed behavior.
-The figure follows a Markdown spec through the optional Feature-file path to execution and reporting.
+Start from product requirements, acceptance criteria, OpenAPI, Markdown, or specs from [spec-driven development (SDD) workflows](docs/integrations/README.md)
+such as Spec Kit, Kiro, and OpenSpec. The figure follows the optional Feature-file path to execution and reporting.
 
 <p align="center">
-  <img width="800" src="docs/assets/readme/specification-to-evidence.svg" alt="Review create-product.md and its Feature, compile to Playwright, then run product-service with PostgreSQL and Redis. Inspect results, runtime evidence, and diagnostics." />
+  <img width="800" src="docs/assets/readme/specification-to-evidence.svg" alt="Skills guide Feature drafting; the developer reviews; the CLI compiles; Playwright runs a fresh Sandbox and reports results and evidence." />
 </p>
 
-The CLI drives validation, test generation, and investigation. Blackbox's skills guide the agent through these
-commands and their structured feedback, from accepted spec to execution evidence.
+Blackbox's CLI drives validation, test generation, and investigation. Its skills guide the agent through those
+commands and their structured feedback. **You review the expected behavior; the agent handles the operational work.**
 
 ### Specs and Behavioural Contracts
 
 **Specifications in any format can become stale as implementation evolves.**
 
-Blackbox solves this by introducing **Behavioural Contracts** into the verification loop. A behavioural contract
-expresses accepted requirements as executable expectations about responses, state changes, and runtime interactions.
-Tests preserve the contract alongside code. Reviewed effects snapshots record expected runtime interactions for
-comparison with later runs. Together, they keep accepted expectations in the verification loop:
+Blackbox solves this by introducing **Behavioural Contracts** into the verification loop: accepted requirements
+expressed as executable expectations about responses, state changes, and runtime interactions. Tests preserve the
+contract alongside code. Reviewed effects snapshots record runtime expectations for comparison with later runs.
 
-- **Review** checks that executable expectations express the accepted spec.
-- **Behavioural Contracts** preserve the intended behavior as the implementation changes.
-- **Execution** makes departures from that behavior visible.
+Blackbox takes its name from how tests enter the running application: through I/O such as HTTP or asynchronous messages.
+Tests exercise the real system and its dependencies. Accepted expectations stay tied to observable behavior,
+so internal code can change while the same contract defines correctness.
 
-Tests enter the running system through I/O, such as HTTP endpoints or asynchronous messages, and check its observable
-behavior. Internal code can change while the same behavioural contract remains the basis for verification.
+## Quickstart
 
-Product creation requires a successful response, persistence in PostgreSQL, and population of Redis.
-This **single scenario** separates response, effects, and state assertions. It assumes an empty store, configured system,
-[clients](docs/playwright/clients-and-fixtures.md), and an [effects evaluator](docs/playwright/clients-and-fixtures.md#inspect-the-attempt).
+Give your agent one accepted requirement, for example `specs/create-product.md`:
+
+> Creating a product must persist it in PostgreSQL and populate Redis. Retrieving it while its cached entry is valid
+> must return the product without reading PostgreSQL.
+
+The [full product-cache guide](docs/guides/verify-a-specification.md) follows it through setup, verification, and repair.
+
+### Installation and Agent Onboarding
+
+<a id="alpha-and-further-guides"></a>
+
+**Alpha setup:** these examples require the [candidate APIs and sample](docs/guides/verify-a-specification.md#run-the-supplied-example).
+Use the [available skill installation](docs/playwright/connect-your-application.md#let-the-agent-discover-and-configure-the-boundary)
+in this checkout; the unified onboarding command below is not yet implemented here.
+
+```sh
+npx @suites/blackbox-cli onboarding start
+```
+
+Blackbox provides a full skill system for setup, authoring, execution, and investigation. The skills supply procedures
+and context; the CLI supplies commands and structured feedback. Give your agent a concrete task:
+
+> Use Blackbox to verify `specs/create-product.md`. Propose expectations for my review, prepare the relevant system
+> and tests, run them, and show me the report and evidence. Repair failures against the same accepted behavior.
+
+The agent discovers services and dependencies, derives the topology and system boundaries, and creates or updates
+`blackbox.config.yaml`, client definitions, and test configuration. You review the proposed expectations before execution.
+
+<p align="center">
+  <img width="800" src="docs/assets/readme/onboarding-discovery.svg" alt="Accepted spec and repository lead to skills-guided discovery, a real system boundary, configuration and client files, and CLI validation." />
+</p>
+
+### From specification to executable tests
+
+The authoring skills help the agent turn the accepted rule into reviewable tests. **You keep ownership of the expected
+behavior.** Both paths preserve `Feature → Rule → Scenario` nesting and **Arrange → Act → Assert**.
+
+**Native Playwright.** This scenario expresses the [behavioural contract](docs/contracts/README.md) as response,
+effects, and state assertions. It assumes an empty store, configured system, [clients](docs/playwright/clients-and-fixtures.md), and an
+[effects evaluator](docs/playwright/clients-and-fixtures.md#inspect-the-attempt).
 
 ```ts
 import { expect, test } from '@suites/blackbox-playwright';
@@ -107,59 +140,8 @@ test.system('product-system', (system) => {
 });
 ```
 
-The response shows what the caller received; effects check runtime interactions; native clients inspect stored state.
-Together, these assertions express the [behavioural contract](docs/contracts/README.md).
-
-Blackbox fits spec-driven development (SDD) workflows such as Spec Kit, Kiro, and OpenSpec, connecting their accepted
-specifications to executable checks and runtime evidence.
-[Specifications and SDD workflows](docs/integrations/README.md).
-
-## Quickstart
-
-Give your agent the specification. It proposes expectations for your review, prepares the application and
-dependencies, and authors or generates native Playwright tests.
-
-Playwright runs them in fresh Sandboxes and produces an HTML report with results and Blackbox runtime evidence.
-The agent uses the CLI to investigate failures, then repairs and reruns against the same accepted expectations.
-
-Start with one requirement: creating a product must persist it in PostgreSQL and populate Redis;
-retrieving a valid cached product must avoid a PostgreSQL read. Follow the [full guide](docs/guides/verify-a-specification.md).
-
-### Installation and Agent Onboarding
-
-Ask your coding agent to start onboarding in your repository:
-
-```sh
-npx @suites/blackbox-cli onboarding start
-```
-
-The onboarding prompt guides the agent through installing packages and preparing your repository.
-
-Blackbox provides a full skill system for setup, execution, investigation, and verification. The skills supply
-procedures and context; the CLI supplies commands and structured feedback the agent uses to carry out each step.
-
-The agent discovers services and dependencies, derives the system topology, and identifies application and subsystem
-boundaries. It creates or updates Blackbox configuration and supporting files, including client definitions.
-Follow the [setup guide](docs/playwright/connect-your-application.md) for the full process.
-
-<p align="center">
-  <img width="800" src="docs/assets/readme/onboarding-discovery.svg" alt="The agent discovers system boundaries and dependencies, then creates and validates Blackbox configuration." />
-  <br />
-  <sub>The agent derives runnable boundaries from the repository’s services and dependencies.</sub>
-</p>
-
-### From specification to executable tests
-
-The authoring skills help the agent translate the accepted rule into concrete tests.
-**You keep ownership of the expected behavior:** review the expectations before using them to judge an implementation.
-
-<p align="center">
-  <img width="790" src="docs/assets/guides/authoring-paths.svg" alt="An accepted spec becomes reviewed native Playwright tests or an optional Feature. Both run in a Sandbox and share reports." />
-</p>
-
-**Option A: a Feature file.** Blackbox adopts Gherkin from Cucumber for its readable
-`Feature → Rule → Scenario` structure. The CLI validates supported HTTP steps and compiles them to native Playwright.
-This excerpt checks creation; the [full Feature](docs/features/drafting-feature-files.md) also checks cached retrieval.
+**Optional Feature files.** Blackbox adopts Gherkin from Cucumber for readable behavioral specifications.
+Its supported HTTP vocabulary gives steps executable meaning. The same creation requirement can be expressed as:
 
 ```gherkin
 @system:product-system @sandbox:default
@@ -188,31 +170,48 @@ Feature: Product creation and retrieval
         """
 ```
 
-**Option B: native Playwright.** Use SDK clients and ordinary assertions, as in the
-[creation example above](#specs-and-behavioural-contracts), preserving `Feature → Rule → Scenario` nesting
-and **Arrange → Act → Assert**.
+Here, the **example-owned** `/fixture/` route reads real PostgreSQL and Redis state through HTTP. Native tests can
+inspect state directly through SDK clients and add runtime assertions, as above.
 
-The Feature reads state through an **example-owned** `/fixture/` HTTP route. Native tests can inspect
-state through SDK clients and assert runtime effects. The [full walkthrough](docs/guides/verify-a-specification.md#native-playwright)
-adds cached retrieval.
+The agent uses `blackbox feature file validate` to check supported steps and `blackbox feature suite emit` to generate
+Playwright tests. Generated suites stay unedited; native suites remain project-owned.
+[Feature authoring and commands](docs/features/drafting-feature-files.md).
 
-Generated suites preserve the Feature's structure and stay unedited. Native suites are project-owned.
-Playwright runs both in Blackbox Sandboxes; the [reporting guide](docs/guides/reports.md) explains results and evidence.
+### Run and inspect the verification
+
+From your test-project root, with the agent-prepared configuration and reviewed suite in place:
+
+```sh
+pnpm exec blackbox catalog validate --json
+pnpm exec playwright test --config playwright.config.ts
+pnpm exec playwright show-report playwright-report
+```
+
+Catalog validation should return `"ok": true`. Playwright runs the tests; Blackbox starts and releases their Sandboxes
+and connects the clients. The HTML report shows named steps, assertion results, and Blackbox diagnostics.
+For the native creation example, expect a `201` response, the stored product, and the required cache write.
+
+The [complete walkthrough](docs/guides/verify-a-specification.md#native-playwright) adds cached retrieval. A correct
+response can still fail its no-PostgreSQL-read requirement. The agent uses CLI feedback and runtime evidence to
+investigate, repair, and rerun against the same expectations. [Read reports](docs/guides/reports.md) ·
+[Follow a repair](docs/guides/repair-from-evidence.md).
 
 ## Keep the spec connected as code changes
 
-**Review** checks that tests express the spec. **CLI validation** checks that generated TypeScript still matches
-its Feature. **Execution** checks the running implementation against the accepted assertions and effects.
+- **Review** checks that executable expectations express the accepted spec.
+- **CLI validation** checks that generated TypeScript still matches its Feature.
+- **Execution** checks the running implementation against accepted assertions and effects.
 
-The skills guide the agent to preserve those expectations during local iteration and CI. When intended behavior
-changes, review the spec, tests, and effects baseline together. A failed run should not silently redefine success.
+Use the same expectations during local iteration and CI. When intended behavior changes, review the spec, tests,
+and effects baseline together. A failed run should not silently redefine success.
 
 A passing test supports the assertions that ran under the observed conditions. Runtime observations, including
-OpenTelemetry, answer questions beyond the response. The requirement determines which evidence each test needs.
+OpenTelemetry, help answer questions beyond the response. The requirement determines which evidence each test needs.
 
 [Spec-Driven Verification](docs/concepts/spec-driven-verification.md) ·
 [Evidence](docs/concepts/behavioral-evidence.md) · [CI verification](docs/guides/ci-verification.md)
 
 ---
 
-[All docs](docs/README.md) · [Contributing](CONTRIBUTING.md) · [License](LICENSE)
+[All docs](docs/README.md) · [Support](https://github.com/suites-dev/blackbox/issues) ·
+[Contributing](CONTRIBUTING.md) · [License](LICENSE)
