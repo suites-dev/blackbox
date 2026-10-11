@@ -1,0 +1,40 @@
+{
+  "name": "@suites/blackbox-effects",
+  "version": "0.0.1-alpha.0",
+  "private": true,
+  "type": "module",
+  "description": "Experimental record of the effects a test or activity produced (schema v0).",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "blackbox-source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./schema/effects-record-v0.json": "./dist/schema/effects-record-v0.json"
+  },
+  "scripts": {
+    "prebuild": "rimraf dist",
+    "build": "tsc --project tsconfig.build.json",
+    "lint": "eslint .",
+    "test": "vitest run --config vitest.config.ts"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "ajv": "8.20.0",
+    "rimraf": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=22.15"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/suites-dev/blackbox.git",
+    "directory": "packages/effects"
+  },
+  "author": "Suites"
+}
