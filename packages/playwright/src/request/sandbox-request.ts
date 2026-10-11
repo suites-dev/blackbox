@@ -1,8 +1,11 @@
 import type { APIRequestContext } from '@playwright/test';
 
-import type { BlackboxEntrypoint } from '../types.js';
+interface SandboxRequestEntrypoint {
+  readonly url: string;
+  readonly protocol: string;
+}
 
-function route(url: string, entrypoint: BlackboxEntrypoint | undefined): string {
+function route(url: string, entrypoint: SandboxRequestEntrypoint | undefined): string {
   if (URL.canParse(url)) {
     return url;
   }
@@ -16,7 +19,7 @@ function route(url: string, entrypoint: BlackboxEntrypoint | undefined): string 
 /** Keep Playwright's context, options and lifecycle; resolve relative URLs inside this attempt. */
 export function sandboxRequest(
   request: APIRequestContext,
-  entrypoint: () => BlackboxEntrypoint | undefined,
+  entrypoint: () => SandboxRequestEntrypoint | undefined,
 ): APIRequestContext {
   return new Proxy(request, {
     get(target, property) {
