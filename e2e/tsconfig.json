@@ -30,7 +30,8 @@
     "tests/playwright-features/**/*.ts",
     "reporters/**/*.ts",
     "tests/features-suites/**/*.ts",
-    ".blackbox/clients/**/*.ts"
+    ".blackbox/clients/**/*.ts",
+    "tests/playwright-effects/**/*.ts"
   ],
   "exclude": ["node_modules"]
 }

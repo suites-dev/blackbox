@@ -9,12 +9,14 @@ services:
     restart: 'no'
     environment:
       DATABASE_URL: postgresql://acceptance:acceptance@postgres:5432/acceptance
+      REDIS_URL: redis://redis:6379
       RABBIT_URL: amqp://acceptance:acceptance@rabbitmq:5672
       PORT: 8080
       OTEL_NODE_DISABLED_INSTRUMENTATIONS: dns,net
     depends_on:
       postgres: { condition: service_healthy }
       rabbitmq: { condition: service_healthy }
+      redis: { condition: service_healthy }
     healthcheck:
       test:
         [
@@ -59,4 +61,14 @@ services:
         ]
       interval: 1s
       timeout: 5s
+      retries: 60
+
+  redis:
+    image: redis:7-alpine
+    restart: 'no'
+    command: ['redis-server', '--save', '', '--appendonly', 'no']
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 1s
+      timeout: 3s
       retries: 60

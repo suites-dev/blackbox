@@ -135,7 +135,7 @@ cp "$SCRIPT_DIR/playwright-evidence.mjs" "$CONSUMER_ROOT/playwright-evidence.mjs
 cp "$SCRIPT_DIR/playwright-report-proof.mjs" "$CONSUMER_ROOT/playwright-report-proof.mjs"
 cp "$SCRIPT_DIR/playwright-recover.mjs" "$CONSUMER_ROOT/playwright-recover.mjs"
 cp "$SCRIPT_DIR/playwright-verify.mjs" "$CONSUMER_ROOT/playwright-verify.mjs"
-# Reuse the eight package acceptance cases without source-package imports. All
+# Reuse the package acceptance cases and automatic authoring proof without source-package imports. All
 # runtime dependencies and the instrumentation install belong to this consumer.
 EFFECTS_ROOT="$CONSUMER_ROOT/effects-acceptance"
 mkdir -p "$EFFECTS_ROOT/tests" "$EFFECTS_ROOT/.blackbox"
@@ -144,6 +144,11 @@ for fixture in database messaging ownership telemetry goldens; do
   cp -R "$REPO_ROOT/packages/playwright/tests/effects/$fixture" "$EFFECTS_ROOT/tests/"
 done
 cp "$REPO_ROOT/packages/playwright/tests/effects/"{support,golden}.ts "$EFFECTS_ROOT/tests/"
+cp -R "$E2E_ROOT/tests/playwright-effects" "$EFFECTS_ROOT/tests/authoring"
+cp "$REPO_ROOT/packages/playwright/tests/effects/golden.ts" "$EFFECTS_ROOT/tests/authoring/golden.ts"
+NPM_CONFIG_REGISTRY="${BLACKBOX_TEST_REGISTRY:-http://127.0.0.1:4874/}" \
+NPM_CONFIG_CACHE="$ASSET_ROOT/npm-cache" \
+  npm ci --legacy-peer-deps --prefix "$EFFECTS_ROOT/tests/authoring" >"$RUN_RESULT_ROOT/authoring-clients-install.txt"
 cp "$E2E_ROOT/playwright-effects.config.ts" "$CONSUMER_ROOT/playwright-effects.config.ts"
 cp "$SCRIPT_DIR/playwright-effects-proof.mjs" "$CONSUMER_ROOT/playwright-effects-proof.mjs"
 
@@ -203,7 +208,7 @@ BLACKBOX_E2E_RESULTS_ROOT="$RUN_RESULT_ROOT" \
 recover_sandboxes
 node "$CONSUMER_ROOT/playwright-effects-proof.mjs" >"$RUN_RESULT_ROOT/effects-receipt.json"
 test -s "$RUN_RESULT_ROOT/effects-receipt.json"
-jq -e '.kind == "playwright-effects-proof" and .attempts == 8 and (.sandboxes | length) == 8' \
+jq -e '.kind == "playwright-effects-proof" and .attempts == 9 and (.sandboxes | length) == 9' \
   "$RUN_RESULT_ROOT/effects-receipt.json" >/dev/null
 
 # Run the retention contract after the native and effects cases.

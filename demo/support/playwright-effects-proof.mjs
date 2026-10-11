@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 export const expectedEffects = [
+  'automatic requests observe effects while SDK clients inspect evolving current state',
   'PostgreSQL activity is observed while its operation remains unknown',
   'forbidden database activity produces a definite matcher failure',
   'database activity remains observable after rollback while state is absent',
@@ -35,7 +36,7 @@ export function proveEffects(report, discovery, goldens) {
     'Effects list discovery omitted an acceptance case',
   );
   assert(
-    report.stats.expected === 8 &&
+    report.stats.expected === expectedEffects.length &&
       report.stats.unexpected === 0 &&
       report.stats.flaky === 0 &&
       report.stats.skipped === 0,
@@ -76,7 +77,11 @@ export function proveEffects(report, discovery, goldens) {
     // The spec's snapshot compares contracts, verdicts and distinct witnesses.
     // Its awaited assertions also independently inspect HTTP and database state.
   }
-  return { kind: 'playwright-effects-proof', specs: expectedEffects, attempts: 8 };
+  return {
+    kind: 'playwright-effects-proof',
+    specs: expectedEffects,
+    attempts: expectedEffects.length,
+  };
 }
 
 async function verifyEffects() {
@@ -124,9 +129,15 @@ async function verifyEffects() {
     )
       records.push(record);
   }
-  assert(records.length === 8, `Expected eight effects Sandbox records, found ${records.length}`);
+  assert(
+    records.length === expectedEffects.length,
+    `Expected nine effects Sandbox records, found ${records.length}`,
+  );
   for (const key of ['sandboxId', 'projectName']) {
-    assert(new Set(records.map((record) => record[key])).size === 8, `Effects ${key} reused`);
+    assert(
+      new Set(records.map((record) => record[key])).size === expectedEffects.length,
+      `Effects ${key} reused`,
+    );
   }
   for (const record of records) {
     assert(

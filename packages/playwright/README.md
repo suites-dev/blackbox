@@ -114,9 +114,14 @@ The Sandbox declaration callback is synchronous. Use `suite.describe`,
 `suite.test`, `suite.beforeEach`, and `suite.afterEach` inside it. Test and
 per-test hook callbacks receive the normal Playwright fixtures plus `clients`,
 `step`, `sandbox`, `telemetry`, and `effects`. Use the attempt-bound `step(...)`
-fixture for native Playwright steps with local asynchronous context. Mark the
-action whose effects matter with `step.stimulus(...)` and pass its W3C headers to
-the client request. Step titles alone do not propagate tracing into the system.
+fixture for native Playwright steps with local asynchronous context. During the
+test body, native `request` calls entering this attempt's HTTP Sandbox automatically
+create owned actions and propagate W3C context, including inside ordinary
+`test.step(...)`. Hooks and custom fixture setup/teardown are excluded. Registered
+SDK clients independently inspect current mutable state; their reads cannot satisfy
+an effects assertion. Use `step.stimulus(...)` with explicit headers for custom
+transports. Native requests inside an explicit stimulus reuse its context. Step
+titles do not determine ownership.
 Sandbox-scoped `beforeAll` and `afterAll` hooks are unavailable because there is
 no group-level live Sandbox. Root Playwright `beforeAll` and `afterAll` hooks can
 still perform setup unrelated to a Sandbox.
@@ -130,12 +135,17 @@ reasons. Setup failure also attempts cleanup before surfacing the error.
 - `clients` exposes the typed clients registered in the Sandbox declaration.
 - `step` creates a native Playwright step with context bound to this attempt.
   `step.stimulus(...)` marks an owned action and supplies propagation headers.
-  Ordinary `step(...)` remains useful for setup and inspection. A custom
+  Ordinary `step(...)` reports actions and inspection. A custom
   transport can pass the same headers at its entrypoint; Blackbox cannot inject
   them into arbitrary SDK calls.
 - `request` remains Playwright's `APIRequestContext`; its relative HTTP URLs go
-  to this attempt's Sandbox entrypoint. Absolute URLs and root hooks retain their
-  native behavior. For non-HTTP entrypoints, supply an absolute HTTP URL or use
+  to this attempt's Sandbox entrypoint. Body requests initially targeting that
+  entrypoint are automatically owned, including absolute URLs at its origin.
+  Independently initiated unrelated URLs and root hooks retain native behavior.
+  Native redirects, options, authentication, cookies and serialization are preserved;
+  generated W3C context can follow redirects as part of the same causal request chain.
+  Context is not authentication: telemetry admission uses the existing trusted
+  manifest and attempt ownership boundary. For non-HTTP entrypoints, supply an absolute HTTP URL or use
   the appropriate project-owned client.
 - Playwright's configured `baseURL` remains unchanged for `page`. Resolve page
   URLs against the Sandbox entrypoint explicitly when needed.

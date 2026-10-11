@@ -1,14 +1,25 @@
-import { expect, test } from '@suites/blackbox-playwright';
+import { request as requestSdk } from '@playwright/test';
+import { defineClient, expect, test } from '@suites/blackbox-playwright';
 import { effectsGolden, json, traceId } from '../support.js';
 
+const inspection = defineClient(requestSdk, {
+  target: { participant: 'app', containerPort: 8080 },
+  env: [] as const,
+  create: (sdk, { endpoint }) => sdk.newContext({ baseURL: endpoint.url }),
+  ready: async (client) => {
+    expect((await client.get('/health')).ok()).toBe(true);
+  },
+  dispose: (client) => client.dispose(),
+});
+
 test.system('effects-acceptance', (system) => {
-  system.sandbox('real dependencies', (sandbox) => {
+  system.sandbox('real dependencies', { clients: { inspection } }, (sandbox) => {
     sandbox.afterEach(({ sandbox: _sandbox }, info) => {
       effectsGolden(info);
     });
     sandbox.test(
       'inspection database activity cannot satisfy a stimulus database contract',
-      async ({ step, effects, request, sandbox, telemetry }) => {
+      async ({ step, effects, request, sandbox, telemetry, clients }) => {
         let stimulusTrace = '';
         await step.stimulus('publish without selecting', async ({ headers }) => {
           stimulusTrace = traceId(headers);
@@ -23,7 +34,7 @@ test.system('effects-acceptance', (system) => {
         ]);
 
         await step('select missing record', async () => {
-          const response = await request.get(new URL('/records/999', sandbox.entrypoint.url).href);
+          const response = await clients.inspection.get('/records/999');
           expect(await json(response, 200)).toEqual({ row: null });
         });
         await expect(expect(effects).toSatisfy((e) => [e.exists(e.db({}))])).rejects.toThrow(

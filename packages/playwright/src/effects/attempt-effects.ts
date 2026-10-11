@@ -1,4 +1,7 @@
-import { AttemptStimuli } from '../activities/execution/attempt-stimuli.js';
+import { AsyncLocalStorage } from 'node:async_hooks';
+import type { APIResponse } from '@playwright/test';
+import type { SandboxRequestDispatch } from '../request/sandbox-request.js';
+import { AttemptStimuli, stimulusHeaders } from '../activities/execution/attempt-stimuli.js';
 import type { BlackboxStimulusScope } from '../steps/types.js';
 import type { BlackboxEffects } from '../types.js';
 import {
@@ -10,6 +13,10 @@ import {
 import { createScopedBlackboxEffects } from './scoped-effects.js';
 
 const attempts = new WeakMap<BlackboxEffects, AttemptStimuli>();
+const stimulus = new AsyncLocalStorage<{
+  readonly effects: BlackboxEffects;
+  readonly scope: BlackboxStimulusScope;
+}>();
 
 export function runEffectStimulus<T>(
   effects: BlackboxEffects,
@@ -20,7 +27,29 @@ export function runEffectStimulus<T>(
   if (attempt === undefined) {
     return Promise.reject(new Error('This Blackbox attempt does not provide stimulus execution.'));
   }
-  return attempt.run(title, action);
+  return attempt.run(title, (scope) => stimulus.run({ effects, scope }, () => action(scope)));
+}
+
+/** Effects composition only; generic request routing knows neither stimuli nor tracing. */
+export function automaticEffectRequest(
+  effects: BlackboxEffects,
+  input: SandboxRequestDispatch,
+): Promise<APIResponse> {
+  if (!attempts.has(effects)) {
+    return input.dispatch(input.options);
+  }
+  const dispatch = (scope: BlackboxStimulusScope): Promise<APIResponse> =>
+    input.dispatch({
+      ...input.options,
+      headers: stimulusHeaders(
+        scope,
+        (input.options === undefined ? {} : input.options.headers) ?? {},
+      ),
+    });
+  const current = stimulus.getStore();
+  return current !== undefined && current.effects === effects
+    ? dispatch(current.scope)
+    : runEffectStimulus(effects, `HTTP ${input.method} entrypoint request`, dispatch);
 }
 
 export function createAttemptEffects(input: {

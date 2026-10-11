@@ -4,6 +4,8 @@ const http = require('node:http');
 const { randomUUID } = require('node:crypto');
 const amqp = require('amqplib');
 const { Pool } = require('pg');
+const { createClient } = require('redis');
+const redis = createClient({ url: process.env.REDIS_URL });
 
 const port = Number(process.env.PORT || 8080);
 const destinations = Object.freeze({
@@ -60,6 +62,18 @@ async function route(req, res) {
   if (req.method === 'GET' && url.pathname === '/health') {
     await pool.query('SELECT 1');
     send(res, 200, { ready: Boolean(rabbitChannel) });
+    return;
+  }
+
+  if (['POST', 'PATCH'].includes(req.method) && url.pathname === '/state-actions') {
+    const body = await readJson(req);
+    if (typeof body.value !== 'string') { send(res, 400, { error: 'invalid-value' }); return; }
+    const result = await pool.query(
+      'INSERT INTO acceptance_records(id, value) VALUES (501, $1) ON CONFLICT (id) DO UPDATE SET value = EXCLUDED.value RETURNING id, value',
+      [body.value],
+    );
+    await redis.set('current-value', body.value);
+    send(res, req.method === 'POST' ? 201 : 200, { row: result.rows[0] });
     return;
   }
 
@@ -136,6 +150,7 @@ async function route(req, res) {
 async function main() {
   await pool.query('SELECT 1');
   await connectRabbit();
+  await redis.connect();
   const server = http.createServer((req, res) => {
     route(req, res).catch((error) => send(res, 500, { error: error.message }));
   });
@@ -144,6 +159,7 @@ async function main() {
     server.close(async () => {
       await rabbitChannel?.close();
       await rabbitConnection?.close();
+      await redis.quit();
       await pool.end();
       process.exit(0);
     });

@@ -1,4 +1,8 @@
-import { injectW3CTextMap, type TelemetryScopeResult } from '@suites/blackbox-telemetry';
+import {
+  injectW3CTextMap,
+  type W3CTraceContext,
+  type TelemetryScopeResult,
+} from '@suites/blackbox-telemetry';
 
 import { createActivityRegistry } from '../activity-registry.js';
 import type { ActivitySelection, OwnedActivity } from '../types.js';
@@ -15,11 +19,28 @@ function failure(error: unknown): TelemetryScopeResult {
   };
 }
 
+const scopeContexts = new WeakMap<BlackboxStimulusScope, W3CTraceContext>();
+
+export function stimulusHeaders(
+  scope: BlackboxStimulusScope,
+  carrier: Readonly<Record<string, string>>,
+): Readonly<Record<string, string>> {
+  const context = scopeContexts.get(scope);
+  if (context === undefined) {
+    throw new Error('Unknown stimulus scope.');
+  }
+  // Native contexts merge default headers after per-call options. Empty state overrides
+  // inherited tracestate when this freshly generated context has no vendor state.
+  return { tracestate: '', ...injectW3CTextMap({ context, carrier }).values };
+}
+
 function stimulusScope(activity: OwnedActivity): BlackboxStimulusScope {
-  return Object.freeze({
+  const scope = Object.freeze({
     activityId: activity.activityId,
     headers: Object.freeze(injectW3CTextMap({ context: activity.context, carrier: {} }).values),
   });
+  scopeContexts.set(scope, activity.context);
+  return scope;
 }
 
 /** Attempt-owned stimulus traces used to select effects; not a test fixture. */

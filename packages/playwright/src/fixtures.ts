@@ -1,3 +1,5 @@
+import { automaticEffectRequest } from './effects/attempt-effects.js';
+import { isTestBody } from './execution/body-phase.js';
 import { createAttemptStep } from './steps/step-context.js';
 import { runClients } from './clients/clients.js';
 import {
@@ -118,10 +120,19 @@ function requestFixtureFor(activeAttempts: WeakMap<TestInfo, RunningBlackboxAtte
     testInfo: TestInfo,
   ): Promise<void> => {
     await use(
-      sandboxRequest(request, () => {
-        const attempt = activeAttempts.get(testInfo);
-        return attempt === undefined ? undefined : attempt.sandbox.entrypoint;
-      }),
+      sandboxRequest(
+        request,
+        () => {
+          const attempt = activeAttempts.get(testInfo);
+          return attempt === undefined ? undefined : attempt.sandbox.entrypoint;
+        },
+        (input) => {
+          const attempt = activeAttempts.get(testInfo);
+          return attempt === undefined || !isTestBody(testInfo)
+            ? input.dispatch(input.options)
+            : automaticEffectRequest(attempt.effects, input);
+        },
+      ),
     );
   };
 }

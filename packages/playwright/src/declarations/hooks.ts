@@ -1,3 +1,4 @@
+import { lifecycleCallback } from '../execution/body-phase.js';
 import type { TestType } from '@playwright/test';
 
 import type { BlackboxNativeStep, BlackboxTestBody } from '../types.js';
@@ -26,15 +27,15 @@ export function createHook<
     assertActive(active);
     if (typeof titleOrBody === 'function') {
       if (mode === 'beforeEach') {
-        nativeTest.beforeEach(titleOrBody);
+        nativeTest.beforeEach(lifecycleCallback(titleOrBody, 'hook'));
       } else {
-        nativeTest.afterEach(titleOrBody);
+        nativeTest.afterEach(lifecycleCallback(titleOrBody, 'hook'));
       }
     } else if (possibleBody !== undefined) {
       if (mode === 'beforeEach') {
-        nativeTest.beforeEach(titleOrBody, possibleBody);
+        nativeTest.beforeEach(titleOrBody, lifecycleCallback(possibleBody, 'hook'));
       } else {
-        nativeTest.afterEach(titleOrBody, possibleBody);
+        nativeTest.afterEach(titleOrBody, lifecycleCallback(possibleBody, 'hook'));
       }
     }
   }

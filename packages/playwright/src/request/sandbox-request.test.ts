@@ -15,6 +15,34 @@ afterEach(async () => {
 
 async function listener(): Promise<string> {
   const server: Server = createServer((incoming, response) => {
+    const url = new URL(incoming.url ?? '/', 'http://localhost');
+    if (url.pathname === '/redirect') {
+      response.writeHead(Number(url.searchParams.get('status')), {
+        location: url.searchParams.get('target') ?? '/',
+        'set-cookie': 'redirected=yes; Path=/',
+      });
+      response.end();
+      return;
+    }
+    if (url.pathname === '/receiver') {
+      let body = '';
+      incoming.on('data', (chunk: Buffer) => {
+        body += chunk.toString();
+      });
+      incoming.on('end', () => {
+        response.setHeader('content-type', 'application/json');
+        response.end(
+          JSON.stringify({
+            method: incoming.method,
+            body,
+            trace: incoming.headers.traceparent,
+            cookie: incoming.headers.cookie,
+            custom: incoming.headers['x-user'],
+          }),
+        );
+      });
+      return;
+    }
     response.setHeader('content-type', 'application/json');
     response.end(
       JSON.stringify({
@@ -118,3 +146,51 @@ it('resolves ownership at dispatch time and preserves native requests without a 
   selected = second;
   expect((await wrapped.get('/second')).url()).toBe(`${second}/second`);
 });
+
+it.each([false, true])(
+  'preserves native 307 body, cookies and trace through redirects (cross-origin: %s)',
+  async (crossOrigin) => {
+    const owned = await listener();
+    const destination = crossOrigin ? await listener() : owned;
+    const calls: string[] = [];
+    const traceparent = '00-11111111111111111111111111111111-2222222222222222-01';
+    const wrapped = sandboxRequest(
+      await context(),
+      () => ({ url: owned, protocol: 'http' }),
+      (input) => {
+        calls.push(input.url);
+        return input.dispatch({
+          ...input.options,
+          headers: { ...(input.options === undefined ? {} : input.options.headers), traceparent },
+        });
+      },
+    );
+    const path = `/redirect?status=307&target=${encodeURIComponent(`${destination}/receiver`)}`;
+    const stopped = await wrapped.post(path, { data: { value: 'retained' }, maxRedirects: 0 });
+    expect(stopped.status()).toBe(307);
+    expect(stopped.url()).toBe(`${owned}${path}`);
+    const followed = await wrapped.post(path, {
+      data: { value: 'retained' },
+      headers: { 'x-user': 'retained' },
+    });
+    expect(followed.url()).toBe(`${destination}/receiver`);
+    expect(await followed.json()).toEqual({
+      method: 'POST',
+      body: '{"value":"retained"}',
+      trace: traceparent,
+      cookie: 'redirected=yes',
+      custom: 'retained',
+    });
+    expect(calls).toEqual([`${owned}${path}`, `${owned}${path}`]);
+    if (crossOrigin) {
+      expect((await (await wrapped.get(`${destination}/outside`)).json()).trace).toBeNull();
+      expect(calls).toHaveLength(2);
+    }
+    const rewrite = await wrapped.post(
+      `/redirect?status=302&target=${encodeURIComponent(`${destination}/receiver`)}`,
+      { data: 'dropped' },
+    );
+    expect((await rewrite.json()).method).toBe('GET');
+    expect((await rewrite.json()).body).toBe('');
+  },
+);
