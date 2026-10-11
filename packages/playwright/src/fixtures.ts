@@ -2,6 +2,7 @@ import { createAttemptStep } from './steps/step-context.js';
 import { runClients } from './clients/clients.js';
 import {
   test as playwrightTest,
+  type APIRequestContext,
   type PlaywrightTestArgs,
   type PlaywrightTestOptions,
   type PlaywrightWorkerArgs,
@@ -18,6 +19,7 @@ import {
   type RunningBlackboxAttempt,
 } from './runtime/acquisition.js';
 import { createSystemTestFacade } from './system-test.js';
+import { sandboxRequest } from './request/sandbox-request.js';
 import type {
   BlackboxStep,
   BlackboxNativeTestArgs,
@@ -109,12 +111,40 @@ async function stepFixture(
   }
 }
 
+function requestFixtureFor(activeAttempts: WeakMap<TestInfo, RunningBlackboxAttempt>) {
+  return async (
+    { request }: { readonly request: APIRequestContext },
+    use: (request: APIRequestContext) => Promise<void>,
+    testInfo: TestInfo,
+  ): Promise<void> => {
+    await use(sandboxRequest(request, () => {
+      const attempt = activeAttempts.get(testInfo);
+      return attempt === undefined ? undefined : attempt.sandbox.entrypoint;
+    }));
+  };
+}
+
+async function useSelectedAttempt(
+  attempt: RunningBlackboxAttempt,
+  testInfo: TestInfo,
+  activeAttempts: WeakMap<TestInfo, RunningBlackboxAttempt>,
+  use: (attempt: AttemptFixture) => Promise<void>,
+): Promise<void> {
+  activeAttempts.set(testInfo, attempt);
+  try {
+    await use({ kind: 'selected', attempt });
+  } finally {
+    activeAttempts.delete(testInfo);
+  }
+}
+
 export function createBlackboxTest(
   runtime: BlackboxAttemptRuntime,
   policy: BlackboxFixturePolicy = defaultPolicy,
 ): NativeBlackboxTest {
   const testScopes = new WeakSet<TestInfo>();
   const testStartedAt = new WeakMap<TestInfo, number>();
+  const activeAttempts = new WeakMap<TestInfo, RunningBlackboxAttempt>();
   return playwrightTest.extend<BlackboxFixtures>({
     catalogEntry: [{ kind: 'unselected' }, { option: true }],
     blackboxEnvironment: [Object.freeze({}), { option: true }],
@@ -156,9 +186,7 @@ export function createBlackboxTest(
           blackboxEnvironment,
           blackboxRetainAttempts,
           blackboxClients,
-          use: async (attempt) => {
-            await use({ kind: 'selected', attempt });
-          },
+          use: (attempt) => useSelectedAttempt(attempt, testInfo, activeAttempts, use),
         });
       },
       // The helper enforces the test deadline and bounds every sandbox cleanup wait.
@@ -178,6 +206,7 @@ export function createBlackboxTest(
       // the attempt fixture, even when the test's own deadline has expired.
       { auto: true, timeout: 0 },
     ],
+    request: requestFixtureFor(activeAttempts),
     step: stepFixture,
     sandbox: async ({ _blackboxAttempt }, use) => {
       await use(selectedAttempt(_blackboxAttempt, 'sandbox').sandbox);
