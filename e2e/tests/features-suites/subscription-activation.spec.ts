@@ -26,24 +26,14 @@ test.system('subscription-system', (system) => {
         () => {
           suite.test(
             'Scenario: Alice activates a subscription through the full path',
-            async ({ clients, effects, step }) => {
-              const response = await step.stimulus(
+            async ({ clients, step }) => {
+              const response = await step(
                 'When client "api" sends POST "/subscriptions" with JSON:',
-                ({ headers }) =>
+                () =>
                   clients.api.post('/subscriptions', {
                     data: { userId: 'alice', paymentMethodId: 'pm_alice_primary' },
-                    headers,
                   }),
               );
-              await expect(effects).toSatisfy((e) => [
-                e.exists(e.http({ actor: 'public-api', method: 'POST' })),
-                e.exists(e.http({ actor: 'fraud-check', method: 'POST' })),
-                e.exists(e.http({ actor: 'payment-mock', method: 'POST' })),
-                e.exists(e.http({ actor: 'order-service', method: 'POST' })),
-                e.exists(e.db({ actor: 'fraud-check' })),
-                e.exists(e.cache({ actor: 'public-api', operation: 'SET' })),
-                e.exists(e.rpc({ actor: 'order-service', operation: 'SendMessage', service: 'SQS' })),
-              ]);
 
               await step('Then the response status is 201', () => {
                 expect(response.status()).toBe(201);
@@ -108,23 +98,17 @@ test.system('subscription-system', (system) => {
             examples.forEach(({ userId }, row) => {
               suite.test(
                 `Examples 1: Seeded local-only users / row ${row + 1}: Activate local-only user ${userId}`,
-                async ({ clients, effects, step }) => {
-                  const response = await step.stimulus(
+                async ({ clients, step }) => {
+                  const response = await step(
                     'When client "api" sends POST "/subscriptions" with JSON:',
-                    ({ headers }) =>
+                    () =>
                       clients.api.post('/subscriptions', {
                         data: {
                           userId: userId,
                           paymentMethodId: `pm_${userId}_unused`,
                         },
-                        headers,
                       }),
                   );
-                  await expect(effects).toSatisfy((e) => [
-                    e.exists(e.http({ actor: 'public-api', method: 'POST' })),
-                    e.exists(e.db({ actor: 'public-api' })),
-                    e.exists(e.cache({ actor: 'public-api', operation: 'SET' })),
-                  ]);
                   await step('Then the response status is 201', () => {
                     expect(response.status()).toBe(201);
                   });
@@ -176,18 +160,14 @@ test.system('subscription-system', (system) => {
         () => {
           suite.test(
             'Scenario: An unknown user leaves the system unchanged',
-            async ({ clients, effects, step }) => {
-              const response = await step.stimulus(
+            async ({ clients, step }) => {
+              const response = await step(
                 'When client "api" sends POST "/subscriptions" with JSON:',
-                ({ headers }) =>
+                () =>
                   clients.api.post('/subscriptions', {
                     data: { userId: 'ghost-user', paymentMethodId: 'pm_ghost' },
-                    headers,
                   }),
               );
-              await expect(effects).toSatisfy((e) => [
-                e.exists(e.http({ actor: 'public-api', method: 'POST' })),
-              ]);
               await step('Then the response status is 404', () => {
                 expect(response.status()).toBe(404);
               });
@@ -234,18 +214,14 @@ test.system('subscription-system', (system) => {
 
         suite.test(
           'Scenario: A repeated request retains only the original downstream state',
-          async ({ clients, effects, step }) => {
-            const response = await step.stimulus(
+          async ({ clients, step }) => {
+            const response = await step(
               'When client "api" sends POST "/subscriptions" with JSON:',
-              ({ headers }) =>
+              () =>
                 clients.api.post('/subscriptions', {
                   data: { userId: 'carol', paymentMethodId: 'pm_carol_secondary' },
-                  headers,
                 }),
             );
-            await expect(effects).toSatisfy((e) => [
-              e.exists(e.http({ actor: 'public-api', method: 'POST' })),
-            ]);
             await step('Then the response status is 409', () => {
               expect(response.status()).toBe(409);
             });

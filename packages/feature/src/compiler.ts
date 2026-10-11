@@ -2,13 +2,12 @@
 /* eslint-disable no-restricted-syntax -- Cucumber's public AST and the inline-source API have optional fields. */
 /* eslint-disable @typescript-eslint/no-unnecessary-condition -- Preserve runtime guards at this untrusted input boundary. */
 /* eslint-disable max-lines -- Keep one compiler pass together while its public output contract is new. */
-import {
-  StepKeywordType,
-  type Background,
-  type GherkinDocument,
-  type Rule,
-  type Scenario,
-  type Step,
+import type {
+  Background,
+  GherkinDocument,
+  Rule,
+  Scenario,
+  Step,
 } from '@cucumber/messages';
 
 import { parseGherkin } from './syntax/parse.js';
@@ -161,7 +160,8 @@ function emitRule(rule: Rule, context: CompilerContext): string {
 }
 
 function emitBackground(background: Background, context: CompilerContext): string {
-  return `suite.beforeEach(${quote(`Background: ${background.name || 'setup'}`)}, async ({ clients, step }) => {\n${indent(emitStepList(background.steps, context), 2)}\n});`;
+  const steps = background.steps.map((step) => emitStep(step, context));
+  return `suite.beforeEach(${quote(`Background: ${background.name || 'setup'}`)}, async ({ clients, step }) => {\n${indent(steps.join('\n'), 2)}\n});`;
 }
 
 function emitScenario(scenario: Scenario, context: CompilerContext): string[] {
@@ -197,16 +197,10 @@ function emitTest(scenario: Scenario, context: CompilerContext): string {
 }
 
 function emitStepList(steps: readonly Step[], context: CompilerContext, dynamicRow = false, dynamicHeaders: readonly string[] = []): string {
-  let action = false;
-  return steps.map((step) => {
-    if (step.keywordType === StepKeywordType.ACTION) {action = true;}
-    else if (step.keywordType === StepKeywordType.CONTEXT || step.keywordType === StepKeywordType.OUTCOME) {action = false;}
-    return emitStep(step, context, { dynamicRow, dynamicHeaders, action });
-  }).join('\n');
+  return steps.map((step) => emitStep(step, context, dynamicRow, dynamicHeaders)).join('\n');
 }
 
-function emitStep(step: Step, context: CompilerContext, options: { readonly dynamicRow: boolean; readonly dynamicHeaders: readonly string[]; readonly action: boolean }): string {
-  const { dynamicRow, dynamicHeaders, action } = options;
+function emitStep(step: Step, context: CompilerContext, dynamicRow = false, dynamicHeaders: readonly string[] = []): string {
   const text = step.text;
   const title = `${step.keyword}${text}`.trim();
   const doc = step.docString?.content;
@@ -223,16 +217,12 @@ function emitStep(step: Step, context: CompilerContext, options: { readonly dyna
     const [, client, method, path, withJson, expectedStatus] = request;
     assertClient(client, step, context);
     if (withJson && doc === undefined) {return unsupported(step, context, 'JSON request needs a JSON Doc String.');}
-    const data = doc !== undefined ? `data: ${dynamicRow ? rowJsonExpression(doc, step, context, dynamicHeaders) : jsonExpression(doc, step, context)}` : '';
-    const options = action ? `{ ${data ? `${data}, ` : ''}headers }` : data ? `{ ${data} }` : '';
-    const body = options ? `, ${options}` : '';
+    const body = doc !== undefined ? `, { data: ${dynamicRow ? rowJsonExpression(doc, step, context, dynamicHeaders) : jsonExpression(doc, step, context)} }` : '';
     const response = `clients.${client}.${method.toLowerCase()}(${stringExpression(path, dynamicRow)}${body})`;
-    const run = action ? 'step.stimulus' : 'step';
-    const callback = action ? 'async ({ headers }) => ' : 'async () => ';
     const variable = `response${context.counter++}`;
     context.lastResponse = variable;
-    if (expectedStatus) {return `const ${variable} = await ${run}(${stringExpression(title, dynamicRow)}, ${callback}{\n  const response = await ${response};\n  expect(response.status()).toBe(${expectedStatus});\n  return response;\n});`;}
-    return `const ${variable} = await ${run}(${stringExpression(title, dynamicRow)}, ${action ? '({ headers })' : '()'} => ${response});`;
+    if (expectedStatus) {return `const ${variable} = await step(${stringExpression(title, dynamicRow)}, async () => {\n  const response = await ${response};\n  expect(response.status()).toBe(${expectedStatus});\n  return response;\n});`;}
+    return `const ${variable} = await step(${stringExpression(title, dynamicRow)}, () => ${response});`;
   }
   const status = /^the response status is (\d{3}|<[^>]+>)$/u.exec(text);
   if (status) {

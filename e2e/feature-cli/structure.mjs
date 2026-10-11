@@ -10,13 +10,11 @@ export function skeleton(source) {
   const transformed = ts.transform(file, [
     (context) => {
       function visit(node) {
-        if (ts.isCallExpression(node) && (
-          (ts.isIdentifier(node.expression) && node.expression.text === 'step') ||
-          (ts.isPropertyAccessExpression(node.expression) &&
-            ts.isIdentifier(node.expression.expression) &&
-            node.expression.expression.text === 'step' &&
-            node.expression.name.text === 'stimulus')
-        )) {
+        if (
+          ts.isCallExpression(node) &&
+          ts.isIdentifier(node.expression) &&
+          node.expression.text === 'step'
+        ) {
           assert.equal(node.arguments.length, 2, 'Unexpected step signature');
           steps += 1;
           return ts.factory.updateCallExpression(node, node.expression, undefined, [
@@ -121,10 +119,12 @@ export async function structure(source) {
   const result = [];
   for (const item of cases) {
     const steps = [];
-    const step = Object.assign(async (title) => { steps.push(title); }, {
-      stimulus: async (title) => { steps.push(title); },
-    });
-    const fixtures = { clients: {}, step };
+    const fixtures = {
+      clients: {},
+      step: async (title) => {
+        steps.push(title);
+      },
+    };
     const backgrounds = [];
     for (const hook of item.hooks) {
       const start = steps.length;

@@ -201,16 +201,12 @@ function generatedCodeDiagnostics(code: string): string[] {
         export interface ApiResponse { status(): number; json(): Promise<unknown> }
         export interface ApiClient {
           get(path: string): Promise<ApiResponse>;
-          post(path: string, options?: { data?: unknown; headers?: Readonly<Record<string, string>> }): Promise<ApiResponse>;
-          patch(path: string, options?: { data?: unknown; headers?: Readonly<Record<string, string>> }): Promise<ApiResponse>;
-        }
-        interface Step {
-          <T>(title: string, body: () => T | Promise<T>): Promise<Awaited<T>>;
-          stimulus<T>(title: string, body: (scope: { headers: Readonly<Record<string, string>> }) => T | Promise<T>): Promise<Awaited<T>>;
+          post(path: string, options?: { data: unknown }): Promise<ApiResponse>;
+          patch(path: string, options?: { data: unknown }): Promise<ApiResponse>;
         }
         interface Fixtures {
           clients: { api: ApiClient };
-          step: Step;
+          step<T>(title: string, body: () => T | Promise<T>): Promise<Awaited<T>>;
         }
         interface Suite {
           describe(title: string, body: () => void): void;

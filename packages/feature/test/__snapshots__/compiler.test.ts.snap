@@ -105,7 +105,7 @@ test.system({ kind: 'system', id: "subscription-system" }, (system) => {
       });
       suite.describe("Rule: Full-path subscriptions settle their downstream state before returning", () => {
         suite.test("Scenario: Alice activates a subscription through the full path", async ({ clients, step }) => {
-          const response1 = await step.stimulus("When client \\"api\\" sends POST \\"\\u002Fsubscriptions\\" with JSON:", ({ headers }) => clients.api.post("\\u002Fsubscriptions", { data: JSON.parse("{\\"userId\\":\\"alice\\",\\"paymentMethodId\\":\\"pm_alice_primary\\"}"), headers }));
+          const response1 = await step("When client \\"api\\" sends POST \\"\\u002Fsubscriptions\\" with JSON:", () => clients.api.post("\\u002Fsubscriptions", { data: JSON.parse("{\\"userId\\":\\"alice\\",\\"paymentMethodId\\":\\"pm_alice_primary\\"}") }));
           await step("Then the response status is 201", async () => {
             expect(response1.status()).toBe(201);
           });
@@ -125,7 +125,7 @@ test.system({ kind: 'system', id: "subscription-system" }, (system) => {
             const outlineRows2 = [{"userId":"dora"},{"userId":"eve"}];
             outlineRows2.forEach((row, rowIndex) => {
               suite.test(\`Scenario: Activate local-only user \${row["userId"]} [Examples 1: Seeded local-only users, row \${rowIndex + 1}]\`, async ({ clients, step }) => {
-                const response3 = await step.stimulus(\`When client "api" sends POST "/subscriptions" with JSON:\`, ({ headers }) => clients.api.post(\`/subscriptions\`, { data: JSON.parse(\`{"userId":"\${JSON.stringify(String(row["userId"])).slice(1, -1)}","paymentMethodId":"pm_\${JSON.stringify(String(row["userId"])).slice(1, -1)}_unused"}\`), headers }));
+                const response3 = await step(\`When client "api" sends POST "/subscriptions" with JSON:\`, () => clients.api.post(\`/subscriptions\`, { data: JSON.parse(\`{"userId":"\${JSON.stringify(String(row["userId"])).slice(1, -1)}","paymentMethodId":"pm_\${JSON.stringify(String(row["userId"])).slice(1, -1)}_unused"}\`) }));
                 await step(\`Then the response status is 201\`, async () => {
                   expect(response3.status()).toBe(201);
                 });
@@ -144,7 +144,7 @@ test.system({ kind: 'system', id: "subscription-system" }, (system) => {
       });
       suite.describe("Rule: Unknown users cannot create subscriptions", { tag: ["@validation"] }, () => {
         suite.test("Scenario: An unknown user leaves the system unchanged", async ({ clients, step }) => {
-          const response4 = await step.stimulus("When client \\"api\\" sends POST \\"\\u002Fsubscriptions\\" with JSON:", ({ headers }) => clients.api.post("\\u002Fsubscriptions", { data: JSON.parse("{\\"userId\\":\\"ghost-user\\",\\"paymentMethodId\\":\\"pm_ghost\\"}"), headers }));
+          const response4 = await step("When client \\"api\\" sends POST \\"\\u002Fsubscriptions\\" with JSON:", () => clients.api.post("\\u002Fsubscriptions", { data: JSON.parse("{\\"userId\\":\\"ghost-user\\",\\"paymentMethodId\\":\\"pm_ghost\\"}") }));
           await step("Then the response status is 404", async () => {
             expect(response4.status()).toBe(404);
           });
@@ -168,7 +168,7 @@ test.system({ kind: 'system', id: "subscription-system" }, (system) => {
         });
 
         suite.test("Scenario: A repeated request retains only the original downstream state", async ({ clients, step }) => {
-          const response6 = await step.stimulus("When client \\"api\\" sends POST \\"\\u002Fsubscriptions\\" with JSON:", ({ headers }) => clients.api.post("\\u002Fsubscriptions", { data: JSON.parse("{\\"userId\\":\\"carol\\",\\"paymentMethodId\\":\\"pm_carol_secondary\\"}"), headers }));
+          const response6 = await step("When client \\"api\\" sends POST \\"\\u002Fsubscriptions\\" with JSON:", () => clients.api.post("\\u002Fsubscriptions", { data: JSON.parse("{\\"userId\\":\\"carol\\",\\"paymentMethodId\\":\\"pm_carol_secondary\\"}") }));
           await step("Then the response status is 409", async () => {
             expect(response6.status()).toBe(409);
           });
@@ -204,7 +204,7 @@ test.system({ kind: 'subsystem', id: "orders" }, (system) => {
       });
       suite.describe("Rule: Valid quantities produce a quote", () => {
         suite.test("Scenario: Quote two keyboards", async ({ clients, step }) => {
-          const response1 = await step.stimulus("When client \\"api\\" sends POST \\"\\u002Fquotes\\" with JSON:", ({ headers }) => clients.api.post("\\u002Fquotes", { data: JSON.parse("{\\"sku\\":\\"keyboard\\",\\"quantity\\":2}"), headers }));
+          const response1 = await step("When client \\"api\\" sends POST \\"\\u002Fquotes\\" with JSON:", () => clients.api.post("\\u002Fquotes", { data: JSON.parse("{\\"sku\\":\\"keyboard\\",\\"quantity\\":2}") }));
           await step("Then the response status is 200", async () => {
             expect(response1.status()).toBe(200);
           });
@@ -227,7 +227,7 @@ test.system({ kind: 'subsystem', id: "orders" }, (system) => {
             const outlineRows3 = [{"quantity":0,"status":422,"code":"INVALID_QUANTITY"},{"quantity":2,"status":409,"code":"INSUFFICIENT_STOCK"}];
             outlineRows3.forEach((row, rowIndex) => {
               suite.test(\`Scenario: Reject quantity \${row["quantity"]} [Examples 1: Rejected quantities, row \${rowIndex + 1}]\`, async ({ clients, step }) => {
-                const response4 = await step.stimulus(\`When client "api" sends POST "/quotes" with JSON:\`, ({ headers }) => clients.api.post(\`/quotes\`, { data: JSON.parse(\`{"sku":"keyboard","quantity":\${JSON.stringify(row["quantity"])}}\`), headers }));
+                const response4 = await step(\`When client "api" sends POST "/quotes" with JSON:\`, () => clients.api.post(\`/quotes\`, { data: JSON.parse(\`{"sku":"keyboard","quantity":\${JSON.stringify(row["quantity"])}}\`) }));
                 await step(\`Then the response status is \${row["status"]}\`, async () => {
                   expect(response4.status()).toBe(Number(row["status"]));
                 });
@@ -258,7 +258,7 @@ test.system({ kind: 'subsystem', id: "subscription-system" }, (system) => {
             const outlineRows0 = [{"userId":"dora"},{"userId":"eve"}];
             outlineRows0.forEach((row, rowIndex) => {
               suite.test(\`Scenario: Activate local-only user \${row["userId"]} [Examples 1: Seeded local-only users, row \${rowIndex + 1}]\`, async ({ clients, step }) => {
-                const response1 = await step.stimulus(\`When client "api" sends POST "/subscriptions" with JSON:\`, ({ headers }) => clients.api.post(\`/subscriptions\`, { data: JSON.parse(\`{"userId":"\${JSON.stringify(String(row["userId"])).slice(1, -1)}","paymentMethodId":"pm_\${JSON.stringify(String(row["userId"])).slice(1, -1)}_unused","state":{"reg:\${JSON.stringify(String(row["userId"])).slice(1, -1)}":"1"}}\`), headers }));
+                const response1 = await step(\`When client "api" sends POST "/subscriptions" with JSON:\`, () => clients.api.post(\`/subscriptions\`, { data: JSON.parse(\`{"userId":"\${JSON.stringify(String(row["userId"])).slice(1, -1)}","paymentMethodId":"pm_\${JSON.stringify(String(row["userId"])).slice(1, -1)}_unused","state":{"reg:\${JSON.stringify(String(row["userId"])).slice(1, -1)}":"1"}}\`) }));
                 await step(\`Then the response status is 201\`, async () => {
                   expect(response1.status()).toBe(201);
                 });
@@ -289,7 +289,7 @@ test.system({ kind: 'subsystem', id: "escape-tests" }, (system) => {
             const outlineRows0 = [{"value":"same","status":200},{"value":"same","status":200}];
             outlineRows0.forEach((row, rowIndex) => {
               suite.test(\`Scenario: Return a value for \${row["value"]} [Examples 1: First duplicate block, row \${rowIndex + 1}]\`, async ({ clients, step }) => {
-                const response1 = await step.stimulus(\`When client "api" sends POST "/values" with JSON:\`, ({ headers }) => clients.api.post(\`/values\`, { data: JSON.parse(\`{"value":"\${JSON.stringify(String(row["value"])).slice(1, -1)}"}\`), headers }));
+                const response1 = await step(\`When client "api" sends POST "/values" with JSON:\`, () => clients.api.post(\`/values\`, { data: JSON.parse(\`{"value":"\${JSON.stringify(String(row["value"])).slice(1, -1)}"}\`) }));
                 await step(\`Then the response status is \${row["status"]}\`, async () => {
                   expect(response1.status()).toBe(Number(row["status"]));
                 });
@@ -314,7 +314,7 @@ test.system({ kind: 'subsystem', id: "escape-tests" }, (system) => {
             const outlineRows3 = [{"value":"same","status":200}];
             outlineRows3.forEach((row, rowIndex) => {
               suite.test(\`Scenario: Return a value for \${row["value"]} [Examples 2: Second duplicate block, row \${rowIndex + 1}]\`, async ({ clients, step }) => {
-                const response4 = await step.stimulus(\`When client "api" sends POST "/values" with JSON:\`, ({ headers }) => clients.api.post(\`/values\`, { data: JSON.parse(\`{"value":"\${JSON.stringify(String(row["value"])).slice(1, -1)}"}\`), headers }));
+                const response4 = await step(\`When client "api" sends POST "/values" with JSON:\`, () => clients.api.post(\`/values\`, { data: JSON.parse(\`{"value":"\${JSON.stringify(String(row["value"])).slice(1, -1)}"}\`) }));
                 await step(\`Then the response status is \${row["status"]}\`, async () => {
                   expect(response4.status()).toBe(Number(row["status"]));
                 });

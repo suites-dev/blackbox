@@ -13,7 +13,7 @@ test.system({ kind: 'system', id: 'example' }, (system) => {
         await step('Given setup', () => { throw new Error('business setup ran'); });
       });
       suite.test('Scenario: Example', async ({ clients, step }) => {
-        const response = await step.stimulus('When request', ({ headers }) => clients.api.post('/business', { headers }));
+        const response = await step('When request', () => clients.api.post('/business'));
         await step('Then response', () => { expect(response.status()).toBe(200); });
       });
     });

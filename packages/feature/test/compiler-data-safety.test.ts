@@ -78,7 +78,7 @@ it.each([
     When client "api" sends POST "/echo"
 ` });
   expect(bodyless.diagnostics).toEqual([]);
-  expect(bodyless.code).toContain('clients.api.post("\\u002Fecho", { headers })');
+  expect(bodyless.code).toContain('clients.api.post("\\u002Fecho")');
 });
 
 async function executeSuite(code: string, responseJson: unknown) {
@@ -92,8 +92,7 @@ async function executeSuite(code: string, responseJson: unknown) {
   const response = { status: () => 200, json: () => Promise.resolve(responseJson) };
   const api = {
     get: () => Promise.resolve(response),
-    post: (_path: string, options: { data: unknown; headers: Readonly<Record<string, string>> }) => {
-      expect(options.headers.traceparent).toMatch(/^00-[0-9a-f]{32}-[0-9a-f]{16}-01$/u);
+    post: (_path: string, options: { data: unknown }) => {
       bodies.push(options.data);
       return Promise.resolve(response);
     },
@@ -110,15 +109,8 @@ async function executeSuite(code: string, responseJson: unknown) {
     }),
   });
   expect(tests.length).toBeGreaterThan(0);
-  const step = Object.assign(
-    (_title: string, operation: () => unknown) => operation(),
-    {
-      stimulus: (_title: string, operation: (scope: { headers: Readonly<Record<string, string>> }) => unknown) =>
-        operation({ headers: { traceparent: '00-11111111111111111111111111111111-2222222222222222-01' } }),
-    },
-  );
   for (const test of tests) {
-    await test({ clients: { api }, step });
+    await test({ clients: { api }, step: (_title: string, operation: () => unknown) => operation() });
   }
   return { bodies, expected };
 }
