@@ -117,10 +117,12 @@ function requestFixtureFor(activeAttempts: WeakMap<TestInfo, RunningBlackboxAtte
     use: (request: APIRequestContext) => Promise<void>,
     testInfo: TestInfo,
   ): Promise<void> => {
-    await use(sandboxRequest(request, () => {
-      const attempt = activeAttempts.get(testInfo);
-      return attempt === undefined ? undefined : attempt.sandbox.entrypoint;
-    }));
+    await use(
+      sandboxRequest(request, () => {
+        const attempt = activeAttempts.get(testInfo);
+        return attempt === undefined ? undefined : attempt.sandbox.entrypoint;
+      }),
+    );
   };
 }
 
