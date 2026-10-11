@@ -1,0 +1,367 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="1320" viewBox="0 0 1120 1320" role="img" aria-labelledby="demo-title demo-description" data-flow="proposed" data-duration-seconds="48">
+  <title id="demo-title">Proposed specification-driven verification demonstration</title>
+  <desc id="demo-description">A developer brings create-new-product.md and invokes an illustrative proposed CLI command. The agent drafts new-product.feature and requests developer approval. Only after approval does the agent discover product-service, PostgreSQL, and Redis, prepare infrastructure and the catalog, generate new-product.spec.ts, and complete its fixtures, client actions, and assertions. Playwright runs the tests; the Sandbox starts the application and dependencies, live logs appear, and an illustrative HTML report shows creation and cache retrieval results with linked evidence. The 48-second animation highlights the stages in order, types the Feature, pauses for approval, reveals the topology and configuration, spawns the Sandbox, appends log lines, and reveals the report. This is a proposed workflow demonstration, not documentation of an available end-to-end command. The starting command is illustrative; the feature generation and Playwright test commands use the existing documented command shapes. With reduced motion, the complete flow remains visible without animation.</desc>
+  <defs>
+    <symbol id="icon-file" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H5v20h14V7l-5-5ZM14 2v6h5M8 12h8M8 16h8"/></g></symbol>
+    <symbol id="icon-person" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="12" cy="7" r="4"/><path d="M4 22v-3a8 8 0 0 1 16 0v3"/></g></symbol>
+    <symbol id="icon-terminal" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="18" rx="3"/><path d="m6 8 4 4-4 4m7 0h5"/></g></symbol>
+    <symbol id="icon-agent" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="7" width="16" height="14" rx="4"/><path d="M12 3v4M1 12v5m22-5v5M9 16h6"/><circle cx="9" cy="12" r=".7"/><circle cx="15" cy="12" r=".7"/><circle cx="12" cy="2" r="1"/></g></symbol>
+    <symbol id="icon-check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="icon-topology" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="6" rx="1"/><rect x="2" y="16" width="7" height="6" rx="1"/><rect x="15" y="16" width="7" height="6" rx="1"/><path d="M12 8v4H5.5v4M12 12h6.5v4"/></g></symbol>
+    <symbol id="icon-pg" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 4 16 4 16 0V5M4 12c0 4 16 4 16 0"/></g></symbol>
+    <symbol id="icon-redis" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="m3 7 9-4 9 4-9 4-9-4Zm0 5 9 4 9-4M3 17l9 4 9-4"/></g></symbol>
+    <symbol id="icon-code" viewBox="0 0 24 24"><path d="m8 6-6 6 6 6m8-12 6 6-6 6M14 3l-4 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="icon-box" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="m3 7 9-4 9 4v10l-9 4-9-4V7Zm0 0 9 5 9-5M12 12v9"/></g></symbol>
+    <symbol id="icon-browser" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="18" rx="3"/><path d="M2 8h20M6 5.5h.01M9 5.5h.01m-2 9 3 3 7-7"/></g></symbol>
+    <filter id="soft-lines" x="-10%" y="-40%" width="120%" height="180%"><feGaussianBlur stdDeviation="1"/></filter>
+<marker id="arrow-neutral" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto"><path d="m0 0 8 4-8 4Z" fill="#8B8B94"/></marker>
+<marker id="arrow-pink" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto"><path d="m0 0 8 4-8 4Z" fill="#E67189"/></marker>
+<marker id="arrow-blue" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto"><path d="m0 0 8 4-8 4Z" fill="#93C5FD"/></marker>
+  </defs>
+  <style>
+    svg { --neutral:#8B8B94; --pink:#E67189; --blue:#93C5FD; }
+    text { font-family:Geist,Inter,Arial,sans-serif; }
+    .panel { fill:#17171C; stroke:#FFFFFF; stroke-opacity:.13; stroke-width:1.5; }
+    .active { fill:none; stroke-width:1.7; opacity:0; }
+    .heading { fill:#F4F4F5; font-size:18px; font-weight:575; }
+    .body { fill:#A1A1AA; font-size:16px; }
+    .small { fill:#A1A1AA; font-size:14px; }
+    .number { fill:#8B8B94; font-size:12px; font-weight:600; letter-spacing:1px; }
+    .filename { fill:#EF9DAB; font-family:Geist Mono,Consolas,monospace; font-size:16px; }
+    .mono { fill:#F4F4F5; font-family:Geist Mono,Consolas,monospace; font-size:14px; }
+    .feature { fill:#A1A1AA; font-family:Geist Mono,Consolas,monospace; font-size:14.5px; }
+    .flow,.line { fill:none; stroke-width:1.6; stroke-linecap:round; stroke-linejoin:round; }
+    .flow { stroke-dasharray:6 10; }
+    .node { fill:#202027; stroke:#8B8B94; stroke-opacity:.3; stroke-width:1.3; }
+    .node-label { fill:#F4F4F5; font-size:15px; font-weight:575; }
+    .green { fill:#86EFAC; }
+    .blue { fill:#93C5FD; }
+    .pending { opacity:0; }
+    .bar { fill:#93C5FD; opacity:.28; }
+    .report-window { transform-box:fill-box; transform-origin:center; }
+    @keyframes flow { from { stroke-dashoffset:0; } to { stroke-dashoffset:-128; } }
+
+@keyframes active-1 { 0%,5.6250% {opacity:.85} 6.2500%,100% {opacity:0} }
+@keyframes active-2 { 0%,6.2500% {opacity:0} 7.0833%,13.5417% {opacity:.85} 14.1667%,100% {opacity:0} }
+@keyframes active-3 { 0%,14.1667% {opacity:0} 15.0000%,24.3750% {opacity:.85} 25.0000%,100% {opacity:0} }
+@keyframes active-4 { 0%,25.6250% {opacity:0} 26.4583%,34.7917% {opacity:.85} 35.4167%,100% {opacity:0} }
+@keyframes active-5 { 0%,35.4167% {opacity:0} 36.2500%,43.1250% {opacity:.85} 43.7500%,100% {opacity:0} }
+@keyframes active-6 { 0%,43.9583% {opacity:0} 44.7917%,51.4583% {opacity:.85} 52.0833%,100% {opacity:0} }
+@keyframes active-7 { 0%,52.2917% {opacity:0} 53.1250%,59.7917% {opacity:.85} 60.4167%,100% {opacity:0} }
+@keyframes active-8 { 0%,60.6250% {opacity:0} 61.4583%,70.2083% {opacity:.85} 70.8333%,100% {opacity:0} }
+@keyframes active-9 { 0%,71.0417% {opacity:0} 71.8750%,84.7917% {opacity:.85} 85.4167%,100% {opacity:0} }
+@keyframes active-10 { 0%,85.6250% {opacity:0} 86.4583%,98.5417% {opacity:.85} 99.1667%,100% {opacity:0} }
+@keyframes reveal-command { 0%,7.5000% {opacity:0.16} 8.7500%,98.8% {opacity:1} 100% {opacity:0.16} }
+@keyframes reveal-command-arg { 0%,10.6250% {opacity:0.16} 11.8750%,98.8% {opacity:1} 100% {opacity:0.16} }
+@keyframes reveal-feature-rule { 0%,15.4167% {opacity:0.16} 16.6667%,98.8% {opacity:1} 100% {opacity:0.16} }
+@keyframes reveal-given { 0%,17.7083% {opacity:0.16} 18.9583%,98.8% {opacity:1} 100% {opacity:0.16} }
+@keyframes reveal-when { 0%,20.2083% {opacity:0.16} 21.4583%,98.8% {opacity:1} 100% {opacity:0.16} }
+@keyframes reveal-then { 0%,22.7083% {opacity:0.16} 23.9583%,98.8% {opacity:1} 100% {opacity:0.16} }
+@keyframes reveal-approved { 0%,32.0833% {opacity:0} 33.3333%,98.8% {opacity:1} 100% {opacity:0} }
+@keyframes reveal-discovery-app { 0%,36.8750% {opacity:0.16} 38.1250%,98.8% {opacity:1} 100% {opacity:0.16} }
+@keyframes reveal-discovery-pg { 0%,38.7500% {opacity:0.16} 40.0000%,98.8% {opacity:1} 100% {opacity:0.16} }
+@keyframes reveal-discovery-redis { 0%,40.6250% {opacity:0.16} 41.8750%,98.8% {opacity:1} 100% {opacity:0.16} }
+@keyframes reveal-file-1 { 0%,45.4167% {opacity:0.16} 46.6667%,98.8% {opacity:1} 100% {opacity:0.16} }
+@keyframes reveal-file-2 { 0%,47.5000% {opacity:0.16} 48.7500%,98.8% {opacity:1} 100% {opacity:0.16} }
+@keyframes reveal-file-3 { 0%,49.5833% {opacity:0.16} 50.8333%,98.8% {opacity:1} 100% {opacity:0.16} }
+@keyframes reveal-suite { 0%,54.1667% {opacity:0.16} 55.4167%,98.8% {opacity:1} 100% {opacity:0.16} }
+@keyframes reveal-impl-1 { 0%,62.0833% {opacity:0.16} 63.3333%,98.8% {opacity:1} 100% {opacity:0.16} }
+@keyframes reveal-impl-2 { 0%,64.5833% {opacity:0.16} 65.8333%,98.8% {opacity:1} 100% {opacity:0.16} }
+@keyframes reveal-impl-3 { 0%,67.0833% {opacity:0.16} 68.3333%,98.8% {opacity:1} 100% {opacity:0.16} }
+@keyframes reveal-sandbox { 0%,72.9167% {opacity:0.16} 74.1667%,98.8% {opacity:1} 100% {opacity:0.16} }
+@keyframes reveal-spawn-app { 0%,74.3750% {opacity:0.16} 75.6250%,98.8% {opacity:1} 100% {opacity:0.16} }
+@keyframes reveal-spawn-pg { 0%,76.2500% {opacity:0.16} 77.5000%,98.8% {opacity:1} 100% {opacity:0.16} }
+@keyframes reveal-spawn-redis { 0%,78.1250% {opacity:0.16} 79.3750%,98.8% {opacity:1} 100% {opacity:0.16} }
+@keyframes reveal-log-1 { 0%,78.7500% {opacity:0} 80.0000%,98.8% {opacity:1} 100% {opacity:0} }
+@keyframes reveal-log-2 { 0%,79.7917% {opacity:0} 81.0417%,98.8% {opacity:1} 100% {opacity:0} }
+@keyframes reveal-log-3 { 0%,80.8333% {opacity:0} 82.0833%,98.8% {opacity:1} 100% {opacity:0} }
+@keyframes reveal-log-4 { 0%,82.5000% {opacity:0} 83.7500%,98.8% {opacity:1} 100% {opacity:0} }
+@keyframes reveal-log-5 { 0%,83.9583% {opacity:0} 85.2083%,98.8% {opacity:1} 100% {opacity:0} }
+@keyframes reveal-run-passed { 0%,84.3750% {opacity:0} 85.6250%,98.8% {opacity:1} 100% {opacity:0} }
+@keyframes reveal-report { 0%,86.4583% {opacity:0} 87.7083%,98.8% {opacity:1} 100% {opacity:0} }
+@keyframes awaiting { 0%,25.6250% {opacity:0} 26.4583%,31.4583% {opacity:1} 32.0833%,100% {opacity:0} }
+@keyframes running { 0%,71.4583% {opacity:0} 72.2917%,83.3333% {opacity:1} 84.3750%,100% {opacity:0} }
+@keyframes report-enter { 0%,86.4583% {transform:translateY(10px)} 87.9167%,98.8% {transform:translateY(0)} 100% {transform:translateY(10px)} }
+@keyframes type-command { 0%,7.5000% {clip-path:inset(0 100% 0 0)} 9.3750%,98.8% {clip-path:inset(0 0 0 0)} 100% {clip-path:inset(0 100% 0 0)} }
+@keyframes type-command-arg { 0%,10.6250% {clip-path:inset(0 100% 0 0)} 12.5000%,98.8% {clip-path:inset(0 0 0 0)} 100% {clip-path:inset(0 100% 0 0)} }
+@keyframes type-feature-rule { 0%,15.4167% {clip-path:inset(0 100% 0 0)} 17.2917%,98.8% {clip-path:inset(0 0 0 0)} 100% {clip-path:inset(0 100% 0 0)} }
+@keyframes type-given { 0%,17.7083% {clip-path:inset(0 100% 0 0)} 19.5833%,98.8% {clip-path:inset(0 0 0 0)} 100% {clip-path:inset(0 100% 0 0)} }
+@keyframes type-when { 0%,20.2083% {clip-path:inset(0 100% 0 0)} 22.0833%,98.8% {clip-path:inset(0 0 0 0)} 100% {clip-path:inset(0 100% 0 0)} }
+@keyframes type-then { 0%,22.7083% {clip-path:inset(0 100% 0 0)} 24.5833%,98.8% {clip-path:inset(0 0 0 0)} 100% {clip-path:inset(0 100% 0 0)} }
+@media (prefers-reduced-motion:no-preference) { .flow { animation:flow 16s linear infinite; }
+.active-1 {animation:active-1 48s linear infinite;}
+.active-2 {animation:active-2 48s linear infinite;}
+.active-3 {animation:active-3 48s linear infinite;}
+.active-4 {animation:active-4 48s linear infinite;}
+.active-5 {animation:active-5 48s linear infinite;}
+.active-6 {animation:active-6 48s linear infinite;}
+.active-7 {animation:active-7 48s linear infinite;}
+.active-8 {animation:active-8 48s linear infinite;}
+.active-9 {animation:active-9 48s linear infinite;}
+.active-10 {animation:active-10 48s linear infinite;}
+.reveal-command {animation:reveal-command 48s linear infinite,type-command 48s steps(24,end) infinite;}
+.reveal-command-arg {animation:reveal-command-arg 48s linear infinite,type-command-arg 48s steps(24,end) infinite;}
+.reveal-feature-rule {animation:reveal-feature-rule 48s linear infinite,type-feature-rule 48s steps(24,end) infinite;}
+.reveal-given {animation:reveal-given 48s linear infinite,type-given 48s steps(24,end) infinite;}
+.reveal-when {animation:reveal-when 48s linear infinite,type-when 48s steps(24,end) infinite;}
+.reveal-then {animation:reveal-then 48s linear infinite,type-then 48s steps(24,end) infinite;}
+.reveal-approved {animation:reveal-approved 48s linear infinite;}
+.reveal-discovery-app {animation:reveal-discovery-app 48s linear infinite;}
+.reveal-discovery-pg {animation:reveal-discovery-pg 48s linear infinite;}
+.reveal-discovery-redis {animation:reveal-discovery-redis 48s linear infinite;}
+.reveal-file-1 {animation:reveal-file-1 48s linear infinite;}
+.reveal-file-2 {animation:reveal-file-2 48s linear infinite;}
+.reveal-file-3 {animation:reveal-file-3 48s linear infinite;}
+.reveal-suite {animation:reveal-suite 48s linear infinite;}
+.reveal-impl-1 {animation:reveal-impl-1 48s linear infinite;}
+.reveal-impl-2 {animation:reveal-impl-2 48s linear infinite;}
+.reveal-impl-3 {animation:reveal-impl-3 48s linear infinite;}
+.reveal-sandbox {animation:reveal-sandbox 48s linear infinite;}
+.reveal-spawn-app {animation:reveal-spawn-app 48s linear infinite;}
+.reveal-spawn-pg {animation:reveal-spawn-pg 48s linear infinite;}
+.reveal-spawn-redis {animation:reveal-spawn-redis 48s linear infinite;}
+.reveal-log-1 {animation:reveal-log-1 48s linear infinite;}
+.reveal-log-2 {animation:reveal-log-2 48s linear infinite;}
+.reveal-log-3 {animation:reveal-log-3 48s linear infinite;}
+.reveal-log-4 {animation:reveal-log-4 48s linear infinite;}
+.reveal-log-5 {animation:reveal-log-5 48s linear infinite;}
+.reveal-run-passed {animation:reveal-run-passed 48s linear infinite;}
+.reveal-report {animation:reveal-report 48s linear infinite,report-enter 48s ease-in-out infinite;}
+ .pending { animation:awaiting 48s linear infinite; }
+    .running { animation:running 48s linear infinite; }
+    }
+  </style>
+  <rect width="1120" height="1320" fill="#0F0F12"/>
+
+<path d="M362 146 H396" class="flow" stroke="#8B8B94" marker-end="url(#arrow-neutral)" />
+<path d="M722 146 H756" class="flow" stroke="#E67189" marker-end="url(#arrow-pink)" />
+<path d="M920 270 V344" class="flow" stroke="#E67189" marker-end="url(#arrow-pink)" />
+<path d="M758 470 H724" class="flow" stroke="#E67189" marker-end="url(#arrow-pink)" data-after="developer-approval"/>
+<path d="M398 470 H364" class="flow" stroke="#93C5FD" marker-end="url(#arrow-blue)" />
+<path d="M200 594 V668" class="flow" stroke="#93C5FD" marker-end="url(#arrow-blue)" />
+<path d="M362 786 H396" class="flow" stroke="#93C5FD" marker-end="url(#arrow-blue)" />
+<path d="M722 786 H756" class="flow" stroke="#93C5FD" marker-end="url(#arrow-blue)" />
+<path d="M920 902 V942 Q920 958 904 958 H396 Q380 958 380 974 V992" class="flow" stroke="#93C5FD" marker-end="url(#arrow-blue)" />
+<path d="M722 1150 H756" class="flow" stroke="#93C5FD" marker-end="url(#arrow-blue)" />
+<text x="666" y="983" class="small" text-anchor="middle">The test invocation starts the Sandbox</text>
+<g id="stage-01" data-stage="1" >
+<rect x="44" y="28" width="312" height="236" rx="18" class="panel" />
+<rect x="44" y="28" width="312" height="236" rx="18" class="active active-1" style="stroke:#EF9DAB" aria-hidden="true"/>
+<use href="#icon-person" x="64" y="48" width="24" height="24" style="color:#EF9DAB" aria-hidden="true"/>
+<text x="100" y="67" class="heading" >Developer brings spec</text>
+<text x="332" y="67" class="number" text-anchor="end">01</text>
+<use href="#icon-file" x="68" y="90" width="20" height="20" style="color:#EF9DAB" aria-hidden="true"/>
+<text x="98" y="106" class="filename" >create-new-product.md</text>
+<text x="68" y="149" class="body" >Create a product.</text>
+<text x="68" y="177" class="body" >Persist it in PostgreSQL.</text>
+<text x="68" y="205" class="small" >Cache it; retrieve without a DB read.</text>
+<g filter="url(#soft-lines)" opacity=".27" aria-hidden="true"><rect x="68" y="228" width="236" height="4" rx="2" fill="#8B8B94"/></g>
+</g>
+<g id="stage-02" data-stage="2" >
+<rect x="404" y="28" width="312" height="236" rx="18" class="panel" />
+<rect x="404" y="28" width="312" height="236" rx="18" class="active active-2" style="stroke:#93C5FD" aria-hidden="true"/>
+<use href="#icon-terminal" x="424" y="48" width="24" height="24" style="color:#93C5FD" aria-hidden="true"/>
+<text x="460" y="67" class="heading" >Run the CLI command</text>
+<text x="692" y="67" class="number" text-anchor="end">02</text>
+<rect x="424" y="88" width="272" height="126" rx="10" class="terminal-pane" fill="#0F0F12" stroke="#FFFFFF" stroke-opacity=".07"/>
+<text x="440" y="117" class="number" style="font-size:10px;letter-spacing:.8px">PROPOSED COMMAND</text>
+<text x="440" y="148" class="mono reveal-command" style="font-size:13px">$ blackbox spec feature draft</text>
+<text x="456" y="178" class="mono reveal-command-arg" style="font-size:13px;fill:#A1A1AA">create-new-product.md</text>
+<text x="428" y="241" class="small" >The agent takes the specification.</text>
+</g>
+<g id="stage-03" data-stage="3" >
+<rect x="764" y="28" width="312" height="236" rx="18" class="panel" />
+<rect x="764" y="28" width="312" height="236" rx="18" class="active active-3" style="stroke:#EF9DAB" aria-hidden="true"/>
+<use href="#icon-agent" x="784" y="48" width="24" height="24" style="color:#EF9DAB" aria-hidden="true"/>
+<text x="820" y="67" class="heading" >Agent drafts Feature</text>
+<text x="1052" y="67" class="number" text-anchor="end">03</text>
+<text x="788" y="104" class="filename" >new-product.feature</text>
+<text x="788" y="142" class="feature reveal-feature-rule" style="fill:#EF9DAB">Rule: Persist and cache</text>
+<text x="788" y="177" class="feature reveal-given" >Given a new product</text>
+<text x="788" y="205" class="feature reveal-when" >When it is created</text>
+<text x="788" y="233" class="feature reveal-then" >Then persist and cache it</text>
+</g>
+<g id="stage-04" data-stage="4" >
+<rect x="764" y="352" width="312" height="236" rx="18" class="panel" />
+<rect x="764" y="352" width="312" height="236" rx="18" class="active active-4" style="stroke:#EF9DAB" aria-hidden="true"/>
+<use href="#icon-person" x="784" y="372" width="24" height="24" style="color:#EF9DAB" aria-hidden="true"/>
+<text x="820" y="391" class="heading" >Ask for approval</text>
+<text x="1052" y="391" class="number" text-anchor="end">04</text>
+<text x="788" y="429" class="filename" >new-product.feature</text>
+<text x="788" y="467" class="small" >Developer reviews the scenarios.</text>
+<g class="pending"><circle cx="800" cy="517" r="9" fill="none" stroke="#EF9DAB" stroke-width="1.3"/><path d="M800 511v6l4 2" class="line" stroke="#EF9DAB"/>
+<text x="821" y="522" class="body" style="fill:#EF9DAB">Awaiting approval</text>
+</g>
+<g class="reveal-approved">
+<rect x="788" y="495" width="166" height="42" rx="10" class="approved-pill" fill="#86EFAC" fill-opacity=".07" stroke="#86EFAC" stroke-opacity=".35"/>
+<use href="#icon-check" x="800" y="504" width="24" height="24" style="color:#86EFAC" aria-hidden="true"/>
+<text x="834" y="522" class="body" style="fill:#86EFAC;font-weight:575">Approved</text>
+</g>
+<text x="788" y="563" class="small" >Accepted behavior drives the work.</text>
+</g>
+<g id="stage-05" data-stage="5" >
+<rect x="404" y="352" width="312" height="236" rx="18" class="panel" />
+<rect x="404" y="352" width="312" height="236" rx="18" class="active active-5" style="stroke:#93C5FD" aria-hidden="true"/>
+<use href="#icon-topology" x="424" y="372" width="24" height="24" style="color:#93C5FD" aria-hidden="true"/>
+<text x="460" y="391" class="heading" >Discover the system</text>
+<text x="692" y="391" class="number" text-anchor="end">05</text>
+<text x="428" y="429" class="small" >Find the services this spec involves.</text>
+<g class="reveal-discovery-app">
+<rect x="472" y="450" width="176" height="42" rx="10" class="node" />
+<text x="560.0" y="477" class="node-label" text-anchor="middle">product-service</text>
+</g>
+<path d="M560 492 V514 H481 V524 M560 514 H641 V524" class="line reveal-discovery-pg" stroke="#8B8B94"/>
+<g class="reveal-discovery-pg">
+<rect x="426" y="530" width="110" height="42" rx="10" class="node" />
+<use href="#icon-pg" x="438" y="540" width="22" height="22" style="color:#93C5FD" aria-hidden="true"/>
+<text x="469" y="557" class="node-label" >PG</text>
+</g>
+<g class="reveal-discovery-redis">
+<rect x="582" y="530" width="112" height="42" rx="10" class="node" />
+<use href="#icon-redis" x="594" y="540" width="22" height="22" style="color:#EF9DAB" aria-hidden="true"/>
+<text x="625" y="557" class="node-label" >Redis</text>
+</g>
+</g>
+<g id="stage-06" data-stage="6" >
+<rect x="44" y="352" width="312" height="236" rx="18" class="panel" />
+<rect x="44" y="352" width="312" height="236" rx="18" class="active active-6" style="stroke:#93C5FD" aria-hidden="true"/>
+<use href="#icon-box" x="64" y="372" width="24" height="24" style="color:#93C5FD" aria-hidden="true"/>
+<text x="100" y="391" class="heading" >Prepare infra + catalog</text>
+<text x="332" y="391" class="number" text-anchor="end">06</text>
+<g class="reveal-file-1">
+<use href="#icon-file" x="68" y="409" width="20" height="20" style="color:#93C5FD" aria-hidden="true"/>
+<text x="98" y="425" class="mono" style="fill:#93C5FD;font-size:14px">blackbox.config.yaml</text>
+</g>
+<g class="reveal-file-2">
+<use href="#icon-file" x="68" y="453" width="20" height="20" style="color:#93C5FD" aria-hidden="true"/>
+<text x="98" y="469" class="mono" style="fill:#93C5FD;font-size:14px">product-subsystem.yaml</text>
+</g>
+<g class="reveal-file-3">
+<use href="#icon-file" x="68" y="497" width="20" height="20" style="color:#93C5FD" aria-hidden="true"/>
+<text x="98" y="513" class="mono" style="fill:#93C5FD;font-size:14px">compose.test.yaml</text>
+</g>
+<text x="68" y="563" class="small" >Agent prepares startup and topology.</text>
+</g>
+<g id="stage-07" data-stage="7" >
+<rect x="44" y="676" width="312" height="220" rx="18" class="panel" />
+<rect x="44" y="676" width="312" height="220" rx="18" class="active active-7" style="stroke:#93C5FD" aria-hidden="true"/>
+<use href="#icon-code" x="64" y="696" width="24" height="24" style="color:#93C5FD" aria-hidden="true"/>
+<text x="100" y="715" class="heading" >Generate the suite</text>
+<text x="332" y="715" class="number" text-anchor="end">07</text>
+<text x="68" y="752" class="mono" style="font-size:13px">$ blackbox feature suite emit</text>
+<g class="reveal-suite">
+<text x="68" y="794" class="filename" style="fill:#93C5FD">new-product.spec.ts</text>
+<text x="68" y="832" class="small" >Feature → Rule → Scenario</text>
+<g filter="url(#soft-lines)" aria-hidden="true"><rect x="68" y="852" width="234" height="4" rx="2" class="bar"/><rect x="84" y="869" width="180" height="4" rx="2" class="bar"/></g>
+</g>
+</g>
+<g id="stage-08" data-stage="8" >
+<rect x="404" y="676" width="312" height="220" rx="18" class="panel" />
+<rect x="404" y="676" width="312" height="220" rx="18" class="active active-8" style="stroke:#EF9DAB" aria-hidden="true"/>
+<use href="#icon-agent" x="424" y="696" width="24" height="24" style="color:#EF9DAB" aria-hidden="true"/>
+<text x="460" y="715" class="heading" >Complete the test</text>
+<text x="692" y="715" class="number" text-anchor="end">08</text>
+<text x="428" y="752" class="small" >Agent implements the test gaps.</text>
+<g class="reveal-impl-1">
+<use href="#icon-check" x="425" y="772" width="22" height="22" style="color:#93C5FD" aria-hidden="true"/>
+<text x="455" y="789" class="small" style="fill:#F4F4F5">Arrange · fixtures</text>
+</g>
+<g class="reveal-impl-2">
+<use href="#icon-check" x="425" y="803" width="22" height="22" style="color:#93C5FD" aria-hidden="true"/>
+<text x="455" y="820" class="small" style="fill:#F4F4F5">Act · client calls</text>
+</g>
+<g class="reveal-impl-3">
+<use href="#icon-check" x="425" y="834" width="22" height="22" style="color:#93C5FD" aria-hidden="true"/>
+<text x="455" y="851" class="small" style="fill:#F4F4F5">Assert · outcomes + evidence</text>
+</g>
+<text x="428" y="878" class="small" style="font-size:13px">Keep the accepted Feature unchanged.</text>
+</g>
+<g id="stage-09" data-stage="9" >
+<rect x="764" y="676" width="312" height="220" rx="18" class="panel" />
+<rect x="764" y="676" width="312" height="220" rx="18" class="active active-9" style="stroke:#93C5FD" aria-hidden="true"/>
+<use href="#icon-terminal" x="784" y="696" width="24" height="24" style="color:#93C5FD" aria-hidden="true"/>
+<text x="820" y="715" class="heading" >Run system tests</text>
+<text x="1052" y="715" class="number" text-anchor="end">09</text>
+<text x="788" y="752" class="mono" style="font-size:13px">$ pnpm exec playwright test</text>
+<g class="pending running"><circle cx="799" cy="795" r="8" fill="none" stroke="#93C5FD" stroke-width="1.5" stroke-dasharray="30 20"/>
+<text x="818" y="800" class="body" style="fill:#93C5FD">Running…</text>
+</g>
+<g class="reveal-run-passed">
+<use href="#icon-check" x="787" y="782" width="24" height="24" style="color:#86EFAC" aria-hidden="true"/>
+<text x="821" y="800" class="body" style="fill:#86EFAC">2 scenarios passed</text>
+</g>
+<text x="788" y="844" class="small" >Watch logs and attempt evidence.</text>
+<text x="788" y="871" class="small" style="font-size:13px">Each attempt gets a fresh Sandbox.</text>
+</g>
+<g id="sandbox-execution" data-belongs-to-stage="9">
+<rect x="44" y="1000" width="672" height="292" rx="18" class="panel" />
+<rect x="44" y="1000" width="672" height="292" rx="18" class="active active-9" style="stroke:#93C5FD" aria-hidden="true"/>
+<use href="#icon-box" x="64" y="1020" width="24" height="24" style="color:#93C5FD" aria-hidden="true"/>
+<text x="100" y="1039" class="heading" >The Sandbox starts with the tests</text>
+<g class="reveal-sandbox">
+<rect x="64" y="1060" width="292" height="210" rx="12" class="sandbox-boundary" fill="none" stroke="#93C5FD" stroke-opacity=".32" stroke-dasharray="5 7"/>
+<text x="82" y="1088" class="number" style="fill:#93C5FD;font-size:11px">ISOLATED SANDBOX</text>
+<g class="reveal-spawn-app">
+<rect x="119" y="1110" width="182" height="42" rx="10" class="node" />
+<text x="210.0" y="1137" class="node-label" text-anchor="middle">product-service</text>
+</g>
+<path d="M210 1152 V1174 H131 V1192 M210 1174 H283 V1192" class="line reveal-spawn-pg" stroke="#8B8B94"/>
+<g class="reveal-spawn-pg">
+<rect x="80" y="1200" width="104" height="42" rx="10" class="node" />
+<use href="#icon-pg" x="92" y="1210" width="22" height="22" style="color:#93C5FD" aria-hidden="true"/>
+<text x="123" y="1227" class="node-label" >PG</text>
+</g>
+<g class="reveal-spawn-redis">
+<rect x="226" y="1200" width="110" height="42" rx="10" class="node" />
+<use href="#icon-redis" x="238" y="1210" width="22" height="22" style="color:#EF9DAB" aria-hidden="true"/>
+<text x="269" y="1227" class="node-label" >Redis</text>
+</g>
+</g>
+<rect x="380" y="1060" width="312" height="210" rx="12" class="log-pane" fill="#0F0F12" stroke="#FFFFFF" stroke-opacity=".07"/>
+<use href="#icon-terminal" x="399" y="1075" width="20" height="20" style="color:#8B8B94" aria-hidden="true"/>
+<text x="430" y="1091" class="small" >Live logs</text>
+<g class="reveal-log-1">
+<use href="#icon-check" x="397" y="1107" width="20" height="20" style="color:#86EFAC" aria-hidden="true"/>
+<text x="423" y="1123" class="mono" style="font-size:13px;fill:#A1A1AA">Sandbox ready</text>
+</g>
+<g class="reveal-log-2">
+<use href="#icon-check" x="397" y="1137" width="20" height="20" style="color:#86EFAC" aria-hidden="true"/>
+<text x="423" y="1153" class="mono" style="font-size:13px;fill:#A1A1AA">Product persisted</text>
+</g>
+<g class="reveal-log-3">
+<use href="#icon-check" x="397" y="1167" width="20" height="20" style="color:#86EFAC" aria-hidden="true"/>
+<text x="423" y="1183" class="mono" style="font-size:13px;fill:#A1A1AA">Redis populated</text>
+</g>
+<g class="reveal-log-4">
+<use href="#icon-check" x="397" y="1197" width="20" height="20" style="color:#86EFAC" aria-hidden="true"/>
+<text x="423" y="1213" class="mono" style="font-size:13px;fill:#A1A1AA">Cache hit · 0 DB reads</text>
+</g>
+<g class="reveal-log-5">
+<use href="#icon-check" x="397" y="1227" width="20" height="20" style="color:#86EFAC" aria-hidden="true"/>
+<text x="423" y="1243" class="mono" style="font-size:13px;fill:#A1A1AA">2 scenarios passed</text>
+</g>
+</g>
+<g id="stage-10" data-stage="10" >
+<rect x="764" y="1000" width="312" height="292" rx="18" class="panel" />
+<rect x="764" y="1000" width="312" height="292" rx="18" class="active active-10" style="stroke:#93C5FD" aria-hidden="true"/>
+<use href="#icon-browser" x="784" y="1020" width="24" height="24" style="color:#93C5FD" aria-hidden="true"/>
+<text x="820" y="1039" class="heading" >HTML report</text>
+<text x="1052" y="1039" class="number" text-anchor="end">10</text>
+<g class="report-window reveal-report">
+<rect x="784" y="1060" width="272" height="208" rx="12" class="browser-pane" fill="#0F0F12" stroke="#FFFFFF" stroke-opacity=".14"/>
+<path d="M784 1095 H1056" class="line" stroke="#FFFFFF" stroke-opacity=".1"/>
+<circle cx="799" cy="1078" r="2.4" fill="#8B8B94" opacity=".7"/>
+<circle cx="810" cy="1078" r="2.4" fill="#8B8B94" opacity=".7"/>
+<circle cx="821" cy="1078" r="2.4" fill="#8B8B94" opacity=".7"/>
+<text x="833" y="1082" class="mono" style="font-size:10px;fill:#A1A1AA">playwright-report/index.html</text>
+<text x="802" y="1133" class="heading" style="fill:#86EFAC;font-size:23px">2 passed</text>
+<text x="1038" y="1132" class="small" text-anchor="end">2 / 2</text>
+<use href="#icon-check" x="799" y="1152" width="22" height="22" style="color:#86EFAC" aria-hidden="true"/>
+<text x="828" y="1169" class="small" style="fill:#F4F4F5">Create a product</text>
+<use href="#icon-check" x="799" y="1184" width="22" height="22" style="color:#86EFAC" aria-hidden="true"/>
+<text x="828" y="1201" class="small" style="fill:#F4F4F5">Retrieve from cache</text>
+<path d="M802 1220 H1038" class="line" stroke="#FFFFFF" stroke-opacity=".1"/>
+<text x="802" y="1245" class="small" style="font-size:13px">Steps · logs · runtime evidence</text>
+</g>
+</g>
+</svg>
