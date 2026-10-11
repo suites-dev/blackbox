@@ -9,6 +9,13 @@
 
 <h1 align="center">Suites / Blackbox</h1>
 
+<p align="center">
+  <a href="docs/README.md">Docs</a> ·
+  <a href="#installation">Installation</a> ·
+  <a href="#quickstart">Quickstart</a> ·
+  <a href="docs/guides/README.md">Guides</a>
+</p>
+
 **A system testing framework for executable specifications and runtime verification, built for developers and coding
 agents.**
 
@@ -54,17 +61,39 @@ This also fits spec-driven development (SDD) workflows such as Spec Kit, Kiro, a
 clarification, planning, and implementation; Blackbox keeps the accepted behavior connected to executable checks
 and runtime evidence. [Specifications and SDD workflows](docs/integrations/README.md).
 
-## Installation | Let your coding agent run Blackbox
+## Installation
 
-Ask your coding agent to set up Blackbox in your repository, starting with:
+Follow the [installation guide](docs/playwright/connect-your-application.md#prepare-the-test-project) for the required
+packages and alpha prerequisites. With compatible Blackbox packages installed, add the agent skills from your
+test-project root:
 
-```bash
-$ npx @suites/blackbox-cli onboarding start
+```sh
+pnpm exec blackbox skills install blackbox --codex
+pnpm exec blackbox skills install discovery --codex
+pnpm exec blackbox skills install catalog --codex
 ```
 
-Blackbox provides a full skill system out of the box to let coding agents handle the operational work, from initial
-setup to execution, investigation, and verification. The skills provide the procedures and context, while Blackbox’s CLI
-returns structured feedback the agent can act on.
+Use `--claude` or `--cursor` instead for your agent. Blackbox's skill system supplies the procedures and context for
+setup, execution, investigation, and verification. The CLI returns structured feedback the agent can act on.
+
+## Quickstart
+
+Start with one accepted requirement. The example below uses product creation and retrieval: creating a product must
+persist it in PostgreSQL and populate Redis; retrieving a valid cached product must avoid a PostgreSQL read.
+
+Give your agent the path to your specification and a verification task:
+
+```text
+Use Blackbox to verify specs/create-product.md.
+Propose the behavioral checks for my review.
+Prepare the relevant system and the Playwright suite.
+Run the checks, show the HTML report, and explain the runtime evidence.
+If a check fails, repair the implementation and rerun against the same expectations.
+```
+
+Replace `specs/create-product.md` with your specification's path. The
+[full product-cache guide](docs/guides/verify-a-specification.md) covers the sample prerequisites, complete tests,
+and evidence checks; the [guides index](docs/guides/README.md) covers reporting, repair, and CI.
 
 ### Agent Onboarding
 
@@ -78,9 +107,10 @@ and supporting files.
   <sub>The agent derives runnable boundaries from the repository’s services and dependencies.</sub>
 </p>
 
-## From specification to executable tests
+### From specification to executable tests
 
-The original spec can live in Markdown, a ticket, an API contract, or an SDD workflow such as [Spec Kit](docs/integrations/spec-kit.md). **You keep ownership of the expected behavior.** The agent proposes concrete tests; you review them before using them to judge an implementation.
+The agent proposes concrete tests for the accepted rule. **You keep ownership of the expected behavior:** review
+the tests before using them to judge an implementation.
 
 <p align="center">
   <img width="790" src="docs/assets/guides/authoring-paths.svg" alt="One accepted specification leads to reviewed native Playwright tests or an optional Gherkin Feature. Both execute in a Blackbox Sandbox and share reports." />
@@ -165,7 +195,7 @@ cached-retrieval check.
 Generated suites preserve the Feature's nesting and steps and stay unedited. Native suites are
 project-owned code. Both run against the same system-testing model.
 
-## Run it. Inspect it. Repair it.
+### Run and inspect the verification
 
 Each Playwright attempt gets a fresh **Sandbox**. Blackbox starts the selected real application and
 its dependencies, readies clients, and releases the environment afterward. **Playwright runs the
