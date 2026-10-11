@@ -22,13 +22,10 @@ test.system({ kind: 'subsystem', id: 'payment-mock' }, (system) => {
         const { response, traceId } = await step.stimulus(
           'create a payment intent with a retained trace',
           async ({ headers }) => ({
-            response: await request.post(
-              new URL('/v1/payment_intents', sandbox.entrypoint.url).href,
-              {
-                headers,
-                data: { paymentMethodId: 'pm_retention', userId: 'retention' },
-              },
-            ),
+            response: await request.post('/v1/payment_intents', {
+              headers,
+              data: { paymentMethodId: 'pm_retention', userId: 'retention' },
+            }),
             traceId: headers.traceparent.split('-')[1],
           }),
         );

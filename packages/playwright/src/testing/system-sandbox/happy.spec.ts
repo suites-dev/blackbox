@@ -120,7 +120,7 @@ test.system('orders', (system) => {
         playwrightExpect(testInfo.project.use.baseURL).toBe(
           'http://127.0.0.1:1/static-native-base/',
         );
-        const response = await request.get(`${sandbox.entrypoint.url}/orders?source=native`);
+        const response = await request.get('/orders?source=native');
         playwrightExpect(response.ok()).toBe(true);
         playwrightExpect(await response.json()).toEqual({
           executionId: sandbox.executionId,
