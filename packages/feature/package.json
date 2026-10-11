@@ -48,6 +48,7 @@
     "@cucumber/gherkin": "42.0.1",
     "@cucumber/messages": "34.2.1",
     "@oclif/core": "^5.1.0",
+    "@suites/blackbox-catalog": "workspace:*",
     "@suites/blackbox-playwright": "workspace:*"
   },
   "devDependencies": {

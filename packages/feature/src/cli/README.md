@@ -10,9 +10,9 @@ but unavailable until its results contract is defined.
 
 ```sh
 blackbox feature step list
-blackbox feature file validate <feature> --clients <module>
-blackbox feature suite emit <feature> --clients <module> --output <spec.ts>
-blackbox feature suite validate <feature> --clients <module> --output <spec.ts>
+blackbox feature file validate <feature> --clients <module> [--config <blackbox.config.yaml>]
+blackbox feature suite emit <feature> --clients <module> --output <spec.ts> [--config <blackbox.config.yaml>]
+blackbox feature suite validate <feature> --clients <module> --output <spec.ts> [--config <blackbox.config.yaml>]
 npx playwright test <spec.ts>
 blackbox feature run verify <feature> --results <results.json>
 ```
@@ -23,6 +23,14 @@ suite. The client module supplies names and `defineClient(...)` definitions. It
 is a development-time input, not a JSON driver registry. The CLI currently recognizes directly named `export const` declarations and
 reports other export forms as missing bindings. The catalog remains the authority
 for Sandbox acquisition and instrumentation.
+
+Every Feature names exactly one catalog entry with a `@system:<id>` or
+`@subsystem:<id>` tag. The compiling commands load the nearest
+`blackbox.config.yaml` above the Feature, or the file given with `--config`, and
+reject a missing tag, an id the catalog does not have, or a tag whose kind differs
+from the entry's `kind`. Each diagnostic points at the tag, or at the `Feature:`
+line when the tag is missing, and a missing catalog is an error. `@sandbox:<name>`
+names the Playwright sandbox declaration and is not checked against the catalog.
 
 | Command                                                                  | Reads                                       | Writes or reports                                                                                                                                                                                                        |
 | ------------------------------------------------------------------------ | ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |

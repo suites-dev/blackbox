@@ -8,7 +8,7 @@ exports[`Feature compiler diagnostics > rejects malformed Gherkin, invalid JSON,
       {
         "code": "FEATURE_JSON_INVALID",
         "column": 5,
-        "line": 3,
+        "line": 4,
         "message": "Doc String must contain valid JSON.",
       },
     ],
@@ -31,7 +31,7 @@ exports[`Feature compiler diagnostics > rejects malformed Gherkin, invalid JSON,
       {
         "code": "CLIENT_UNKNOWN",
         "column": 5,
-        "line": 3,
+        "line": 4,
         "message": "Step refers to unbound client "api".",
       },
     ],
@@ -249,7 +249,7 @@ exports[`Feature compiler snapshots > compiles the E2E subscription Outline with
 "import { expect, test } from '@suites/blackbox-playwright';
 import { api as client_api } from "..\\u002Fclients.js";
 
-test.system({ kind: 'subsystem', id: "subscription-system" }, (system) => {
+test.system({ kind: 'system', id: "subscription-system" }, (system) => {
   system.sandbox("default", { clients: { "api": client_api } }, (suite) => {
     suite.describe("Feature: Subscription activation", () => {
       suite.describe("Rule: Local-only subscriptions retain no payment or order state", () => {

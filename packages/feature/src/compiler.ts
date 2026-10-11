@@ -4,6 +4,7 @@
 /* eslint-disable max-lines -- Keep one compiler pass together while its public output contract is new. */
 import type {
   Background,
+  Feature,
   GherkinDocument,
   Rule,
   Scenario,
@@ -24,10 +25,22 @@ export interface FeatureDiagnostic {
   readonly column: number;
 }
 
+export interface FeatureCatalogEntry {
+  readonly id: string;
+  readonly kind: 'system' | 'subsystem';
+}
+
+/** The catalog entries a Feature's `@system:` or `@subsystem:` tag must name. */
+export interface FeatureCatalog {
+  readonly source: string;
+  readonly entries: readonly FeatureCatalogEntry[];
+}
+
 export interface CompileFeatureOptions {
   readonly source: string;
   readonly uri?: string;
   readonly clients: Readonly<Record<string, FeatureClientBinding>>;
+  readonly catalog: FeatureCatalog;
 }
 
 export interface CompileFeatureResult {
@@ -83,6 +96,7 @@ export function compileFeature(options: CompileFeatureOptions): CompileFeatureRe
   if (!feature) {return { code: '', diagnostics: [diagnostic('FEATURE_EMPTY', 'No Feature was found.', 1, 1)] };}
 
   const context: CompilerContext = { options, diagnostics: [], counter: 0, lastResponse: null };
+  const system = resolveSystem(feature, options.catalog, context);
   validateClientBindings(options.clients, context);
   if (!feature.children.some((child) => Boolean(child.scenario ?? child.rule?.children.some((nested) => nested.scenario)))) {
     context.diagnostics.push(diagnostic('FEATURE_SCENARIO_MISSING', 'Feature must contain at least one Scenario.', 1, 1));
@@ -101,14 +115,10 @@ export function compileFeature(options: CompileFeatureOptions): CompileFeatureRe
     else if (child.scenario) {declarations.push(...emitScenario(child.scenario, context));}
   }
 
-  if (context.diagnostics.length > 0) {return { code: '', diagnostics: context.diagnostics };}
+  if (context.diagnostics.length > 0 || !system) {return { code: '', diagnostics: context.diagnostics };}
   const tags = feature.tags.map((tag) => tag.name).filter((tag) => !tag.startsWith('@subsystem:') && !tag.startsWith('@system:') && !tag.startsWith('@sandbox:'));
-  const systemTag = feature.tags.find((tag) => tag.name.startsWith('@system:'));
-  const subsystemTag = feature.tags.find((tag) => tag.name.startsWith('@subsystem:'));
-  const systemKind = systemTag ? 'system' : 'subsystem';
-  const systemId = systemTag ? systemTag.name.slice(8) : subsystemTag ? subsystemTag.name.slice(11) : feature.name;
   const sandbox = feature.tags.find((tag) => tag.name.startsWith('@sandbox:'))?.name.slice(9) ?? 'default';
-  const systemSelector = `{ kind: '${systemKind}', id: ${quote(systemId)} }`;
+  const systemSelector = `{ kind: '${system.kind}', id: ${quote(system.id)} }`;
   const clientNames = Object.keys(options.clients).sort();
   const clientProperties = clientNames.map((name) => `${quote(name)}: ${localName(name)}`).join(', ');
   const imports = clientNames.map((name) => {
@@ -138,6 +148,35 @@ interface CompilerContext {
   readonly diagnostics: FeatureDiagnostic[];
   counter: number;
   lastResponse: string | null;
+}
+
+/** Resolve the Feature's system tag against the catalog; the Feature title is never a system id. */
+function resolveSystem(feature: Feature, catalog: FeatureCatalog, context: CompilerContext): FeatureCatalogEntry | null {
+  const tags = feature.tags.filter((tag) => tag.name.startsWith('@system:') || tag.name.startsWith('@subsystem:'));
+  const [tag, duplicate] = tags;
+  if (!tag) {
+    context.diagnostics.push(diagnostic('FEATURE_SYSTEM_MISSING', `Feature needs a @system:<id> or @subsystem:<id> tag naming an entry in ${catalog.source}.`, feature.location.line, feature.location.column ?? 1));
+    return null;
+  }
+  if (duplicate) {
+    context.diagnostics.push(diagnostic('FEATURE_SYSTEM_DUPLICATE', `Feature names more than one system: ${tags.map(({ name }) => name).join(', ')}.`, duplicate.location.line, duplicate.location.column ?? 1));
+    return null;
+  }
+  const kind = tag.name.startsWith('@system:') ? 'system' : 'subsystem';
+  const id = tag.name.slice(kind.length + 2);
+  const { line } = tag.location;
+  const column = tag.location.column ?? 1;
+  const entry = catalog.entries.find((candidate) => candidate.id === id);
+  if (!entry) {
+    const known = [...catalog.entries].sort((left, right) => left.id.localeCompare(right.id)).map((candidate) => `${candidate.id} (${candidate.kind})`);
+    context.diagnostics.push(diagnostic('FEATURE_SYSTEM_UNKNOWN', `Unknown ${kind} ${JSON.stringify(id)}: ${catalog.source} has no such entry. Catalog entries: ${known.join(', ') || 'none'}.`, line, column));
+    return null;
+  }
+  if (entry.kind !== kind) {
+    context.diagnostics.push(diagnostic('FEATURE_SYSTEM_KIND', `${JSON.stringify(id)} is a ${entry.kind} in ${catalog.source}; tag it @${entry.kind}:${id}.`, line, column));
+    return null;
+  }
+  return entry;
 }
 
 function validateClientBindings(clients: CompileFeatureOptions['clients'], context: CompilerContext): void {

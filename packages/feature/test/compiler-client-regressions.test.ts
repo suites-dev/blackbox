@@ -1,13 +1,15 @@
 import { expect, it } from 'vitest';
 import * as ts from 'typescript';
 import { compileFeature } from '../src/index.js';
+import { catalog } from './fixtures/catalog.js';
 
 const clients = { api: { from: '../clients.js', export: 'api' } } as const;
 
 it('retains the inline received response for the next JSON assertion', () => {
-  const result = compileFeature({
+  const result = compileFeature({ catalog,
     clients,
-    source: `Feature: response scope
+    source: `@subsystem:orders
+Feature: response scope
   Scenario: inline status retains the latest response
     When client "api" sends GET "/first"
     And client "api" sends GET "/second" and received 200
@@ -26,9 +28,10 @@ it('retains the inline received response for the next JSON assertion', () => {
 });
 
 it('interpolates Example headers with hyphens as bracket properties', () => {
-  const result = compileFeature({
+  const result = compileFeature({ catalog,
     clients,
-    source: `Feature: unusual example headers
+    source: `@subsystem:orders
+Feature: unusual example headers
   Scenario Outline: fetch a user
     When client "api" sends GET "/users/<user-id>"
     Then the response status is 200
@@ -44,12 +47,14 @@ it('interpolates Example headers with hyphens as bracket properties', () => {
   const row = 'declare const row: Record<string, string>;';
   expect(semanticDiagnostics(`${row}\nconst path = \`/users/\${row["user-id"]}\`;`)).toEqual([]);
   expect(semanticDiagnostics(`${row}\nconst path = \`/users/\${row.user-id}\`;`)).not.toEqual([]);
-});
+  // The first TypeScript program in a worker loads the standard library cold; under a full parallel run that exceeds the 5 s default.
+}, 30_000);
 
 it('preserves dollar characters in unusual Example headers', () => {
-  const result = compileFeature({
+  const result = compileFeature({ catalog,
     clients,
-    source: `Feature: dollar example header
+    source: `@subsystem:orders
+Feature: dollar example header
   Scenario Outline: fetch a user
     When client "api" sends GET "/users/<$$>"
     Then the response status is 200

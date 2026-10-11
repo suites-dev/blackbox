@@ -407,7 +407,8 @@ claim that SDK registration alone supplies causally scoped application evidence.
 
 `e2e/features/order-pricing.feature` covers Feature and Rule Backgrounds, an
 ordinary Scenario, an Outline, Examples, tags, JSON Doc Strings, and a Data Table.
-Here `@subsystem:orders` and `@sandbox:default` are proposed compiler selectors;
+Here `@subsystem:orders` names the catalog entry the compiler checks and
+`@sandbox:default` the sandbox declaration;
 `@sync` and `@validation` are ordinary native report/filter tags.
 
 ```gherkin
