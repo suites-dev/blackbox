@@ -108,10 +108,10 @@ reasons. Setup failure also attempts cleanup before surfacing the error.
 
 - `clients` exposes the typed clients registered in the Sandbox declaration.
 - `step` creates a native Playwright step with context bound to this attempt.
-  `step.stimulus('place order', ({ headers }) => clients.api.post('/orders',
-  { data: order, headers }))` marks an owned action. Ordinary `step(...)` remains
-  useful for setup and inspection. A custom transport can pass the same headers
-  at its entrypoint; Blackbox cannot inject them into arbitrary SDK calls.
+  `step.stimulus(...)` marks an owned action and supplies propagation headers.
+  Ordinary `step(...)` remains useful for setup and inspection. A custom
+  transport can pass the same headers at its entrypoint; Blackbox cannot inject
+  them into arbitrary SDK calls.
 - `request` remains Playwright's `APIRequestContext`; its relative HTTP URLs go
   to this attempt's Sandbox entrypoint. Absolute URLs and root hooks retain their
   native behavior. For non-HTTP entrypoints, supply an absolute HTTP URL or use
