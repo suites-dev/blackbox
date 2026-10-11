@@ -105,7 +105,28 @@ function invalidEnvironment(): void {
   });
 }
 
+function directSandboxMisuse(): void {
+  test.system.sandbox('orders', async (suite) => {
+    suite.test('async direct guard bypass probe', () => undefined);
+    await Promise.resolve();
+  });
+}
+
+function nestedDirectSandbox(): void {
+  test.system.sandbox('orders', () => {
+    test.system.sandbox('nested', (suite) => {
+      suite.test('nested direct guard bypass probe', () => undefined);
+    });
+  });
+}
+
 switch (process.env.BLACKBOX_SYSTEM_SANDBOX_SCENARIO) {
+  case 'async-direct-sandbox':
+    directSandboxMisuse();
+    break;
+  case 'nested-direct-sandbox':
+    nestedDirectSandbox();
+    break;
   case 'nested-sandbox':
     nestedSandbox();
     break;

@@ -17,7 +17,17 @@ const playwrightCli = join(playwrightTestPackage, 'cli.js');
 const typescriptCli = fileURLToPath(new URL('../bin/tsc', import.meta.resolve('typescript')));
 
 const validSpec = `
-import { expect, test } from '@suites/blackbox-playwright';
+import { defineClient, defineClients, expect, test, type ClientRegistry } from '@suites/blackbox-playwright';
+
+const clients = defineClients({
+  redis: defineClient({}, {
+    target: { participant: 'redis', containerPort: 6379 },
+    env: [],
+    create: () => ({ get: async (key: string): Promise<string | null> => key }),
+    ready: () => undefined,
+    dispose: () => undefined,
+  }),
+}) satisfies ClientRegistry;
 
 const extended = test.extend<{ readonly tenant: string }>({
   tenant: async ({}, use) => {
@@ -45,6 +55,25 @@ extended.system('orders', (system) => {
       });
     });
   });
+});
+
+extended.system.sandbox({ kind: 'subsystem', id: 'product-service' }, { clients }, (suite) => {
+  suite.beforeEach(async ({ clients, tenant }) => {
+    const value: string | null = await clients.redis.get(tenant);
+    void value;
+  });
+  suite.afterEach(({ clients }) => void clients.redis.get('after'));
+  suite.test('Scenario: typed registered clients', async ({ clients, request, tenant }) => {
+    const value: string | null = await clients.redis.get(tenant);
+    // @ts-expect-error registry names remain exact
+    clients.postgres;
+    // @ts-expect-error raw Redis values are not HTTP responses
+    value.json();
+    void request;
+  });
+});
+test.system.sandbox('plain', (suite) => {
+  suite.test('Scenario: default sandbox shorthand', ({ sandbox }) => void sandbox);
 });
 `;
 
@@ -172,7 +201,16 @@ test('independent Playwright consumer compiles and discovers a journey', async (
     listed.stdout,
     /system "orders" › sandbox "isolated" › Rule: independent Playwright consumer › Scenario: inferred fixtures are available/u,
   );
-  assert.match(listed.stdout, /Total: 1 test in 1 file/u);
+  assert.match(listed.stdout, /Total: 3 tests in 1 file/u);
+
+  assert.match(
+    listed.stdout,
+    /subsystem "product-service" › sandbox "default" › Scenario: typed registered clients/u,
+  );
+  assert.match(
+    listed.stdout,
+    /system "plain" › sandbox "default" › Scenario: default sandbox shorthand/u,
+  );
 
   const consumerSources = await Promise.all(
     [

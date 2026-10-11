@@ -87,6 +87,16 @@ it('does not subtract near-half acquisition time from the native body timeout', 
 it.each([
   {
     file: 'illegal-nesting.spec.ts',
+    scenario: 'async-direct-sandbox',
+    message: /system\.sandbox callback must be synchronous/u,
+  },
+  {
+    file: 'illegal-nesting.spec.ts',
+    scenario: 'nested-direct-sandbox',
+    message: /test\.system declarations cannot be nested/u,
+  },
+  {
+    file: 'illegal-nesting.spec.ts',
     scenario: 'nested-sandbox',
     message: /sandbox declarations cannot be nested/u,
   },

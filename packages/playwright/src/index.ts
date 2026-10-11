@@ -3,5 +3,11 @@ export { test } from './fixtures.js';
 export type { EffectContractBuilder } from './effects/contract.js';
 export type { BlackboxEffects, BlackboxSandbox, BlackboxTelemetry } from './types.js';
 
+export { defineClients } from './clients/registry.js';
 export { defineClient } from './clients/clients.js';
-export type { ClientDefinition, ClientTarget, RegisteredClients } from './clients/types.js';
+export type {
+  ClientDefinition,
+  ClientRegistry,
+  ClientTarget,
+  RegisteredClients,
+} from './clients/types.js';

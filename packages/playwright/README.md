@@ -46,6 +46,27 @@ export default defineConfig({
 ```
 
 Then [write a native test](../../docs/playwright/README.md#add-clients-and-a-test).
+Use `test.system.sandbox(selection, callback)` for one default-named configuration
+or `test.system.sandbox(selection, { clients, environment }, callback)` to supply options:
+
+```ts
+import { defineClients, test } from '@suites/blackbox-playwright';
+import { redis } from './.blackbox/clients/redis.js';
+
+const clients = defineClients({ redis });
+test.system.sandbox({ kind: 'subsystem', id: 'product-service' }, { clients }, (suite) => {
+  suite.test('reads stored data', async ({ clients }) => {
+    const value = await clients.redis.get('product:1');
+    // value retains the Redis SDK return type.
+  });
+});
+```
+
+`defineClients` captures and freezes the registry names while retaining each SDK
+type. Client definitions retain their existing readiness and disposal lifecycle.
+The explicit registry can be reused across declarations. Named configuration groups
+continue to use the nested API below.
+
 Register your SDK clients in `system.sandbox(...)`; Blackbox readies them before
 per-test hooks and disposes them during cleanup. The [async guide](../../docs/guides/testing-async-flows.md)
 contains a complete Redis-to-PostgreSQL example.
