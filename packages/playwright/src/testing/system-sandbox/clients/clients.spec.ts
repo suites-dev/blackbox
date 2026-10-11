@@ -1,20 +1,15 @@
-import { setTimeout as delay } from 'node:timers/promises';
-
 import { expect } from '@playwright/test';
-import { defineClients } from '../../../clients/registry.js';
+import * as clients from './api.js';
+import { events, scenario } from './state.js';
 import type {
   BlackboxNativeTestArgs,
   BlackboxNativeWorkerArgs,
   BlackboxSandboxSuite,
 } from '../../../types.js';
-import { defineClient } from '../../../clients/clients.js';
 import { createBlackboxSystemTest } from '../../../fixtures.js';
 import { currentStepContext } from '../../../steps/step-context.js';
 import { record, startRespondingAttempt } from '../runtime.fixture.js';
 
-const failReadiness = process.env.BLACKBOX_SYSTEM_SANDBOX_SCENARIO === 'client-readiness-failure';
-const scenario = process.env.BLACKBOX_SYSTEM_SANDBOX_SCENARIO;
-const events: string[] = [];
 const test = createBlackboxSystemTest({
   async start(input) {
     const attempt = await startRespondingAttempt(input);
@@ -49,49 +44,6 @@ const test = createBlackboxSystemTest({
     };
   },
 });
-const api = defineClient(
-  {},
-  {
-    target: { participant: 'api', containerPort: 3000 },
-    env: ['TOKEN'] as const,
-    create: async (_sdk, { endpoint, env }) => {
-      expect(env.TOKEN).toBe('secret');
-      if (scenario === 'client-create-late') {
-        events.push('create:start');
-        await delay(400);
-        events.push('create:finish');
-      } else {
-        events.push('create');
-      }
-      return { url: endpoint.url };
-    },
-    ready: () => {
-      events.push('ready');
-      if (scenario === 'client-readiness-timeout') {
-        return new Promise<void>(() => undefined);
-      }
-      if (scenario === 'client-healthy-short-timeout') {
-        return delay(20);
-      }
-      if (failReadiness) {
-        throw new Error('client readiness deliberately failed');
-      }
-      return undefined;
-    },
-    dispose: () => {
-      if (scenario === 'client-readiness-timeout' || scenario === 'client-create-late') {
-        events.push('dispose:start');
-        const disposal = scenario === 'client-readiness-timeout' ? delay(400) : Promise.resolve();
-        return disposal.then(() => {
-          events.push('dispose:finish');
-        });
-      }
-      events.push('dispose');
-      return undefined;
-    },
-  },
-);
-const clients = defineClients({ api });
 function declareSuite(
   suite: BlackboxSandboxSuite<
     BlackboxNativeTestArgs & { readonly clients: { readonly api: { readonly url: string } } },

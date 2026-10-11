@@ -1,6 +1,6 @@
 import { expect, test } from '@suites/blackbox-playwright';
 
-import { paymentClients } from '../../.blackbox/clients/registry.js';
+import * as clients from '../../.blackbox/clients/payment-mock.js';
 
 import {
   blackboxEnvironment,
@@ -31,7 +31,7 @@ const emptyPaymentState = { paymentIntents: [], refunds: [] } satisfies PaymentS
 
 test.system.sandbox(
   { kind: 'subsystem', id: 'payment-mock' },
-  { environment: blackboxEnvironment, clients: paymentClients },
+  { environment: blackboxEnvironment, clients },
   (suite) => {
     suite.describe('Rule: accepted payments are retained as succeeded intents', () => {
       suite.test(

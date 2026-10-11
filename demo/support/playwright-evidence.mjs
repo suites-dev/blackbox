@@ -108,7 +108,7 @@ export async function boundary(consumerRootValue) {
     '.blackbox/clients/payment-mock.ts',
     '.blackbox/clients/redis.ts',
     '.blackbox/clients/postgres.ts',
-    '.blackbox/clients/registry.ts',
+    '.blackbox/clients/index.ts',
     '.blackbox/clients/package.json',
     '.blackbox/instrumentation/instrumentation.js',
     '.blackbox/instrumentation/package.json',

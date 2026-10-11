@@ -50,10 +50,9 @@ Use `test.system.sandbox(selection, callback)` for one default-named configurati
 or `test.system.sandbox(selection, { clients, environment }, callback)` to supply options:
 
 ```ts
-import { defineClients, test } from '@suites/blackbox-playwright';
-import { redis } from './.blackbox/clients/redis.js';
+import { test } from '@suites/blackbox-playwright';
+import * as clients from './.blackbox/clients/index.js';
 
-const clients = defineClients({ redis });
 test.system.sandbox({ kind: 'subsystem', id: 'product-service' }, { clients }, (suite) => {
   suite.test('reads stored data', async ({ clients }) => {
     const value = await clients.redis.get('product:1');
@@ -62,10 +61,11 @@ test.system.sandbox({ kind: 'subsystem', id: 'product-service' }, { clients }, (
 });
 ```
 
-`defineClients` captures and freezes the registry names while retaining each SDK
-type. Client definitions retain their existing readiness and disposal lifecycle.
-The explicit registry can be reused across declarations. Named configuration groups
-continue to use the nested API below.
+Export named `defineClient(...)` definitions from ordinary modules and pass the
+module namespace as `{ clients }`. A normal export barrel can collect several
+participant clients. Each handle retains its SDK type, readiness and disposal
+lifecycle; import only the participants available in the selected sandbox.
+Named configuration groups continue to use the nested API below.
 
 Register your SDK clients in `system.sandbox(...)`; Blackbox readies them before
 per-test hooks and disposes them during cleanup. The [async guide](../../docs/guides/testing-async-flows.md)

@@ -1,9 +1,9 @@
 import { expect, type BlackboxSandbox, type RegisteredClients } from '@suites/blackbox-playwright';
 
-import type { subscriptionClients } from '../../.blackbox/clients/registry.js';
+import type * as clientDefinitions from '../../.blackbox/clients/index.js';
 import type { SubscriptionRow } from './subscription-state.js';
 
-type SubscriptionClients = RegisteredClients<typeof subscriptionClients>;
+type SubscriptionClients = RegisteredClients<typeof clientDefinitions>;
 
 export function expectClientSandboxEndpoints(
   clients: SubscriptionClients,

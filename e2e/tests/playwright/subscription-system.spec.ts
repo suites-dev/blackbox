@@ -1,6 +1,6 @@
 import { expect, test } from '@suites/blackbox-playwright';
 
-import { subscriptionClients } from '../../.blackbox/clients/registry.js';
+import * as clients from '../../.blackbox/clients/index.js';
 import { expectClientSandboxEndpoints, expectPersistedSubscription } from './persisted-state.js';
 
 import {
@@ -21,7 +21,7 @@ interface SubscriptionResult {
 
 test.system.sandbox(
   'subscription-system',
-  { environment: blackboxEnvironment, clients: subscriptionClients },
+  { environment: blackboxEnvironment, clients },
   (suite) => {
     suite.beforeEach(({ clients, sandbox }) => {
       expectClientSandboxEndpoints(clients, sandbox);

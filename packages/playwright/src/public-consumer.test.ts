@@ -16,18 +16,21 @@ const playwrightTestPackage = join(playwrightPackage, 'node_modules/@playwright/
 const playwrightCli = join(playwrightTestPackage, 'cli.js');
 const typescriptCli = fileURLToPath(new URL('../bin/tsc', import.meta.resolve('typescript')));
 
-const validSpec = `
-import { defineClient, defineClients, expect, test, type ClientRegistry } from '@suites/blackbox-playwright';
-
-const clients = defineClients({
-  redis: defineClient({}, {
+const clientModule = `
+import { defineClient } from '@suites/blackbox-playwright';
+export const redis = defineClient({}, {
     target: { participant: 'redis', containerPort: 6379 },
     env: [],
     create: () => ({ get: async (key: string): Promise<string | null> => key }),
     ready: () => undefined,
     dispose: () => undefined,
-  }),
-}) satisfies ClientRegistry;
+  });
+
+`;
+
+const validSpec = `
+import { expect, test } from '@suites/blackbox-playwright';
+import * as clients from './clients/index.js';
 
 const extended = test.extend<{ readonly tenant: string }>({
   tenant: async ({}, use) => {
@@ -67,6 +70,8 @@ extended.system.sandbox({ kind: 'subsystem', id: 'product-service' }, { clients 
     const value: string | null = await clients.redis.get(tenant);
     // @ts-expect-error registry names remain exact
     clients.postgres;
+    // @ts-expect-error Redis handles retain their SDK methods
+    clients.redis.post('/products');
     // @ts-expect-error raw Redis values are not HTTP responses
     value.json();
     void request;
@@ -152,12 +157,18 @@ async function createConsumer(context: TestContext): Promise<string> {
   context.onTestFinished(async () => rm(project, { recursive: true, force: true }));
   const suites = join(project, 'node_modules/@suites');
   const playwright = join(project, 'node_modules/@playwright');
-  await Promise.all([mkdir(suites, { recursive: true }), mkdir(playwright, { recursive: true })]);
+  await Promise.all([
+    mkdir(suites, { recursive: true }),
+    mkdir(playwright, { recursive: true }),
+    mkdir(join(project, 'clients'), { recursive: true }),
+  ]);
   await Promise.all([
     symlink(playwrightPackage, join(suites, 'blackbox-playwright'), 'dir'),
     symlink(playwrightTestPackage, join(playwright, 'test'), 'dir'),
     writeFile(join(project, 'package.json'), JSON.stringify({ name: 'consumer', type: 'module' })),
     writeFile(join(project, 'journey.spec.ts'), validSpec),
+    writeFile(join(project, 'clients/redis.ts'), clientModule),
+    writeFile(join(project, 'clients/index.ts'), "export { redis } from './redis.js';\n"),
     writeFile(join(project, 'types-negative.ts'), negativeTypes),
     writeFile(join(project, 'playwright.config.ts'), validConfig),
     writeFile(join(project, 'invalid-reporter.config.ts'), invalidReporterConfig),
