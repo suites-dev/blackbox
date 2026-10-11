@@ -1,36 +1,201 @@
-# Blackbox effects (experimental)
+# Blackbox Effects
 
-`@suites/blackbox-effects` is a **private, experimental** package. It defines the
-shape of one record of the effects a single test attempt or Capsule activity
-produced, so two runs can be compared without reading an HTML report.
+`@suites/blackbox-effects` turns OpenTelemetry trace exports into immutable effects
+and evaluates behavioral contracts. It also builds a separate experimental `v0`
+record of effects produced by one Playwright attempt or Capsule activity. The
+projection and evaluation API has no runtime dependencies and works without
+Playwright, a collector, or a Blackbox sandbox.
 
-The schema is `v0` and can change without notice. This skeleton only builds and
-serializes a record; it does not read telemetry or normalize spans yet. Tracking
-issue: [#187](https://github.com/suites-dev/blackbox/issues/187).
+This alpha package accepts decoded OTLP JSON trace export payloads. The caller
+chooses which observations belong together and supplies their scope identifier.
 
-An effect is a normalized operation observed at a boundary (an HTTP request, a
-database operation, a cache call or a message), counted over the record's scope.
-The record states its completeness once. A missing effect only means "not
-observed" when the record is `complete` and the observation covers that boundary.
+```ts
+import { readFile } from 'node:fs/promises';
+import { compileEffectContract, evaluateEffects, projectEffects } from '@suites/blackbox-effects';
 
-## How this relates to what exists
+const payload = JSON.parse(await readFile('./traces.json', 'utf8'));
+const graph = projectEffects({
+  format: 'otlp-json',
+  scopeId: 'checkout-42',
+  payloads: [payload],
+});
+const contract = compileEffectContract((e) => [
+  e.exists(e.db({ operation: 'INSERT' })),
+  e.exists(e.message({ operation: 'send', destination: 'orders' })),
+]);
+const assessment = evaluateEffects(graph, contract);
 
-- `packages/playwright/src/effects` holds the effects **contract**: what a test
-  _expects_ (counts and order). This package holds what a run _produced_. The kinds
-  are the same list (`EFFECT_KINDS`); a test checks the schema against it, but the
-  two lists are copies and can still drift apart.
-- The Capsule report keeps a bounded, redacted view of spans for people to read.
-  This record is meant for comparison between runs, and starts from the retained
-  telemetry, not from the report.
-- It is a separate package so that both Playwright and Capsule inputs can feed it
-  without either depending on the other. If the schema settles, folding it into one
-  of them is a possible later step.
+console.log(graph.effects);
+console.log(assessment.status, assessment.findings);
+```
 
-## Known open questions
+The assessment passes when both operations are observed with matching fields.
+Missing evidence remains `inconclusive`. An effect records an observed operation;
+checking durable database or cache state requires a separate read from that system.
 
-- What identifies an effect (`kind`, `operation`, `target`, `outcome` is a first
-  guess). Real data decides this.
-- The record is count-based and throws order away. The contract can already say
-  "A before B".
-- Effect `target` for databases may be empty while the report does not keep
-  statements.
+## Public API
+
+| Function                | Input                                        | Output                                                                                  |
+| ----------------------- | -------------------------------------------- | --------------------------------------------------------------------------------------- |
+| `projectEffects`        | `{ format: 'otlp-json', scopeId, payloads }` | `EffectGraph` with effects, source span identities, relations, and coverage diagnostics |
+| `compileEffectContract` | Builder callback returning constraints       | Canonical, serializable `EffectContract`                                                |
+| `evaluateEffects`       | Graph and contract                           | `EffectAssessment` with status and per-constraint findings, reasons, and evidence IDs   |
+
+The package also exports `effectContractBuilder` and the graph, selector, builder,
+contract, and assessment types through its root entrypoint. Its internal modules
+are not public entrypoints.
+
+All three functions are synchronous. They snapshot their inputs and deeply freeze
+their outputs without freezing caller-owned data. Invalid JSON shapes, conflicting
+observations, or malformed graph/contract structures throw `TypeError`. Valid
+observations with missing semantic evidence produce uncertainty instead.
+
+`projectEffects` accepts inert decoded telemetry. It rejects enumerable accessors,
+accessor array elements, and proxies without invoking their getters or traps.
+Parse serialized OTLP JSON before projection; application objects are not telemetry.
+Trusted contract construction retains its existing accessor snapshot behavior.
+Duplicate trace/span identities must also agree on resource, instrumentation scope
+and schema metadata. Conflicting provenance rejects the projection atomically;
+matching observations under different producer contexts are not silently merged.
+Unknown OTLP message fields are ignored before comparison.
+
+The current graph schema is `0.1.1`, the contract schema is `1`, and assessment
+semantics are `0.1.0`. These are separate versioned data formats.
+
+## Write contracts
+
+Selectors include `http`, `rpc`, `db`, `cache`, `message`, `business`, `internal`,
+and `span`. Common fields are `operation`, `target`, `actor`, `outcome`, and `where`.
+Convenience aliases include HTTP `method`/`route`, RPC `service`, database `table`,
+cache `keyspace`, and message `destination`.
+
+Constraints include `exists`, `absent`, `exactly`, `atLeast`, `atMost`, `before`,
+and `after`. The projection currently recognizes structured HTTP, RPC, database,
+cache, and messaging observations; the presence of a selector does not imply that
+the projector can infer that kind from every telemetry source.
+
+| Evidence                                                                     | Result                               |
+| ---------------------------------------------------------------------------- | ------------------------------------ |
+| A required effect is observed                                                | `pass` for that existence constraint |
+| A forbidden effect is observed                                               | `fail` for that absence constraint   |
+| A required effect has not been observed in an open capture                   | `inconclusive`                       |
+| An exact count matches observed effects, but capture completeness is unknown | `inconclusive`                       |
+| Trace parent/link relationships exist, but ordering evidence is insufficient | `inconclusive` for ordering          |
+
+## Supply evidence with explicit boundaries
+
+Projection always returns an open graph. `scopeId` labels the caller's selection;
+it does not authenticate or filter telemetry. Collecting, admitting, and isolating
+observations belongs to the consumer.
+
+The source instrumentation stays neutral: the effects engine consumes the attributes
+it receives without requiring Blackbox producer hooks. A database system attribute
+can establish `db` activity (or `cache` for Redis), and `messaging.system` can
+establish message activity, even when the operation is absent. For example,
+`e.exists(e.db({}))` can pass while `e.exists(e.db({ operation: 'INSERT' }))`
+remains inconclusive on the same PostgreSQL span. Missing operations stay `unknown`.
+
+Projection does not infer operations from SQL text or span display names. Database
+namespaces do not become table names, and Redis key targets remain unknown without
+a supported convention. Parent links and timestamps do not become
+`happensBefore` proof.
+
+`evaluateEffects` also accepts a conforming caller-created graph. Completeness and
+ordering metadata in that graph are the caller's attestation. Shape validation
+cannot certify that the underlying capture was complete or the ordering true.
+
+The [Playwright package](../playwright/README.md) owns activity selection, test
+lifecycle, and `expect(...).toSatisfy(...)`. Its matcher uses this package's public
+API. Other consumers can use the assessment directly or provide their own adapter.
+
+## OpenTelemetry standards profile
+
+The input is an OTLP JSON `ExportTraceServiceRequest`, not an SDK `Span` object.
+An SDK span exposes recording methods; this package reads exported observations.
+No OpenTelemetry SDK is required in the consuming test process.
+
+The reader follows [OTLP JSON encoding](https://opentelemetry.io/docs/specs/otlp/#json-protobuf-encoding)
+and the [ProtoJSON presence and null rules](https://protobuf.dev/programming-guides/json/).
+The supported message fields are pinned to
+[opentelemetry-proto b3f7558](https://github.com/open-telemetry/opentelemetry-proto/tree/b3f75588eb23c5fca62264edd05d382de49beb1a/opentelemetry/proto).
+The attribute names and key renames use
+[semantic conventions v1.44.0](https://github.com/open-telemetry/semantic-conventions/tree/e10a930844c6951757a43b849d364f7d056ac32b)
+and its [published schema changes](https://github.com/open-telemetry/semantic-conventions/blob/e10a930844c6951757a43b849d364f7d056ac32b/schemas/1.44.0).
+
+| Exported observation                          | Interpretation                             |
+| --------------------------------------------- | ------------------------------------------ |
+| `{}` or omitted/null repeated fields          | Empty observations; capture remains open   |
+| Uppercase or lowercase trace/span hex         | Canonical lowercase identity               |
+| Numeric status code `2`                       | Observed failure                           |
+| Unset, OK, or an unknown numeric status code  | Unknown effect outcome                     |
+| Enum name strings such as `STATUS_CODE_ERROR` | Rejected; OTLP uses numeric enums          |
+| Unknown message fields                        | Ignored, including inside attribute values |
+| Empty or unset semantic strings               | No usable evidence for that field          |
+
+Supported key renames preserve values:
+
+| Legacy attribute        | Current attribute            |
+| ----------------------- | ---------------------------- |
+| `http.method`           | `http.request.method`        |
+| `db.operation`          | `db.operation.name`          |
+| `db.sql.table`          | `db.collection.name`         |
+| `db.name`               | `db.namespace`               |
+| `db.system`             | `db.system.name`             |
+| `messaging.operation`   | `messaging.operation.type`   |
+| `messaging.destination` | `messaging.destination.name` |
+
+For example, `db.operation.name=findAndModify` keeps its case, and
+`messaging.operation.name=publish` alone does not imply `messaging.operation.type=send`.
+An explicit RabbitMQ destination such as `orders:created` stays intact. An empty
+legacy exchange does not establish a queue or a current destination value.
+
+This is a projection reader for the supported effect fields, not a full Protobuf
+validator or automatic schema migration engine. Unused scalar fields are retained
+for duplicate checks without interpreting them. Composite attributes supply no
+scalar selector evidence. Schema URLs are preserved as provenance; they do not
+trigger downloads or arbitrary transformations. Update this profile and the
+OTLP regression cases when upgrading the pinned definitions.
+
+Rejecting conflicting observations and keeping missing evidence inconclusive are
+Blackbox verification policies. OpenTelemetry does not certify capture completeness,
+persisted state, or whether a behavioral assertion should pass.
+
+## Validate the package
+
+From the repository root after a frozen dependency installation:
+
+```sh
+pnpm --filter @suites/blackbox-effects build
+pnpm --filter @suites/blackbox-effects test
+```
+
+These tests cover OTLP projection, contract compilation, and three-valued
+assessment. The real PostgreSQL/RabbitMQ matcher tests and their assertion goldens
+live in [`packages/playwright/tests/effects`](../playwright/tests/effects).
+Run that package's `test:effects` lane for Docker-backed integration, and
+`pnpm test:e2e:playwright` for business scenarios using registry-installed packages.
+
+## Experimental effects record
+
+`createEffectsRecord` validates, merges, and sorts counted effects within one
+source scope. `serializeEffectsRecord` writes stable JSON; the `v0` schema is
+available at `@suites/blackbox-effects/schema/effects-record-v0.json`. This is a
+record format for comparing runs, not the graph or contract used by
+`evaluateEffects`. It does not project telemetry, retain effect order, or prove
+that an absent effect never happened. A missing effect is meaningful only when
+the caller can attest that capture is complete for the relevant boundary.
+
+```ts
+import { createEffectsRecord, serializeEffectsRecord } from '@suites/blackbox-effects';
+
+const record = createEffectsRecord({
+  source: { kind: 'playwright-attempt', id: 'checkout-42' },
+  completeness: { status: 'provisional' },
+  effects: [{ kind: 'http', operation: 'POST', target: '/orders', outcome: 'ok', count: 1 }],
+});
+console.log(serializeEffectsRecord(record));
+```
+
+The record identity (`kind`, `operation`, `target`, `outcome`) is experimental;
+[#187](https://github.com/suites-dev/blackbox/issues/187) tracks validation against
+real observations. Record effects do not yet link to graph effect IDs.

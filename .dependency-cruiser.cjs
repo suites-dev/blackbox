@@ -38,7 +38,7 @@ const DIR_BY_NAME = new Map(PACKAGES.map(({ dir, manifest }) => [manifest.name, 
 // Test files and the fixtures/helpers only tests load. Mirrors the exclude
 // list of every tsconfig.build.json, so "production" here means "compiled
 // into dist and published".
-const TEST_SUPPORT = '(\\.(test|spec|fixture)\\.[cm]?[jt]s$|/(testing|test-fixtures|__tests__)/)';
+const TEST_SUPPORT = '(\\.(test|spec|fixture)\\.[cm]?[jt]s$|/(tests|testing|test-fixtures|__tests__)/)';
 // Tooling run from package.json scripts or by vitest, never shipped.
 const TOOLING_IN_PACKAGE = '(vitest(\\.integration)?\\.config\\.ts$|scripts/)';
 const TOOLING = `^packages/[^/]+/${TOOLING_IN_PACKAGE}`;
@@ -128,6 +128,10 @@ const ENTRY_POINTS = [
   // its reporter option loads the observer by filesystem path.
   '^packages/playwright/src/testing/reporting/playwright\\.config\\.ts$',
   '^packages/playwright/src/testing/reporting/progress-observer\\.ts$',
+  // The package acceptance runner loads this config through Playwright, and
+  // the SUT fixture is copied into Docker rather than imported by the package.
+  '^packages/playwright/tests/effects/run\\.mjs$',
+  '^packages/playwright/tests/effects/playwright\\.config\\.ts$',
   // Maintainer script run by hand to refresh the recorded capsule fixture
   // (see the README next to it); nothing imports it.
   '^packages/capsule/src/cli/operations/inspection/testing/fixtures/sanitize-recording\\.mjs$',
@@ -390,7 +394,8 @@ module.exports = {
     // product graph. dist/ is not excluded, only not followed: excluding it by
     // a bare `dist/` pattern also dropped every npm module whose entry lives
     // in a dist/ folder (vitest, ajv), hiding them from the package.json rules.
-    exclude: { path: '^packages/[^/]+/(coverage[^/]*/|eslint\\.config\\.mjs$)' },
+    exclude: { path: ['^packages/[^/]+/(coverage[^/]*/|eslint\\.config\\.mjs$)',
+      '^packages/playwright/tests/effects/project/sut/'] },
     doNotFollow: { path: ['(^|/)node_modules/', '^packages/[^/]+/dist/'] },
     // The root tsconfig carries the blackbox-source custom condition. Workspace
     // packages resolve through their pnpm links and exports maps, so no

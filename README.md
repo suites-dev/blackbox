@@ -18,7 +18,7 @@ evidence to evaluate the specified claims.
 ## Spec-Driven Verification
 
 Spec-Driven Verification checks a running system against an accepted specification. That specification can come from
-product requirements, acceptance criteria, an API contract (like Swagger and OpenAPI), a Markdown document, or any 
+product requirements, acceptance criteria, an API contract (like Swagger and OpenAPI), a Markdown document, or any
 other source of agreed behavior.
 
 **Accepted behavior defines the checks; each execution supplies evidence.**
@@ -38,7 +38,7 @@ Specifications in any format can become stale as implementation evolves. Blackbo
 in the verification loop: review checks that executable expectations preserve the intended behavior, and repeated
 execution makes departures from that behavior visible.
 
-This also fits spec-driven development (SDD) workflows such as Spec Kit, Kiro and Openspec. SDD guides 
+This also fits spec-driven development (SDD) workflows such as Spec Kit, Kiro and Openspec. SDD guides
 specification, clarification, planning, and implementation; Blackbox provides executable verification of the accepted
 system behavior.
 

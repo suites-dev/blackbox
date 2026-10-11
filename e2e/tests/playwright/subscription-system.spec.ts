@@ -33,11 +33,21 @@ test.system('subscription-system', (system) => {
               expect(await readFixtureState<SystemState>(clients.api)).toEqual(emptySystemState);
             });
 
-            const response = await step('When Alice subscribes with a payment method', () =>
+            const response = await step.stimulus('When Alice subscribes with a payment method', ({ headers }) =>
               clients.api.post('/subscriptions', {
                 data: { paymentMethodId: 'pm_alice_primary', userId: 'alice' },
+                headers,
               }),
             );
+            await expect(effects).toSatisfy((e) => [
+              e.exists(e.http({ actor: 'public-api', method: 'POST' })),
+              e.exists(e.http({ actor: 'fraud-check', method: 'POST' })),
+              e.exists(e.http({ actor: 'payment-mock', method: 'POST' })),
+              e.exists(e.http({ actor: 'order-service', method: 'POST' })),
+              e.exists(e.db({ actor: 'fraud-check' })),
+              e.exists(e.cache({ actor: 'public-api', operation: 'SET' })),
+              e.exists(e.rpc({ actor: 'order-service', operation: 'SendMessage', service: 'SQS' })),
+            ]);
 
             await step(
               'Then the subscription is active only after every effect settles',
@@ -99,11 +109,15 @@ test.system('subscription-system', (system) => {
               expect(await readFixtureState<SystemState>(clients.api)).toEqual(emptySystemState);
             });
 
-            const response = await step('When an unknown user attempts to subscribe', () =>
+            const response = await step.stimulus('When an unknown user attempts to subscribe', ({ headers }) =>
               clients.api.post('/subscriptions', {
                 data: { paymentMethodId: 'pm_ghost', userId: 'ghost-user' },
+                headers,
               }),
             );
+            await expect(effects).toSatisfy((e) => [
+              e.exists(e.http({ actor: 'public-api', method: 'POST' })),
+            ]);
 
             await step(
               'Then the request is rejected and the system remains unchanged',
@@ -129,11 +143,17 @@ test.system('subscription-system', (system) => {
               expect(await readFixtureState<SystemState>(clients.api)).toEqual(emptySystemState);
             });
 
-            const response = await step('When Dora subscribes with a payment method', () =>
+            const response = await step.stimulus('When Dora subscribes with a payment method', ({ headers }) =>
               clients.api.post('/subscriptions', {
                 data: { paymentMethodId: 'pm_dora_unused', userId: 'dora' },
+                headers,
               }),
             );
+            await expect(effects).toSatisfy((e) => [
+              e.exists(e.http({ actor: 'public-api', method: 'POST' })),
+              e.exists(e.db({ actor: 'public-api' })),
+              e.exists(e.cache({ actor: 'public-api', operation: 'SET' })),
+            ]);
 
             await step(
               'Then her subscription is activated entirely within the local path',
@@ -184,11 +204,15 @@ test.system('subscription-system', (system) => {
               ).toBe(201);
             });
 
-            const response = await step('When Carol submits another subscription request', () =>
+            const response = await step.stimulus('When Carol submits another subscription request', ({ headers }) =>
               clients.api.post('/subscriptions', {
                 data: { paymentMethodId: 'pm_carol_secondary', userId: 'carol' },
+                headers,
               }),
             );
+            await expect(effects).toSatisfy((e) => [
+              e.exists(e.http({ actor: 'public-api', method: 'POST' })),
+            ]);
 
             await step(
               'Then the duplicate is rejected without another downstream flow',
@@ -223,16 +247,27 @@ test.system('subscription-system', (system) => {
               expect(await readFixtureState<SystemState>(clients.api)).toEqual(emptySystemState);
             });
 
-            const responses = await step('When two subscription requests arrive together', () =>
+            const responses = await step.stimulus('When two subscription requests arrive together', ({ headers }) =>
               Promise.all([
                 clients.api.post('/subscriptions', {
                   data: { paymentMethodId: 'pm_bob_one', userId: 'bob' },
+                  headers,
                 }),
                 clients.api.post('/subscriptions', {
                   data: { paymentMethodId: 'pm_bob_two', userId: 'bob' },
+                  headers,
                 }),
               ]),
             );
+            await expect(effects).toSatisfy((e) => [
+              e.atLeast(2, e.http({ actor: 'public-api', method: 'POST' })),
+              e.exists(e.http({ actor: 'fraud-check', method: 'POST' })),
+              e.exists(e.http({ actor: 'payment-mock', method: 'POST' })),
+              e.exists(e.http({ actor: 'order-service', method: 'POST' })),
+              e.exists(e.db({ actor: 'fraud-check' })),
+              e.exists(e.cache({ actor: 'public-api', operation: 'SET' })),
+              e.exists(e.rpc({ actor: 'order-service', operation: 'SendMessage', service: 'SQS' })),
+            ]);
 
             await step(
               'Then exactly one request wins and one complete flow is recorded',
