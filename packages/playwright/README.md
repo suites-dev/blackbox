@@ -56,9 +56,9 @@ Replace
 `test.use({ catalogEntry, blackboxEnvironment })` plus root `test(...)` calls with
 `test.system(...)` and nested `system.sandbox(...)` groups, and pass `blackboxEnvironment` as the
 Sandbox option `{ environment: blackboxEnvironment }`. Relative `request` and
-`page` URLs no longer target the Sandbox automatically; resolve them explicitly
-against `sandbox.entrypoint.url`. Playwright's root `baseURL` remains whatever the
-project configured.
+`page` URLs behave differently: the native `request` fixture resolves relative
+URLs against this attempt's HTTP Sandbox entrypoint, while `page` still uses the
+project's configured `baseURL`. Absolute request URLs keep their native meaning.
 
 The Sandbox `environment` is the Compose substitution environment for that group.
 Progress and diagnostics redact the values of entries whose names mark a credential,
@@ -71,9 +71,8 @@ Use an object to select either kind explicitly:
 ```ts
 test.system({ kind: 'subsystem', id: 'payment-mock' }, (system) => {
   system.sandbox('default', (suite) => {
-    suite.test('accepts a payment', async ({ request, sandbox }) => {
-      const url = new URL('/v1/payment_intents', sandbox.entrypoint.url).href;
-      const response = await request.post(url, {
+    suite.test('accepts a payment', async ({ request }) => {
+      const response = await request.post('/v1/payment_intents', {
         data: { paymentMethodId: 'pm_primary', userId: 'alice' },
       });
       expect(response.status()).toBe(201);
@@ -108,8 +107,12 @@ reasons. Setup failure also attempts cleanup before surfacing the error.
 
 - `clients` exposes the typed clients registered in the Sandbox declaration.
 - `step` creates a native Playwright step with context bound to this attempt.
-- Playwright's configured `baseURL` remains unchanged. Build request and page
-  URLs explicitly with `new URL(path, sandbox.entrypoint.url).href`.
+- `request` remains Playwright's `APIRequestContext`; its relative HTTP URLs go
+  to this attempt's Sandbox entrypoint. Absolute URLs and root hooks retain their
+  native behavior. For non-HTTP entrypoints, supply an absolute HTTP URL or use
+  the appropriate project-owned client.
+- Playwright's configured `baseURL` remains unchanged for `page`. Resolve page
+  URLs against the Sandbox entrypoint explicitly when needed.
 - `sandbox` exposes read-only attempt, catalog, entrypoint, container, and
   artifact identity. Lifecycle control remains fixture-owned.
 - `telemetry` exposes the attempt identity, live collector status, and raw

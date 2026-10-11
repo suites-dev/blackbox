@@ -43,13 +43,10 @@ test.system({ kind: 'subsystem', id: 'payment-mock' }, (system) => {
           contentType: 'application/json',
           body: JSON.stringify(receipt, null, 2),
         });
-        const response = await request.post(
-          new URL('/v1/payment_intents', sandbox.entrypoint.url).href,
-          {
-            headers: { traceparent },
-            data: { paymentMethodId: 'pm_retention', userId: 'retention' },
-          },
-        );
+        const response = await request.post('/v1/payment_intents', {
+          headers: { traceparent },
+          data: { paymentMethodId: 'pm_retention', userId: 'retention' },
+        });
         expect(response.status()).toBe(201);
         expect(await response.json()).toMatchObject({ status: 'succeeded', userId: 'retention' });
         await expect
