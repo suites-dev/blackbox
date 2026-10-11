@@ -29,7 +29,7 @@ test.system.sandbox(
     suite.describe('Rule: full-path subscriptions settle every required effect', () => {
       suite.test(
         'Scenario: an eligible user receives an active subscription',
-        async ({ clients, sandbox, telemetry, effects, step }) => {
+        async ({ clients, request, sandbox, telemetry, effects, step }) => {
           expectAttemptEvidenceIdentity({ effects, sandbox, telemetry });
 
           await step('Given Alice has no subscription or downstream effects', async () => {
@@ -39,7 +39,7 @@ test.system.sandbox(
           });
 
           const response = await step('When Alice subscribes with a payment method', () =>
-            clients.api.post('/subscriptions', {
+            request.post(new URL('/subscriptions', sandbox.entrypoint.url).href, {
               data: { paymentMethodId: 'pm_alice_primary', userId: 'alice' },
             }),
           );
@@ -105,7 +105,7 @@ test.system.sandbox(
     suite.describe('Rule: invalid subscription attempts have no side effects', () => {
       suite.test(
         'Scenario: an unknown user is rejected without side effects',
-        async ({ clients, sandbox, telemetry, effects, step }) => {
+        async ({ clients, request, sandbox, telemetry, effects, step }) => {
           expectAttemptEvidenceIdentity({ effects, sandbox, telemetry });
 
           await step('Given the system has no prior subscription activity', async () => {
@@ -113,7 +113,7 @@ test.system.sandbox(
           });
 
           const response = await step('When an unknown user attempts to subscribe', () =>
-            clients.api.post('/subscriptions', {
+            request.post(new URL('/subscriptions', sandbox.entrypoint.url).href, {
               data: { paymentMethodId: 'pm_ghost', userId: 'ghost-user' },
             }),
           );
@@ -132,7 +132,7 @@ test.system.sandbox(
     suite.describe('Rule: local-only subscriptions avoid external service effects', () => {
       suite.test(
         'Scenario: a local-only user activates without payment or ordering',
-        async ({ clients, sandbox, telemetry, effects, step }) => {
+        async ({ clients, request, sandbox, telemetry, effects, step }) => {
           expectAttemptEvidenceIdentity({ effects, sandbox, telemetry });
 
           await step('Given Dora has no subscription or downstream effects', async () => {
@@ -140,7 +140,7 @@ test.system.sandbox(
           });
 
           const response = await step('When Dora subscribes with a payment method', () =>
-            clients.api.post('/subscriptions', {
+            request.post(new URL('/subscriptions', sandbox.entrypoint.url).href, {
               data: { paymentMethodId: 'pm_dora_unused', userId: 'dora' },
             }),
           );
@@ -180,14 +180,14 @@ test.system.sandbox(
     suite.describe('Rule: a user can hold only one subscription', () => {
       suite.test(
         'Scenario: a repeated request does not repeat downstream effects',
-        async ({ clients, sandbox, telemetry, effects, step }) => {
+        async ({ clients, request, sandbox, telemetry, effects, step }) => {
           expectAttemptEvidenceIdentity({ effects, sandbox, telemetry });
 
           await step('Given Carol already completed one subscription', async () => {
             expect(await readFixtureState<SystemState>(clients.api)).toEqual(emptySystemState);
             expect(
               (
-                await clients.api.post('/subscriptions', {
+                await request.post(new URL('/subscriptions', sandbox.entrypoint.url).href, {
                   data: { paymentMethodId: 'pm_carol_primary', userId: 'carol' },
                 })
               ).status(),
@@ -195,7 +195,7 @@ test.system.sandbox(
           });
 
           const response = await step('When Carol submits another subscription request', () =>
-            clients.api.post('/subscriptions', {
+            request.post(new URL('/subscriptions', sandbox.entrypoint.url).href, {
               data: { paymentMethodId: 'pm_carol_secondary', userId: 'carol' },
             }),
           );
@@ -223,7 +223,7 @@ test.system.sandbox(
 
       suite.test(
         'Scenario: concurrent requests create exactly one subscription',
-        async ({ clients, sandbox, telemetry, effects, step }) => {
+        async ({ clients, request, sandbox, telemetry, effects, step }) => {
           expectAttemptEvidenceIdentity({ effects, sandbox, telemetry });
 
           await step('Given Bob has no subscription or downstream effects', async () => {
@@ -232,10 +232,10 @@ test.system.sandbox(
 
           const responses = await step('When two subscription requests arrive together', () =>
             Promise.all([
-              clients.api.post('/subscriptions', {
+              request.post(new URL('/subscriptions', sandbox.entrypoint.url).href, {
                 data: { paymentMethodId: 'pm_bob_one', userId: 'bob' },
               }),
-              clients.api.post('/subscriptions', {
+              request.post(new URL('/subscriptions', sandbox.entrypoint.url).href, {
                 data: { paymentMethodId: 'pm_bob_two', userId: 'bob' },
               }),
             ]),

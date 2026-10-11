@@ -36,7 +36,7 @@ test.system.sandbox(
     suite.describe('Rule: accepted payments are retained as succeeded intents', () => {
       suite.test(
         'Scenario: a valid payment method creates a payment intent',
-        async ({ clients, sandbox, telemetry, effects, step }) => {
+        async ({ clients, request, sandbox, telemetry, effects, step }) => {
           expectAttemptEvidenceIdentity({ effects, sandbox, telemetry });
 
           await step('Given the payment service has no prior transactions', async () => {
@@ -46,7 +46,7 @@ test.system.sandbox(
           });
 
           const response = await step('When Alice submits a payment method', () =>
-            clients.payments.post('/v1/payment_intents', {
+            request.post(new URL('/v1/payment_intents', sandbox.entrypoint.url).href, {
               data: { paymentMethodId: 'pm_alice_primary', userId: 'alice' },
             }),
           );
@@ -71,7 +71,7 @@ test.system.sandbox(
     suite.describe('Rule: each payment can be refunded at most once', () => {
       suite.test(
         'Scenario: a second refund for the same payment is rejected',
-        async ({ clients, sandbox, telemetry, effects, step }) => {
+        async ({ clients, request, sandbox, telemetry, effects, step }) => {
           expectAttemptEvidenceIdentity({ effects, sandbox, telemetry });
 
           await step('Given Alice has one succeeded payment', async () => {
@@ -80,7 +80,7 @@ test.system.sandbox(
             );
             expect(
               (
-                await clients.payments.post('/v1/payment_intents', {
+                await request.post(new URL('/v1/payment_intents', sandbox.entrypoint.url).href, {
                   data: { paymentMethodId: 'pm_alice_refundable', userId: 'alice' },
                 })
               ).status(),
@@ -88,12 +88,12 @@ test.system.sandbox(
           });
 
           const firstRefund = await step('When the payment is refunded', () =>
-            clients.payments.post('/v1/refunds', {
+            request.post(new URL('/v1/refunds', sandbox.entrypoint.url).href, {
               data: { paymentIntentId: 'pi_alice1' },
             }),
           );
           const repeatedRefund = await step('And the same refund is requested again', () =>
-            clients.payments.post('/v1/refunds', {
+            request.post(new URL('/v1/refunds', sandbox.entrypoint.url).href, {
               data: { paymentIntentId: 'pi_alice1' },
             }),
           );
@@ -126,7 +126,7 @@ test.system.sandbox(
     suite.describe('Rule: only known payments can be refunded', () => {
       suite.test(
         'Scenario: an unknown payment intent cannot be refunded',
-        async ({ clients, sandbox, telemetry, effects, step }) => {
+        async ({ clients, request, sandbox, telemetry, effects, step }) => {
           expectAttemptEvidenceIdentity({ effects, sandbox, telemetry });
 
           await step('Given the payment service has no prior transactions', async () => {
@@ -136,7 +136,7 @@ test.system.sandbox(
           });
 
           const response = await step('When a refund references an unknown payment', () =>
-            clients.payments.post('/v1/refunds', {
+            request.post(new URL('/v1/refunds', sandbox.entrypoint.url).href, {
               data: { paymentIntentId: 'pi_missing1' },
             }),
           );
