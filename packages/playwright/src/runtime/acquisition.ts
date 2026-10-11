@@ -66,7 +66,6 @@ export interface BlackboxAcquisitionPorts {
     readonly executionId: string;
     readonly telemetry: BlackboxTelemetry;
     readonly storageDirectory: string;
-    readonly entrypointUrl: string;
   }) => BlackboxEffects;
 }
 
@@ -246,7 +245,7 @@ export async function acquireBlackboxAttempt(
       telemetry: exposedTelemetry,
       effects: ports.createEffects({ sessionId, executionId, telemetry: exposedTelemetry,
         storageDirectory: sandboxTelemetryStorageDirectory({ recordDirectory, sandboxId: executionId }),
-        entrypointUrl: selectedEntrypoint.url }),
+      }),
       async stop(reason): Promise<void> {
         await sandbox.stop({ reason });
       },

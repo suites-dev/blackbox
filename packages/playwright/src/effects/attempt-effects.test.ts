@@ -1,8 +1,7 @@
 import { expect as check, it, vi } from 'vitest';
 
-import type { BlackboxScopedRequest } from '../activities/public-types.js';
 import { expect } from './expect.js';
-import { createAttemptEffects } from './attempt-effects.js';
+import { createAttemptEffects, runEffectStimulus } from './attempt-effects.js';
 import { closeBlackboxEffects } from './runtime.js';
 import { operationSpan, withPipeline } from './testing/collector.fixture.js';
 
@@ -10,24 +9,21 @@ function traceId(traceparent: string): string {
   return traceparent.split('-')[1];
 }
 
-it('evaluates completed stimuli and excludes setup and inspection observations', async () => {
+it('evaluates completed stimuli and excludes unowned setup and inspection observations', async () => {
   await withPipeline(async ({ storageDirectory, exportSpans }) => {
     const runtime = createAttemptEffects({
       sessionId: 'effects-pipeline-session',
       executionId: 'effects-pipeline-attempt',
       storageDirectory,
-      entrypointUrl: 'http://127.0.0.1:3000',
     });
-    await runtime.activities.setup.run('seed state', async ({ headers }) => {
-      await exportSpans([
-        operationSpan({
-          traceId: traceId(headers.traceparent),
-          spanId: '1111111111111111',
-          attributes: { 'db.system.name': 'postgresql', 'db.operation.name': 'INSERT' },
-        }),
-      ]);
-    });
-    await runtime.activities.stimulus.run('create order', async ({ headers }) => {
+    await exportSpans([
+      operationSpan({
+        traceId: 'a'.repeat(32),
+        spanId: '1111111111111111',
+        attributes: { 'db.system.name': 'postgresql', 'db.operation.name': 'INSERT' },
+      }),
+    ]);
+    await runEffectStimulus(runtime.effects, 'create order', async ({ headers }) => {
       await exportSpans([
         operationSpan({
           traceId: traceId(headers.traceparent),
@@ -36,15 +32,13 @@ it('evaluates completed stimuli and excludes setup and inspection observations',
         }),
       ]);
     });
-    await runtime.activities.inspection.run('read state', async ({ headers }) => {
-      await exportSpans([
-        operationSpan({
-          traceId: traceId(headers.traceparent),
-          spanId: '3333333333333333',
-          attributes: { 'db.system.name': 'postgresql', 'db.operation.name': 'SELECT' },
-        }),
-      ]);
-    });
+    await exportSpans([
+      operationSpan({
+        traceId: 'b'.repeat(32),
+        spanId: '3333333333333333',
+        attributes: { 'db.system.name': 'postgresql', 'db.operation.name': 'SELECT' },
+      }),
+    ]);
 
     await expect(runtime.effects).toSatisfy((e) => [
       e.exists(e.http({ method: 'POST', route: '/orders' })),
@@ -64,7 +58,6 @@ it('keeps an attempt with no registered stimulus inconclusive', async () => {
       sessionId: 'effects-pipeline-session',
       executionId: 'effects-pipeline-attempt',
       storageDirectory,
-      entrypointUrl: 'http://127.0.0.1:3000',
     });
     await check(expect(runtime.effects).toSatisfy((e) => [e.exists(e.http())])).rejects.toThrow(
       'No completed stimulus activity',
@@ -78,7 +71,6 @@ it('selects only completed stimuli and admits them after settlement', async () =
       sessionId: 'effects-pipeline-session',
       executionId: 'effects-pipeline-attempt',
       storageDirectory,
-      entrypointUrl: 'http://127.0.0.1:3000',
     });
     let release = (): void => undefined;
     const gate = new Promise<void>((resolve) => {
@@ -88,7 +80,7 @@ it('selects only completed stimuli and admits them after settlement', async () =
     const exported = new Promise<void>((resolve) => {
       markExported = resolve;
     });
-    const pending = runtime.activities.stimulus.run('pending update', async ({ headers }) => {
+    const pending = runEffectStimulus(runtime.effects, 'pending update', async ({ headers }) => {
       await exportSpans([
         operationSpan({
           traceId: traceId(headers.traceparent),
@@ -100,7 +92,7 @@ it('selects only completed stimuli and admits them after settlement', async () =
       await gate;
     });
     await exported;
-    await runtime.activities.stimulus.run('completed read', async ({ headers }) => {
+    await runEffectStimulus(runtime.effects, 'completed read', async ({ headers }) => {
       await exportSpans([
         operationSpan({
           traceId: traceId(headers.traceparent),
@@ -135,10 +127,9 @@ it('treats a failed but settled stimulus as completed evidence', async () => {
       sessionId: 'effects-pipeline-session',
       executionId: 'effects-pipeline-attempt',
       storageDirectory,
-      entrypointUrl: 'http://127.0.0.1:3000',
     });
     await check(
-      runtime.activities.stimulus.run('failed delete', async ({ headers }) => {
+      runEffectStimulus(runtime.effects, 'failed delete', async ({ headers }) => {
         await exportSpans([
           operationSpan({
             traceId: traceId(headers.traceparent),
@@ -156,15 +147,14 @@ it('treats a failed but settled stimulus as completed evidence', async () => {
   });
 });
 
-it('expires retained effects and activity handles when the attempt closes', async () => {
+it('expires retained effects and stimulus execution when the attempt closes', async () => {
   await withPipeline(async ({ storageDirectory, exportSpans }) => {
     const runtime = createAttemptEffects({
       sessionId: 'effects-pipeline-session',
       executionId: 'effects-pipeline-attempt',
       storageDirectory,
-      entrypointUrl: 'http://127.0.0.1:3000',
     });
-    await runtime.activities.stimulus.run('retained post', async ({ headers }) => {
+    await runEffectStimulus(runtime.effects, 'retained post', async ({ headers }) => {
       await exportSpans([
         operationSpan({
           traceId: traceId(headers.traceparent),
@@ -179,17 +169,13 @@ it('expires retained effects and activity handles when the attempt closes', asyn
     await expect(runtime.effects).not.toSatisfy((e) => [
       e.absent(e.http({ method: 'POST', route: '/retained' })),
     ]);
-    const post = vi.fn();
-    const request = Object.create(null) as BlackboxScopedRequest;
-    Object.defineProperty(request, 'post', { value: post });
+    const action = vi.fn();
     closeBlackboxEffects(runtime.effects);
 
-    await check(
-      runtime.activities.stimulus.request('expired request', request, (scoped) =>
-        scoped.post('http://127.0.0.1:3000/orders'),
-      ),
-    ).rejects.toThrow('attempt has expired');
-    check(post).not.toHaveBeenCalled();
+    await check(runEffectStimulus(runtime.effects, 'expired request', action)).rejects.toThrow(
+      'does not provide stimulus execution',
+    );
+    check(action).not.toHaveBeenCalled();
     await check(
       expect(runtime.effects).toSatisfy((e) => [
         e.exists(e.http({ method: 'POST', route: '/retained' })),

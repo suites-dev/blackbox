@@ -21,7 +21,6 @@ it('keeps ordinary steps out of effect selection and gives stimulus steps owned 
     sessionId: 'session-1',
     executionId: 'attempt-1',
     storageDirectory: '/missing-blackbox-step-test',
-    entrypointUrl: 'http://127.0.0.1:3000',
   }).effects;
   const attempt = {
     effects,

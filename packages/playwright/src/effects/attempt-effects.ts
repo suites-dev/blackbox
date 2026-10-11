@@ -1,5 +1,5 @@
-import { AttemptActivities } from '../activities/execution/attempt-activities.js';
-import type { BlackboxActivities, BlackboxActivityContext } from '../activities/public-types.js';
+import { AttemptStimuli } from '../activities/execution/attempt-stimuli.js';
+import type { BlackboxStimulusScope } from '../steps/types.js';
 import type { BlackboxEffects } from '../types.js';
 import {
   evaluateBlackboxEffects,
@@ -9,38 +9,35 @@ import {
 } from './runtime.js';
 import { createScopedBlackboxEffects } from './scoped-effects.js';
 
-const attempts = new WeakMap<BlackboxEffects, AttemptActivities>();
+const attempts = new WeakMap<BlackboxEffects, AttemptStimuli>();
 
 export function runEffectStimulus<T>(
   effects: BlackboxEffects,
   title: string,
-  action: (context: BlackboxActivityContext) => T | Promise<T>,
+  action: (scope: BlackboxStimulusScope) => T | Promise<T>,
 ): Promise<T> {
   const attempt = attempts.get(effects);
   if (attempt === undefined) {
     return Promise.reject(new Error('This Blackbox attempt does not provide stimulus execution.'));
   }
-  return attempt.runStimulus(title, action);
+  return attempt.run(title, action);
 }
 
 export function createAttemptEffects(input: {
   readonly sessionId: string;
   readonly executionId: string;
   readonly storageDirectory: string;
-  readonly entrypointUrl: string;
 }): {
   readonly effects: ReturnType<typeof createBlackboxEffects>;
-  /** Internal harness for lower-level selection tests; not a Playwright fixture. */
-  readonly activities: BlackboxActivities;
 } {
-  const attempt = new AttemptActivities(input);
+  const attempt = new AttemptStimuli(input);
 
   const effects = createBlackboxEffects({
     sessionId: input.sessionId,
     executionId: input.executionId,
     evaluator: {
       async evaluate(contract) {
-        const completed = attempt.completedStimuli();
+        const completed = attempt.completed();
         if (completed.kind === 'none') {
           return {
             kind: 'inconclusive',
@@ -61,5 +58,5 @@ export function createAttemptEffects(input: {
   });
   markBlackboxEffectsLive(effects);
   attempts.set(effects, attempt);
-  return { effects, activities: attempt.activities };
+  return { effects };
 }
