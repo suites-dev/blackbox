@@ -4,12 +4,14 @@ import {
   type TelemetryScopeResult,
 } from '@suites/blackbox-telemetry';
 
+import { activityAdmissionLimits } from '../limits.js';
 import { createActivityRegistry } from '../activity-registry.js';
 import type { ActivitySelection, OwnedActivity } from '../types.js';
 import type { BlackboxStimulusScope } from '../../steps/types.js';
 
 export type CompletedStimuli =
-  { readonly kind: 'none' } | { readonly kind: 'selected'; readonly selection: ActivitySelection };
+  | { readonly kind: 'none' }
+  | { readonly kind: 'selected'; readonly selections: readonly ActivitySelection[] };
 
 function failure(error: unknown): TelemetryScopeResult {
   const message = error instanceof Error ? error.message : String(error);
@@ -78,13 +80,23 @@ export class AttemptStimuli {
     if (this.#completed.length === 0) {
       return { kind: 'none' };
     }
-    return {
-      kind: 'selected',
-      selection: this.#registry.select({
-        kind: 'stimulus',
-        activities: [...this.#completed],
-      }),
-    };
+    const selections: ActivitySelection[] = [];
+    for (
+      let offset = 0;
+      offset < this.#completed.length;
+      offset += activityAdmissionLimits.selectedTraces
+    ) {
+      selections.push(
+        this.#registry.select({
+          kind: 'stimulus',
+          activities: this.#completed.slice(
+            offset,
+            offset + activityAdmissionLimits.selectedTraces,
+          ),
+        }),
+      );
+    }
+    return { kind: 'selected', selections: Object.freeze(selections) };
   }
 
   #finish(activity: OwnedActivity, outcome: TelemetryScopeResult): void {

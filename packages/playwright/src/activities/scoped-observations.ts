@@ -8,7 +8,7 @@ import type {
   EffectObservationReadResult,
   EffectObservationSource,
 } from '../effects/evaluation/source.js';
-import { requireTrustedSelection } from './activity-registry.js';
+import { selectionBatches, type SelectionInput } from './execution/selection-batches.js';
 import { createPayloadAdmission } from './admission.js';
 import { freezeActivityData, type ActivityProvenance, type ActivitySelection } from './types.js';
 
@@ -27,12 +27,13 @@ export interface ScopedObservationSource extends EffectObservationSource {
 function admitSnapshot(
   snapshot: Extract<CollectorSnapshotReadResult, { kind: 'collector-snapshot-found' }>,
   selection: ActivitySelection,
+  batches: readonly ActivitySelection[],
 ): ScopedObservationReadResult {
   const payloads: unknown[] = [];
   const diagnostics = ['explicit-activity-trace-admission', 'trusted-manifest-not-authenticated'];
   const admission = createPayloadAdmission(selection);
   try {
-    for (const activity of selection.activities) {
+    for (const activity of batches.flatMap((batch) => batch.activities)) {
       for (const traceId of activity.traceIds) {
         if (snapshot.traces.filter((trace) => trace.traceId === traceId).length > 1) {
           throw new TypeError('Duplicate trace entry in activity snapshot.');
@@ -72,15 +73,14 @@ function admitSnapshot(
 
 export function createScopedObservationSource(
   input: {
-    readonly selection: ActivitySelection;
+    readonly selection: SelectionInput;
     readonly storageDirectory: string;
   },
   ports: { readonly readSnapshot: typeof readCollectorSnapshot } = {
     readSnapshot: readCollectorSnapshot,
   },
 ): ScopedObservationSource {
-  requireTrustedSelection(input.selection);
-  const selection = input.selection;
+  const { batches, scope: selection } = selectionBatches(input.selection);
   const identity = Object.freeze({
     sessionId: selection.sessionId,
     executionId: selection.executionId,
@@ -109,7 +109,7 @@ export function createScopedObservationSource(
       if (snapshot.kind === 'collector-snapshot-corrupt') {
         return { kind: 'rejected', message: 'Retained activity telemetry snapshot is corrupt.' };
       }
-      return admitSnapshot(snapshot, selection);
+      return admitSnapshot(snapshot, selection, batches);
     },
   });
 }

@@ -121,7 +121,11 @@ create owned actions and propagate W3C context, including inside ordinary
 SDK clients independently inspect current mutable state; their reads cannot satisfy
 an effects assertion. Use `step.stimulus(...)` with explicit headers for custom
 transports. Native requests inside an explicit stimulus reuse its context. Step
-titles do not determine ownership.
+titles do not determine ownership. Completed actions are selected in bounded batches
+of eight traces and evaluated together from one retained snapshot. Each action
+keeps its own trace; the existing registration and cumulative payload/span
+admission limits still apply. Exceeding an admission budget is inconclusive,
+not a partial evaluation.
 Sandbox-scoped `beforeAll` and `afterAll` hooks are unavailable because there is
 no group-level live Sandbox. Root Playwright `beforeAll` and `afterAll` hooks can
 still perform setup unrelated to a Sandbox.

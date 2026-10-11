@@ -21,6 +21,7 @@ export async function withObservedRequests(
   effects: BlackboxEffects,
   body: (input: {
     readonly request: ReturnType<typeof sandboxRequest>;
+    readonly inspection: Awaited<ReturnType<typeof nativeRequest.newContext>>;
     readonly observed: ObservedRequest[];
     readonly origin: string;
   }) => Promise<void>,
@@ -69,6 +70,7 @@ export async function withObservedRequests(
         () => ({ url: origin, protocol: 'http' }),
         (input) => automaticEffectRequest(effects, input),
       ),
+      inspection: native,
       observed,
       origin,
     });

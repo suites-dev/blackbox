@@ -13,6 +13,41 @@ function attempt(storageDirectory: string) {
   }).effects;
 }
 
+it('evaluates every independently owned action across selection batches while excluding interleaved inspection', async () => {
+  await withPipeline(async (pipeline) => {
+    const effects = attempt(pipeline.storageDirectory);
+    await withObservedRequests(
+      pipeline,
+      effects,
+      async ({ request, inspection, origin, observed }) => {
+        for (let index = 0; index < 17; index++) {
+          check((await request.post(`/action-${index}`)).ok()).toBe(true);
+          check((await inspection.get(`${origin}/inspection-${index}`)).ok()).toBe(true);
+        }
+        await expect(effects).toSatisfy((e) => [
+          e.atLeast(17, e.http({ method: 'POST' })),
+          ...Array.from({ length: 17 }, (_, index) =>
+            e.exists(e.http({ route: `/action-${index}` })),
+          ),
+        ]);
+        await check(
+          expect(effects).toSatisfy((e) => [e.exists(e.http({ method: 'GET' }))]),
+        ).rejects.toThrow();
+        const actions = observed.filter(({ method }) => method === 'POST');
+        check(new Set(actions.map(({ traceparent }) => traceparent)).size).toBe(17);
+        check(
+          actions.every(({ traceparent }) => /^00-[\da-f]{32}-[\da-f]{16}-01$/u.test(traceparent)),
+        ).toBe(true);
+        check(
+          observed
+            .filter(({ method }) => method === 'GET')
+            .every(({ traceparent }) => traceparent === ''),
+        ).toBe(true);
+      },
+    );
+  });
+});
+
 it('automatically owns multiple native entrypoint requests with independently generated traces', async () => {
   await withPipeline(async (pipeline) => {
     const effects = attempt(pipeline.storageDirectory);
@@ -28,9 +63,7 @@ it('automatically owns multiple native entrypoint requests with independently ge
       ]);
       check(observed).toHaveLength(2);
       check(
-        observed.every(({ traceparent }) =>
-          /^00-[\da-f]{32}-[\da-f]{16}-01$/u.test(traceparent),
-        ),
+        observed.every(({ traceparent }) => /^00-[\da-f]{32}-[\da-f]{16}-01$/u.test(traceparent)),
       ).toBe(true);
       check(new Set(observed.map(({ traceparent }) => traceparent)).size).toBe(2);
     });

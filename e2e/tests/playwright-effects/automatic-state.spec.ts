@@ -51,6 +51,25 @@ test.system('effects-acceptance', (system) => {
           (await clients.postgres.query('SELECT id, value FROM acceptance_records ORDER BY id'))
             .rows,
         ).toEqual([{ id: 501, value: 'second' }]);
+
+        for (let action = 3; action <= 9; action++) {
+          const value = `value-${action}`;
+          const response = await test.step(`write value ${action}`, () =>
+            request.patch('/state-actions', { data: { value } }));
+          expect(response.status()).toBe(200);
+          expect(await response.json()).toEqual({ row: { id: 501, value } });
+          expect(await clients.redis.get('current-value')).toBe(value);
+          expect(
+            (await clients.postgres.query('SELECT id, value FROM acceptance_records ORDER BY id'))
+              .rows,
+          ).toEqual([{ id: 501, value }]);
+        }
+        await expect(effects).toSatisfy((e) => [
+          e.exists(e.http({ actor: 'app', method: 'POST' })),
+          e.atLeast(8, e.http({ actor: 'app', method: 'PATCH' })),
+          e.atLeast(9, e.db({ actor: 'app' })),
+          e.atLeast(9, e.cache({ actor: 'app', operation: 'SET' })),
+        ]);
       },
     );
   });

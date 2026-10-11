@@ -75,7 +75,7 @@ export function createAttemptEffects(input: {
         }
         const selected = createScopedBlackboxEffects({
           storageDirectory: input.storageDirectory,
-          selection: completed.selection,
+          selection: completed.selections,
         });
         return evaluateBlackboxEffects(selected, contract);
       },
