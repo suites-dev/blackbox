@@ -11,9 +11,7 @@ name: E2E
 #
 # Lanes run on separate runners so the slowest one sets the wall clock: each
 # golden journey gets its own leg, and lanes that need no registry start with
-# the build. The Playwright leg runs its effects checks inside the same
-# packed-consumer journey and evidence archive.
-# The gate below is the one required check over all of them.
+# the build. The gate below is the one required check over all of them.
 on:
   pull_request:
     branches:

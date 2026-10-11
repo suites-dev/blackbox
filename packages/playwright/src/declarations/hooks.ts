@@ -1,6 +1,6 @@
 import type { TestType } from '@playwright/test';
 
-import type { BlackboxNativeStep, BlackboxTestBody } from '../types.js';
+import type { BlackboxStep, BlackboxTestBody } from '../types.js';
 import type { InternalTest } from './native.js';
 import { declarationError } from './validation.js';
 
@@ -45,6 +45,6 @@ export function createStep<
   TestArgs extends object,
   WorkerArgs extends object,
   InternalArgs extends object,
->(nativeTest: InternalTest<TestArgs, WorkerArgs, InternalArgs>): BlackboxNativeStep {
+>(nativeTest: InternalTest<TestArgs, WorkerArgs, InternalArgs>): BlackboxStep {
   return nativeTest.step.bind(nativeTest);
 }

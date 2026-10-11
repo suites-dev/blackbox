@@ -94,9 +94,8 @@ The Sandbox declaration callback is synchronous. Use `suite.describe`,
 `suite.test`, `suite.beforeEach`, and `suite.afterEach` inside it. Test and
 per-test hook callbacks receive the normal Playwright fixtures plus `clients`,
 `step`, `sandbox`, `telemetry`, and `effects`. Use the attempt-bound `step(...)`
-fixture for native Playwright steps with local asynchronous context. Mark the
-action whose effects matter with `step.stimulus(...)` and pass its W3C headers to
-the client request. Step titles alone do not propagate tracing into the system.
+fixture for native Playwright steps with local asynchronous context. Step titles
+alone do not propagate tracing into application requests.
 Sandbox-scoped `beforeAll` and `afterAll` hooks are unavailable because there is
 no group-level live Sandbox. Root Playwright `beforeAll` and `afterAll` hooks can
 still perform setup unrelated to a Sandbox.
@@ -109,21 +108,17 @@ reasons. Setup failure also attempts cleanup before surfacing the error.
 
 - `clients` exposes the typed clients registered in the Sandbox declaration.
 - `step` creates a native Playwright step with context bound to this attempt.
-  `step.stimulus('place order', ({ headers }) => clients.api.post('/orders',
-  { data: order, headers }))` marks an owned action. Ordinary `step(...)` remains
-  useful for setup and inspection. A custom transport can pass the same headers
-  at its entrypoint; Blackbox cannot inject them into arbitrary SDK calls.
 - Playwright's configured `baseURL` remains unchanged. Build request and page
   URLs explicitly with `new URL(path, sandbox.entrypoint.url).href`.
 - `sandbox` exposes read-only attempt, catalog, entrypoint, container, and
   artifact identity. Lifecycle control remains fixture-owned.
 - `telemetry` exposes the attempt identity, live collector status, and raw
   retained session or trace reads.
-- `effects` exposes the attempt identity and evaluates immutable contracts
-  against OTLP observations owned by completed stimulus steps. Use
-  `expect(effects).toSatisfy(...)`. Missing or incomplete observation remains
-  inconclusive, including under negation; an observed operation does not prove
-  durable state.
+- `effects` exposes the attempt identity and the contract-evaluation boundary.
+  `expect(effects).toSatisfy(...)` compiles and delegates an immutable contract,
+  but the Alpha does not yet project raw telemetry into normalized effects. The
+  matcher therefore reports an inconclusive failure unless an evaluator is
+  supplied by the runtime.
 
 ## Execution reporting
 

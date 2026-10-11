@@ -1,4 +1,4 @@
-import type { BlackboxNativeStep, BlackboxStep } from './steps/types.js';
+import type { BlackboxStep } from './steps/types.js';
 import type { ClientRegistry, RegisteredClients } from './clients/types.js';
 import type { CatalogEntryKind } from '@suites/blackbox-catalog';
 import type {
@@ -17,12 +17,7 @@ import type {
 } from '@suites/blackbox-otel-collector';
 import type { SandboxContainer, SandboxTelemetryStatus } from '@suites/blackbox-sandbox';
 
-export type {
-  BlackboxNativeStep,
-  BlackboxStep,
-  BlackboxStepOptions,
-  BlackboxStimulusScope,
-} from './steps/types.js';
+export type { BlackboxStep, BlackboxStepOptions } from './steps/types.js';
 
 export type BlackboxCatalogSelection =
   { readonly kind: 'unselected' } | { readonly kind: CatalogEntryKind; readonly id: string };
@@ -147,7 +142,7 @@ export interface BlackboxSandboxSuite<TestArgs extends object, WorkerArgs extend
   /** Registers an attempt-scoped native hook. */
   readonly afterEach: TestType<TestArgs, WorkerArgs>['afterEach'];
   /** Runs a native Playwright step from a test or attempt-scoped hook. */
-  readonly step: BlackboxNativeStep;
+  readonly step: BlackboxStep;
 }
 
 export interface BlackboxSystemScope<TestArgs extends object, WorkerArgs extends object> {
@@ -197,7 +192,7 @@ export interface BlackboxSystemTest<
   describe: BlackboxRootDescribe;
   beforeAll: BlackboxRootSuiteHook<TestArgs, WorkerArgs>;
   afterAll: BlackboxRootSuiteHook<TestArgs, WorkerArgs>;
-  step: BlackboxNativeStep;
+  step: BlackboxStep;
   extend<T extends object, W extends object = object>(
     fixtures: Fixtures<T, W, TestArgs, WorkerArgs>,
   ): BlackboxSystemTest<TestArgs & T, WorkerArgs & W>;

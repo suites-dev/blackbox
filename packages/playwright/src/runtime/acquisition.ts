@@ -7,12 +7,7 @@ import {
   type CatalogSandboxInput,
   type LoadedCatalog,
 } from '@suites/blackbox-catalog';
-import {
-  sandboxTelemetryStorageDirectory,
-  startSandbox,
-  type SandboxHandle,
-  type SandboxStopReason,
-} from '@suites/blackbox-sandbox';
+import { startSandbox, type SandboxHandle, type SandboxStopReason } from '@suites/blackbox-sandbox';
 
 import type {
   BlackboxCatalogSelection,
@@ -21,7 +16,7 @@ import type {
   BlackboxSandbox,
   BlackboxTelemetry,
 } from '../types.js';
-import { createAttemptEffects } from '../effects/attempt-effects.js';
+import { createUnavailableBlackboxEffects } from '../effects/runtime.js';
 import { reported, type AttemptProgress } from '../reporting/events.js';
 import { verifyRequiredActivations } from './activation.js';
 import { resolveCollectorRuntime } from './collector-runtime.js';
@@ -65,7 +60,6 @@ export interface BlackboxAcquisitionPorts {
     readonly sessionId: string;
     readonly executionId: string;
     readonly telemetry: BlackboxTelemetry;
-    readonly storageDirectory: string;
   }) => BlackboxEffects;
 }
 
@@ -79,7 +73,7 @@ const productionPorts = {
   awaitReadiness,
   randomId: randomUUID,
   randomToken: () => randomBytes(32).toString('base64url'),
-  createEffects: (input) => createAttemptEffects(input).effects,
+  createEffects: createUnavailableBlackboxEffects,
 } satisfies BlackboxAcquisitionPorts;
 
 function selectedPlan(input: {
@@ -243,9 +237,7 @@ export async function acquireBlackboxAttempt(
     return {
       sandbox: publicSandbox,
       telemetry: exposedTelemetry,
-      effects: ports.createEffects({ sessionId, executionId, telemetry: exposedTelemetry,
-        storageDirectory: sandboxTelemetryStorageDirectory({ recordDirectory, sandboxId: executionId }),
-      }),
+      effects: ports.createEffects({ sessionId, executionId, telemetry: exposedTelemetry }),
       async stop(reason): Promise<void> {
         await sandbox.stop({ reason });
       },

@@ -42,18 +42,15 @@
     "build": "tsc --project tsconfig.build.json",
     "prepack": "pnpm build",
     "lint": "eslint .",
-    "test": "vitest run --config vitest.config.ts",
-    "test:effects": "node tests/effects/run.mjs"
+    "test": "vitest run --config vitest.config.ts"
   },
   "dependencies": {
     "@suites/blackbox-catalog": "workspace:*",
-    "@suites/blackbox-effects": "workspace:*",
     "@suites/blackbox-inst-runtime-node": "workspace:*",
     "@suites/blackbox-instrumentation": "workspace:*",
     "@suites/blackbox-otel-collector": "workspace:*",
     "@suites/blackbox-report-server": "workspace:*",
-    "@suites/blackbox-sandbox": "workspace:*",
-    "@suites/blackbox-telemetry": "workspace:*"
+    "@suites/blackbox-sandbox": "workspace:*"
   },
   "peerDependencies": {
     "@playwright/test": ">=1.61.0 <2"
