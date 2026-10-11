@@ -1,4 +1,4 @@
-import type { APIRequestContext } from '@playwright/test';
+import type { APIRequestContext, APIResponse } from '@playwright/test';
 
 interface SandboxRequestEntrypoint {
   readonly url: string;
@@ -18,45 +18,63 @@ function route(url: string, entrypoint: SandboxRequestEntrypoint | undefined): s
   return new URL(url, `${entrypoint.url}/`).href;
 }
 
+type RequestOptions = Parameters<APIRequestContext['fetch']>[1];
+
+export interface SandboxRequestDispatch {
+  readonly url: string;
+  readonly method: string;
+  readonly options: RequestOptions;
+  dispatch(options: RequestOptions): Promise<APIResponse>;
+}
+
+/** A neutral composition hook, invoked only for this sandbox's HTTP origin. */
+export type SandboxRequestHook = (request: SandboxRequestDispatch) => Promise<APIResponse>;
+
+function owns(url: string, entrypoint: SandboxRequestEntrypoint | undefined): boolean {
+  return (
+    entrypoint !== undefined &&
+    (entrypoint.protocol === 'http' || entrypoint.protocol === 'https') &&
+    URL.canParse(url) &&
+    new URL(url).origin === new URL(entrypoint.url).origin
+  );
+}
+
 /** Keep Playwright's context, options and lifecycle; resolve relative URLs inside this attempt. */
 export function sandboxRequest(
   request: APIRequestContext,
   entrypoint: () => SandboxRequestEntrypoint | undefined,
+  hook?: SandboxRequestHook,
 ): APIRequestContext {
   return new Proxy(request, {
     get(target, property) {
-      switch (property) {
-        case 'delete':
-          return (url: string, options?: Parameters<APIRequestContext['delete']>[1]) =>
-            target.delete(route(url, entrypoint()), options);
-        case 'fetch':
-          return (
-            url: Parameters<APIRequestContext['fetch']>[0],
-            options?: Parameters<APIRequestContext['fetch']>[1],
-          ) => target.fetch(typeof url === 'string' ? route(url, entrypoint()) : url, options);
-        case 'get':
-          return (url: string, options?: Parameters<APIRequestContext['get']>[1]) =>
-            target.get(route(url, entrypoint()), options);
-        case 'head':
-          return (url: string, options?: Parameters<APIRequestContext['head']>[1]) =>
-            target.head(route(url, entrypoint()), options);
-        case 'patch':
-          return (url: string, options?: Parameters<APIRequestContext['patch']>[1]) =>
-            target.patch(route(url, entrypoint()), options);
-        case 'post':
-          return (url: string, options?: Parameters<APIRequestContext['post']>[1]) =>
-            target.post(route(url, entrypoint()), options);
-        case 'put':
-          return (url: string, options?: Parameters<APIRequestContext['put']>[1]) =>
-            target.put(route(url, entrypoint()), options);
-        default: {
-          const value: unknown = Reflect.get(target, property);
-          if (typeof value !== 'function') {
-            return value;
+      if (['delete', 'fetch', 'get', 'head', 'patch', 'post', 'put'].includes(String(property))) {
+        return (url: Parameters<APIRequestContext['fetch']>[0], options?: RequestOptions) => {
+          const selected = entrypoint();
+          const routed = typeof url === 'string' ? route(url, selected) : url;
+          const method = Reflect.get(target, property) as APIRequestContext['fetch'];
+          const dispatch = (nextOptions: RequestOptions): Promise<APIResponse> =>
+            Reflect.apply(method, target, [routed, nextOptions]);
+          if (hook === undefined || typeof routed !== 'string' || !owns(routed, selected)) {
+            return dispatch(options);
           }
-          return (...args: unknown[]): unknown => Reflect.apply(value, target, args) as unknown;
-        }
+          return hook({
+            url: routed,
+            method:
+              property === 'fetch'
+                ? options === undefined
+                  ? 'GET'
+                  : (options.method ?? 'GET')
+                : String(property).toUpperCase(),
+            options,
+            dispatch,
+          });
+        };
       }
+      const value: unknown = Reflect.get(target, property);
+      if (typeof value !== 'function') {
+        return value;
+      }
+      return (...args: unknown[]): unknown => Reflect.apply(value, target, args) as unknown;
     },
   });
 }
