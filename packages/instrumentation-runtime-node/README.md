@@ -84,6 +84,14 @@ The installed bootstrap starts the OpenTelemetry Node SDK with automatic Node
 instrumentations and an async-local-storage context manager. In Blackbox mode it
 posts an authenticated activation record, exports traces over OTLP HTTP/JSON, and
 continues an optional W3C `TRACEPARENT` inherited through the process environment.
+The activation request runs with tracing suppressed, so it never appears as an
+application span.
+
+Package-manager launchers do nothing: when the resolved entry file is the CLI of
+npm, npx, pnpm, pnpx, yarn 1, yarn 4 (`@yarnpkg/cli-dist` or a project's
+`.yarn/releases/yarn-*.cjs`), or a corepack shim, the bootstrap neither starts the
+SDK nor posts an activation. `NODE_OPTIONS` is left intact, so the application
+processes they start are still instrumented.
 
 [`createNodeTelemetryEnvironment()`](src/runtime/bootstrap/environment.ts) produces
 the complete standalone environment contract:
