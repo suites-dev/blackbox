@@ -1,6 +1,8 @@
 import { spawn, spawnSync } from 'node:child_process';
 import { once } from 'node:events';
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { createServer } from 'node:http';
+import type { AddressInfo } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -163,6 +165,46 @@ async function expectEventEmitterContext(input: {
   expect(result.stdout).toBe(expectedTraceId);
 }
 
+async function expectUntracedActivation(input: {
+  readonly bootstrap: string;
+  readonly directory: string;
+}): Promise<void> {
+  const received: { readonly path: string; readonly body: string }[] = [];
+  const collector = createServer((request, response) => {
+    const chunks: Buffer[] = [];
+    request.on('data', (chunk: Buffer) => chunks.push(chunk));
+    request.on('end', () => {
+      received.push({ path: String(request.url), body: Buffer.concat(chunks).toString('utf8') });
+      response.end('{}');
+    });
+  });
+  await once(collector.listen(0, '127.0.0.1'), 'listening');
+  const endpoint = `http://127.0.0.1:${String((collector.address() as AddressInfo).port)}/v1`;
+  const entry = join(input.directory, 'activation-application.cjs');
+  await writeFile(entry, commonJsApplication.replace('process.exit(0)', 'undefined'));
+  const child = spawn(process.execPath, [entry], {
+    cwd: input.directory,
+    env: {
+      ...activatedEnvironment({ ...input, adapter: 'node-preload' }),
+      BLACKBOX_OTEL_TRACES_ENDPOINT: `${endpoint}/traces`,
+      BLACKBOX_OTEL_ACTIVATION_ENDPOINT: `${endpoint}/activation`,
+      BLACKBOX_OTEL_AUTH_TOKEN: 'integration-token',
+      BLACKBOX_OTEL_SESSION_ID: 'integration-session',
+      BLACKBOX_OTEL_EXECUTION_ID: 'integration-execution',
+      BLACKBOX_OTEL_RUNTIME: 'node',
+      BLACKBOX_OTEL_SERVICE_NAME: 'blackbox-instrumentation-integration',
+    },
+    stdio: 'ignore',
+  });
+  expect(await once(child, 'exit')).toEqual([0, null]);
+  collector.close();
+  expect(received.filter((request) => request.path === '/v1/activation')).toHaveLength(1);
+  const traces = received.filter((request) => request.path === '/v1/traces');
+  const spans = traces.map((request) => request.body).join('\n');
+  expect(spans).toContain('@opentelemetry/instrumentation-http');
+  expect(spans).not.toContain('/v1/activation');
+}
+
 it('installs a standalone dependency tree and instruments real CommonJS and ESM applications', async () => {
   const projectDirectory = await mkdtemp(join(tmpdir(), 'blackbox-real-instrumentation-'));
   try {
@@ -203,6 +245,7 @@ it('installs a standalone dependency tree and instruments real CommonJS and ESM 
 
     await expectEventEmitterContext({ bootstrap, directory });
     await expectApplicationSignalHandler({ bootstrap, directory });
+    await expectUntracedActivation({ bootstrap, directory });
 
     const invalidContext = spawnSync(process.execPath, ['--eval', 'void 0'], {
       cwd: projectDirectory,
