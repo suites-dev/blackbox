@@ -9,15 +9,15 @@
 
 <h1 align="center">Suites / Blackbox</h1>
 
+**A system testing framework for executable specifications and runtime verification, built for developers and coding
+agents.**
+
 <p align="center">
   <a href="docs/README.md">Docs</a> ·
   <a href="#installation">Installation</a> ·
   <a href="#quickstart">Quickstart</a> ·
   <a href="docs/guides/README.md">Guides</a>
 </p>
-
-**A system testing framework for executable specifications and runtime verification, built for developers and coding
-agents.**
 
 Blackbox turns accepted specifications into repeatable verification against real applications and subsystems. Coding
 agents can execute the specified behavior, inspect what happened, investigate failures, repair the implementation, and
