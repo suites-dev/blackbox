@@ -60,10 +60,8 @@ required runtime interactions. This ties expectations to the system's behavioral
 while the same accepted behavior remains the basis for verification.
 
 For product creation, the contract requires a successful response, persistence in PostgreSQL, and population of Redis.
-These excerpts separate the assertions within **one scenario**. They use `test` and `expect` from
+This example separates response, effects, and state assertions within **one scenario**. It uses `test` and `expect` from
 `@suites/blackbox-playwright`; system setup, client definitions, and initial-state checks are omitted.
-
-**Response assertion**
 
 ```ts
 suite.test('Scenario: Create and cache a product', async ({ clients, effects }) => {
@@ -75,38 +73,29 @@ suite.test('Scenario: Create and cache a product', async ({ clients, effects }) 
     expect(response.status()).toBe(201);
     expect(await response.json()).toMatchObject(product);
   });
-  // The state and runtime assertions below continue inside this test.
+
+  await test.step('And write the product to the cache', async () => {
+    await expect(effects).toSatisfy((e) => [
+      e.exists(
+        e.cache({
+          actor: 'product-service',
+          operation: 'SET',
+          target: `product:${product.id}`,
+        }),
+      ),
+    ]);
+  });
+
+  await test.step('And persist the product and populate its cache', async () => {
+    const state = await clients.api.get('/fixture/products/product-1');
+    expect(state.status()).toBe(200);
+    expect(await state.json()).toEqual({ postgres: product, redis: product });
+  });
 });
 ```
 
-**State assertion** — check the stored values in the same scenario:
-
-```ts
-await test.step('And persist the product and populate its cache', async () => {
-  const state = await clients.api.get('/fixture/products/product-1');
-  expect(state.status()).toBe(200);
-  expect(await state.json()).toEqual({ postgres: product, redis: product });
-});
-```
-
-**Runtime assertion** — check the application's cache operation:
-
-```ts
-await test.step('And write the product to the cache', async () => {
-  await expect(effects).toSatisfy((e) => [
-    e.exists(
-      e.cache({
-        actor: 'product-service',
-        operation: 'SET',
-        target: `product:${product.id}`,
-      }),
-    ),
-  ]);
-});
-```
-
-The response establishes what the caller received, the state check reads the values actually stored, and the runtime
-check requires a cache write by the application. The `/fixture/` endpoint is sample-owned observation support that
+The response establishes what the caller received, the effects check requires a cache write by the application, and
+the state check reads the values actually stored. The `/fixture/` endpoint is sample-owned observation support that
 reads real PostgreSQL and Redis state. [Behavioral contracts](docs/contracts/README.md) ·
 [Effects matcher requirements](docs/playwright/clients-and-fixtures.md#inspect-the-attempt).
 
@@ -206,7 +195,7 @@ Feature: Product creation and retrieval
 ```
 
 **Option B: native Playwright.** Gherkin is optional. Write TypeScript using your SDK clients and ordinary assertions,
-as in the [creation excerpts above](#specs-and-behavioural-contracts). Preserve the `Feature → Rule → Scenario` nesting
+as in the [creation example above](#specs-and-behavioural-contracts). Preserve the `Feature → Rule → Scenario` nesting
 and **Arrange → Act → Assert** sequence.
 
 The `/fixture/` route is **example-owned observation support**: it reads real PostgreSQL and Redis
