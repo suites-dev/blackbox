@@ -1,110 +1,73 @@
 # Keep reviewed behavior in the suite you execute
 
-Generated Playwright is **derived output**, not a second mutable source
-of truth. If the reviewed Feature changes but TypeScript doesn't, CI may
-still execute an obsolete scenario.
+A compiled suite is derived output. An accepted effects baseline is a runtime expectation. They
+are separate artifacts with **different drift checks**.
 
-Keep three checks separate: source specification → expectations needs
-**semantic review**; Feature → TypeScript needs a **deterministic drift
-check**; executable expectations → implementation needs **runtime
-execution**. This guide protects the middle relationship, then reruns
-the last one.
+![Review preserves intent; generation preserves the reviewed Feature's executable structure.](../assets/readme/specification-triangle.svg)
 
-The payoff grows as agents iterate: **review the expected behavior
-once, then run the same check against every new implementation**. A
-deterministic drift check catches an outdated generated suite cheaply.
-The running system still needs to be executed for behavioral confirmation.
-
-Complete [the Feature path](drafting-feature-files.md) first. Keep commands in
-`e2e/product-cache/`. Native tests use the same review, execution, and repair loop;
-this generated-file check is additional work for the Feature authoring path.
-
-![Review keeps the expected behavior aligned from the source spec through an optional Feature and its generated native suite.](../assets/readme/specification-triangle.svg)
-
-A generated test is not the authority for changing requirements. If a
-reviewed Feature changes, regenerate its suite rather than editing the
-output by hand.
+This guide uses the candidate product-cache workspace after the merged PR #181 APIs and sample are
+available. All commands below run from `e2e/product-cache/`.
 
 ## Don't confuse generated suites with editable scaffolds
 
-The approved Feature can lead to two different kinds of Playwright
-code. The supported-steps compiler emits a **complete, deterministic**
-suite. It is derived output: don't ask an agent to edit or complete it.
+The Feature compiler emits a complete deterministic suite for supported steps. Do not hand-edit it,
+including to add hypothetical snapshot calls. A future effects binding must be supported explicitly
+by the compiler/runtime.
 
-A separate [editable Playwright scaffold](../playwright/editable-scaffolds.md)
-is a **planned** authoring tool for project-specific setup and SDK
-assertions. It would be owned by the project, rather than protected
-by this byte-level drift check. Today the agent can author the native
-test directly.
-
-Both choices fit the [spec-first developer journey](../guides/from-spec-to-verification.md);
-only the deterministic route uses the command on this page.
+A native suite is project-owned TypeScript. The separate [editable scaffold generator](../playwright/editable-scaffolds.md)
+is planned and has no byte-level generation guarantee. Both routes can participate in the proposed
+[behavioral contract](../contracts/README.md), including accepted effects when implemented.
 
 ## Check for drift
 
 ```sh
-pnpm exec blackbox feature suite validate tests/product-cache.feature --clients tests/clients.ts --output tests/product-cache.generated.spec.ts
+pnpm exec blackbox feature suite validate tests/product-cache.feature \
+  --clients tests/clients.ts --output tests/product-cache.generated.spec.ts
 ```
 
-A matching pair reports that the generated TypeScript matches the reviewed
-Feature. Validation regenerates the TypeScript in memory and compares bytes.
-It does **not** execute the system or establish whether the Feature captured
-every requirement in the source specification.
-
-Generated formatting is part of that comparison. Keep the generated suite outside
-automatic formatting and make expectation changes in the reviewed source.
+The candidate compiler regenerates in memory and compares bytes. It writes nothing and does not
+run the system. Generated formatting matters; keep the output outside automatic formatting.
+This command cannot say whether the source spec was complete or an effects baseline matched a run.
 
 ## Review a change before replacing the suite
 
-For a small practice edit, refine the cached-retrieval Scenario title to include
-`while the cache entry is valid`. Keep its requests and assertions unchanged.
-The title now makes the accepted precondition visible in the report.
-
-Run the drift command again. It must fail with `Generated suite has drifted`:
-the reviewed source title and committed generated title no longer match.
-
-For a behavior change, first review the source specification and its consequences.
-A newly observed implementation behavior does not by itself authorize changing
-the expected outcome.
+For practice, change the cached-retrieval Scenario title to include `while the cache entry is valid`,
+without changing requests or assertions. Validation should report `Generated suite has drifted`.
+For a change in intended behavior, review the specification and its consequences first.
 
 ## Generate a candidate, then execute it
 
-Choose an unused candidate filename beside the existing suite:
+Choose an unused candidate path; emission refuses to overwrite an existing file:
 
 ```sh
-pnpm exec blackbox feature suite emit tests/product-cache.feature --clients tests/clients.ts --output tests/product-cache.candidate.ts
+pnpm exec blackbox feature suite emit tests/product-cache.feature \
+  --clients tests/clients.ts --output tests/product-cache.candidate.ts
 ```
 
-Inspect the generated change. For the title edit, expect a changed scenario title
-with the same two scenarios, hierarchy, preconditions, and assertions. Do not
-replace the suite if unrelated expectations changed.
-
-After accepting that generated change:
+Inspect the candidate. For a title-only change, expect the same scenarios, setup, hierarchy and
+assertions. After accepting the generated change:
 
 ```sh
 mv tests/product-cache.candidate.ts tests/product-cache.generated.spec.ts
 pnpm exec tsc --project tsconfig.json
-pnpm exec blackbox feature suite validate tests/product-cache.feature --clients tests/clients.ts --output tests/product-cache.generated.spec.ts
+pnpm exec blackbox feature suite validate tests/product-cache.feature \
+  --clients tests/clients.ts --output tests/product-cache.generated.spec.ts
 pnpm --dir .. exec playwright test --config product-cache/playwright.config.ts --project feature --list
 pnpm --dir .. exec playwright test --config product-cache/playwright.config.ts --project feature
 ```
 
-Discovery should still show two scenarios. Inspect the report to confirm that the
-renamed scenario executed the same PostgreSQL and Redis expectations.
+Confirm that both scenarios were discovered and executed. Generating code successfully does not
+establish runtime correctness.
 
 ## Repeat the same checks in CI
 
-With the test project prepared and Docker available, use the same
-TypeScript check, suite validation, and Playwright invocation in CI. Keep the
-compiler version consistent with local generation. The CI job must run the
-selected scenarios; a successful generation command is not runtime verification.
+**Feature drift** compares reviewed source with generated TypeScript. **Effects differences**, when
+snapshot comparison is implemented, compare fresh runtime observations with an accepted baseline.
+Normal CI should compare both applicable relationships without approving new expectations.
 
-| Check                           | Relationship protected                           |
-| ------------------------------- | ------------------------------------------------ |
-| Developer/agent review          | Accepted specification → executable expectations |
-| Generated-suite drift check     | Reviewed Feature → generated TypeScript          |
-| System test and evidence review | Executable expectations → running system         |
+A missing baseline or unavailable observation is not a match. A deliberate behavior change needs
+review of the source requirement, tests and baseline together. Existing output/state assertions
+remain necessary; snapshot support does not replace them.
 
-An implementation change repeats the [verification and repair loop](../guides/repair-from-evidence.md)
-against unchanged expectations. An accepted behavior change updates the source
-specification and scenarios together, then generates and executes the new suite.
+[CI verification](../guides/ci-verification.md) · [Baseline review](../contracts/reviewing-changes.md) ·
+[Repair without changing expectations](../guides/repair-from-evidence.md)

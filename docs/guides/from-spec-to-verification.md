@@ -1,105 +1,68 @@
-# From specification to repeatable verification
+# From specification to a durable behavioral contract
 
-Start with **the behavior you want verified**. Blackbox's agent workflow follows that behavior into
-the relevant real system, exercises its I/O interfaces, and preserves the accepted checks as
-repeatable Playwright tests. The checks target the system's contract, so an agent can change its
-internal code without redefining success.
+Start with **one behavior you want verified**, not an infrastructure tour. Blackbox helps the agent
+prepare the relevant real system and preserve the accepted expectations as repeatable checks.
 
-![Developer approves behavioral expectations, the agent prepares the relevant system and optionally investigates it in a Capsule, then generated or authored Playwright checks run in a fresh Sandbox and produce an HTML report.](../assets/readme/spec-to-verification-workflow.svg)
+![Review expected behavior, prepare the relevant system, investigate when useful, and verify through Playwright in a fresh Sandbox.](../assets/readme/spec-to-verification-workflow.svg)
 
-This page describes the **target experience** and distinguishes what exists today from what is still
-designed or pending. It is not a promise that one CLI command automates every stage in the current
-alpha.
+This describes the target workflow. Effects snapshots extend the existing test path and are
+**planned**, not implemented by this documentation PR.
 
 ## 1. The developer brings the specification
 
-Start with Markdown, an API contract, a ticket, or a reviewed SDD artifact. The agent derives
-**candidate examples** of the intended behavior and makes them easy to review.
+Use Markdown, an API contract, a ticket, or an SDD artifact. The agent proposes concrete scenarios;
+the developer approves their meaning before judging the implementation against them.
 
-For the product-cache example:
+For the product example: persist the product, populate Redis, and avoid PostgreSQL on a valid cache
+hit. Later client bindings may be technical refinements. Changing expected outcomes or preconditions
+needs renewed review.
 
-> Creation persists the product in PostgreSQL and populates Redis. A valid-cache retrieval returns
-> that product without reading PostgreSQL.
-
-The developer approves the expected behavior _before_ the agent uses execution results to judge it.
-An agent may suggest corrections; it must not redefine success based on what it observes.
-
-Approval concerns the **meaning of the scenario**. The agent may later add concrete client names and
-supported executable steps once the system is discovered. If those changes alter expected outcomes
-or preconditions, return them for developer review.
-
-A future CLI-assisted authoring step is reserved as
-`blackbox feature file draft <spec> --output <feature>`, but **this command currently exits
-unavailable**. Today the agent can draft the `.feature` file as a normal project file using the
-[supported Gherkin vocabulary](../features/reference.md). A project can also choose
-[native Playwright](../playwright/README.md) and skip Feature authoring.
+A Feature is a durable, reviewable expression of selected expectations, not the entire source spec.
+The `blackbox feature file draft <spec> --output <feature>` route is reserved but unavailable.
+An agent can author the file directly or write native Playwright.
 
 ## 2. Discover what must run
 
-Once the intended behavior is clear, the agent inspects relevant entrypoints, services,
-dependencies, state, and observation points. Source inspection helps it discover and repair the
-implementation. The resulting test enters through the running application's I/O, rather than
-importing an application class into the test process.
+Select the smallest **sufficient verification boundary**: entrypoints, real participants, state and
+observation sources needed by the scenario. The test enters through I/O, not an imported business
+class. Source inspection is still useful for the agent's discovery and repair work.
 
-For the cache rule, the **verification boundary** includes the product API, PostgreSQL, Redis, and a
-mechanism capable of detecting an application database read. The agent can reuse an existing Catalog
-entry or prepare `blackbox.config.yaml` and its startup files.
+For cached retrieval, keep the API, PostgreSQL, Redis, and a credible database observer. Removing
+PostgreSQL would prevent detecting a forbidden read. Record external or substituted dependencies.
 
-Choose the smallest **sufficient** boundary. Run the real participants whose behavior the rule
-constrains, and record anything external or substituted. Removing PostgreSQL would prevent the cache
-example from detecting an unwanted database read. See
-[system boundaries and expectations](../concepts/spec-driven-verification.md#why-the-testing-boundary-matters).
-
-The current Catalog can be validated with:
+Reuse existing `blackbox.config.yaml`, clients and startup files when they fit. A specification
+selects the setup it needs; it does not require its own duplicate configuration stack. Fresh runtime
+isolation is separate from reusable configuration.
 
 ```sh
 pnpm exec blackbox catalog validate --json
 ```
 
-[System setup](../playwright/connect-your-application.md) ·
-[Catalog reference](../../packages/catalog/README.md)
+[System setup](../playwright/connect-your-application.md).
 
 ## 3. Investigate uncertain behavior in a Capsule
 
-A Capsule is the agent's **laboratory**: start the configured system, establish state, perform the
-intended action through drivers or commands, inspect available observations, and revise the
-experiment.
+The agent establishes state, acts through commands or drivers, inspects results, and shows the
+Capsule HTML report. It can test whether the chosen boundary exposes the required behavior and
+observations; that is not proof of equivalence with every production execution.
 
 ```sh
-# Use an actual Catalog system ID. Capture sessionId from the JSON result.
+# Use a real Catalog ID and the sessionId returned by startup
 pnpm exec blackbox capsule up product-system --json
 pnpm exec blackbox capsule run --session <session-id> -- <command...>
-pnpm exec blackbox capsule show <session-id>
 pnpm exec blackbox capsule down <session-id>
 pnpm exec blackbox capsule report serve --session <session-id> --open
 ```
 
-The developer can inspect the **Capsule HTML report** to understand what the experiment observed,
-which operations were correlated, and where the observation was incomplete.
-
-**A Capsule does not currently run a `.feature` file as a test suite.** The agent rehearses the
-proposed Given/When/Then behavior using supported actions and inspections. Even an apparently
-successful experiment does not prove the spec itself is correct or that every later test will pass.
-
-If the system is already known and its observations are trusted, this investigation can be brief or
-skipped.
-
-[Capsule investigation guide](investigate-with-capsule.md)
+Capsule does not currently run `.feature` files. It rehearses their intended actions through
+supported tools. Known systems and checks can skip this investigation.
+[Capsule guide](investigate-with-capsule.md).
 
 ## 4. Preserve the behavior as executable checks
 
-Both paths run as **native Playwright**, exercise the system through its interfaces, and keep the
-accepted behavior visible in their assertions. They differ in how the test code is maintained.
-
-### Compile a reviewed Feature
-
-Use this path when every step fits the supported Gherkin vocabulary. The reviewed Feature, client
-definitions, and Catalog produce a generated suite. **Never hand-edit that output**; suite
-validation checks whether it still matches the Feature. The compiler is implemented in
-[PR #181](https://github.com/suites-dev/blackbox/pull/181), which is merged but not included on this
-docs branch.
-
-For the generated path, the candidate compiler uses:
+A deterministic compiler generates complete native Playwright for supported Feature steps.
+**Never hand-edit its output.** The merged PR #181 implements the compiler, but its code is not on
+this docs branch.
 
 ```sh
 pnpm exec blackbox feature file validate tests/product-cache.feature --clients tests/clients.ts
@@ -109,44 +72,50 @@ pnpm exec blackbox feature suite validate tests/product-cache.feature \
   --clients tests/clients.ts --output tests/product-cache.generated.spec.ts
 ```
 
-### Author native Playwright
+For richer interactions, the agent authors a project-owned native suite. A separate editable
+scaffold generator is planned; native authoring already expresses that role without the generator.
+Both paths preserve output and state assertions and can participate in the proposed snapshot model.
+[Authoring contracts](../playwright/editable-scaffolds.md).
 
-For custom SDK operations or observations outside the Feature vocabulary, the agent writes a
-[project-owned native test](../playwright/README.md) using the required clients and observations.
-Capsule findings can inform that setup when investigation was needed. Review the assertions against
-the accepted behavior; this path has no compiler guarantee of alignment with a Feature.
+## Review candidate effects before accepting a baseline
 
-A separate **editable-scaffold generator** is planned. Native authoring does not depend on it.
+With the planned snapshot capability, an execution can supply a candidate `.effects.yaml` beside
+the test. First review the scenario's intended behavior; then review whether the candidate's
+selected runtime interactions are appropriate to preserve. These are related but distinct decisions.
 
-The two outputs must not be conflated: **an edited generated suite is no longer deterministically
-derived from its Feature**. Learn more in [Editable scaffolds](../playwright/editable-scaffolds.md).
+<picture>
+  <source media="(max-width: 640px)" srcset="../assets/contracts/snapshot-review-mobile.svg" />
+  <img src="../assets/contracts/snapshot-review.svg" width="900" alt="Capture produces a candidate; review accepts a baseline; a new execution is compared without automatically updating expectations." />
+</picture>
+
+Capture-by-default is being considered, **not automatic approval**. A Capsule may help identify
+what to observe; the final test must reproduce its own state and evidence. Candidate promotion
+between tools and exact snapshot association are not implemented or specified here.
+
+The source spec, optional Feature, executable assertions, and accepted effects represent
+[one behavioral contract](../contracts/README.md). State remains asserted in TypeScript while a
+separate `.state.yaml` format is still under discussion.
 
 ## 5. Run the final check and show the report
 
-Playwright starts a **fresh Sandbox per physical test attempt**, connects clients, executes the
-reviewed assertions, and produces a test report. It does not take over the earlier Capsule's live
-environment.
+Each physical Playwright attempt gets a fresh Sandbox. It does not take over the Capsule. In the
+candidate sample, after installing its prerequisites:
 
 ```sh
-# Example commands from e2e/product-cache/ once the sample lands
+# From e2e/product-cache/
 pnpm --dir .. exec playwright test --config product-cache/playwright.config.ts --project native
 pnpm --dir .. exec playwright show-report product-cache/playwright-report
 ```
 
-A different implementation can now be evaluated against **the same expected behavior**. The agent
-repairs a failure and reruns without silently rewriting the specification.
+Inspect the actual output and state assertions, available runtime observations, and attempt limits.
+Snapshot comparison should add accepted-versus-observed effects, not replace those checks.
+A difference leads to investigation or a proposed change for review—not automatic baseline updates.
 
-Client bindings, startup configuration, state readers, and instrumentation may need repairs too.
-Maintain that machinery while preserving the accepted expectations. If the expected behavior itself
-needs to change, return to developer review.
+[Reports](reports.md) · [Review changes](../contracts/reviewing-changes.md) · [CI](ci-verification.md)
 
-[Product-cache verification walkthrough](verify-a-specification.md) ·
-[Repair from evidence](repair-from-evidence.md)
+Start with one behavior. Reuse the setup and observers for further scenarios. Existing Playwright
+system tests are also an intended adoption path; there is no automatic migration flow promised here.
 
----
-
-**Alpha status:** this branch is documentation-only. The typed clients/Feature compiler from merged
-PR #181 are not included here; the product-cache sample is not yet published here, CLI Feature
-drafting is unavailable, direct Feature-in-Capsule execution is not implemented, and the editable
-scaffold generator is proposed. Existing native Playwright tests and Capsule experiments remain
-different execution paths.
+**Alpha scope:** the product sample is unpublished; the PR #181 APIs are not on this branch.
+Automated drafting, Feature-in-Capsule execution, editable-scaffold generation and effects snapshot
+comparison are planned. No state YAML or snapshot schema is finalized by this guide.

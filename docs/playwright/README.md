@@ -1,122 +1,91 @@
 # Express accepted behavior in native Playwright
 
-Native Playwright tests express accepted behavior against a **running system**. SDK clients send
-requests through its interfaces and inspect the state or operations required by the specification.
-The application runs its own implementation; the test does not import its business classes to invoke
-them. That separation lets an agent change internal code while preserving the same expectations at
-the agreed interfaces.
+Native tests exercise a **running system through I/O**. SDK clients send requests and inspect the
+state or interactions required by the specification. The application runs its implementation; the
+test does not import business classes to invoke them.
 
-When the actions or observations are uncertain, a
-[Capsule rehearsal](../guides/investigate-with-capsule.md) can help establish them before the agent
-writes repeatable checks against a fresh Sandbox. A known system can go straight to Playwright.
-
-**Two contracts must stay separate:** a Feature-compiled suite is deterministic and must not be
-hand-edited. An editable Playwright **scaffold generator is planned**; today the agent can write and
-maintain a project-owned native suite directly. See [Editable scaffolds](editable-scaffolds.md) and
-the [full spec-first workflow](../guides/from-spec-to-verification.md).
-
-Native Playwright is a **first-class Spec-Driven Verification path**. Write executable expectations
-in TypeScript, operate the application through SDK clients connected to its interfaces, and assert
-the response, state, and bounded runtime operations the accepted specification requires. Blackbox
-supplies an isolated Sandbox per attempt, resolved client endpoints, and retained execution
-diagnostics.
-
-Gherkin Features are useful review surfaces in SDD, but **optional**. Whether native or generated,
-the human-approved behavior remains fixed while the agent investigates and repairs an
-implementation.
-
-The [product walkthrough](../guides/verify-a-specification.md) follows this accepted behavior:
-creating a product stores it in PostgreSQL and Redis; retrieving the cached product returns it
-without reading PostgreSQL. Use that complete walkthrough for setup, execution, and evidence. This
-page explains how its native test preserves the rule and how to apply that structure to another
-requirement.
+This is a first-class authoring path. A new Markdown spec or Gherkin file is not mandatory for every
+test. Existing Playwright system tests are an intended adoption path too; the setup and migration
+workflow is not yet defined, and unchanged compatibility is not promised.
 
 ## Start from the claim, not the SDK
 
-Ask what each assertion must establish. In the product example, creation status does not establish a
-committed PostgreSQL row, and a cached Redis value does not establish that retrieval avoided
-PostgreSQL. Each claim needs an observable source, a known initial state, and an appropriate
-completion condition.
+A successful response, a saved row, and a forbidden database read are different questions. Write
+assertions against the observations that can answer each one. A Capsule can establish useful actions
+and observers when they are unknown; a known system can go directly to Playwright.
 
-[Behavioral evidence](../concepts/behavioral-evidence.md).
+[Evidence model](../concepts/behavioral-evidence.md) · [Capsule investigation](../guides/investigate-with-capsule.md).
 
 ## Keep the rule visible in the test
 
-![Arrange a known state, act through the application, and assert the result and independently observed state.](../assets/guides/state-testing.svg)
+![Arrange a known state, act through the application, and check the response and independently read state.](../assets/guides/state-testing.svg)
 
-Read the
-[accepted product specification](../guides/verify-a-specification.md#start-with-the-accepted-behavior)
-beside the [candidate native suite](../guides/verify-a-specification.md#native-playwright). The
-suite groups the capability, rule, and scenarios with ordinary Playwright declarations. The Feature
-→ Rule → Scenario hierarchy is useful in native tests; writing a `.feature` file is optional.
+The [candidate native suite](../guides/verify-a-specification.md#native-playwright) preserves
+Feature/Rule/Scenario names and Arrange/Act/Assert phases. Creation checks the response and stored
+PostgreSQL/Redis values. Cached retrieval establishes its own preconditions, calibrates its observer,
+and checks that the application's bounded retrieval did not access PostgreSQL.
 
-Both scenarios belong to **Rule: Persist products and serve valid cache entries**. Each has its own
-Arrange, Act, and Assert phases:
+Each scenario owns a fresh Sandbox. It cannot borrow a product, observer window, or evidence from a
+previous test or Capsule. The sample-owned `/fixture/` endpoints inspect real resources; they are
+not built-in Blackbox APIs. Direct PostgreSQL and Redis clients are also valid observation tools.
 
-| Scenario                  | Arrange                                                                                        | Act                                    | Assert                                                                                      |
-| ------------------------- | ---------------------------------------------------------------------------------------------- | -------------------------------------- | ------------------------------------------------------------------------------------------- |
-| Create a product          | Establish a fresh product system.                                                              | Submit the product to the API.         | Check the creation response, committed PostgreSQL row (C1), and populated Redis entry (C2). |
-| Retrieve a cached product | Create the product, establish its stored and cached state, and prepare the observation window. | Retrieve that product through the API. | Check the response and the retrieval's cache/database observations (C3).                    |
+## The test is part of the behavioral contract
 
-The second scenario must establish its own precondition. It cannot borrow a product created by
-another test: each physical attempt owns a separate Sandbox. Keep the accepted rule unchanged while
-investigating a failing assertion.
+The proposed sibling layout is:
 
-The sample uses HTTP fixture operations for state inspection and its bounded retrieval observation.
-Those operations belong to the sample application. The test can also use
-[PostgreSQL](../guides/testing-postgres.md) and [Redis](../guides/testing-redis.md) SDK clients when
-your application's evidence requires direct access.
+```text
+create-payment.blackbox.test.ts    project-owned actions and assertions
+create-payment.feature            optional reviewed scenarios
+create-payment.effects.yaml       planned accepted effects baseline
+```
+
+The names illustrate the design, not automatic discovery. Output and state assertions remain in the
+suite. A separate `.state.yaml` file is undecided. An accepted effects baseline would complement
+those assertions, not replace state reads or become a dump of all raw spans.
+
+**Generated and authored code remain different.** A Feature compiler's output must not be edited;
+a native test is project-owned. The [editable scaffold generator](editable-scaffolds.md) is planned,
+and incomplete scaffold checks must fail visibly. Both routes can participate in the future snapshot
+model, but this PR adds no capture API, matcher or automatic file loading.
+
+[Behavioral contract](../contracts/README.md) · [Snapshot design](../contracts/effects-snapshots.md).
 
 ## Separate connection setup from behavior
 
-The [sample API client](../guides/testing-http-apis.md#connect-the-api-client) uses `defineClient`
-to bind the exported `api` definition to the `product-service` participant on port `3000`. It
-creates an authenticated request context using that attempt's endpoint and fixture token. The tests
-register it in `system.sandbox(...)` and call `clients.api` using the ordinary request SDK.
+`defineClient` binds a project's SDK to the selected participant and mapped endpoint. The sample
+registers its authenticated API client in `system.sandbox(...)` and calls `clients.api` normally.
+`test.system(...)` selects the Catalog boundary; `suite.describe` and `suite.test` retain behavior
+names; the injected `step` fixture names runtime steps and maintains attempt context.
 
-`test.system('product-system', ...)` selects the catalog boundary. `suite.describe(...)` names the
-capability and rule, and `suite.test(...)` names each scenario. The injected `step` function records
-the scenario's work in the native report while maintaining Blackbox's attempt context.
+Blackbox readies and disposes clients. The application owns its schema, authentication, fixtures and
+observation meaning. Registering an SDK does not automatically instrument it or propagate context.
+[Client and fixture reference](clients-and-fixtures.md).
 
-Client bindings and observation support can change without redefining the rule. Keep that
-maintenance separate from changes to expected behavior, which require review.
-
-Blackbox readies and disposes registered clients. The application owns its schema, fixture meaning,
-authentication, and observation operations. See the
-[client and fixture reference](clients-and-fixtures.md) for SDK registration, per-test hooks, custom
-fixtures, and lifecycle details.
+Reuse suitable configuration and observers for additional scenarios. Fresh runtime isolation does
+not require a separate infrastructure stack in the repository for every specification.
 
 ## Run the same reviewed expectations
 
-After completing the [walkthrough's preparation](../guides/verify-a-specification.md), run these
-commands from `e2e/product-cache/`:
+After the [candidate example prerequisites](../guides/verify-a-specification.md#run-the-supplied-example),
+from `e2e/product-cache/`:
 
 ```sh
 pnpm --dir .. exec playwright test --config product-cache/playwright.config.ts --project native --list
 pnpm --dir .. exec playwright test --config product-cache/playwright.config.ts --project native
 ```
 
-The native project selects the two business scenarios. Check their individual results and named
-steps, then return to [Read the evidence](../guides/verify-a-specification.md#read-the-evidence). A
-scenario that stops at a failed assertion has not established its later claims. Setup and cleanup
-outcomes also belong to the attempt's result.
+Confirm both scenarios actually ran. Keep setup failures, skipped assertions, retries, and cleanup
+outcomes visible. The planned effects comparison must also preserve unavailable observation as a
+limitation rather than an empty match. [Reports](../guides/reports.md).
 
 ## Ask the agent to add another scenario
 
-Give the agent the accepted requirement, the existing suite, and the observation needed to
-distinguish correct behavior:
+```text
+Add a test for this accepted behavior using the existing system setup when suitable.
+Establish its own initial state and check the required output, state, and interactions.
+Keep expected behavior fixed while repairing code or test support.
+If snapshot support is available, propose effects for review instead of auto-accepting them.
+Run the focused scenario and report anything it did not establish.
+```
 
-> Extend the native suite with a scenario for this accepted requirement. Keep its rule and Arrange,
-> Act, Assert phases visible. Establish its precondition within its own attempt, and identify the
-> response, state, or runtime evidence needed by each claim. Run the scenario and report any claim
-> that remains unchecked.
-
-An SDK call is an action or observation, not an acceptance criterion by itself. For example, a Redis
-`GET` that returns the expected value establishes cache state. It does not establish that the
-application's retrieval avoided PostgreSQL. The [cache evidence guide](../guides/testing-redis.md)
-explains that distinction.
-
-Continue with [repairing the implementation from evidence](../guides/repair-from-evidence.md). Use
-the same native suite during local iteration and in the repository's CI selection. If your team also
-wants reviewed Gherkin, the optional [Feature workflow](../features/drafting-feature-files.md)
-generates native suites that use the same runtime and reporting path.
+[Repair exercise](../guides/repair-from-evidence.md) · [CI verification](../guides/ci-verification.md)

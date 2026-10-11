@@ -1,138 +1,86 @@
 # Spec-Driven Verification
 
-**Start with what we agreed the system should do. Run the system. Check what it actually did.**
+**The specification describes intended behavior. Executions produce evidence. Verification compares
+them through reviewed expectations.**
 
-As agents take on more implementation work, we need a repeatable way to check behavior alongside
-code review. A spec gives the implementation and its checker a shared, human-reviewed target. Its
-meaning should survive changes to classes, functions, and internal organization.
-
-The specification may be Markdown, a ticket, an API contract, or a document owned by an SDD
-workflow. Blackbox doesn't replace it. It helps coding agents turn that accepted behavior into tests
-that exercise the real running application.
+As agents write and rewrite implementations, keep that expectation independent from the code's
+current structure. The source can be Markdown, an API contract, or an SDD artifact. Blackbox does
+not have to own that document to check the running system.
 
 ## Why the testing boundary matters
 
-**The application runs its implementation. The test interacts with the application.** A Blackbox
-system test sends input through a running application's interface, such as HTTP. It does not import
-a business class into the test process and invoke its methods as the entrypoint.
+The application runs its implementation. The test enters through I/O, such as an HTTP request,
+instead of importing a business class and invoking a method. It inspects outputs, state, and
+required interactions of the real participants inside the selected boundary.
 
-That is why the framework is called **Blackbox**. The checks describe what the system returns,
-changes, and does against the accepted behavior. Testing through those interfaces makes the
-separation between specification and implementation practical: an agent can change the code's
-internal structure while the same expectations continue to apply.
+You may call such checks integration tests; the important distinction is **where the test enters
+and what it depends on**, not the label. Some integration tests also use external interfaces and
+real dependencies. Blackbox supplies the agent-operated setup, isolation, investigation and reports.
 
-For the product rule, the test creates and retrieves a product through the API, inspects its
-PostgreSQL and Redis state, and observes the database/cache operations during retrieval. The rule
-constrains those interactions. It need not name a service class or repository method.
-
-Some teams call these integration tests. The term includes both
-[code-level interactions and tests across live services](https://martinfowler.com/bliki/IntegrationTest.html).
-Blackbox's contribution is the system preparation, isolation, observation, and feedback workflow
-that lets agents repeat these checks against an accepted specification.
-
-Run the real participants needed inside the **verification boundary**. Record external or
-substituted dependencies and what their substitution leaves unverified. Removing PostgreSQL from the
-cache example would remove the very interaction the test must check.
-
-## Maintain the machinery without redefining success
-
-A Feature is durable when it describes system behavior, not merely because it uses Gherkin. If
-agreed interfaces and behavior stay the same, changing an ORM or reorganizing classes need not
-change the expectation. Client bindings, startup configuration, state readers, and instrumentation
-may still need maintenance.
-
-Keep that maintenance separate from changing the behavioral contract. An agent may repair an
-observer that stopped recording database reads; changing the expected read count to accept a cache
-bypass would change the requirement and needs review.
+A service can change its classes or ORM without changing the expected behavior at those interfaces.
+Client bindings, fixtures, and observers can still need maintenance. Replacing them must not silently
+redefine correctness. Record external dependencies and substitutions; do not remove the behavior or
+observer needed to answer the question.
 
 ## One specification, three things to keep connected
 
-Suppose we agree:
+> Creating a product persists it in PostgreSQL and populates Redis. A valid cache hit must not read
+> PostgreSQL.
 
-> Creating a product persists it in PostgreSQL and populates Redis. Retrieving a valid cached entry
-> must not read PostgreSQL.
+![The specification, optional Feature and executable suite keep the same cache rule visible.](../assets/readme/specification-triangle.svg)
 
-<p align="center">
-  <img width="790" src="../assets/readme/specification-triangle.svg" alt="An accepted product specification, optional Gherkin Feature, and generated Playwright suite preserve the same cache behavior." />
-</p>
+The Feature is a **durable, reviewable expression of selected expectations**. It is not the entire
+spec, and Gherkin syntax alone cannot prevent staleness. The test exercises those expectations; the
+run supplies actual results. A passing result is not proof that every source requirement was covered.
 
-The **spec** describes what should happen. The **test** expresses a concrete example. The **run**
-tells us whether that example held in one real execution. A passing test cannot prove that every
-requirement in the source document has been covered.
+## The contract lives beside the test
 
-The full [developer journey](../guides/from-spec-to-verification.md) places human review before
-system discovery. The agent then uses Capsule experiments to learn which observations actually work
-before turning the approved behavior into repeatable Playwright checks. Capsule exploration is
-useful, but isn't mandatory when the selected system and assertions are already known.
+The intended [behavioral contract](../contracts/README.md) combines reviewed scenarios, TypeScript
+output/state assertions, and an accepted effects snapshot when snapshot support is available.
+
+```text
+create-payment.feature
+create-payment.blackbox.test.ts
+create-payment.effects.yaml       # planned accepted baseline, not raw telemetry
+```
+
+The layout is illustrative, not a discovery API. A separate `.state.yaml` is undecided. State
+assertions remain in the suite. Capturing observations never makes them accepted expectations by
+itself; [baseline review](../contracts/reviewing-changes.md) preserves that boundary.
 
 ## Write checks in two ways
 
-<p align="center">
-  <img width="790" src="../assets/guides/authoring-paths.svg" alt="Accepted specifications can become direct native Playwright tests or optional reviewed Gherkin Features that compile to Playwright." />
-</p>
+A Feature compiler emits deterministic native Playwright for supported sentences. Keep generated
+code unedited. Native authoring uses project-owned TypeScript and can express richer SDK operations.
+The proposed editable-scaffold generator is separate; it does not give authored tests byte-level
+equivalence with a Feature.
 
-- **Native Playwright:** TypeScript tests using SDK clients to interact with the running system's
-  interfaces and inspect its resources.
-- **Optional Gherkin Feature:** readable `Feature → Rule → Scenario` examples, reviewed before
-  Blackbox generates a native suite.
+Both paths use the same underlying system-testing model and can participate in the planned effects
+comparison. Gherkin is optional, including for existing Playwright system tests.
 
-A short Feature can express a request and its response:
-
-```gherkin
-Feature: Product creation
-  Scenario: Create a product
-    When client "api" sends POST "/products" with JSON:
-      """json
-      { "id": "product-1", "name": "Field notebook", "priceCents": 1299 }
-      """
-    Then the response status is 201
-```
-
-**That only checks the response.** The complete
-[product example](../guides/verify-a-specification.md) also checks storage, cache state, and the
-application's database operations.
+[Authoring paths](../features/README.md) · [Editable scaffolds](../playwright/editable-scaffolds.md).
 
 ## Three different ways things drift
 
-| Relationship                  | What can go wrong?                               | How to check                     |
-| ----------------------------- | ------------------------------------------------ | -------------------------------- |
-| **Spec → test**               | We miss or misunderstand a requirement           | Review against the accepted spec |
-| **Feature → generated suite** | The TypeScript no longer matches the Feature     | Deterministic generation check   |
-| **Test → system**             | The implementation no longer behaves as expected | Run against the isolated system  |
+| Relationship | Check |
+| --- | --- |
+| Source spec → executable expectations | Review meaning, conditions and omitted cases. |
+| Feature → generated suite | Deterministic generation comparison. |
+| Accepted runtime expectations → new execution | Execute assertions and, when supported, compare effects. |
 
-For the Feature path, the candidate compiler can check the generated suite:
-
-```sh
-# In the product-cache sample, with the PR #181 APIs and sample available
-pnpm exec blackbox feature suite validate tests/product-cache.feature \
-  --clients tests/clients.ts --output tests/product-cache.generated.spec.ts
-```
-
-This checks **generated files**, not the running system.
-[Feature maintenance](../features/generating-test-suites.md).
+An effects difference needs actual runtime observations. It is not Feature-to-TypeScript drift, and
+neither check proves that the source specification was adequate.
 
 ## The important human boundary
 
-Two separate questions matter. **Is the spec itself right?** Someone must clarify and approve the
-behavior. **Does the implementation meet the spec?** Blackbox gives the agent an environment and
-observations to check selected behaviors.
+**Is the specification right?** Clarification and review must establish what the team intends.
+**Does the implementation meet it?** Blackbox supplies system execution and observations for the
+selected checks. Finite system tests do not provide formal proof of all inputs and interleavings.
 
-If the test fails, the agent should investigate the code or the observation setup. It should not
-change a requirement to make the test green without review.
+A Capsule can investigate an unknown before the final test. Fresh Playwright attempts confirm their
+own assertions; they do not borrow evidence from the experiment. If a candidate effects baseline
+exposes a previously unstated constraint, accepting it is a deliberate decision.
 
-When the reason for a failure is unclear, the agent can explore with a
-[Capsule](../../packages/capsule/README.md). An experiment may suggest a new test, but it doesn't
-automatically define acceptable behavior.
-
-<p align="center">
-  <img width="790" src="../assets/readme/capsule-to-feature.svg" alt="A Capsule supports experimentation; a developer reviews candidate expectations before recording them as repeatable Playwright verification." />
-</p>
-
-Blackbox can work from ordinary Markdown or integrate with an existing process such as
-[Spec Kit](../integrations/spec-kit.md). Spec Kit owns the specification; Blackbox owns the runtime
-check. The integration itself is planned, not shipped.
-
-**Specifications define intent. Executions produce evidence. Verification connects them.**
-
-[Why this matters in agentic development](why-verification-now.md) ·
-[Investigate with a Capsule](../guides/investigate-with-capsule.md)
+[Why verification matters now](why-verification-now.md) ·
+[Developer workflow](../guides/from-spec-to-verification.md) ·
+[Spec Kit](../integrations/spec-kit.md)

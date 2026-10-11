@@ -1,119 +1,90 @@
 # Check the behavior the specification requires
 
-An agent can write an implementation, send an HTTP request, and see `200`. But **is that the result
-the specification required?** And what might be missing behind the response?
+An HTTP `200` is an observation, not an answer to every requirement. Testing needs a way to decide
+whether the observed result is correct: the _test oracle problem_. When agents implement and test
+more of the software, reviewed expectations and trustworthy observations make that decision
+repeatable rather than relying on an agent's confidence.
 
-This is the _test oracle problem_: generating test inputs is different from deciding whether the
-observed behavior was correct. Historically, a human could inspect the system and judge. As coding
-agents do more implementation work, we need more of that judgment expressed in **reviewed checks and
-trustworthy observations**.
-
-Blackbox helps build those checks. It does **not** automatically invent a correct oracle from
-arbitrary prose.
-[Research background: _The Oracle Problem in Software Testing: A Survey_](https://ieeexplore.ieee.org/document/6963470).
+[The Oracle Problem in Software Testing: A Survey](https://ieeexplore.ieee.org/document/6963470).
 
 ## Observe the running system through its boundaries
 
-Blackbox exercises the application through its I/O interfaces. Outputs, stored state, database
-access, cache operations, and outgoing requests can all provide evidence about that execution.
-Observing those interactions preserves the separation between the test and the application's
-internal classes or functions.
+Blackbox enters through I/O and inspects outputs, stored state and required interactions. Asserting
+that `CacheService.find()` was called couples a test to a method. Checking that a valid cached
+retrieval avoided PostgreSQL checks an interaction explicitly constrained by the specification.
 
-For example, asserting that `CacheService.find()` was called would couple the test to one code
-structure. Checking that a valid cached retrieval did not access PostgreSQL expresses an interaction
-explicitly constrained by our accepted specification. The agent remains free to reorganize the
-implementation behind the same interfaces.
-
-**An observation becomes an assertion because the specification requires it.** Other trace details
-can help diagnose a failure without becoming part of the behavioral contract. See
-[why the testing boundary matters](spec-driven-verification.md#why-the-testing-boundary-matters).
+The proposed snapshot model keeps that separation: **raw observations are evidence; reviewed output,
+state and effects expectations form the contract**. Diagnostic spans need not become assertions.
+[Behavioral contracts](../contracts/README.md).
 
 ## The same response, different behavior
 
-Our example specification says creating a product stores it in PostgreSQL and Redis, and a valid
-cache hit **must not read PostgreSQL**.
+![The same correct product response can come from a valid cache hit or a cache bypass that violates the rule by reading PostgreSQL.](../assets/guides/product-cache-evidence.svg)
 
-<p align="center">
-  <img width="900" src="../assets/guides/product-cache-evidence.svg" alt="The test reaches the real product system through HTTP and checks state and runtime interactions. Both retrieval implementations return the same product; a cache bypass violates the rule by reading PostgreSQL." />
-</p>
+| What we inspect | Question it answers |
+| --- | --- |
+| **Output** — status, payload, process result | What did the caller receive? |
+| **State** — PostgreSQL row, Redis value | What was stored or changed? |
+| **Runtime interactions** — observed SQL, cache, HTTP or messaging operations | What did the application do during the action? |
 
-The product can be correct in the response **and** wrong in how it was retrieved. The test needs the
-observations required by the rule:
-
-| What we check                    | Example                                | What it answers                 |
-| -------------------------------- | -------------------------------------- | ------------------------------- |
-| **Outcome**                      | HTTP status and JSON body              | What did the caller receive?    |
-| **State**                        | PostgreSQL row or Redis value          | What was actually stored?       |
-| **Runtime activity** (_effects_) | SQL query, Redis GET, outgoing request | What did the running system do? |
-
-These are **choices, not a mandatory checklist**. The specification decides which matter.
-
-An observed `INSERT` doesn't establish that a transaction committed. Finding a product in Redis
-doesn't establish that the application served it from Redis. Choose the observer that answers the
-_specific_ question.
+Choose the observations the requirement needs. A recorded `INSERT` may roll back; a separate state
+read can establish visibility of a committed row. A Redis value does not show that the application
+used it for a particular retrieval. Publication does not establish consumer completion.
 
 ## The outcome depends on how the system is entered
 
-| Entry point    | Immediate result                                                     | What may need another check               |
-| -------------- | -------------------------------------------------------------------- | ----------------------------------------- |
-| HTTP           | Status, headers, response                                            | Persisted state, downstream calls         |
-| Queue consumer | Handler result, acknowledgment or offset commit, depending on broker | Business completion, duplicate handling   |
-| CLI            | Exit status, stdout, stderr                                          | Files, database changes, external effects |
-| Scheduled job  | Scheduler/job result, when available                                 | Work completed by another process         |
+HTTP exposes a response. A CLI exposes exit status and output. A queue consumer may expose a handler
+result, acknowledgment or offset commit, depending on the broker. A job may expose completion status.
+**There is no universal queue equivalent of an HTTP response.** Submission, processing, settlement,
+and downstream business completion may be different events.
 
-A queue consumer has **no universal HTTP-like response**. Receipt, processing, acknowledgment, and
-downstream completion can be separate events.
-
-These are principles for designing a test, **not promises** that the current alpha provides built-in
-drivers for every entrypoint.
+These describe how to choose evidence, not a promise of built-in adapters for every entrypoint.
+The documented product example exercises HTTP.
 
 ## Why absence is harder than presence
 
-To assert that cached retrieval never read PostgreSQL, a missing OpenTelemetry SQL span isn't
-enough. That process may not be instrumented; the observer may have missed the call.
+The cache rule forbids PostgreSQL access on a valid cache hit. A missing SQL span is insufficient:
+an uninstrumented process or incomplete capture can also produce no spans.
 
-The [product-cache test](../guides/testing-redis.md#observe-the-retrieval-within-a-bounded-window)
-instead:
-
-1. **Calibrates** its observer with a known database read.
-2. Establishes stored and cached product state.
-3. Measures exactly one cache-hit retrieval in a bounded, isolated window.
+The current [cache example](../guides/testing-redis.md#observe-the-retrieval-within-a-bounded-window)
+first checks that a known database read is detected, establishes cached state, and then measures
+one retrieval through application-role SQL and Redis counters in an isolated window.
 
 ```text
-Expected valid cache hit:  Redis GET 1  | PostgreSQL statements 0
-Deliberate cache bypass:   Redis GET 1  | PostgreSQL statements 1
+Expected valid cache hit:  Redis GET 1 | PostgreSQL statements 0
+Deliberate cache bypass:   Redis GET 1 | PostgreSQL statements 1
 ```
 
-These are _expected example measurements_, not a screenshot of a completed run. The assertion
-depends on correct calibration, application-role filtering, and a window without unrelated traffic.
+These are expected example values, not a fresh test receipt. Their meaning depends on calibration,
+role filtering and exclusion of unrelated traffic. The example uses explicit assertions today;
+**do not replace them with an empty effects snapshot** without equivalent coverage guarantees.
 
 ## Wait until the behavior is actually complete
 
-A response may precede asynchronous work. A queue acknowledgment doesn't necessarily mean an invoice
-was created. A specification that allows eventual completion needs a **specific result and a
-deadline**.
+A response or queue acknowledgment may precede background work. Check the business completion
+condition and deadline specified by the requirement; do not add polling to weaken an immediate
+completion promise.
 
-<p align="center">
-  <img width="790" src="../assets/guides/async-completion.svg" alt="Conceptual queued work is verified by checking that the matching record reaches completed status rather than trusting submission alone." />
-</p>
+![Conceptual queue work is checked by observing completion of the matching record, not by trusting submission alone.](../assets/guides/async-completion.svg)
 
-The [async guide](../guides/testing-async-flows.md) uses Playwright polling for a documented state
-condition. The diagram is conceptual, not a shipped queue driver.
+Same-Sandbox membership or overlapping timestamps do not prove one action caused another. Preserve
+identity, observation scope, causal limitations and partial capture. [Async guide](../guides/testing-async-flows.md).
+
+## From evidence to an accepted effects baseline
+
+The planned workflow selects relevant runtime interactions, normalizes unstable details, and
+proposes a snapshot for review. **OpenTelemetry is an observation source, not the snapshot format
+or the acceptance decision.** Exact projection and matching semantics remain to be implemented.
+
+An accepted snapshot does not prove the run was adequately observed. Fresh comparison must still
+account for scope, completion and instrumentation compatibility.
+[Effects snapshots](../contracts/effects-snapshots.md).
 
 ## Read the result without overstating it
 
-A result can support one expectation but leave another unanswered because observation was
-unavailable or the test failed before reaching it. The same Sandbox also doesn't guarantee two
-observed operations caused one another; request identity, timing, and completion matter.
+A run may support one expectation while leaving another unchecked after an earlier failure.
+Supported, refuted and unresolved describe how to reason about evidence; they are not a universal
+three-valued API shipped by this alpha. Current assertions use Playwright's actual outcomes.
 
-**Supported, refuted, and unresolved** are useful terms for what the collected information
-establishes. They are **not** a universal three-valued result API shipped by this alpha. Blackbox's
-current native path uses Playwright assertions and retained diagnostics.
-
-OpenTelemetry contributes runtime observations where instrumentation exists. It isn't Blackbox's
-definition, and an attempted payment span is not proof of a settled payment. System tests provide
-evidence for **specific executions**, not formal guarantees for every possible behavior.
-
-[Why verification matters now](why-verification-now.md) ·
-[PostgreSQL](../guides/testing-postgres.md) · [Redis](../guides/testing-redis.md) ·
-[Repair the cache bug](../guides/repair-from-evidence.md)
+[Reports](../guides/reports.md) · [Review differences](../contracts/reviewing-changes.md) ·
+[Why verification now](why-verification-now.md)

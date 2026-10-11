@@ -1,80 +1,74 @@
 # Blackbox with Spec Kit
 
-Spec Kit provides structured specifications, plans, tasks, and an agentic implementation workflow. Blackbox provides **executable system verification** against the accepted behavior.
-
-The proposed `blackbox-spec-kit` extension is a thin handoff. **It is not published or installed by this alpha**. You can use the same conceptual workflow today by giving the Blackbox agent the accepted `spec.md` path.
+Spec Kit owns its specifications, planning and implementation workflow. Blackbox supplies runtime
+verification of the accepted behavior. The proposed `blackbox-spec-kit` extension remains a thin
+handoff, **not a published integration in this alpha**.
 
 ## Keep one owner for each artifact
 
-| Artifact or capability                                          | Owner                                                   |
-| --------------------------------------------------------------- | ------------------------------------------------------- |
-| `spec.md`, requirements, clarification, planning, tasks         | Spec Kit and the project's reviewers                    |
-| Accepted meaning of the requirement                             | Developer or relevant human approval process            |
-| Native tests or a reviewed executable Feature                   | Blackbox authoring path, derived from accepted behavior |
-| Sandbox, clients, evidence, runtime diagnostics, test execution | Blackbox                                                |
-| Cross-artifact planning/implementation convergence              | Spec Kit; Blackbox may contribute runtime findings      |
+The developer or SDD review process approves intent. The agent derives reviewable scenarios, prepares
+the system, and creates generated or native Playwright checks. In the planned snapshot workflow,
+selected effects become an accepted baseline only after deliberate review.
 
-Do not automatically rewrite `spec.md` after a failed runtime check. Fix the implementation when it contradicts accepted behavior, or return a proposed requirement change for explicit review.
+The Feature, TypeScript assertions and effects baseline express one [behavioral contract](../contracts/README.md).
+They do not become competing requirements documents, and a failed execution must not automatically
+rewrite Spec Kit's `spec.md`.
 
 ## Fit into the developer's verification journey
 
-Spec Kit supplies the accepted `spec.md`. The agent proposes a
-reviewable Feature for developer approval, then discovers and rehearses
-the system in a Capsule. When it is ready to make the check repeatable,
-it either compiles supported Feature steps deterministically or authors
-project-owned native Playwright. The proposed editable scaffold
-generator is a **separate future capability**.
+```text
+Spec Kit's accepted spec.md
+        ↓
+Reviewed scenarios → selected real system → optional Capsule experiment
+        ↓
+Executable assertions + candidate effects, when capture is supported
+        ↓
+Review baseline → fresh Playwright verification → report and repair
+```
 
-This is the same [spec-first workflow](../guides/from-spec-to-verification.md)
-that works for ordinary Markdown; there is no reason to fork the
-verification runtime for Spec Kit.
+Candidate capture, baseline review and comparison are planned Blackbox behavior, not capabilities
+already supplied by this extension. The same process works from plain Markdown.
 
 ## The handoff
 
-Spec Kit keeps `spec.md` and its approval process. The agent proposes
-checks from the accepted spec; Blackbox runs them against the system.
+![Accepted specifications can lead to native Playwright or optional Gherkin and the same Sandbox/runtime path.](../assets/guides/authoring-paths.svg)
 
-![An accepted specification leads to native Playwright or an optional Gherkin Feature; both use a Blackbox Sandbox and shared reports.](../assets/guides/authoring-paths.svg)
-
-In a Spec Kit project this might begin with `specs/003-user-auth/spec.md`.
-In a plain Markdown project it might begin with `requirement.md`.
-**Everything after the reviewed expectations is the same Blackbox workflow.**
+Resolve the accepted source and use the existing system configuration where suitable. A new
+specification should not automatically create another infrastructure stack. State assertions stay
+in the tests; a separate state YAML is still undecided.
 
 ## Resolve the active specification
 
-The bridge should look for `SPECIFY_FEATURE_DIRECTORY` and otherwise use the `feature_directory` recorded by `.specify/feature.json`. Read `spec.md` from that active feature directory. **Do not assume `.specify/specify.md` is current**, and do not guess the current feature based on timestamps.
-
-That is a concrete integration contract, not just a folder convention. The Spec Kit BDD extension once had to correct a read-location bug caused by assuming the wrong spec location.
-
-If the source is absent or ambiguous, surface the problem rather than silently selecting another specification.
+The previously documented bridge design checks `SPECIFY_FEATURE_DIRECTORY` and otherwise the
+`feature_directory` in `.specify/feature.json`, then reads that directory's `spec.md`. Treat this as
+a version-dependent integration contract to validate when implementing the extension, not a guess
+based on timestamps or an assumed `.specify/specify.md` path. Ambiguous sources require clarification.
 
 ## Coexist with the existing BDD ecosystem
 
-The community [Spec Kit BDD extension](https://github.com/RSginer/spec-kit-bdd) can already derive Gherkin acceptance scenarios and map specification requirements to them.
-
-Blackbox should not produce a second competing Gherkin source when one has already been reviewed. It should:
-
-1. Consume the existing accepted scenario or help the agent propose one for review.
-2. Validate its steps against **Blackbox's actual executable vocabulary**.
-3. Surface unsupported or ambiguous steps rather than silently deleting them.
-4. Use the resulting reviewed expectations for native Playwright execution, evidence, and repeatable verification.
-
-A generic Gherkin sentence or step-definition stub is not automatically executable in the Blackbox Feature compiler. Nor does a spec-to-scenario traceability matrix establish that the application behaves correctly.
+The community [Spec Kit BDD extension](https://github.com/RSginer/spec-kit-bdd) can supply reviewed
+Gherkin. Reuse accepted scenarios instead of creating a competing Feature. Validate against
+Blackbox's actual supported vocabulary and surface unsupported meanings. A generic step-definition
+stub does not supply executable Blackbox semantics, and traceability does not establish runtime
+correctness.
 
 ## Proposed extension lifecycle
 
-A future Spec Kit extension can add skills, agent commands and optional lifecycle hooks to propose a Feature after `specify`, check that expectations are reviewed before implementation, and request runtime verification after implementation/convergence.
-
-For illustration, the command identifiers might be `speckit.blackbox.setup`, `speckit.blackbox.draft`, and `speckit.blackbox.verify`. **These are proposed names, not runnable commands.** The implementation should delegate to the shipped Blackbox CLI instead of duplicating its verification semantics inside an agent prompt.
-
-Agent hooks are not enforcement: CI must invoke the actual selected tests and drift checks, honor their exit status, and retain reports.
+A thin extension could contribute skills and hooks for drafting, preparation and verification while
+delegating to the real Blackbox CLI. Exact command names and integrations are not shipped here.
+Hooks must not silently accept baselines, rewrite specifications or weaken required checks.
+CI needs actual test and comparison results, not an agent's assertion that it ran them.
 
 ## Without the bridge
 
-Give the agent the active Spec Kit `spec.md` path and follow [Connect your application](../playwright/connect-your-application.md). You don't have to install, initialize, or even use Spec Kit for a vanilla Markdown project.
+Give the agent an explicit accepted spec path and use the [developer workflow](../guides/from-spec-to-verification.md).
+Neither Spec Kit nor a new Gherkin file is required for native Playwright. The broader existing-test
+adoption workflow is intentionally not specified yet.
 
-[Spec-Driven Verification](../concepts/spec-driven-verification.md) · [Feature authoring](../features/README.md) · [Runtime evidence](../concepts/behavioral-evidence.md)
+[Contract review](../contracts/reviewing-changes.md) · [CI](../guides/ci-verification.md)
 
 ## Upstream references
 
-[Spec Kit](https://github.com/github/spec-kit) · [Extension development](https://github.com/github/spec-kit/blob/main/extensions/EXTENSION-DEVELOPMENT-GUIDE.md) · [Community BDD extension](https://github.com/RSginer/spec-kit-bdd)
+[Spec Kit](https://github.com/github/spec-kit) ·
+[Extension development](https://github.com/github/spec-kit/blob/main/extensions/EXTENSION-DEVELOPMENT-GUIDE.md) ·
+[Community BDD extension](https://github.com/RSginer/spec-kit-bdd)
