@@ -40,7 +40,7 @@ the generic instrumentation, Catalog, Capsule, Sandbox, and collector packages.
 
 ## Install And Activation Flow
 
-The [CLI install command](../cli/src/commands/inst/install.ts) passes
+The [CLI install command](src/cli/commands/inst/install.ts) passes
 `nodeRuntimeProvider` to the generic
 [`installInstrumentation()`](../instrumentation/src/installation/install.ts). That
 layer owns `.blackbox/instrumentation`, containment checks, conflict detection,
@@ -65,8 +65,8 @@ Activation is separate from installation:
 | `node-preload` | `--require=<mounted instrumentation.js>`                 | CommonJS            |
 | `node-esm`     | OpenTelemetry experimental loader, then the same preload | ESM                 |
 
-For Capsule, the [CLI up command](../cli/src/commands/capsule/up.ts) injects
-the exported adapter descriptors. Capsule resolves the catalog activation, validates
+For Capsule, the [CLI up operation](../capsule/src/cli/operations/up/up-command.ts) passes
+the registered descriptors from selected runtime packages into startup. Capsule resolves the catalog activation, validates
 that its asset stays inside `.blackbox/instrumentation`, and creates a read-only
 `/blackbox/instrumentation` mount. Sandbox preserves an existing `NODE_OPTIONS`
 value before appending the adapter value; see

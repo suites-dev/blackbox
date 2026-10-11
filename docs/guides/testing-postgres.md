@@ -1,5 +1,7 @@
 # Establish that creation committed the product
 
+**Candidate case study.** The typed client API is outside this branch and the product application is not supplied. Adapt the schema and credentials to an implemented system. [Availability](../alpha-status.md).
+
 Claim **C1: Persistence** in the
 [accepted product specification](verify-a-specification.md#start-with-the-accepted-behavior) says
 that a successful creation stores the product in PostgreSQL. A `201` response or an observed
@@ -15,7 +17,7 @@ observation with a native `pg` client.
 ## State evidence is not an effect trace
 
 An instrumented `INSERT` can be attempted and later rolled back. C1 requires the committed product
-row after creation, which is why the sample reads state from a separate observation connection and
+row after creation, which is why the proposed fixture reads state from a separate observation connection and
 checks the expected identity and fields.
 
 That is evidence under a particular isolation/visibility model, not a blanket proof of durability
@@ -34,7 +36,7 @@ After creation, `GET /fixture/products/product-1` returns two independently read
 }
 ```
 
-The `postgres` value is the stored row read by the sample's `e2e/product-cache/app/fixtures.mjs`. It
+The `postgres` value must be the stored row read independently by the fixture implementation. It
 is not a copy of the creation response. The scenario compares it with the expected product; a
 missing or different row fails the persistence claim even if the API returned `201`.
 
@@ -69,12 +71,12 @@ export const db = defineClient(Pool, {
 });
 ```
 
-The source workspace supplies `pg` and its types. An external project must install compatible SDK
+Install `pg` and its types in the consuming test project. An external project must install compatible SDK
 dependencies and supply the actual participant, credentials, and schema. `clients.db` retains the
 native `Pool` API. `SELECT 1` establishes connectivity; application migrations establish the schema.
 
 Keep the test's observation connection distinct from the application's database role. The product
-sample exposes the read-only `fixture_observer` credentials through these `OBSERVER_DATABASE_*`
+fixture design calls for the read-only `fixture_observer` credentials through these `OBSERVER_DATABASE_*`
 environment values. It measures SQL performed by `product_app`; test-side reads must not masquerade
 as application reads in that measurement. Use a separately authorized writable client when a
 scenario needs database seeding.

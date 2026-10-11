@@ -28,7 +28,8 @@ dependency installation, or `NODE_OPTIONS` policy.
 | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | This package                                                          | Select a provider, safely install its declared files, run its preparation callback, and define runtime-neutral activation adapter types.                                 |
 | [`instrumentation-runtime-node`](../instrumentation-runtime-node/src) | Supply the Node provider, bundled OpenTelemetry bootstrap, dependency preparation, and the current `node-preload` and `node-esm` activation adapters.                    |
-| [`cli`](../cli/src/commands)                                          | Choose the supported provider for `inst install`; inject Node activation adapters when starting a Capsule.                                                               |
+| [Node runtime CLI](../instrumentation-runtime-node/src/cli/commands)  | Choose the Node provider for `inst install`.                                                                                                                             |
+| [Capsule CLI](../capsule/src/cli/operations/up/up-command.ts)         | Pass registered activation adapters from the selected runtime packages into Capsule startup.                                                                             |
 | [`capsule`](../capsule/src/manager/telemetry/participants.ts)         | Match catalog runtime and adapter names, validate the activation asset, mount the instrumentation directory read-only, and materialize the environment append operation. |
 | [`catalog`](../catalog/src/model/catalog-types.ts)                    | Supply each participant's runtime and the selected activation's adapter and project-relative asset reference.                                                            |
 
@@ -87,10 +88,10 @@ The current Node runtime package exports two adapters:
 | `node-preload` | Appends `--require=<mounted activation asset>` to `NODE_OPTIONS`.                                           |
 | `node-esm`     | Appends the mounted OpenTelemetry loader and then `--require=<mounted activation asset>` to `NODE_OPTIONS`. |
 
-[`capsule up`](../cli/src/commands/capsule/up.ts) is currently the composition
-root: it passes `nodeRuntimeActivationAdapters` into Capsule. Capsule remains
-runtime-agnostic and resolves an adapter by the catalog participant's `runtime`
-plus the activation's `adapter` name.
+The [`capsule up` operation](../capsule/src/cli/operations/up/up-command.ts) reads
+registered adapters through the CLI contract and passes them into Capsule startup.
+Selected runtime packages contribute those adapters. Capsule resolves an adapter
+by the catalog participant's `runtime` plus the activation's `adapter` name.
 
 When extending runtime support, update the provider and adapter data in the runtime
 package, inject it at the application boundary, and add consumer tests. Do not add

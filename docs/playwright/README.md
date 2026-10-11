@@ -1,91 +1,85 @@
-# Express accepted behavior in native Playwright
+# Write native Playwright system tests
 
-Native tests exercise a **running system through I/O**. SDK clients send requests and inspect the
-state or interactions required by the specification. The application runs its implementation; the
-test does not import business classes to invoke them.
+Use native tests when you want to author actions and assertions in TypeScript.
+Blackbox starts the selected system for each physical attempt; Playwright runs
+your test and reports the result.
 
-This is a first-class authoring path. A new Markdown spec or Gherkin file is not mandatory for every
-test. Existing Playwright system tests are an intended adoption path too; the setup and migration
-workflow is not yet defined, and unchanged compatibility is not promised.
+Complete [the first system test](../getting-started.md) or
+[connect your application](connect-your-application.md) before following this guide.
 
-## Start from the claim, not the SDK
+## Keep the requirement visible
 
-A successful response, a saved row, and a forbidden database read are different questions. Write
-assertions against the observations that can answer each one. A Capsule can establish useful actions
-and observers when they are unknown; a known system can go directly to Playwright.
+Write one scenario around a concrete behavior. Name setup, action, and assertion
+steps so a report explains what was checked:
 
-[Evidence model](../concepts/behavioral-evidence.md) · [Capsule investigation](../guides/investigate-with-capsule.md).
+```ts
+import { expect, test } from '@suites/blackbox-playwright';
 
-## Keep the rule visible in the test
-
-![Arrange a known state, act through the application, and check the response and independently read state.](../assets/guides/state-testing.svg)
-
-The [candidate native suite](../guides/verify-a-specification.md#native-playwright) preserves
-Feature/Rule/Scenario names and Arrange/Act/Assert phases. Creation checks the response and stored
-PostgreSQL/Redis values. Cached retrieval establishes its own preconditions, calibrates its observer,
-and checks that the application's bounded retrieval did not access PostgreSQL.
-
-Each scenario owns a fresh Sandbox. It cannot borrow a product, observer window, or evidence from a
-previous test or Capsule. The sample-owned `/fixture/` endpoints inspect real resources; they are
-not built-in Blackbox APIs. Direct PostgreSQL and Redis clients are also valid observation tools.
-
-## The test is part of the behavioral contract
-
-The proposed sibling layout is:
-
-```text
-create-payment.blackbox.test.ts    project-owned actions and assertions
-create-payment.feature            optional reviewed scenarios
-create-payment.effects.yaml       planned accepted effects baseline
+test.system('items', (system) => {
+  system.sandbox('default', (suite) => {
+    suite.describe('Rule: created items can be retrieved', () => {
+      suite.test('Scenario: retrieve a newly created item', async ({ request, sandbox }) => {
+        const url = (path: string) => new URL(path, sandbox.entrypoint.url).href;
+        await test.step('Given an item was created', async () => {
+          expect((await request.post(url('/items'))).status()).toBe(201);
+        });
+        await test.step('Then its data is available', async () => {
+          const response = await request.get(url('/items/item-1'));
+          expect(response.status()).toBe(200);
+          expect(await response.json()).toEqual({ id: 'item-1', name: 'Field notebook' });
+        });
+      });
+    });
+  });
+});
 ```
 
-The names illustrate the design, not automatic discovery. Output and state assertions remain in the
-suite. A separate `.state.yaml` file is undecided. An accepted effects baseline would complement
-those assertions, not replace state reads or become a dump of all raw spans.
+This example uses the tutorial's `items` system. Feature/Rule/Scenario naming is
+optional for authored tests. A source specification or Gherkin file is not a
+runtime prerequisite; the reviewer still needs to understand the expected behavior.
 
-**Generated and authored code remain different.** A Feature compiler's output must not be edited;
-a native test is project-owned. The [editable scaffold generator](editable-scaffolds.md) is planned,
-and incomplete scaffold checks must fail visibly. Both routes can participate in the future snapshot
-model, but this PR adds no capture API, matcher or automatic file loading.
+## Establish state in each scenario
 
-[Behavioral contract](../contracts/README.md) · [Snapshot design](../contracts/effects-snapshots.md).
+Tests and retries receive fresh Sandboxes. Create required records within the
+attempt rather than relying on a preceding test. Use `suite.beforeEach` for shared
+preparation that must run for every scenario, and `suite.afterEach` for associated
+cleanup. A declaration group has no shared live Sandbox.
 
-## Separate connection setup from behavior
+Database seeding must commit before the application reads it. A transaction on
+the test connection cannot roll back work committed by the application. If a
+participant remains external, plan explicit state ownership and cleanup.
 
-`defineClient` binds a project's SDK to the selected participant and mapped endpoint. The sample
-registers its authenticated API client in `system.sandbox(...)` and calls `clients.api` normally.
-`test.system(...)` selects the Catalog boundary; `suite.describe` and `suite.test` retain behavior
-names; the injected `step` fixture names runtime steps and maintains attempt context.
+## Choose observations for the requirement
 
-Blackbox readies and disposes clients. The application owns its schema, authentication, fixtures and
-observation meaning. Registering an SDK does not automatically instrument it or propagate context.
-[Client and fixture reference](clients-and-fixtures.md).
+| Requirement            | Suitable check                                                                            |
+| ---------------------- | ----------------------------------------------------------------------------------------- |
+| Return an item         | HTTP status and response fields.                                                          |
+| Persist an item        | Independent read through the application's state interface or a database client.          |
+| Avoid a database read  | A scoped observer that can detect a forbidden read, with a demonstrated positive control. |
+| Finish background work | A matching business completion condition within the accepted deadline.                    |
 
-Reuse suitable configuration and observers for additional scenarios. Fresh runtime isolation does
-not require a separate infrastructure stack in the repository for every specification.
+The last two require more than a response or an empty trace. See
+[evidence](../concepts/behavioral-evidence.md) and
+[bounded completion](../guides/testing-async-flows.md).
 
-## Run the same reviewed expectations
+The ordinary Playwright `request` and `page` fixtures are available. Resolve URLs
+against `sandbox.entrypoint.url`; their configured `baseURL` is not rewritten.
+For candidate SDK registration through `defineClient`, read
+[availability](../alpha-status.md) and [typed clients](clients-and-fixtures.md).
 
-After the [candidate example prerequisites](../guides/verify-a-specification.md#run-the-supplied-example),
-from `e2e/product-cache/`:
+## Run a focused scenario
+
+From the configured test-project root:
 
 ```sh
-pnpm --dir .. exec playwright test --config product-cache/playwright.config.ts --project native --list
-pnpm --dir .. exec playwright test --config product-cache/playwright.config.ts --project native
+npx playwright test --list
+npx playwright test --grep 'retrieve a newly created item'
+npx playwright show-report
 ```
 
-Confirm both scenarios actually ran. Keep setup failures, skipped assertions, retries, and cleanup
-outcomes visible. The planned effects comparison must also preserve unavailable observation as a
-limitation rather than an empty match. [Reports](../guides/reports.md).
+Confirm the intended test was discovered and executed. A failed assertion may
+prevent later checks from running. Preserve the failed report before another
+invocation replaces it, then repair against the same expected behavior.
 
-## Ask the agent to add another scenario
-
-```text
-Add a test for this accepted behavior using the existing system setup when suitable.
-Establish its own initial state and check the required output, state, and interactions.
-Keep expected behavior fixed while repairing code or test support.
-If snapshot support is available, propose effects for review instead of auto-accepting them.
-Run the focused scenario and report anything it did not establish.
-```
-
-[Repair exercise](../guides/repair-from-evidence.md) · [CI verification](../guides/ci-verification.md)
+[Fixtures and lifecycle](fixtures.md) · [Reports](../guides/reports.md) ·
+[CI](../guides/ci-verification.md)

@@ -1,19 +1,21 @@
 # Editable Playwright scaffolds: the project-owned path
 
+Part of [design proposals](../design/README.md). Check [availability](../alpha-status.md) for implemented capabilities.
+
 **Proposed generator, not a shipped command.** Native Playwright authoring already works without it.
 Some accepted behaviors need SDK operations or observers outside the supported Feature vocabulary.
 A scaffold would give the agent a starting structure for that project-owned test.
 
 ## Two distinct authoring contracts
 
-| Deterministic Feature compilation | Editable scaffold — planned |
-| --- | --- |
-| Complete native suite for supported sentences | Starting structure for project-specific implementation |
-| Generated output stays unedited | Agent/developer owns and edits the TypeScript |
-| Byte-level Feature-to-suite drift validation | Review against source expectations; no compiler equivalence guarantee |
-| Implemented in merged PR #181, not on this docs branch | No final CLI name or implemented generator |
+| Deterministic Feature compilation                         | Editable scaffold — planned                                           |
+| --------------------------------------------------------- | --------------------------------------------------------------------- |
+| Complete native suite for supported sentences             | Starting structure for project-specific implementation                |
+| Generated output stays unedited                           | Agent/developer owns and edits the TypeScript                         |
+| Byte-level Feature-to-suite drift validation              | Review against source expectations; no compiler equivalence guarantee |
+| Implemented in the candidate revision, not on this branch | No final CLI name or implemented generator                            |
 
-Both can participate in the planned [behavioral contract](../contracts/README.md): reviewed
+Both can participate in the [behavioral contract](../contracts/README.md): reviewed
 scenarios, output/state assertions, and an accepted effects baseline. The baseline is a separate
 expectation artifact, not editable generated test code. No snapshot binding API is introduced here.
 
@@ -33,13 +35,12 @@ This is illustrative project-owned TypeScript, not output from a released scaffo
 
 ```ts
 import { test } from '@suites/blackbox-playwright';
-import { api } from './clients.js';
 
 test.system('product-system', (system) => {
-  system.sandbox('default', { clients: { api } }, (suite) => {
-    suite.test('serves a valid cache hit without PostgreSQL', async ({ clients }) => {
+  system.sandbox('default', (suite) => {
+    suite.test('serves a valid cache hit without PostgreSQL', async ({ sandbox }) => {
       // Establish initial state and a reliable observation of database reads.
-      void clients;
+      void sandbox;
       throw new Error('Unimplemented verification: cache-hit PostgreSQL absence');
     });
   });
@@ -47,7 +48,7 @@ test.system('product-system', (system) => {
 ```
 
 Missing required assertions must not become an empty passing test. The agent fills in the checks
-against the accepted requirement. Capturing effects, when supported, is not a substitute for
+against the accepted requirement. Recording effects is not a substitute for
 implementing output/state assertions or approving a baseline.
 
 ## How traceability should work

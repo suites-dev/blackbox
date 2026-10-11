@@ -1,5 +1,7 @@
 # Wait for an outcome only when the specification allows it
 
+**Example scope.** `expect.poll` is available through ordinary Playwright. The `clients.db` snippet assumes the candidate client API and an application-owned product schema; neither is part of the runnable first-test project. [Availability](../alpha-status.md).
+
 The product specification requires persistence and cache population when creation succeeds. Its
 tests therefore check those results immediately after the `201` response. Adding retries there could
 hide a violation of the accepted rule.
@@ -22,7 +24,7 @@ The accepted specification must say what **business completion** means. For a qu
 might require an authoritative invoice record and downstream publication evidence. Broker
 acknowledgment alone cannot establish all of those outcomes.
 
-The sample below uses HTTP and PostgreSQL. The queue and job examples are **evidence-design
+The example below illustrates a PostgreSQL observation after an HTTP action. The queue and job examples are **evidence-design
 guidance**, not a claim that the alpha includes universal queue/scheduler adapters or effect
 matchers.
 
@@ -41,7 +43,7 @@ import { expect } from '@suites/blackbox-playwright';
 The callback runs repeatedly until its returned value satisfies the matcher or the deadline expires.
 The callback should observe state; issue the business action once, outside it.
 
-For example, the product sample's real PostgreSQL schema and
+For example, an application-owned PostgreSQL schema and
 [native observation client](testing-postgres.md#register-the-native-pool) support this assertion
 inside a native scenario with `api` and `db` registered. `product` is the expected product submitted
 by that scenario:

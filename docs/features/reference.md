@@ -1,8 +1,10 @@
 # Feature language and compiler reference
 
+**Candidate reference.** This describes the Feature compiler outside this branch, identified on the [availability page](../alpha-status.md). Its commands are absent from this checkout; the product-cache sample is not supplied.
+
 Use this page to look up syntax after [running your first Feature](drafting-feature-files.md).
 Blackbox parses Gherkin with Cucumber and compiles the supported HTTP sentences into native
-Playwright declarations. This page describes the current alpha compiler.
+Playwright declarations. This page describes the candidate compiler.
 
 ## What the compiler can and cannot establish
 
@@ -57,7 +59,7 @@ Given client "api" has sent POST "/products" with JSON and received 201:
 ```
 
 This is an action used as a precondition for a later retrieval. The
-`e2e/product-cache/tests/product-cache.feature` checks the stored PostgreSQL and Redis values before
+candidate product Feature checks the stored PostgreSQL and Redis values before
 exercising that retrieval.
 
 Doc Strings must contain valid JSON. In a fields table, each `json` cell is a JSON value, so strings
@@ -97,7 +99,7 @@ For a complete first execution, use the [Feature tutorial](drafting-feature-file
 
 ## Sentence reference
 
-Run `pnpm exec blackbox feature step list` to inspect the available vocabulary. `METHOD` below is
+Run `npx blackbox feature step list` to inspect the available vocabulary. `METHOD` below is
 `GET`, `POST`, `PUT`, `PATCH`, or `DELETE`.
 
 | Sentence after the Gherkin keyword                                 | Result                                                          |
@@ -114,7 +116,7 @@ Sentence text selects the operation. `Given`, `When`, `Then`, `And`, `But`, and 
 readable step labels. Keep response assertions after the request in the same Scenario. Use combined
 request/assertion steps for self-contained setup or inspection.
 
-The current alpha compiler accepts only this HTTP vocabulary. Other sentences, including queue
+The candidate compiler accepts only this HTTP vocabulary. Other sentences, including queue
 operations and effect assertions, produce diagnostics and no suite. Adding an SDK client does not
 extend that vocabulary. Blackbox's native Playwright tests can call other SDKs directly; use the
 [bounded polling guide](../guides/testing-async-flows.md) for a native PostgreSQL observation

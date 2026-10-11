@@ -1,50 +1,53 @@
 # Blackbox documentation
 
-**Bring one accepted behavior. Keep its checks alongside the code. Verify it against the running system.**
+Run your application in an isolated environment, act through its public interfaces,
+and check the responses, state, and interactions your requirement calls for.
 
-Blackbox tests enter through I/O and check outputs, state, and required interactions. The planned
-effects-snapshot workflow adds a reviewed runtime baseline to that same behavioral contract—not a
-new source of truth independent of the specification.
+**Start here:** [Run your first system test](getting-started.md). It uses the native
+Playwright API present in this checkout and includes every application and configuration file.
 
-<picture>
-  <source media="(max-width: 640px)" srcset="assets/contracts/behavioral-contract-mobile.svg" />
-  <img src="assets/contracts/behavioral-contract.svg" width="900" alt="The accepted specification informs a durable behavioral contract checked against fresh execution observations." />
-</picture>
+Blackbox is in alpha. [Availability](alpha-status.md) distinguishes this checkout's
+APIs from candidate implementations and design proposals. Use documentation from
+the same revision as your packages.
 
-## Start with a useful verification
+## Learn by running a test
 
-[Follow the developer workflow](guides/from-spec-to-verification.md): review scenarios, reuse or
-prepare the relevant system, investigate in a Capsule when useful, and run repeatable Playwright
-checks. With the planned snapshot capability, capture proposes a baseline; review accepts it.
+- [Install Blackbox](installation.md): install the packages and prepare a test project.
+- [Run your first system test](getting-started.md): start a service, assert its response,
+  inspect the report, and see an assertion fail.
+- [Understand the product-cache case study](guides/verify-a-specification.md): design
+  checks for persistence, caching, and a forbidden database read. Its application
+  and typed-client setup are not included in this checkout.
 
-The [product-cache walkthrough](guides/verify-a-specification.md) shows why a correct HTTP response
-can hide an unwanted database read. It uses explicit observations today, not the proposed snapshots.
+## Accomplish a task
 
-| Task | Start here |
-| --- | --- |
-| Understand the files and their authority | [Behavioral contract](contracts/README.md) |
-| Understand capture, acceptance and comparison | [Effects snapshots — planned](contracts/effects-snapshots.md) |
-| Integrate your repository with an agent | [System setup](playwright/connect-your-application.md) |
-| Review Gherkin scenarios | [Features](features/README.md) |
-| Write project-owned SDK assertions | [Native Playwright](playwright/README.md) |
-| Explore a behavior | [Capsule experiments](guides/investigate-with-capsule.md) |
-| Inspect and repair a difference | [Reports](guides/reports.md) · [Repair exercise](guides/repair-from-evidence.md) |
-| Repeat accepted checks in CI | [CI verification](guides/ci-verification.md) |
+| You want to…                                       | Read                                                         |
+| -------------------------------------------------- | ------------------------------------------------------------ |
+| Connect an existing application                    | [Configure a system](playwright/connect-your-application.md) |
+| Write a native test                                | [Playwright authoring](playwright/README.md)                 |
+| Set up a coding agent                              | [Start agent onboarding](agent-skills.md)                    |
+| Investigate interactively                          | [Use a Capsule](guides/investigate-with-capsule.md)          |
+| Diagnose a failed attempt                          | [Read reports](guides/reports.md)                            |
+| Run the same tests in CI                           | [CI verification](guides/ci-verification.md)                 |
+| Choose HTTP, database, cache, or completion checks | [Testing guides](guides/README.md)                           |
 
-## Go deeper when needed
+## Look up exact behavior
 
-[Why verification now](concepts/why-verification-now.md) ·
-[Spec-Driven Verification](concepts/spec-driven-verification.md) ·
-[Evidence](concepts/behavioral-evidence.md) · [Reviewing changes](contracts/reviewing-changes.md) ·
-[Feature compiler](features/generating-test-suites.md) · [Feature syntax](features/reference.md) ·
-[Clients and fixtures](playwright/clients-and-fixtures.md) · [HTTP](guides/testing-http-apis.md) ·
-[PostgreSQL](guides/testing-postgres.md) · [Redis](guides/testing-redis.md) ·
-[Async completion](guides/testing-async-flows.md) · [Spec Kit](integrations/spec-kit.md)
+[Configuration](configuration.md) · [Playwright fixtures](playwright/fixtures.md) ·
+[Drivers](drivers.md) · [Package and schema references](reference/README.md)
 
-Start narrow and reuse what the agent established for later scenarios. Native tests remain
-first-class; a new Feature is not required for every adopted behavior. The broader existing-test
-adoption workflow is still being designed.
+## Understand the model
 
-**Availability:** the product sample is unpublished and the APIs from merged PR #181 are not in
-this docs branch. Snapshot commands, formats, comparison policy and default capture are planned;
-a separate state YAML remains undecided. [Current workflow boundaries](guides/from-spec-to-verification.md).
+[Specifications and tests](concepts/spec-driven-verification.md) ·
+[Behavioral contracts](contracts/README.md) · [Choosing evidence](concepts/behavioral-evidence.md) ·
+[Effects snapshots](contracts/effects-snapshots.md) · [Reviewing expectation changes](contracts/reviewing-changes.md) ·
+[Verification with coding agents](concepts/why-verification-now.md)
+
+## Explore candidate and proposed capabilities
+
+[Feature compiler and typed clients](features/README.md) describe a candidate
+implementation outside this branch. [Design proposals](design/README.md) cover
+scaffold generation and a Spec Kit extension.
+
+For help, see [Support](../SUPPORT.md). To improve these docs, see
+[the documentation authoring guide](../maintainers/docs/documentation.md).

@@ -5,8 +5,8 @@
 This is a public alpha authoring package. Its contract may change between alpha
 releases. For the end-user workflow, read
 [Drivers and command execution](../../docs/drivers.md); this page describes the
-maintainer boundary. Until the alpha is published, install the SDK into a project from
-source as described in [installation](../../docs/installation.md#install-the-sdk-for-project-drivers).
+maintainer boundary. Install the SDK and prepare its project-local runtime using
+[the installation guide](../../docs/installation.md#install-the-sdk-for-project-drivers).
 
 ```text
 CLI + catalog + Capsule context
@@ -108,8 +108,8 @@ Redaction declarations tell Capsule which prepared values are secret, including 
 | ------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
 | [Catalog](../catalog/src/model/catalog-types.ts)        | Declares project module, target, execution location, and propagation expectation.                                      |
 | [Capsule](../capsule/src/execution/driver-execution.ts) | Builds the request, invokes preparation, enforces propagation policy, and owns command execution.                      |
-| [CLI install](../cli/src/commands/driver/install.ts)    | Prepares `.blackbox/drivers/` and verifies a project-local SDK; it does not author a driver or install protocol tools. |
-| [CLI exec](../cli/src/commands/capsule/exec.ts)         | Selects the driver and exposes the explicit `--allow-untraced` override.                                               |
+| [CLI install](src/cli/commands/driver/install.ts)       | Prepares `.blackbox/drivers/` and verifies a project-local SDK; it does not author a driver or install protocol tools. |
+| [CLI run](../capsule/src/cli/commands/capsule/run.ts)   | Selects the driver and exposes the explicit `--allow-untraced` override.                                               |
 | [Telemetry](../telemetry/src/index.ts)                  | Supplies propagation expectations/outcomes used to validate and retain the boundary record.                            |
 
 The root export in [src/index.ts](src/index.ts) exposes the authoring model, protocol helpers, schemas, runtime artifact, and Node preparation helpers. The `./node-runner` subpath is the generated child-process entrypoint. The checked-in schemas under [schema](schema/) are the versioned wire contract for tooling or a future non-Node runner; only the Node runtime is implemented today.

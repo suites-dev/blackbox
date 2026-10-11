@@ -1,5 +1,7 @@
 # Blackbox with Spec Kit
 
+Part of [design proposals](../design/README.md). Check [availability](../alpha-status.md) for implemented capabilities.
+
 Spec Kit owns its specifications, planning and implementation workflow. Blackbox supplies runtime
 verification of the accepted behavior. The proposed `blackbox-spec-kit` extension remains a thin
 handoff, **not a published integration in this alpha**.
@@ -7,8 +9,8 @@ handoff, **not a published integration in this alpha**.
 ## Keep one owner for each artifact
 
 The developer or SDD review process approves intent. The agent derives reviewable scenarios, prepares
-the system, and creates generated or native Playwright checks. In the planned snapshot workflow,
-selected effects become an accepted baseline only after deliberate review.
+the system, and creates generated or native Playwright checks. Selected effects
+become an accepted baseline only after deliberate review.
 
 The Feature, TypeScript assertions and effects baseline express one [behavioral contract](../contracts/README.md).
 They do not become competing requirements documents, and a failed execution must not automatically
@@ -21,13 +23,13 @@ Spec Kit's accepted spec.md
         ↓
 Reviewed scenarios → selected real system → optional Capsule experiment
         ↓
-Executable assertions + candidate effects, when capture is supported
+Executable assertions + recorded effects for review
         ↓
 Review baseline → fresh Playwright verification → report and repair
 ```
 
-Candidate capture, baseline review and comparison are planned Blackbox behavior, not capabilities
-already supplied by this extension. The same process works from plain Markdown.
+Effect evaluation and records belong to Blackbox. The proposed extension connects
+that workflow to Spec Kit; the same review process works from plain Markdown.
 
 ## The handoff
 

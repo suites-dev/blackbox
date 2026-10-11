@@ -1,51 +1,75 @@
-# Repeat the accepted contract in CI
+# Run system tests in CI
 
-Local investigation and CI have different budgets, not different definitions of correct behavior.
-Run focused scenarios during development; CI runs the broader scope selected by the repository.
-Every physical Playwright attempt gets a fresh Sandbox. CPU, memory, containers and shared external
-dependencies still limit useful concurrency.
+Run the same accepted assertions as local development and retain the result when
+they fail. Start with a project that passes the [native tutorial](../getting-started.md)
+or your own configured suite.
 
-## Keep the checks separate
+## Prepare the runner
 
-| Check | What it answers |
-| --- | --- |
-| Review spec and scenarios | Are we checking the behavior people intended? |
-| Validate Feature generation | Does the derived TypeScript match the reviewed Feature? |
-| Execute output and state assertions | Did this actual attempt satisfy those expectations? |
-| Compare effects with an accepted snapshot — planned | Did the observed interactions agree with the accepted runtime expectation? |
+Install the project's pinned dependencies, matching Blackbox packages, and Docker
+with Compose. The runner needs access to application images and any build inputs.
+Commit `package-lock.json` and install it unchanged in CI so the runner uses
+the same package versions as local development.
 
-Generated-suite drift and effects differences are **not the same drift**. One compares source
-artifacts; the other needs a real execution with adequate observation.
+Keep test state isolated. Limit workers to the runner's CPU, memory, and container
+capacity. A retry starts a new Sandbox; it does not reuse the failed attempt's state.
 
-## Current candidate example commands
+## Discover and execute
 
-After integrating the typed clients/Feature compiler from PR #181 and the unpublished product-cache
-sample, prepare its dependencies and Docker as described in the walkthrough. From `e2e/product-cache/`:
+From the configured test-project root:
 
 ```sh
-pnpm exec tsc --project tsconfig.json
-pnpm exec blackbox feature suite validate tests/product-cache.feature \
-  --clients tests/clients.ts --output tests/product-cache.generated.spec.ts
-pnpm --dir .. exec playwright test --config product-cache/playwright.config.ts --project feature
+npm ci
+npx playwright test --list
+npx playwright test
 ```
 
-For project-owned native tests, omit generated-suite validation and select `--project native`.
-Honor the actual exit statuses and retain reports even when verification fails. Generating a suite
-or rendering a report successfully is not proof that its scenarios ran.
+Ensure the intended scenarios are listed and executed. Preserve the command's
+nonzero exit status on assertion, startup, cleanup, or retention failure. Report
+skips and retries rather than reducing the result to a single passing count.
 
-## Planned snapshot policy
+Add a JSON reporter when your CI consumes structured results:
 
-Normal CI should **compare accepted baselines, not update them**. A first recording is a candidate
-for review, not automatic acceptance. Missing baselines, explicit opt-outs, changed observation
-policy, and inadequate capture must be visible. The exact gate commands and status schema await
-the snapshot implementation; this page adds no workflow or GitHub Action.
+```ts
+reporter: [
+  ['list', { printSteps: true }],
+  ['@suites/blackbox-playwright/reporter', { sandboxLifecycle: true }],
+  ['html', { open: 'never', outputFolder: 'playwright-report' }],
+  ['json', { outputFile: 'test-results/results.json' }],
+],
+```
 
-A retry is a new attempt. Keep its earlier failure visible. A focused subset, skipped test, or
-unimplemented scaffold is not complete verification of the selected contract.
+This is a property inside `defineConfig`, not a complete config. Configure your
+CI's artifact step to run on failure too and collect `playwright-report/` and
+`test-results/`. If attempt retention is enabled, preserve the relevant
+`.blackbox/experiments/` directories as well.
 
-Start with one behavior. Reuse the system configuration, clients, and observations for further
-scenarios; fresh Sandboxes do not require duplicate per-Feature configuration stacks. Existing
-Playwright system tests are also an intended adoption path, not a promised one-command migration.
+## Add Feature drift validation only for the candidate compiler
 
-[Generated-suite maintenance](../features/generating-test-suites.md) ·
-[Review changes](../contracts/reviewing-changes.md) · [Reports](reports.md)
+A project using the [candidate Feature compiler](../features/README.md) should
+also validate its generated suite before execution:
+
+```sh
+npx blackbox feature suite validate tests/example.feature \
+  --clients tests/clients.ts --output tests/example.generated.spec.ts
+```
+
+Replace those paths with the project's actual files. This command is absent from
+this branch. In the candidate it compares generated bytes; it does not execute
+assertions or establish requirement coverage. Native authored suites do not need
+this generation check.
+
+## Review behavior changes separately
+
+A code failure is not a reason to rewrite an accepted assertion. Review deliberate
+requirement changes alongside the affected tests and
+[effects baselines](../contracts/effects-snapshots.md). Preserve effect assessments
+and observation limitations with the test report; a verification run must not
+automatically accept changed expectations.
+
+The Blackbox repository's own acceptance workflow has additional registry and
+resource-cleanup requirements. Maintainers should use
+[the acceptance guide](../../maintainers/docs/capsule-bash-e2e.md), not substitute
+these consumer-project commands for that harness.
+
+[Reports](reports.md) · [Contract review](../contracts/reviewing-changes.md)

@@ -3,10 +3,12 @@
 Start with a focused issue and a pull request. Report vulnerabilities through
 [SECURITY.md](SECURITY.md), never a public bug report.
 
-Blackbox is being built in public and has not been published. The current default
-branch is `release/v0.0.1-alpha`. Start with the [current status](docs/alpha-status.md)
-and [Capsule source workflow](docs/getting-started.md); Playwright integration is
-still in progress.
+Start with [availability](docs/alpha-status.md) and the
+[package installation](docs/installation.md) for usage, or the contributor setup below. Native Playwright and Capsule execution
+are implemented in this checkout; typed clients and the Feature compiler require
+the candidate revision described by the availability page.
+
+For documentation changes, follow [the authoring guide](maintainers/docs/documentation.md).
 
 ## Set up and validate
 

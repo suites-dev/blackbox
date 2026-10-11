@@ -1,39 +1,28 @@
-# Follow one behavior into repeatable verification
+# Testing guides
 
-The first task is concrete: **verify this accepted requirement against the running application**.
-The result should be a reusable check, not just a successful setup command.
+Choose a guide for the task you are doing. For your first run, use the
+[complete native tutorial](../getting-started.md).
 
-![The accepted product rule leads to system preparation, reviewed tests, and execution evidence.](../assets/guides/product-cache-journey.svg)
+| Task                           | Guide                                                              |
+| ------------------------------ | ------------------------------------------------------------------ |
+| Turn a requirement into a test | [From specification to verification](from-spec-to-verification.md) |
+| Connect your application       | [System setup](../playwright/connect-your-application.md)          |
+| Investigate an unknown         | [Capsule experiments](investigate-with-capsule.md)                 |
+| Understand a failed attempt    | [Reports](reports.md)                                              |
+| Repeat checks automatically    | [CI verification](ci-verification.md)                              |
+| Review an expectation change   | [Contract review](../contracts/reviewing-changes.md)               |
 
-[The developer workflow](from-spec-to-verification.md) covers review, system discovery, optional
-Capsule experiments and fresh Playwright verification. The planned snapshot extension adds candidate
-capture and deliberate baseline acceptance to that same workflow.
+## Product-cache case study
 
-| Task | Guide |
-| --- | --- |
-| Follow a complete business rule | [Product-cache verification](verify-a-specification.md) |
-| Prepare your own repository | [Agent setup](../playwright/connect-your-application.md) |
-| Investigate an uncertain result | [Capsule experiments](investigate-with-capsule.md) |
-| Inspect execution evidence | [Reports](reports.md) |
-| Repair a meaningful regression | [Cache-bypass exercise](repair-from-evidence.md) |
-| Preserve the accepted baseline | [Review changes](../contracts/reviewing-changes.md) |
-| Repeat checks in CI | [CI verification](ci-verification.md) |
+These guides explain how to check different parts of one requirement. Their typed
+client API is from a candidate revision, and the product sample is not supplied
+in this checkout. [Check availability](../alpha-status.md) before using the code.
 
-## Choose evidence for the claim
+- [Case study](verify-a-specification.md): map persistence, caching, and no-read claims to evidence.
+- [HTTP](testing-http-apis.md): send the action and assert the response.
+- [PostgreSQL](testing-postgres.md): inspect the committed row independently.
+- [Redis](testing-redis.md): distinguish stored cache state from cache-only retrieval.
+- [Asynchronous work](testing-async-flows.md): wait only when the requirement permits it.
+- [Repair exercise](repair-from-evidence.md): diagnose a correct response with an unwanted database read.
 
-[HTTP](testing-http-apis.md), [PostgreSQL](testing-postgres.md), [Redis](testing-redis.md), and
-[async completion](testing-async-flows.md) explain different observation needs. They are not three
-mandatory assertion categories. The spec determines what must be established.
-
-The current product sample uses explicit output, state and operation assertions. The proposed
-[effects snapshot](../contracts/effects-snapshots.md) must preserve equivalent observation guarantees
-before replacing any of those checks. A separate state YAML is not part of the current workflow.
-
-## Extend an accepted requirement
-
-Reuse suitable system configuration and observers for more scenarios. Fresh runtime isolation does
-not mean duplicating repository setup. Existing native Playwright tests are an intended adoption
-path too, but this guide does not define an automatic migration workflow.
-
-[Behavioral contract](../contracts/README.md) · [Native authoring](../playwright/README.md) ·
-[Feature authoring](../features/README.md)
+[Evidence concepts](../concepts/behavioral-evidence.md) · [Reference](../reference/README.md)

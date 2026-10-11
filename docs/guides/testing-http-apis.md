@@ -1,12 +1,14 @@
 # Check the response promised by the specification
 
+**Candidate case study.** This page uses the candidate typed-client API and a proposed product application that is not supplied. See [availability](../alpha-status.md); use the [native tutorial](../getting-started.md) for a complete executable example.
+
 The [accepted product specification](verify-a-specification.md#start-with-the-accepted-behavior)
 starts with a visible result: creating and retrieving a product returns its data through the API.
 Check that response as part of the same scenario that verifies persistence, cache population, and
 cache-only retrieval.
 
 Follow [Verify a specification against your system](verify-a-specification.md) for the complete
-runnable example. This guide explains its HTTP action and response checks. The
+evidence design. This guide explains its HTTP action and response checks. The
 [candidate native suite](verify-a-specification.md#native-playwright) keeps them connected to the
 other accepted claims.
 
@@ -20,8 +22,8 @@ operation. The accepted spec determines whether those require separate claims.
 
 ## Connect the API client
 
-The sample's `e2e/product-cache/tests/clients.ts` binds Playwright's request SDK to the current
-attempt's API:
+In a compatible candidate build, this definition binds Playwright's request SDK to the
+attempt's API. Save it in your test project's client module:
 
 ```ts
 import { request } from '@playwright/test';
@@ -83,7 +85,7 @@ establish the accepted cache-only behavior.
 
 ## Connect the response to stored state and runtime behavior
 
-The supplied scenario uses protected, sample-owned observation endpoints:
+The case study proposes protected, application-owned observation endpoints:
 
 | Operation                              | Question it answers                                                                        |
 | -------------------------------------- | ------------------------------------------------------------------------------------------ |
@@ -92,8 +94,8 @@ The supplied scenario uses protected, sample-owned observation endpoints:
 | `POST /fixture/observations/start`     | Where does the bounded retrieval observation begin?                                        |
 | `GET /fixture/observations/result`     | Which measured application/database and cache operations occurred during that window?      |
 
-These endpoints are part of the product sample, not built-in Blackbox HTTP APIs. The canonical suite
-supplies their request bodies and expected results in the required order. In particular, the state
+These endpoints are part of the product sample, not built-in Blackbox HTTP APIs. The candidate Feature
+shows their proposed request bodies and expected results in the required order. In particular, the state
 inspection happens before the measured retrieval, so its own Redis read cannot be confused with the
 application's read.
 
@@ -103,10 +105,10 @@ ask the agent to find or prepare observations that establish the same accepted c
 
 ## Follow the failed step back to the requirement
 
-After preparation, run the native project from `e2e/product-cache/`:
+After implementing and configuring the case study, run its native suite from your test-project root:
 
 ```sh
-pnpm --dir .. exec playwright test --config product-cache/playwright.config.ts --project native
+npx playwright test --config playwright.config.ts
 ```
 
 If creation or retrieval returns a different status, compare the response with the accepted

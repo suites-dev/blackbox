@@ -282,7 +282,7 @@
 <use href="#icon-terminal" x="784" y="696" width="24" height="24" style="color:#93C5FD" aria-hidden="true"/>
 <text x="820" y="715" class="heading" >Run system tests</text>
 <text x="1052" y="715" class="number" text-anchor="end">09</text>
-<text x="788" y="752" class="mono" style="font-size:13px">$ pnpm exec playwright test</text>
+<text x="788" y="752" class="mono" style="font-size:13px">$ npx playwright test</text>
 <g class="pending running"><circle cx="799" cy="795" r="8" fill="none" stroke="#93C5FD" stroke-width="1.5" stroke-dasharray="30 20"/>
 <text x="818" y="800" class="body" style="fill:#93C5FD">Running…</text>
 </g>

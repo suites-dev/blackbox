@@ -24,11 +24,12 @@ report-server ── registry, routes, polling, listener ownership
 Capsule provider ── reads retained state, validates/redacts, renders
 ```
 
-The [CLI report command](../cli/src/commands/capsule/report/serve.ts) creates the
-[Capsule provider](../cli/src/reporting/capsule-provider.ts) and passes it to this
-package through [CLI composition](../cli/src/reporting/serve.ts). Capsule itself
-does not depend on the CLI or report server. This keeps report storage and Capsule
-schema semantics out of the generic HTTP layer.
+The [CLI report command](../capsule/src/cli/commands/capsule/report/serve.ts) creates the
+[Capsule provider](../capsule/src/cli/reporting/capsule-provider.ts) and passes it to this
+package through [CLI composition](../capsule/src/cli/reporting/serve.ts). The Capsule
+package owns that command and provider and depends on the report server. The generic
+server does not import Capsule; report storage and Capsule schema semantics remain
+in the provider.
 
 ## Architecture and ownership
 
@@ -89,7 +90,7 @@ The live viewer can therefore follow a running session or display retained stopp
 sessions. Closing the viewer does not stop Capsules.
 
 `blackbox capsule report export` is different: the
-[export path](../cli/src/reporting/export.ts) reads one exact Capsule report and
+[export path](../capsule/src/cli/reporting/export.ts) reads one exact Capsule report and
 writes a point-in-time HTML or JSON artifact. It does not start this HTTP server,
 poll, or update after export. Live HTML and HTML export share Capsule's renderer,
 but have different lifecycle ownership.

@@ -1,71 +1,68 @@
-# Investigate with a Capsule, confirm with Playwright
+# Investigate with a Capsule
 
-A Capsule is the agent's laboratory: prepare a bounded real system, act through its interfaces,
-inspect the results, and refine a hypothesis. Use it before the final test when observations are
-unclear or after a failure needs investigation. Known systems can go straight to Playwright.
+Start a configured system, run an experiment, and retain its commands and
+observations. Use a Capsule to investigate an uncertain behavior before turning
+it into a repeatable Playwright test.
 
-![Capsule experiments inform candidate expectations; review preserves the accepted behavior before repeatable verification.](../assets/readme/capsule-to-feature.svg)
+You need a valid catalog, Docker, and the Capsule integration.
+[Install `@suites/blackbox-capsule`](../installation.md#add-optional-integrations)
+in your test project before using its commands.
 
-## Make the question smaller
+## Start and identify the experiment
 
-For a cached product, ask whether one retrieval reads PostgreSQL despite a valid cached value.
-Keep the product API, Redis, PostgreSQL, and the necessary observer. Remove unrelated services only
-when doing so preserves the behavior and evidence. Record external or substituted participants.
-
-This is Blackbox's application of [narrowing difficult verification problems](https://www.kipiiler.me/blog/verification-systems-llms-ai-agents).
-Discovery finds a useful boundary; it does not prove behavioral equivalence with production.
-Reuse a suitable Catalog entry and clients rather than making a new stack for every spec.
-
-![Configuration selects the real participants, action and inspection drivers, and supported runtime instrumentation.](../assets/readme/system-boundary.svg)
-
-## Run an experiment
-
-In a configured checkout, use supported command families and the actual session ID from startup:
+From the application's project root:
 
 ```sh
-pnpm exec blackbox capsule up <system-id> --json
-pnpm exec blackbox capsule run --session <session-id> -- <command...>
-pnpm exec blackbox capsule show <session-id>
-pnpm exec blackbox capsule down <session-id>
-pnpm exec blackbox capsule report serve --session <session-id> --open
+npx blackbox catalog validate --json
+npx blackbox capsule up <system-id> --json
 ```
 
-Capture activity IDs too. Establish initial state, issue the stimulus, inspect the required outcome,
-and record completion and capture limits. Do not guess the latest session or repeat a non-idempotent
-action merely to make the result pass. Ensure owned resources are cleaned up even when a command or
-report fails. Stopping retains the experiment's records.
+Replace `<system-id>` with the real catalog ID. Keep the returned `sessionId` and
+entrypoint URL. For the [first-test project](../getting-started.md), use `items`.
+Startup must complete successfully before you send its business request.
 
-The [operational reference](../../packages/capsule/skills/capsule/references/capsule-experiments.md)
-describes identities, propagation, raw command results, and cleanup. The HTML and JSON report expose
-observations, not automatic approval of expected behavior. A drained collector is not proof that
-every library was instrumented.
+## Run one action
 
-## What a Capsule does not execute
+For the tutorial service, substitute the returned values into this command:
 
-Capsule currently runs commands and drivers, **not a `.feature` test suite**. The agent can rehearse
-a reviewed Given/When/Then scenario using those tools, but must keep its assessment separate from
-recorded runtime facts. It must not describe proposed effects evaluators as shipped.
+```sh
+npx blackbox capsule run --session <session-id> -- \
+  curl --fail --silent --show-error --request POST <entrypoint-url>/items
+```
 
-## From an observation to an accepted check
+The expected tutorial response is the created item's JSON. Keep the activity ID
+and command result. Plain host commands do not automatically inject trace headers;
+[project drivers](../drivers.md) can prepare endpoints and propagation when configured.
 
-The accepted spec determines whether the result is right. The planned snapshot workflow can propose
-selected effects as a candidate baseline. Capture alone does not make those interactions normative.
-Review the intended meaning and any newly introduced constraints before acceptance.
+The tutorial service has no instrumentation activation. Its command result is useful
+HTTP evidence, but it will not produce application traces merely because it runs
+inside a Capsule.
 
-A snapshot should not freeze private function calls, transient IDs, or unrelated telemetry. Equally,
-normalization must not discard the interaction the requirement is supposed to constrain.
-[Effects snapshot design](../contracts/effects-snapshots.md).
+## Inspect, stop, and retain the report
 
-The final native or generated Playwright suite creates **its own fresh Sandbox, initial state, and
-evidence**. It does not inherit a successful Capsule attempt or use that observation as its fresh
-verification result. Cross-tool candidate promotion is not specified as an implemented capability.
+```sh
+npx blackbox capsule show <session-id>
+npx blackbox capsule down <session-id>
+npx blackbox capsule report serve --session <session-id> --open
+```
 
-## Keep verification cheap enough to repeat
+Stop the Capsule even if the experiment fails. Check the reported cleanup outcome.
+The viewer reads retained session records; stopping the viewer is separate from
+stopping a running Capsule.
 
-The point of the experiment is to make a useful repeatable check—not to investigate forever.
-Reuse accepted expectations and suitable setup for subsequent implementations. This applies
-[the asymmetry of verification](https://www.jasonwei.net/blog/asymmetry-of-verification-and-verifiers-law)
-without promising that every distributed-system property is cheap or fully observable.
+When a configured observer records runtime data, preserve its scope and limitations.
+A completed collector drain does not prove every relevant operation was instrumented.
+[Operational reference](../../packages/capsule/skills/capsule/references/capsule-experiments.md).
 
-[Full workflow](from-spec-to-verification.md) · [Reports](reports.md) ·
-[Review candidate effects](../contracts/reviewing-changes.md) · [Repair exercise](repair-from-evidence.md)
+## Turn the finding into a regression test
+
+Use the accepted requirement to choose assertions. The final Playwright test must
+recreate its own preconditions and collect fresh observations. It does not inherit
+the successful Capsule's state or result.
+
+Capsule runs commands and drivers; it does not execute `.feature` suites.
+Review recorded effects against the accepted requirement before adopting an
+[effects baseline](../contracts/effects-snapshots.md).
+
+[Native tests](../playwright/README.md) · [Reports](reports.md) ·
+[Evidence](../concepts/behavioral-evidence.md)

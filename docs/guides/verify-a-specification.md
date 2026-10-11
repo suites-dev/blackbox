@@ -1,408 +1,135 @@
-# Verify a specification against your system
+# Case study: verify persistence and cache-only retrieval
 
-You and your coding agent have an **accepted specification**: product creation must persist to
-PostgreSQL and populate Redis; retrieving a cached product must not read PostgreSQL. Blackbox lets
-the agent turn that rule into executable expectations, run the real system, and inspect the evidence
-needed for each claim before accepting or repairing the implementation.
+A product endpoint can return the right JSON while violating a rule about how it
+uses PostgreSQL and Redis. This case study shows how to turn that rule into
+reviewable checks.
 
-This is **Spec-Driven Verification**, not simply test generation. Follow one requirement from
-accepted intent through claim selection, system setup, native Playwright or optional Gherkin,
-evidence review, and an unchanged-expectation repair. The selected application contains a product
-service, PostgreSQL, and Redis. [Read the model](../concepts/spec-driven-verification.md).
-
-This candidate-alpha walkthrough requires the typed Playwright client API from PR #181 and the
-`e2e/product-cache/` sample, which are not yet included in this checkout. Read the journey here; run
-its commands only from a checkout containing those dependencies. See
-[current availability](../../README.md#alpha-and-further-guides).
-
-![The specification guides setup, reviewed tests, the product system, and the execution report.](../assets/guides/product-cache-journey.svg)
+**Availability:** the product application and fixture endpoints described here
+are not included in this checkout. The `defineClient`, `clients`, and injected
+`step` APIs used by related examples belong to a candidate revision outside this
+branch. This is an implementation case study, not a runnable source-checkout
+tutorial. Start with [the first system test](../getting-started.md) for a complete
+example using available APIs. [Compatibility details](../alpha-status.md).
 
 ## Start with the accepted behavior
 
-The source specification is `e2e/product-cache/specs/create-product.md`:
+> Creating a product persists it in PostgreSQL and populates Redis. Retrieving it
+> while its cached entry is valid returns the cached product without reading PostgreSQL.
 
-> Creating a product persists it in PostgreSQL and populates Redis. Retrieving it while its cached
-> entry is valid returns the cached product without reading PostgreSQL.
-
-The implementation might use different classes, SQL libraries, or cache internals tomorrow. The
-requirement still matters: **persist, cache, and avoid a database read on a valid cache hit**.
-That's why we check observable behavior rather than particular implementation methods.
-
-The test sends HTTP requests to the running application and inspects its real state and resource
-interactions. It does not import a product service class to invoke it. That I/O boundary makes the
-separation between accepted behavior and implementation practical, and gives **Blackbox** its name.
-Client bindings and observation support may still need maintenance as the system evolves.
-
-**Begin with the developer's approval.** The agent drafts a reviewable Feature for this rule before
-deciding what infrastructure to create. A Feature-drafting CLI command is planned but currently
-unavailable; the agent can write the file as a normal project artifact. The developer reviews
-whether the scenarios preserve the accepted behavior.
-
-Only then does the agent discover the product service, PostgreSQL, Redis, and observers needed to
-execute those approved scenarios. The agent may rehearse the actions in a
-[Capsule](investigate-with-capsule.md), show the Capsule HTML report, and use those findings to
-prepare the final tests. A Capsule **does not directly run a `.feature` file**.
-
-[Follow the complete developer workflow](from-spec-to-verification.md).
-
-The developer approves the rule. The agent proposes concrete checks and identifies how to observe
-each result:
-
-| What the spec requires      | What we'll actually check                                                                            |
-| --------------------------- | ---------------------------------------------------------------------------------------------------- |
-| **Save the product**        | The expected PostgreSQL row, read after creation                                                     |
-| **Populate the cache**      | The expected value in Redis                                                                          |
-| **Serve a valid cache hit** | The correct response, one Redis GET, and **zero application PostgreSQL operations** during retrieval |
-
-The last requirement says something **must not happen**. So the example first checks that its
-database observer can detect a known SQL read, then measures one cache-hit retrieval in a controlled
-window. An absent trace span by itself would not be enough.
-
-The walkthrough covers creation and immediate retrieval. Expiry, invalidation, and concurrent
-requests would need their own agreed rules.
-[Why these observations matter](../concepts/behavioral-evidence.md).
-
-## Let the agent prepare the system
-
-Give your agent the specification and a concrete task:
-
-> Set up Blackbox to verify this accepted specification. Discover the product service, PostgreSQL,
-> and Redis; select the smallest runnable boundary that preserves the required behavior. Configure
-> the Sandbox and its clients. Map C1, C2, and C3 to observations and completion boundaries. Prepare
-> the scenarios for my review. Do not change the accepted behavior to match the current
-> implementation.
-
-In your own repository, follow [agent-assisted setup](../playwright/connect-your-application.md).
-The agent derives the topology and creates or reuses the configuration and test support files. A
-Sandbox is the isolated running instance of that selected system for one test attempt. The suite
-invokes it and connects the clients; Blackbox manages the environment while the test checks the
-accepted behavior.
-
-The supplied example already contains that setup. Its main artifacts are:
-
-| Artifact in `e2e/product-cache/`        | Purpose                                              |
-| --------------------------------------- | ---------------------------------------------------- |
-| `specs/create-product.md`               | The accepted behavior carried through the tests.     |
-| `blackbox.config.yaml`                  | The product service, PostgreSQL, and Redis boundary. |
-| `tests/clients.ts`                      | The client connection for the current Sandbox.       |
-| `tests/product-cache.native.spec.ts`    | Handwritten Playwright expectations.                 |
-| `tests/product-cache.feature`           | Optional reviewed Gherkin source.                    |
-| `tests/product-cache.generated.spec.ts` | The suite generated from that Feature.               |
-| `playwright.config.ts`                  | Test discovery, authoring projects, and reports.     |
-
-### Run the supplied example
-
-Use a Blackbox source checkout containing the typed client API and the complete `e2e/product-cache/`
-sample, plus the Feature compiler if you choose that path. You need Node.js 22.15 or later, pnpm
-9.15.4, and a running Docker engine with Compose. The first run needs network access to obtain
-dependencies and images. No browser download is needed for these API tests.
-
-<details>
-<summary>First time using this source checkout</summary>
-
-From the repository root, install the pinned dependencies and compile Blackbox:
-
-```sh
-pnpm install --frozen-lockfile
-pnpm build
-```
-
-These are source-checkout preparation steps. The Playwright invocation below builds and starts the
-sample application through its Sandbox configuration.
-
-</details>
-
-From a prepared checkout, enter the sample:
-
-```sh
-cd e2e/product-cache
-```
-
-**Run all remaining commands in this walkthrough and the repair chapter from `e2e/product-cache/`.**
-Playwright is owned by the parent E2E workspace, so its commands use `pnpm --dir ..` and a
-`product-cache/` path.
-
-```sh
-pnpm exec blackbox catalog validate --json
-```
-
-Catalog validation must report `"ok": true`. When Playwright invokes the Sandbox, Blackbox builds
-the configured application, starts a fresh isolated system, waits for readiness, and connects the
-clients. After the attempt, it closes the clients and releases the environment. The same test
-command runs your updated application after an implementation change.
-
-## Review the executable expectations
-
-![Reviewed native Playwright or optional Gherkin scenarios run through the same Sandbox and evidence path.](../assets/guides/authoring-paths.svg)
-
-The two scenarios keep Arrange, Act, and Assert visible:
-
-| Scenario         | Arrange                                                               | Act                       | Assert                                                           |
-| ---------------- | --------------------------------------------------------------------- | ------------------------- | ---------------------------------------------------------------- |
-| Creation         | A fresh isolated product system                                       | Create the product        | Expected response, PostgreSQL row, and Redis value               |
-| Cached retrieval | Create the product, verify its state, and begin an observation window | Retrieve the product once | Expected response, one Redis GET, and zero PostgreSQL statements |
-
-The cached-retrieval scenario first checks that its observation mechanism detects a real database
-read on a cache miss. It then creates the product used by the scenario. This prevents an inactive
-observer from passing the absence check.
-
-Both scenarios use this product:
+Use one concrete product throughout:
 
 ```json
 { "id": "product-1", "name": "Field notebook", "priceCents": 1299 }
 ```
 
-### Native Playwright
+| Claim                                          | Required observation                                                                         |
+| ---------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| C1: Persist the product                        | The matching committed row, read independently after creation.                               |
+| C2: Populate Redis                             | The expected cached value before retrieval.                                                  |
+| C3: Serve a valid cache hit without PostgreSQL | Correct response and a bounded, calibrated observation of the retrieval's database activity. |
 
-The candidate `e2e/product-cache/tests/product-cache.native.spec.ts` uses Feature and Rule groups to
-preserve the relationship to the specification; Scenario tests carry the concrete examples. Named
-steps separate setup, action, and assertions in the report.
+The accepted rule does not specify expiry, invalidation, or concurrent requests.
+Those need separate requirements and scenarios. Internal class names are not
+part of these claims.
 
-Within the cached-retrieval scenario, after establishing its preconditions:
+## Review the executable expectations
 
-```ts
-const response = await step('When the product is retrieved once', () =>
-  clients.api.get('/products/product-1'),
-);
+| Scenario         | Arrange                                                        | Act                 | Assert                                                                            |
+| ---------------- | -------------------------------------------------------------- | ------------------- | --------------------------------------------------------------------------------- |
+| Creation         | Fresh system, product absent                                   | Create through HTTP | `201`, product response, independent PostgreSQL and Redis values                  |
+| Cached retrieval | Calibrate observer, create product, verify cache, begin window | Retrieve once       | `200`, product response, no application database read during the completed window |
 
-await step('Then the cached product is returned without a PostgreSQL read [C3]', async () => {
-  const inspection = await clients.api.get('/fixture/observations/result');
-  const observations: unknown = await inspection.json();
-  await testInfo.attach('retrieval-observations', {
-    body: JSON.stringify(observations, null, 2),
-    contentType: 'application/json',
-  });
-  expect(response.status()).toBe(200);
-  expect(await response.json()).toMatchObject(product);
-  expect(inspection.status()).toBe(200);
-  expect(observations).toEqual({
-    productId: product.id,
-    applicationPostgresSelects: 0,
-    applicationPostgresStatements: 0,
-    applicationPostgresPlans: 0,
-    redisGets: 1,
-    retrievals: 1,
-  });
-});
+Each scenario must establish its own state. Retrieval cannot depend on the
+creation test running first. A calibration request must happen before the
+measured retrieval window.
+
+![Creation stores the product; retrieval distinguishes a cache hit from a cache bypass.](../assets/guides/product-cache-evidence.svg)
+
+<a id="run-the-supplied-example"></a>
+
+## What an executable sample must supply
+
+The product-cache application is not bundled with Blackbox. To make this case
+study executable, an implementation must supply:
+
+- The product API, Compose configuration, migrations, and cache contract.
+- Independent state inspection and a scoped database/cache observer.
+- Authentication and lifecycle for any fixture endpoints.
+- Native tests, clients, runner configuration, and optional generated Feature suite.
+- A demonstrated failure when the cache is bypassed and a passing rerun after repair.
+
+The candidate compiler revision supplies APIs, not those application files.
+Use [application setup](../playwright/connect-your-application.md) to implement the
+boundary and [availability](../alpha-status.md) to choose compatible packages.
+
+## Native Playwright
+
+A project-owned native test can call independent PostgreSQL and Redis clients.
+The [PostgreSQL](testing-postgres.md) and [Redis](testing-redis.md) guides contain
+candidate client definitions. A project may instead expose authenticated test-only
+inspection endpoints, provided they read real state.
+
+For example, after a successful creation, a proposed inspection endpoint might
+return:
+
+```json
+{
+  "postgres": { "id": "product-1", "name": "Field notebook", "priceCents": 1299 },
+  "redis": { "id": "product-1", "name": "Field notebook", "priceCents": 1299 }
+}
 ```
 
-<details>
-<summary>Inspect the complete candidate native suite, including setup</summary>
+Assert this against the expected product. The endpoint must not derive its answer
+from the creation response. A recorded `INSERT` alone does not establish that
+the row committed.
 
-This sample is not yet published. The code below includes both scenarios and their preconditions.
+## Bound and calibrate the retrieval observation
 
-```ts
-import { expect, test } from '@suites/blackbox-playwright';
+The proposed observer uses PostgreSQL statement statistics filtered to the
+application role and Redis command statistics during one isolated request.
+Fixture reads use a different database role, and test-side Redis reads happen
+outside the measured window.
 
-import { api } from './clients.js';
+A candidate fixture protocol is:
 
-const product = { id: 'product-1', name: 'Field notebook', priceCents: 1299 };
+| Endpoint                               | Responsibility                                                                                 |
+| -------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `POST /fixture/observations/calibrate` | Cause a known cache miss and demonstrate detection of the resulting application database read. |
+| `POST /fixture/observations/start`     | Begin a measurement for the selected product.                                                  |
+| `GET /fixture/observations/result`     | Return completed measurements and the selected identity.                                       |
 
-test.system('product-system', (system) => {
-  system.sandbox('default', { clients: { api } }, (suite) => {
-    suite.describe('Feature: Product creation and retrieval', () => {
-      suite.describe('Rule: Persist products and serve valid cache entries', () => {
-        suite.test('Scenario: Create a new product', async ({ clients, step }, testInfo) => {
-          await step('Given the product does not exist', async () => {
-            const response = await clients.api.get('/fixture/products/product-1');
-            expect(response.status()).toBe(200);
-            expect(await response.json()).toEqual({ postgres: null, redis: null });
-          });
+These are proposed application endpoints, not Blackbox APIs. The implementation
+must demonstrate counter reset/delta semantics, statistics visibility, completion,
+and exclusion of unrelated traffic before a zero count is meaningful.
 
-          const response = await step('When the product is created', () =>
-            clients.api.post('/products', { data: product }),
-          );
+Expected design outcomes:
 
-          await step('Then creation succeeds with the specified product', async () => {
-            expect(response.status()).toBe(201);
-            expect(await response.json()).toMatchObject(product);
-          });
-          await step('Then PostgreSQL and Redis contain the product [C1, C2]', async () => {
-            const inspection = await clients.api.get('/fixture/products/product-1');
-            expect(inspection.status()).toBe(200);
-            const state: unknown = await inspection.json();
-            await testInfo.attach('product-state', {
-              body: JSON.stringify(state, null, 2),
-              contentType: 'application/json',
-            });
-            expect(state).toEqual({ postgres: product, redis: product });
-          });
-        });
-
-        suite.test(
-          'Scenario: Retrieve a product from its valid cache entry',
-          async ({ clients, step }, testInfo) => {
-            await step('Given the observer detects a real cache miss', async () => {
-              const calibration = await clients.api.post('/fixture/observations/calibrate', {
-                data: {},
-              });
-              expect(calibration.status()).toBe(200);
-              expect(await calibration.json()).toMatchObject({
-                applicationPostgresSelects: 1,
-                applicationPostgresStatements: 1,
-                applicationPostgresPlans: 1,
-                redisGets: 1,
-                retrievals: 1,
-              });
-            });
-            await step('Given the new product is persisted and cached', async () => {
-              const created = await clients.api.post('/products', { data: product });
-              expect(created.status()).toBe(201);
-              const inspection = await clients.api.get('/fixture/products/product-1');
-              expect(inspection.status()).toBe(200);
-              const state: unknown = await inspection.json();
-              await testInfo.attach('product-state', {
-                body: JSON.stringify(state, null, 2),
-                contentType: 'application/json',
-              });
-              expect(state).toEqual({ postgres: product, redis: product });
-              const started = await clients.api.post('/fixture/observations/start', {
-                data: { productId: product.id },
-              });
-              expect(started.status()).toBe(200);
-            });
-
-            const response = await step('When the product is retrieved once', () =>
-              clients.api.get('/products/product-1'),
-            );
-
-            await step(
-              'Then the cached product is returned without a PostgreSQL read [C3]',
-              async () => {
-                const inspection = await clients.api.get('/fixture/observations/result');
-                const observations: unknown = await inspection.json();
-                await testInfo.attach('retrieval-observations', {
-                  body: JSON.stringify(observations, null, 2),
-                  contentType: 'application/json',
-                });
-                expect(response.status()).toBe(200);
-                expect(await response.json()).toMatchObject(product);
-                expect(inspection.status()).toBe(200);
-                expect(observations).toEqual({
-                  productId: product.id,
-                  applicationPostgresSelects: 0,
-                  applicationPostgresStatements: 0,
-                  applicationPostgresPlans: 0,
-                  redisGets: 1,
-                  retrievals: 1,
-                });
-              },
-            );
-          },
-        );
-      });
-    });
-  });
-});
+```text
+Valid cache hit:     one retrieval, Redis read, no application PostgreSQL read
+Deliberate bypass:   one retrieval, correct response, application PostgreSQL read
 ```
 
-</details>
+In a concurrent system, global counters may not isolate the request. Choose an
+observer suited to that environment instead of copying this protocol unchanged.
+[Absence evidence](../concepts/behavioral-evidence.md#why-absence-is-harder-than-presence).
 
-The `/fixture/` requests are protected observation endpoints owned by this example application. They
-inspect real PostgreSQL and Redis state and operation counters. They are not built-in Blackbox
-commands. In your project, use the observation surfaces appropriate to your requirement.
+## Optional Gherkin Feature
 
-### Optional Gherkin Feature
-
-If your team reviews behavior in Gherkin, follow
-[the Feature authoring path](../features/drafting-feature-files.md). It uses the same product, rule,
-clients, and observations, then rejoins this walkthrough at execution and evidence review.
-
-Blackbox adopts Gherkin through Cucumber's parser. Supported sentences generate native Playwright
-declarations while preserving Feature → Rule → Scenario nesting and authored step order. The current
-compiler supports HTTP sentences, so the example uses its project-owned observation endpoints for
-state and counter checks. Registering a Redis SDK does not introduce new Gherkin sentences.
-
-Review the executable scenarios against the source specification whichever path you choose.
-Generation does not establish that every requirement was captured.
-
-## Execute the accepted expectations
-
-The native suite declares the system and clients it needs:
-
-```ts
-test.system('product-system', (system) => {
-  system.sandbox('default', { clients: { api } }, (suite) => {
-    // Feature, Rule, and Scenario declarations live here.
-  });
-});
-```
-
-That declaration brings up the configured system when a scenario executes. Check the TypeScript,
-confirm discovery, and run the native route:
-
-```sh
-pnpm exec tsc --project tsconfig.json
-pnpm --dir .. exec playwright test --config product-cache/playwright.config.ts --project native --list
-pnpm --dir .. exec playwright test --config product-cache/playwright.config.ts --project native
-```
-
-Discovery must show **two scenarios**, creation and cached retrieval, under the same Feature and
-Rule. Execution should pass both. For the generated route, use `--project feature` after the Feature
-validation and generation steps. You only need one authoring route to complete the journey.
-
-Open the report:
-
-```sh
-pnpm --dir .. exec playwright show-report product-cache/playwright-report
-```
+The [candidate Feature example](../features/drafting-feature-files.md) expresses
+the same design through supported HTTP sentences. It requires actual fixture
+endpoints and the candidate compiler. Registering a database SDK does not add
+Gherkin database sentences.
 
 ## Read the evidence
 
-Follow the accepted rule into the executed steps. A green response assertion alone does not
-establish the database and cache claims.
+Map the executed assertions back to C1, C2, and C3. Preserve product identity,
+initial state, observed values, observation scope, and attempt identity. If an
+assertion throws, later checks may not have run.
 
-![Creation stores the product in PostgreSQL and Redis. A valid-cache retrieval reads Redis without a PostgreSQL read; bypassing the cache breaks that requirement despite the same response.](../assets/guides/product-cache-evidence.svg)
+A valid response supports the response claim. Stored values support state claims.
+A calibrated, completed observation supports the selected interaction claim
+within its documented limits. None establishes every behavior of the system.
 
-| Claim                                                            | Evidence to inspect                                                                                                    |
-| ---------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| The product was persisted                                        | The creation scenario's PostgreSQL state assertion.                                                                    |
-| The cache was populated                                          | The same scenario's Redis value assertion, before retrieval.                                                           |
-| The product was retrieved from the cache without a database read | The retrieval's correct response, one Redis GET, and zero application PostgreSQL statements in its observation window. |
-
-<details>
-<summary>How the sample observes the retrieval</summary>
-
-The sample reads PostgreSQL's `pg_stat_statements` counters for the application role and Redis's
-`INFO commandstats`. Fixture queries use a separate database role. State inspection happens before
-the retrieval window. The isolated system has no other application traffic during that window, so
-the deltas describe the selected retrieval. See [Redis verification](testing-redis.md) for how to
-preserve that boundary when adapting the example.
-
-These are explicit assertions over database and cache observations. They do not rely on a missing
-telemetry span or the alpha effects matcher. In a busier system, choose an observation mechanism
-that distinguishes the relevant request from concurrent activity.
-
-</details>
-
-Expand the Blackbox attempt and lifecycle attachments too. They identify the Sandbox that ran the
-scenario and its diagnostics. If an assertion fails, later steps after that throwing assertion may
-not have run; do not count them as passed.
-
-You now have a specification connected to executable checks and evidence from a real system.
-Continue directly to
-**[repairing an implementation defect against these same expectations](repair-from-evidence.md)**.
-
-## Qualify the result, not merely the process
-
-A real Playwright pass means that its **executed assertions passed**. It doesn't mean every
-statement in `specs/create-product.md` was represented, or that all external effects were observed.
-
-Distinguish a supported claim, a contradictory observation, and a claim **not evaluated** because an
-earlier step failed, an observer was absent, or completion never occurred. These are
-evidence-reasoning categories, not a three-valued result automatically promised by the alpha.
-
-Keep attempt identity, initial state, observed values, and the calibrated window with each finding
-so a reviewer can follow the result back to the accepted rule.
-[Evidence guidance](../concepts/behavioral-evidence.md).
-
-## Resolve a first-run failure
-
-| Failure                           | Next action                                                                                       |
-| --------------------------------- | ------------------------------------------------------------------------------------------------- |
-| Source-checkout preparation fails | Resolve the reported toolchain, Docker, or network error before interpreting test results.        |
-| Catalog validation fails          | Check the current directory and ask the agent to correct the reported configuration error.        |
-| No scenarios are discovered       | Check the config and project selection against the commands above.                                |
-| The Sandbox cannot start          | Inspect Blackbox's lifecycle diagnostics; the business assertions have not run.                   |
-| Calibration fails                 | Repair the observation setup before trusting a zero-read result.                                  |
-| An accepted expectation fails     | Follow the failed step and its observed value into the [repair chapter](repair-from-evidence.md). |
+Once an implementation exists, introduce the [cache-bypass defect](repair-from-evidence.md)
+and confirm the unchanged test detects it. [Reports](reports.md) explain which
+attachments Blackbox supplies and which the project must create itself.

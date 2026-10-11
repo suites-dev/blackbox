@@ -1,61 +1,71 @@
-# Follow the expectation into the report
+# Read a failed test report
 
-A report should help a developer answer **what ran, what was checked, what differed, and what remains
-unknown**. The agent uses that same execution evidence to investigate and repair.
+Find the failed attempt, identify which phase failed, and inspect the values that
+support or contradict the expected behavior. An assertion that never ran did not pass.
 
-## Capsule: understand the experiment
+## Open a Playwright report
 
-Use the actual session ID returned by startup. A Capsule records commands, activity identities,
-outputs, runtime observations and their limitations. It does not currently execute a Feature file
-or automatically approve observations as expected behavior.
+From a project configured with the HTML reporter:
 
 ```sh
-pnpm exec blackbox capsule show <session-id>
-pnpm exec blackbox capsule down <session-id>
-pnpm exec blackbox capsule report serve --session <session-id> --open
+npx playwright show-report
 ```
 
-A report while the Capsule is running is provisional. Stopping and draining the collector does not
-prove that every library was instrumented. Preserve unknown causality and incomplete capture rather
-than interpreting absent spans as absent behavior.
+For a custom output directory, pass that directory to `show-report`. Open the test
+and its named steps, then inspect these Blackbox attachments:
 
-[Report semantics and limitations](../../packages/capsule/skills/capsule/references/evidence-and-reports.md).
+| Attachment             | Use                                                  |
+| ---------------------- | ---------------------------------------------------- |
+| `blackbox-progress`    | Lifecycle events for the physical attempt.           |
+| `blackbox-attempt`     | Attempt identity and its final lifecycle record.     |
+| `blackbox-diagnostics` | Readable diagnostics added by the Blackbox reporter. |
 
-## Playwright: inspect the fresh verification attempt
+Application-specific attachments exist only if your tests add them. The product-cache
+case study's `product-state` and `retrieval-observations` are not built-in attachments.
 
-In the candidate product-cache workspace, after its prerequisites are available:
+## Locate the failing phase
+
+| Failure                 | What to inspect                                                                        |
+| ----------------------- | -------------------------------------------------------------------------------------- |
+| Acquisition             | Docker, Compose files, image builds, and selected services.                            |
+| Activation or readiness | Instrumentation configuration, application startup, health endpoint, and deadline.     |
+| Test assertion          | Expected and actual values, preconditions, and the observation used by that assertion. |
+| Cleanup or retention    | Reported resource or write failure; a passing business assertion does not erase it.    |
+
+A retry creates another Sandbox and another attempt. Inspect earlier failures as
+well as the final outcome. A raw span can explain a failure, but a missing span
+may mean incomplete instrumentation rather than absence of behavior.
+[Evidence limitations](../concepts/behavioral-evidence.md).
+
+## Preserve the failed run before retrying
+
+Playwright replaces its default report and test output on the next invocation.
+Copy the report to an unused directory before rerunning:
 
 ```sh
-# From e2e/product-cache/
-pnpm --dir .. exec playwright show-report product-cache/playwright-report
+cp -R playwright-report playwright-report.failed
+npx playwright show-report playwright-report.failed
 ```
 
-Follow the Feature/Rule/Scenario names into the native steps. The documented native suite attaches
-`product-state` and `retrieval-observations`; Blackbox adds attempt and lifecycle diagnostics.
-An earlier failed assertion may prevent later checks from running. Those later checks did not pass.
+Copy JSON output separately if you configured a JSON reporter. To retain Blackbox
+attempt records, set `use: { blackboxRetainAttempts: true }` in the configuration.
+Those records live under `.blackbox/experiments/<sandboxId>/` beside the catalog;
+they do not archive the HTML report. [Retention reference](../playwright/fixtures.md#reports-and-retention).
 
-The Capsule experiment and the Playwright attempt are different executions. Preserve a failed
-Playwright report before another invocation overwrites it; retained Sandbox artifacts do not
-implicitly archive the HTML report. [Repair walkthrough](repair-from-evidence.md).
+## Inspect a Capsule experiment
 
-## Planned effects comparison view
+From the configured application's root, use its actual session ID:
 
-This is the information the snapshot feature should expose, **not a screenshot of shipped UI**:
-
-```text
-Reviewed scenario + baseline identity
-  Output assertions       expected versus returned
-  State assertions        expected versus stored
-  Effects comparison      accepted versus observed interactions
-  Observation limits      scope, completion, missing data
-  Attempt                  revision, selected system, run identity
+```sh
+npx blackbox capsule show <session-id>
+npx blackbox capsule down <session-id>
+npx blackbox capsule report serve --session <session-id> --open
 ```
 
-An effects comparison must remain distinguishable from a response assertion and from an observer
-failure. A missing baseline, opted-out comparison, or incomplete observation should be visible,
-not displayed as a successful match. Actual section names and snapshot integration are not settled.
+Use the project-local CLI from the application root. A running
+Capsule's report is provisional. Stopping retains its records and updates cleanup
+status; it does not establish complete instrumentation. Capsule report commands
+read Capsule sessions, not saved Playwright attempts.
 
-Real screenshots should come from reproducible runs once that report exists. No illustrative
-checkmark or fabricated trace should stand in for execution evidence.
-
-[Snapshot review](../contracts/reviewing-changes.md) · [Evidence](../concepts/behavioral-evidence.md)
+[Capsule report semantics](../../packages/capsule/skills/capsule/references/evidence-and-reports.md) ·
+[Investigate with a Capsule](investigate-with-capsule.md) · [Review changes](../contracts/reviewing-changes.md)

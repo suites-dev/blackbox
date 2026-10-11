@@ -1,5 +1,7 @@
 # Client and fixture reference
 
+**Candidate reference.** `defineClient`, typed `clients`, and the injected `step` fixture are outside this branch. See [availability](../alpha-status.md) for the source revision, or [native fixtures](fixtures.md) for the API you can use in this checkout.
+
 Clients are **action and observation mechanisms** for executable specifications. Choose them because
 they can act at a relevant entrypoint or supply evidence for a behavioral claim, not merely because
 a service has an SDK.
@@ -14,9 +16,9 @@ bindings and observation support may need maintenance while the accepted behavio
 remain unchanged.
 [Why the testing boundary matters](../concepts/spec-driven-verification.md#why-the-testing-boundary-matters).
 
-The [product walkthrough](../guides/verify-a-specification.md) requires HTTP stimuli and independent
+The [product case study](../guides/verify-a-specification.md) proposes HTTP stimuli and independent
 state/operation observations. Its
-[sample API client](../guides/testing-http-apis.md#connect-the-api-client) is a starting point. A
+[candidate API client](../guides/testing-http-apis.md#connect-the-api-client) is a starting point. A
 connected SDK is not itself a test oracle: the accepted specification still determines the
 expectation.
 
@@ -131,7 +133,7 @@ when registered, and the normal Playwright fixtures.
 The ordinary `request` and `page` fixtures also remain available. Their configured `baseURL` is
 unchanged. To address the current Sandbox, resolve the path with
 `new URL(path, sandbox.entrypoint.url).href`. The
-[sample API client](../guides/testing-http-apis.md#connect-the-api-client) registers a separate
+[candidate API client](../guides/testing-http-apis.md#connect-the-api-client) registers a separate
 request context whose `baseURL` is the resolved target.
 
 A fixture depending on `sandbox` must remain scoped to a test. Keep SDK lifecycle in `defineClient`
@@ -145,10 +147,10 @@ when it needs the registered target and typed client registry.
 | `telemetry` | Inspect collector status or read retained session and trace data.                                                               |
 | `effects`   | Access the attempt's effect-evaluation boundary.                                                                                |
 
-The current Alpha does not project raw telemetry into normalized effects by default.
-`expect(effects).toSatisfy(...)` therefore reports an inconclusive failure unless the runtime
-supplies an evaluator. Native response and state assertions are available independently of that
-boundary.
+`expect(effects).toSatisfy(...)` evaluates an immutable contract against the
+selected runtime observations. Missing or incomplete evidence remains inconclusive,
+including under negation. An observed operation does not prove durable state;
+keep response and independent state assertions alongside the effect checks.
 
 For a worked inspection, return to
 [Read the evidence](../guides/verify-a-specification.md#read-the-evidence). See

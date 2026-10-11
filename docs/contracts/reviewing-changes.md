@@ -1,53 +1,48 @@
-# Review a behavior change, not just a snapshot diff
+# Review changes to expected behavior
 
-An effects difference is a question to investigate. It is **not permission to replace the baseline**.
-The same rule applies to a changed assertion or Feature scenario.
+A failed assertion is a discrepancy to investigate. Decide whether the
+implementation, the requirement, or the observation needs to change before
+editing an expectation.
 
-The snapshot lifecycle below is planned; current tests continue to use their real Playwright
-assertions and supported observations.
+| Situation                                 | Review action                                                                   |
+| ----------------------------------------- | ------------------------------------------------------------------------------- |
+| Implementation violates accepted behavior | Repair code and rerun unchanged assertions.                                     |
+| Intended behavior changed                 | Review the requirement, scenarios, and assertions together.                     |
+| Observer changed                          | Check whether it still measures the same action and outcome.                    |
+| Observation is incomplete                 | Repair capture or report that the claim was not established.                    |
+| Internal refactor preserves behavior      | Keep expectations; avoid making incidental internal calls part of the contract. |
 
-## Decide what changed
+For a cache-hit requirement, changing an expected database-read count from zero
+to one would conceal the defect. Conversely, changing how the observer identifies
+application SQL may be necessary if the application's instrumentation changed.
+Keep the reason and resulting scope explicit.
 
-| Situation | Appropriate response |
-| --- | --- |
-| Implementation violates the accepted behavior | Repair code and rerun unchanged expectations. |
-| Intended behavior has deliberately changed | Review the source requirement, scenarios, assertions, and relevant baseline together. |
-| Instrumentation or normalization changed | Review observer compatibility; do not silently accept a new product behavior. |
-| Observation is incomplete or mis-scoped | Repair observation or report the check as unestablished; do not accept an empty snapshot. |
-| Internal refactor preserves the agreed behavior | Keep the same expectations. Incidental internal spans should not force a contract change. |
+## Give the repair a fixed target
 
-An effects baseline can add constraints not explicitly stated in the original prose. Review those
-as decisions, not as incidental capture output. Not every detail must become a permanent constraint.
-
-## First baseline
-
-Identify the scenario, initial state, selected system and observation scope. Compare the candidate
-with the accepted requirement, inspect its outputs and state assertions, and ask whether the
-observer could detect the relevant failure. Approval is a deliberate review step. A fresh run
-checks reproducibility; it does not prove correctness for every possible execution.
-
-## Give the agent a fixed target
+Supply the exact failed attempt, requirement, and observed discrepancy:
 
 ```text
-Investigate the failed behavior using this specification and accepted baseline.
-Keep the expected output, state assertions, and required effects unchanged.
-Distinguish an implementation defect from incomplete or changed observation.
-Repair the implementation or test support, rerun, and show both attempts.
-Propose any requirement or baseline change separately for review.
+A valid cached retrieval must avoid PostgreSQL. The API returned the right
+product, but the observation recorded an application database read.
+Investigate the implementation and the observer. Preserve the accepted
+expectation, repair the cause, and rerun. Propose any requirement change
+separately and explain why it is needed.
 ```
 
-A known passing response does not authorize accepting new downstream behavior. In the cache example,
-changing the expected database count from zero to one would conceal the very defect being tested.
+## Keep the decision reviewable
 
-## Preserve evidence of the decision
+Preserve the failed and repaired reports with their revision and attempt identities.
+Explain which assertions ran and whether any later checks were left unexecuted.
+Record why a deliberately changed expectation matches the revised requirement.
+An agent's explanation should link to runtime evidence rather than replace it.
 
-Keep the old baseline, proposed change, reason, source-specification link, and the run used to assess
-it available to reviewers. Failed and repaired executions retain distinct identities. Do not copy
-an agent explanation into captured evidence as though the runtime produced it.
+In the candidate Feature workflow, regenerating TypeScript updates a derived
+artifact. Review the Feature's meaning first, then validate generation and execute
+the suite. Arbitrarily edited native tests do not have byte-level compiler equivalence.
 
-**Generated suite updates and effects updates are different.** Regenerating TypeScript from a
-reviewed Feature is an artifact operation. Accepting an effects change modifies an expectation about
-runtime behavior. Neither operation establishes that a fresh system run passed.
+Apply the same review discipline to [effects baselines](effects-snapshots.md).
+Review changes to effect selection, normalization, and accepted constraints;
+a newly recorded interaction does not automatically become expected behavior.
 
-[Behavioral contract](README.md) · [Repair exercise](../guides/repair-from-evidence.md) ·
-[CI checks](../guides/ci-verification.md)
+[Reports](../guides/reports.md) · [CI](../guides/ci-verification.md) ·
+[Behavioral contracts](README.md)

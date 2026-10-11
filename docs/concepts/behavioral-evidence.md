@@ -1,90 +1,62 @@
-# Check the behavior the specification requires
+# Choose evidence for the requirement
 
-An HTTP `200` is an observation, not an answer to every requirement. Testing needs a way to decide
-whether the observed result is correct: the _test oracle problem_. When agents implement and test
-more of the software, reviewed expectations and trustworthy observations make that decision
-repeatable rather than relying on an agent's confidence.
+A correct HTTP response can accompany an incorrect state change or a forbidden
+external call. Select observations that answer the specific question in the requirement.
 
-[The Oracle Problem in Software Testing: A Survey](https://ieeexplore.ieee.org/document/6963470).
+![A valid cache hit and a cache bypass return the same product, but only the latter reads PostgreSQL.](../assets/guides/product-cache-evidence.svg)
 
-## Observe the running system through its boundaries
+## Responses, state, and interactions
 
-Blackbox enters through I/O and inspects outputs, stored state and required interactions. Asserting
-that `CacheService.find()` was called couples a test to a method. Checking that a valid cached
-retrieval avoided PostgreSQL checks an interaction explicitly constrained by the specification.
+| Evidence                           | Question                      | Limitation                                                       |
+| ---------------------------------- | ----------------------------- | ---------------------------------------------------------------- |
+| Response status and body           | What did the caller receive?  | Does not establish persistence or downstream completion.         |
+| Independent database or cache read | What state was visible?       | Does not identify every operation used to produce it.            |
+| Observed runtime operation         | What did the observer record? | An attempted SQL write may roll back; capture may be incomplete. |
 
-The proposed snapshot model keeps that separation: **raw observations are evidence; reviewed output,
-state and effects expectations form the contract**. Diagnostic spans need not become assertions.
-[Behavioral contracts](../contracts/README.md).
-
-## The same response, different behavior
-
-![The same correct product response can come from a valid cache hit or a cache bypass that violates the rule by reading PostgreSQL.](../assets/guides/product-cache-evidence.svg)
-
-| What we inspect | Question it answers |
-| --- | --- |
-| **Output** — status, payload, process result | What did the caller receive? |
-| **State** — PostgreSQL row, Redis value | What was stored or changed? |
-| **Runtime interactions** — observed SQL, cache, HTTP or messaging operations | What did the application do during the action? |
-
-Choose the observations the requirement needs. A recorded `INSERT` may roll back; a separate state
-read can establish visibility of a committed row. A Redis value does not show that the application
-used it for a particular retrieval. Publication does not establish consumer completion.
-
-## The outcome depends on how the system is entered
-
-HTTP exposes a response. A CLI exposes exit status and output. A queue consumer may expose a handler
-result, acknowledgment or offset commit, depending on the broker. A job may expose completion status.
-**There is no universal queue equivalent of an HTTP response.** Submission, processing, settlement,
-and downstream business completion may be different events.
-
-These describe how to choose evidence, not a promise of built-in adapters for every entrypoint.
-The documented product example exercises HTTP.
+Use only the observations needed by the requirement. A database assertion is not
+mandatory for a response-only rule, and an effects matcher cannot replace an
+independent state read when the claim concerns committed data.
 
 ## Why absence is harder than presence
 
-The cache rule forbids PostgreSQL access on a valid cache hit. A missing SQL span is insufficient:
-an uninstrumented process or incomplete capture can also produce no spans.
+“No PostgreSQL read on a valid cache hit” requires more than no SQL spans. The
+service might be uninstrumented or the capture window incomplete.
 
-The current [cache example](../guides/testing-redis.md#observe-the-retrieval-within-a-bounded-window)
-first checks that a known database read is detected, establishes cached state, and then measures
-one retrieval through application-role SQL and Redis counters in an isolated window.
+A credible absence check needs:
 
-```text
-Expected valid cache hit:  Redis GET 1 | PostgreSQL statements 0
-Deliberate cache bypass:   Redis GET 1 | PostgreSQL statements 1
-```
+1. A known valid cached value before the action.
+2. An observer shown to detect a relevant database read.
+3. A bounded window covering the selected retrieval and its completion.
+4. A way to distinguish application traffic from setup, inspection, and concurrent work.
 
-These are expected example values, not a fresh test receipt. Their meaning depends on calibration,
-role filtering and exclusion of unrelated traffic. The example uses explicit assertions today;
-**do not replace them with an empty effects snapshot** without equivalent coverage guarantees.
+The [product-cache case study](../guides/verify-a-specification.md) proposes
+calibration and application-role counters for an isolated request. It is an
+observation design, not an included counter implementation. A positive control
+supports the tested observation path; it cannot guarantee coverage of arbitrary
+libraries or future paths.
 
-## Wait until the behavior is actually complete
+## Wait for the right completion condition
 
-A response or queue acknowledgment may precede background work. Check the business completion
-condition and deadline specified by the requirement; do not add polling to weaken an immediate
-completion promise.
+An HTTP response, broker acknowledgment, and completed business operation are
+different events. For asynchronous work, use the matching business identity and
+the deadline permitted by the requirement. Do not add polling to conceal a
+violation of a promise that the result is already available when the response arrives.
 
-![Conceptual queue work is checked by observing completion of the matching record, not by trusting submission alone.](../assets/guides/async-completion.svg)
+Same-Sandbox membership or overlapping timestamps do not by themselves establish
+causality. Keep scope, identifiers, and capture limitations with the result.
+[Completion guide](../guides/testing-async-flows.md).
 
-Same-Sandbox membership or overlapping timestamps do not prove one action caused another. Preserve
-identity, observation scope, causal limitations and partial capture. [Async guide](../guides/testing-async-flows.md).
+## Interpret an execution
 
-## From evidence to an accepted effects baseline
+Effect assessments distinguish `pass`, `fail`, and `inconclusive`. The
+`toSatisfy` matcher succeeds only when the contract is established; missing or
+incomplete evidence remains inconclusive, including under negation. Playwright
+reports the outcomes of its assertions, and an early failure can prevent later
+assertions from running.
 
-The planned workflow selects relevant runtime interactions, normalizes unstable details, and
-proposes a snapshot for review. **OpenTelemetry is an observation source, not the snapshot format
-or the acceptance decision.** Exact projection and matching semantics remain to be implemented.
+Effects are projected from OpenTelemetry observations. An observed operation does
+not prove durable state, and an empty observation set is not a successful absence
+check.
 
-An accepted snapshot does not prove the run was adequately observed. Fresh comparison must still
-account for scope, completion and instrumentation compatibility.
-[Effects snapshots](../contracts/effects-snapshots.md).
-
-## Read the result without overstating it
-
-A run may support one expectation while leaving another unchecked after an earlier failure.
-Supported, refuted and unresolved describe how to reason about evidence; they are not a universal
-three-valued API shipped by this alpha. Current assertions use Playwright's actual outcomes.
-
-[Reports](../guides/reports.md) · [Review differences](../contracts/reviewing-changes.md) ·
-[Why verification now](why-verification-now.md)
+[Reports](../guides/reports.md) · [Review changes](../contracts/reviewing-changes.md) ·
+[Effects snapshots](../contracts/effects-snapshots.md)

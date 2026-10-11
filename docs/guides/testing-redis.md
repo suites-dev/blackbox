@@ -1,5 +1,7 @@
 # Establish cache population and cache-only retrieval
 
+**Candidate case study.** The typed client API is outside this branch and the product application and counter endpoints are not supplied. The observation protocol below is a design to implement and validate. [Availability](../alpha-status.md).
+
 The [accepted product specification](verify-a-specification.md#start-with-the-accepted-behavior)
 makes two different promises about Redis: **C2: Cache population** makes the created product
 available in the cache, and **C3: Cache retrieval** returns it without reading PostgreSQL while that
@@ -24,7 +26,7 @@ Preserve that scope when adapting it to a system with concurrent or background t
 
 ## Establish the cached product before retrieval
 
-The product service (`e2e/product-cache/app/products.mjs`) stores JSON under `product:<id>` with a
+The proposed product service stores JSON under `product:<id>` with a
 five-minute expiry. After creating `product-1`, its protected `GET /fixture/products/product-1`
 operation reads the database and cache. The scenario requires its `redis` value to equal the
 expected product before exercising cache-hit retrieval.
@@ -70,7 +72,7 @@ export const cache = defineClient(createClient, {
 
 Use `endpoint.host` and `endpoint.port`; the current endpoint's `url` is HTTP-shaped. The sample
 Redis participant does not require authentication. Configure credentials for an application that
-does. The source workspace supplies the Redis SDK; an external project needs its own compatible
+does. Install a compatible Redis SDK in the test project; an external project needs its own compatible
 dependency.
 
 Blackbox readies the connection before the scenario and disposes it afterward. `clients.cache`
@@ -100,7 +102,7 @@ expiry.
 
 ## Observe the retrieval within a bounded window
 
-The canonical scenario uses the sample's protected observation operations in this order:
+The proposed scenario uses the sample's protected observation operations in this order:
 
 1. Calibrate the observer with a known cache miss that causes an application PostgreSQL read and a
    Redis read. This happens before creating the scenario's product.
@@ -122,12 +124,12 @@ The expected cache-hit observation is:
 }
 ```
 
-The sample's `e2e/product-cache/app/counters.mjs` uses PostgreSQL statement statistics for the
+The proposed counter implementation uses PostgreSQL statement statistics for the
 `product_app` role and Redis command statistics within its isolated window. The database observer
-uses a separate role. The positive control checks that a known read is detectable; the zero counts
+uses a separate role. The positive control must demonstrate that a known read is detectable; the zero counts
 then concern the subsequent, bounded retrieval. Planned-statement counts add a guard for the
 sample's query path, including a query that is planned but fails during execution. The observation
-window in `e2e/product-cache/app/observations.mjs` is a project-owned contract, not a built-in
+window is a project-owned contract, not a built-in
 Blackbox absence assertion.
 
 The window must contain only the selected application retrieval. Keep test-side Redis reads and

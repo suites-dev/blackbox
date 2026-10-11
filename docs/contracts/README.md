@@ -1,73 +1,48 @@
-# Keep the behavior alongside the code
+# Behavioral contracts
 
-A behavioral contract records **what must remain true when the implementation changes**:
-what the application returns, what it changes, and which interactions it must or must not perform.
-Blackbox exercises the running system through I/O and checks those expectations.
+A behavioral contract records what must remain true when the implementation
+changes: the result returned to the caller, required state changes, and any
+interactions constrained by the requirement.
 
-The contract is not every observation from a passing run. **Observed results are evidence;
-reviewed expectations are the contract.**
+For example, a product may need to be stored in PostgreSQL and Redis, while a
+later valid cache hit must avoid PostgreSQL. Those are three distinct claims.
 
-<picture>
-  <source media="(max-width: 640px)" srcset="../assets/contracts/behavioral-contract-mobile.svg" />
-  <img src="../assets/contracts/behavioral-contract.svg" width="900" alt="Source specification informs reviewed scenarios, executable output and state checks, and an accepted effects baseline. Fresh system execution is compared with those expectations." />
-</picture>
+| Artifact             | Role                                                                                |
+| -------------------- | ----------------------------------------------------------------------------------- |
+| Accepted requirement | Defines intended behavior and conditions.                                           |
+| Native test          | Establishes initial state, acts through I/O, and asserts the selected expectations. |
+| Optional Feature     | Expresses selected examples in the candidate compiler's supported vocabulary.       |
+| Effects baseline     | Preserves reviewed expectations about the scenario's runtime interactions.          |
+| Run record           | Retains observed results and diagnostics from one execution.                        |
 
-## One behavior, related artifacts
+An observation does not become an expectation just because a run succeeded.
+Reviewers decide which behavior to preserve.
 
-The proposed sibling layout makes that relationship visible:
+## Keep expectations stable through a refactor
 
-```text
-create-payment.feature            reviewed scenarios; optional
-create-payment.blackbox.test.ts    executable setup, actions, output/state checks
-create-payment.effects.yaml       accepted effects snapshot; planned
-```
+A test that enters through HTTP can keep the same response and state assertions
+when the application changes its internal classes. Client bindings, fixtures,
+and instrumentation may still need maintenance. Review those changes so they
+continue to measure the same claim.
 
-These filenames illustrate ownership, **not a released discovery convention or a runnable payment
-example**. The product-cache guides remain the worked example.
+Use independent state reads when persistence matters. Use scoped runtime
+observation when the rule constrains an interaction. A successful response alone
+cannot establish either. [Choosing evidence](../concepts/behavioral-evidence.md).
 
-The original Markdown or SDD specification owns the intended behavior. The Feature describes
-selected examples. The TypeScript performs the test and its assertions. An accepted effects file
-would add the runtime interactions to preserve. Together they express one contract, not three
-competing specifications.
+## Review intentional behavior changes
 
-`create-payment.state.yaml` is still under discussion. **Keep state assertions in the test today**;
-there is no agreed state-file schema, generator, or extra file requirement.
+When a requirement changes, review the source requirement and its assertions
+together. When an implementation violates the existing requirement, repair it
+and rerun the same assertions. The [review guide](reviewing-changes.md) covers
+observer changes and incomplete evidence too.
 
-## What makes the artifacts durable?
+## Review the effects baseline
 
-Tests enter through application interfaces, not private business methods. A class refactor can
-preserve the same response, saved state, and required downstream interactions. Client bindings and
-observers may still need maintenance; that does not authorize changing the expected behavior.
+[Effects snapshots](effects-snapshots.md) preserve selected runtime observations
+for review. Accept expectations against the requirement, then check fresh
+observations with the same effect contract. Keep response and state assertions
+alongside it. A recorded effect is evidence of an operation, not proof that a
+write committed or background work completed.
 
-Effects snapshots must preserve that distinction too. Do not freeze every internal function span,
-timestamp, identifier, or incidental operation. Select interactions that the specification requires
-or that a reviewer deliberately accepts as additional constraints.
-
-[Why the testing boundary matters](../concepts/spec-driven-verification.md#why-the-testing-boundary-matters).
-
-## From a recorded run to an accepted baseline
-
-```text
-Capture an execution → propose effects → review against intent → accept a baseline
-                                                                  ↓
-Fresh execution ────────────────────────────────────────────── compare
-```
-
-Recording can be automatic. **Acceptance must be deliberate.** An agent must not repair a failing
-check by accepting the implementation's new behavior as the baseline.
-
-A Capsule can help discover useful observations. The final Playwright test must reproduce its own
-initial state and collect fresh evidence; it does not borrow a successful Capsule run.
-
-## Both authoring paths use the same model
-
-A deterministic Feature suite stays generated and unedited. A native suite is project-owned
-TypeScript, including tests that did not begin as a new Feature. Accepted effects expectations are
-separate from either suite's generated-versus-authored status.
-
-**Snapshot comparison is planned.** Its schema, scenario association, selection/normalization,
-commands, and default capture/opt-out behavior are not settled by these docs. There is no implied
-snapshot matcher available today.
-
-[Effects snapshots](effects-snapshots.md) · [Reviewing changes](reviewing-changes.md) ·
-[Developer workflow](../guides/from-spec-to-verification.md)
+[Write a native test](../playwright/README.md) ·
+[Requirement workflow](../guides/from-spec-to-verification.md)

@@ -62,7 +62,7 @@ Docker Compose lifecycle.
   `runCatalogList()`](src/application/catalog-commands.ts) implement data-only
   command facades for the canonical project-root `blackbox.config.yaml`. They
   return discriminated, JSON-ready results and do not print or terminate the
-  process. The [CLI commands](../cli/src/commands/catalog/) render those results.
+  process. The [CLI commands](src/cli/commands/catalog/) render those results.
 - **Capsule:** the [manager catalog
   port](../capsule/src/manager/ports.ts) loads an explicit config file and
   resolves a requested system ID. Capsule then maps the returned plan into
@@ -85,8 +85,8 @@ referenced files. Pass `activationAdapters: [{ runtime: 'node', adapter: 'node-p
 to also check adapter availability. An explicit empty list rejects any participant
 that declares an activation, including when the CLI has no registered adapters.
 
-A future Playwright integration may consume the same catalog contract. No
-Playwright fixture, adapter, or public Playwright API is implemented here today.
+The [Playwright adapter](../playwright/README.md) consumes this catalog contract.
+Fixtures and Sandbox lifecycle belong to that adapter, not the Catalog package.
 
 ## Example Internal Use
 

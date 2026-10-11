@@ -7,16 +7,11 @@ reporters, and parallel scheduling.
 
 ## Install
 
-Install the Blackbox adapter with Playwright:
-
-```sh
-npm install --save-dev @suites/blackbox-playwright@next @playwright/test
-```
-
-Application code imports directly from the adapter paths below.
-
-Until the alpha is published, install it and its Blackbox dependencies from source as
-described in [installation](../../docs/installation.md#install-the-playwright-package-from-source).
+Use [package installation](../../docs/installation.md#install-the-playwright-package)
+to install this adapter and its dependencies, then follow
+[the first-test tutorial](../../docs/getting-started.md). The adapter requires
+`@playwright/test >=1.61.0 <2`. Check [availability](../../docs/alpha-status.md)
+before using candidate APIs documented on another branch.
 
 ## Use
 
@@ -122,11 +117,11 @@ reasons. Setup failure also attempts cleanup before surfacing the error.
   artifact identity. Lifecycle control remains fixture-owned.
 - `telemetry` exposes the attempt identity, live collector status, and raw
   retained session or trace reads.
-- `effects` exposes the attempt identity and the contract-evaluation boundary.
-  `expect(effects).toSatisfy(...)` compiles and delegates an immutable contract,
-  but the Alpha does not yet project raw telemetry into normalized effects. The
-  matcher therefore reports an inconclusive failure unless an evaluator is
-  supplied by the runtime.
+- `effects` exposes the attempt identity and evaluates immutable contracts
+  against selected OTLP observations. Use `expect(effects).toSatisfy(...)`.
+  Missing or incomplete evidence remains inconclusive, including under negation;
+  an observed operation does not prove durable state. See
+  [effects and baseline review](../../docs/contracts/effects-snapshots.md).
 
 ## Execution reporting
 

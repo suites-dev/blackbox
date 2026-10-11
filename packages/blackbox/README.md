@@ -6,15 +6,13 @@ add execution adapters only when you need them.
 
 ## Install
 
-This package is prepared for the alpha release but is not published to npm yet.
-Until it is released, use the [source installation](../../docs/installation.md#build-from-source).
-The release installation model is:
+Install the base package and CLI together:
 
 ```sh
-npm install --save-dev @suites/blackbox@next @suites/blackbox-cli@next
+npm install --save-dev @suites/blackbox@alpha @suites/blackbox-cli@alpha
 ```
 
-Prereleases use the `next` distribution tag. Use your project's package manager
+Prereleases use the `alpha` distribution tag. Use your project's package manager
 and compatible Blackbox versions. Node 22.15+
 is required; Docker is needed for Compose-backed execution, not skill installation
 or static discovery. Install integrations separately when needed; see
@@ -37,13 +35,23 @@ they need, and installing the main package alone does not install them. See the
 
 ## Start with the agent skill
 
-From the target project, use its installed executable (for example,
-`pnpm exec blackbox`):
+From the target project, start the guided onboarding workflow:
 
 ```sh
-blackbox --help
-blackbox skills list --json
-blackbox skills install blackbox --codex --gitignore
+npx blackbox onboarding start
+```
+
+Follow [onboarding and agent skills](../../docs/agent-skills.md) to prepare the
+agent and application for verification.
+
+## Manage individual skills
+
+Use the installed CLI to inspect and add selected skills:
+
+```sh
+npx blackbox --help
+npx blackbox skills list --json
+npx blackbox skills install blackbox --codex --gitignore
 ```
 
 The base installation lists `blackbox`, `catalog`, and `discovery`. The last command
@@ -56,10 +64,10 @@ specialists. The installer does not refresh the host.
 Copy specialist skills separately when wanted:
 
 ```sh
-blackbox skills install discovery --codex
-blackbox skills install catalog --codex
+npx blackbox skills install discovery --codex
+npx blackbox skills install catalog --codex
 # Available only when @suites/blackbox-capsule is selected and installed:
-blackbox skills install capsule --codex
+npx blackbox skills install capsule --codex
 ```
 
 Package installation and skill copying are different operations. The command

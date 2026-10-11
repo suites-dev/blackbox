@@ -86,10 +86,10 @@
     <text x="354" y="368" class="number" text-anchor="end">04</text>
     <text x="68" y="422" class="filename" style="fill:#93C5FD;font-size:14px">product-cache.generated.spec.ts</text>
   </g>
-  <g id="handoff-execute" data-command="pnpm exec playwright test">
+  <g id="handoff-execute" data-command="npx playwright test">
     <path d="M212 492 V615" class="flow" stroke="#8B8B94"/>
     <path d="M212 615 V621" class="arrow" stroke="#8B8B94" marker-end="url(#pipeline-arrow-neutral)"/>
-    <text x="248" y="545" class="command" text-anchor="start">$ pnpm exec playwright test</text>
+    <text x="248" y="545" class="command" text-anchor="start">$ npx playwright test</text>
     <text x="248" y="574" class="annotation">Run in a fresh Sandbox</text>
   </g>
   <g id="stage-execution-evidence" data-stage="5">
@@ -111,8 +111,8 @@
       <text x="272" y="839" class="topology-label">Redis</text>
     </g>
   </g>
-  <g id="handoff-verify" data-command="pnpm exec playwright show-report">
-    <text x="560" y="747" class="command" text-anchor="middle">$ pnpm exec playwright show-report</text>
+  <g id="handoff-verify" data-command="npx playwright show-report">
+    <text x="560" y="747" class="command" text-anchor="middle">$ npx playwright show-report</text>
     <text x="560" y="776" class="annotation" text-anchor="middle">Review results + execution evidence</text>
     <path d="M384 803 H726" class="flow" stroke="#93C5FD"/>
     <path d="M726 803 H732" class="arrow" stroke="#93C5FD" marker-end="url(#pipeline-arrow-blue)"/>
