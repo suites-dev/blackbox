@@ -108,6 +108,7 @@ mkdir -p "$CONSUMER_ROOT/.blackbox/catalog" "$CONSUMER_ROOT/.blackbox/drivers"
 mkdir -p "$CONSUMER_ROOT/.blackbox/clients"
 mkdir -p "$CONSUMER_ROOT/tests/playwright"
 mkdir -p "$CONSUMER_ROOT/tests/playwright-features"
+mkdir -p "$CONSUMER_ROOT/tests/features-suites"
 mkdir -p "$CONSUMER_ROOT/reporters"
 cp "$E2E_ROOT/blackbox.config.yaml" "$CONSUMER_ROOT/blackbox.config.yaml"
 cp "$E2E_ROOT/.blackbox/catalog/"*.yml "$CONSUMER_ROOT/.blackbox/catalog/"
@@ -117,10 +118,12 @@ cp "$E2E_ROOT/.blackbox/clients/payment-mock.ts" "$CONSUMER_ROOT/.blackbox/clien
 cp -R "$E2E_ROOT/sut" "$CONSUMER_ROOT/sut"
 cp "$E2E_ROOT/playwright.config.ts" "$CONSUMER_ROOT/playwright.config.ts"
 cp "$E2E_ROOT/playwright-features.config.ts" "$CONSUMER_ROOT/playwright-features.config.ts"
+cp "$E2E_ROOT/playwright-suites.config.ts" "$CONSUMER_ROOT/playwright-suites.config.ts"
 cp "$E2E_ROOT/reporters/"*.ts "$CONSUMER_ROOT/reporters/"
 cp "$E2E_ROOT/tests/playwright/"*.ts "$CONSUMER_ROOT/tests/playwright/"
 cp "$E2E_ROOT/tests/playwright-features/"*.ts "$CONSUMER_ROOT/tests/playwright-features/"
 cp "$E2E_ROOT/tests/playwright-features/"*.golden "$CONSUMER_ROOT/tests/playwright-features/"
+cp "$E2E_ROOT/tests/features-suites/"*.spec.ts "$CONSUMER_ROOT/tests/features-suites/"
 cp "$SCRIPT_DIR/"playwright-features*.mjs "$CONSUMER_ROOT/"
 cp "$SCRIPT_DIR/playwright-boundary.mjs" "$CONSUMER_ROOT/playwright-boundary.mjs"
 cp "$SCRIPT_DIR/playwright-evidence.mjs" "$CONSUMER_ROOT/playwright-evidence.mjs"
@@ -170,6 +173,30 @@ BLACKBOX_E2E_RESULTS_ROOT="$RUN_RESULT_ROOT" \
 
 recover_sandboxes
 node "$CONSUMER_ROOT/playwright-verify.mjs" >"$RUN_RESULT_ROOT/receipt.json"
+
+BLACKBOX_E2E_FIXTURE_TOKEN="$FIXTURE_TOKEN" \
+BLACKBOX_E2E_RESULTS_ROOT="$RUN_RESULT_ROOT" \
+  "$PLAYWRIGHT_BIN" test --config "$CONSUMER_ROOT/playwright-suites.config.ts" \
+    --list --reporter=line >"$RUN_RESULT_ROOT/feature-suites-discovery.txt"
+test -s "$RUN_RESULT_ROOT/feature-suites-discovery.txt"
+
+BLACKBOX_E2E_FIXTURE_TOKEN="$FIXTURE_TOKEN" \
+BLACKBOX_E2E_RESULTS_ROOT="$RUN_RESULT_ROOT" \
+  "$PLAYWRIGHT_BIN" test --config "$CONSUMER_ROOT/playwright-suites.config.ts" \
+  | tee "$RUN_RESULT_ROOT/feature-suites-execution.txt"
+jq -e '
+  .stats.expected == 7 and .stats.unexpected == 0 and
+  .stats.flaky == 0 and .stats.skipped == 0 and
+  ([.suites[] | recurse(.suites[]?) | .specs[]? | .tests[]?.results[]?] |
+    length == 7 and all(.[];
+      .status == "passed" and .retry == 0 and
+      ([.attachments[]? | select(.name == "blackbox-effects") |
+        .body | @base64d | fromjson |
+        select(.assertion.outcome == "passed" and
+          .assertion.evaluation == "satisfied" and .evidence.kind == "admitted")]
+        | length) == 1))
+' "$RUN_RESULT_ROOT/feature-suites-results.json" >/dev/null
+recover_sandboxes
 
 # Run the retention contract after the original eight-case proof.
 # Its runner owns recovery and keeps each invocation under test-results/features.

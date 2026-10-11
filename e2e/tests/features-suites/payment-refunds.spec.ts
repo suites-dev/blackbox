@@ -24,14 +24,18 @@ test.system({ kind: 'subsystem', id: 'payment-mock' }, (system) => {
         () => {
           suite.test(
             'Scenario: An unknown payment cannot be refunded',
-            async ({ clients, step }) => {
-              const response = await step(
+            async ({ clients, effects, step }) => {
+              const response = await step.stimulus(
                 'When client "payments" sends POST "/v1/refunds" with JSON:',
-                () =>
+                ({ headers }) =>
                   clients.payments.post('/v1/refunds', {
                     data: { paymentIntentId: 'pi_missing1' },
+                    headers,
                   }),
               );
+              await expect(effects).toSatisfy((e) => [
+                e.exists(e.http({ actor: 'payment-mock', method: 'POST' })),
+              ]);
               await step('Then the response status is 404', () => {
                 expect(response.status()).toBe(404);
               });
@@ -66,11 +70,14 @@ test.system({ kind: 'subsystem', id: 'payment-mock' }, (system) => {
 
         suite.test(
           'Scenario: A repeated refund retains exactly one refund',
-          async ({ clients, step }) => {
-            const firstRefund = await step(
+          async ({ clients, effects, step }) => {
+            const firstRefund = await step.stimulus(
               'When client "payments" sends POST "/v1/refunds" with JSON:',
-              () =>
-                clients.payments.post('/v1/refunds', { data: { paymentIntentId: 'pi_alice1' } }),
+              ({ headers }) =>
+                clients.payments.post('/v1/refunds', {
+                  data: { paymentIntentId: 'pi_alice1' },
+                  headers,
+                }),
             );
             await step('Then the response status is 201', () => {
               expect(firstRefund.status()).toBe(201);
@@ -83,11 +90,17 @@ test.system({ kind: 'subsystem', id: 'payment-mock' }, (system) => {
               });
             });
 
-            const repeatedRefund = await step(
+            const repeatedRefund = await step.stimulus(
               'When client "payments" sends POST "/v1/refunds" with JSON:',
-              () =>
-                clients.payments.post('/v1/refunds', { data: { paymentIntentId: 'pi_alice1' } }),
+              ({ headers }) =>
+                clients.payments.post('/v1/refunds', {
+                  data: { paymentIntentId: 'pi_alice1' },
+                  headers,
+                }),
             );
+            await expect(effects).toSatisfy((e) => [
+              e.atLeast(2, e.http({ actor: 'payment-mock', method: 'POST' })),
+            ]);
             await step('Then the response status is 409', () => {
               expect(repeatedRefund.status()).toBe(409);
             });
