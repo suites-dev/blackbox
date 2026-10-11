@@ -1,9 +1,8 @@
 import { defineConfig as playwrightConfig, type PlaywrightTestConfig } from '@playwright/test';
 
 import { sandboxLifecycleConfigured, sandboxLifecycleMetadataKey } from './reporting/options.js';
-import type { BlackboxTestOptions } from './config/options.js';
 
-export type BlackboxPlaywrightConfig = PlaywrightTestConfig<BlackboxTestOptions> & {
+export type BlackboxPlaywrightConfig = PlaywrightTestConfig & {
   readonly blackboxConfigFile: string;
 };
 
