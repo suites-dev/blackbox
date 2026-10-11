@@ -99,7 +99,15 @@ jobs:
           tarballs="$RUNNER_TEMP/tarballs"
           rm -rf "$tarballs"
           mkdir -p "$tarballs"
-          pnpm --recursive --filter './packages/*' exec pnpm pack --pack-destination "$tarballs"
+          # A package marked private (an experimental one) is never published, as in
+          # the real release, so it is not packed for the test registry either.
+          for directory in packages/*/; do
+            if [ "$(node -p "require('./${directory}package.json').private === true")" = "true" ]; then
+              echo "Skipping private package ${directory}"
+              continue
+            fi
+            (cd "$directory" && pnpm pack --pack-destination "$tarballs")
+          done
           for tarball in "$tarballs"/*.tgz; do
             env "npm_config_//127.0.0.1:4874/:_authToken=blackbox-e2e" \
               npm publish "$tarball" \
