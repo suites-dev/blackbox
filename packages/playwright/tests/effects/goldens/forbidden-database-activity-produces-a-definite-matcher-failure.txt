@@ -1,0 +1,34 @@
+[
+  {
+    "contract": {
+      "schemaVersion": 1,
+      "constraints": [
+        {
+          "node": "constraint",
+          "operator": "exactly",
+          "count": 0,
+          "selector": {
+            "node": "selector",
+            "kind": "db"
+          }
+        }
+      ],
+      "omitted": {
+        "constraints": 0,
+        "selectorWhereEntries": 0
+      }
+    },
+    "evaluation": "unsatisfied",
+    "negated": false,
+    "outcome": "failed",
+    "witnesses": [
+      {
+        "kind": "db",
+        "actor": "app",
+        "operation": "unknown",
+        "target": "unknown",
+        "outcome": "unknown"
+      }
+    ]
+  }
+]

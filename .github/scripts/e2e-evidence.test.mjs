@@ -470,6 +470,22 @@ test('the CLI approves the sandbox Docker lane command and nothing appended to i
   }
 });
 
+test('the Playwright E2E gate uses one packed-consumer command and evidence trail', async () => {
+  const command = ['pnpm', 'test:e2e:playwright'];
+  assert.deepEqual(approvedCliCommand(command), command);
+  assert.throws(
+    () => approvedCliCommand(['pnpm', '--filter', '@suites/blackbox-playwright', 'test:effects']),
+    /not an approved repository check/,
+  );
+  const workflow = await fs.readFile(new URL('../workflows/e2e.yml', import.meta.url), 'utf8');
+  const playwrightJob = workflow.split('\n  playwright:\n')[1]?.split('\n  skills:\n')[0];
+  assert.ok(playwrightJob, 'Playwright E2E job must exist');
+  assert.match(playwrightJob, /-- pnpm test:e2e:playwright/u);
+  assert.match(playwrightJob, /steps\.playwright_tests\.outcome/u);
+  assert.match(playwrightJob, /steps\.playwright_evidence\.outcome/u);
+  assert.doesNotMatch(playwrightJob, /test:effects|effects_evidence/u);
+});
+
 test('the CLI approves only the sequential Feature journey passes', async () => {
   const workflow = await fs.readFile(new URL('../workflows/e2e.yml', import.meta.url), 'utf8');
   const featureJob = workflow.split('\n  feature-cli:\n')[1]?.split('\n  playwright:\n')[0];

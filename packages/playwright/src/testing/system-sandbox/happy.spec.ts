@@ -113,29 +113,29 @@ test.system('orders', (system) => {
         });
       });
 
-      suite.test('hooks body and native request share one attempt', async (
-        { request, sandbox },
-        testInfo,
-      ) => {
-        playwrightExpect(testInfo.project.use.baseURL).toBe(
-          'http://127.0.0.1:1/static-native-base/',
-        );
-        const response = await request.get(`${sandbox.entrypoint.url}/orders?source=native`);
-        playwrightExpect(response.ok()).toBe(true);
-        playwrightExpect(await response.json()).toEqual({
-          executionId: sandbox.executionId,
-          method: 'GET',
-          path: '/orders?source=native',
-        });
-        record({
-          kind: 'body',
-          executionId: sandbox.executionId,
-          title: testInfo.title,
-          retry: testInfo.retry,
-          workerIndex: testInfo.workerIndex,
-          parallelIndex: testInfo.parallelIndex,
-        });
-      });
+      suite.test(
+        'hooks body and native request share one attempt',
+        async ({ request, sandbox }, testInfo) => {
+          playwrightExpect(testInfo.project.use.baseURL).toBe(
+            'http://127.0.0.1:1/static-native-base/',
+          );
+          const response = await request.get('/orders?source=native');
+          playwrightExpect(response.ok()).toBe(true);
+          playwrightExpect(await response.json()).toEqual({
+            executionId: sandbox.executionId,
+            method: 'GET',
+            path: '/orders?source=native',
+          });
+          record({
+            kind: 'body',
+            executionId: sandbox.executionId,
+            title: testInfo.title,
+            retry: testInfo.retry,
+            workerIndex: testInfo.workerIndex,
+            parallelIndex: testInfo.parallelIndex,
+          });
+        },
+      );
 
       suite.test('retry receives a fresh attempt', ({ sandbox }, testInfo) => {
         record({
@@ -180,21 +180,17 @@ test.system({ kind: 'system', id: 'billing' }, (system) => {
     });
   });
 
-  system.sandbox(
-    'fixtureless group',
-    { environment: { PROBE: 'fixtureless' } },
-    (suite) => {
-      suite.test('acquires without any Blackbox fixture dependency', () => {
-        playwrightExpect(true).toBe(true);
-      });
-      suite.test.skip('native skip modifier remains available', () => {
-        throw new Error('Skipped body must not execute');
-      });
-      suite.test.fixme('native fixme modifier remains available', () => {
-        throw new Error('Fixme body must not execute');
-      });
-    },
-  );
+  system.sandbox('fixtureless group', { environment: { PROBE: 'fixtureless' } }, (suite) => {
+    suite.test('acquires without any Blackbox fixture dependency', () => {
+      playwrightExpect(true).toBe(true);
+    });
+    suite.test.skip('native skip modifier remains available', () => {
+      throw new Error('Skipped body must not execute');
+    });
+    suite.test.fixme('native fixme modifier remains available', () => {
+      throw new Error('Fixme body must not execute');
+    });
+  });
 });
 
 test.system({ kind: 'subsystem', id: 'invoice-worker' }, (system) => {
@@ -218,12 +214,12 @@ test.system({ kind: 'subsystem', id: 'invoice-worker' }, (system) => {
 
 extendedTest.system('extended', (system) => {
   system.sandbox('custom automatic fixture', (suite) => {
-    suite.test('automatic fixture dependency shares the group attempt', ({
-      auditAttempt,
-      sandbox,
-    }) => {
-      playwrightExpect(auditAttempt).toBe(sandbox.executionId);
-    });
+    suite.test(
+      'automatic fixture dependency shares the group attempt',
+      ({ auditAttempt, sandbox }) => {
+        playwrightExpect(auditAttempt).toBe(sandbox.executionId);
+      },
+    );
   });
 });
 

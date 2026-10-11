@@ -3,6 +3,7 @@ import { dirname, isAbsolute, resolve } from 'node:path';
 import type { TestInfo } from '@playwright/test';
 import { recoverSandbox, type SandboxStopReason } from '@suites/blackbox-sandbox';
 
+import { bindEffectAssertionReporter, closeBlackboxEffects } from '../effects/runtime.js';
 import { AttemptReport } from '../reporting/attempt.js';
 import { reported } from '../reporting/events.js';
 import { reportObservations } from '../reporting/observations.js';
@@ -109,6 +110,7 @@ export async function runAttemptFixture(input: AttemptFixtureInput): Promise<voi
       },
     });
     report.acquired(attempt.sandbox, attempt.telemetry);
+    bindEffectAssertionReporter(attempt.effects, report);
     report.emit(
       'sandbox',
       'completed',
@@ -120,6 +122,7 @@ export async function runAttemptFixture(input: AttemptFixtureInput): Promise<voi
       report.lifecycle('ready', attempt.sandbox.catalogEntry);
       await input.use(attempt);
     } finally {
+      closeBlackboxEffects(attempt.effects);
       const reason = stopReason(input.testInfo.status);
       report.emit('execution', 'info', input.testInfo.status ?? 'unknown');
       await finishAttempt(attempt, report, reason, input.policy);
