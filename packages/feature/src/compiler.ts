@@ -273,7 +273,7 @@ function emitStep(step: Step, context: CompilerContext, dynamicRow = false, dyna
   if (/^the response JSON contains:?$/u.test(text) && doc) {
     const response = context.lastResponse;
     if (!response) {return unsupported(step, context, 'Response JSON assertion has no preceding HTTP request in this scenario.');}
-    return `await step(${stringExpression(title, dynamicRow)}, async () => {\n  expect(await ${response}.json()).toMatchObject(${dynamicRow ? rowJsonExpression(doc, step, context, dynamicHeaders) : jsonExpression(doc, step, context)});\n});`;
+    return `await step(${stringExpression(title, dynamicRow)}, async () => {\n  expect(await ${response}.json()).toEqual(${containsJsonExpression(doc, step, context, dynamicRow ? dynamicHeaders : null)});\n});`;
   }
   if (/^the response JSON contains these fields:?$/u.test(text) && step.dataTable) {
     const rows = step.dataTable.rows.map((row) => row.cells.map((cell) => cell.value));
@@ -286,9 +286,8 @@ function emitStep(step: Step, context: CompilerContext, dynamicRow = false, dyna
     }
     const response = context.lastResponse;
     if (!response) {return unsupported(step, context, 'Response JSON assertion has no preceding HTTP request in this scenario.');}
-    const value = `{ ${values.join(', ')} }`;
-    const expected = dynamicRow ? rowJsonExpression(value, step, context, dynamicHeaders) : jsonExpression(value, step, context);
-    return `await step(${stringExpression(title, dynamicRow)}, async () => {\n  expect(await ${response}.json()).toMatchObject(${expected});\n});`;
+    const expected = containsJsonExpression(`{ ${values.join(', ')} }`, step, context, dynamicRow ? dynamicHeaders : null);
+    return `await step(${stringExpression(title, dynamicRow)}, async () => {\n  expect(await ${response}.json()).toEqual(${expected});\n});`;
   }
   return unsupported(step, context, `Unsupported Feature step: ${quote(text)}.`);
 }
@@ -310,13 +309,24 @@ function unsupported(step: Step, context: CompilerContext, message: string): str
   return '';
 }
 
-function rowJsonExpression(
+interface RowPlaceholder {
+  readonly name: string;
+  readonly insideString: boolean;
+}
+
+interface RowJson {
+  readonly serialized: string;
+  readonly markers: ReadonlyMap<string, RowPlaceholder>;
+}
+
+/** Replace Examples placeholders with markers so the JSON can be parsed before row values exist. */
+function parseRowJson(
   value: string,
   step: Step,
   context: CompilerContext,
   dynamicHeaders: readonly string[],
-): string {
-  const markers = new Map<string, { readonly name: string; readonly insideString: boolean }>();
+): RowJson | null {
+  const markers = new Map<string, RowPlaceholder>();
   let normalized = '';
   let insideString = false;
   let escaped = false;
@@ -348,19 +358,32 @@ function rowJsonExpression(
     serialized = JSON.stringify(JSON.parse(normalized));
   } catch {
     context.diagnostics.push(diagnostic('FEATURE_JSON_INVALID', 'Outline JSON must remain valid after Examples substitution.', step.location?.line ?? 1, step.location?.column ?? 1));
-    return 'null';
+    return null;
   }
+  for (const placeholder of markers.values()) {
+    if (!dynamicHeaders.includes(placeholder.name)) {
+      context.diagnostics.push(diagnostic('FEATURE_OUTLINE_HEADER_UNKNOWN', `Outline placeholder <${placeholder.name}> has no matching Examples column.`, step.location?.line ?? 1, step.location?.column ?? 1));
+    }
+  }
+  return { serialized, markers };
+}
 
+function rowJsonExpression(
+  value: string,
+  step: Step,
+  context: CompilerContext,
+  dynamicHeaders: readonly string[],
+): string {
+  const parsed = parseRowJson(value, step, context, dynamicHeaders);
+  if (!parsed) {return 'null';}
+  let { serialized } = parsed;
   const templateMarkers: { readonly marker: string; readonly replacement: string }[] = [];
-  for (const [index, [marker, placeholder]] of [...markers.entries()].entries()) {
+  for (const [index, [marker, placeholder]] of [...parsed.markers.entries()].entries()) {
     const generatedMarker = placeholder.insideString
       ? `__BLACKBOX_STRING_ROW_${index}__`
       : `__BLACKBOX_VALUE_ROW_${index}__`;
     const markerToReplace = placeholder.insideString ? marker : JSON.stringify(marker);
     serialized = serialized.replace(markerToReplace, generatedMarker);
-    if (!dynamicHeaders.includes(placeholder.name)) {
-      context.diagnostics.push(diagnostic('FEATURE_OUTLINE_HEADER_UNKNOWN', `Outline placeholder <${placeholder.name}> has no matching Examples column.`, step.location?.line ?? 1, step.location?.column ?? 1));
-    }
     const rowValue = `row[${quote(placeholder.name)}]`;
     const replacement = placeholder.insideString
       ? `\${JSON.stringify(String(${rowValue})).slice(1, -1)}`
@@ -373,6 +396,57 @@ function rowJsonExpression(
     template = template.replace(marker, () => replacement);
   }
   return `JSON.parse(${template})`;
+}
+
+/**
+ * "contains" means the expected values are present, in any order, with extra fields and items
+ * allowed. Objects become `expect.objectContaining` and arrays `expect.arrayContaining` at every
+ * level; primitives stay literal.
+ */
+function containsJsonExpression(
+  value: string,
+  step: Step,
+  context: CompilerContext,
+  dynamicHeaders: readonly string[] | null,
+): string {
+  if (dynamicHeaders) {
+    const parsed = parseRowJson(value, step, context, dynamicHeaders);
+    return parsed ? containsExpression(JSON.parse(parsed.serialized), parsed.markers) : 'null';
+  }
+  try { return containsExpression(JSON.parse(value), new Map()); }
+  catch {
+    context.diagnostics.push(diagnostic('FEATURE_JSON_INVALID', 'Doc String must contain valid JSON.', step.location?.line ?? 1, step.location?.column ?? 1));
+    return 'null';
+  }
+}
+
+function containsExpression(value: unknown, markers: ReadonlyMap<string, RowPlaceholder>): string {
+  if (Array.isArray(value)) {
+    return `expect.arrayContaining([${value.map((item) => containsExpression(item, markers)).join(', ')}])`;
+  }
+  if (typeof value === 'object' && value !== null) {
+    const properties = Object.entries(value).map(([key, item]) => `${propertyKey(key, markers)}: ${containsExpression(item, markers)}`);
+    return properties.length ? `expect.objectContaining({ ${properties.join(', ')} })` : 'expect.objectContaining({})';
+  }
+  if (typeof value === 'string') {return stringValue(value, markers);}
+  return JSON.stringify(value);
+}
+
+function propertyKey(key: string, markers: ReadonlyMap<string, RowPlaceholder>): string {
+  const expression = stringValue(key, markers);
+  // A computed key keeps __proto__ an own property instead of setting the prototype.
+  return expression === quote(key) && key !== '__proto__' ? expression : `[${expression}]`;
+}
+
+function stringValue(value: string, markers: ReadonlyMap<string, RowPlaceholder>): string {
+  const whole = markers.get(value);
+  if (whole && !whole.insideString) {return `row[${quote(whole.name)}]`;}
+  const parts = value.split(/(__BLACKBOX_ROW_\d+__)/u).filter((part) => part !== '');
+  if (parts.length === 0) {return quote(value);}
+  return parts.map((part) => {
+    const placeholder = markers.get(part);
+    return placeholder ? `String(row[${quote(placeholder.name)}])` : quote(part);
+  }).join(' + ');
 }
 
 function parseExampleValue(value: string): string | number | boolean | null {

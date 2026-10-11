@@ -220,7 +220,11 @@ function generatedCodeDiagnostics(code: string): string[] {
           test(title: string, details: { tag: string[] }, body: (fixtures: Fixtures) => unknown): void;
         }
         interface System { sandbox(name: string, options: { clients: { api: ApiClient } }, body: (suite: Suite) => void): void }
-        export const expect: (actual: unknown) => { toBe(expected: unknown): void; toEqual(expected: unknown): void; toMatchObject(expected: unknown): void };
+        export const expect: {
+          (actual: unknown): { toBe(expected: unknown): void; toEqual(expected: unknown): void };
+          arrayContaining(sample: readonly unknown[]): unknown;
+          objectContaining(sample: Record<string, unknown>): unknown;
+        };
         export const test: { system(selector: { kind: 'system' | 'subsystem'; id: string }, body: (system: System) => void): void };
       }
     `],

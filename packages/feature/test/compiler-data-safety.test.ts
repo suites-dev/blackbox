@@ -33,14 +33,22 @@ Feature: exact JSON data
   const execution = await executeSuite(result.code, payload);
   expect(execution.bodies).toHaveLength(1);
   expect(execution.expected).toHaveLength(3);
-  for (const value of [...execution.bodies, ...execution.expected]) {
+  const exact = execution.expected.filter((value) => !isAsymmetricMatcher(value));
+  expect(exact).toHaveLength(1);
+  for (const value of [...execution.bodies, ...exact]) {
     expect(JSON.stringify(value)).toBe(json);
     expect(Object.hasOwn(value as object, '__proto__')).toBe(true);
     expect(Object.hasOwn((value as { nested: object }).nested, '__proto__')).toBe(true);
     expect((value as { role: unknown }).role).toBeUndefined();
   }
+  // The contains assertions read __proto__ as an own field: a different own value fails them.
+  await expect(executeSuite(result.code, JSON.parse(json.replace('"ok":true', '"ok":false')))).rejects.toThrow();
   await expect(executeSuite(result.code, { nested: {} })).rejects.toThrow();
 });
+
+function isAsymmetricMatcher(value: unknown): boolean {
+  return typeof value === 'object' && value !== null && 'asymmetricMatch' in value;
+}
 
 it('preserves $$ Examples headers for both JSON values and string interpolation', async () => {
   const result = compileFeature({ catalog, clients, source: `@subsystem:orders
@@ -107,11 +115,10 @@ async function executeSuite(code: string, responseJson: unknown) {
     test: { system: (_selector: unknown, callback: (system: unknown) => void) => { callback({
       sandbox: (_name: string, _options: unknown, callback: (suite: unknown) => void) => { callback(suite); },
     }); } },
-    expect: (actual: unknown) => ({
+    expect: Object.assign((actual: unknown) => ({
       toBe: (value: unknown) => { expect(actual).toBe(value); },
       toEqual: (value: unknown) => { expected.push(value); expect(actual).toEqual(value); },
-      toMatchObject: (value: object) => { expected.push(value); expect(actual).toMatchObject(value); },
-    }),
+    }), { arrayContaining: expect.arrayContaining, objectContaining: expect.objectContaining }),
   });
   expect(tests.length).toBeGreaterThan(0);
   for (const test of tests) {

@@ -32,6 +32,10 @@ from the entry's `kind`. Each diagnostic points at the tag, or at the `Feature:`
 line when the tag is missing, and a missing catalog is an error. `@sandbox:<name>`
 names the Playwright sandbox declaration and is not checked against the catalog.
 
+In the vocabulary, "contains" means these values are present, in any order; extra
+fields and items are allowed. It compiles to nested `expect.objectContaining` and
+`expect.arrayContaining` matchers. The "exactly" sentence compiles to `toEqual`.
+
 | Command                                                                  | Reads                                       | Writes or reports                                                                                                                                                                                                        |
 | ------------------------------------------------------------------------ | ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `feature step list`                                                      | Compiler vocabulary                         | Lists supported sentences and argument forms. A natural-language Gherkin step is not automatically executable.                                                                                                           |

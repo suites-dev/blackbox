@@ -462,13 +462,13 @@ The compiler receives this source, the `api` binding from `e2e/clients.ts`, and
 compilation rules for these sentences. This is the example vocabulary to
 implement, not a claim that the current older vocabulary already accepts it:
 
-| Sentence / argument                       | Emitted behavior                                               |
-| ----------------------------------------- | -------------------------------------------------------------- |
-| `has sent METHOD ... and received STATUS` | Send setup request and assert its status.                      |
-| `sends METHOD ... with JSON`              | Call the registered HTTP client; retain the local response.    |
-| `the response status is STATUS`           | Assert the preceding response's status.                        |
-| `the response JSON contains` + Doc String | Parse expected JSON and emit `toMatchObject`.                  |
-| `... contains these fields` + Data Table  | Parse each `json` cell into an expected top-level field value. |
+| Sentence / argument                       | Emitted behavior                                                                                   |
+| ----------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| `has sent METHOD ... and received STATUS` | Send setup request and assert its status.                                                          |
+| `sends METHOD ... with JSON`              | Call the registered HTTP client; retain the local response.                                        |
+| `the response status is STATUS`           | Assert the preceding response's status.                                                            |
+| `the response JSON contains` + Doc String | Parse expected JSON and emit nested `expect.objectContaining` / `expect.arrayContaining` matchers. |
+| `... contains these fields` + Data Table  | Parse each `json` cell into an expected top-level field value, with the same matchers.             |
 
 Outline substitution happens before JSON parsing. Unknown clients, unsupported
 sentences, invalid JSON, duplicate table fields, or assertions without a prior
@@ -509,11 +509,9 @@ test.system({ kind: 'subsystem', id: 'orders' }, (system) => {
             expect(response.status()).toBe(200);
           });
           await step('* the response JSON contains these fields:', async () => {
-            expect(await response.json()).toMatchObject({
-              sku: 'keyboard',
-              quantity: 2,
-              total: 200,
-            });
+            expect(await response.json()).toEqual(
+              expect.objectContaining({ sku: 'keyboard', quantity: 2, total: 200 }),
+            );
           });
         });
       });
@@ -555,7 +553,7 @@ test.system({ kind: 'subsystem', id: 'orders' }, (system) => {
                     expect(response.status()).toBe(status);
                   });
                   await step('But the response JSON contains:', async () => {
-                    expect(await response.json()).toMatchObject({ code: code });
+                    expect(await response.json()).toEqual(expect.objectContaining({ code: code }));
                   });
                 },
               );

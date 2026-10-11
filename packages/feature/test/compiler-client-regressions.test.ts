@@ -19,8 +19,8 @@ Feature: response scope
       """
 `,
   });
-  const expected = 'expect(await response1.json()).toMatchObject(JSON.parse("{\\"ok\\":true}"))';
-  const stale = 'expect(await response0.json()).toMatchObject(JSON.parse("{\\"ok\\":true}"))';
+  const expected = 'expect(await response1.json()).toEqual(expect.objectContaining({ "ok": true }))';
+  const stale = 'expect(await response0.json()).toEqual(expect.objectContaining({ "ok": true }))';
   const targetsLatestResponse = (code: string) => code.includes(expected) && !code.includes(stale);
   expect(result.diagnostics).toEqual([]);
   expect(targetsLatestResponse(result.code)).toBe(true);

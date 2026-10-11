@@ -37,6 +37,9 @@ export class FeatureStepList extends Command {
       'the response JSON contains: <JSON Doc String>',
       'the response JSON contains these fields: <Data Table with field and json columns>',
       'client "<name>" GET "<path>" returns <status> with JSON exactly: <JSON Doc String>',
+      '',
+      '"contains" = these values are present, in any order; extra fields and items are allowed.',
+      '"exactly" = the response JSON equals the expected JSON.',
     ].join('\n'));
     return Promise.resolve();
   }
