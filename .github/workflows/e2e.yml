@@ -11,8 +11,8 @@ name: E2E
 #
 # Lanes run on separate runners so the slowest one sets the wall clock: each
 # golden journey gets its own leg, and lanes that need no registry start with
-# the build. The Playwright leg also runs source-package effects integration
-# against disposable Docker dependencies before its packed-consumer journey.
+# the build. The Playwright leg runs its effects checks inside the same
+# packed-consumer journey and evidence archive.
 # The gate below is the one required check over all of them.
 on:
   pull_request:
@@ -556,43 +556,6 @@ jobs:
         with:
           storage: ${{ runner.temp }}/registry-storage
 
-      - name: Build dependencies for effects integration
-        id: effects_build
-        run: pnpm --filter @suites/blackbox-playwright... build
-
-      - name: Test effects against real dependencies
-        id: effects_tests
-        timeout-minutes: 15
-        run: >-
-          node .github/scripts/ci-evidence.mjs run --lane playwright --project effects
-          --evidence-dir ci-evidence/playwright/effects
-          -- pnpm --filter @suites/blackbox-playwright test:effects
-
-      - name: Validate effects command evidence
-        id: effects_command_evidence
-        if: always()
-        uses: ./.github/actions/ci-evidence
-        with:
-          lane: playwright
-          project: effects
-          evidence-dir: ci-evidence/playwright/effects
-          setup-result: ${{ steps.setup.outcome }}
-          result: ${{ steps.effects_tests.outcome }}
-          command: pnpm --filter @suites/blackbox-playwright test:effects
-          expected: |
-            log=ci-evidence/playwright/effects/logs/command.log
-
-      - name: Retain effects integration evidence
-        id: effects_evidence
-        if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: playwright-effects-${{ github.run_id }}-${{ github.run_attempt }}
-          path: .blackbox/tmp/playwright-effects.*
-          include-hidden-files: true
-          if-no-files-found: error
-          retention-days: 14
-
       # The script prepares its own registry-installed consumer, then
       # materializes this project in it.
       - name: Run the Playwright system tests
@@ -634,10 +597,7 @@ jobs:
         if: always()
         env:
           OUTCOMES: >-
-            ${{ steps.setup.outcome }} ${{ steps.effects_build.outcome }}
-            ${{ steps.effects_tests.outcome }} ${{ steps.effects_command_evidence.outcome }}
-            ${{ steps.effects_evidence.outcome }}
-            ${{ steps.playwright_tests.outcome }}
+            ${{ steps.setup.outcome }} ${{ steps.playwright_tests.outcome }}
             ${{ steps.playwright_archive.outcome }} ${{ steps.playwright_evidence.outcome }}
         run: |
           for outcome in $OUTCOMES; do

@@ -1095,8 +1095,6 @@ export function approvedCliCommand(command) {
       return ['pnpm', 'test:e2e:journeys'];
     case 'pnpm\0test:e2e:playwright':
       return ['pnpm', 'test:e2e:playwright'];
-    case 'pnpm\0--filter\0@suites/blackbox-playwright\0test:effects':
-      return ['pnpm', '--filter', '@suites/blackbox-playwright', 'test:effects'];
     case 'pnpm\0test:e2e:skills':
       return ['pnpm', 'test:e2e:skills'];
     case 'node\0e2e/feature-cli/run.mjs\0--repeat\x001':

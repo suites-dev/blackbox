@@ -26,6 +26,7 @@
     "playwright.config.ts",
     "playwright-features.config.ts",
     "playwright-suites.config.ts",
+    "playwright-effects.config.ts",
     "tests/playwright/**/*.ts",
     "tests/playwright-features/**/*.ts",
     "reporters/**/*.ts",

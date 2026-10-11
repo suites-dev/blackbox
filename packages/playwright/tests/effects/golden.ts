@@ -1,7 +1,21 @@
 import type { TestInfo } from '@playwright/test';
 import { expect } from '@suites/blackbox-playwright';
 
-import type { EffectEvidenceArtifact } from '../../src/effects/evaluation/artifact-types.js';
+// Keep the acceptance fixture portable to a packed consumer.
+interface EffectEvidenceArtifact {
+  readonly kind: string;
+  readonly assessment: { readonly findings: readonly { readonly evidence: readonly string[] }[] };
+  readonly projection: {
+    readonly effects: readonly {
+      readonly id: string;
+      readonly kind: string;
+      readonly actor: string;
+      readonly operation: string;
+      readonly target: string;
+      readonly outcome: string;
+    }[];
+  };
+}
 
 interface EffectReport {
   readonly assertion: {
