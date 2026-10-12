@@ -194,6 +194,13 @@ const record = createEffectsRecord({
 console.log(serializeEffectsRecord(record));
 ```
 
+`createEffectsRecordFromGraph` builds the record from a projected `EffectGraph`. It keeps only
+`kind`, `operation`, `target` and `outcome`, counted, and drops actor, attributes and span
+identities. The record is `complete` only when the graph's scope is closed and its coverage is
+complete; otherwise it is `incomplete` and names why. An operation no convention classified keeps
+the kind `unknown`. `node scripts/effects-summary-run.mjs <results.json>` (from the repository
+root, after `pnpm build`) prints one such record per test from a Playwright results file.
+
 The record identity (`kind`, `operation`, `target`, `outcome`) is experimental;
 [#187](https://github.com/suites-dev/blackbox/issues/187) tracks validation against
 real observations. Record effects do not yet link to graph effect IDs.
