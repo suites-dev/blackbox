@@ -12,7 +12,7 @@ const workspacePath = resolve(scriptDirectory, '..', '..');
 // same project, and e2e is the only one in this repository.
 const projectRoot = join(workspacePath, 'e2e');
 const statePath = join(projectRoot, '.blackbox', 'capsule-assets.json');
-const packedPackages = [
+export const packedPackages = [
   '@suites/blackbox',
   '@suites/blackbox-capsule',
   '@suites/blackbox-catalog',
@@ -20,6 +20,7 @@ const packedPackages = [
   '@suites/blackbox-cli-contract',
   '@suites/blackbox-discovery',
   '@suites/blackbox-driver',
+  '@suites/blackbox-effects',
   '@suites/blackbox-feature',
   '@suites/blackbox-inst-runtime-node',
   '@suites/blackbox-instrumentation',
