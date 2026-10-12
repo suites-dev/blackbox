@@ -20,15 +20,18 @@ async function loadEffects(root) {
   return import(pathToFileURL(entry).href);
 }
 
-/** The real path of `file`, only when it lies inside `root` after symbolic links are followed. */
+/**
+ * The real path of `file`, only when it lies inside `root` both as written and after symbolic
+ * links are followed. `file` must be spelled under `root` the way `root` is spelled.
+ */
 async function insidePath(root, file) {
-  const base = await realpath(root);
-  const lexical = resolve(base, file);
-  // The root may be spelled through a link (a temporary directory on macOS): accept either spelling.
-  if (!lexical.startsWith(base + sep) && !lexical.startsWith(resolve(root) + sep)) {
-    throw new Error(`${file} is outside ${base}`);
+  const spelled = resolve(root);
+  const lexical = resolve(spelled, file);
+  if (!lexical.startsWith(spelled + sep)) {
+    throw new Error(`${file} is outside ${spelled}`);
   }
   const real = await realpath(lexical);
+  const base = await realpath(spelled);
   if (!real.startsWith(base + sep)) {
     throw new Error(`${file} resolves outside ${base}`);
   }
