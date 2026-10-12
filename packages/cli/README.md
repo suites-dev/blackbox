@@ -5,6 +5,17 @@ this package explicitly alongside [`@suites/blackbox`](../blackbox/README.md),
 which owns the default composition and entry skill but has no launcher.
 The CLI also supports custom compositions; it depends on neither product features nor Skills.
 
+## Start agent onboarding
+
+Run `npx @suites/blackbox-cli agent onboarding start` to print a bootstrap prompt
+for your agent. The command works with just the CLI package installed and makes no
+changes itself. The prompt asks the agent to install compatible versions of
+`@suites/blackbox`, `@suites/blackbox-cli`, `@suites/blackbox-skills`, and
+`@suites/blackbox-discovery` using the project's package manager and registry,
+install the `blackbox` and `discovery` skills for its host, then load the installed
+`blackbox` skill and follow its onboarding instructions. Skill installation and
+loading are separate agent steps; printing the prompt does not perform them.
+
 ## Runtime composition
 
 The host reads the consumer's declared dependencies and development dependencies,
