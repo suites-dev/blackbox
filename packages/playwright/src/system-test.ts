@@ -142,31 +142,56 @@ function createSystemDeclaration<
   state: DeclarationState,
   useBlackboxOptions: UseBlackboxOptions,
 ): BlackboxSystemTest<TestArgs, WorkerArgs>['system'] {
-  return (selection: BlackboxSystemSelection, callback) => {
-    if (state.phase !== 'idle') {
-      throw declarationError('test.system declarations cannot be nested');
-    }
-    const selected = selectionValue(selection);
-    nativeTest.describe(`${selected.kind} ${JSON.stringify(selected.id)}`, () => {
-      state.phase = 'system';
-      let active = true;
-      const system: BlackboxSystemScope<TestArgs, WorkerArgs> = Object.freeze({
-        sandbox: createSandboxDeclaration(nativeTest, {
-          state,
-          selected,
-          systemActive: () => active,
-          useBlackboxOptions,
-        }),
-      });
-      try {
-        const result = callback(system);
-        ensureSynchronous(result, 'test.system');
-      } finally {
-        active = false;
-        state.phase = 'idle';
+  const systemDeclaration = Object.assign(
+    (
+      selection: BlackboxSystemSelection,
+      callback: (system: BlackboxSystemScope<TestArgs, WorkerArgs>) => unknown,
+    ) => {
+      if (state.phase !== 'idle') {
+        throw declarationError('test.system declarations cannot be nested');
       }
-    });
-  };
+      const selected = selectionValue(selection);
+      nativeTest.describe(`${selected.kind} ${JSON.stringify(selected.id)}`, () => {
+        state.phase = 'system';
+        let active = true;
+        const system: BlackboxSystemScope<TestArgs, WorkerArgs> = Object.freeze({
+          sandbox: createSandboxDeclaration(nativeTest, {
+            state,
+            selected,
+            systemActive: () => active,
+            useBlackboxOptions,
+          }),
+        });
+        try {
+          const result = callback(system);
+          ensureSynchronous(result, 'test.system');
+        } finally {
+          active = false;
+          state.phase = 'idle';
+        }
+      });
+    },
+    {
+      sandbox: (
+        selection: BlackboxSystemSelection,
+        optionsOrCallback:
+          BlackboxSandboxOptions | ((suite: BlackboxSandboxSuite<TestArgs, WorkerArgs>) => unknown),
+        callback?: (suite: BlackboxSandboxSuite<TestArgs, WorkerArgs>) => unknown,
+      ) => {
+        systemDeclaration(selection, (system) => {
+          if (typeof optionsOrCallback === 'function') {
+            system.sandbox('default', optionsOrCallback);
+          } else {
+            if (callback === undefined) {
+              throw declarationError('system.sandbox requires a synchronous callback');
+            }
+            system.sandbox('default', optionsOrCallback, callback);
+          }
+        });
+      },
+    },
+  ) as BlackboxSystemTest<TestArgs, WorkerArgs>['system'];
+  return systemDeclaration;
 }
 
 function createFacade<

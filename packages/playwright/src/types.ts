@@ -181,14 +181,38 @@ export interface BlackboxRootSuiteHook<TestArgs extends object, WorkerArgs exten
   ): void;
 }
 
+/** Callable system scope with a default-named sandbox shorthand. */
+export interface BlackboxSystemDeclaration<TestArgs extends object, WorkerArgs extends object> {
+  (
+    selection: BlackboxSystemSelection,
+    callback: (system: BlackboxSystemScope<TestArgs, WorkerArgs>) => unknown,
+  ): void;
+  sandbox<const Definitions extends ClientRegistry>(
+    selection: BlackboxSystemSelection,
+    options: BlackboxSandboxOptions & { readonly clients: Definitions },
+    callback: (
+      suite: BlackboxSandboxSuite<
+        TestArgs & { readonly clients: RegisteredClients<Definitions> },
+        WorkerArgs
+      >,
+    ) => unknown,
+  ): void;
+  sandbox(
+    selection: BlackboxSystemSelection,
+    callback: (suite: BlackboxSandboxSuite<TestArgs, WorkerArgs>) => unknown,
+  ): void;
+  sandbox(
+    selection: BlackboxSystemSelection,
+    options: BlackboxSandboxOptions,
+    callback: (suite: BlackboxSandboxSuite<TestArgs, WorkerArgs>) => unknown,
+  ): void;
+}
+
 export interface BlackboxSystemTest<
   TestArgs extends object = BlackboxNativeTestArgs,
   WorkerArgs extends object = BlackboxNativeWorkerArgs,
 > {
-  system(
-    selection: BlackboxSystemSelection,
-    callback: (system: BlackboxSystemScope<TestArgs, WorkerArgs>) => unknown,
-  ): void;
+  readonly system: BlackboxSystemDeclaration<TestArgs, WorkerArgs>;
   describe: BlackboxRootDescribe;
   beforeAll: BlackboxRootSuiteHook<TestArgs, WorkerArgs>;
   afterAll: BlackboxRootSuiteHook<TestArgs, WorkerArgs>;

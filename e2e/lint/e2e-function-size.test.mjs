@@ -25,6 +25,8 @@ function messages(source) {
 test('allows long direct synchronous Blackbox suite declaration callbacks', () => {
   const sources = [
     `test.system('suite', ${callback(100)});`,
+    `test.system.sandbox('suite', ${callback(100)});`,
+    `test.system.sandbox('suite', {}, ${callback(100)});`,
     `system.sandbox('suite', ${callback(100)});`,
     `system.sandbox('suite', {}, ${callback(100)});`,
     `sandbox.describe('suite', ${callback(100)});`,
@@ -52,12 +54,18 @@ test('rejects oversized tests, steps, hooks, and helper functions', () => {
 test('still rejects an oversized test nested inside an exempt suite callback', () => {
   const source = `test.system('orders', () => {\nsandbox.test('journey', ${callback(81)});\n});`;
   assert.equal(messages(source).filter(({ ruleId }) => ruleId === 'e2e/function-size').length, 1);
+  const direct = `test.system.sandbox('orders', () => {\nsuite.test('journey', ${callback(81)});\n});`;
+  assert.equal(messages(direct).filter(({ ruleId }) => ruleId === 'e2e/function-size').length, 1);
 });
 
 test('rejects unrelated describe, async suite, and callback in the wrong position', () => {
   const sources = [
     `test.describe('suite', ${callback(81)});`,
     `test.system('suite', ${callback(81, { async: true })});`,
+    `test.system.sandbox('suite', ${callback(81, { async: true })});`,
+    `test.system.sandbox(${callback(81)}, 'suite');`,
+    `other.system.sandbox('suite', ${callback(81)});`,
+    `test.system['sandbox']('suite', ${callback(81)});`,
     `system.sandbox('suite', ${callback(81, { async: true })});`,
     `sandbox.describe('suite', ${callback(81, { async: true })});`,
     `suite.describe('suite', ${callback(81, { async: true })});`,

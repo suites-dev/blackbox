@@ -6,7 +6,7 @@ import {
 } from '../testing/system-sandbox-harness/native-runner.js';
 
 afterEach(cleanupNativeRuns);
-it.each(['default', 'client-readiness-failure'])(
+it.each(['default', 'direct-sandbox', 'client-readiness-failure'])(
   'owns native client lifecycle for %s',
   async (scenario) => {
     const run = await runPlaywright({
@@ -15,16 +15,16 @@ it.each(['default', 'client-readiness-failure'])(
       jsonReport: false,
       scenario,
     });
-    expect(run.code, run.output).toBe(scenario === 'default' ? 0 : 1);
+    expect(run.code, run.output).toBe(scenario === 'client-readiness-failure' ? 1 : 0);
     const release = eventsOf(run, 'client-release-order');
     expect(release).toHaveLength(1);
     expect(release[0].raw.events).toEqual(
-      scenario === 'default'
+      scenario !== 'client-readiness-failure'
         ? ['create', 'ready', 'hook', 'body', 'after', 'dispose']
         : ['create', 'ready', 'dispose', 'after'],
     );
     expect(eventsOf(run, 'stop')).toHaveLength(1);
-    if (scenario !== 'default') {
+    if (scenario === 'client-readiness-failure') {
       expect(run.output).toContain('client readiness deliberately failed');
     }
   },
@@ -61,14 +61,7 @@ it('allows healthy client setup within a 100ms native test timeout', async () =>
   expect(run.code, run.output).toBe(0);
   const release = eventsOf(run, 'client-release-order');
   expect(release).toHaveLength(1);
-  expect(release[0].raw.events).toEqual([
-    'create',
-    'ready',
-    'hook',
-    'body',
-    'after',
-    'dispose',
-  ]);
+  expect(release[0].raw.events).toEqual(['create', 'ready', 'hook', 'body', 'after', 'dispose']);
   expect(eventsOf(run, 'stop')).toHaveLength(1);
   expect(eventsOf(run, 'stop')[0].raw.reason).toBe('completed');
 });

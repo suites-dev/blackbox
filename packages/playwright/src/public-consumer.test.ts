@@ -16,8 +16,21 @@ const playwrightTestPackage = join(playwrightPackage, 'node_modules/@playwright/
 const playwrightCli = join(playwrightTestPackage, 'cli.js');
 const typescriptCli = fileURLToPath(new URL('../bin/tsc', import.meta.resolve('typescript')));
 
+const clientModule = `
+import { defineClient } from '@suites/blackbox-playwright';
+export const redis = defineClient({}, {
+    target: { participant: 'redis', containerPort: 6379 },
+    env: [],
+    create: () => ({ get: async (key: string): Promise<string | null> => key }),
+    ready: () => undefined,
+    dispose: () => undefined,
+  });
+
+`;
+
 const validSpec = `
 import { expect, test } from '@suites/blackbox-playwright';
+import * as clients from './clients/index.js';
 
 const extended = test.extend<{ readonly tenant: string }>({
   tenant: async ({}, use) => {
@@ -45,6 +58,27 @@ extended.system('orders', (system) => {
       });
     });
   });
+});
+
+extended.system.sandbox({ kind: 'subsystem', id: 'product-service' }, { clients }, (suite) => {
+  suite.beforeEach(async ({ clients, tenant }) => {
+    const value: string | null = await clients.redis.get(tenant);
+    void value;
+  });
+  suite.afterEach(({ clients }) => void clients.redis.get('after'));
+  suite.test('Scenario: typed registered clients', async ({ clients, request, tenant }) => {
+    const value: string | null = await clients.redis.get(tenant);
+    // @ts-expect-error registry names remain exact
+    clients.postgres;
+    // @ts-expect-error Redis handles retain their SDK methods
+    clients.redis.post('/products');
+    // @ts-expect-error raw Redis values are not HTTP responses
+    value.json();
+    void request;
+  });
+});
+test.system.sandbox('plain', (suite) => {
+  suite.test('Scenario: default sandbox shorthand', ({ sandbox }) => void sandbox);
 });
 `;
 
@@ -123,12 +157,18 @@ async function createConsumer(context: TestContext): Promise<string> {
   context.onTestFinished(async () => rm(project, { recursive: true, force: true }));
   const suites = join(project, 'node_modules/@suites');
   const playwright = join(project, 'node_modules/@playwright');
-  await Promise.all([mkdir(suites, { recursive: true }), mkdir(playwright, { recursive: true })]);
+  await Promise.all([
+    mkdir(suites, { recursive: true }),
+    mkdir(playwright, { recursive: true }),
+    mkdir(join(project, 'clients'), { recursive: true }),
+  ]);
   await Promise.all([
     symlink(playwrightPackage, join(suites, 'blackbox-playwright'), 'dir'),
     symlink(playwrightTestPackage, join(playwright, 'test'), 'dir'),
     writeFile(join(project, 'package.json'), JSON.stringify({ name: 'consumer', type: 'module' })),
     writeFile(join(project, 'journey.spec.ts'), validSpec),
+    writeFile(join(project, 'clients/redis.ts'), clientModule),
+    writeFile(join(project, 'clients/index.ts'), "export { redis } from './redis.js';\n"),
     writeFile(join(project, 'types-negative.ts'), negativeTypes),
     writeFile(join(project, 'playwright.config.ts'), validConfig),
     writeFile(join(project, 'invalid-reporter.config.ts'), invalidReporterConfig),
@@ -172,7 +212,16 @@ test('independent Playwright consumer compiles and discovers a journey', async (
     listed.stdout,
     /system "orders" › sandbox "isolated" › Rule: independent Playwright consumer › Scenario: inferred fixtures are available/u,
   );
-  assert.match(listed.stdout, /Total: 1 test in 1 file/u);
+  assert.match(listed.stdout, /Total: 3 tests in 1 file/u);
+
+  assert.match(
+    listed.stdout,
+    /subsystem "product-service" › sandbox "default" › Scenario: typed registered clients/u,
+  );
+  assert.match(
+    listed.stdout,
+    /system "plain" › sandbox "default" › Scenario: default sandbox shorthand/u,
+  );
 
   const consumerSources = await Promise.all(
     [
