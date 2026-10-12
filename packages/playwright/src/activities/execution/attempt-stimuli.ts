@@ -1,11 +1,17 @@
-import { injectW3CTextMap, type TelemetryScopeResult } from '@suites/blackbox-telemetry';
+import {
+  injectW3CTextMap,
+  type W3CTraceContext,
+  type TelemetryScopeResult,
+} from '@suites/blackbox-telemetry';
 
+import { activityAdmissionLimits } from '../limits.js';
 import { createActivityRegistry } from '../activity-registry.js';
 import type { ActivitySelection, OwnedActivity } from '../types.js';
 import type { BlackboxStimulusScope } from '../../steps/types.js';
 
 export type CompletedStimuli =
-  { readonly kind: 'none' } | { readonly kind: 'selected'; readonly selection: ActivitySelection };
+  | { readonly kind: 'none' }
+  | { readonly kind: 'selected'; readonly selections: readonly ActivitySelection[] };
 
 function failure(error: unknown): TelemetryScopeResult {
   const message = error instanceof Error ? error.message : String(error);
@@ -15,11 +21,28 @@ function failure(error: unknown): TelemetryScopeResult {
   };
 }
 
+const scopeContexts = new WeakMap<BlackboxStimulusScope, W3CTraceContext>();
+
+export function stimulusHeaders(
+  scope: BlackboxStimulusScope,
+  carrier: Readonly<Record<string, string>>,
+): Readonly<Record<string, string>> {
+  const context = scopeContexts.get(scope);
+  if (context === undefined) {
+    throw new Error('Unknown stimulus scope.');
+  }
+  // Native contexts merge default headers after per-call options. Empty state overrides
+  // inherited tracestate when this freshly generated context has no vendor state.
+  return { tracestate: '', ...injectW3CTextMap({ context, carrier }).values };
+}
+
 function stimulusScope(activity: OwnedActivity): BlackboxStimulusScope {
-  return Object.freeze({
+  const scope = Object.freeze({
     activityId: activity.activityId,
     headers: Object.freeze(injectW3CTextMap({ context: activity.context, carrier: {} }).values),
   });
+  scopeContexts.set(scope, activity.context);
+  return scope;
 }
 
 /** Attempt-owned stimulus traces used to select effects; not a test fixture. */
@@ -57,13 +80,23 @@ export class AttemptStimuli {
     if (this.#completed.length === 0) {
       return { kind: 'none' };
     }
-    return {
-      kind: 'selected',
-      selection: this.#registry.select({
-        kind: 'stimulus',
-        activities: [...this.#completed],
-      }),
-    };
+    const selections: ActivitySelection[] = [];
+    for (
+      let offset = 0;
+      offset < this.#completed.length;
+      offset += activityAdmissionLimits.selectedTraces
+    ) {
+      selections.push(
+        this.#registry.select({
+          kind: 'stimulus',
+          activities: this.#completed.slice(
+            offset,
+            offset + activityAdmissionLimits.selectedTraces,
+          ),
+        }),
+      );
+    }
+    return { kind: 'selected', selections: Object.freeze(selections) };
   }
 
   #finish(activity: OwnedActivity, outcome: TelemetryScopeResult): void {

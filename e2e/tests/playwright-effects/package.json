@@ -1,0 +1,12 @@
+{
+  "name": "blackbox-effects-authoring-clients",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "pg": "8.12.0",
+    "redis": "4.7.1"
+  },
+  "peerDependencies": {
+    "@suites/blackbox-playwright": "0.0.1-alpha.0"
+  }
+}

@@ -36,28 +36,25 @@ test.system.sandbox(
     suite.describe('Rule: accepted payments are retained as succeeded intents', () => {
       suite.test(
         'Scenario: a valid payment method creates a payment intent',
-        async ({ clients, request, sandbox, telemetry, effects, step }) => {
+        async ({ clients, request, sandbox, telemetry, effects }) => {
           expectAttemptEvidenceIdentity({ effects, sandbox, telemetry });
 
-          await step('Given the payment service has no prior transactions', async () => {
+          await test.step('Given the payment service has no prior transactions', async () => {
             expect(await readFixtureState<PaymentState>(clients.payments)).toEqual(
               emptyPaymentState,
             );
           });
 
-          const response = await step.stimulus(
-            'When Alice submits a payment method',
-            ({ headers }) =>
-              request.post(new URL('/v1/payment_intents', sandbox.entrypoint.url).href, {
-                data: { paymentMethodId: 'pm_alice_primary', userId: 'alice' },
-                headers,
-              }),
-          );
+          const response = await test.step('When Alice submits a payment method', () =>
+            request.post('/v1/payment_intents', {
+              data: { paymentMethodId: 'pm_alice_primary', userId: 'alice' },
+            }));
+
           await expect(effects).toSatisfy((e) => [
             e.exists(e.http({ actor: 'payment-mock', method: 'POST' })),
           ]);
 
-          await step('Then a succeeded payment intent is returned and retained', async () => {
+          await test.step('Then a succeeded payment intent is returned and retained', async () => {
             const intent = {
               id: 'pi_alice1',
               paymentMethodId: 'pm_alice_primary',
@@ -77,61 +74,53 @@ test.system.sandbox(
     suite.describe('Rule: each payment can be refunded at most once', () => {
       suite.test(
         'Scenario: a second refund for the same payment is rejected',
-        async ({ clients, request, sandbox, telemetry, effects, step }) => {
+        async ({ clients, request, sandbox, telemetry, effects }) => {
           expectAttemptEvidenceIdentity({ effects, sandbox, telemetry });
 
-          await step('Given Alice has one succeeded payment', async () => {
+          await test.step('Given Alice has one succeeded payment', async () => {
             expect(await readFixtureState<PaymentState>(clients.payments)).toEqual(
               emptyPaymentState,
             );
             expect(
               (
-                await request.post(new URL('/v1/payment_intents', sandbox.entrypoint.url).href, {
+                await request.post('/v1/payment_intents', {
                   data: { paymentMethodId: 'pm_alice_refundable', userId: 'alice' },
                 })
               ).status(),
             ).toBe(201);
           });
 
-          const firstRefund = await step.stimulus('When the payment is refunded', ({ headers }) =>
-            request.post(new URL('/v1/refunds', sandbox.entrypoint.url).href, {
+          const firstRefund = await test.step('When the payment is refunded', () =>
+            request.post('/v1/refunds', {
               data: { paymentIntentId: 'pi_alice1' },
-              headers,
-            }),
-          );
-          const repeatedRefund = await step.stimulus(
-            'And the same refund is requested again',
-            ({ headers }) =>
-              request.post(new URL('/v1/refunds', sandbox.entrypoint.url).href, {
-                data: { paymentIntentId: 'pi_alice1' },
-                headers,
-              }),
-          );
+            }));
+          const repeatedRefund = await test.step('And the same refund is requested again', () =>
+            request.post('/v1/refunds', {
+              data: { paymentIntentId: 'pi_alice1' },
+            }));
+
           await expect(effects).toSatisfy((e) => [
-            e.atLeast(2, e.http({ actor: 'payment-mock', method: 'POST' })),
+            e.atLeast(3, e.http({ actor: 'payment-mock', method: 'POST' })),
           ]);
 
-          await step(
-            'Then the first refund succeeds and the repeated refund is rejected',
-            async () => {
-              expect(await expectJson<Refund>(firstRefund, 201)).toEqual({
-                id: 'refund_1',
-                paymentIntentId: 'pi_alice1',
-                status: 'succeeded',
-              });
-              expect(await expectJson(repeatedRefund, 409)).toMatchObject({
-                code: 'refund-already-exists',
-              });
+          await test.step('Then the first refund succeeds and the repeated refund is rejected', async () => {
+            expect(await expectJson<Refund>(firstRefund, 201)).toEqual({
+              id: 'refund_1',
+              paymentIntentId: 'pi_alice1',
+              status: 'succeeded',
+            });
+            expect(await expectJson(repeatedRefund, 409)).toMatchObject({
+              code: 'refund-already-exists',
+            });
 
-              await step('And only one refund is retained', async () => {
-                const state = await readFixtureState<PaymentState>(clients.payments);
-                expect(state.paymentIntents).toHaveLength(1);
-                expect(state.refunds).toEqual([
-                  { id: 'refund_1', paymentIntentId: 'pi_alice1', status: 'succeeded' },
-                ]);
-              });
-            },
-          );
+            await test.step('And only one refund is retained', async () => {
+              const state = await readFixtureState<PaymentState>(clients.payments);
+              expect(state.paymentIntents).toHaveLength(1);
+              expect(state.refunds).toEqual([
+                { id: 'refund_1', paymentIntentId: 'pi_alice1', status: 'succeeded' },
+              ]);
+            });
+          });
         },
       );
     });
@@ -139,28 +128,25 @@ test.system.sandbox(
     suite.describe('Rule: only known payments can be refunded', () => {
       suite.test(
         'Scenario: an unknown payment intent cannot be refunded',
-        async ({ clients, request, sandbox, telemetry, effects, step }) => {
+        async ({ clients, request, sandbox, telemetry, effects }) => {
           expectAttemptEvidenceIdentity({ effects, sandbox, telemetry });
 
-          await step('Given the payment service has no prior transactions', async () => {
+          await test.step('Given the payment service has no prior transactions', async () => {
             expect(await readFixtureState<PaymentState>(clients.payments)).toEqual(
               emptyPaymentState,
             );
           });
 
-          const response = await step.stimulus(
-            'When a refund references an unknown payment',
-            ({ headers }) =>
-              request.post(new URL('/v1/refunds', sandbox.entrypoint.url).href, {
-                data: { paymentIntentId: 'pi_missing1' },
-                headers,
-              }),
-          );
+          const response = await test.step('When a refund references an unknown payment', () =>
+            request.post('/v1/refunds', {
+              data: { paymentIntentId: 'pi_missing1' },
+            }));
+
           await expect(effects).toSatisfy((e) => [
             e.exists(e.http({ actor: 'payment-mock', method: 'POST' })),
           ]);
 
-          await step('Then the refund is rejected without recording a transaction', async () => {
+          await test.step('Then the refund is rejected without recording a transaction', async () => {
             expect(await expectJson(response, 404)).toMatchObject({
               code: 'payment-intent-not-found',
             });

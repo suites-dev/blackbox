@@ -25,6 +25,10 @@ catalog:
           service: postgres
           role: dependency
           runtime: infra
+        redis:
+          service: redis
+          role: dependency
+          runtime: infra
         rabbitmq:
           service: rabbitmq
           role: dependency
@@ -39,10 +43,13 @@ catalog:
           - id: effects.postgres
             kind: postgres
             authoritativeFor: [normalized PostgreSQL operations]
+          - id: effects.redis
+            kind: redis
+            authoritativeFor: [normalized Redis operations]
           - id: effects.rabbitmq
             kind: rabbitmq
             authoritativeFor: [normalized RabbitMQ operations]
-        requiredBoundaries: [effects.http, effects.postgres, effects.rabbitmq]
+        requiredBoundaries: [effects.http, effects.postgres, effects.redis, effects.rabbitmq]
         terminalObservationWindowMs: 2000
         redaction:
           requestBodies: not-captured
@@ -59,6 +66,10 @@ catalog:
           runtime: infra
         postgres:
           service: postgres
+          role: dependency
+          runtime: infra
+        redis:
+          service: redis
           role: dependency
           runtime: infra
         rabbitmq:

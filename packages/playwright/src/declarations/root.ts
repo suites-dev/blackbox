@@ -1,3 +1,4 @@
+import { lifecycleCallback } from '../execution/body-phase.js';
 import type { TestDetails, TestInfo } from '@playwright/test';
 
 import type {
@@ -37,15 +38,15 @@ export function createRootHook<
     assertRootScope(active, `test.${mode}`);
     if (typeof titleOrBody === 'function') {
       if (mode === 'beforeAll') {
-        nativeTest.beforeAll(titleOrBody);
+        nativeTest.beforeAll(lifecycleCallback(titleOrBody, 'hook'));
       } else {
-        nativeTest.afterAll(titleOrBody);
+        nativeTest.afterAll(lifecycleCallback(titleOrBody, 'hook'));
       }
     } else if (possibleBody !== undefined) {
       if (mode === 'beforeAll') {
-        nativeTest.beforeAll(titleOrBody, possibleBody);
+        nativeTest.beforeAll(titleOrBody, lifecycleCallback(possibleBody, 'hook'));
       } else {
-        nativeTest.afterAll(titleOrBody, possibleBody);
+        nativeTest.afterAll(titleOrBody, lifecycleCallback(possibleBody, 'hook'));
       }
     }
   }

@@ -5,7 +5,7 @@ import { expectedEffects, proveEffects } from './playwright-effects-proof.mjs';
 
 function report() {
   return {
-    stats: { expected: 8, unexpected: 0, flaky: 0, skipped: 0 },
+    stats: { expected: 9, unexpected: 0, flaky: 0, skipped: 0 },
     suites: [
       {
         specs: expectedEffects.map((title) => ({
@@ -57,8 +57,8 @@ const goldens = Object.fromEntries(
     ],
   ]),
 );
-test('effects proof accepts exactly eight clean acceptance attempts', () => {
-  assert.equal(proveEffects(report(), discovery, goldens).attempts, 8);
+test('effects proof accepts exactly nine clean acceptance attempts', () => {
+  assert.equal(proveEffects(report(), discovery, goldens).attempts, 9);
 });
 
 for (const [name, mutate, message] of [

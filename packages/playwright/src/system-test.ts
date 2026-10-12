@@ -1,3 +1,4 @@
+import { lifecycleFixtures, registerBodyEnd, registerBodyStart } from './execution/body-phase.js';
 import type { Fixtures } from '@playwright/test';
 
 import type { InternalTest } from './declarations/native.js';
@@ -119,12 +120,14 @@ function declareSandboxGroup<
       blackboxEnvironment: input.environment,
       blackboxClients: input.clients ?? {},
     });
+    registerBodyEnd(nativeTest);
     input.state.phase = 'sandbox';
     let active = true;
     const declaration = createSandboxSuite(nativeTest, () => active);
     try {
       const result = input.callback(declaration.suite);
       ensureSynchronous(result, 'system.sandbox');
+      registerBodyStart(nativeTest);
     } finally {
       active = false;
       declaration.revoke();
@@ -215,7 +218,7 @@ function createFacade<
     >(
       declared: Fixtures<ExtendedTest, ExtendedWorker, TestArgs, WorkerArgs>,
     ) => InternalTest<TestArgs & ExtendedTest, WorkerArgs & ExtendedWorker, InternalArgs>;
-    const extended = extendNative(fixtures);
+    const extended = extendNative(lifecycleFixtures(fixtures));
     return createFacade(extended, state, createUseBlackboxOptions(extended));
   }
   const rootActive = () => state.phase === 'idle';
