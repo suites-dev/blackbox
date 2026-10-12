@@ -29,6 +29,7 @@ export type {
 } from './verification/model.js';
 
 export { createEffectsRecord } from './record/create.js';
+export { createEffectsRecordFromGraph } from './record/from-graph.js';
 export { serializeEffectsRecord } from './record/serialize.js';
 export { EFFECT_KINDS, EFFECTS_RECORD_SCHEMA_VERSION } from './record/types.js';
 export type {

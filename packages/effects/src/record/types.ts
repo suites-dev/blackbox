@@ -1,6 +1,9 @@
 export const EFFECTS_RECORD_SCHEMA_VERSION = 0 as const;
 
-/** The same kinds the Playwright effects contract selects on (`packages/playwright/src/effects/contract.ts`). */
+/**
+ * The kinds the Playwright effects contract selects on (`packages/playwright/src/effects/contract.ts`),
+ * plus `unknown` for an observed operation that no known convention classified.
+ */
 export const EFFECT_KINDS = [
   'http',
   'rpc',
@@ -9,6 +12,7 @@ export const EFFECT_KINDS = [
   'message',
   'business',
   'internal',
+  'unknown',
 ] as const;
 
 export type EffectKind = (typeof EFFECT_KINDS)[number];

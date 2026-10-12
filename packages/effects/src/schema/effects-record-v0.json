@@ -59,7 +59,7 @@
         "required": ["kind", "operation", "target", "outcome", "count"],
         "properties": {
           "kind": {
-            "enum": ["http", "rpc", "db", "cache", "message", "business", "internal"]
+            "enum": ["http", "rpc", "db", "cache", "message", "business", "internal", "unknown"]
           },
           "operation": {
             "type": "string"
