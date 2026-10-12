@@ -1,5 +1,5 @@
 const feature = `
-@subsystem:subscription-system @sandbox:default
+@system:subscription-system @sandbox:default
 Feature: Subscription activation
   Rule: Local-only subscriptions retain no payment or order state
     Scenario Outline: Activate local-only user <userId>

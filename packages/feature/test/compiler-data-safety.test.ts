@@ -1,12 +1,14 @@
 import { runInNewContext } from 'node:vm';
 import { expect, it } from 'vitest';
 import { compileFeature } from '../src/index.js';
+import { catalog } from './fixtures/catalog.js';
 
 const clients = { api: { from: '../clients.js', export: 'api' } } as const;
 
 it('preserves own __proto__ properties in request JSON and all JSON assertions', async () => {
   const json = '{"__proto__":{"role":"reader"},"nested":{"__proto__":{"ok":true}}}';
-  const result = compileFeature({ clients, source: `Feature: exact JSON data
+  const result = compileFeature({ catalog, clients, source: `@subsystem:orders
+Feature: exact JSON data
   Scenario: request and partial assertions
     When client "api" sends POST "/echo" with JSON:
       """json
@@ -31,17 +33,26 @@ it('preserves own __proto__ properties in request JSON and all JSON assertions',
   const execution = await executeSuite(result.code, payload);
   expect(execution.bodies).toHaveLength(1);
   expect(execution.expected).toHaveLength(3);
-  for (const value of [...execution.bodies, ...execution.expected]) {
+  const exact = execution.expected.filter((value) => !isAsymmetricMatcher(value));
+  expect(exact).toHaveLength(1);
+  for (const value of [...execution.bodies, ...exact]) {
     expect(JSON.stringify(value)).toBe(json);
     expect(Object.hasOwn(value as object, '__proto__')).toBe(true);
     expect(Object.hasOwn((value as { nested: object }).nested, '__proto__')).toBe(true);
     expect((value as { role: unknown }).role).toBeUndefined();
   }
+  // The contains assertions read __proto__ as an own field: a different own value fails them.
+  await expect(executeSuite(result.code, JSON.parse(json.replace('"ok":true', '"ok":false')))).rejects.toThrow();
   await expect(executeSuite(result.code, { nested: {} })).rejects.toThrow();
 });
 
+function isAsymmetricMatcher(value: unknown): boolean {
+  return typeof value === 'object' && value !== null && 'asymmetricMatch' in value;
+}
+
 it('preserves $$ Examples headers for both JSON values and string interpolation', async () => {
-  const result = compileFeature({ clients, source: `Feature: dollar JSON header
+  const result = compileFeature({ catalog, clients, source: `@subsystem:orders
+Feature: dollar JSON header
   Scenario Outline: send a value
     When client "api" sends POST "/echo" with JSON:
       """json
@@ -62,7 +73,8 @@ it.each([
   'sends POST "/echo" with JSON:',
   'has sent POST "/echo" with JSON and received 200:',
 ])('rejects a JSON request without its Doc String: %s', (request) => {
-  const result = compileFeature({ clients, source: `Feature: missing body
+  const result = compileFeature({ catalog, clients, source: `@subsystem:orders
+Feature: missing body
   Scenario: request
     When client "api" ${request}
 ` });
@@ -70,10 +82,11 @@ it.each([
   expect(result.diagnostics).toEqual([{
     code: 'FEATURE_STEP_UNSUPPORTED',
     message: 'JSON request needs a JSON Doc String.',
-    line: 3,
+    line: 4,
     column: 5,
   }]);
-  const bodyless = compileFeature({ clients, source: `Feature: optional body
+  const bodyless = compileFeature({ catalog, clients, source: `@subsystem:orders
+Feature: optional body
   Scenario: request
     When client "api" sends POST "/echo"
 ` });
@@ -102,11 +115,10 @@ async function executeSuite(code: string, responseJson: unknown) {
     test: { system: (_selector: unknown, callback: (system: unknown) => void) => { callback({
       sandbox: (_name: string, _options: unknown, callback: (suite: unknown) => void) => { callback(suite); },
     }); } },
-    expect: (actual: unknown) => ({
+    expect: Object.assign((actual: unknown) => ({
       toBe: (value: unknown) => { expect(actual).toBe(value); },
       toEqual: (value: unknown) => { expected.push(value); expect(actual).toEqual(value); },
-      toMatchObject: (value: object) => { expected.push(value); expect(actual).toMatchObject(value); },
-    }),
+    }), { arrayContaining: expect.arrayContaining, objectContaining: expect.objectContaining }),
   });
   expect(tests.length).toBeGreaterThan(0);
   for (const test of tests) {

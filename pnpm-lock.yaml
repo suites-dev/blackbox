@@ -419,6 +419,9 @@ importers:
       '@oclif/core':
         specifier: ^5.1.0
         version: 5.1.2
+      '@suites/blackbox-catalog':
+        specifier: workspace:*
+        version: link:../catalog
       '@suites/blackbox-playwright':
         specifier: workspace:*
         version: link:../playwright

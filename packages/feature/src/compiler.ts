@@ -4,6 +4,7 @@
 /* eslint-disable max-lines -- Keep one compiler pass together while its public output contract is new. */
 import type {
   Background,
+  Feature,
   GherkinDocument,
   Rule,
   Scenario,
@@ -24,10 +25,22 @@ export interface FeatureDiagnostic {
   readonly column: number;
 }
 
+export interface FeatureCatalogEntry {
+  readonly id: string;
+  readonly kind: 'system' | 'subsystem';
+}
+
+/** The catalog entries a Feature's `@system:` or `@subsystem:` tag must name. */
+export interface FeatureCatalog {
+  readonly source: string;
+  readonly entries: readonly FeatureCatalogEntry[];
+}
+
 export interface CompileFeatureOptions {
   readonly source: string;
   readonly uri?: string;
   readonly clients: Readonly<Record<string, FeatureClientBinding>>;
+  readonly catalog: FeatureCatalog;
 }
 
 export interface CompileFeatureResult {
@@ -83,6 +96,7 @@ export function compileFeature(options: CompileFeatureOptions): CompileFeatureRe
   if (!feature) {return { code: '', diagnostics: [diagnostic('FEATURE_EMPTY', 'No Feature was found.', 1, 1)] };}
 
   const context: CompilerContext = { options, diagnostics: [], counter: 0, lastResponse: null };
+  const system = resolveSystem(feature, options.catalog, context);
   validateClientBindings(options.clients, context);
   if (!feature.children.some((child) => Boolean(child.scenario ?? child.rule?.children.some((nested) => nested.scenario)))) {
     context.diagnostics.push(diagnostic('FEATURE_SCENARIO_MISSING', 'Feature must contain at least one Scenario.', 1, 1));
@@ -101,14 +115,10 @@ export function compileFeature(options: CompileFeatureOptions): CompileFeatureRe
     else if (child.scenario) {declarations.push(...emitScenario(child.scenario, context));}
   }
 
-  if (context.diagnostics.length > 0) {return { code: '', diagnostics: context.diagnostics };}
+  if (context.diagnostics.length > 0 || !system) {return { code: '', diagnostics: context.diagnostics };}
   const tags = feature.tags.map((tag) => tag.name).filter((tag) => !tag.startsWith('@subsystem:') && !tag.startsWith('@system:') && !tag.startsWith('@sandbox:'));
-  const systemTag = feature.tags.find((tag) => tag.name.startsWith('@system:'));
-  const subsystemTag = feature.tags.find((tag) => tag.name.startsWith('@subsystem:'));
-  const systemKind = systemTag ? 'system' : 'subsystem';
-  const systemId = systemTag ? systemTag.name.slice(8) : subsystemTag ? subsystemTag.name.slice(11) : feature.name;
   const sandbox = feature.tags.find((tag) => tag.name.startsWith('@sandbox:'))?.name.slice(9) ?? 'default';
-  const systemSelector = `{ kind: '${systemKind}', id: ${quote(systemId)} }`;
+  const systemSelector = `{ kind: '${system.kind}', id: ${quote(system.id)} }`;
   const clientNames = Object.keys(options.clients).sort();
   const clientProperties = clientNames.map((name) => `${quote(name)}: ${localName(name)}`).join(', ');
   const imports = clientNames.map((name) => {
@@ -138,6 +148,35 @@ interface CompilerContext {
   readonly diagnostics: FeatureDiagnostic[];
   counter: number;
   lastResponse: string | null;
+}
+
+/** Resolve the Feature's system tag against the catalog; the Feature title is never a system id. */
+function resolveSystem(feature: Feature, catalog: FeatureCatalog, context: CompilerContext): FeatureCatalogEntry | null {
+  const tags = feature.tags.filter((tag) => tag.name.startsWith('@system:') || tag.name.startsWith('@subsystem:'));
+  const [tag, duplicate] = tags;
+  if (!tag) {
+    context.diagnostics.push(diagnostic('FEATURE_SYSTEM_MISSING', `Feature needs a @system:<id> or @subsystem:<id> tag naming an entry in ${catalog.source}.`, feature.location.line, feature.location.column ?? 1));
+    return null;
+  }
+  if (duplicate) {
+    context.diagnostics.push(diagnostic('FEATURE_SYSTEM_DUPLICATE', `Feature names more than one system: ${tags.map(({ name }) => name).join(', ')}.`, duplicate.location.line, duplicate.location.column ?? 1));
+    return null;
+  }
+  const kind = tag.name.startsWith('@system:') ? 'system' : 'subsystem';
+  const id = tag.name.slice(kind.length + 2);
+  const { line } = tag.location;
+  const column = tag.location.column ?? 1;
+  const entry = catalog.entries.find((candidate) => candidate.id === id);
+  if (!entry) {
+    const known = [...catalog.entries].sort((left, right) => left.id.localeCompare(right.id)).map((candidate) => `${candidate.id} (${candidate.kind})`);
+    context.diagnostics.push(diagnostic('FEATURE_SYSTEM_UNKNOWN', `Unknown ${kind} ${JSON.stringify(id)}: ${catalog.source} has no such entry. Catalog entries: ${known.join(', ') || 'none'}.`, line, column));
+    return null;
+  }
+  if (entry.kind !== kind) {
+    context.diagnostics.push(diagnostic('FEATURE_SYSTEM_KIND', `${JSON.stringify(id)} is a ${entry.kind} in ${catalog.source}; tag it @${entry.kind}:${id}.`, line, column));
+    return null;
+  }
+  return entry;
 }
 
 function validateClientBindings(clients: CompileFeatureOptions['clients'], context: CompilerContext): void {
@@ -234,7 +273,7 @@ function emitStep(step: Step, context: CompilerContext, dynamicRow = false, dyna
   if (/^the response JSON contains:?$/u.test(text) && doc) {
     const response = context.lastResponse;
     if (!response) {return unsupported(step, context, 'Response JSON assertion has no preceding HTTP request in this scenario.');}
-    return `await step(${stringExpression(title, dynamicRow)}, async () => {\n  expect(await ${response}.json()).toMatchObject(${dynamicRow ? rowJsonExpression(doc, step, context, dynamicHeaders) : jsonExpression(doc, step, context)});\n});`;
+    return `await step(${stringExpression(title, dynamicRow)}, async () => {\n  expect(await ${response}.json()).toEqual(${containsJsonExpression(doc, step, context, dynamicRow ? dynamicHeaders : null)});\n});`;
   }
   if (/^the response JSON contains these fields:?$/u.test(text) && step.dataTable) {
     const rows = step.dataTable.rows.map((row) => row.cells.map((cell) => cell.value));
@@ -247,9 +286,8 @@ function emitStep(step: Step, context: CompilerContext, dynamicRow = false, dyna
     }
     const response = context.lastResponse;
     if (!response) {return unsupported(step, context, 'Response JSON assertion has no preceding HTTP request in this scenario.');}
-    const value = `{ ${values.join(', ')} }`;
-    const expected = dynamicRow ? rowJsonExpression(value, step, context, dynamicHeaders) : jsonExpression(value, step, context);
-    return `await step(${stringExpression(title, dynamicRow)}, async () => {\n  expect(await ${response}.json()).toMatchObject(${expected});\n});`;
+    const expected = containsJsonExpression(`{ ${values.join(', ')} }`, step, context, dynamicRow ? dynamicHeaders : null);
+    return `await step(${stringExpression(title, dynamicRow)}, async () => {\n  expect(await ${response}.json()).toEqual(${expected});\n});`;
   }
   return unsupported(step, context, `Unsupported Feature step: ${quote(text)}.`);
 }
@@ -271,13 +309,24 @@ function unsupported(step: Step, context: CompilerContext, message: string): str
   return '';
 }
 
-function rowJsonExpression(
+interface RowPlaceholder {
+  readonly name: string;
+  readonly insideString: boolean;
+}
+
+interface RowJson {
+  readonly serialized: string;
+  readonly markers: ReadonlyMap<string, RowPlaceholder>;
+}
+
+/** Replace Examples placeholders with markers so the JSON can be parsed before row values exist. */
+function parseRowJson(
   value: string,
   step: Step,
   context: CompilerContext,
   dynamicHeaders: readonly string[],
-): string {
-  const markers = new Map<string, { readonly name: string; readonly insideString: boolean }>();
+): RowJson | null {
+  const markers = new Map<string, RowPlaceholder>();
   let normalized = '';
   let insideString = false;
   let escaped = false;
@@ -309,19 +358,32 @@ function rowJsonExpression(
     serialized = JSON.stringify(JSON.parse(normalized));
   } catch {
     context.diagnostics.push(diagnostic('FEATURE_JSON_INVALID', 'Outline JSON must remain valid after Examples substitution.', step.location?.line ?? 1, step.location?.column ?? 1));
-    return 'null';
+    return null;
   }
+  for (const placeholder of markers.values()) {
+    if (!dynamicHeaders.includes(placeholder.name)) {
+      context.diagnostics.push(diagnostic('FEATURE_OUTLINE_HEADER_UNKNOWN', `Outline placeholder <${placeholder.name}> has no matching Examples column.`, step.location?.line ?? 1, step.location?.column ?? 1));
+    }
+  }
+  return { serialized, markers };
+}
 
+function rowJsonExpression(
+  value: string,
+  step: Step,
+  context: CompilerContext,
+  dynamicHeaders: readonly string[],
+): string {
+  const parsed = parseRowJson(value, step, context, dynamicHeaders);
+  if (!parsed) {return 'null';}
+  let { serialized } = parsed;
   const templateMarkers: { readonly marker: string; readonly replacement: string }[] = [];
-  for (const [index, [marker, placeholder]] of [...markers.entries()].entries()) {
+  for (const [index, [marker, placeholder]] of [...parsed.markers.entries()].entries()) {
     const generatedMarker = placeholder.insideString
       ? `__BLACKBOX_STRING_ROW_${index}__`
       : `__BLACKBOX_VALUE_ROW_${index}__`;
     const markerToReplace = placeholder.insideString ? marker : JSON.stringify(marker);
     serialized = serialized.replace(markerToReplace, generatedMarker);
-    if (!dynamicHeaders.includes(placeholder.name)) {
-      context.diagnostics.push(diagnostic('FEATURE_OUTLINE_HEADER_UNKNOWN', `Outline placeholder <${placeholder.name}> has no matching Examples column.`, step.location?.line ?? 1, step.location?.column ?? 1));
-    }
     const rowValue = `row[${quote(placeholder.name)}]`;
     const replacement = placeholder.insideString
       ? `\${JSON.stringify(String(${rowValue})).slice(1, -1)}`
@@ -334,6 +396,57 @@ function rowJsonExpression(
     template = template.replace(marker, () => replacement);
   }
   return `JSON.parse(${template})`;
+}
+
+/**
+ * "contains" means the expected values are present, in any order, with extra fields and items
+ * allowed. Objects become `expect.objectContaining` and arrays `expect.arrayContaining` at every
+ * level; primitives stay literal.
+ */
+function containsJsonExpression(
+  value: string,
+  step: Step,
+  context: CompilerContext,
+  dynamicHeaders: readonly string[] | null,
+): string {
+  if (dynamicHeaders) {
+    const parsed = parseRowJson(value, step, context, dynamicHeaders);
+    return parsed ? containsExpression(JSON.parse(parsed.serialized), parsed.markers) : 'null';
+  }
+  try { return containsExpression(JSON.parse(value), new Map()); }
+  catch {
+    context.diagnostics.push(diagnostic('FEATURE_JSON_INVALID', 'Doc String must contain valid JSON.', step.location?.line ?? 1, step.location?.column ?? 1));
+    return 'null';
+  }
+}
+
+function containsExpression(value: unknown, markers: ReadonlyMap<string, RowPlaceholder>): string {
+  if (Array.isArray(value)) {
+    return `expect.arrayContaining([${value.map((item) => containsExpression(item, markers)).join(', ')}])`;
+  }
+  if (typeof value === 'object' && value !== null) {
+    const properties = Object.entries(value).map(([key, item]) => `${propertyKey(key, markers)}: ${containsExpression(item, markers)}`);
+    return properties.length ? `expect.objectContaining({ ${properties.join(', ')} })` : 'expect.objectContaining({})';
+  }
+  if (typeof value === 'string') {return stringValue(value, markers);}
+  return JSON.stringify(value);
+}
+
+function propertyKey(key: string, markers: ReadonlyMap<string, RowPlaceholder>): string {
+  const expression = stringValue(key, markers);
+  // A computed key keeps __proto__ an own property instead of setting the prototype.
+  return expression === quote(key) && key !== '__proto__' ? expression : `[${expression}]`;
+}
+
+function stringValue(value: string, markers: ReadonlyMap<string, RowPlaceholder>): string {
+  const whole = markers.get(value);
+  if (whole && !whole.insideString) {return `row[${quote(whole.name)}]`;}
+  const parts = value.split(/(__BLACKBOX_ROW_\d+__)/u).filter((part) => part !== '');
+  if (parts.length === 0) {return quote(value);}
+  return parts.map((part) => {
+    const placeholder = markers.get(part);
+    return placeholder ? `String(row[${quote(placeholder.name)}])` : quote(part);
+  }).join(' + ');
 }
 
 function parseExampleValue(value: string): string | number | boolean | null {

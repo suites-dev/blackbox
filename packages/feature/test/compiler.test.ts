@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import * as ts from 'typescript';
 
 import asyncRedisProof from './fixtures/async-redis-proof.feature.js';
+import { catalog } from './fixtures/catalog.js';
 import escapingAndDuplicateRows from './fixtures/escaping-and-duplicate-rows.feature.js';
 import orderPricing from './fixtures/order-pricing.feature.js';
 import subscriptionActivationE2E from './fixtures/subscription-activation-e2e.feature.js';
@@ -15,6 +16,7 @@ describe('Feature compiler literal safety', () => {
     const value = '</script> "quoted" \\path\n\u2028\u2029';
     const featureName = 'Escaping </script> "quoted" \\path';
     const source = [
+      '@subsystem:orders',
       `Feature: ${featureName}`,
       '  Scenario: Send a literal value',
       '    When client "api" sends POST "/echo" with JSON:',
@@ -23,7 +25,7 @@ describe('Feature compiler literal safety', () => {
       '      """',
       '    Then the response status is 200',
     ].join('\n');
-    const result = compileFeature({ source, clients });
+    const result = compileFeature({ catalog, source, clients });
 
     expect(result.diagnostics).toEqual([]);
     expectValidTypeScript(result.code, 'safe-literals.generated.ts');
@@ -42,7 +44,7 @@ describe('Feature compiler literal safety', () => {
 
 describe('Feature compiler snapshots', () => {
   it('compiles hierarchy, backgrounds, tags, tables, doc strings, and outline rows', () => {
-    const result = compileFeature({ source: orderPricing, uri: 'order-pricing.feature', clients });
+    const result = compileFeature({ catalog, source: orderPricing, uri: 'order-pricing.feature', clients });
     expect(result.diagnostics).toEqual([]);
     expect(result.code.match(/suite\.test\(/gu)).toHaveLength(2);
     expect(result.code).toContain('id: "orders"');
@@ -58,7 +60,7 @@ describe('Feature compiler snapshots', () => {
   it('compiles the E2E subscription Outline with placeholders embedded in JSON strings', () => {
     let result: ReturnType<typeof compileFeature> | undefined;
     expect(() => {
-      result = compileFeature({
+      result = compileFeature({ catalog,
         source: subscriptionOutlineInterpolation,
         uri: 'subscription-activation.feature',
         clients,
@@ -85,7 +87,7 @@ describe('Feature compiler snapshots', () => {
   });
 
   it('compiles exact-state assertions in the full E2E Feature', () => {
-    const result = compileFeature({
+    const result = compileFeature({ catalog,
       source: subscriptionActivationE2E,
       uri: 'subscription-activation.feature',
       clients,
@@ -99,7 +101,7 @@ describe('Feature compiler snapshots', () => {
   });
 
   it('preserves escaping, And/But/* titles, multiple Act/Assert phases, and duplicate row identity', () => {
-    const result = compileFeature({
+    const result = compileFeature({ catalog,
       source: escapingAndDuplicateRows,
       uri: 'escaping-and-duplicate-rows.feature',
       clients,
@@ -123,7 +125,7 @@ describe('Feature compiler snapshots', () => {
 
 describe('Feature compiler diagnostics', () => {
   it('catches a lost response binding in the generated-code typecheck negative control', () => {
-    const result = compileFeature({ source: orderPricing, uri: 'order-pricing.feature', clients });
+    const result = compileFeature({ catalog, source: orderPricing, uri: 'order-pricing.feature', clients });
     const reference = [...result.code.matchAll(/\bresponse\d+\b/gu)][1] as RegExpMatchArray & { index: number };
     const wrongResponseBinding = `${result.code.slice(0, reference.index)}lostResponse${result.code.slice(reference.index + reference[0].length)}`;
     expect(wrongResponseBinding).not.toBe(result.code);
@@ -133,7 +135,7 @@ describe('Feature compiler diagnostics', () => {
   });
 
   it('rejects the natural-language async Redis feature without emitting a suite', () => {
-    const result = compileFeature({
+    const result = compileFeature({ catalog,
       source: asyncRedisProof,
       uri: 'redis-proof-delivery.feature',
       clients,
@@ -146,13 +148,14 @@ describe('Feature compiler diagnostics', () => {
   });
 
   it('rejects malformed Gherkin, invalid JSON, and unbound clients', () => {
-    const malformed = compileFeature({ source: 'not a Gherkin document', clients });
+    const malformed = compileFeature({ catalog, source: 'not a Gherkin document', clients });
     expect(malformed.code).toBe('');
     expect(malformed.diagnostics.map(({ code }) => code)).toContain('FEATURE_SYNTAX');
 
-    const invalidJson = compileFeature({
+    const invalidJson = compileFeature({ catalog,
       clients,
-      source: `Feature: Invalid JSON
+      source: `@subsystem:orders
+Feature: Invalid JSON
   Scenario: broken body
     When client "api" sends POST "/items" with JSON:
       """json
@@ -163,9 +166,10 @@ describe('Feature compiler diagnostics', () => {
     expect(invalidJson.code).toBe('');
     expect(invalidJson.diagnostics.map(({ code }) => code)).toContain('FEATURE_JSON_INVALID');
 
-    const unbound = compileFeature({
+    const unbound = compileFeature({ catalog,
       clients: {},
-      source: `Feature: Unknown client
+      source: `@subsystem:orders
+Feature: Unknown client
   Scenario: unknown binding
     When client "api" sends GET "/health"
     Then the response status is 200`,
@@ -216,7 +220,11 @@ function generatedCodeDiagnostics(code: string): string[] {
           test(title: string, details: { tag: string[] }, body: (fixtures: Fixtures) => unknown): void;
         }
         interface System { sandbox(name: string, options: { clients: { api: ApiClient } }, body: (suite: Suite) => void): void }
-        export const expect: (actual: unknown) => { toBe(expected: unknown): void; toEqual(expected: unknown): void; toMatchObject(expected: unknown): void };
+        export const expect: {
+          (actual: unknown): { toBe(expected: unknown): void; toEqual(expected: unknown): void };
+          arrayContaining(sample: readonly unknown[]): unknown;
+          objectContaining(sample: Record<string, unknown>): unknown;
+        };
         export const test: { system(selector: { kind: 'system' | 'subsystem'; id: string }, body: (system: System) => void): void };
       }
     `],

@@ -8,7 +8,7 @@ exports[`Feature compiler diagnostics > rejects malformed Gherkin, invalid JSON,
       {
         "code": "FEATURE_JSON_INVALID",
         "column": 5,
-        "line": 3,
+        "line": 4,
         "message": "Doc String must contain valid JSON.",
       },
     ],
@@ -31,7 +31,7 @@ exports[`Feature compiler diagnostics > rejects malformed Gherkin, invalid JSON,
       {
         "code": "CLIENT_UNKNOWN",
         "column": 5,
-        "line": 3,
+        "line": 4,
         "message": "Step refers to unbound client "api".",
       },
     ],
@@ -110,7 +110,7 @@ test.system({ kind: 'system', id: "subscription-system" }, (system) => {
             expect(response1.status()).toBe(201);
           });
           await step("And the response JSON contains these fields:", async () => {
-            expect(await response1.json()).toMatchObject(JSON.parse("{\\"userId\\":\\"alice\\",\\"tier\\":\\"pro\\",\\"subscription\\":{\\"id\\":\\"subscription_alice\\",\\"status\\":\\"active\\"},\\"paymentIntentId\\":\\"pi_alice1\\",\\"orderId\\":\\"order_alice\\"}"));
+            expect(await response1.json()).toEqual(expect.objectContaining({ "userId": "alice", "tier": "pro", "subscription": expect.objectContaining({ "id": "subscription_alice", "status": "active" }), "paymentIntentId": "pi_alice1", "orderId": "order_alice" }));
           });
           await step("And client \\"api\\" GET \\"\\u002Ffixture\\u002Fstate\\" returns 200 with JSON exactly:", async () => {
             const response = await clients.api.get("\\u002Ffixture\\u002Fstate");
@@ -130,7 +130,7 @@ test.system({ kind: 'system', id: "subscription-system" }, (system) => {
                   expect(response3.status()).toBe(201);
                 });
                 await step(\`And the response JSON contains:\`, async () => {
-                  expect(await response3.json()).toMatchObject(JSON.parse(\`{"userId":"\${JSON.stringify(String(row["userId"])).slice(1, -1)}","tier":"pro","subscription":{"id":"subscription_\${JSON.stringify(String(row["userId"])).slice(1, -1)}","status":"active"},"paymentIntentId":null,"orderId":null}\`));
+                  expect(await response3.json()).toEqual(expect.objectContaining({ "userId": String(row["userId"]), "tier": "pro", "subscription": expect.objectContaining({ "id": "subscription_" + String(row["userId"]), "status": "active" }), "paymentIntentId": null, "orderId": null }));
                 });
                 await step(\`And client "api" GET "/fixture/state" returns 200 with JSON exactly:\`, async () => {
                   const response = await clients.api.get(\`/fixture/state\`);
@@ -149,7 +149,7 @@ test.system({ kind: 'system', id: "subscription-system" }, (system) => {
             expect(response4.status()).toBe(404);
           });
           await step("And the response JSON contains:", async () => {
-            expect(await response4.json()).toMatchObject(JSON.parse("{\\"outcome\\":\\"unknown-user\\",\\"userId\\":\\"ghost-user\\"}"));
+            expect(await response4.json()).toEqual(expect.objectContaining({ "outcome": "unknown-user", "userId": "ghost-user" }));
           });
           await step("But client \\"api\\" GET \\"\\u002Ffixture\\u002Fstate\\" returns 200 with JSON exactly:", async () => {
             const response = await clients.api.get("\\u002Ffixture\\u002Fstate");
@@ -173,7 +173,7 @@ test.system({ kind: 'system', id: "subscription-system" }, (system) => {
             expect(response6.status()).toBe(409);
           });
           await step("And the response JSON contains:", async () => {
-            expect(await response6.json()).toMatchObject(JSON.parse("{\\"outcome\\":\\"duplicate-subscription\\",\\"userId\\":\\"carol\\"}"));
+            expect(await response6.json()).toEqual(expect.objectContaining({ "outcome": "duplicate-subscription", "userId": "carol" }));
           });
           await step("And client \\"api\\" GET \\"\\u002Ffixture\\u002Fstate\\" returns 200 with JSON exactly:", async () => {
             const response = await clients.api.get("\\u002Ffixture\\u002Fstate");
@@ -209,7 +209,7 @@ test.system({ kind: 'subsystem', id: "orders" }, (system) => {
             expect(response1.status()).toBe(200);
           });
           await step("* the response JSON contains these fields:", async () => {
-            expect(await response1.json()).toMatchObject(JSON.parse("{\\"sku\\":\\"keyboard\\",\\"quantity\\":2,\\"total\\":200}"));
+            expect(await response1.json()).toEqual(expect.objectContaining({ "sku": "keyboard", "quantity": 2, "total": 200 }));
           });
         });
       });
@@ -232,7 +232,7 @@ test.system({ kind: 'subsystem', id: "orders" }, (system) => {
                   expect(response4.status()).toBe(Number(row["status"]));
                 });
                 await step(\`But the response JSON contains:\`, async () => {
-                  expect(await response4.json()).toMatchObject(JSON.parse(\`{"code":"\${JSON.stringify(String(row["code"])).slice(1, -1)}"}\`));
+                  expect(await response4.json()).toEqual(expect.objectContaining({ "code": String(row["code"]) }));
                 });
               });
             });
@@ -249,7 +249,7 @@ exports[`Feature compiler snapshots > compiles the E2E subscription Outline with
 "import { expect, test } from '@suites/blackbox-playwright';
 import { api as client_api } from "..\\u002Fclients.js";
 
-test.system({ kind: 'subsystem', id: "subscription-system" }, (system) => {
+test.system({ kind: 'system', id: "subscription-system" }, (system) => {
   system.sandbox("default", { clients: { "api": client_api } }, (suite) => {
     suite.describe("Feature: Subscription activation", () => {
       suite.describe("Rule: Local-only subscriptions retain no payment or order state", () => {
@@ -263,7 +263,7 @@ test.system({ kind: 'subsystem', id: "subscription-system" }, (system) => {
                   expect(response1.status()).toBe(201);
                 });
                 await step(\`And the response JSON contains:\`, async () => {
-                  expect(await response1.json()).toMatchObject(JSON.parse(\`{"userId":"\${JSON.stringify(String(row["userId"])).slice(1, -1)}","tier":"pro","subscription":{"id":"subscription_\${JSON.stringify(String(row["userId"])).slice(1, -1)}","status":"active"},"paymentIntentId":null,"orderId":null}\`));
+                  expect(await response1.json()).toEqual(expect.objectContaining({ "userId": String(row["userId"]), "tier": "pro", "subscription": expect.objectContaining({ "id": "subscription_" + String(row["userId"]), "status": "active" }), "paymentIntentId": null, "orderId": null }));
                 });
               });
             });
@@ -294,10 +294,10 @@ test.system({ kind: 'subsystem', id: "escape-tests" }, (system) => {
                   expect(response1.status()).toBe(Number(row["status"]));
                 });
                 await step(\`And the response JSON contains these fields:\`, async () => {
-                  expect(await response1.json()).toMatchObject(JSON.parse(\`{"value":"\${JSON.stringify(String(row["value"])).slice(1, -1)}"}\`));
+                  expect(await response1.json()).toEqual(expect.objectContaining({ "value": String(row["value"]) }));
                 });
                 await step(\`But the response JSON contains:\`, async () => {
-                  expect(await response1.json()).toMatchObject(JSON.parse(\`{"value":"\${JSON.stringify(String(row["value"])).slice(1, -1)}"}\`));
+                  expect(await response1.json()).toEqual(expect.objectContaining({ "value": String(row["value"]) }));
                 });
                 const response2 = await step(\`* client "api" has sent POST "/audit" with JSON and received 204:\`, async () => {
                   const response = await clients.api.post(\`/audit\`, { data: JSON.parse(\`{"label":"quote and tick: \\\` and interpolation: \\\${literal}"}\`) });
@@ -319,10 +319,10 @@ test.system({ kind: 'subsystem', id: "escape-tests" }, (system) => {
                   expect(response4.status()).toBe(Number(row["status"]));
                 });
                 await step(\`And the response JSON contains these fields:\`, async () => {
-                  expect(await response4.json()).toMatchObject(JSON.parse(\`{"value":"\${JSON.stringify(String(row["value"])).slice(1, -1)}"}\`));
+                  expect(await response4.json()).toEqual(expect.objectContaining({ "value": String(row["value"]) }));
                 });
                 await step(\`But the response JSON contains:\`, async () => {
-                  expect(await response4.json()).toMatchObject(JSON.parse(\`{"value":"\${JSON.stringify(String(row["value"])).slice(1, -1)}"}\`));
+                  expect(await response4.json()).toEqual(expect.objectContaining({ "value": String(row["value"]) }));
                 });
                 const response5 = await step(\`* client "api" has sent POST "/audit" with JSON and received 204:\`, async () => {
                   const response = await clients.api.post(\`/audit\`, { data: JSON.parse(\`{"label":"quote and tick: \\\` and interpolation: \\\${literal}"}\`) });

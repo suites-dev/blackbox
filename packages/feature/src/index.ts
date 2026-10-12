@@ -9,6 +9,8 @@ export { compileFeature } from './compiler.js';
 export type {
   CompileFeatureOptions,
   CompileFeatureResult,
+  FeatureCatalog,
+  FeatureCatalogEntry,
   FeatureClientBinding,
   FeatureDiagnostic,
 } from './compiler.js';

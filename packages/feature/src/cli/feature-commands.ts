@@ -1,8 +1,19 @@
 import { Args, Command, Flags } from '@oclif/core';
-import { readFile, writeFile } from 'node:fs/promises';
+import { access, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
-import { compileFeature, referencedClientNames, type FeatureClientBinding } from '../compiler.js';
+import { listCatalogEntries, loadCatalogFile } from '@suites/blackbox-catalog';
+
+import {
+  compileFeature,
+  referencedClientNames,
+  type FeatureCatalog,
+  type FeatureClientBinding,
+  type FeatureDiagnostic,
+} from '../compiler.js';
+
+const catalogFileName = 'blackbox.config.yaml';
+const configFlag = Flags.string({ description: `Path to ${catalogFileName}. Defaults to the nearest one above the Feature.` });
 
 export class FeatureFileDraft extends Command {
   static override description = 'Draft candidate Feature expectations.';
@@ -26,6 +37,9 @@ export class FeatureStepList extends Command {
       'the response JSON contains: <JSON Doc String>',
       'the response JSON contains these fields: <Data Table with field and json columns>',
       'client "<name>" GET "<path>" returns <status> with JSON exactly: <JSON Doc String>',
+      '',
+      '"contains" = these values are present, in any order; extra fields and items are allowed.',
+      '"exactly" = the response JSON equals the expected JSON.',
     ].join('\n'));
     return Promise.resolve();
   }
@@ -37,11 +51,12 @@ export class FeatureSuiteEmit extends Command {
   static override flags = {
     clients: Flags.string({ required: true, description: 'Path to the TypeScript client registration module.' }),
     output: Flags.string({ required: true, description: 'Path for the generated TypeScript suite.' }),
+    config: configFlag,
   };
 
   public async run(): Promise<void> {
     const { args, flags } = await this.parse(FeatureSuiteEmit);
-    const result = await compileFromFiles(args.feature, flags.clients, flags.output);
+    const result = await compileFromFiles(args.feature, flags.clients, flags.output, flags.config);
     if (result.diagnostics.length) {
       this.error(renderDiagnostics(result.diagnostics));
     }
@@ -60,11 +75,14 @@ export class FeatureSuiteEmit extends Command {
 export class FeatureFileValidate extends Command {
   static override description = 'Validate a Feature against the supported suite compiler.';
   static override args = { feature: Args.string({ required: true, description: 'Path to a Gherkin Feature file.' }) };
-  static override flags = { clients: Flags.string({ required: true, description: 'Path to the TypeScript client registration module.' }) };
+  static override flags = {
+    clients: Flags.string({ required: true, description: 'Path to the TypeScript client registration module.' }),
+    config: configFlag,
+  };
 
   public async run(): Promise<void> {
     const { args, flags } = await this.parse(FeatureFileValidate);
-    const result = await compileFromFiles(args.feature, flags.clients, undefined);
+    const result = await compileFromFiles(args.feature, flags.clients, undefined, flags.config);
     if (result.diagnostics.length) {
       this.error(renderDiagnostics(result.diagnostics));
     }
@@ -78,11 +96,12 @@ export class FeatureSuiteValidate extends Command {
   static override flags = {
     clients: Flags.string({ required: true, description: 'Path to the TypeScript client registration module.' }),
     output: Flags.string({ required: true, description: 'Path to the generated TypeScript suite.' }),
+    config: configFlag,
   };
 
   public async run(): Promise<void> {
     const { args, flags } = await this.parse(FeatureSuiteValidate);
-    const result = await compileFromFiles(args.feature, flags.clients, flags.output);
+    const result = await compileFromFiles(args.feature, flags.clients, flags.output, flags.config);
     if (result.diagnostics.length) {
       this.error(renderDiagnostics(result.diagnostics));
     }
@@ -117,8 +136,11 @@ export async function compileFromFiles(
   featurePath: string,
   clientsPath: string,
   outputPath: string | undefined,
+  configPath: string | undefined,
 ): Promise<ReturnType<typeof compileFeature>> {
   const featureAbsolute = path.resolve(featurePath);
+  const catalog = await loadFeatureCatalog(featureAbsolute, configPath);
+  if (!catalog.ok) {return { code: '', diagnostics: [catalog.diagnostic] };}
   const clientsAbsolute = path.resolve(clientsPath);
   const [source, clientSource] = await Promise.all([
     readFile(featureAbsolute, 'utf8'),
@@ -149,7 +171,43 @@ export async function compileFromFiles(
     }
     clients[name] = { from: clientModule, export: name };
   }
-  return compileFeature({ source, uri: featureAbsolute, clients });
+  return compileFeature({ source, uri: featureAbsolute, clients, catalog: catalog.catalog });
+}
+
+type FeatureCatalogLoad =
+  | { readonly ok: true; readonly catalog: FeatureCatalog }
+  | { readonly ok: false; readonly diagnostic: FeatureDiagnostic };
+
+async function loadFeatureCatalog(featureAbsolute: string, configPath: string | undefined): Promise<FeatureCatalogLoad> {
+  const configFile = configPath === undefined ? await findCatalogFile(path.dirname(featureAbsolute)) : path.resolve(configPath);
+  if (configFile === undefined) {
+    return catalogFailure('FEATURE_CATALOG_MISSING', `No ${catalogFileName} found in ${path.dirname(featureAbsolute)} or any parent directory; pass --config <path>.`);
+  }
+  const source = path.relative(process.cwd(), configFile) || configFile;
+  try {
+    const { config } = await loadCatalogFile({ configFile });
+    return { ok: true, catalog: { source, entries: listCatalogEntries({ config }).map(({ id, kind }) => ({ id, kind })) } };
+  } catch (error) {
+    if (isCode(error, 'ENOENT')) {return catalogFailure('FEATURE_CATALOG_MISSING', `Catalog file does not exist: ${source}.`);}
+    return catalogFailure('FEATURE_CATALOG_INVALID', `Catalog ${source} could not be loaded: ${error instanceof Error ? error.message : String(error)}`);
+  }
+}
+
+async function findCatalogFile(start: string): Promise<string | undefined> {
+  for (let directory = start; ; directory = path.dirname(directory)) {
+    const candidate = path.join(directory, catalogFileName);
+    try {
+      await access(candidate);
+      return candidate;
+    } catch (error) {
+      if (!isCode(error, 'ENOENT')) {throw error;}
+    }
+    if (path.dirname(directory) === directory) {return undefined;}
+  }
+}
+
+function catalogFailure(code: string, message: string): FeatureCatalogLoad {
+  return { ok: false, diagnostic: { code, message, line: 1, column: 1 } };
 }
 
 function exportedClientNames(source: string): ReadonlySet<string> {
