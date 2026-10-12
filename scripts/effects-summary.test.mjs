@@ -176,3 +176,31 @@ test('refuses an attachment path that leaves the results directory', async (t) =
   await writeFile(file, JSON.stringify(results));
   await assert.rejects(summarize(file, { root: directory }), /is outside/u);
 });
+
+test('names each record after the attempt sandbox, not after the test title', async () => {
+  const rollback = titled(await summarize(fixture, { root: fixtureRoot }), 'after rollback');
+  assert.equal(rollback.record.source.kind, 'playwright-attempt');
+  assert.match(rollback.record.source.id, /^playwright-[0-9a-f-]{36}$/u);
+});
+
+test('a test with no effects attachment is incomplete, never a complete record with no effects', async (t) => {
+  const document = JSON.parse(await readFile(fixture, 'utf8'));
+  const directory = await mkdtemp(join(tmpdir(), 'effects-summary-'));
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  for (const result of document.suites
+    .flatMap(function visit(suite) {
+      return [...suite.specs, ...suite.suites.flatMap(visit)];
+    })
+    .flatMap(({ tests }) => tests.flatMap(({ results }) => results))) {
+    result.attachments = result.attachments.filter(({ name }) => name !== 'blackbox-effects');
+  }
+  const bare = join(directory, 'results.json');
+  await writeFile(bare, JSON.stringify(document));
+  const summaries = await summarize(bare, { root: directory });
+  assert.equal(summaries.length, 3);
+  for (const { record } of summaries) {
+    assert.deepEqual(record.effects, []);
+    assert.equal(record.completeness.status, 'incomplete');
+    assert.match(record.completeness.reason, /no effects evidence/u);
+  }
+});

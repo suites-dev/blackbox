@@ -71,8 +71,9 @@ async function attemptId(result, fallback, root) {
   for (const attachment of result.attachments ?? []) {
     if (attachment.name !== 'blackbox-attempt') continue;
     const document = JSON.parse(await bodyOf(attachment, root));
-    if (typeof document.sandboxId === 'string' && document.sandboxId.length > 0) {
-      return document.sandboxId;
+    const identity = document.identity ?? {};
+    if (typeof identity.sandboxId === 'string' && identity.sandboxId.length > 0) {
+      return identity.sandboxId;
     }
   }
   return fallback;
@@ -94,11 +95,16 @@ export async function summarize(resultsPath, { root = process.cwd(), effects = n
     const id = await attemptId(result, title, attachmentRoot);
     const source = { kind: 'playwright-attempt', id };
     const records = graphs.map((graph) => createEffectsRecordFromGraph({ source, graph }));
+    // A test with no effects attachment (it failed before an assertion, or made none) has no
+    // evidence at all; that is "unknown", never a complete record with no effects.
+    const noEvidence =
+      graphs.length === 0 && unavailable.length === 0 ? ['no effects evidence'] : [];
     const incomplete = [
       ...records.flatMap(({ completeness }) =>
         completeness.status === 'incomplete' ? [completeness.reason] : [],
       ),
       ...unavailable.map((kind) => `evidence ${kind}`),
+      ...noEvidence,
     ];
     const record = createEffectsRecord({
       source,
