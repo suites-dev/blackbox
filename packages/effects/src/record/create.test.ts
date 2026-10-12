@@ -80,6 +80,21 @@ describe('createEffectsRecord: effects', () => {
     expect(() => createEffectsRecord(input([big, select]))).toThrow(RangeError);
   });
 
+  test.each(['operation', 'target', 'outcome'] as const)(
+    'rejects a %s that is not a string, so the record always matches its schema',
+    (field) => {
+      for (const value of [undefined, 1, null, {}]) {
+        const bad: Effect = JSON.parse(JSON.stringify({ ...select, [field]: value }));
+        expect(() => createEffectsRecord(input([bad]))).toThrow(TypeError);
+      }
+    },
+  );
+
+  test('accepts an empty string for operation, target and outcome', () => {
+    const record = createEffectsRecord(input([{ ...select, target: '', outcome: '' }]));
+    expect(record.effects).toHaveLength(1);
+  });
+
   test('rejects an unknown effect kind', () => {
     const unknown: Effect = JSON.parse(JSON.stringify({ ...select, kind: 'zzz' }));
     expect(() => createEffectsRecord(input([unknown]))).toThrow(TypeError);

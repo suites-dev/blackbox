@@ -54,6 +54,11 @@ function checked(effect: Effect): Effect {
   if (!EFFECT_KINDS.includes(effect.kind)) {
     throw new TypeError(`Unknown effect kind ${JSON.stringify(effect.kind)}`);
   }
+  for (const field of ['operation', 'target', 'outcome'] as const) {
+    if (typeof effect[field] !== 'string') {
+      throw new TypeError(`An effect ${field} must be a string, got ${typeof effect[field]}`);
+    }
+  }
   if (!Number.isSafeInteger(effect.count) || effect.count < 1) {
     throw new RangeError(
       `An effect count must be a positive safe integer, got ${String(effect.count)}`,
