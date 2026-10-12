@@ -4,7 +4,7 @@
 // `node scripts/effects-summary-run.mjs <results.json> [--json]` after `pnpm build`.
 import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { join, resolve, sep } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
@@ -17,12 +17,22 @@ async function loadEffects(root) {
   return import(pathToFileURL(entry).href);
 }
 
-async function bodyOf(attachment) {
+/** Reads a file only when it lies inside `root`, so a results file cannot point this tool elsewhere. */
+async function readInside(root, file) {
+  const base = resolve(root);
+  const absolute = resolve(base, file);
+  if (!absolute.startsWith(base + sep)) {
+    throw new Error(`${file} is outside ${base}`);
+  }
+  return readFile(absolute, 'utf8');
+}
+
+async function bodyOf(attachment, root) {
   if (typeof attachment.body === 'string') {
     return Buffer.from(attachment.body, 'base64').toString('utf8');
   }
   if (typeof attachment.path === 'string') {
-    return readFile(attachment.path, 'utf8');
+    return readInside(root, attachment.path);
   }
   throw new Error(`Attachment ${attachment.name} has neither a body nor a path`);
 }
@@ -41,12 +51,12 @@ function* testResults(suites, trail = []) {
 }
 
 /** One graph per distinct scope: several assertions can read the same stimulus. */
-async function evidenceOf(result) {
+async function evidenceOf(result, root) {
   const scopes = new Map();
   const unavailable = [];
   for (const attachment of result.attachments ?? []) {
     if (attachment.name !== 'blackbox-effects') continue;
-    const document = JSON.parse(await bodyOf(attachment));
+    const document = JSON.parse(await bodyOf(attachment, root));
     const evidence = document.evidence ?? {};
     if (evidence.kind === 'admitted' && evidence.projection !== undefined) {
       scopes.set(evidence.projection.scope.id, evidence.projection);
@@ -57,10 +67,10 @@ async function evidenceOf(result) {
   return { graphs: [...scopes.values()], unavailable };
 }
 
-async function attemptId(result, fallback) {
+async function attemptId(result, fallback, root) {
   for (const attachment of result.attachments ?? []) {
     if (attachment.name !== 'blackbox-attempt') continue;
-    const document = JSON.parse(await bodyOf(attachment));
+    const document = JSON.parse(await bodyOf(attachment, root));
     if (typeof document.sandboxId === 'string' && document.sandboxId.length > 0) {
       return document.sandboxId;
     }
@@ -68,14 +78,20 @@ async function attemptId(result, fallback) {
   return fallback;
 }
 
-export async function summarize(resultsPath, effects = null) {
+/**
+ * `root` is the directory the results file must lie in (default: the current directory); the
+ * attachments it names must lie in the results file's own directory.
+ */
+export async function summarize(resultsPath, { root = process.cwd(), effects = null } = {}) {
   const { createEffectsRecord, createEffectsRecordFromGraph } =
     effects ?? (await loadEffects(ROOT));
-  const document = JSON.parse(await readFile(resultsPath, 'utf8'));
+  const resultsFile = resolve(root, resultsPath);
+  const document = JSON.parse(await readInside(root, resultsFile));
+  const attachmentRoot = resolve(resultsFile, '..');
   const summaries = [];
   for (const { title, result } of testResults(document.suites ?? [])) {
-    const { graphs, unavailable } = await evidenceOf(result);
-    const id = await attemptId(result, title);
+    const { graphs, unavailable } = await evidenceOf(result, attachmentRoot);
+    const id = await attemptId(result, title, attachmentRoot);
     const source = { kind: 'playwright-attempt', id };
     const records = graphs.map((graph) => createEffectsRecordFromGraph({ source, graph }));
     const incomplete = [
