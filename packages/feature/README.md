@@ -15,6 +15,12 @@ pnpm exec blackbox feature suite emit tests/api-health.feature --clients tests/c
 pnpm exec playwright test tests/api-health.spec.ts
 ```
 
+For agent-assisted authoring, `pnpm exec blackbox feature file draft
+specification.md --output tests/api-health.feature` prints a prompt containing
+the reviewed Markdown and the packaged `feature-file-authoring` skill. Give that
+prompt to an agent and review its candidate file before running validation. The
+command itself does not write a Feature or call an authoring provider.
+
 Emission creates a new `.spec.ts` file and refuses to overwrite an existing one.
 Follow [Generating Playwright suites](../../docs/features/generating-suites.md)
 for prerequisites, expected output, and drift checks after changes.
