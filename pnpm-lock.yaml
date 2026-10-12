@@ -517,6 +517,9 @@ importers:
       '@suites/blackbox-catalog':
         specifier: workspace:*
         version: link:../catalog
+      '@suites/blackbox-effects':
+        specifier: workspace:*
+        version: link:../effects
       '@suites/blackbox-inst-runtime-node':
         specifier: workspace:*
         version: link:../instrumentation-runtime-node
@@ -526,12 +529,15 @@ importers:
       '@suites/blackbox-otel-collector':
         specifier: workspace:*
         version: link:../otel-collector
-      '@suites/blackbox-sandbox':
-        specifier: workspace:*
-        version: link:../sandbox
       '@suites/blackbox-report-server':
         specifier: workspace:*
         version: link:../report-server
+      '@suites/blackbox-sandbox':
+        specifier: workspace:*
+        version: link:../sandbox
+      '@suites/blackbox-telemetry':
+        specifier: workspace:*
+        version: link:../telemetry
     devDependencies:
       '@playwright/test':
         specifier: 1.63.0

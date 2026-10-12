@@ -77,9 +77,9 @@ Replace
 `test.use({ catalogEntry, blackboxEnvironment })` plus root `test(...)` calls with
 `test.system(...)` and nested `system.sandbox(...)` groups, and pass `blackboxEnvironment` as the
 Sandbox option `{ environment: blackboxEnvironment }`. Relative `request` and
-`page` URLs no longer target the Sandbox automatically; resolve them explicitly
-against `sandbox.entrypoint.url`. Playwright's root `baseURL` remains whatever the
-project configured.
+`page` URLs behave differently: the native `request` fixture resolves relative
+URLs against this attempt's HTTP Sandbox entrypoint, while `page` still uses the
+project's configured `baseURL`. Absolute request URLs keep their native meaning.
 
 The Sandbox `environment` is the Compose substitution environment for that group.
 Progress and diagnostics redact the values of entries whose names mark a credential,
@@ -92,9 +92,8 @@ Use an object to select either kind explicitly:
 ```ts
 test.system({ kind: 'subsystem', id: 'payment-mock' }, (system) => {
   system.sandbox('default', (suite) => {
-    suite.test('accepts a payment', async ({ request, sandbox }) => {
-      const url = new URL('/v1/payment_intents', sandbox.entrypoint.url).href;
-      const response = await request.post(url, {
+    suite.test('accepts a payment', async ({ request }) => {
+      const response = await request.post('/v1/payment_intents', {
         data: { paymentMethodId: 'pm_primary', userId: 'alice' },
       });
       expect(response.status()).toBe(201);
@@ -115,8 +114,9 @@ The Sandbox declaration callback is synchronous. Use `suite.describe`,
 `suite.test`, `suite.beforeEach`, and `suite.afterEach` inside it. Test and
 per-test hook callbacks receive the normal Playwright fixtures plus `clients`,
 `step`, `sandbox`, `telemetry`, and `effects`. Use the attempt-bound `step(...)`
-fixture for native Playwright steps with local asynchronous context. Step titles
-alone do not propagate tracing into application requests.
+fixture for native Playwright steps with local asynchronous context. Mark the
+action whose effects matter with `step.stimulus(...)` and pass its W3C headers to
+the client request. Step titles alone do not propagate tracing into the system.
 Sandbox-scoped `beforeAll` and `afterAll` hooks are unavailable because there is
 no group-level live Sandbox. Root Playwright `beforeAll` and `afterAll` hooks can
 still perform setup unrelated to a Sandbox.
@@ -129,17 +129,25 @@ reasons. Setup failure also attempts cleanup before surfacing the error.
 
 - `clients` exposes the typed clients registered in the Sandbox declaration.
 - `step` creates a native Playwright step with context bound to this attempt.
-- Playwright's configured `baseURL` remains unchanged. Build request and page
-  URLs explicitly with `new URL(path, sandbox.entrypoint.url).href`.
+  `step.stimulus(...)` marks an owned action and supplies propagation headers.
+  Ordinary `step(...)` remains useful for setup and inspection. A custom
+  transport can pass the same headers at its entrypoint; Blackbox cannot inject
+  them into arbitrary SDK calls.
+- `request` remains Playwright's `APIRequestContext`; its relative HTTP URLs go
+  to this attempt's Sandbox entrypoint. Absolute URLs and root hooks retain their
+  native behavior. For non-HTTP entrypoints, supply an absolute HTTP URL or use
+  the appropriate project-owned client.
+- Playwright's configured `baseURL` remains unchanged for `page`. Resolve page
+  URLs against the Sandbox entrypoint explicitly when needed.
 - `sandbox` exposes read-only attempt, catalog, entrypoint, container, and
   artifact identity. Lifecycle control remains fixture-owned.
 - `telemetry` exposes the attempt identity, live collector status, and raw
   retained session or trace reads.
-- `effects` exposes the attempt identity and the contract-evaluation boundary.
-  `expect(effects).toSatisfy(...)` compiles and delegates an immutable contract,
-  but the Alpha does not yet project raw telemetry into normalized effects. The
-  matcher therefore reports an inconclusive failure unless an evaluator is
-  supplied by the runtime.
+- `effects` exposes the attempt identity and evaluates immutable contracts
+  against OTLP observations owned by completed stimulus steps. Use
+  `expect(effects).toSatisfy(...)`. Missing or incomplete observation remains
+  inconclusive, including under negation; an observed operation does not prove
+  durable state.
 
 ## Execution reporting
 

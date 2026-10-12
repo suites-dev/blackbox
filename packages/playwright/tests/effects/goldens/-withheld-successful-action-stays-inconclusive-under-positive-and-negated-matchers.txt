@@ -1,0 +1,50 @@
+[
+  {
+    "contract": {
+      "schemaVersion": 1,
+      "constraints": [
+        {
+          "node": "constraint",
+          "operator": "atLeast",
+          "count": 1,
+          "selector": {
+            "node": "selector",
+            "kind": "db"
+          }
+        }
+      ],
+      "omitted": {
+        "constraints": 0,
+        "selectorWhereEntries": 0
+      }
+    },
+    "evaluation": "inconclusive",
+    "negated": false,
+    "outcome": "inconclusive",
+    "witnesses": []
+  },
+  {
+    "contract": {
+      "schemaVersion": 1,
+      "constraints": [
+        {
+          "node": "constraint",
+          "operator": "atLeast",
+          "count": 1,
+          "selector": {
+            "node": "selector",
+            "kind": "db"
+          }
+        }
+      ],
+      "omitted": {
+        "constraints": 0,
+        "selectorWhereEntries": 0
+      }
+    },
+    "evaluation": "inconclusive",
+    "negated": true,
+    "outcome": "inconclusive",
+    "witnesses": []
+  }
+]

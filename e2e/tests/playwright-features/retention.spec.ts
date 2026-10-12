@@ -1,4 +1,3 @@
-import { randomBytes } from 'node:crypto';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
@@ -18,10 +17,18 @@ test.system({ kind: 'subsystem', id: 'payment-mock' }, (system) => {
   system.sandbox('retention', { environment: blackboxEnvironment }, (sandbox) => {
     sandbox.test(
       'Scenario: finished attempts retain their real telemetry',
-      async ({ request, sandbox, telemetry }, testInfo) => {
+      async ({ request, sandbox, telemetry, effects, step }, testInfo) => {
         const mode = requiredEnvironment('BLACKBOX_FEATURE_MODE');
-        const traceId = randomBytes(16).toString('hex');
-        const traceparent = `00-${traceId}-${randomBytes(8).toString('hex')}-01`;
+        const { response, traceId } = await step.stimulus(
+          'create a payment intent with a retained trace',
+          async ({ headers }) => ({
+            response: await request.post('/v1/payment_intents', {
+              headers,
+              data: { paymentMethodId: 'pm_retention', userId: 'retention' },
+            }),
+            traceId: headers.traceparent.split('-')[1],
+          }),
+        );
         const retainedDirectory = join(
           process.cwd(),
           '.blackbox',
@@ -43,13 +50,6 @@ test.system({ kind: 'subsystem', id: 'payment-mock' }, (system) => {
           contentType: 'application/json',
           body: JSON.stringify(receipt, null, 2),
         });
-        const response = await request.post(
-          new URL('/v1/payment_intents', sandbox.entrypoint.url).href,
-          {
-            headers: { traceparent },
-            data: { paymentMethodId: 'pm_retention', userId: 'retention' },
-          },
-        );
         expect(response.status()).toBe(201);
         expect(await response.json()).toMatchObject({ status: 'succeeded', userId: 'retention' });
         await expect
@@ -57,6 +57,9 @@ test.system({ kind: 'subsystem', id: 'payment-mock' }, (system) => {
             timeout: 15_000,
           })
           .toBe('collector-trace-found');
+        await expect(effects).toSatisfy((e) => [
+          e.exists(e.http({ actor: 'payment-mock', method: 'POST' })),
+        ]);
         if (mode === 'write-failure') {
           // A portable real filesystem failure, including when CI runs as root.
           // The outer runner must observe fixture teardown failing after this body passes.
