@@ -146,6 +146,7 @@ done
 cp "$REPO_ROOT/packages/playwright/tests/effects/"{support,golden}.ts "$EFFECTS_ROOT/tests/"
 cp "$E2E_ROOT/playwright-effects.config.ts" "$CONSUMER_ROOT/playwright-effects.config.ts"
 cp "$SCRIPT_DIR/playwright-effects-proof.mjs" "$CONSUMER_ROOT/playwright-effects-proof.mjs"
+cp "$SCRIPT_DIR/playwright-effects-proof-run.mjs" "$CONSUMER_ROOT/playwright-effects-proof-run.mjs"
 
 cd "$CONSUMER_ROOT"
 NPM_CONFIG_REGISTRY="${BLACKBOX_TEST_REGISTRY:-http://127.0.0.1:4874/}" \
@@ -201,7 +202,7 @@ BLACKBOX_E2E_RESULTS_ROOT="$RUN_RESULT_ROOT" \
   "$PLAYWRIGHT_BIN" test --config "$CONSUMER_ROOT/playwright-effects.config.ts" \
   | tee "$RUN_RESULT_ROOT/effects-execution.txt"
 recover_sandboxes
-node "$CONSUMER_ROOT/playwright-effects-proof.mjs" >"$RUN_RESULT_ROOT/effects-receipt.json"
+node "$CONSUMER_ROOT/playwright-effects-proof-run.mjs" >"$RUN_RESULT_ROOT/effects-receipt.json"
 test -s "$RUN_RESULT_ROOT/effects-receipt.json"
 jq -e '.kind == "playwright-effects-proof" and .attempts == 8 and (.sandboxes | length) == 8' \
   "$RUN_RESULT_ROOT/effects-receipt.json" >/dev/null

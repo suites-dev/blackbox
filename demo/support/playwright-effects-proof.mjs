@@ -1,5 +1,4 @@
 import { execFileSync } from 'node:child_process';
-import { realpathSync } from 'node:fs';
 import { readFile, readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -79,7 +78,7 @@ export function proveEffects(report, discovery, goldens) {
   return { kind: 'playwright-effects-proof', specs: expectedEffects, attempts: 8 };
 }
 
-async function verifyEffects() {
+export async function verifyEffects() {
   const consumer = fileURLToPath(new URL('.', import.meta.url));
   const root = join(consumer, 'test-results', 'effects');
   const goldens = Object.fromEntries(
@@ -161,11 +160,4 @@ async function verifyEffects() {
       cleanup,
     })),
   };
-}
-
-if (
-  process.argv[1] !== undefined &&
-  realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url))
-) {
-  process.stdout.write(`${JSON.stringify(await verifyEffects(), null, 2)}\n`);
 }
