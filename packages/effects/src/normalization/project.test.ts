@@ -170,3 +170,23 @@ test.each([
 ])('rejects invalid raw payload %j', (input) => {
   expect(() => projectObservations([input], 'scope')).toThrow(TypeError);
 });
+
+test('treats the same trace and span IDs in different hex casing as one record', () => {
+  const lower = span(1, {
+    traceId: 'abcdefabcdefabcdefabcdefabcdefab',
+    spanId: 'abcdefabcdefabcd',
+    attributes: [attribute('db.operation', 'INSERT')],
+  });
+  const upper = {
+    ...lower,
+    traceId: lower.traceId.toUpperCase(),
+    spanId: lower.spanId.toUpperCase(),
+  };
+  expect(upper.traceId).not.toBe(lower.traceId);
+  expect(projectObservations([payload([lower]), payload([upper])], 'scope').effects).toHaveLength(
+    1,
+  );
+  expect(() =>
+    projectObservations([payload([lower]), payload([{ ...upper, endTimeUnixNano: '9' }])], 'scope'),
+  ).toThrow('Conflicting duplicate');
+});

@@ -22,7 +22,9 @@ function addSpan(
   const spanId = identifier(span.spanId, 16);
   const id = `${traceId}:${spanId}`;
   const item = {
-    span,
+    // Both IDs are stored in their canonical (lower-case) form, so two arrivals that only
+    // differ in hex casing are the same record and not a conflicting duplicate.
+    span: { ...span, traceId, spanId },
     traceId,
     spanId,
     resourceAttributes,
