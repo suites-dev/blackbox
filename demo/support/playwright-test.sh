@@ -135,6 +135,18 @@ cp "$SCRIPT_DIR/playwright-evidence.mjs" "$CONSUMER_ROOT/playwright-evidence.mjs
 cp "$SCRIPT_DIR/playwright-report-proof.mjs" "$CONSUMER_ROOT/playwright-report-proof.mjs"
 cp "$SCRIPT_DIR/playwright-recover.mjs" "$CONSUMER_ROOT/playwright-recover.mjs"
 cp "$SCRIPT_DIR/playwright-verify.mjs" "$CONSUMER_ROOT/playwright-verify.mjs"
+# Reuse the eight package acceptance cases without source-package imports. All
+# runtime dependencies and the instrumentation install belong to this consumer.
+EFFECTS_ROOT="$CONSUMER_ROOT/effects-acceptance"
+mkdir -p "$EFFECTS_ROOT/tests" "$EFFECTS_ROOT/.blackbox"
+cp -R "$REPO_ROOT/packages/playwright/tests/effects/project/." "$EFFECTS_ROOT/"
+for fixture in database messaging ownership telemetry goldens; do
+  cp -R "$REPO_ROOT/packages/playwright/tests/effects/$fixture" "$EFFECTS_ROOT/tests/"
+done
+cp "$REPO_ROOT/packages/playwright/tests/effects/"{support,golden}.ts "$EFFECTS_ROOT/tests/"
+cp "$E2E_ROOT/playwright-effects.config.ts" "$CONSUMER_ROOT/playwright-effects.config.ts"
+cp "$SCRIPT_DIR/playwright-effects-proof.mjs" "$CONSUMER_ROOT/playwright-effects-proof.mjs"
+cp "$SCRIPT_DIR/playwright-effects-proof-run.mjs" "$CONSUMER_ROOT/playwright-effects-proof-run.mjs"
 
 cd "$CONSUMER_ROOT"
 NPM_CONFIG_REGISTRY="${BLACKBOX_TEST_REGISTRY:-http://127.0.0.1:4874/}" \
@@ -143,6 +155,7 @@ NPM_CONFIG_CACHE="$ASSET_ROOT/npm-cache" \
   >"$RUN_RESULT_ROOT/instrumentation-install.txt"
 test -s "$CONSUMER_ROOT/.blackbox/instrumentation/instrumentation.js"
 test -d "$CONSUMER_ROOT/.blackbox/instrumentation/node_modules"
+cp -R "$CONSUMER_ROOT/.blackbox/instrumentation" "$EFFECTS_ROOT/.blackbox/"
 
 "$BLACKBOX_BIN" catalog validate --json >"$RUN_RESULT_ROOT/catalog-validate.json"
 jq -e '.ok == true' "$RUN_RESULT_ROOT/catalog-validate.json" >/dev/null
@@ -179,7 +192,22 @@ BLACKBOX_E2E_RESULTS_ROOT="$RUN_RESULT_ROOT" \
 recover_sandboxes
 node "$CONSUMER_ROOT/playwright-verify.mjs" >"$RUN_RESULT_ROOT/receipt.json"
 
-# Run the retention contract after the original eight-case proof.
+# Effects cases run against the same packed packages and transport their reports,
+# snapshots and physical Sandbox records through the existing evidence archive.
+BLACKBOX_E2E_RESULTS_ROOT="$RUN_RESULT_ROOT" \
+  "$PLAYWRIGHT_BIN" test --config "$CONSUMER_ROOT/playwright-effects.config.ts" \
+    --list --reporter=line >"$RUN_RESULT_ROOT/effects-discovery.txt"
+RECOVERY_RECORDED=0
+BLACKBOX_E2E_RESULTS_ROOT="$RUN_RESULT_ROOT" \
+  "$PLAYWRIGHT_BIN" test --config "$CONSUMER_ROOT/playwright-effects.config.ts" \
+  | tee "$RUN_RESULT_ROOT/effects-execution.txt"
+recover_sandboxes
+node "$CONSUMER_ROOT/playwright-effects-proof-run.mjs" >"$RUN_RESULT_ROOT/effects-receipt.json"
+test -s "$RUN_RESULT_ROOT/effects-receipt.json"
+jq -e '.kind == "playwright-effects-proof" and .attempts == 8 and (.sandboxes | length) == 8' \
+  "$RUN_RESULT_ROOT/effects-receipt.json" >/dev/null
+
+# Run the retention contract after the native and effects cases.
 # Its runner owns recovery and keeps each invocation under test-results/features.
 BLACKBOX_E2E_FIXTURE_TOKEN="$FIXTURE_TOKEN" \
   node "$CONSUMER_ROOT/playwright-features.mjs"
