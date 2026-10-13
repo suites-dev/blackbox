@@ -10,11 +10,13 @@ import {
   inspectComposeStartup,
 } from './observation/observation-inspector.js';
 import { observeComposeStartup } from './observation/startup-observer.js';
-import { upUnlessParticipantExits } from './observation/participant-exit.js';
+import { upUnlessParticipantExits } from './participant-exit/participant-exit.js';
+import { readParticipantLogTails } from './participant-exit/participant-logs.js';
 import { inspectComposeResources, inspectRemainingContainers } from './resources/resource-inspector.js';
 import { writeTelemetryComposeOverride } from '../telemetry/compose-override.js';
 import { composeTelemetryController, stopGrace } from '../telemetry/compose-controller.js';
 import { writeEndpointComposeOverride } from './endpoint-override.js';
+import type { ComposeServiceObservation } from './observation.js';
 import { snapshotContainerEnvironment } from './container-environment.js';
 import { inspectEffectiveParticipantEnvironments } from './environment/effective.js';
 import { SandboxReadinessWaitStrategy } from './readiness/wait-strategy.js';
@@ -152,6 +154,12 @@ function requiredContainer(
   return container;
 }
 
+/** Reads exited participants' logs before cleanup removes them, within a bounded time. */
+function participantLogReader(docker: Dockerode) {
+  return (containers: readonly ComposeServiceObservation[]) =>
+    readParticipantLogTails({ docker, containers, timeoutMs: 5_000 });
+}
+
 /** Takes the project down outside a started environment, as Testcontainers does after a failed `up()`. */
 async function composeDown(input: {
   readonly client: Awaited<ReturnType<typeof getContainerRuntimeClient>>;
@@ -196,6 +204,7 @@ export class TestcontainersComposeDriver implements ComposeSandboxDriver {
       up: () => environment.up(services),
       requiredServices: requiredServiceNames(request),
       inspect,
+      readLogs: participantLogReader(client.container.dockerode),
       down: () => composeDown({ client, request, composeFiles }),
       intervalMs: 500,
     }).finally(() => observer.stop());
