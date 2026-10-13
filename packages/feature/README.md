@@ -2,11 +2,11 @@
 
 `@suites/blackbox-feature` compiles a reviewed Gherkin Feature into a native
 Blackbox Playwright suite. Feature files are optional; you can also
-[write suites directly](../../docs/playwright/README.md).
+[write a scoped TypeScript Gherkin specification directly](../../docs/gherkin.md#run-a-typescript-specification-directly).
 
 ## Generate your first suite
 
-Start with [Writing a Feature](../../docs/features/authoring.md) to create
+Start with [the Feature authoring guide](../../docs/gherkin.md#compile-a-separate-feature-file) to create
 `tests/api-health.feature` and connect it to your project's `api` client. Then:
 
 ```sh
@@ -16,16 +16,16 @@ pnpm exec playwright test tests/api-health.spec.ts
 ```
 
 Emission creates a new `.spec.ts` file and refuses to overwrite an existing one.
-Follow [Generating Playwright suites](../../docs/features/generating-suites.md)
+Follow [the compiler workflow](../../docs/gherkin.md#compile-a-separate-feature-file)
 for prerequisites, expected output, and drift checks after changes.
 
 The current compiler accepts a defined
-[HTTP vocabulary](../../docs/features/authoring.md#sentence-reference).
+[HTTP vocabulary](src/cli/README.md).
 Native Playwright suites can use other SDK clients; see
-[testing asynchronous flows](../../docs/guides/testing-async-flows.md).
+[the adapter reference](../playwright/README.md).
 
 ## Reference
 
-- [Feature guides](../../docs/features/README.md): author, generate, and maintain suites.
+- [Authoring routes](../../docs/gherkin.md): author, generate, and maintain suites.
 - [CLI reference](src/cli/README.md): command arguments and availability.
 - [Compiler design](DESIGN.md): compilation and runtime responsibilities.
