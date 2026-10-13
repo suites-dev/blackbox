@@ -11,12 +11,11 @@ import {
 } from './observation/observation-inspector.js';
 import { observeComposeStartup } from './observation/startup-observer.js';
 import { upUnlessParticipantExits } from './participant-exit/participant-exit.js';
-import { readParticipantLogTails } from './participant-exit/participant-logs.js';
+import { participantLogReader } from './participant-exit/participant-logs.js';
 import { inspectComposeResources, inspectRemainingContainers } from './resources/resource-inspector.js';
 import { writeTelemetryComposeOverride } from '../telemetry/compose-override.js';
 import { composeTelemetryController, stopGrace } from '../telemetry/compose-controller.js';
 import { writeEndpointComposeOverride } from './endpoint-override.js';
-import type { ComposeServiceObservation } from './observation.js';
 import { snapshotContainerEnvironment } from './container-environment.js';
 import { inspectEffectiveParticipantEnvironments } from './environment/effective.js';
 import { SandboxReadinessWaitStrategy } from './readiness/wait-strategy.js';
@@ -152,12 +151,6 @@ function requiredContainer(
     throw new Error(`Compose service ${JSON.stringify(service)} was not selected for the sandbox`);
   }
   return container;
-}
-
-/** Reads exited participants' logs before cleanup removes them, within a bounded time. */
-function participantLogReader(docker: Dockerode) {
-  return (containers: readonly ComposeServiceObservation[]) =>
-    readParticipantLogTails({ docker, containers, timeoutMs: 5_000 });
 }
 
 /** Takes the project down outside a started environment, as Testcontainers does after a failed `up()`. */

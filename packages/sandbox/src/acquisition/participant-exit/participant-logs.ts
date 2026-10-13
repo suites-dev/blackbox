@@ -121,6 +121,13 @@ export async function readParticipantLogTails(input: {
   );
 }
 
+/** Reads exited participants' logs before cleanup removes them, within a bounded time. */
+export function participantLogReader(
+  docker: ParticipantLogClient,
+): (containers: readonly ComposeServiceObservation[]) => Promise<readonly ParticipantLogTail[]> {
+  return (containers) => readParticipantLogTails({ docker, containers, timeoutMs: 5_000 });
+}
+
 function exitText(termination: ParticipantLogTail['termination']): string {
   return termination.kind === 'exited' ? `exit code ${termination.exitCode}` : 'no exit code';
 }
