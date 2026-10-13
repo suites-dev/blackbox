@@ -23,6 +23,12 @@ export interface ComposeContainer {
   getMappedPort(input: SandboxMappedPortSelector): number;
 }
 
+/** A project container Docker still has after a cleanup attempt. */
+export interface ComposeRemainingContainer {
+  readonly service: string;
+  readonly state: string;
+}
+
 export interface StartedComposeSandbox {
   getContainer(input: SandboxContainerSelector): ComposeContainer;
   execute(input: SandboxContainerExecInput): Promise<{
@@ -35,6 +41,7 @@ export interface StartedComposeSandbox {
   inspectTelemetry(): Promise<SandboxTelemetryStatus>;
   prepareStop(input: { readonly timeoutMs: number }): Promise<void>;
   stop(input: { readonly timeoutMs: number }): Promise<void>;
+  inspectRemainingContainers(): Promise<readonly ComposeRemainingContainer[]>;
 }
 
 export interface ComposeStartRequest {

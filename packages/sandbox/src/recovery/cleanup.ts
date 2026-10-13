@@ -1,4 +1,5 @@
 import { withTimeout } from '../lifecycle/helpers.js';
+import { stopGrace } from '../telemetry/compose-controller.js';
 import type {
   ComposeRecoveryClient,
   OwnedComposeCleanupInput,
@@ -129,7 +130,8 @@ async function cleanupOwnedComposeProjectUnbounded(input: {
       client: input.client,
       id,
       projectName,
-      timeoutSeconds: Math.max(1, Math.ceil(timeoutMs / 1000)),
+      // Docker's stop grace, not the whole budget, as in the started sandbox's stop.
+      timeoutSeconds: stopGrace(timeoutMs).participantMs / 1_000,
     }),
   ));
   const [networkIds, volumeIds] = await Promise.all([

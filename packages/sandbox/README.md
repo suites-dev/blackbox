@@ -65,6 +65,10 @@ The handle provides:
 - Optional collector and participant telemetry wiring through generated Compose
   overrides.
 - Idempotent stop behavior with volume removal and retained cleanup outcomes.
+  Docker gets a stop grace of at most 10 s per container out of `stopTimeoutMs`
+  ([`stopGrace`](src/telemetry/compose-controller.ts)), so a participant that
+  ignores SIGTERM is killed within the budget. A cleanup that still fails names
+  the containers Docker has left.
 
 Lifecycle records follow the exported
 [`sandbox-record-v1` schema](schema/sandbox-record-v1.json). After interruption,

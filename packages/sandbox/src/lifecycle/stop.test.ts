@@ -121,6 +121,54 @@ it('bounds cleanup that never settles', async () => {
   ).toBe('stop-failed');
 });
 
+it('names the participants Docker still has when cleanup times out', async () => {
+  const { input } = await sandboxFixture();
+  const compose = startedSandbox({ stop: () => new Promise<void>(() => undefined) });
+  const driver = {
+    start: () =>
+      Promise.resolve({
+        ...compose,
+        inspectRemainingContainers: () =>
+          Promise.resolve([{ service: 'pokeapi-stub', state: 'running' }]),
+      }),
+  } satisfies ComposeSandboxDriver;
+  const handle = await new SandboxRuntime({
+    driver,
+    now: deterministicClock(),
+    onEvent: () => undefined,
+  }).start(silentStart({ ...input, stopTimeoutMs: 10 }));
+  const message =
+    'Sandbox cleanup timed out after 10ms; still present: pokeapi-stub (running)';
+  await expect(handle.stop({ reason: 'completed' })).rejects.toMatchObject({
+    name: 'SandboxStopError',
+    message: `Sandbox cleanup failed: ${message}`,
+    failure: { kind: 'cleanup-failed', cleanupError: expect.objectContaining({ message }) },
+  });
+  expect(
+    await readSandboxRecord({ recordDirectory: input.recordDirectory, sandboxId: input.sandboxId }),
+  ).toMatchObject({ state: 'stop-failed', cleanup: { kind: 'failed', error: { message } } });
+});
+
+it('keeps the cleanup error when the remaining containers cannot be listed', async () => {
+  const { input } = await sandboxFixture();
+  const compose = startedSandbox({ stop: () => Promise.reject(new Error('daemon unavailable')) });
+  const driver = {
+    start: () =>
+      Promise.resolve({
+        ...compose,
+        inspectRemainingContainers: () => Promise.reject(new Error('daemon unavailable')),
+      }),
+  } satisfies ComposeSandboxDriver;
+  const handle = await new SandboxRuntime({
+    driver,
+    now: deterministicClock(),
+    onEvent: () => undefined,
+  }).start(silentStart(input));
+  await expect(handle.stop({ reason: 'completed' })).rejects.toMatchObject({
+    message: 'Sandbox cleanup failed: daemon unavailable',
+  });
+});
+
 it('does not let a lifecycle callback change the durable result', async () => {
   const { input } = await sandboxFixture();
   const driver = {

@@ -11,9 +11,9 @@ import {
 } from './observation/observation-inspector.js';
 import { observeComposeStartup } from './observation/startup-observer.js';
 import { upUnlessParticipantExits } from './observation/participant-exit.js';
-import { inspectComposeResources } from './resources/resource-inspector.js';
+import { inspectComposeResources, inspectRemainingContainers } from './resources/resource-inspector.js';
 import { writeTelemetryComposeOverride } from '../telemetry/compose-override.js';
-import { composeTelemetryController } from '../telemetry/compose-controller.js';
+import { composeTelemetryController, stopGrace } from '../telemetry/compose-controller.js';
 import { writeEndpointComposeOverride } from './endpoint-override.js';
 import { snapshotContainerEnvironment } from './container-environment.js';
 import { inspectEffectiveParticipantEnvironments } from './environment/effective.js';
@@ -241,11 +241,16 @@ export class TestcontainersComposeDriver implements ComposeSandboxDriver {
         await telemetry.controller.prepareStop(input);
       },
       async stop(input): Promise<void> {
+        // Docker's per-container stop grace, not the whole budget: with the
+        // budget as grace, a participant that ignores SIGTERM held `down` for
+        // the full budget and the cleanup deadline always fired first.
         await started.down({
-          timeout: input.timeoutMs,
+          timeout: stopGrace(input.timeoutMs).participantMs,
           removeVolumes: true,
         });
       },
+      inspectRemainingContainers: () =>
+        inspectRemainingContainers({ docker: client.container.dockerode, projectName: request.projectName }),
     };
   }
 }
