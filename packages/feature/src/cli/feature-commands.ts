@@ -2,6 +2,8 @@ import { Args, Command, Flags } from '@oclif/core';
 import { access, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
+import { renderDraftPrompt } from './feature-file-draft.js';
+
 import { listCatalogEntries, loadCatalogFile } from '@suites/blackbox-catalog';
 
 import {
@@ -16,13 +18,17 @@ const catalogFileName = 'blackbox.config.yaml';
 const configFlag = Flags.string({ description: `Path to ${catalogFileName}. Defaults to the nearest one above the Feature.` });
 
 export class FeatureFileDraft extends Command {
-  static override description = 'Draft candidate Feature expectations.';
+  static override description = 'Print an agent prompt for drafting a candidate Feature from reviewed Markdown.';
   static override args = { specification: Args.string({ required: true, description: 'Path to the reviewed human specification.' }) };
-  static override flags = { output: Flags.string({ required: true, description: 'Path for the candidate Feature file.' }) };
+  static override flags = { output: Flags.string({ description: 'Suggested path for the agent to write the candidate Feature; this command writes nothing.' }) };
 
   public async run(): Promise<void> {
     const { args, flags } = await this.parse(FeatureFileDraft);
-    this.error(`Feature drafting is unavailable: no authoring provider is configured for ${args.specification} -> ${flags.output}.`);
+    try {
+      this.log(await renderDraftPrompt(args.specification, flags.output));
+    } catch (error) {
+      this.error(error instanceof Error ? error.message : 'Could not read the specification or Feature authoring skill.');
+    }
   }
 }
 

@@ -444,6 +444,9 @@ importers:
       '@suites/blackbox-playwright':
         specifier: workspace:*
         version: link:../playwright
+      '@suites/blackbox-skills':
+        specifier: workspace:*
+        version: link:../skills
     devDependencies:
       '@types/node':
         specifier: 'catalog:'
