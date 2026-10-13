@@ -11,7 +11,7 @@
     "@suites/blackbox-cli": "workspace:*",
     "@suites/blackbox-playwright": "workspace:*",
     "pg": "8.23.1",
-    "redis": "4.7.1"
+    "redis": "6.3.0"
   },
   "scripts": {
     "lint": "eslint tests/playwright tests/playwright-features tests/features-suites feature-cli .blackbox/clients reporters playwright.config.ts playwright-features.config.ts playwright-effects.config.ts lint",
