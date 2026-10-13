@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import type {
   FullResult,
   Reporter,
+  Suite,
   TestCase,
   TestResult,
   TestStep,
@@ -46,9 +47,16 @@ export default class BlackboxEvidence implements Reporter {
   }
 
   onTestBegin(test: TestCase, result: TestResult): void {
+    let fileSuite: Suite | undefined = test.parent;
+    while (fileSuite !== undefined && fileSuite.type !== 'file') {
+      fileSuite = fileSuite.parent;
+    }
+    if (fileSuite === undefined) {
+      throw new Error(`Missing Playwright file suite for ${test.title}`);
+    }
     this.attempts.set(result, {
       title: test.title,
-      file: test.location.file,
+      file: fileSuite.title,
       acquisitionStartedAt: null,
       acquisitionCompletedAt: null,
       testId: test.id,

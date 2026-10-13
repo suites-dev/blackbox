@@ -10,3 +10,11 @@ export type {
   ClientTarget,
   RegisteredClients,
 } from './clients/types.js';
+
+export type {
+  GherkinFeatureScope,
+  GherkinRuleScope,
+  GherkinScenarioScope,
+  GherkinOutlineScope,
+  GherkinRow,
+} from './gherkin/types.js';

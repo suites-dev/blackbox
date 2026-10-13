@@ -109,6 +109,24 @@ Run `pnpm --dir e2e run test:lint` to verify the local rule and
 `pnpm --dir e2e run lint` for consumer test/config/reporter/lint sources. Keep
 both separate from the repository's `pnpm lint`; CI runs all three as separate
 named steps in the lint job.
+The scoped Gherkin example in `e2e/examples/gherkin-executable-spec.ts` has an
+opt-in runner, separate from the existing Playwright acceptance lane. Root
+`pnpm typecheck` includes `e2e/examples/**/*.ts`; `pnpm --dir e2e run lint`
+includes the examples and their configuration. Prove native discovery after
+building the candidate adapter:
+
+```sh
+BLACKBOX_E2E_FIXTURE_TOKEN=demo-fixture-token pnpm --dir e2e exec playwright test --config examples/playwright.config.ts --list
+```
+
+The example config selects only `gherkin-executable-spec.ts`, uses two workers
+with fully parallel scheduling, and writes to `e2e/test-results/gherkin-example/`.
+Omit `--list` for Docker execution after preparing the SUT assets using the
+existing E2E setup. Discovery proves registered cases and title hierarchy;
+execution must separately prove step ordering, assertions, per-attempt isolation,
+and cleanup. This opt-in runner does not add cases to the existing acceptance
+lane or establish a CI gate by itself.
+
 The console uses Playwright's native list reporter. Verify ready/cleanup messages
 in each attempt's captured stdout, no streamed container polling, and retained
 `blackbox-diagnostics` attachments. Lifecycle messages can be disabled using the

@@ -31,6 +31,8 @@ test('allows long direct synchronous Blackbox suite declaration callbacks', () =
     `system.sandbox('suite', {}, ${callback(100)});`,
     `sandbox.describe('suite', ${callback(100)});`,
     `suite.describe('suite', ${callback(100)});`,
+    `suite.Feature('feature', ${callback(100)});`,
+    `Rule('rule', ${callback(100)});`,
   ];
   for (const source of sources) {
     assert.deepEqual(messages(source), []);
@@ -41,6 +43,7 @@ test('rejects oversized tests, steps, hooks, and helper functions', () => {
   const sources = [
     `test('journey', ${callback(81, { async: true })});`,
     `sandbox.test('journey', ${callback(81, { async: true })});`,
+    `Scenario('journey', ${callback(81, { async: true })});`,
     `test.step('action', ${callback(81, { async: true })});`,
     `sandbox.beforeEach(${callback(81, { async: true })});`,
     `sandbox.afterEach(${callback(81, { async: true })});`,
