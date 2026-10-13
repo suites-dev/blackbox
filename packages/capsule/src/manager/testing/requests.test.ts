@@ -1,3 +1,5 @@
+import { access } from 'node:fs/promises';
+
 import { expect, it, vi } from 'vitest';
 
 import { managerRequest } from '../../ipc/client.js';
@@ -247,6 +249,10 @@ it('records failed cleanup truthfully when sandbox stop rejects', async () => {
       { kind: 'capsule-stop-requested', reason: 'failed' },
       { kind: 'capsule-stop-failed', error: { message: 'owned container is still running' } },
     ]);
+    // The sandbox never retries a failed cleanup, so the manager stops serving
+    // and can exit; the next `down` recovers the sandbox instead (#190).
+    expect(fixture.manager.server.listening).toBe(false);
+    await expect(access(fixture.socketPath)).rejects.toMatchObject({ code: 'ENOENT' });
   } finally {
     await fixture.close();
   }

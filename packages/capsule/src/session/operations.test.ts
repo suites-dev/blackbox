@@ -150,10 +150,11 @@ describe('dead manager reader reconciliation', () => {
       cleanup: 'complete',
       alreadyStopped: true,
     });
+    // A `down` that finds the cleanup complete records the capsule stopped (#186).
     await expect(reportCapsule(session)).resolves.toMatchObject({
       kind: 'capsule-report',
       document: {
-        lifecycle: { kind: 'failed', retainedState: 'manager-failed' },
+        lifecycle: { kind: 'stopped', retainedState: 'stopped' },
         cleanup: { kind: 'complete' },
       },
     });
@@ -176,20 +177,7 @@ describe('dead manager reader reconciliation', () => {
         },
       },
     });
-    const sandboxDirectory = capsuleSandboxRecordDirectory(session);
-    await mkdir(sandboxDirectory, { recursive: true });
-    await writeFile(join(sandboxDirectory, `${record.executionId}.json`), `${JSON.stringify({
-      schemaVersion: 1,
-      sandboxId: record.executionId,
-      projectName: composeProjectName({ sandboxId: record.executionId }),
-      composeFiles: ['/project/compose.yaml'],
-      state: 'completed',
-      revision: 3,
-      admittedAt: record.admittedAt,
-      updatedAt: record.updatedAt,
-      stopReason: 'interrupted',
-      cleanup: 'complete',
-    })}\n`);
+    await writeCompletedSandboxRecord(session, record);
 
     await expect(stopCapsule({ ...session, reason: 'interrupted' })).resolves.toMatchObject({
       kind: 'capsule-stopped',
@@ -197,9 +185,65 @@ describe('dead manager reader reconciliation', () => {
       alreadyStopped: true,
     });
     await expect(readCapsuleRecord(session)).resolves.toMatchObject({
-      state: 'manager-failed',
+      state: 'stopped',
       cleanup: { kind: 'complete' },
       failure: { kind: 'recorded', error: { name: 'CapsuleManagerUnavailable' } },
     });
   });
 });
+
+describe('failed stop recovery', () => {
+  it('finishes a failed stop after its manager exited and keeps the stop error (#190)', async () => {
+    const session = await sessionFixture('stop-failed');
+    const record = await readCapsuleRecord(session);
+    const stopError = {
+      name: 'SandboxStopError',
+      message: 'Sandbox cleanup failed: Sandbox cleanup timed out after 60000ms',
+    };
+    await writeCapsuleRecord({
+      projectDirectory: session.projectDirectory,
+      record: {
+        ...record,
+        manager: deadManagerOwnership(),
+        cleanup: { kind: 'failed', error: stopError },
+        failure: { kind: 'recorded', error: stopError },
+      },
+    });
+    await writeCompletedSandboxRecord(session, record);
+    vi.spyOn(process, 'kill').mockImplementation(() => {
+      throw Object.assign(new Error('dead'), { code: 'ESRCH' });
+    });
+
+    await expect(stopCapsule({ ...session, reason: 'completed' })).resolves.toMatchObject({
+      kind: 'capsule-stopped',
+      cleanup: 'complete',
+    });
+    await expect(readCapsuleRecord(session)).resolves.toMatchObject({
+      state: 'stopped',
+      cleanup: { kind: 'complete' },
+      failure: { kind: 'recorded', error: stopError },
+    });
+  });
+});
+
+
+/** A sandbox record that recovery reads as already cleaned up, so no Docker is needed. */
+async function writeCompletedSandboxRecord(
+  session: { readonly projectDirectory: string; readonly sessionId: string },
+  record: CapsuleSessionRecord,
+): Promise<void> {
+  const sandboxDirectory = capsuleSandboxRecordDirectory(session);
+  await mkdir(sandboxDirectory, { recursive: true });
+  await writeFile(join(sandboxDirectory, `${record.executionId}.json`), `${JSON.stringify({
+    schemaVersion: 1,
+    sandboxId: record.executionId,
+    projectName: composeProjectName({ sandboxId: record.executionId }),
+    composeFiles: ['/project/compose.yaml'],
+    state: 'completed',
+    revision: 3,
+    admittedAt: record.admittedAt,
+    updatedAt: record.updatedAt,
+    stopReason: 'interrupted',
+    cleanup: 'complete',
+  })}\n`);
+}

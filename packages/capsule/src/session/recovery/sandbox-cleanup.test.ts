@@ -78,7 +78,7 @@ it('retains a failed retry and allows the next explicit retry to complete cleanu
     cleanup: { kind: 'failed', error: { message: 'first cleanup failed' } },
   });
   await expect(retryManagerFailedCleanupWithPorts(selector, ports)).resolves.toMatchObject({
-    state: 'manager-failed',
+    state: 'stopped',
     revision: 6,
     cleanup: { kind: 'complete' },
   });
@@ -87,4 +87,36 @@ it('retains a failed retry and allows the next explicit retry to complete cleanu
     failure: { kind: 'recorded', error: { name: 'CapsuleManagerUnavailable' } },
     cleanup: { kind: 'complete' },
   });
+});
+
+it('records a manager-failed capsule stopped when its cleanup already completed (#186)', async () => {
+  const initial = {
+    ...runningRecord('/project'),
+    state: 'manager-failed',
+    cleanup: { kind: 'complete' },
+    failure: {
+      kind: 'recorded',
+      error: { name: 'CapsuleManagerUnavailable', message: 'manager exited' },
+    },
+  } satisfies CapsuleSessionRecord;
+  let record: CapsuleSessionRecord = initial;
+  const recoverSandbox = vi.fn<CapsuleCleanupRecoveryPorts['recoverSandbox']>();
+  const ports = {
+    readRecord: () => Promise.resolve(record),
+    writeRecord: (input) => {
+      record = input.record;
+      return Promise.resolve();
+    },
+    recoverSandbox,
+  } satisfies CapsuleCleanupRecoveryPorts;
+  const selector = { projectDirectory: '/project', sessionId: record.sessionId };
+
+  await expect(retryManagerFailedCleanupWithPorts(selector, ports)).resolves.toMatchObject({
+    state: 'stopped',
+    cleanup: { kind: 'complete' },
+    failure: { kind: 'recorded', error: { name: 'CapsuleManagerUnavailable' } },
+  });
+  expect(recoverSandbox).not.toHaveBeenCalled();
+  expect(record.state).toBe('stopped');
+  await expect(retryManagerFailedCleanupWithPorts(selector, ports)).resolves.toBe(record);
 });
