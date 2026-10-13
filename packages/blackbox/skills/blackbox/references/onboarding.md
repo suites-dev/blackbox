@@ -42,7 +42,7 @@ docker volume ls -q --filter "label=com.docker.compose.project=<project>"
    not that anything starts.
 5. **One Capsule run.** With the capsule skill: `blackbox capsule up <system> --json --non-interactive` (in a terminal, interactive rendering omits the Compose project name), one `capsule run` with an
    explicit `--session`, then inspect.
-6. **Inspect, stop, then report.** `blackbox capsule show <id>` while it runs, then `down <id>` (`down` accepts `running`, `stop-failed` and `manager-failed` capsules; the last retries the cleanup. After a `start-failed` `up`, startup already tried its own cleanup, so skip `down` and use the Docker check),
+6. **Inspect, stop, then report.** `blackbox capsule show <id>` while it runs, then `down <id>` (`down` accepts `running`, `stop-failed` and `manager-failed` capsules; the last two retry the cleanup and end `stopped` once it completes. After a `start-failed` `up`, startup already tried its own cleanup, so skip `down` and use the Docker check),
    then `blackbox capsule show <id>` and `blackbox capsule report <id>` again. A report written while the capsule
    runs is `provisional` and does not draw the final evidence: `down` drains the collector, and only the report
    after `down` can be `complete`. Judge absence and exact-count expectations only from that one.
@@ -66,9 +66,10 @@ Read the structured result (`--json`; `capsule show`), fix the setup, retry with
   had no value. Provide it (see Secrets) and retry.
 - `listen EINVAL ... .sock` with state `manager-failed`: the project path was too long for a Unix socket. Use a shorter
   path.
-- `down` returned `SandboxStopError` ("cleanup timed out after 60000ms"), state `stop-failed`, for a service whose
-  PID 1 was `node -e`. Adding `init: true` to the service made cleanup `complete` in about 3 seconds. The cause was
-  not proven. A `stop-failed` capsule is a cleanup failure: check Docker yourself (#89, #90).
+- `down` returned `SandboxStopError`, state `stop-failed`: Docker did not remove the project within the stop budget.
+  The message names what was `still present`. A service whose PID 1 ignores SIGTERM (`node -e`, `sh -c`, busybox
+  `httpd -f`) is killed after Docker's stop grace (at most 10 s); `init: true` makes it exit at once. Run `down <id>`
+  again: it finishes the cleanup and records the capsule `stopped`. If it fails again, check Docker yourself (#89, #90).
 
 If a dependency, env var, credential, image or capability is missing, stop and report a blocker. Never broaden the
 spec, drop a required boundary or weaken a claim to get a pass. Do not repeat a non-idempotent stimulus.

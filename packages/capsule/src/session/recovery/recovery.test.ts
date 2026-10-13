@@ -164,6 +164,39 @@ describe('Capsule manager reconciliation admission', () => {
 
 });
 
+describe('stop-failed manager reconciliation', () => {
+  it('keeps the recorded stop failure when a stop-failed manager has exited', async () => {
+    const stopError = { name: 'SandboxStopError', message: 'Sandbox cleanup failed: timed out' };
+    const initial = {
+      ...runningRecord('/project'),
+      state: 'stop-failed',
+      cleanup: { kind: 'failed', error: stopError },
+      failure: { kind: 'recorded', error: stopError },
+    } satisfies CapsuleSessionRecord;
+    let record: CapsuleSessionRecord = initial;
+    const result = await reconcileDeadCapsuleManagerWithPorts(
+      { projectDirectory: '/project', sessionId: record.sessionId },
+      {
+        now: () => completedAt,
+        signal: () => { throw processError('ESRCH'); },
+        probeManager: () => Promise.resolve({ kind: 'manager-instance-exact' }),
+        readRecord: () => Promise.resolve(record),
+        readActivities: () => Promise.resolve([]),
+        writeActivities: () => Promise.resolve(),
+        writeRecord: (input) => {
+          record = input.record;
+          return Promise.resolve();
+        },
+        recoverSandbox: () => Promise.reject(new Error('recovery still unavailable')),
+      },
+    );
+    expect(result).toMatchObject({
+      kind: 'capsule-manager-reconciled',
+      record: { state: 'manager-failed', failure: { kind: 'recorded', error: stopError } },
+    });
+  });
+});
+
 describe('persisted Capsule manager reconciliation', () => {
   it('persists schema-valid interrupted telemetry and remains idempotent through real artifacts', async () => {
     const projectDirectory = await mkdtemp(join(tmpdir(), 'capsule-recovery-'));

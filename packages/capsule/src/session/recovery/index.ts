@@ -246,7 +246,10 @@ export async function reconcileDeadCapsuleManagerWithPorts(
     state: 'manager-failed',
     revision: currentRecord.revision + 1,
     updatedAt: completedAt,
-    failure: { kind: 'recorded', error },
+    // A manager that exits after its own failed stop leaves that failure as the cause.
+    failure: currentRecord.state === 'stop-failed' && currentRecord.failure.kind === 'recorded'
+      ? currentRecord.failure
+      : { kind: 'recorded', error },
     cleanup,
   } satisfies CapsuleSessionRecord;
   await ports.writeActivities({ ...input, activities: reconciled.activities });

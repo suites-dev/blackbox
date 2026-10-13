@@ -15,6 +15,31 @@ async function attempt(operation: Promise<void>): Promise<CleanupStep> {
   }
 }
 
+/** How long a failed cleanup may spend asking Docker which containers remain. */
+const REMAINING_INSPECTION_TIMEOUT_MS = 5_000;
+
+/** Names the participants Docker still has, so a failed cleanup says what blocked it. */
+async function namedCleanupFailure(
+  compose: StartedComposeSandbox,
+  error: unknown,
+): Promise<CleanupStep> {
+  const cause = asError(error);
+  try {
+    const remaining = await withTimeout({
+      operation: compose.inspectRemainingContainers(),
+      timeoutMs: REMAINING_INSPECTION_TIMEOUT_MS,
+      label: 'Remaining container inspection',
+    });
+    if (remaining.length === 0) {
+      return { kind: 'failed', error: cause };
+    }
+    const names = remaining.map(({ service, state }) => `${service} (${state})`).join(', ');
+    return { kind: 'failed', error: new Error(`${cause.message}; still present: ${names}`, { cause }) };
+  } catch {
+    return { kind: 'failed', error: cause };
+  }
+}
+
 export async function cleanupCompose(input: {
   readonly compose: StartedComposeSandbox;
   readonly timeoutMs: number;
@@ -32,7 +57,7 @@ export async function cleanupCompose(input: {
       timeoutMs: input.timeoutMs,
       label: 'Sandbox cleanup',
     }),
-  );
+  ).then((step) => (step.kind === 'failed' ? namedCleanupFailure(input.compose, step.error) : step));
   if (preparation.kind === 'complete' && cleanup.kind === 'complete') {
     return;
   }

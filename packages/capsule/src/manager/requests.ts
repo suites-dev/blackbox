@@ -57,13 +57,20 @@ async function handleStop(input: {
       sessionId: input.bootstrap.sessionId,
       error: recordedError(error),
     });
-    input.manager.record = await persist(
-      input.bootstrap.projectDirectory,
-      transition(input.manager.record, 'stop-failed', {
-        cleanup: { kind: 'failed', error: recordedError(error) },
-        failure: { kind: 'recorded', error: recordedError(error) },
-      }),
-    );
+    try {
+      input.manager.record = await persist(
+        input.bootstrap.projectDirectory,
+        transition(input.manager.record, 'stop-failed', {
+          cleanup: { kind: 'failed', error: recordedError(error) },
+          failure: { kind: 'recorded', error: recordedError(error) },
+        }),
+      );
+    } finally {
+      // The sandbox never repeats a failed cleanup, so this manager has nothing
+      // left to serve. Closing lets it exit (and Ryuk with it); the next `down`
+      // finds it gone and finishes the cleanup through sandbox recovery.
+      await closeManager(input.manager);
+    }
     throw error;
   }
   input.manager.record = await persist(
@@ -82,9 +89,14 @@ async function handleStop(input: {
       cleanup: 'complete',
     });
   } finally {
-    input.manager.server.close();
-    await unlink(input.manager.record.socketPath).catch(() => undefined);
+    await closeManager(input.manager);
   }
+}
+
+/** Stops accepting requests; the process exits once in-flight work settles. */
+async function closeManager(manager: RunningManager): Promise<void> {
+  manager.server.close();
+  await unlink(manager.record.socketPath).catch(() => undefined);
 }
 
 interface AdmittedConnection {

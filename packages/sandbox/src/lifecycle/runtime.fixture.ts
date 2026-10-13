@@ -76,6 +76,7 @@ export function startedSandbox(input: {
     inspectTelemetry: () => Promise.resolve({ kind: 'disabled' }),
     prepareStop: () => Promise.resolve(),
     stop: input.stop,
+    inspectRemainingContainers: () => Promise.resolve([]),
   };
 }
 

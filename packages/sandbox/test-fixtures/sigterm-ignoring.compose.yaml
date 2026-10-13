@@ -1,0 +1,6 @@
+# busybox httpd as PID 1 without `init: true` ignores SIGTERM, so Docker has
+# to wait out the stop grace and kill it.
+services:
+  stubborn:
+    image: busybox:1.36
+    command: ['httpd', '-f', '-p', '80', '-h', '/tmp']

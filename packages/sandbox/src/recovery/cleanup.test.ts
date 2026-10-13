@@ -129,3 +129,18 @@ it('treats resources that disappeared after discovery as already cleaned', async
   })).resolves.toBeUndefined();
   expect(events.some((event) => event.startsWith('remove-'))).toBe(false);
 });
+
+it('gives Docker a stop grace inside the recovery budget, not the whole budget', async () => {
+  const graces: number[] = [];
+  await cleanupOwnedComposeProject({
+    cleanup: { projectName, timeoutMs: 60_000 },
+    client: {
+      ...recoveryClient([]),
+      stopContainer: ({ timeoutSeconds }) => {
+        graces.push(timeoutSeconds);
+        return Promise.resolve();
+      },
+    },
+  });
+  expect(graces).toEqual([10]);
+});

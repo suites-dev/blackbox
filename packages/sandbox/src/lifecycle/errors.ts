@@ -40,8 +40,11 @@ export class SandboxStopError extends Error {
 
   constructor(input: { readonly failure: SandboxStopFailure }) {
     const recordFailed = input.failure.kind === 'record-failed';
+    // Name the cause, such as the participant that blocked cleanup, as start errors do.
     super(
-      recordFailed ? 'Sandbox terminal record could not be written' : 'Sandbox cleanup failed',
+      recordFailed
+        ? 'Sandbox terminal record could not be written'
+        : `Sandbox cleanup failed: ${input.failure.cleanupError.message}`,
       {
         cause: recordFailed ? input.failure.recordError : input.failure.cleanupError,
       },

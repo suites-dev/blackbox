@@ -3,6 +3,7 @@ import type {
   ComposeResourceInspectionInput,
   ComposeResourceInspectionResult,
 } from '../../inspection/resources.js';
+import type { ComposeRemainingContainer } from '../../model/compose.js';
 
 const COMPOSE_PROJECT_LABEL = 'com.docker.compose.project';
 
@@ -29,4 +30,19 @@ export async function inspectComposeResources(
       labels: { ...volume.Labels },
     })),
   };
+}
+
+type Dockerode = Awaited<ReturnType<typeof getContainerRuntimeClient>>['container']['dockerode'];
+
+/** The project's containers Docker still has, by Compose service, for naming what blocked a cleanup. */
+export async function inspectRemainingContainers(input: {
+  readonly docker: Dockerode;
+  readonly projectName: string;
+}): Promise<readonly ComposeRemainingContainer[]> {
+  const filters = JSON.stringify({ label: [`${COMPOSE_PROJECT_LABEL}=${input.projectName}`] });
+  const containers = await input.docker.listContainers({ all: true, filters });
+  return containers.map((container) => ({
+    service: container.Labels['com.docker.compose.service'] ?? container.Id,
+    state: container.State,
+  }));
 }
