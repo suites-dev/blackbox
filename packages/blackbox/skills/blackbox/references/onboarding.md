@@ -64,6 +64,12 @@ Read the structured result (`--json`; `capsule show`), fix the setup, retry with
 
 - `capsule-operation-failed` at `start`, message `required variable GREETING is missing a value`: a Compose `${VAR:?}`
   had no value. Provide it (see Secrets) and retry.
+- `Participant "queue" exited during Sandbox startup`: the message ends with the last log lines of each exited
+  container; read them before retrying. Seen with `rabbitmq:3.12`, exit 0 after `BOOT FAILED` and
+  `Error when reading /var/lib/rabbitmq/.erlang.cookie: eacces`. Its `rabbitmq-diagnostics` health check runs as
+  root; when it runs before the broker has created its Erlang cookie, it creates the cookie as root and the broker
+  cannot read it. Guard the check with
+  `test -f /var/lib/rabbitmq/.erlang.cookie && rabbitmq-diagnostics -q check_running`.
 - `listen EINVAL ... .sock` with state `manager-failed`: the project path was too long for a Unix socket. Use a shorter
   path.
 - `down` returned `SandboxStopError`, state `stop-failed`: Docker did not remove the project within the stop budget.
