@@ -30,7 +30,7 @@ function createRuleScope<Args extends object, Worker extends object, Internal ex
     started = true;
     const title = nonemptyString(name, 'Scenario title');
     const setup = [...inherited, ...backgrounds];
-    fixtureTest(title, async ({ clients, request, sandbox, effects, step, telemetry }) => {
+    fixtureTest(`Scenario: ${title}`, async ({ clients, request, sandbox, effects, step, telemetry }) => {
       const fixtures = Object.freeze({ clients, request, sandbox, effects, step, telemetry });
       for (const background of setup) {
         await step(`Given ${background.title}`, () => background.body(fixtures));

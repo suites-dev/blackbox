@@ -5,6 +5,8 @@ const suiteCallbacks = new Set([
   'system.sandbox',
   'sandbox.describe',
   'suite.describe',
+  'suite.Feature',
+  'Rule',
 ]);
 
 function memberName(node) {

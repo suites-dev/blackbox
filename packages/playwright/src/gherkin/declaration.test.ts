@@ -26,9 +26,9 @@ it('discovers isolated native scenarios and outline rows, awaits real request fi
   }
   const specs = specsIn(run.report.suites);
   expect(specs.map(({ title }) => title)).toEqual([
-    'native async action',
-    'row alice [users 1]',
-    'row bob [users 2]',
+    'Scenario: native async action',
+    'Scenario: row alice [users 1]',
+    'Scenario: row bob [users 2]',
   ]);
   expect(
     specs
