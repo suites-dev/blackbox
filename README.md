@@ -1,9 +1,10 @@
 <h1 align="center">BLACKBOX</h1>
 
-<p align="center"><strong>Code changes. Behavior is the contract.</strong></p>
+<p align="center"><strong>Your agent writes the code. You own the behavior. BLACKBOX verifies the running system.</strong></p>
 
 <p align="center">
-  Independent system verification for I/O-driven software.
+  Engineers no longer need to know how their system is implemented.<br />
+  They need to know how it behaves.
 </p>
 
 <p align="center">
@@ -12,109 +13,108 @@
 </p>
 
 <p align="center">
-  <a href="#see-it-work">See it work</a> ·
+  <a href="#the-behavior-contract">The contract</a> ·
+  <a href="#the-behavior-lane">The lane</a> ·
   <a href="#run-blackbox">Run it</a> ·
-  <a href="packages/blackbox/README.md">Packages</a> ·
   <a href="docs/alpha-status.md">Alpha status</a> ·
   <a href="CONTRIBUTING.md">Contribute</a>
 </p>
 
-Your agent writes the code. BLACKBOX verifies the running system.
-
-BLACKBOX exercises real applications through their I/O boundaries, runs them with their dependencies in isolated
-Sandboxes, and checks their responses, state changes and runtime effects against accepted expectations. It keeps
-the execution evidence so developers and coding agents can see what was verified, what failed, and what remains
-unknown. It does not matter which agent wrote the code or which methodology produced it.
-
-## Why BLACKBOX
-
 Coding agents can rewrite thousands of lines in minutes. A 20,000-line change may alter nothing observable; a
-one-line change can break a business rule. Reading the diff cannot settle which one you have, and reviewers cannot
-keep up with the volume.
+one-line change can break a business rule. Reading the diff cannot tell you which one you have. What you can know is
+what the system must do, and that is what BLACKBOX checks: the running system, through its real inputs and outputs,
+against a contract a person accepted.
 
-Unit tests, integration tests and Playwright remain essential. BLACKBOX adds a different control point: the running
-system, started fresh for every test, checked against expectations that stay fixed while implementations change, with
-the evidence of what actually happened kept per execution. When the same agent writes the code and decides what
-success means, a passing suite says less than it appears to. BLACKBOX keeps the accepted expectations separate and
-reports what was not observed instead of treating it as a pass.
+## The behavior contract
 
-## What BLACKBOX verifies
+A behavior contract states what the system must do at its boundaries: the responses it returns, the state it keeps,
+and the effects it has on its dependencies. A person accepts it. It stays fixed while the implementation changes
+underneath it, no matter who or what wrote the code.
 
-BLACKBOX verifies systems that can be exercised through defined input and output interfaces: APIs, network services,
-message-driven systems, and applications with externally exercisable operations. In the alpha, tests drive the system
-through an HTTP entrypoint and observe HTTP, PostgreSQL, Redis and SQS effects.
+**Example: one subscription, one payment.** A subscription service takes a payment, runs a fraud check and queues an
+order. Two requests for the same user arrive at the same time. The contract:
 
-Verification can look past the immediate output: persisted state, calls to dependencies, published messages and other
-observable effects can all matter to an accepted requirement. The target is **system behavior at its I/O boundaries**,
-not how the implementation was written.
+| The system must                                                                                     | Checked against |
+| --------------------------------------------------------------------------------------------------- | --------------- |
+| Answer one request with `201` and the other with `409 duplicate-subscription`                       | Responses       |
+| Keep exactly one subscription, one fraud audit and one payment intent                               | Stored state    |
+| Call the fraud, payment and order services, write to the database and cache, and publish to a queue | Runtime effects |
 
-**What BLACKBOX is not.** It is not a general-purpose verifier for arbitrary source code. It does not replace unit
-tests, static analysis, code review or specialized tools for isolated algorithms, and it does not prove a system
-correct. Its conclusions are limited to the expectations exercised, the evidence collected and the observation
-coverage available.
+Nothing in that contract names a class, a function or a framework. Rewrite the service and the contract does not
+change. The response can be right while the payment state is wrong; that is the case this contract exists to catch.
 
-**Different implementation. Same accepted contract. Independently verified execution.**
+<sub>Today this contract is the bundled test
+[`subscription-system.spec.ts`](e2e/tests/playwright/subscription-system.spec.ts), which runs eight services in a fresh
+Sandbox. It passes on a healthy system; the repository does not yet include a broken variant. Effect checks confirm that
+calls happened; the exactly-once claim rests on the stored-state check.</sub>
 
-## See it work
+## The behavior lane
 
-**The API returned success. Did the system do the right thing?**
+Every change passes through one lane before it ships: **CODE → VERIFY → SHIP.** BLACKBOX is the VERIFY step. It does
+not write code and does not replace your CI, deployment or observability tools.
 
-A subscription service takes a payment, runs a fraud check and queues an order. Two requests for the same user arrive
-at the same time. The accepted behavior: **one subscription, one payment.** The service answers one request with `201`
-and the other with `409`.
+<p align="center">
+  <img width="800" src="docs/assets/readme/human-agent-verification-loop.svg" alt="The person approves the behavior contract and feeds it forward to the coding agent, which realizes or repairs the code. The real system runs in isolation with its dependencies and sends fresh runtime evidence to BLACKBOX, which returns findings: held, failed or not observed. Findings go back to the agent as repair work; proposed contract changes go back to the person, who decides." />
+</p>
 
-The bundled test
-[`subscription-system.spec.ts`](e2e/tests/playwright/subscription-system.spec.ts) starts eight services in a fresh
-Sandbox (the application services, PostgreSQL, Redis, LocalStack for SQS, and a mock payment provider), sends both
-requests, and checks three kinds of evidence:
+Each part has one owner:
 
-| Check                                                                                                        | Source                                      |
-| ------------------------------------------------------------------------------------------------------------ | ------------------------------------------- |
-| One `201` and one `409` with `duplicate-subscription`                                                        | The HTTP responses                          |
-| Exactly one subscription, one fraud audit and one payment intent                                             | The system's stored state                   |
-| Calls to the fraud, payment and order services, a database write, a cache write and a queue message occurred | Runtime effects observed with OpenTelemetry |
+- **The person owns the contract.** They accept what the system must do. A proposed change to the contract goes back
+  to them.
+- **The coding agent owns the code.** It writes and repairs the implementation, with any agent, editor or
+  methodology.
+- **BLACKBOX owns the verdict.** It runs the real system in isolation, captures evidence, and reports what held, what
+  failed and what was not observed.
 
-The response can be right while the payment state is wrong. That is the case this test is built to expose.
+Findings go back to the agent as repair work. The agent does not decide what correct means, and it does not grade its
+own work. A passing run supports only the checks that ran; missing evidence stays inconclusive, never a pass.
 
-**Today this test passes on a healthy system, and that is all it shows.** The repository does not yet include a broken
-variant, so there is no recorded failing run to show. Effect checks here confirm that calls happened; the
-exactly-once claim rests on the stored-state check.
+## Where we're going
 
-## How it works
+**Every PR deserves a behavioral review.** A BLACKBOX check on a pull request should answer: what accepted behavior was
+intentionally changed, what existing behavior was checked, which expectations were violated, what evidence supports
+that, what could not be verified, and what needs investigation before merge.
 
-```text
-CODE  ─────────►  VERIFY  ─────────►  SHIP
-agents and        BLACKBOX             your existing delivery
-people write      runs the system,     and production tooling
-code              checks accepted
-                  behavior, returns
-                  evidence
-      ◄── violations and missing evidence go back to the agent ──
-```
+It keeps two things apart: the **contract diff** (changes to accepted behavior) and the **execution diff** (changes
+observed between runs or revisions). Neither is a summary of the source diff.
 
-BLACKBOX does not write code and does not replace your CI, deployment or observability tools. Inside VERIFY:
+None of this exists in the alpha. Pull request reports, revision-aware comparison and impact planning are roadmap.
+What exists is the execution and evidence layer they will rest on.
 
-```text
-Accepted expectations  →  Isolated execution  →  Runtime evidence  →  Result
-tests that enter          fresh Sandbox:          responses, stored      what held, what failed,
-through the system's      real app + deps         state, effects,        what was not observed
-interfaces                                        OpenTelemetry
-```
+## What BLACKBOX needs from your system
 
-Accepted behavior, observed behavior and verification evidence stay separate. An observed effect is not automatically
-desired, a passing run supports only the assertions that ran, and a result never claims to prove the whole system
-correct. Agents may change implementations; they must not silently redefine what correct means.
+Not how it is implemented. How to run it, how to act on it, and how to observe it.
 
-Expectations today are [Playwright](https://playwright.dev) tests that use BLACKBOX fixtures. Existing tests,
-acceptance criteria and API contracts are useful sources for them. The alpha does not execute arbitrary requirement
-documents.
+<p align="center">
+  <img width="800" src="docs/assets/readme/system-boundary.svg" alt="blackbox.config.yaml defines what to run (services and dependencies), how to act on it (actions and state inspection) and how to observe it (runtime observations). BLACKBOX then runs the real system." />
+</p>
+
+In the alpha, the system is driven through an HTTP entrypoint and observed through HTTP, PostgreSQL, Redis and SQS
+effects. Node is the primary instrumented runtime.
+
+**What BLACKBOX is not.** It is not a verifier for arbitrary source code. It does not replace unit tests, static
+analysis, code review or specialized tools for isolated algorithms, and it does not prove a system correct. Its
+conclusions are limited to the contract exercised, the evidence collected and the observation coverage available.
+
+## Writing contracts today
+
+Contracts live in your repository next to the code and rerun after every change. Today they are written in one of two
+formats:
+
+| Format                                                   | Status                      |
+| -------------------------------------------------------- | --------------------------- |
+| Playwright tests that use BLACKBOX fixtures              | Working                     |
+| Feature files (Gherkin) that generate a Playwright suite | In source, not yet verified |
+
+Existing tests, acceptance criteria and API contracts are good sources for a contract. The alpha does not execute
+arbitrary requirement documents.
 
 ## Run BLACKBOX
 
 BLACKBOX is `0.0.1-alpha` and **not on npm yet**. You need Node 22.15+, pnpm 9.15.4 and Docker.
 
-**Check your setup (about two minutes, no Docker).** This validates the bundled catalog. It is a configuration
-check, not a verification run.
+**Check your setup (no Docker).** This validates the bundled catalog. It is a configuration check, not a
+verification run.
 
 ```sh
 git clone https://github.com/suites-dev/blackbox.git
@@ -124,56 +124,35 @@ pnpm build
 cd e2e && pnpm exec blackbox catalog validate && pnpm exec blackbox systems
 ```
 
-**Run the real verification (about six minutes plus image pulls).** The subscription test installs BLACKBOX from a
-disposable local package registry, as CI does, so you start a registry, publish the built packages to it, and run
-the suite. The exact commands are in
-[Alpha status](docs/alpha-status.md#run-the-bundled-example-from-source). The run writes a JUnit file and per-test evidence
-attachments to `e2e/test-results/`. A one-command version does not exist yet.
+**Run the example contract.** The subscription test installs BLACKBOX from a disposable local package registry, as CI
+does, so you start a registry, publish the built packages to it, and run the suite. The exact commands are in
+[Alpha status](docs/alpha-status.md#run-the-bundled-example-from-source). The run writes a JUnit file and per-test
+evidence attachments to `e2e/test-results/`. A one-command version does not exist yet.
 
-**Use it on your own application.** Install the skills, then ask your coding agent to connect BLACKBOX to the
-repository:
-
-```sh
-pnpm exec blackbox skills install blackbox --codex     # or --claude
-```
-
-The skills guide the agent through discovering services and dependencies and writing the configuration, and the
-CLI gives it commands and structured results. Setup against an external repository has not been validated end to
-end in the alpha. See the [`@suites/blackbox` package](packages/blackbox/README.md) and the [skills installer](packages/skills/README.md).
+**Use it on your own application: not available yet.** Connecting BLACKBOX to another repository goes through the
+`blackbox` CLI and its agent skills, which need the npm release. Until then, BLACKBOX runs from a source checkout only.
 
 ## With your coding agent
 
 Nothing about how you write code changes. Keep your agent, your editor and your process.
 
 1. **Connect.** The agent discovers services and dependencies and prepares configuration.
-2. **Specify.** You review the expectations to verify.
-3. **Verify.** BLACKBOX runs the system and checks them.
-4. **Inspect.** You and the agent read results and evidence, including what was not checked. The agent can reproduce
+2. **Accept the contract.** You review and accept the behavior to verify.
+3. **Verify.** BLACKBOX runs the system and checks it against the contract.
+4. **Inspect.** You and the agent read results and evidence, including what was not observed. The agent can reproduce
    a failure in a Capsule with `blackbox up`, `run`, `show` and `report`.
-5. **Preserve.** The accepted expectations stay in the repository and rerun after every change.
-
-## Where we're going
-
-**Every PR deserves a behavioral review.** A BLACKBOX check on a pull request should answer: what accepted behavior
-was intentionally changed, what existing behavior was checked, which expectations were violated, what evidence
-supports that, what could not be verified, and what needs investigation before merge.
-
-It keeps two things apart: the **contract diff** (changes to accepted expectations) and the **execution diff**
-(changes observed between runs or revisions). Neither is a summary of the source diff.
-
-None of this exists in the alpha. Pull request reports, revision-aware comparison and impact planning are
-roadmap. What exists is the execution and evidence layer they will rest on.
+5. **Preserve.** The contract stays in the repository and reruns after every change.
 
 ## Open source
 
-BLACKBOX is Apache-2.0. The code that evaluates behavioral claims is open and runs in your own infrastructure, so
-you can read how a result was reached and keep your code and runs under your control. Issues and pull requests are
+BLACKBOX is Apache-2.0. The code that evaluates behavioral claims is open and runs in your own infrastructure, so you
+can read how a result was reached and keep your code and runs under your control. Issues and pull requests are
 welcome; start with [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Alpha status
 
-Interfaces will change. [Alpha status](docs/alpha-status.md) lists the audited revision, what works, what is in
-source but unverified, and what is in development. Observations depend on instrumentation coverage and Node is the
-primary instrumented runtime. BLACKBOX is not a hardened sandbox for hostile code; see [SECURITY.md](SECURITY.md).
+Interfaces will change. [Alpha status](docs/alpha-status.md) lists the audited revision, what works, what is in source
+but unverified, and what is in development. BLACKBOX is not a hardened sandbox for hostile code; see
+[SECURITY.md](SECURITY.md).
 
 [Packages](packages/blackbox/README.md) · [Contributing](CONTRIBUTING.md) · [Support](SUPPORT.md) · [License](LICENSE)
