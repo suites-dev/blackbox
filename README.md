@@ -59,26 +59,41 @@ coverage available.
 
 **The API returned success. Did the system do the right thing?**
 
-A subscription service takes a payment, runs a fraud check and queues an order. Two requests for the same user arrive
-at the same time. The accepted behavior: **one subscription, one payment.** The service answers one request with `201`
-and the other with `409`.
-
-The bundled test
+A subscription service takes a payment, runs a fraud check and queues an order. The bundled test
 [`subscription-system.spec.ts`](e2e/tests/playwright/subscription-system.spec.ts) starts eight services in a fresh
-Sandbox (the application services, PostgreSQL, Redis, LocalStack for SQS, and a mock payment provider), sends both
+Sandbox (the application services, PostgreSQL, Redis, LocalStack for SQS, and a mock payment provider), sends real
 requests, and checks three kinds of evidence:
 
-| Check                                                                                                        | Source                                      |
-| ------------------------------------------------------------------------------------------------------------ | ------------------------------------------- |
-| One `201` and one `409` with `duplicate-subscription`                                                        | The HTTP responses                          |
-| Exactly one subscription, one fraud audit and one payment intent                                             | The system's stored state                   |
-| Calls to the fraud, payment and order services, a database write, a cache write and a queue message occurred | Runtime effects observed with OpenTelemetry |
+| Check                                                                    | Source                                      |
+| ------------------------------------------------------------------------ | ------------------------------------------- |
+| The HTTP responses: for example `201` with the expected subscription     | The responses                               |
+| What the system stored: subscription, fraud audit, payment intent, Redis | The system's stored state                   |
+| Calls to dependent services, database and cache writes, a queue message  | Runtime effects observed with OpenTelemetry |
 
-The response can be right while the payment state is wrong. That is the case this test is built to expose.
+**Break it.** In `e2e/sut/src/public-api/redis-repository.ts`, make `setTier` write its cache entry under the wrong key,
+a one-line mistake that changes nothing a caller can see:
 
-**Today this test passes on a healthy system, and that is all it shows.** The repository does not yet include a broken
-variant, so there is no recorded failing run to show. Effect checks here confirm that calls happened; the
-exactly-once claim rests on the stored-state check.
+```diff
+-    await this.#client.set(`user:${userId}:tier`, tier, { EX: 300 });
++    await this.#client.set(`tier:${userId}`, tier, { EX: 300 });
+```
+
+In one recorded run against this change, the service's own unit tests (26 of 26) passed, because they replace Redis
+with a fake. The BLACKBOX test for an eligible user started the real system, received the correct `201`, and then
+failed on stored state:
+
+```text
+Expected: "pro"
+Received: null
+  > expect(await clients.redis.get(`user:${expected.userId}:tier`)).toBe(expected.tier);
+```
+
+That is the case BLACKBOX exists for: the response is right, the unit tests are green, and the system did not do what
+it was accepted to do.
+
+This is one defect and one run, on one machine. The change above is not in the repository, so you reproduce it
+yourself with the [steps below](#run-blackbox). Effect checks confirm that calls happened, not what they wrote;
+the stored-state check is what caught this.
 
 ## How it works
 
