@@ -22,7 +22,7 @@ async function exitingParticipantFixture() {
     command: ["sleep", "3600"]
   price:
     image: alpine:latest
-    command: ["/bin/sh", "-c", "sleep 2; exit 0"]
+    command: ["/bin/sh", "-c", "echo 'price: fault profile stopped the service' >&2; sleep 2; exit 0"]
 `,
   );
   const sandbox = {
@@ -44,7 +44,7 @@ async function exitingParticipantFixture() {
 describe.skipIf(process.env.BLACKBOX_SANDBOX_DOCKER_TEST !== '1')(
   'sandbox startup with a participant that exits',
   () => {
-    it('fails as soon as the participant exits, naming it and its exit code', async () => {
+    it('fails as soon as the participant exits, naming it, its exit code and its last log lines', async () => {
       const input = await exitingParticipantFixture();
       const started = Date.now();
       try {
@@ -54,11 +54,22 @@ describe.skipIf(process.env.BLACKBOX_SANDBOX_DOCKER_TEST !== '1')(
           name: 'SandboxStartError',
           message:
             'Sandbox startup failed: Participant "price" exited during Sandbox startup ' +
-            'with exit code 0; a selected participant must keep running',
+            'with exit code 0; a selected participant must keep running\n' +
+            'Last log lines of "price" (exit code 0):\n' +
+            '  price: fault profile stopped the service',
           failure: { kind: 'start-failed', record: { kind: 'written' } },
         });
         expect(Date.now() - started).toBeLessThan(45_000);
-        expect(await readSandboxRecord(input.sandbox)).toMatchObject({ state: 'start-failed' });
+        // Issue #190: the start-failure record keeps the logs after cleanup removed the container.
+        expect(await readSandboxRecord(input.sandbox)).toMatchObject({
+          state: 'start-failed',
+          primaryError: {
+            name: 'ParticipantExitedError',
+            message: expect.stringContaining(
+              'Last log lines of "price" (exit code 0):\n  price: fault profile stopped the service',
+            ),
+          },
+        });
         expect(await resourcesForProjects({ projectNames: [input.projectName] })).toEqual({
           containers: [],
           networks: [],

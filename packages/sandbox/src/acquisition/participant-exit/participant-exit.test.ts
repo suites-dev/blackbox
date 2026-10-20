@@ -1,51 +1,6 @@
 import { expect, it } from 'vitest';
-import type { ComposeObservationSnapshot, ComposeServiceObservation } from '../observation.js';
 import { ParticipantExitedError, upUnlessParticipantExits } from './participant-exit.js';
-
-function container(
-  service: string,
-  state: ComposeServiceObservation['state'],
-  exitCode = 0,
-): ComposeServiceObservation {
-  return {
-    service,
-    containerId: `${service}-id`,
-    containerName: `project-${service}-1`,
-    state,
-    health: 'not-configured',
-    termination:
-      state === 'exited' || state === 'dead' ? { kind: 'exited', exitCode } : { kind: 'none' },
-  };
-}
-
-function snapshots(...sequence: readonly (readonly ComposeServiceObservation[] | Error)[]) {
-  let index = 0;
-  let calls = 0;
-  return {
-    calls: () => calls,
-    inspect: (): Promise<ComposeObservationSnapshot> => {
-      calls++;
-      const next = sequence[Math.min(index++, sequence.length - 1)];
-      return next instanceof Error
-        ? Promise.reject(next)
-        : Promise.resolve({ containers: next, resources: [] });
-    },
-  };
-}
-
-/** An `up()` that, like Testcontainers, only fails once its containers are taken down. */
-function pendingUp() {
-  let fail: (error: Error) => void = () => undefined;
-  const up = new Promise<string>((_resolve, reject) => {
-    fail = reject;
-  });
-  return {
-    up: () => up,
-    takenDown: () => {
-      fail(new Error('container removed while waiting'));
-    },
-  };
-}
+import { container, noLogs, pendingUp, snapshots } from './participant-exit.fixture.js';
 
 it('fails at once, naming the participant and its exit code, and takes the project down', async () => {
   // Benchmark F11: ts-price-service exited with code 0 while Java services were still starting.
@@ -60,6 +15,7 @@ it('fails at once, naming the participant and its exit code, and takes the proje
     up: pending.up,
     requiredServices: ['ts-route-service', 'ts-price-service'],
     inspect: states.inspect,
+    readLogs: noLogs,
     down: () => {
       downs.push('down');
       pending.takenDown();
@@ -87,6 +43,7 @@ it('treats a dead container as an exit', async () => {
       up: pending.up,
       requiredServices: ['api'],
       inspect: snapshots([container('api', 'dead', 137)]).inspect,
+      readLogs: noLogs,
       down: () => {
         pending.takenDown();
         return Promise.resolve();
@@ -110,6 +67,7 @@ it('ignores services that are not required and unavailable inventories', async (
     up: () => up,
     requiredServices: ['api'],
     inspect: states.inspect,
+    readLogs: noLogs,
     down: () => {
       downs++;
       return Promise.resolve();
@@ -135,6 +93,7 @@ it('reports both the exit and a failed cleanup', async () => {
       up: pending.up,
       requiredServices: ['api'],
       inspect: snapshots([container('api', 'exited', 1)]).inspect,
+      readLogs: noLogs,
       down: () => Promise.reject(new Error('compose down failed')),
       intervalMs: 5,
     }),
