@@ -1,0 +1,11 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "paths": {
+      "@suites/blackbox-playwright": ["packages/playwright/src/index.ts"],
+      "@suites/blackbox-playwright/config": ["packages/playwright/src/config.ts"],
+      "@suites/blackbox-playwright/reporter": ["packages/playwright/src/reporter.ts"]
+    }
+  },
+  "include": ["./gherkin-executable-spec.ts", "./playwright.config.ts"]
+}

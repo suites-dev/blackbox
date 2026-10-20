@@ -7,6 +7,7 @@ import type {
   BlackboxSandboxTest,
 } from '../types.js';
 import { createHook, createStep } from './hooks.js';
+import { createFeature } from '../gherkin/declaration.js';
 import type { InternalTest } from './native.js';
 import { declarationError, ensureSynchronous } from './validation.js';
 
@@ -181,6 +182,7 @@ export function createSandboxSuite<
   return Object.freeze({
     suite: Object.freeze({
       test: testDeclaration.test,
+      Feature: createFeature(nativeTest, active),
       describe,
       beforeEach: createHook(nativeTest, active, 'beforeEach'),
       afterEach: createHook(nativeTest, active, 'afterEach'),

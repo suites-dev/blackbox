@@ -11,20 +11,20 @@ Blackbox turns accepted specifications into repeatable verification against real
 agents can execute the specified behavior, inspect what happened, investigate failures, repair the implementation, and
 rerun against the same accepted expectations.
 
-Expected behavior can be expressed directly in native Playwright tests or through optional executable Feature files
-that generate a native suite. Each test attempt runs in a fresh isolated Sandbox, using response, state, and runtime
+Expected behavior can be expressed directly in native Playwright tests, with a scoped TypeScript Gherkin DSL, or through
+optional `.feature` files that compile into a native suite. Each test attempt runs in a fresh isolated Sandbox, using response, state, and runtime
 evidence to evaluate the specified claims.
 
 ## Spec-Driven Verification
 
 Spec-Driven Verification checks a running system against an accepted specification. That specification can come from
-product requirements, acceptance criteria, an API contract (like Swagger and OpenAPI), a Markdown document, or any 
+product requirements, acceptance criteria, an API contract (like Swagger and OpenAPI), a Markdown document, or any
 other source of agreed behavior.
 
 **Accepted behavior defines the checks; each execution supplies evidence.**
 
 Developers and coding agents turn those requirements into executable expectations for review. They can write native
-Playwright tests directly or generate suites from optional Feature files. Blackbox runs the selected application or
+Playwright tests, use the scoped TypeScript Gherkin DSL, or generate suites from optional Feature files. Blackbox runs the selected application or
 subsystem and gathers evidence for the specified claims.
 
 The example below follows the optional Feature-file workflow, from a Markdown specification through review and suite
@@ -38,12 +38,11 @@ Specifications in any format can become stale as implementation evolves. Blackbo
 in the verification loop: review checks that executable expectations preserve the intended behavior, and repeated
 execution makes departures from that behavior visible.
 
-This also fits spec-driven development (SDD) workflows such as Spec Kit, Kiro and Openspec. SDD guides 
+This also fits spec-driven development (SDD) workflows such as Spec Kit, Kiro and Openspec. SDD guides
 specification, clarification, planning, and implementation; Blackbox provides executable verification of the accepted
 system behavior.
 
 [Spec-Driven workflows integration](docs/integrations/spec-driven-workflows.md)
-
 
 ## Installation - let your coding agent run Blackbox
 
@@ -95,145 +94,30 @@ effects, such as serving a product from cache. Their meaning should remain stabl
 organization change while the required behavior stays the same. Native Playwright tests can express these expectations
 directly.
 
-### Express scenarios with executable Feature files
+### Choose an executable authoring route
 
-For this optional workflow, Blackbox adopts [Gherkin from Cucumber](https://cucumber.io/docs/gherkin/reference/).
-A `Feature` describes a capability, a `Rule` groups scenarios illustrating a business rule, and each `Scenario` states
-initial conditions (`Given`), an action (`When`), and expected outcomes (`Then`).
+Blackbox supports two Gherkin authoring routes. Both run with native Playwright and use the same per-attempt Sandbox,
+typed clients, assertions, and runtime evidence.
 
-The agent drafts or refines the specification into Blackbox’s closed executable vocabulary for review. Supported steps
-have defined setup, action, and verification semantics, without a separate
-regex step-definition layer. Existing Gherkin may need refinement to use that vocabulary.
+| Route                         | Accepted executable source                                                     | Execution                                                         |
+| ----------------------------- | ------------------------------------------------------------------------------ | ----------------------------------------------------------------- |
+| Scoped TypeScript Gherkin DSL | A `.spec.ts` file with `Feature`, `Rule`, `Scenario`, and typed step callbacks | Playwright runs that file directly.                               |
+| Optional Feature compiler     | A reviewed `.feature` file using the compiler's supported HTTP vocabulary      | The CLI emits a native `.spec.ts` suite, then Playwright runs it. |
 
-The following example connects the source specification, reviewed Feature, and native Playwright suite around the same
-response and required cache behavior:
+The TypeScript route keeps the readable specification and its implementation in one file. It supports project-owned
+SDK clients and ordinary assertions inside callbacks. The Feature compiler remains supported for teams reviewing a
+separate Gherkin artifact; its sentences must match the closed compiler vocabulary.
 
-<p align="center">
-  <img width="800" src="docs/assets/readme/specification-triangle.svg" alt="product-cache.md drives a reviewed product-cache.feature and its native product-cache.spec.ts suite. Review preserves intent, generation preserves alignment, and execution supplies evidence for the specified behavior." />
-</p>
+For both routes, `Given` establishes initial conditions, `When` acts on the system, and `Then` checks the required
+outcomes. An effect observation needs the action's propagated trace context; a step title alone does not connect
+telemetry to a claim. Tests must also wait for the workflow's completion boundary before asserting downstream state.
 
-<details>
-<summary>View the specification and tests</summary>
+[Write Gherkin specifications](docs/gherkin.md) · [Feature CLI reference](packages/feature/src/cli/README.md)
 
-**Specification · `product-cache.md`**
-
-```markdown
-# Product details
-
-## Business rule
-
-Cached product details are served from cache.
-
-## Acceptance example
-
-A product is already cached. When a client requests its details:
-
-- The response status is 200.
-- The product is returned from cache.
-```
-
-**Feature · `features/product-cache.feature`**
-
-The reviewed Feature expresses the same business rule and acceptance example:
-
-```gherkin
-Feature: Product details
-
-  Rule: Cached product details are served from cache
-
-    Scenario: Return product details from cache
-      Given the product is already cached
-      When the client requests product details
-      Then the response status is 200
-      And the product is returned from cache
-```
-
-**Native suite · `product-cache.spec.ts`**
-
-Generation preserves the `Feature → Rule → Scenario → steps` nesting and names. Within each scenario, `Given` arranges
-the initial state, `When` applies the stimulus, and `Then` asserts the expected outcomes, following Arrange–Act–Assert
-(AAA). `And` continues the preceding step type. The selected system and its isolated Sandbox provide the execution
-context around that hierarchy.
-
-The planned native expression below retains the same capability, business rule, scenario, and steps. The existing
-[Playwright E2E suite](https://github.com/suites-dev/blackbox/blob/8017b623d5c5da5f162f3ee828a703cb814ea1cf/e2e/tests/playwright/subscription-system.spec.ts)
-illustrates the underlying system-test structure. This example requires a cache-only fixture: product 42 is present in
-the cache and absent from the backing store, so its returned value can establish the response source.
-
-```ts
-import { randomUUID } from 'node:crypto';
-import { expect, test } from '@suites/blackbox-playwright';
-
-test
-.system('products-system')
-.feature('Product details')
-.run(({ sandbox }) => {
-  sandbox.describe('Rule: Cached product details are served from cache', ({ suite }) => {
-    suite.test(
-      'Scenario: Return product details from cache',
-      async ({ activities, request, sandbox, effects }) => {
-        const product = { id: '42', name: `Cached product ${randomUUID()}` };
-        const url = (path: string) => new URL(path, sandbox.entrypoint.url).href;
-
-        await test.step('Given the product is already cached', () =>
-          activities.setup.request('seed cache-only product', request, async (scoped) => {
-            const seeded = await scoped.post(url('/__fixtures/products/cache-only'), {
-              data: product,
-            });
-            expect(seeded.status()).toBe(204);
-          }));
-
-        const response = await test.step('When the client requests product details', () =>
-          activities.stimulus.request('request product details', request, (scoped) =>
-            scoped.get(url('/products/42')),
-          ));
-
-        await test.step('Then the response status is 200', async () => {
-          expect(response.status()).toBe(200);
-        });
-
-        await test.step('And the product is returned from cache', async () => {
-          expect(await response.json()).toEqual(product);
-
-          await expect(effects).toSatisfy((e) => [
-            e.exists(e.cache({ actor: 'catalog-api', operation: 'GET' })),
-          ]);
-        });
-      },
-    );
-  });
-});
-```
-
-**Draft, review, generate, and run**
-
-The agent drafts the Feature from the specification for review. Once its expectations are accepted, it validates the
-Feature, generates the native suite, and runs it against the selected application or subsystem:
-
-```console
-$ blackbox spec feature draft --file product-cache.md
-$ blackbox feature validate --file features/product-cache.feature
-$ blackbox feature suite emit --file features/product-cache.feature
-$ npx playwright test
-```
-
-</details>
-
-The project-owned fixture endpoint seeds the cache and removes any backing-store copy of the product. Setup remains
-separate from the stimulus. The final claim combines that controlled initial state, the returned product, and cache-read
-evidence from the same execution; observing a cache read alone would not establish that the product was served from it.
-
-**Keep specifications connected as the system evolves.** Review checks that executable expectations remain faithful to
-the accepted specification. Repeated execution checks those expectations against the running system. When intended
-behavior changes, revise the specification and its executable expectations together.
-
-For the Feature workflow, `blackbox feature suite check` also detects deterministic drift between the accepted Feature
-and its generated suite. After reviewing changes to the Feature, regenerate the suite and verify the new expectations.
-Review maintains meaning, generation keeps the derived suite aligned, and execution supplies evidence for the exercised
-claims.
-
-[Executable specifications](docs/specifications/index.md) ·
-[Feature files](docs/specifications/feature-files.md)
+Review checks that executable expectations preserve the accepted behavior. Repeated execution checks those
+expectations against the running system. When intended behavior changes, revise the specification and its checks
+together. For the compiler route, `blackbox feature suite validate` detects byte-level drift between the Feature and
+its generated suite; it does not compare arbitrary handwritten TypeScript with a Feature.
 
 ## Developer-agent verification loop
 
@@ -269,21 +153,15 @@ was not observed is not automatically evidence that it never happened.
 
 Blackbox keeps those limits explicit so a passing verification does not claim more than the execution established.
 
-For suites generated from Feature files, **Executable Feature Coverage** shows which executable Feature lines and
-Examples rows were actually exercised by the run. It measures coverage of the executable Feature; an exercised line
-still needs evidence to support its claim.
+Playwright's reports retain native test and step results. The Blackbox reporter adds sanitized progress, attempt
+identity, and diagnostics attachments. Optional attempt retention keeps raw Sandbox and telemetry evidence after the
+run; see [the adapter reference](packages/playwright/README.md#execution-reporting).
 
-The HTML report connects scenarios, Sandbox execution, claims, observations, and retained evidence, including the
-associated Feature when present:
+Executable Feature coverage and verification of a completed run against a Feature are unavailable in this alpha.
 
 ```console
-$ npx playwright show-report
+$ pnpm exec playwright show-report
 ```
-
-[Reports](docs/playwright/reports.md) ·
-[Verification](docs/verification/index.md) ·
-[Evidence](docs/verification/evidence.md) ·
-[Evidence qualification](docs/verification/evidence-qualification.md)
 
 ## Investigate with Capsules
 
@@ -291,7 +169,7 @@ When a claim is refuted or unresolved, the agent can use a Capsule to investigat
 with candidate expectations before they become accepted behavior.
 
 | Mode                   | Purpose                                                                      |
-|------------------------|------------------------------------------------------------------------------|
+| ---------------------- | ---------------------------------------------------------------------------- |
 | Playwright system test | Repeat accepted expectations against a fresh isolated Sandbox.               |
 | Capsule                | Act on a running system, inspect evidence, test a hypothesis, and try again. |
 
@@ -356,34 +234,31 @@ experiments during development, while CI runs the suite selected by the reposito
 Every physical Playwright attempt gets a fresh Sandbox. Isolation enables parallel execution; CPU, memory, and container
 resources determine how much concurrency is practical.
 
-For repositories using the Feature workflow, three checks protect different parts of verification:
-
-| Check                                              | What it establishes                                                                              |
-|----------------------------------------------------|--------------------------------------------------------------------------------------------------|
-| `blackbox feature suite check`                     | The generated suite matches the accepted Feature and current compiler inputs.                    |
-| `blackbox feature verify`                          | Required scenarios ran, verdicts are supported, and runner policy matches the accepted baseline. |
-| `blackbox feature change check --base origin/main` | Changes to accepted Features satisfy the repository's specification-change policy.               |
-
-For generated Feature suites, CI checks that the suite is current, runs it, and verifies the completed execution:
+For the compiler route, validate the Feature, emit a new suite, and run it. Later, validate the generated suite against
+its current compiler inputs:
 
 ```console
-$ blackbox feature suite check
-$ npx playwright test
-$ blackbox feature verify
+$ pnpm exec blackbox feature file validate tests/api-health.feature --clients tests/clients.ts
+$ pnpm exec blackbox feature suite emit tests/api-health.feature --clients tests/clients.ts --output tests/api-health.spec.ts
+$ pnpm exec playwright test tests/api-health.spec.ts
+$ pnpm exec blackbox feature suite validate tests/api-health.feature --clients tests/clients.ts --output tests/api-health.spec.ts
 ```
 
-The generated suite is derived from the accepted Feature. Source-specification-to-Feature alignment is a separate
-semantic question from deterministic Feature-to-suite drift. Repositories that protect specifications separately from
-implementation changes can also use `feature change check` against their chosen base branch.
+`feature suite emit` refuses to overwrite an existing file. Emit changes to a new path, review the diff, and replace the
+previous suite deliberately. `feature run verify` and `feature file draft` are registered but unavailable. There is no
+implemented `feature change check` policy gate.
 
-[CI verification](docs/playwright/ci.md) ·
-[Specification drift](docs/specifications/drift.md)
+The TypeScript DSL runs directly through Playwright, with no generation or Feature drift command. Each route still
+needs review of its assertions and the execution evidence for the claims being checked.
+
+[Authoring and compatibility](docs/gherkin.md) · [Feature CLI reference](packages/feature/src/cli/README.md)
 
 ---
 
 ## Alpha and next steps
 
-Blackbox is under active development. The executable Feature workflow described here is upcoming. APIs, command names,
+Blackbox is under active development. The Feature compiler and scoped TypeScript DSL are implemented in this source
+workspace. Feature drafting, completed-run verification, and Feature coverage remain unavailable. APIs, command names,
 and report formats may change before the stable release.
 
 Start with [coding-agent onboarding](#let-your-coding-agent-run-blackbox), or explore the guides below.

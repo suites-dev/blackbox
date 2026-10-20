@@ -149,9 +149,9 @@ export async function recover(recoverSandbox) {
   return { kind: 'playwright-sandbox-recovery', recoveries };
 }
 
-function collectSpecs(suite, result = []) {
-  result.push(...(suite.specs ?? []));
-  for (const child of suite.suites ?? []) collectSpecs(child, result);
+function collectSpecs(suite, result = [], authoringFile = suite.file) {
+  for (const spec of suite.specs ?? []) result.push({ spec, authoringFile });
+  for (const child of suite.suites ?? []) collectSpecs(child, result, authoringFile);
   return result;
 }
 
@@ -195,18 +195,18 @@ export async function verify() {
     specs.length === expectedSpecs.length,
     `Expected ${expectedSpecs.length} Playwright specs, found ${specs.length}`,
   );
-  const discoveredSpecs = specs.map((spec) => spec.title).sort();
+  const discoveredSpecs = specs.map(({ spec }) => spec.title).sort();
   assert(
     JSON.stringify(discoveredSpecs) === JSON.stringify(expectedSpecs),
     `Unexpected Playwright specs: ${JSON.stringify(discoveredSpecs)}`,
   );
-  const attempts = specs.flatMap((spec) => {
+  const attempts = specs.flatMap(({ spec, authoringFile }) => {
     const catalogByFile = {
       'payment-service.spec.ts': { kind: 'subsystem', id: 'payment-mock' },
       'subscription-system.spec.ts': { kind: 'system', id: 'subscription-system' },
     };
-    const expectedCatalog = catalogByFile[spec.file.split('/').at(-1)];
-    assert(expectedCatalog !== undefined, `Unexpected scenario file: ${spec.file}`);
+    const expectedCatalog = catalogByFile[authoringFile?.split('/').at(-1)];
+    assert(expectedCatalog !== undefined, `Unexpected scenario file: ${authoringFile}`);
     return spec.tests.flatMap((test) =>
       test.results.map((result) => ({ ...result, testId: spec.id, expectedCatalog })),
     );
@@ -231,7 +231,7 @@ export async function verify() {
       live,
       text: await readFile(join(resultsRoot, 'execution.txt'), 'utf8'),
     }),
-    specs: specs.map((spec) => spec.title),
+    specs: specs.map(({ spec }) => spec.title),
     attempts: attempts.length,
     sandboxes: records.map(({ value }) => ({
       sandboxId: value.sandboxId,
