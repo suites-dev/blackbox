@@ -5,6 +5,7 @@
   "description": "Compiles Gherkin Feature files into native Blackbox Playwright suites.",
   "files": [
     "dist",
+    "skills",
     "README.md"
   ],
   "types": "./dist/index.d.ts",
@@ -14,6 +15,12 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "default": "./dist/index.js"
+    },
+    "./skills": {
+      "blackbox-source": "./src/skills.ts",
+      "types": "./dist/skills.d.ts",
+      "import": "./dist/skills.js",
+      "default": "./dist/skills.js"
     }
   },
   "scripts": {
@@ -28,6 +35,10 @@
       "apiVersion": 1,
       "pluginId": "feature",
       "topic": "feature"
+    },
+    "skills": {
+      "apiVersion": 1,
+      "export": "./skills"
     }
   },
   "oclif": {
@@ -49,7 +60,8 @@
     "@cucumber/messages": "34.2.1",
     "@oclif/core": "^5.1.0",
     "@suites/blackbox-catalog": "workspace:*",
-    "@suites/blackbox-playwright": "workspace:*"
+    "@suites/blackbox-playwright": "workspace:*",
+    "@suites/blackbox-skills": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "catalog:",
