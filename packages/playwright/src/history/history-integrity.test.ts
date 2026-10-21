@@ -11,6 +11,8 @@ import { ObjectStore } from './store.js';
 import {
   behaviorOf,
   cleanup,
+  completedReceipt,
+  defined,
   execution,
   failedAcquisition,
   ingest,
@@ -42,6 +44,17 @@ describe('reading a record that changed after it was indexed', () => {
     );
   });
 
+  it('refuses a valid envelope served from the file of a different envelope', async () => {
+    const history = await openHistory();
+    const first = await ingest(history, execution({ attemptId: 'a' }));
+    const second = await ingest(history, execution({ attemptId: 'b' }));
+    const path = (id: string) => pathOf(history.root, 'envelope', id);
+    const bytes = await readFile(path(first));
+    await rm(path(second));
+    await writeFile(path(second), bytes);
+    await expect(history.execution(second)).rejects.toThrow('different identity');
+  });
+
   it('refuses a snapshot blob whose bytes changed and an unparsable envelope', async () => {
     const history = await openHistory();
     const spec = execution({ attemptId: 'a' });
@@ -57,6 +70,23 @@ describe('reading a record that changed after it was indexed', () => {
     await rm(pathOf(history.root, 'envelope', id));
     await writeFile(pathOf(history.root, 'envelope', id), '{ not json');
     await expect(history.execution(id)).rejects.toThrow('no longer verifies');
+  });
+});
+
+describe('a receipt that changed after it was indexed', () => {
+  it('is refused when the execution it belongs to is read', async () => {
+    const history = await openHistory();
+    const spec = execution({ attemptId: 'a' });
+    const id = await ingest(history, spec);
+    const receipt = completedReceipt(id, 7);
+    await history.ingestReceipt(receipt);
+    expect((await history.index()).receipts).toHaveLength(1);
+    expect(defined(await history.execution(id)).receipts).toHaveLength(1);
+    const hex = receipt.digest.slice('sha256:'.length);
+    const file = join(history.root, 'objects', 'receipt', hex.slice(0, 2), hex);
+    await rm(file);
+    await writeFile(file, JSON.stringify({ ...receipt, invocation: 'forged' }));
+    await expect(history.execution(id)).rejects.toThrow('receipt no longer verifies');
   });
 });
 
@@ -157,6 +187,7 @@ describe('evidence references that point outside the evidence root', () => {
     });
     const refs = [
       ref('escape', '../outside.txt', 'escape'),
+      ref('escape-missing', '../does-not-exist.txt', 'escape-missing'),
       ref('absolute', join(base, 'outside.txt'), 'absolute'),
       ref('link', 'link.txt', 'link'),
       ref('inside', 'inside.txt', 'fine'),
@@ -167,7 +198,7 @@ describe('evidence references that point outside the evidence root', () => {
     const checks = await history.verifyEvidence(envelope.digest, root);
     expect(
       checks.filter(({ kind }) => kind === 'sandbox-record').map(({ status }) => status),
-    ).toEqual(['refused', 'refused', 'refused', 'verified']);
+    ).toEqual(['refused', 'refused', 'refused', 'refused', 'verified']);
   });
 });
 
