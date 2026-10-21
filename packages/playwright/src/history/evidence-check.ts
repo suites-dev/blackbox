@@ -1,7 +1,7 @@
 import { digestBytes } from '../envelope/canonical.js';
 import { currentEvidenceDigest, evidencePathInside } from '../envelope/capture/evidence.js';
 import type { AnyEnvelope, EvidenceCheck } from './history-types.js';
-import type { ObjectStore } from './store.js';
+import type { ObjectStore } from './storage/store.js';
 
 /**
  * Where each piece of an execution's evidence stands: stored in the history and matching, re-verified against the

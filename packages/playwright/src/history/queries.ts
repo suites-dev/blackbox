@@ -1,7 +1,7 @@
 import type { Digest } from '../envelope/canonical.js';
-import { resolveAliases } from './alias.js';
-import type { HistoryIndex, IndexedExecution, IndexedReceipt } from './index-build.js';
-import type { ReceiptStatus } from './receipt.js';
+import { resolveAliases } from './aliases/alias.js';
+import type { HistoryIndex, IndexedExecution, IndexedReceipt } from './storage/index-build.js';
+import type { ReceiptStatus } from './receipts/receipt.js';
 
 export interface HistoryEntry {
   readonly kind: 'execution' | 'attempt-without-evidence';

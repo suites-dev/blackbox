@@ -4,7 +4,7 @@ import type { Reporter, TestCase, TestResult } from '@playwright/test/reporter';
 
 import { decodeEvent, progressAttachment } from './reporting/events.js';
 import { sandboxLifecycleOption } from './reporting/options.js';
-import { invocationVariable } from './reporting/invocation.js';
+import { invocationVariable } from './reporting/capture/invocation.js';
 import { reportText } from './reporting/text.js';
 
 /**

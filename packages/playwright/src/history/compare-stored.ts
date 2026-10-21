@@ -1,6 +1,6 @@
 import { compareSides } from '../compare/compare.js';
 import type { AtMostClaim, BehavioralDelta, ComparisonSide } from '../compare/types.js';
-import { aliasPath, resolveAliases, type BehaviorAlias } from './alias.js';
+import { aliasPath, resolveAliases, type BehaviorAlias } from './aliases/alias.js';
 
 /**
  * Compares two loaded executions. If their behavior ids differ but a recorded, unambiguous alias connects them, the

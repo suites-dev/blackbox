@@ -2,7 +2,7 @@ import { loadSide } from '../compare/side.js';
 import type { AtMostClaim, BehavioralDelta, ComparisonSide } from '../compare/types.js';
 import { canonicalize, digestBytes, type Digest } from '../envelope/canonical.js';
 import { verifyEnvelope } from '../envelope/verify.js';
-import { buildAlias, verifyAlias, type AliasBody, type BehaviorAlias } from './alias.js';
+import { buildAlias, verifyAlias, type AliasBody, type BehaviorAlias } from './aliases/alias.js';
 import { compareThroughAliases } from './compare-stored.js';
 import { checkEvidence } from './evidence-check.js';
 import { checkStoredEnvelope } from './stored-envelope.js';
@@ -15,17 +15,17 @@ import {
   type IngestResult,
   type StoreReport,
 } from './history-types.js';
-import { buildIndex, type HistoryIndex } from './index-build.js';
-import { indexMatchesStore, readIndexFile, writeIndexFile } from './index-file.js';
+import { buildIndex, type HistoryIndex } from './storage/index-build.js';
+import { indexMatchesStore, readIndexFile, writeIndexFile } from './storage/index-file.js';
 import {
   behaviorHistory,
   behaviorSummaries,
   type BehaviorSummary,
   type HistoryEntry,
 } from './queries.js';
-import { verifyReceipt, type AttemptReceipt } from './receipt.js';
-import { verifyDelta } from './records.js';
-import { ObjectStore, objectKinds, type ObjectKind } from './store.js';
+import { verifyReceipt, type AttemptReceipt } from './receipts/receipt.js';
+import { verifyDelta } from './storage/records.js';
+import { ObjectStore, objectKinds, type ObjectKind } from './storage/store.js';
 
 export { HistoryError } from './history-types.js';
 export type { EvidenceCheck, ExecutionDetail, IngestResult, StoreReport } from './history-types.js';

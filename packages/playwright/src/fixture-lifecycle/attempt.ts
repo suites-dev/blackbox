@@ -5,12 +5,12 @@ import { recoverSandbox, type SandboxStopReason } from '@suites/blackbox-sandbox
 
 import { completedAttemptStimuli, recordedAttemptStimuli } from '../effects/attempt-effects.js';
 import { bindEffectAssertionReporter, closeBlackboxEffects } from '../effects/runtime.js';
-import type { ReceiptRecorder } from '../history/recorder.js';
+import type { ReceiptRecorder } from '../history/receipts/recorder.js';
 import { AttemptReport } from '../reporting/attempt.js';
-import type { EnvelopePrelude } from '../reporting/envelope.js';
+import type { EnvelopePrelude } from '../reporting/capture/envelope.js';
 import { reported } from '../reporting/events.js';
 import { reportObservations } from '../reporting/observations.js';
-import { attachReceipt, startReceipt } from '../reporting/receipt.js';
+import { attachReceipt, startReceipt } from '../reporting/capture/receipt.js';
 import type { BlackboxAttemptRuntime, RunningBlackboxAttempt } from '../runtime/acquisition.js';
 import { retainAttempt, retainedAttemptDirectory } from '../retention/retention.js';
 import type { BlackboxTestOptions } from '../types.js';

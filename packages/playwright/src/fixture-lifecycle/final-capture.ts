@@ -11,8 +11,8 @@ import {
   captureEnvelopePrelude,
   envelopeAttachment,
   type EnvelopePrelude,
-} from '../reporting/envelope.js';
-import { collectFinalSnapshot } from '../reporting/final-snapshot.js';
+} from '../reporting/capture/envelope.js';
+import { collectFinalSnapshot } from '../reporting/capture/final-snapshot.js';
 import type { RunningBlackboxAttempt } from '../runtime/acquisition.js';
 
 export interface FinalCaptureInput {
