@@ -1,6 +1,5 @@
 import type { FinalSnapshotDocument } from '../effects/final-snapshot.js';
-import type { Digest } from '../envelope/canonical.js';
-import type { BehaviorEnvelope, StateRecord } from '../envelope/types.js';
+import type { Digest, BehaviorEnvelope, StateRecord } from '../envelope/index.js';
 
 export const deltaVersion = 1;
 

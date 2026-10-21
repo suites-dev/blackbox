@@ -3,7 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { relative } from 'node:path';
 
 import { behaviorIdentity } from '../../envelope/behavior.js';
-import type { Digest } from '../../envelope/canonical.js';
+import type { Digest } from '../../envelope/index.js';
 import { ReceiptRecorder } from '../../history/receipts/recorder.js';
 import type { AttemptReceipt } from '../../history/receipts/receipt.js';
 import { invocationId } from './invocation.js';

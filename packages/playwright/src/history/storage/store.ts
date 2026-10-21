@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { link, mkdir, open, readdir, readFile, stat, unlink } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 
-import type { Digest } from '../../envelope/canonical.js';
+import type { Digest } from '../../envelope/index.js';
 
 export const objectKinds = ['envelope', 'blob', 'receipt', 'alias', 'delta'] as const;
 export type ObjectKind = (typeof objectKinds)[number];

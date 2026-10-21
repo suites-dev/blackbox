@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { buildReceipt, receiptStatus, verifyReceipt, type AttemptReceipt } from './receipt.js';
 import { ReceiptRecorder, type ReceiptContext } from './recorder.js';
-import { digestBytes } from '../../envelope/canonical.js';
+import { digestBytes } from '../../envelope/index.js';
 import { defined } from '../testing/history.fixture.js';
 
 const context = {

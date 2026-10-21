@@ -3,11 +3,9 @@ import { dirname, isAbsolute, resolve } from 'node:path';
 import type { TestInfo } from '@playwright/test';
 import { recoverSandbox, type SandboxStopReason } from '@suites/blackbox-sandbox';
 
-import { completedAttemptStimuli, recordedAttemptStimuli } from '../effects/attempt-effects.js';
-import { bindEffectAssertionReporter, closeBlackboxEffects } from '../effects/runtime.js';
+import { bindEffectAssertionReporter } from '../effects/runtime.js';
 import type { ReceiptRecorder } from '../history/receipts/recorder.js';
 import { AttemptReport } from '../reporting/attempt.js';
-import type { EnvelopePrelude } from '../reporting/capture/envelope.js';
 import { reported } from '../reporting/events.js';
 import { reportObservations } from '../reporting/observations.js';
 import { attachReceipt, startReceipt } from '../reporting/capture/receipt.js';
@@ -15,11 +13,13 @@ import type { BlackboxAttemptRuntime, RunningBlackboxAttempt } from '../runtime/
 import { retainAttempt, retainedAttemptDirectory } from '../retention/retention.js';
 import type { BlackboxTestOptions } from '../types.js';
 import {
-  attachFinalCapture,
   captureBeforeAttempt,
+  newAttemptProduct,
+  settleAttempt,
+  type AttemptProduct,
+  type EnvelopePrelude,
   type FinalCaptureInput,
 } from './final-capture.js';
-import { finalizeAttempt, newAttemptProduct, type AttemptProduct } from './finalize.js';
 import {
   acquireWithinTestTimeout,
   stopWithinCleanupTimeout,
@@ -163,23 +163,16 @@ async function useAttempt(
     report.lifecycle('ready', attempt.sandbox.catalogEntry);
     await input.use(attempt);
   } finally {
-    const stimuli = completedAttemptStimuli(attempt.effects);
-    const recorded = recordedAttemptStimuli(attempt.effects);
-    closeBlackboxEffects(attempt.effects);
     const reason = stopReason(input.testInfo.status);
     report.emit('execution', 'info', input.testInfo.status ?? 'unknown');
-    // After cleanup the collector has stopped, so this read is final. It also runs when cleanup failed,
-    // where the collector's own state is what the snapshot reports.
-    await finalizeAttempt(product, {
+    await settleAttempt({
+      capture,
+      report,
+      attempt,
+      stopReason: reason,
+      prelude,
+      product,
       cleanup: () => finishAttempt(attempt, report, reason, input.policy),
-      capture: () =>
-        attachFinalCapture(capture, report, {
-          attempt,
-          stimuli,
-          recorded,
-          stopReason: reason,
-          prelude,
-        }),
     });
   }
 }

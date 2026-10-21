@@ -1,4 +1,4 @@
-import type { Digest } from '../envelope/canonical.js';
+import type { Digest } from '../envelope/index.js';
 import { verifyEnvelope } from '../envelope/verify.js';
 import type { AnyEnvelope } from './history-types.js';
 

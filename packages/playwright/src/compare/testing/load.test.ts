@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { envelopeDigest, experimentDigest } from '../../envelope/build.js';
 import { captureDigest, configurationFingerprint } from '../../envelope/fingerprints.js';
-import type { BehaviorEnvelope } from '../../envelope/types.js';
+import type { BehaviorEnvelope } from '../../envelope/index.js';
 import { verifyEnvelope } from '../../envelope/verify.js';
 import { compareSides } from '../compare.js';
 import { checkOf } from './delta.fixture.js';

@@ -7,7 +7,7 @@ import type { BlackboxSandbox, BlackboxTelemetry } from '../types.js';
 
 import { effectAttachment, effectAttachmentBody } from './effects/attachment.js';
 import { finalSnapshotAttachment, type FinalSnapshotDocument } from '../effects/final-snapshot.js';
-import { digestBytes, digestOf, type Digest } from '../envelope/canonical.js';
+import { digestBytes, digestOf, type Digest } from '../envelope/index.js';
 import {
   attemptAttachment,
   progressAttachment,

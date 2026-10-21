@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises';
 
-import type { BehaviorHistory } from './history.js';
+import type { BehaviorHistory } from '../history.js';
 
 export interface IngestSummary {
   readonly attempts: number;

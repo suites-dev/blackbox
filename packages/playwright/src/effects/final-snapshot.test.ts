@@ -8,7 +8,7 @@ import {
   type ScopedObservationReadResult,
 } from '../activities/scoped-observations.js';
 import { AttemptReport } from '../reporting/attempt.js';
-import { digestBytes } from '../envelope/canonical.js';
+import { digestBytes } from '../envelope/index.js';
 import {
   buildFinalSnapshot,
   finalSnapshotAttachment,

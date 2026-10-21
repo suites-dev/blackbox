@@ -1,4 +1,4 @@
-import type { Digest } from '../envelope/canonical.js';
+import type { Digest } from '../envelope/index.js';
 
 /** What an attempt produced that the receipt must be able to name, even when the attempt then fails. */
 export interface AttemptProduct {

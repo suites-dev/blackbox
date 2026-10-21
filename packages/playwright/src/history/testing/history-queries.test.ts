@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { digestBytes } from '../../envelope/canonical.js';
+import { digestBytes } from '../../envelope/index.js';
 import type { BehaviorHistory } from '../history.js';
 import {
   behaviorOf,

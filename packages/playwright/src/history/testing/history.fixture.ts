@@ -3,8 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { healthy, rawSide, span, type SideSpec } from '../../compare/testing/compare.fixture.js';
-import { digestBytes, type Digest } from '../../envelope/canonical.js';
-import type { BehaviorIdentity } from '../../envelope/types.js';
+import { digestBytes, type Digest, type BehaviorIdentity } from '../../envelope/index.js';
 import { BehaviorHistory } from '../history.js';
 import { ReceiptRecorder } from '../receipts/recorder.js';
 import type { AttemptReceipt } from '../receipts/receipt.js';

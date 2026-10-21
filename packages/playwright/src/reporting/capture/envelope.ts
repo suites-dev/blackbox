@@ -1,9 +1,4 @@
-import { dirname, join, relative } from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { readFileSync } from 'node:fs';
-
 import type { TestInfo } from '@playwright/test';
-import { sandboxTelemetryStorageDirectory } from '@suites/blackbox-sandbox';
 
 import type { RecordedStimuli } from '../../effects/attempt-effects.js';
 import type { FinalSnapshotDocument } from '../../effects/final-snapshot.js';
@@ -11,96 +6,23 @@ import { stateSection } from '../../envelope/state.js';
 import { stimulusFingerprint } from '../../stimulus/summary.js';
 import { behaviorIdentity } from '../../envelope/behavior.js';
 import { buildEnvelope } from '../../envelope/build.js';
-import { digestBytes } from '../../envelope/canonical.js';
 import {
-  captureCapture,
-  captureCatalog,
-  captureEnvironment,
-  type CapturedConfiguration,
-} from '../../envelope/capture/configuration.js';
-import { retainedEvidence } from '../../envelope/capture/evidence.js';
-import { captureSource, type CapturedSource } from '../../envelope/capture/revision.js';
+  digestBytes,
+  type BehaviorEnvelope,
+  type EvidenceRef,
+  type StimulusSection,
+} from '../../envelope/index.js';
 import { configurationSection } from '../../envelope/fingerprints.js';
-import type {
-  BehaviorEnvelope,
-  EnvironmentConfiguration,
-  EvidenceRef,
-  Provenance,
-  StimulusSection,
-} from '../../envelope/types.js';
 import type { RunningBlackboxAttempt } from '../../runtime/acquisition.js';
 import type { AttachedEvidence } from '../attempt.js';
-import { invocationId } from './invocation.js';
+import {
+  captureAttemptCollector,
+  provenanceOf,
+  retainedAttemptFiles,
+  type EnvelopePrelude,
+} from './prelude.js';
 
 export const envelopeAttachment = 'blackbox-envelope';
-
-/** Everything the envelope needs that must be read before the attempt changes anything. */
-export interface EnvelopePrelude {
-  readonly catalog: CapturedConfiguration;
-  readonly source: CapturedSource;
-  readonly environment: EnvironmentConfiguration;
-  readonly startedAt: string;
-}
-
-function packageVersion(): string {
-  try {
-    const manifest: unknown = JSON.parse(
-      readFileSync(`${dirname(fileURLToPath(import.meta.url))}/../../../package.json`, 'utf8'),
-    );
-    return typeof manifest === 'object' &&
-      manifest !== null &&
-      'version' in manifest &&
-      typeof manifest.version === 'string'
-      ? manifest.version
-      : 'unknown';
-  } catch {
-    return 'unknown';
-  }
-}
-
-/** Reads the catalog, the source tree and the environment. Returns `null` instead of throwing. */
-export async function captureEnvelopePrelude(input: {
-  readonly testInfo: TestInfo;
-  readonly configFile: string;
-  readonly entryId: string;
-  readonly variables: Readonly<Record<string, string>>;
-}): Promise<EnvelopePrelude | null> {
-  const { testInfo } = input;
-  try {
-    const [catalog, source, environment] = await Promise.all([
-      captureCatalog({ configFile: input.configFile, entryId: input.entryId }),
-      captureSource({ directory: dirname(input.configFile), ignore: [testInfo.project.outputDir] }),
-      captureEnvironment({
-        playwright: testInfo.config.version,
-        workers: testInfo.config.workers,
-        project: testInfo.project.name,
-        variables: input.variables,
-      }),
-    ]);
-    return { catalog, source, environment, startedAt: new Date().toISOString() };
-  } catch {
-    return null;
-  }
-}
-
-function ciEnvironment(): Record<string, string> {
-  const env = process.env;
-  const invocation = invocationId();
-  const extra: Record<string, string> = invocation === null ? {} : { invocation };
-  if (env.GITHUB_ACTIONS !== 'true') {
-    return env.CI === undefined ? extra : { provider: 'unknown-ci', ...extra };
-  }
-  const pick = (name: string): string => env[name] ?? '';
-  return {
-    provider: 'github-actions',
-    runId: pick('GITHUB_RUN_ID'),
-    runAttempt: pick('GITHUB_RUN_ATTEMPT'),
-    job: pick('GITHUB_JOB'),
-    sha: pick('GITHUB_SHA'),
-    ref: pick('GITHUB_REF_NAME'),
-    ...extra,
-  };
-}
 
 function evidenceRef(item: AttachedEvidence): EvidenceRef {
   return {
@@ -129,25 +51,6 @@ function annotationsOf(testInfo: TestInfo): { type: string; description: string 
   }));
 }
 
-function provenanceOf(
-  testInfo: TestInfo,
-  prelude: EnvelopePrelude,
-  titlePath: readonly string[],
-): Provenance {
-  return {
-    capturedAt: prelude.startedAt,
-    test: {
-      file: relative(testInfo.project.testDir, testInfo.file),
-      titlePath,
-      project: testInfo.project.name,
-      runnerTestId: testInfo.testId,
-    },
-    source: { branch: prelude.source.branch, changedPaths: prelude.source.changedPaths },
-    ci: ciEnvironment(),
-    packageVersion: packageVersion(),
-  };
-}
-
 export async function buildAttemptEnvelope(input: {
   readonly testInfo: TestInfo;
   readonly prelude: EnvelopePrelude;
@@ -158,19 +61,9 @@ export async function buildAttemptEnvelope(input: {
 }): Promise<BehaviorEnvelope> {
   const { testInfo, prelude, attempt } = input;
   const { sandbox } = attempt;
-  const storage = sandboxTelemetryStorageDirectory({
-    recordDirectory: sandbox.artifactDirectory,
-    sandboxId: sandbox.sandboxId,
-  });
   const snapshotAttachment = input.attached.find(({ kind }) => kind === 'final-snapshot');
-  const files = await retainedEvidence({
-    root: testInfo.outputDir,
-    sandboxRecord: `${sandbox.artifactDirectory}/${sandbox.sandboxId}.json`,
-    collectorDirectory: storage,
-  });
-  const capture = await captureCapture(
-    join(sandbox.artifactDirectory, `${sandbox.sandboxId}.compose`, 'telemetry.compose.json'),
-  );
+  const files = await retainedAttemptFiles(testInfo.outputDir, sandbox);
+  const capture = await captureAttemptCollector(sandbox);
   const titlePath = testInfo.titlePath.slice(1);
   return buildEnvelope({
     behavior: behaviorIdentity({

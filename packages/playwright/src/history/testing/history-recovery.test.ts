@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 
 import { retainedEvidence } from '../../envelope/capture/evidence.js';
 import { buildEnvelope } from '../../envelope/build.js';
-import { digestBytes } from '../../envelope/canonical.js';
+import { digestBytes } from '../../envelope/index.js';
 import { inputFixture } from '../../envelope/testing/envelope.fixture.js';
 import { BehaviorHistory } from '../history.js';
 import { cleanup, execution, ingest, openHistory, roots } from './history.fixture.js';

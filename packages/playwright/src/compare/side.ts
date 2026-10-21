@@ -1,6 +1,9 @@
 import type { FinalSnapshotDocument } from '../effects/final-snapshot.js';
-import { digestBytes } from '../envelope/canonical.js';
-import type { BehaviorEnvelope, LegacyBehaviorEnvelope } from '../envelope/types.js';
+import {
+  digestBytes,
+  type BehaviorEnvelope,
+  type LegacyBehaviorEnvelope,
+} from '../envelope/index.js';
 import { verifyEnvelope } from '../envelope/verify.js';
 import type { ComparableEnvelope, ComparisonSide } from './types.js';
 

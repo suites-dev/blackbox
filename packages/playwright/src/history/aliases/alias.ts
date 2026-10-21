@@ -1,4 +1,4 @@
-import { digestOf, type canonicalization, type Digest } from '../../envelope/canonical.js';
+import { digestOf, type canonicalization, type Digest } from '../../envelope/index.js';
 
 export const aliasVersion = 1;
 

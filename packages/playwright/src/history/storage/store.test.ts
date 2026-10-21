@@ -4,7 +4,7 @@ import { join } from 'node:path';
 
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { digestBytes } from '../../envelope/canonical.js';
+import { digestBytes } from '../../envelope/index.js';
 import { defined } from '../testing/history.fixture.js';
 import { ConflictError, ObjectStore, type ObjectKind } from './store.js';
 

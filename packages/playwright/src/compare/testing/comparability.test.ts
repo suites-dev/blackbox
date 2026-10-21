@@ -1,8 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { digestBytes } from '../../envelope/canonical.js';
+import { digestBytes, type BehaviorIdentity } from '../../envelope/index.js';
 import { inputFixture } from '../../envelope/testing/envelope.fixture.js';
-import type { BehaviorIdentity } from '../../envelope/types.js';
 import { compareSides } from '../compare.js';
 import { checkOf } from './delta.fixture.js';
 import {

@@ -1,6 +1,17 @@
-import type { Digest } from '../envelope/canonical.js';
-import type { BehaviorHistory } from './history.js';
+import type { Digest } from '../envelope/index.js';
+import type { AnyEnvelope } from './history-types.js';
+import type { HistoryIndex } from './storage/index-build.js';
 import type { HistoryEntry } from './queries.js';
+
+/** The part of the history that findings are read from; declared here so the history can depend on this module. */
+export interface FindingsSource {
+  behaviorHistory(
+    id: string,
+    options: { readonly followAliases: boolean },
+  ): Promise<HistoryEntry[]>;
+  execution(id: Digest): Promise<{ readonly envelope: AnyEnvelope } | null>;
+  index(): Promise<HistoryIndex>;
+}
 
 export interface AssertionFinding {
   readonly envelopeId: Digest;
@@ -36,7 +47,7 @@ const sound = new Set(['passed', 'skipped']);
 
 /** Failed and unresolved findings for one behavior, each linked to the record that holds its evidence. */
 export async function collectFindings(
-  history: BehaviorHistory,
+  history: FindingsSource,
   id: string,
   options: { readonly followAliases: boolean },
 ): Promise<Findings> {

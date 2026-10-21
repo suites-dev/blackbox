@@ -1,6 +1,5 @@
 import type { BehavioralDelta } from '../../compare/types.js';
-import type { Digest } from '../../envelope/canonical.js';
-import type { BehaviorEnvelope, LegacyBehaviorEnvelope } from '../../envelope/types.js';
+import type { Digest, BehaviorEnvelope, LegacyBehaviorEnvelope } from '../../envelope/index.js';
 import { receiptStatus, type AttemptReceipt, type ReceiptStatus } from '../receipts/receipt.js';
 import type { ObjectKind } from './store.js';
 

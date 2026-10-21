@@ -2,18 +2,23 @@ import type { TestInfo } from '@playwright/test';
 import type { SandboxStopReason } from '@suites/blackbox-sandbox';
 
 import type { CompletedStimuli } from '../activities/execution/attempt-stimuli.js';
-import type { Digest } from '../envelope/canonical.js';
-import type { RecordedStimuli } from '../effects/attempt-effects.js';
+import type { Digest } from '../envelope/index.js';
+import {
+  completedAttemptStimuli,
+  recordedAttemptStimuli,
+  type RecordedStimuli,
+} from '../effects/attempt-effects.js';
+import { closeBlackboxEffects } from '../effects/runtime.js';
 import type { FinalSnapshotDocument } from '../effects/final-snapshot.js';
 import type { AttemptReport } from '../reporting/attempt.js';
-import {
-  buildAttemptEnvelope,
-  captureEnvelopePrelude,
-  envelopeAttachment,
-  type EnvelopePrelude,
-} from '../reporting/capture/envelope.js';
+import { buildAttemptEnvelope, envelopeAttachment } from '../reporting/capture/envelope.js';
+import { captureEnvelopePrelude, type EnvelopePrelude } from '../reporting/capture/prelude.js';
 import { collectFinalSnapshot } from '../reporting/capture/final-snapshot.js';
 import type { RunningBlackboxAttempt } from '../runtime/acquisition.js';
+import { finalizeAttempt, newAttemptProduct, type AttemptProduct } from './finalize.js';
+
+export { newAttemptProduct, type AttemptProduct };
+export type { EnvelopePrelude };
 
 export interface FinalCaptureInput {
   readonly enabled: boolean;
@@ -88,4 +93,36 @@ export async function attachFinalCapture(
     report.emit('envelope', 'failed', 'could not build or attach the envelope');
     return null;
   }
+}
+
+/**
+ * Ends an attempt: reads what its stimuli did, closes its effects, cleans up, and takes the final capture, in that
+ * order. The capture is stored in `product` even when cleanup throws, and the cleanup error still propagates.
+ */
+export async function settleAttempt(input: {
+  readonly capture: FinalCaptureInput;
+  readonly report: AttemptReport;
+  readonly attempt: RunningBlackboxAttempt;
+  readonly stopReason: SandboxStopReason;
+  readonly prelude: EnvelopePrelude | null;
+  readonly product: AttemptProduct;
+  readonly cleanup: () => Promise<void>;
+}): Promise<void> {
+  const { attempt } = input;
+  const stimuli = completedAttemptStimuli(attempt.effects);
+  const recorded = recordedAttemptStimuli(attempt.effects);
+  closeBlackboxEffects(attempt.effects);
+  // After cleanup the collector has stopped, so this read is final. It also runs when cleanup failed,
+  // where the collector's own state is what the snapshot reports.
+  await finalizeAttempt(input.product, {
+    cleanup: input.cleanup,
+    capture: () =>
+      attachFinalCapture(input.capture, input.report, {
+        attempt,
+        stimuli,
+        recorded,
+        stopReason: input.stopReason,
+        prelude: input.prelude,
+      }),
+  });
 }

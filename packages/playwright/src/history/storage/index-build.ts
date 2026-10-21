@@ -1,4 +1,4 @@
-import { digestBytes, digestOf, type Digest } from '../../envelope/canonical.js';
+import { digestBytes, digestOf, type Digest } from '../../envelope/index.js';
 import { verifyEnvelope } from '../../envelope/verify.js';
 import { verifyAlias, type BehaviorAlias } from '../aliases/alias.js';
 import type { BehavioralDelta } from '../../compare/types.js';

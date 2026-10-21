@@ -1,5 +1,9 @@
-import type { Digest } from '../envelope/canonical.js';
-import type { BehaviorEnvelope, EvidenceRef, LegacyBehaviorEnvelope } from '../envelope/types.js';
+import type {
+  Digest,
+  BehaviorEnvelope,
+  EvidenceRef,
+  LegacyBehaviorEnvelope,
+} from '../envelope/index.js';
 import type { HistoryIndex } from './storage/index-build.js';
 import type { AttemptReceipt } from './receipts/receipt.js';
 import type { ObjectKind } from './storage/store.js';

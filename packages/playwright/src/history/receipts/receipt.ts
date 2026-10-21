@@ -1,5 +1,9 @@
-import { digestOf, type canonicalization, type Digest } from '../../envelope/canonical.js';
-import type { BehaviorIdentity } from '../../envelope/types.js';
+import {
+  digestOf,
+  type canonicalization,
+  type Digest,
+  type BehaviorIdentity,
+} from '../../envelope/index.js';
 
 export const receiptVersion = 1;
 

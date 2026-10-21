@@ -1,4 +1,4 @@
-import { digestOf } from '../envelope/canonical.js';
+import { digestOf } from '../envelope/index.js';
 import { evaluateClaims } from './claims.js';
 import { assessComparability } from './comparability.js';
 import { diffEffects, diffInfrastructure } from './effects.js';

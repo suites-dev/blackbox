@@ -1,4 +1,4 @@
-import { digestBytes } from '../envelope/canonical.js';
+import { digestBytes } from '../envelope/index.js';
 import { currentEvidenceDigest, evidencePathInside } from '../envelope/capture/evidence.js';
 import type { AnyEnvelope, EvidenceCheck } from './history-types.js';
 import type { ObjectStore } from './storage/store.js';

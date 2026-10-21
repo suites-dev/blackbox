@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
-import { canonicalize, digestOf, type Digest } from '../../envelope/canonical.js';
+import { canonicalize, digestOf, type Digest } from '../../envelope/index.js';
 import type { HistoryIndex } from './index-build.js';
 import { objectKinds, type ObjectKind, type ObjectStore } from './store.js';
 

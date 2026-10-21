@@ -1,4 +1,4 @@
-import type { Digest } from '../envelope/canonical.js';
+import type { Digest } from '../envelope/index.js';
 import { resolveAliases } from './aliases/alias.js';
 import type { HistoryIndex, IndexedExecution, IndexedReceipt } from './storage/index-build.js';
 import type { ReceiptStatus } from './receipts/receipt.js';

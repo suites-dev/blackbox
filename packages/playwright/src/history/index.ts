@@ -6,7 +6,7 @@
 export { BehaviorHistory, HistoryError } from './history.js';
 export type { EvidenceCheck, ExecutionDetail, IngestResult, StoreReport } from './history.js';
 export { ConflictError } from './storage/store.js';
-export { ingestPlaywrightResults, type IngestSummary } from './playwright-results.js';
+export { ingestPlaywrightResults, type IngestSummary } from './ingestion/playwright-results.js';
 export type { AliasBody, BehaviorAlias } from './aliases/alias.js';
 export type { AttemptReceipt } from './receipts/receipt.js';
 export type { BehaviorSummary, HistoryEntry } from './queries.js';

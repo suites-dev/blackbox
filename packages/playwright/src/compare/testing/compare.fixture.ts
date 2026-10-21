@@ -1,5 +1,10 @@
 import { buildEnvelope, type BuildEnvelopeInput } from '../../envelope/build.js';
-import { digestBytes } from '../../envelope/canonical.js';
+import {
+  digestBytes,
+  type BehaviorEnvelope,
+  type BehaviorIdentity,
+  type EvidenceRef,
+} from '../../envelope/index.js';
 import {
   sourceFixtureAt,
   configurationFixture,
@@ -8,7 +13,6 @@ import {
   stimulusFixture,
 } from '../../envelope/testing/envelope.fixture.js';
 import { stateSection } from '../../envelope/state.js';
-import type { BehaviorEnvelope, BehaviorIdentity, EvidenceRef } from '../../envelope/types.js';
 import { loadSide } from '../side.js';
 import { snapshotWith, span, type SpanSpec } from './snapshot.fixture.js';
 import type { ComparisonSide } from '../types.js';

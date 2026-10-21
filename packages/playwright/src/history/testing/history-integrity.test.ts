@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { buildEnvelope } from '../../envelope/build.js';
-import { digestBytes, digestOf } from '../../envelope/canonical.js';
+import { digestBytes, digestOf } from '../../envelope/index.js';
 import { inputFixture } from '../../envelope/testing/envelope.fixture.js';
 import { BehaviorHistory } from '../history.js';
 import { ObjectStore } from '../storage/store.js';

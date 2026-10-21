@@ -1,4 +1,4 @@
-import { digestOf } from '../../envelope/canonical.js';
+import { digestOf } from '../../envelope/index.js';
 import type { BehavioralDelta } from '../../compare/types.js';
 
 /** A stored comparison is content-addressed like everything else: its digest covers every other field. */

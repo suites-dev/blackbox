@@ -1,5 +1,4 @@
-import type { BehaviorIdentity } from '../../envelope/types.js';
-import { canonicalization, type Digest } from '../../envelope/canonical.js';
+import { type BehaviorIdentity, canonicalization, type Digest } from '../../envelope/index.js';
 import {
   buildReceipt,
   receiptVersion,

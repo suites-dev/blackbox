@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { digestBytes } from '../envelope/canonical.js';
+import { digestBytes } from '../envelope/index.js';
 import { finalizeAttempt, newAttemptProduct } from './finalize.js';
 
 const envelope = digestBytes('envelope');
