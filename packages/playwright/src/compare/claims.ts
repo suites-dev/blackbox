@@ -41,14 +41,13 @@ function finding(
     };
   }
   if (record !== undefined) {
-    const established = true;
     if (record.distinct > claim.n) {
       return {
         ...base,
         status: 'refuted',
         basis: 'state',
         distinctRecords: record.distinct,
-        businessOperationsEstablished: established,
+        businessOperationsEstablished: true,
         reason: `${String(record.distinct)} distinct ${record.subject} records exist; at most ${String(claim.n)} allowed`,
       };
     }
@@ -58,8 +57,18 @@ function finding(
         status: 'suspect',
         basis: 'state',
         distinctRecords: record.distinct,
-        businessOperationsEstablished: established,
+        businessOperationsEstablished: true,
         reason: `${String(refs.length)} spans exceed ${String(claim.n)} but state holds ${String(record.distinct)} distinct records: a retry or a duplicated span, not a second operation`,
+      };
+    }
+    if (side.envelope.state.rejected > 0) {
+      return {
+        ...base,
+        status: 'unevaluable',
+        basis: 'state',
+        distinctRecords: record.distinct,
+        businessOperationsEstablished: false,
+        reason: `${String(side.envelope.state.rejected)} state annotation(s) were malformed or repeated and ignored: the kept state may not be the final one, so it cannot show the limit held`,
       };
     }
     return {
@@ -67,7 +76,7 @@ function finding(
       status: 'not-refuted',
       basis: 'state',
       distinctRecords: record.distinct,
-      businessOperationsEstablished: established,
+      businessOperationsEstablished: true,
       reason: 'state shows no excess; says nothing about operations the capture may have missed',
     };
   }

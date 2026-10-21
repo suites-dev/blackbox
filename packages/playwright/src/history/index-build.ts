@@ -1,79 +1,24 @@
-import type { BehavioralDelta } from '../compare/types.js';
 import { digestBytes, digestOf, type Digest } from '../envelope/canonical.js';
-import type { BehaviorEnvelope, LegacyBehaviorEnvelope } from '../envelope/types.js';
 import { verifyEnvelope } from '../envelope/verify.js';
 import { verifyAlias, type BehaviorAlias } from './alias.js';
+import type { BehavioralDelta } from '../compare/types.js';
 import {
-  receiptStatus,
-  verifyReceipt,
-  type AttemptReceipt,
-  type ReceiptStatus,
-} from './receipt.js';
+  deltaOf,
+  executionOf,
+  receiptOf,
+  type AnyEnvelope,
+  type CorruptObject,
+  type IndexedDelta,
+  type IndexedExecution,
+  type IndexedReceipt,
+} from './index-rows.js';
+import { verifyReceipt, type AttemptReceipt } from './receipt.js';
 import { verifyDelta } from './records.js';
 import type { ObjectKind, ObjectStore } from './store.js';
 
+export type { CorruptObject, IndexedDelta, IndexedExecution, IndexedReceipt };
+
 export const indexVersion = 1;
-
-export interface IndexedExecution {
-  readonly envelopeId: Digest;
-  readonly behaviorId: string;
-  readonly basis: string;
-  readonly derivedId: string;
-  readonly attemptId: string;
-  readonly retry: number;
-  readonly invocation: string | null;
-  readonly runnerTestId: string;
-  readonly capturedAt: string;
-  readonly testStatus: string;
-  readonly source: {
-    readonly commit: string | null;
-    readonly tree: string | null;
-    readonly workingTree: string;
-    readonly fingerprint: Digest | null;
-  };
-  readonly configuration: Digest;
-  readonly experiment: Digest;
-  readonly stimulus: Digest | null;
-  readonly observation: Digest | null;
-  readonly completeness: string;
-  readonly snapshot: 'stored' | 'missing' | 'not-produced';
-  readonly snapshotId: Digest | null;
-  readonly failedAssertions: number;
-  readonly inconclusiveAssertions: number;
-}
-
-export interface IndexedReceipt {
-  readonly id: Digest;
-  readonly receiptId: string;
-  readonly behaviorId: string;
-  readonly derivedId: string;
-  readonly basis: string;
-  readonly retry: number;
-  readonly invocation: string | null;
-  readonly runnerTestId: string;
-  readonly at: string;
-  readonly status: ReceiptStatus;
-  readonly failure: AttemptReceipt['failure'];
-  readonly envelope: Digest | null;
-  readonly envelopeStored: boolean;
-  readonly sandboxId: string | null;
-}
-
-export interface IndexedDelta {
-  readonly id: Digest;
-  readonly outcome: string;
-  readonly behavior: string;
-  readonly reference: { readonly envelope: Digest; readonly attemptId: string };
-  readonly head: { readonly envelope: Digest; readonly attemptId: string };
-  readonly refutedClaims: readonly string[];
-  readonly unresolved: number;
-}
-
-export interface CorruptObject {
-  readonly kind: ObjectKind;
-  readonly id: Digest;
-  readonly reason: string;
-}
 
 export interface HistoryIndex {
   readonly indexVersion: typeof indexVersion;
@@ -85,87 +30,6 @@ export interface HistoryIndex {
   readonly corrupt: readonly CorruptObject[];
   /** A digest of everything above. Equal stores give equal digests, so a rebuild can be checked. */
   readonly digest: Digest;
-}
-
-type AnyEnvelope = BehaviorEnvelope | LegacyBehaviorEnvelope;
-
-function stimulusOf(envelope: AnyEnvelope): Digest | null {
-  return 'stimulus' in envelope.identity ? envelope.identity.stimulus : null;
-}
-
-function executionOf(envelope: AnyEnvelope, snapshots: ReadonlySet<Digest>): IndexedExecution {
-  const { finalSnapshot } = envelope.observed;
-  const ci = envelope.provenance.ci;
-  const assertions = envelope.verification.assertions;
-  return {
-    envelopeId: envelope.digest,
-    behaviorId: envelope.identity.behavior.id,
-    basis: envelope.identity.behavior.basis,
-    derivedId: envelope.identity.behavior.derivedId,
-    attemptId: envelope.identity.attempt.attemptId,
-    retry: envelope.identity.attempt.retry,
-    invocation: Object.hasOwn(ci, 'invocation') ? ci.invocation : null,
-    runnerTestId: envelope.provenance.test.runnerTestId,
-    capturedAt: envelope.provenance.capturedAt,
-    testStatus: envelope.verification.testStatus.status,
-    source: {
-      commit: envelope.source.commit,
-      tree: envelope.source.tree,
-      workingTree: envelope.source.workingTree.state,
-      fingerprint: envelope.source.fingerprint,
-    },
-    configuration: envelope.configuration.fingerprint,
-    experiment: envelope.identity.experiment,
-    stimulus: stimulusOf(envelope),
-    observation: envelope.identity.observation,
-    completeness: envelope.observed.completeness.status,
-    snapshot:
-      finalSnapshot.state !== 'attached'
-        ? 'not-produced'
-        : snapshots.has(finalSnapshot.evidence)
-          ? 'stored'
-          : 'missing',
-    snapshotId: finalSnapshot.state === 'attached' ? finalSnapshot.evidence : null,
-    failedAssertions: assertions.filter(({ outcome }) => outcome === 'failed').length,
-    inconclusiveAssertions: assertions.filter(({ outcome }) => outcome === 'inconclusive').length,
-  };
-}
-
-function receiptOf(receipt: AttemptReceipt, envelopes: ReadonlySet<Digest>): IndexedReceipt {
-  return {
-    id: receipt.digest,
-    receiptId: receipt.attempt.receiptId,
-    behaviorId: receipt.behavior.id,
-    derivedId: receipt.behavior.derivedId,
-    basis: receipt.behavior.basis,
-    retry: receipt.attempt.retry,
-    invocation: receipt.invocation,
-    runnerTestId: receipt.test.runnerTestId,
-    at: receipt.lifecycle[0].at,
-    status: receiptStatus(receipt),
-    failure: receipt.failure,
-    envelope: receipt.envelope,
-    envelopeStored: receipt.envelope !== null && envelopes.has(receipt.envelope),
-    sandboxId: receipt.attempt.sandboxId,
-  };
-}
-
-function deltaOf(delta: BehavioralDelta): IndexedDelta {
-  return {
-    id: delta.digest,
-    outcome: delta.outcome,
-    behavior: delta.reference.behavior,
-    reference: { envelope: delta.reference.envelope, attemptId: delta.reference.attemptId },
-    head: { envelope: delta.head.envelope, attemptId: delta.head.attemptId },
-    refutedClaims: [
-      ...new Set(
-        delta.verification.claims
-          .filter(({ status }) => status === 'refuted')
-          .map(({ claim }) => claim),
-      ),
-    ].sort(),
-    unresolved: delta.unresolved.length,
-  };
 }
 
 async function readJson(store: ObjectStore, kind: ObjectKind, id: Digest): Promise<unknown> {
@@ -237,6 +101,32 @@ async function loadRecords<T extends { readonly digest: Digest }>(
 }
 
 /**
+ * Reduces verified records to index rows. A record can carry a correct digest and still be shaped wrongly, because
+ * its digest only proves its bytes were not changed since someone computed it. One such record must not make the
+ * whole history unreadable, so a row that cannot be built is reported as corrupt and left out.
+ */
+function rows<T extends { readonly digest: Digest }, R>(
+  kind: ObjectKind,
+  records: readonly T[],
+  toRow: (record: T) => R,
+  bad: Reject,
+): R[] {
+  const built: R[] = [];
+  for (const record of records) {
+    try {
+      built.push(toRow(record));
+    } catch (error) {
+      bad(
+        kind,
+        record.digest,
+        `malformed: ${error instanceof Error ? error.message : 'unreadable'}`,
+      );
+    }
+  }
+  return built;
+}
+
+/**
  * Derives the whole index from the immutable objects. It is a pure function of what the store holds: nothing
  * about when it ran enters the result, so rebuilding it from the same objects gives the same digest.
  */
@@ -255,12 +145,17 @@ export async function buildIndex(store: ObjectStore): Promise<HistoryIndex> {
   const byId = <T extends { readonly id: Digest }>(a: T, b: T): number => (a.id < b.id ? -1 : 1);
   const body = {
     indexVersion,
-    executions: envelopes
-      .map((envelope) => executionOf(envelope, snapshotIds))
-      .sort((a, b) => (a.envelopeId < b.envelopeId ? -1 : 1)),
-    receipts: receipts.map((receipt) => receiptOf(receipt, envelopeIds)).sort(byId),
+    executions: rows(
+      'envelope',
+      envelopes,
+      (envelope) => executionOf(envelope, snapshotIds),
+      bad,
+    ).sort((a, b) => (a.envelopeId < b.envelopeId ? -1 : 1)),
+    receipts: rows('receipt', receipts, (receipt) => receiptOf(receipt, envelopeIds), bad).sort(
+      byId,
+    ),
     aliases: aliases.sort((a, b) => (a.digest < b.digest ? -1 : 1)),
-    deltas: deltas.map(deltaOf).sort(byId),
+    deltas: rows('delta', deltas, deltaOf, bad).sort(byId),
     blobs,
     corrupt: corrupt.sort((a, b) => (`${a.kind}${a.id}` < `${b.kind}${b.id}` ? -1 : 1)),
   } satisfies Omit<HistoryIndex, 'digest'>;

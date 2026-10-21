@@ -61,7 +61,18 @@ export function environmentDigest(value: Omit<EnvironmentConfiguration, 'digest'
   return digestOf(value);
 }
 
-/** Credential-named variables contribute their names only; every other value is reduced to a digest. */
+// A URL with credentials in it (scheme://user:password@host) carries a secret whatever the variable is called.
+const credentialUrl = /:\/\/[^/\s:@]*:[^/\s@]*@/u;
+
+const isSecretVariable = (name: string, value: string): boolean =>
+  isSecretEnvironmentName(name) || credentialUrl.test(value);
+
+/**
+ * Credential-named variables, and variables whose value is a URL with credentials, contribute their names only;
+ * every other value is reduced to a digest. That digest is unsalted so equal environments compare equal, which
+ * means a low-entropy value that is not recognized as secret could be guessed from it: do not put secrets in
+ * variables with innocuous names.
+ */
 export function environmentConfiguration(input: {
   readonly platform: string;
   readonly arch: string;
@@ -73,16 +84,17 @@ export function environmentConfiguration(input: {
   readonly variables: Readonly<Record<string, string>>;
 }): EnvironmentConfiguration {
   const names = Object.keys(input.variables).sort();
+  const secret = (name: string): boolean => isSecretVariable(name, input.variables[name]);
   const variables = Object.fromEntries(
     names
-      .filter((name) => !isSecretEnvironmentName(name))
+      .filter((name) => !secret(name))
       .map((name) => [name, digestOf({ name, value: input.variables[name] })]),
   );
   const { variables: _raw, ...rest } = input;
   const partial = {
     ...rest,
     variables,
-    secretVariableNames: names.filter((name) => isSecretEnvironmentName(name)),
+    secretVariableNames: names.filter(secret),
   };
   return { ...partial, digest: environmentDigest(partial) };
 }

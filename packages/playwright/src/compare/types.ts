@@ -112,7 +112,8 @@ export interface UnresolvedItem {
     | 'stimulus-unestablished'
     | 'measurement-basis-differs'
     | 'evidence-unavailable'
-    | 'state-reported-on-one-side';
+    | 'state-reported-on-one-side'
+    | 'state-annotations-rejected';
   readonly detail: string;
 }
 

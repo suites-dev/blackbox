@@ -10,6 +10,19 @@ export function diffState(
 ): { readonly deltas: readonly StateDelta[]; readonly unresolved: readonly UnresolvedItem[] } {
   const deltas: StateDelta[] = [];
   const unresolved: UnresolvedItem[] = [];
+  for (const [name, side] of [
+    ['reference', reference],
+    ['head', head],
+  ] as const) {
+    if (side.state.rejected > 0) {
+      // A repeated or malformed report is dropped on ingestion, and the first record wins: the state that was
+      // kept may be an earlier read than the one the test meant as final.
+      unresolved.push({
+        kind: 'state-annotations-rejected',
+        detail: `${name}: ${String(side.state.rejected)} state annotation(s) were malformed or repeated and ignored`,
+      });
+    }
+  }
   const subjects = new Set(
     [...reference.state.records, ...head.state.records].map(({ subject }) => subject),
   );

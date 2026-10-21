@@ -4,9 +4,10 @@ import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { buildEnvelope } from '../envelope/build.js';
-import { digestBytes } from '../envelope/canonical.js';
+import { digestBytes, digestOf } from '../envelope/canonical.js';
 import { inputFixture } from '../envelope/envelope.fixture.js';
 import { BehaviorHistory } from './history.js';
+import { ObjectStore } from './store.js';
 import {
   behaviorOf,
   cleanup,
@@ -167,5 +168,24 @@ describe('evidence references that point outside the evidence root', () => {
     expect(
       checks.filter(({ kind }) => kind === 'sandbox-record').map(({ status }) => status),
     ).toEqual(['refused', 'refused', 'refused', 'verified']);
+  });
+});
+
+describe('records with a correct digest and the wrong shape', () => {
+  it('reports them as corrupt and keeps the rest of the history readable', async () => {
+    const history = await openHistory();
+    const good = await ingest(history, execution({ attemptId: 'good' }));
+    const store = new ObjectStore(history.root);
+    const receipt = failedAcquisition(behaviorOf('subscription.payment'), 5);
+    const { digest: _digest, behavior: _behavior, ...withoutBehavior } = receipt;
+    const malformedReceipt = { ...withoutBehavior, digest: digestOf(withoutBehavior) };
+    const delta = { kind: 'behavioral-delta', deltaVersion: 1 };
+    const malformedDelta = { ...delta, digest: digestOf(delta) };
+    await store.put('receipt', malformedReceipt.digest, JSON.stringify(malformedReceipt));
+    await store.put('delta', malformedDelta.digest, JSON.stringify(malformedDelta));
+    const report = await history.verifyStore();
+    expect(report.corrupt.map(({ kind }) => kind).sort()).toEqual(['delta', 'receipt']);
+    expect(report.corrupt.every(({ reason }) => reason.startsWith('malformed'))).toBe(true);
+    expect((await history.index()).executions.map(({ envelopeId }) => envelopeId)).toEqual([good]);
   });
 });

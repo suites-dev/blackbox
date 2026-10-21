@@ -47,6 +47,38 @@ describe('configuration fingerprints', () => {
     });
     expect(flipped.digest).not.toBe(one.digest);
   });
+});
+
+describe('environment secrets', () => {
+  it('treats a URL carrying credentials as secret even when the variable name does not say so', () => {
+    const input = {
+      platform: 'p',
+      arch: 'a',
+      node: 'n',
+      docker: 'd',
+      playwright: 'p',
+      workers: 1,
+      project: 'p',
+    };
+    const one = environmentConfiguration({
+      ...input,
+      variables: {
+        DATABASE_URL: 'postgres://app:hunter2@db:5432/app',
+        PUBLIC_URL: 'https://example.test/path',
+      },
+    });
+    expect(one.secretVariableNames).toEqual(['DATABASE_URL']);
+    expect(Object.keys(one.variables)).toEqual(['PUBLIC_URL']);
+    const other = environmentConfiguration({
+      ...input,
+      variables: {
+        DATABASE_URL: 'postgres://app:different@db:5432/app',
+        PUBLIC_URL: 'https://example.test/path',
+      },
+    });
+    expect(other.digest).toBe(one.digest);
+    expect(JSON.stringify(one)).not.toContain('hunter2');
+  });
 
   it('orders inputs deterministically and tells a missing file from an empty one', () => {
     const a = {

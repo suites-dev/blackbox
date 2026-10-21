@@ -58,6 +58,32 @@ describe('authoritative state', () => {
   });
 });
 
+describe('state that was reported more than once', () => {
+  const early = { subject: 'payment-intents', identities: ['pi_1'] };
+  const final = { subject: 'payment-intents', identities: ['pi_1', 'pi_2'] };
+
+  it('does not let an earlier read hide a later one: the limit is unevaluable and the difference unresolved', () => {
+    const reference = sideFixture({ attemptId: 'ref', state: [early] });
+    const head = sideFixture({ attemptId: 'head', state: [early, final] });
+    expect(head.envelope.state.rejected).toBe(1);
+    const delta = compareSides(reference, head, { claims: [claim] });
+    const headClaim = delta.verification.claims.find(({ side }) => side === 'head');
+    expect(headClaim).toMatchObject({ status: 'unevaluable', basis: 'state' });
+    expect(delta.unresolved.map(({ kind }) => kind)).toContain('state-annotations-rejected');
+    expect(delta.outcome).not.toBe('no-observed-difference');
+  });
+
+  it('still refutes when the kept state already exceeds the limit', () => {
+    const head = sideFixture({ attemptId: 'head', state: [final, early] });
+    const delta = compareSides(sideFixture({ attemptId: 'ref', state: [early] }), head, {
+      claims: [claim],
+    });
+    expect(delta.verification.claims.find(({ side }) => side === 'head')).toMatchObject({
+      status: 'refuted',
+    });
+  });
+});
+
 describe('atMost claims are evaluated independently of the comparison', () => {
   it('refutes through state, even though the head lost a participant to missing telemetry', () => {
     const delta = compareSides(
