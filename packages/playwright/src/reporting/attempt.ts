@@ -126,6 +126,17 @@ export class AttemptReport implements AttemptProgress {
     await this.testInfo.attach(effectAttachment, { contentType: 'application/json', body });
   }
 
+  /** The phase of the last progress event, which names where an attempt that failed to start was. */
+  lastPhase(): string {
+    const last = this.events.at(-1);
+    return last === undefined ? 'start' : last.phase;
+  }
+
+  /** An error as one redacted, bounded line. */
+  describe(error: unknown): string {
+    return this.sanitize(error instanceof Error ? error.message : String(error));
+  }
+
   /** What this attempt attached as evidence, with the digest of each exact body. */
   attachedEvidence(): readonly AttachedEvidence[] {
     return this.evidence;

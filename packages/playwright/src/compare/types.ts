@@ -160,6 +160,15 @@ export interface BehavioralDelta {
     readonly note: string;
   };
   readonly invocation: 'same' | 'unestablished';
+  /** Empty unless the behavior ids differ and a recorded alias connects them. */
+  readonly behaviorAliases: readonly AliasStep[];
+}
+
+/** A recorded alias that was followed to treat two behavior ids as one for this comparison. */
+export interface AliasStep {
+  readonly alias: Digest;
+  readonly from: string;
+  readonly to: string;
 }
 
 export interface CompareOptions {

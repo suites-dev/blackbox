@@ -188,14 +188,22 @@ export function envelopeFixture(overrides: Partial<BuildEnvelopeInput> = {}) {
   return buildEnvelope(inputFixture(overrides));
 }
 
-export function sourceFixture(input: { commit: string; workingTree: WorkingTree }): SourceSection {
+export function sourceFixtureAt(input: {
+  commit: string;
+  tree: string;
+  workingTree: WorkingTree;
+}): SourceSection {
   const identity = {
     repoId: 'git:root',
     commit: input.commit,
-    tree: `tree-${input.commit}`,
+    tree: input.tree,
     workingTree: input.workingTree,
   };
   return { state: 'captured', ...identity, fingerprint: sourceFingerprint(identity), reason: null };
+}
+
+export function sourceFixture(input: { commit: string; workingTree: WorkingTree }): SourceSection {
+  return sourceFixtureAt({ ...input, tree: `tree-${input.commit}` });
 }
 
 export function requestFixture(overrides: Partial<RecordedRequest> = {}): RecordedRequest {
@@ -211,7 +219,9 @@ export function requestFixture(overrides: Partial<RecordedRequest> = {}): Record
   };
 }
 
-export function stimulusFixture(requests: readonly RecordedRequest[] = [requestFixture()]): StimulusSection {
+export function stimulusFixture(
+  requests: readonly RecordedRequest[] = [requestFixture()],
+): StimulusSection {
   const activities = [{ title: 'When Alice subscribes', requests }];
   return {
     state: 'recorded',

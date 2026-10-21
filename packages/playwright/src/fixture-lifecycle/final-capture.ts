@@ -2,6 +2,7 @@ import type { TestInfo } from '@playwright/test';
 import type { SandboxStopReason } from '@suites/blackbox-sandbox';
 
 import type { CompletedStimuli } from '../activities/execution/attempt-stimuli.js';
+import type { Digest } from '../envelope/canonical.js';
 import type { RecordedStimuli } from '../effects/attempt-effects.js';
 import type { FinalSnapshotDocument } from '../effects/final-snapshot.js';
 import type { AttemptReport } from '../reporting/attempt.js';
@@ -59,14 +60,14 @@ export async function attachFinalCapture(
     readonly stopReason: SandboxStopReason;
     readonly prelude: EnvelopePrelude | null;
   },
-): Promise<void> {
+): Promise<Digest | null> {
   if (!input.enabled) {
-    return;
+    return null;
   }
   const snapshot = await snapshotOf(input, report, captured);
   if (captured.prelude === null) {
     report.emit('envelope', 'failed', 'catalog, source or environment could not be captured');
-    return;
+    return null;
   }
   try {
     const envelope = await buildAttemptEnvelope({
@@ -82,7 +83,9 @@ export async function attachFinalCapture(
       body: JSON.stringify(envelope),
     });
     report.emit('envelope', 'completed', envelope.digest);
+    return envelope.digest;
   } catch {
     report.emit('envelope', 'failed', 'could not build or attach the envelope');
+    return null;
   }
 }

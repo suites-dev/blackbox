@@ -1,7 +1,7 @@
 import { readdir, readFile, stat } from 'node:fs/promises';
 import { join, relative } from 'node:path';
 
-import { digestBytes, digestOf } from '../canonical.js';
+import { digestBytes, digestOf, type Digest } from '../canonical.js';
 import type { EvidenceRef } from '../types.js';
 
 async function entries(
@@ -31,6 +31,43 @@ async function fileRef(
       bytes: bytes.byteLength,
       locator: { type: 'file', root: 'test-output', path: relative(root, path) },
     };
+  } catch {
+    return null;
+  }
+}
+
+/** The digest a fragments directory has now, computed the way the reference was when it was captured. */
+export async function fragmentsDigest(directory: string): Promise<Digest | null> {
+  const files = (await entries(directory))
+    .filter((entry) => !entry.directory)
+    .sort((a, b) => (a.name < b.name ? -1 : 1));
+  if (files.length === 0) {
+    return null;
+  }
+  return digestOf(
+    await Promise.all(
+      files.map(async (file) => ({
+        name: file.name,
+        digest: digestBytes(await readFile(file.path)),
+      })),
+    ),
+  );
+}
+
+/** Recomputes the digest of the file evidence a reference points to; `null` when it is gone. */
+export async function currentEvidenceDigest(
+  root: string,
+  ref: EvidenceRef,
+): Promise<Digest | null> {
+  if (ref.locator.type !== 'file') {
+    return null;
+  }
+  const path = join(root, ref.locator.path);
+  if (ref.kind === 'collector-fragments') {
+    return fragmentsDigest(path);
+  }
+  try {
+    return digestBytes(await readFile(path));
   } catch {
     return null;
   }

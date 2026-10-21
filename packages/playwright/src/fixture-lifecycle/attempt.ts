@@ -5,9 +5,13 @@ import { recoverSandbox, type SandboxStopReason } from '@suites/blackbox-sandbox
 
 import { completedAttemptStimuli, recordedAttemptStimuli } from '../effects/attempt-effects.js';
 import { bindEffectAssertionReporter, closeBlackboxEffects } from '../effects/runtime.js';
+import type { Digest } from '../envelope/canonical.js';
+import type { ReceiptRecorder } from '../history/recorder.js';
 import { AttemptReport } from '../reporting/attempt.js';
+import type { EnvelopePrelude } from '../reporting/envelope.js';
 import { reported } from '../reporting/events.js';
 import { reportObservations } from '../reporting/observations.js';
+import { attachReceipt, startReceipt } from '../reporting/receipt.js';
 import type { BlackboxAttemptRuntime, RunningBlackboxAttempt } from '../runtime/acquisition.js';
 import { retainAttempt, retainedAttemptDirectory } from '../retention/retention.js';
 import type { BlackboxTestOptions } from '../types.js';
@@ -107,13 +111,13 @@ function finalCaptureInput(input: AttemptFixtureInput): FinalCaptureInput {
   };
 }
 
-export async function runAttemptFixture(input: AttemptFixtureInput): Promise<void> {
-  const report = new AttemptReport(input.testInfo);
-  report.protect(input.blackboxEnvironment);
-  const capture = finalCaptureInput(input);
+async function acquire(
+  input: AttemptFixtureInput,
+  report: AttemptReport,
+  recorder: ReceiptRecorder | null,
+): Promise<RunningBlackboxAttempt> {
   try {
-    const prelude = await captureBeforeAttempt(capture);
-    const attempt = await acquireWithinTestTimeout({
+    return await acquireWithinTestTimeout({
       runtime: input.runtime,
       testInfo: input.testInfo,
       cleanupTimeoutMs: input.policy.sandboxCleanupTimeoutMs,
@@ -127,42 +131,88 @@ export async function runAttemptFixture(input: AttemptFixtureInput): Promise<voi
         progress: report,
       },
     });
-    report.acquired(attempt.sandbox, attempt.telemetry);
-    bindEffectAssertionReporter(attempt.effects, report);
-    report.emit(
-      'sandbox',
-      'completed',
-      `${attempt.sandbox.sandboxId}; ${attempt.sandbox.entrypoint.url}`,
-    );
-    report.emit('execution', 'started', 'test fixtures, hooks and body');
-    try {
-      await report.flush();
-      report.lifecycle('ready', attempt.sandbox.catalogEntry);
-      await input.use(attempt);
-    } finally {
-      const stimuli = completedAttemptStimuli(attempt.effects);
-      const recorded = recordedAttemptStimuli(attempt.effects);
-      closeBlackboxEffects(attempt.effects);
-      const reason = stopReason(input.testInfo.status);
-      report.emit('execution', 'info', input.testInfo.status ?? 'unknown');
-      try {
-        await finishAttempt(attempt, report, reason, input.policy);
-      } finally {
-        // After cleanup the collector has stopped, so this read is final. It also runs when cleanup failed,
-        // where the collector's own state is what the snapshot reports.
-        await attachFinalCapture(capture, report, {
-          attempt,
-          stimuli,
-          recorded,
-          stopReason: reason,
-          prelude,
-        });
-      }
+  } catch (error) {
+    if (recorder !== null) {
+      recorder.acquisitionFailed(report.lastPhase(), report.describe(error));
     }
+    throw error;
+  }
+}
+
+async function useAttempt(
+  input: AttemptFixtureInput,
+  report: AttemptReport,
+  context: {
+    readonly capture: FinalCaptureInput;
+    readonly prelude: EnvelopePrelude | null;
+    readonly attempt: RunningBlackboxAttempt;
+  },
+): Promise<Digest | null> {
+  const { capture, prelude, attempt } = context;
+  report.acquired(attempt.sandbox, attempt.telemetry);
+  bindEffectAssertionReporter(attempt.effects, report);
+  report.emit(
+    'sandbox',
+    'completed',
+    `${attempt.sandbox.sandboxId}; ${attempt.sandbox.entrypoint.url}`,
+  );
+  report.emit('execution', 'started', 'test fixtures, hooks and body');
+  let envelope: Digest | null = null;
+  try {
+    await report.flush();
+    report.lifecycle('ready', attempt.sandbox.catalogEntry);
+    await input.use(attempt);
+  } finally {
+    const stimuli = completedAttemptStimuli(attempt.effects);
+    const recorded = recordedAttemptStimuli(attempt.effects);
+    closeBlackboxEffects(attempt.effects);
+    const reason = stopReason(input.testInfo.status);
+    report.emit('execution', 'info', input.testInfo.status ?? 'unknown');
+    try {
+      await finishAttempt(attempt, report, reason, input.policy);
+    } finally {
+      // After cleanup the collector has stopped, so this read is final. It also runs when cleanup failed,
+      // where the collector's own state is what the snapshot reports.
+      envelope = await attachFinalCapture(capture, report, {
+        attempt,
+        stimuli,
+        recorded,
+        stopReason: reason,
+        prelude,
+      });
+    }
+  }
+  return envelope;
+}
+
+export async function runAttemptFixture(input: AttemptFixtureInput): Promise<void> {
+  const report = new AttemptReport(input.testInfo);
+  report.protect(input.blackboxEnvironment);
+  const capture = finalCaptureInput(input);
+  const entryId = input.catalogEntry.kind === 'unselected' ? '' : input.catalogEntry.id;
+  const recorder = capture.enabled ? startReceipt(input.testInfo, entryId) : null;
+  let envelope: Digest | null = null;
+  try {
+    const prelude = await captureBeforeAttempt(capture);
+    const attempt = await acquire(input, report, recorder);
+    if (recorder !== null) {
+      recorder.started(attempt.sandbox.sandboxId);
+    }
+    envelope = await useAttempt(input, report, { capture, prelude, attempt });
   } catch (error) {
     report.emit('attempt', 'failed', 'setup or teardown failed; see test error');
     throw error;
   } finally {
+    if (recorder !== null) {
+      await attachReceipt({
+        testInfo: input.testInfo,
+        recorder,
+        catalogEntryId: entryId,
+        envelope,
+      }).catch(() => {
+        report.emit('receipt', 'failed', 'could not attach the attempt receipt');
+      });
+    }
     await closeReport(report, input);
   }
 }

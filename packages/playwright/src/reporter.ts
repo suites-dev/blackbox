@@ -1,7 +1,10 @@
+import { randomUUID } from 'node:crypto';
+
 import type { Reporter, TestCase, TestResult } from '@playwright/test/reporter';
 
 import { decodeEvent, progressAttachment } from './reporting/events.js';
 import { sandboxLifecycleOption } from './reporting/options.js';
+import { invocationVariable } from './reporting/invocation.js';
 import { reportText } from './reporting/text.js';
 
 /**
@@ -11,6 +14,17 @@ import { reportText } from './reporting/text.js';
 export default class BlackboxReporter implements Reporter {
   constructor(options: unknown = {}) {
     sandboxLifecycleOption(options);
+  }
+
+  /**
+   * Runs in the process that starts the workers, so every attempt of this invocation inherits the same id.
+   * A value the user already set is kept.
+   */
+  onBegin(): void {
+    const existing = process.env[invocationVariable];
+    if (existing === undefined || existing === '') {
+      process.env[invocationVariable] = randomUUID();
+    }
   }
 
   printsToStdio(): boolean {

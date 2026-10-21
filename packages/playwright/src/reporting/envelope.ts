@@ -30,6 +30,7 @@ import type {
 } from '../envelope/types.js';
 import type { RunningBlackboxAttempt } from '../runtime/acquisition.js';
 import type { AttachedEvidence } from './attempt.js';
+import { invocationId } from './invocation.js';
 
 export const envelopeAttachment = 'blackbox-envelope';
 
@@ -84,8 +85,10 @@ export async function captureEnvelopePrelude(input: {
 
 function ciEnvironment(): Record<string, string> {
   const env = process.env;
+  const invocation = invocationId();
+  const extra: Record<string, string> = invocation === null ? {} : { invocation };
   if (env.GITHUB_ACTIONS !== 'true') {
-    return env.CI === undefined ? {} : { provider: 'unknown-ci' };
+    return env.CI === undefined ? extra : { provider: 'unknown-ci', ...extra };
   }
   const pick = (name: string): string => env[name] ?? '';
   return {
@@ -95,6 +98,7 @@ function ciEnvironment(): Record<string, string> {
     job: pick('GITHUB_JOB'),
     sha: pick('GITHUB_SHA'),
     ref: pick('GITHUB_REF_NAME'),
+    ...extra,
   };
 }
 

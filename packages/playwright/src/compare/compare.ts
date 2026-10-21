@@ -9,6 +9,7 @@ import {
   type CompareOptions,
   type ComparisonOutcome,
   type ComparisonSide,
+  type AliasStep,
   type ComparableEnvelope,
   type SideVerification,
   type UnresolvedItem,
@@ -53,12 +54,9 @@ function invocation(
 ): BehavioralDelta['invocation'] {
   const left = reference.provenance.ci;
   const right = head.provenance.ci;
-  return Object.hasOwn(left, 'runId') &&
-    left.runId !== '' &&
-    left.runId === right.runId &&
-    left.runAttempt === right.runAttempt
-    ? 'same'
-    : 'unestablished';
+  const named = (ci: Readonly<Record<string, string>>): string =>
+    Object.hasOwn(ci, 'invocation') ? ci.invocation : '';
+  return named(left) !== '' && named(left) === named(right) ? 'same' : 'unestablished';
 }
 
 function limits(checks: BehavioralDelta['comparability']['checks']): readonly UnresolvedItem[] {
@@ -98,12 +96,30 @@ function outcomeOf(input: {
  * produces drift. The result is never a pass or a fail: contract findings sit beside it, and a missing
  * observation is reported as unresolved, never as absence.
  */
+function annotated(comparability: BehavioralDelta['comparability'], aliases: readonly AliasStep[]) {
+  if (aliases.length === 0) {
+    return comparability;
+  }
+  return {
+    ...comparability,
+    checks: comparability.checks.map((entry) =>
+      entry.name === 'behavior'
+        ? {
+            ...entry,
+            detail: `${entry.detail} (same behavior through ${String(aliases.length)} recorded alias(es); the ids were not merged)`,
+          }
+        : entry,
+    ),
+  };
+}
+
 export function compareSides(
   reference: ComparisonSide,
   head: ComparisonSide,
   options: CompareOptions = { claims: [] },
+  aliases: readonly AliasStep[] = [],
 ): BehavioralDelta {
-  const comparability = assessComparability(reference, head);
+  const comparability = annotated(assessComparability(reference, head), aliases);
   const invalid = comparability.level === 'incomparable';
   const limited = comparability.level === 'limited';
   const effects = invalid ? { drift: [], coverage: [] } : diffEffects(reference, head);
@@ -149,6 +165,7 @@ export function compareSides(
     coverage: effects.coverage,
     association: association(reference.envelope, head.envelope),
     invocation: invocation(reference.envelope, head.envelope),
+    behaviorAliases: aliases,
   } satisfies Omit<BehavioralDelta, 'digest'>;
   return { ...body, digest: digestOf(body) };
 }
