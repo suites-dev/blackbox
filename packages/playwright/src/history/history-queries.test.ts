@@ -177,6 +177,30 @@ describe('comparing selected executions', () => {
   });
 });
 
+describe('tree identity', () => {
+  it('does not call a dirty working tree a tree that was seen before', async () => {
+    const history = await openHistory();
+    await ingest(
+      history,
+      execution({ attemptId: 'p', commit: 'c1', tree: 't1', capturedAt: at(10) }),
+    );
+    await ingest(
+      history,
+      execution({ attemptId: 'q', commit: 'c2', tree: 't1', capturedAt: at(20), dirty: true }),
+    );
+    await ingest(
+      history,
+      execution({ attemptId: 'r', commit: 'c3', tree: 't1', capturedAt: at(30) }),
+    );
+    const entries = await history.behaviorHistory(id, { followAliases: false });
+    expect(
+      entries.map(
+        ({ attemptId, treeSeenBefore }) => `${String(attemptId)}:${String(treeSeenBefore)}`,
+      ),
+    ).toEqual(['p:false', 'q:false', 'r:true']);
+  });
+});
+
 describe('findings', () => {
   it('collects failed attempts, failed assertions and refuted comparisons with links to their records', async () => {
     const history = await openHistory();

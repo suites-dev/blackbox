@@ -5,6 +5,7 @@ import { verifyEnvelope } from '../envelope/verify.js';
 import { buildAlias, verifyAlias, type AliasBody, type BehaviorAlias } from './alias.js';
 import { compareThroughAliases } from './compare-stored.js';
 import { checkEvidence } from './evidence-check.js';
+import { checkStoredEnvelope } from './stored-envelope.js';
 import { collectFindings, type Findings } from './findings.js';
 import {
   HistoryError,
@@ -147,18 +148,50 @@ export class BehaviorHistory {
     return collectFindings(this, id, options);
   }
 
+  /** A stored envelope, re-verified on every read: the index is a cache and a file can change after it was built. */
   private async envelopeOf(id: Digest): Promise<AnyEnvelope | null> {
     const bytes = await this.store.get('envelope', id);
-    return bytes === null ? null : (JSON.parse(bytes.toString('utf8')) as AnyEnvelope);
+    if (bytes === null) {
+      return null;
+    }
+    const checked = checkStoredEnvelope(bytes, id);
+    if (checked.ok) {
+      return checked.envelope;
+    }
+    throw new HistoryError('A stored envelope no longer verifies', [id, ...checked.problems]);
   }
 
   private async snapshotOf(envelope: AnyEnvelope): Promise<string | null> {
     const { finalSnapshot } = envelope.observed;
-    const bytes =
-      finalSnapshot.state === 'attached'
-        ? await this.store.get('blob', finalSnapshot.evidence)
-        : null;
-    return bytes === null ? null : bytes.toString('utf8');
+    if (finalSnapshot.state !== 'attached') {
+      return null;
+    }
+    const bytes = await this.store.get('blob', finalSnapshot.evidence);
+    if (bytes === null) {
+      return null;
+    }
+    if (digestBytes(bytes) !== finalSnapshot.evidence) {
+      throw new HistoryError('A stored snapshot no longer matches its identity', [
+        finalSnapshot.evidence,
+      ]);
+    }
+    return bytes.toString('utf8');
+  }
+
+  private async receiptOf(id: Digest): Promise<AttemptReceipt | null> {
+    const bytes = await this.store.get('receipt', id);
+    if (bytes === null) {
+      return null;
+    }
+    try {
+      const value: unknown = JSON.parse(bytes.toString('utf8'));
+      if (verifyReceipt(value).ok && (value as AttemptReceipt).digest === id) {
+        return value as AttemptReceipt;
+      }
+    } catch {
+      // unparsable: reported below
+    }
+    throw new HistoryError('A stored receipt no longer verifies', [id]);
   }
 
   /** One execution, its receipts, and where each piece of its evidence stands. */
@@ -174,9 +207,9 @@ export class BehaviorHistory {
     for (const item of (await this.index()).receipts.filter(
       ({ envelope: digest }) => digest === id,
     )) {
-      const bytes = await this.store.get('receipt', item.id);
-      if (bytes !== null) {
-        receipts.push(JSON.parse(bytes.toString('utf8')) as AttemptReceipt);
+      const receipt = await this.receiptOf(item.id);
+      if (receipt !== null) {
+        receipts.push(receipt);
       }
     }
     return {

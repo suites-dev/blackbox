@@ -9,6 +9,12 @@ export type ObjectKind = (typeof objectKinds)[number];
 
 const identity = /^sha256:([0-9a-f]{64})$/u;
 
+/** The largest single record the store accepts. A record is read whole, so an unbounded one is a memory attack. */
+export const maxObjectBytes = 256 * 1024 * 1024;
+
+// The history can hold excerpts of what the system under test did; only its owner needs to read it.
+const privateDirectory = 0o700;
+
 /** A different record already exists under the same identity: the store is corrupt or a digest collided. */
 export class ConflictError extends Error {
   constructor(
@@ -44,9 +50,15 @@ async function readIfPresent(path: string): Promise<Buffer | null> {
  * racing on the same record both succeed and nobody overwrites anybody.
  */
 export class ObjectStore {
-  constructor(readonly root: string) {}
+  constructor(
+    readonly root: string,
+    private readonly limit: number = maxObjectBytes,
+  ) {}
 
   path(kind: ObjectKind, id: Digest): string {
+    if (!objectKinds.includes(kind)) {
+      throw new TypeError(`Not an object kind: ${JSON.stringify(kind)}`);
+    }
     const hex = hexOf(id);
     return join(this.root, 'objects', kind, hex.slice(0, 2), hex);
   }
@@ -57,6 +69,11 @@ export class ObjectStore {
     bytes: string | Uint8Array,
   ): Promise<{ readonly created: boolean }> {
     const data = Buffer.from(bytes);
+    if (data.byteLength > this.limit) {
+      throw new RangeError(
+        `A ${kind} of ${String(data.byteLength)} bytes exceeds ${String(this.limit)}`,
+      );
+    }
     const target = this.path(kind, id);
     const same = async (): Promise<{ readonly created: false }> => {
       const existing = await readIfPresent(target);
@@ -68,8 +85,8 @@ export class ObjectStore {
     if ((await readIfPresent(target)) !== null) {
       return same();
     }
-    await mkdir(dirname(target), { recursive: true });
-    await mkdir(join(this.root, 'tmp'), { recursive: true });
+    await mkdir(dirname(target), { recursive: true, mode: privateDirectory });
+    await mkdir(join(this.root, 'tmp'), { recursive: true, mode: privateDirectory });
     const partial = join(this.root, 'tmp', `${kind}-${randomUUID()}.partial`);
     const handle = await open(partial, 'wx', 0o444);
     try {

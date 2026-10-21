@@ -28,6 +28,8 @@ export interface SideSpec {
   readonly commit: string;
   readonly tree: string | null;
   readonly invocation: string | null;
+  /** Uncommitted edits on top of the commit's tree. */
+  readonly dirty: boolean;
   readonly assertions: readonly { readonly outcome: string; readonly evaluation: string }[];
 }
 
@@ -73,6 +75,7 @@ export function rawSide(overrides: Partial<SideSpec>): {
     commit: 'c1',
     tree: null,
     invocation: null,
+    dirty: false,
     assertions: [],
     ...overrides,
   } satisfies SideSpec;
@@ -94,7 +97,9 @@ export function rawSide(overrides: Partial<SideSpec>): {
     source: sourceFixtureAt({
       commit: spec.commit,
       tree: spec.tree ?? `tree-${spec.commit}`,
-      workingTree: { state: 'clean' },
+      workingTree: spec.dirty
+        ? { state: 'dirty', digest: digestBytes(`edits-${spec.attemptId}`), coverage: 'complete' }
+        : { state: 'clean' },
     }),
     provenance: {
       ...base.provenance,

@@ -1,5 +1,5 @@
 import { digestBytes } from '../envelope/canonical.js';
-import { currentEvidenceDigest } from '../envelope/capture/evidence.js';
+import { currentEvidenceDigest, evidencePathInside } from '../envelope/capture/evidence.js';
 import type { AnyEnvelope, EvidenceCheck } from './history-types.js';
 import type { ObjectStore } from './store.js';
 
@@ -19,6 +19,10 @@ export async function checkEvidence(
     if (bytes !== null && digestBytes(bytes) === ref.id) {
       checks.push({ ...base, status: 'stored' });
     } else if (root !== null && ref.locator.type === 'file') {
+      if ((await evidencePathInside(root, ref.locator.path)) === null) {
+        checks.push({ ...base, status: 'refused' });
+        continue;
+      }
       const current = await currentEvidenceDigest(root, ref);
       checks.push({
         ...base,

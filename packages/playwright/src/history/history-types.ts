@@ -25,8 +25,8 @@ export interface EvidenceCheck {
   readonly kind: EvidenceRef['kind'];
   readonly id: Digest;
   readonly locator: EvidenceRef['locator'];
-  /** `stored`: the bytes are in the store and match. `verified`/`mismatch`/`missing`: re-checked against files. */
-  readonly status: 'stored' | 'verified' | 'mismatch' | 'missing' | 'not-checked';
+  /** `stored`: the bytes are in the store and match. `verified`/`mismatch`/`missing`: re-checked against files. `refused`: the locator leaves the evidence root. */
+  readonly status: 'stored' | 'verified' | 'mismatch' | 'missing' | 'not-checked' | 'refused';
 }
 
 export interface ExecutionDetail {

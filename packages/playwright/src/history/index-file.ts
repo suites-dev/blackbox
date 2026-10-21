@@ -21,7 +21,7 @@ export async function readIndexFile(root: string): Promise<HistoryIndex | null> 
 
 /** Written to a private file and renamed, so a reader never sees half an index. Concurrent writers are harmless. */
 export async function writeIndexFile(root: string, index: HistoryIndex): Promise<void> {
-  await mkdir(join(root, 'index'), { recursive: true });
+  await mkdir(join(root, 'index'), { recursive: true, mode: 0o700 });
   const partial = join(root, 'index', `index.${randomUUID()}.partial`);
   await writeFile(partial, canonicalize(index));
   await rename(partial, join(root, 'index', 'index.json'));

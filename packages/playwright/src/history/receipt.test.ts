@@ -137,7 +137,7 @@ describe('receipt invariants', () => {
     recorder.started('sandbox-1');
     const good = recorder.build({ behavior, outcome, interrupted: false, envelope });
     const { digest: _digest, ...rest } = good;
-    const lifecycle = [...rest.lifecycle, { state: 'execution-interrupted' as const, at: clock() }];
+    const lifecycle = [...rest.lifecycle, { state: 'execution-interrupted' as const, at: clock(), detail: '' }];
     expect(verifyReceipt(buildReceipt({ ...rest, lifecycle }))).toMatchObject({
       ok: false,
       problems: ['lifecycle has more than one ending'],

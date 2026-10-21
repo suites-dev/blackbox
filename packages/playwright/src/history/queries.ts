@@ -25,7 +25,7 @@ export interface HistoryEntry {
   readonly snapshot: IndexedExecution['snapshot'] | null;
   /** The commit differs from the previous execution that recorded one. */
   readonly revisionChanged: boolean;
-  /** The same tree (identical content) was already seen at a different commit. */
+  /** The same tree (identical content, working tree clean) was already seen at a different commit. */
   readonly treeSeenBefore: boolean;
 }
 
@@ -140,7 +140,8 @@ function annotate(entries: readonly Draft[]): HistoryEntry[] {
   return entries.map((entry) => {
     const { source } = entry;
     const commit = source === null ? null : source.commit;
-    const tree = source === null ? null : source.tree;
+    // A tree names the content only when nothing was edited on top of it: a dirty working tree is not that tree.
+    const tree = source === null || source.workingTree !== 'clean' ? null : source.tree;
     const revisionChanged = commit !== null && previous !== null && commit !== previous;
     const treeSeenBefore = tree !== null && trees.has(tree) && trees.get(tree) !== commit;
     if (commit !== null) {

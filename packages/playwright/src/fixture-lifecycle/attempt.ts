@@ -5,7 +5,6 @@ import { recoverSandbox, type SandboxStopReason } from '@suites/blackbox-sandbox
 
 import { completedAttemptStimuli, recordedAttemptStimuli } from '../effects/attempt-effects.js';
 import { bindEffectAssertionReporter, closeBlackboxEffects } from '../effects/runtime.js';
-import type { Digest } from '../envelope/canonical.js';
 import type { ReceiptRecorder } from '../history/recorder.js';
 import { AttemptReport } from '../reporting/attempt.js';
 import type { EnvelopePrelude } from '../reporting/envelope.js';
@@ -20,6 +19,7 @@ import {
   captureBeforeAttempt,
   type FinalCaptureInput,
 } from './final-capture.js';
+import { finalizeAttempt, newAttemptProduct, type AttemptProduct } from './finalize.js';
 import {
   acquireWithinTestTimeout,
   stopWithinCleanupTimeout,
@@ -146,9 +146,10 @@ async function useAttempt(
     readonly capture: FinalCaptureInput;
     readonly prelude: EnvelopePrelude | null;
     readonly attempt: RunningBlackboxAttempt;
+    readonly product: AttemptProduct;
   },
-): Promise<Digest | null> {
-  const { capture, prelude, attempt } = context;
+): Promise<void> {
+  const { capture, prelude, attempt, product } = context;
   report.acquired(attempt.sandbox, attempt.telemetry);
   bindEffectAssertionReporter(attempt.effects, report);
   report.emit(
@@ -157,7 +158,6 @@ async function useAttempt(
     `${attempt.sandbox.sandboxId}; ${attempt.sandbox.entrypoint.url}`,
   );
   report.emit('execution', 'started', 'test fixtures, hooks and body');
-  let envelope: Digest | null = null;
   try {
     await report.flush();
     report.lifecycle('ready', attempt.sandbox.catalogEntry);
@@ -168,21 +168,20 @@ async function useAttempt(
     closeBlackboxEffects(attempt.effects);
     const reason = stopReason(input.testInfo.status);
     report.emit('execution', 'info', input.testInfo.status ?? 'unknown');
-    try {
-      await finishAttempt(attempt, report, reason, input.policy);
-    } finally {
-      // After cleanup the collector has stopped, so this read is final. It also runs when cleanup failed,
-      // where the collector's own state is what the snapshot reports.
-      envelope = await attachFinalCapture(capture, report, {
-        attempt,
-        stimuli,
-        recorded,
-        stopReason: reason,
-        prelude,
-      });
-    }
+    // After cleanup the collector has stopped, so this read is final. It also runs when cleanup failed,
+    // where the collector's own state is what the snapshot reports.
+    await finalizeAttempt(product, {
+      cleanup: () => finishAttempt(attempt, report, reason, input.policy),
+      capture: () =>
+        attachFinalCapture(capture, report, {
+          attempt,
+          stimuli,
+          recorded,
+          stopReason: reason,
+          prelude,
+        }),
+    });
   }
-  return envelope;
 }
 
 export async function runAttemptFixture(input: AttemptFixtureInput): Promise<void> {
@@ -191,14 +190,14 @@ export async function runAttemptFixture(input: AttemptFixtureInput): Promise<voi
   const capture = finalCaptureInput(input);
   const entryId = input.catalogEntry.kind === 'unselected' ? '' : input.catalogEntry.id;
   const recorder = capture.enabled ? startReceipt(input.testInfo, entryId) : null;
-  let envelope: Digest | null = null;
+  const product = newAttemptProduct();
   try {
     const prelude = await captureBeforeAttempt(capture);
     const attempt = await acquire(input, report, recorder);
     if (recorder !== null) {
       recorder.started(attempt.sandbox.sandboxId);
     }
-    envelope = await useAttempt(input, report, { capture, prelude, attempt });
+    await useAttempt(input, report, { capture, prelude, attempt, product });
   } catch (error) {
     report.emit('attempt', 'failed', 'setup or teardown failed; see test error');
     throw error;
@@ -208,7 +207,7 @@ export async function runAttemptFixture(input: AttemptFixtureInput): Promise<voi
         testInfo: input.testInfo,
         recorder,
         catalogEntryId: entryId,
-        envelope,
+        envelope: product.envelope,
       }).catch(() => {
         report.emit('receipt', 'failed', 'could not attach the attempt receipt');
       });

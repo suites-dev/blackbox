@@ -8,15 +8,7 @@ import { buildEnvelope } from '../envelope/build.js';
 import { digestBytes } from '../envelope/canonical.js';
 import { inputFixture } from '../envelope/envelope.fixture.js';
 import { BehaviorHistory } from './history.js';
-import {
-  behaviorOf,
-  cleanup,
-  execution,
-  failedAcquisition,
-  ingest,
-  openHistory,
-  roots,
-} from './history.fixture.js';
+import { cleanup, execution, ingest, openHistory, roots } from './history.fixture.js';
 
 afterEach(cleanup);
 
@@ -84,84 +76,6 @@ describe('corruption and interrupted writes', () => {
     ]);
     expect((await history.index()).executions.map(({ envelopeId }) => envelopeId)).toEqual([good]);
     expect(await history.execution(good)).not.toBeNull();
-  });
-});
-
-describe('records stored under the wrong identity', () => {
-  it('refuses a valid envelope stored under another envelope identity', async () => {
-    const history = await openHistory();
-    const a = execution({ attemptId: 'a' });
-    const b = execution({ attemptId: 'b' });
-    await ingest(history, a);
-    await ingest(history, b);
-    const path = (id: string) => {
-      const hex = id.slice('sha256:'.length);
-      return join(history.root, 'objects', 'envelope', hex.slice(0, 2), hex);
-    };
-    const bytes = await readFile(path(a.envelope.digest));
-    await rm(path(b.envelope.digest));
-    await writeFile(path(b.envelope.digest), bytes);
-    const report = await history.verifyStore();
-    expect(report.corrupt).toEqual([
-      expect.objectContaining({ kind: 'envelope', id: b.envelope.digest }),
-    ]);
-    expect((await history.index()).executions.map(({ envelopeId }) => envelopeId)).toEqual([
-      a.envelope.digest,
-    ]);
-  });
-
-  it('refuses a receipt stored under another receipt identity', async () => {
-    const history = await openHistory();
-    const first = failedAcquisition(behaviorOf('subscription.payment'), 5);
-    const second = failedAcquisition(behaviorOf('subscription.payment'), 6);
-    await history.ingestReceipt(first);
-    await history.ingestReceipt(second);
-    const path = (id: string) => {
-      const hex = id.slice('sha256:'.length);
-      return join(history.root, 'objects', 'receipt', hex.slice(0, 2), hex);
-    };
-    const bytes = await readFile(path(first.digest));
-    await rm(path(second.digest));
-    await writeFile(path(second.digest), bytes);
-    expect((await history.verifyStore()).corrupt).toEqual([
-      expect.objectContaining({ kind: 'receipt', id: second.digest }),
-    ]);
-    expect((await history.index()).receipts.map(({ id: receipt }) => receipt)).toEqual([
-      first.digest,
-    ]);
-  });
-});
-
-describe('blobs and interrupted writes', () => {
-  it('flags a blob whose bytes do not match its identity and unparsable records', async () => {
-    const history = await openHistory();
-    const spec = execution({ attemptId: 'a' });
-    await ingest(history, spec);
-    const snap = spec.envelope.observed.finalSnapshot;
-    if (snap.state !== 'attached') {
-      throw new Error('fixture must have a snapshot');
-    }
-    const hex = snap.evidence.slice('sha256:'.length);
-    const file = join(history.root, 'objects', 'blob', hex.slice(0, 2), hex);
-    await rm(file);
-    await writeFile(file, 'not the snapshot');
-    const junk = join(history.root, 'objects', 'receipt', 'ab');
-    await mkdir(junk, { recursive: true });
-    await writeFile(join(junk, `ab${'0'.repeat(62)}`), '{ not json');
-    const report = await history.verifyStore();
-    expect(report.corrupt.map(({ kind }) => kind).sort()).toEqual(['blob', 'receipt']);
-    expect((await history.index()).executions[0].snapshot).toBe('missing');
-  });
-
-  it('lists a write that was interrupted and does not let it into the history', async () => {
-    const history = await openHistory();
-    await ingest(history, execution({ attemptId: 'a' }));
-    await mkdir(join(history.root, 'tmp'), { recursive: true });
-    await writeFile(join(history.root, 'tmp', 'envelope-crash.partial'), '{"half":');
-    const report = await history.verifyStore();
-    expect(report.interruptedWrites).toEqual(['envelope-crash.partial']);
-    expect(report.objects.envelope).toBe(1);
-    expect(report.corrupt).toEqual([]);
   });
 });
 

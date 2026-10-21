@@ -1,4 +1,4 @@
-import { chmod, mkdtemp, readdir, rm, utimes, writeFile } from 'node:fs/promises';
+import { chmod, mkdtemp, readdir, rm, stat, utimes, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 
 import { digestBytes } from '../envelope/canonical.js';
 import { defined } from './history.fixture.js';
-import { ConflictError, ObjectStore } from './store.js';
+import { ConflictError, ObjectStore, type ObjectKind } from './store.js';
 
 const roots: string[] = [];
 async function fresh(): Promise<ObjectStore> {
@@ -16,6 +16,33 @@ async function fresh(): Promise<ObjectStore> {
 }
 afterEach(async () => {
   await Promise.all(roots.splice(0).map((root) => rm(root, { recursive: true, force: true })));
+});
+
+describe('hostile input to the store', () => {
+  it('rejects an unknown kind, so a kind cannot name a path outside the objects directory', async () => {
+    const store = await fresh();
+    const id = digestBytes('x');
+    expect(() => store.path('../../escape' as ObjectKind, id)).toThrow(TypeError);
+    await expect(store.put('../x' as ObjectKind, id, 'x')).rejects.toThrow(TypeError);
+  });
+
+  it('rejects a record larger than the limit and stores nothing for it', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'bb-store-'));
+    roots.push(root);
+    const store = new ObjectStore(root, 8);
+    const id = digestBytes('0123456789');
+    await expect(store.put('blob', id, '0123456789')).rejects.toThrow(RangeError);
+    expect(await store.list('blob')).toEqual([]);
+    expect(await store.interrupted()).toEqual([]);
+  });
+
+  it('creates directories only its owner can enter and objects nobody can write', async () => {
+    const store = await fresh();
+    const id = digestBytes('x');
+    await store.put('blob', id, 'x');
+    expect((await stat(join(store.root, 'objects'))).mode & 0o077).toBe(0);
+    expect((await stat(store.path('blob', id))).mode & 0o222).toBe(0);
+  });
 });
 
 describe('immutable object store', () => {

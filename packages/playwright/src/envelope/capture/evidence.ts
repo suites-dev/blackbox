@@ -1,5 +1,5 @@
-import { readdir, readFile, stat } from 'node:fs/promises';
-import { join, relative } from 'node:path';
+import { readdir, readFile, realpath, stat } from 'node:fs/promises';
+import { isAbsolute, join, relative, resolve, sep } from 'node:path';
 
 import { digestBytes, digestOf, type Digest } from '../canonical.js';
 import type { EvidenceRef } from '../types.js';
@@ -54,7 +54,49 @@ export async function fragmentsDigest(directory: string): Promise<Digest | null>
   );
 }
 
-/** Recomputes the digest of the file evidence a reference points to; `null` when it is gone. */
+/** The largest retained file a re-verification will read. */
+export const maxEvidenceBytes = 256 * 1024 * 1024;
+
+const inside = (parent: string, child: string): boolean => {
+  const path = relative(parent, child);
+  return path !== '' && path !== '..' && !path.startsWith(`..${sep}`) && !isAbsolute(path);
+};
+
+/**
+ * Resolves a locator path under `root`, or `null` when it would leave it, lexically or through a symbolic link.
+ * An envelope is data from a file; a path inside it is not trusted to name something under the evidence root.
+ */
+export async function evidencePathInside(
+  root: string,
+  locatorPath: string,
+): Promise<string | null> {
+  const path = resolve(root, locatorPath);
+  if (!inside(resolve(root), path)) {
+    return null;
+  }
+  try {
+    return inside(await realpath(root), await realpath(path)) ? path : null;
+  } catch {
+    // Nothing there to follow: the caller reports the file as missing.
+    return path;
+  }
+}
+
+async function regularFileDigest(path: string): Promise<Digest | null> {
+  try {
+    const info = await stat(path);
+    return info.isFile() && info.size <= maxEvidenceBytes
+      ? digestBytes(await readFile(path))
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Recomputes the digest of the file evidence a reference points to; `null` when it is gone, is not a regular
+ * file, is too large, or its path escapes `root`.
+ */
 export async function currentEvidenceDigest(
   root: string,
   ref: EvidenceRef,
@@ -62,15 +104,11 @@ export async function currentEvidenceDigest(
   if (ref.locator.type !== 'file') {
     return null;
   }
-  const path = join(root, ref.locator.path);
-  if (ref.kind === 'collector-fragments') {
-    return fragmentsDigest(path);
-  }
-  try {
-    return digestBytes(await readFile(path));
-  } catch {
+  const path = await evidencePathInside(root, ref.locator.path);
+  if (path === null) {
     return null;
   }
+  return ref.kind === 'collector-fragments' ? fragmentsDigest(path) : regularFileDigest(path);
 }
 
 async function fragmentsRef(root: string, directory: string): Promise<EvidenceRef | null> {
