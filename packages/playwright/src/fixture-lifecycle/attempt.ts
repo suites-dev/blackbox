@@ -3,6 +3,7 @@ import { dirname, isAbsolute, resolve } from 'node:path';
 import type { TestInfo } from '@playwright/test';
 import { recoverSandbox, type SandboxStopReason } from '@suites/blackbox-sandbox';
 
+import { completedAttemptStimuli, recordedAttemptStimuli } from '../effects/attempt-effects.js';
 import { bindEffectAssertionReporter, closeBlackboxEffects } from '../effects/runtime.js';
 import { AttemptReport } from '../reporting/attempt.js';
 import { reported } from '../reporting/events.js';
@@ -10,6 +11,11 @@ import { reportObservations } from '../reporting/observations.js';
 import type { BlackboxAttemptRuntime, RunningBlackboxAttempt } from '../runtime/acquisition.js';
 import { retainAttempt, retainedAttemptDirectory } from '../retention/retention.js';
 import type { BlackboxTestOptions } from '../types.js';
+import {
+  attachFinalCapture,
+  captureBeforeAttempt,
+  type FinalCaptureInput,
+} from './final-capture.js';
 import {
   acquireWithinTestTimeout,
   stopWithinCleanupTimeout,
@@ -91,10 +97,22 @@ async function closeReport(report: AttemptReport, input: AttemptFixtureInput): P
   }
 }
 
+function finalCaptureInput(input: AttemptFixtureInput): FinalCaptureInput {
+  return {
+    enabled: input.blackboxFinalSnapshot && input.catalogEntry.kind !== 'unselected',
+    testInfo: input.testInfo,
+    configFile: configFilePath(input.testInfo),
+    entryId: input.catalogEntry.kind === 'unselected' ? '' : input.catalogEntry.id,
+    variables: input.blackboxEnvironment,
+  };
+}
+
 export async function runAttemptFixture(input: AttemptFixtureInput): Promise<void> {
   const report = new AttemptReport(input.testInfo);
   report.protect(input.blackboxEnvironment);
+  const capture = finalCaptureInput(input);
   try {
+    const prelude = await captureBeforeAttempt(capture);
     const attempt = await acquireWithinTestTimeout({
       runtime: input.runtime,
       testInfo: input.testInfo,
@@ -122,10 +140,24 @@ export async function runAttemptFixture(input: AttemptFixtureInput): Promise<voi
       report.lifecycle('ready', attempt.sandbox.catalogEntry);
       await input.use(attempt);
     } finally {
+      const stimuli = completedAttemptStimuli(attempt.effects);
+      const recorded = recordedAttemptStimuli(attempt.effects);
       closeBlackboxEffects(attempt.effects);
       const reason = stopReason(input.testInfo.status);
       report.emit('execution', 'info', input.testInfo.status ?? 'unknown');
-      await finishAttempt(attempt, report, reason, input.policy);
+      try {
+        await finishAttempt(attempt, report, reason, input.policy);
+      } finally {
+        // After cleanup the collector has stopped, so this read is final. It also runs when cleanup failed,
+        // where the collector's own state is what the snapshot reports.
+        await attachFinalCapture(capture, report, {
+          attempt,
+          stimuli,
+          recorded,
+          stopReason: reason,
+          prelude,
+        });
+      }
     }
   } catch (error) {
     report.emit('attempt', 'failed', 'setup or teardown failed; see test error');

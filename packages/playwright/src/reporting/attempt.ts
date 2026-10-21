@@ -6,6 +6,8 @@ import type { EffectAssertionReport } from '../effects/runtime.js';
 import type { BlackboxSandbox, BlackboxTelemetry } from '../types.js';
 
 import { effectAttachment, effectAttachmentBody } from './effects/attachment.js';
+import { finalSnapshotAttachment, type FinalSnapshotDocument } from '../effects/final-snapshot.js';
+import { digestBytes, digestOf, type Digest } from '../envelope/canonical.js';
 import {
   attemptAttachment,
   progressAttachment,
@@ -16,6 +18,34 @@ import { SecretValues } from './redaction/secret-environment.js';
 import { reportText, reportTextLimit } from './text.js';
 import { sandboxLifecycleEnabled } from './options.js';
 
+export interface AttachedEvidence {
+  readonly kind: 'assertion-evidence' | 'final-snapshot';
+  readonly name: string;
+  readonly sequence: number;
+  readonly digest: Digest;
+  readonly bytes: number;
+  readonly outcome: string;
+  readonly evaluation: string;
+  readonly contractDigest: Digest | null;
+}
+
+function assertionFields(
+  body: string,
+): Pick<AttachedEvidence, 'outcome' | 'evaluation' | 'contractDigest'> {
+  try {
+    const { assertion } = JSON.parse(body) as {
+      assertion: { outcome: string; evaluation: string; contract: unknown };
+    };
+    return {
+      outcome: assertion.outcome,
+      evaluation: assertion.evaluation,
+      contractDigest: digestOf(assertion.contract),
+    };
+  } catch {
+    return { outcome: 'unknown', evaluation: 'unknown', contractDigest: null };
+  }
+}
+
 /** Attachments use Playwright's worker transport and remain available to other reporters. */
 export class AttemptReport implements AttemptProgress {
   private readonly started = Date.now();
@@ -25,6 +55,7 @@ export class AttemptReport implements AttemptProgress {
   private attachmentFailure: unknown = null;
   private dropped = 0;
   private effectAssertions = 0;
+  private readonly evidence: AttachedEvidence[] = [];
   private closed = false;
   private identity:
     | { readonly kind: 'not-ready' }
@@ -76,17 +107,62 @@ export class AttemptReport implements AttemptProgress {
 
   async effectAssertion(report: EffectAssertionReport): Promise<void> {
     this.effectAssertions++;
-    await this.testInfo.attach(effectAttachment, {
-      contentType: 'application/json',
-      body: effectAttachmentBody({
-        sequence: this.effectAssertions,
-        report,
-        sanitize: (value) => {
-          const redacted = this.secrets.redact(value);
-          return { text: reportText(redacted), truncated: redacted.length > reportTextLimit };
-        },
-      }),
+    const body = effectAttachmentBody({
+      sequence: this.effectAssertions,
+      report,
+      sanitize: (value) => {
+        const redacted = this.secrets.redact(value);
+        return { text: reportText(redacted), truncated: redacted.length > reportTextLimit };
+      },
     });
+    this.evidence.push({
+      kind: 'assertion-evidence',
+      name: effectAttachment,
+      sequence: this.effectAssertions,
+      digest: digestBytes(body),
+      bytes: Buffer.byteLength(body),
+      ...assertionFields(body),
+    });
+    await this.testInfo.attach(effectAttachment, { contentType: 'application/json', body });
+  }
+
+  /** What this attempt attached as evidence, with the digest of each exact body. */
+  attachedEvidence(): readonly AttachedEvidence[] {
+    return this.evidence;
+  }
+
+  /** Attaches the final snapshot with the same redaction and truncation accounting as an assertion. */
+  async finalSnapshot(snapshot: FinalSnapshotDocument): Promise<void> {
+    let truncatedStrings = 0;
+    const render = (display: number): string =>
+      JSON.stringify(
+        { ...snapshot, display: { stringLimit: reportTextLimit, truncatedStrings: display } },
+        (_key, value: unknown) => {
+          if (typeof value !== 'string') {
+            return value;
+          }
+          const redacted = this.secrets.redact(value);
+          if (redacted.length > reportTextLimit) {
+            truncatedStrings++;
+          }
+          return reportText(redacted);
+        },
+      );
+    render(0);
+    const counted = truncatedStrings;
+    truncatedStrings = 0;
+    const body = render(counted);
+    this.evidence.push({
+      kind: 'final-snapshot',
+      name: finalSnapshotAttachment,
+      sequence: 1,
+      digest: digestBytes(body),
+      bytes: Buffer.byteLength(body),
+      outcome: snapshot.attempt.status,
+      evaluation: snapshot.observation.state,
+      contractDigest: null,
+    });
+    await this.testInfo.attach(finalSnapshotAttachment, { contentType: 'application/json', body });
   }
 
   emit(phase: string, status: AttemptEvent['status'], detail: string): void {

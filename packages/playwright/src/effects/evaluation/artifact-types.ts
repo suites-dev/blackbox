@@ -2,12 +2,19 @@ import type { EffectAssessment, EffectScalar } from '@suites/blackbox-effects';
 
 import type { ActivityPurpose, ActivitySelection } from '../../activities/types.js';
 
+export type InfrastructureClass = 'connection-pool' | 'connection-establishment';
+
 export interface ObservationExcerpt {
   readonly traceId: string;
   readonly spanId: string;
   readonly service: string;
   readonly kind: string;
   readonly status: string;
+  /**
+   * Set when the span is a known connection-management span of an allowlisted instrumentation, so that
+   * comparisons can keep it apart from application operations without discarding it. `null` means unclassified.
+   */
+  readonly infrastructure: InfrastructureClass | null;
   readonly fields: readonly {
     readonly key: string;
     readonly value: EffectScalar;
@@ -81,3 +88,8 @@ export interface EffectEvidenceArtifact {
     readonly owners: number;
   };
 }
+
+/** The scope's observations without any contract assessment: what a final snapshot retains. */
+export type EffectSnapshotArtifact = Omit<EffectEvidenceArtifact, 'assessment' | 'omitted'> & {
+  readonly omitted: Omit<EffectEvidenceArtifact['omitted'], 'findings' | 'findingEvidence'>;
+};

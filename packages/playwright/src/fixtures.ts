@@ -19,6 +19,7 @@ import {
   type RunningBlackboxAttempt,
 } from './runtime/acquisition.js';
 import { createSystemTestFacade } from './system-test.js';
+import { recordStimulusRequest } from './effects/attempt-effects.js';
 import { sandboxRequest } from './request/sandbox-request.js';
 import type {
   BlackboxStep,
@@ -118,10 +119,23 @@ function requestFixtureFor(activeAttempts: WeakMap<TestInfo, RunningBlackboxAtte
     testInfo: TestInfo,
   ): Promise<void> => {
     await use(
-      sandboxRequest(request, () => {
-        const attempt = activeAttempts.get(testInfo);
-        return attempt === undefined ? undefined : attempt.sandbox.entrypoint;
-      }),
+      sandboxRequest(
+        request,
+        () => {
+          const attempt = activeAttempts.get(testInfo);
+          return attempt === undefined ? undefined : attempt.sandbox.entrypoint;
+        },
+        (entry, opaque) => {
+          const attempt = activeAttempts.get(testInfo);
+          if (attempt !== undefined) {
+            recordStimulusRequest(attempt.effects, {
+              entry,
+              entrypointUrl: attempt.sandbox.entrypoint.url,
+              opaque,
+            });
+          }
+        },
+      ),
     );
   };
 }
@@ -140,6 +154,23 @@ async function useSelectedAttempt(
   }
 }
 
+function testScopeFixture(testScopes: WeakSet<TestInfo>, testStartedAt: WeakMap<TestInfo, number>) {
+  return async (
+    { catalogEntry: _catalogEntry }: Pick<BlackboxTestOptions, 'catalogEntry'>,
+    use: (value: undefined) => Promise<void>,
+    testInfo: TestInfo,
+  ): Promise<void> => {
+    testScopes.add(testInfo);
+    testStartedAt.set(testInfo, performance.now());
+    try {
+      await use(undefined);
+    } finally {
+      testScopes.delete(testInfo);
+      testStartedAt.delete(testInfo);
+    }
+  };
+}
+
 export function createBlackboxTest(
   runtime: BlackboxAttemptRuntime,
   policy: BlackboxFixturePolicy = defaultPolicy,
@@ -151,23 +182,18 @@ export function createBlackboxTest(
     catalogEntry: [{ kind: 'unselected' }, { option: true }],
     blackboxEnvironment: [Object.freeze({}), { option: true }],
     blackboxRetainAttempts: [false, { option: true }],
+    blackboxFinalSnapshot: [true, { option: true }],
     blackboxClients: [{}, { option: true }],
-    _blackboxTestScope: [
-      async ({ catalogEntry: _catalogEntry }, use, testInfo) => {
-        testScopes.add(testInfo);
-        testStartedAt.set(testInfo, performance.now());
-        try {
-          await use(undefined);
-        } finally {
-          testScopes.delete(testInfo);
-          testStartedAt.delete(testInfo);
-        }
-      },
-      { auto: true, timeout: 0 },
-    ],
+    _blackboxTestScope: [testScopeFixture(testScopes, testStartedAt), { auto: true, timeout: 0 }],
     _blackboxAttempt: [
       async (
-        { catalogEntry, blackboxEnvironment, blackboxRetainAttempts, blackboxClients },
+        {
+          catalogEntry,
+          blackboxEnvironment,
+          blackboxRetainAttempts,
+          blackboxFinalSnapshot,
+          blackboxClients,
+        },
         use,
         testInfo,
       ) => {
@@ -187,6 +213,7 @@ export function createBlackboxTest(
           catalogEntry,
           blackboxEnvironment,
           blackboxRetainAttempts,
+          blackboxFinalSnapshot,
           blackboxClients,
           use: (attempt) => useSelectedAttempt(attempt, testInfo, activeAttempts, use),
         });
