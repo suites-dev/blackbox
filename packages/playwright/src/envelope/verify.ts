@@ -82,8 +82,11 @@ function inputChecks(envelope: BehaviorEnvelope, check: Check): void {
 function invariantChecks(envelope: AnyEnvelope, check: Check): void {
   if (envelope.envelopeVersion === 1) {
     check('expectations.acceptedBaselines', envelope.expectations.acceptedBaselines.length === 0);
+    check('expectations.acceptedContracts', envelope.expectations.acceptedContracts.length === 0);
+  } else {
+    // Nothing can be marked accepted: the section holds exactly what the test declared.
+    check('expectations.shape', Object.keys(envelope.expectations).join() === 'declaredInTest');
   }
-  check('expectations.acceptedContracts', envelope.expectations.acceptedContracts.length === 0);
   check(
     'observed.effectsRecord',
     (envelope.observed.effectsRecord === null) === (envelope.observed.effectsRecordReason !== null),

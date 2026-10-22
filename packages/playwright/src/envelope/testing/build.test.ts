@@ -109,7 +109,6 @@ describe('observation, expectation and verification stay apart', () => {
     expect(envelope.observed.coverage.gaps).toEqual(['activated-without-observation:worker']);
     expect(envelope.verification.assertions).toEqual([]);
     expect(envelope.expectations).toEqual({
-      acceptedContracts: [],
       declaredInTest: [],
     });
     expect(envelope.observed.completeness.closed).toBe(false);
@@ -182,7 +181,7 @@ describe('coverage and the v0 wrapper', () => {
     expect(envelope.expectations.declaredInTest).toEqual([
       { contractDigest: contract, assertions: 1 },
     ]);
-    expect(envelope.expectations.acceptedContracts).toEqual([]);
+    expect(Object.keys(envelope.expectations)).toEqual(['declaredInTest']);
     expect(verifyEnvelope(envelope)).toEqual({ ok: true });
   });
 });
@@ -223,12 +222,15 @@ describe('content addressing', () => {
     expect(result.ok).toBe(false);
     const forged = {
       ...envelope,
-      expectations: { ...envelope.expectations, acceptedContracts: ['contract'] },
+      expectations: {
+        ...envelope.expectations,
+        acceptedContracts: ['contract'],
+      } as typeof envelope.expectations,
     };
     const forgedResult = verifyEnvelope(forged);
     expect(forgedResult.ok).toBe(false);
     if (!forgedResult.ok) {
-      expect(forgedResult.problems).toContain('expectations.acceptedContracts');
+      expect(forgedResult.problems).toContain('expectations.shape');
     }
     expect(verifyEnvelope({ kind: 'behavior-envelope', envelopeVersion: 2 }).ok).toBe(false);
     expect(verifyEnvelope(null).ok).toBe(false);

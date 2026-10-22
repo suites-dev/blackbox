@@ -27,7 +27,7 @@ function legacyOf(envelope: BehaviorEnvelope) {
   const body = {
     ...rest,
     envelopeVersion: 1,
-    expectations: { ...envelope.expectations, acceptedBaselines: [] },
+    expectations: { ...envelope.expectations, acceptedBaselines: [], acceptedContracts: [] },
     identity: {
       ...identity,
       experiment: experimentDigest(
@@ -44,20 +44,16 @@ function legacyOf(envelope: BehaviorEnvelope) {
 describe('the version 1 expectations field', () => {
   it('is not part of a version 2 envelope, and a forged value in a version 1 envelope is rejected', () => {
     const side = sideFixture({ spans: healthy });
-    expect(Object.keys(side.envelope.expectations).sort()).toEqual([
-      'acceptedContracts',
-      'declaredInTest',
-    ]);
+    expect(Object.keys(side.envelope.expectations)).toEqual(['declaredInTest']);
     const legacy = legacyOf(side.envelope);
     expect(verifyEnvelope(legacy)).toEqual({ ok: true });
-    const forged = {
-      ...legacy,
-      expectations: { ...legacy.expectations, acceptedBaselines: ['x'] },
-    };
-    const result = verifyEnvelope(forged);
-    expect(result.ok).toBe(false);
-    if (!result.ok) {
-      expect(result.problems).toContain('expectations.acceptedBaselines');
+    for (const field of ['acceptedBaselines', 'acceptedContracts']) {
+      const forged = { ...legacy, expectations: { ...legacy.expectations, [field]: ['x'] } };
+      const result = verifyEnvelope(forged);
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.problems).toContain(`expectations.${field}`);
+      }
     }
   });
 });
