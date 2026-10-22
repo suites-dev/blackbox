@@ -34,6 +34,8 @@ export interface SideSpec {
   readonly invocation: string | null;
   /** Uncommitted edits on top of the commit's tree. */
   readonly dirty: boolean;
+  /** Effects the final snapshot's retention limit cut off. */
+  readonly omittedEffects: number;
   readonly assertions: readonly { readonly outcome: string; readonly evaluation: string }[];
 }
 
@@ -80,10 +82,15 @@ export function rawSide(overrides: Partial<SideSpec>): {
     tree: null,
     invocation: null,
     dirty: false,
+    omittedEffects: 0,
     assertions: [],
     ...overrides,
   } satisfies SideSpec;
-  const snapshot = snapshotWith(spec.spans, { activated: spec.activated, status: spec.status });
+  const snapshot = snapshotWith(spec.spans, {
+    activated: spec.activated,
+    status: spec.status,
+    omittedEffects: spec.omittedEffects,
+  });
   const body = JSON.stringify(snapshot);
   const ref = {
     id: digestBytes(body),

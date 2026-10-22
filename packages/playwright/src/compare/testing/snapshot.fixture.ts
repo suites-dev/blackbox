@@ -94,9 +94,15 @@ function spansOf(specs: readonly SpanSpec[]): {
 /** A final snapshot built to the shape the real one has, with one span identity per counted span. */
 export function snapshotWith(
   specs: readonly SpanSpec[],
-  options: { readonly activated: readonly string[] | null; readonly status: string } = {
+  options: {
+    readonly activated: readonly string[] | null;
+    readonly status: string;
+    /** Effects the snapshot's retention limit cut off. */
+    readonly omittedEffects: number;
+  } = {
     activated: null,
     status: 'passed',
+    omittedEffects: 0,
   },
 ): FinalSnapshotDocument {
   const { effects, excerpts, ownership } = spansOf(specs);
@@ -163,7 +169,7 @@ export function snapshotWith(
         relations: [],
       },
       ownership,
-      omitted: noneOmitted,
+      omitted: { ...noneOmitted, effects: options.omittedEffects },
     },
   };
 }

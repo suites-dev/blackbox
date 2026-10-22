@@ -115,6 +115,13 @@ export class AttemptReport implements AttemptProgress {
         return { text: reportText(redacted), truncated: redacted.length > reportTextLimit };
       },
     });
+    try {
+      await this.testInfo.attach(effectAttachment, { contentType: 'application/json', body });
+    } catch (error) {
+      // Nothing was attached, so the next assertion reuses this sequence number and no evidence is registered.
+      this.effectAssertions--;
+      throw error;
+    }
     this.evidence.push({
       kind: 'assertion-evidence',
       name: effectAttachment,
@@ -123,7 +130,6 @@ export class AttemptReport implements AttemptProgress {
       bytes: Buffer.byteLength(body),
       ...assertionFields(body),
     });
-    await this.testInfo.attach(effectAttachment, { contentType: 'application/json', body });
   }
 
   /** The phase of the last progress event, which names where an attempt that failed to start was. */
@@ -163,6 +169,8 @@ export class AttemptReport implements AttemptProgress {
     const counted = truncatedStrings;
     truncatedStrings = 0;
     const body = render(counted);
+    // Registered only once attached: the envelope must never reference a document that was not produced.
+    await this.testInfo.attach(finalSnapshotAttachment, { contentType: 'application/json', body });
     this.evidence.push({
       kind: 'final-snapshot',
       name: finalSnapshotAttachment,
@@ -173,7 +181,6 @@ export class AttemptReport implements AttemptProgress {
       evaluation: snapshot.observation.state,
       contractDigest: null,
     });
-    await this.testInfo.attach(finalSnapshotAttachment, { contentType: 'application/json', body });
   }
 
   emit(phase: string, status: AttemptEvent['status'], detail: string): void {

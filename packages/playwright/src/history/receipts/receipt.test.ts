@@ -147,6 +147,26 @@ describe('receipt invariants', () => {
     });
   });
 
+  it('rejects each missing or mistyped field of the shape the queries rely on', () => {
+    const receipt = base();
+    const { digest: _digest, ...body } = receipt;
+    for (const [field, broken] of [
+      ['attempt', undefined],
+      ['test', null],
+      ['system', 'x'],
+      ['behavior', {}],
+      ['outcome', { testStatus: 1 }],
+      ['lifecycle', []],
+      ['failure', { phase: 1 }],
+      ['envelope', 'not-a-digest'],
+      ['invocation', 5],
+    ] as const) {
+      const result = verifyReceipt({ ...body, [field]: broken, digest: receipt.digest });
+      expect(result.ok, field).toBe(false);
+      expect(result.problems.join(), field).toContain(`shape: ${field}`);
+    }
+  });
+
   it('detects a changed receipt', () => {
     const receipt = base();
     expect(verifyReceipt({ ...receipt, invocation: 'invocation:other' }).ok).toBe(false);

@@ -88,4 +88,21 @@ describe('stimulus summary', () => {
     expect(stimulusFingerprint([], 0)).toBeNull();
     expect(stimulusFingerprint([], 1)).not.toBeNull();
   });
+
+  it('counts Playwright params as part of the request, wherever the query is written', () => {
+    const withParams = (params: unknown) =>
+      fingerprint(
+        entry({ method: 'GET', url: 'http://127.0.0.1:41000/items', options: { params } }),
+      );
+    const alice = withParams({ user: 'alice' });
+    expect(withParams({ user: 'bob' })).not.toBe(alice);
+    expect(withParams(new URLSearchParams({ user: 'alice' }))).toBe(alice);
+    expect(withParams('user=alice')).toBe(alice);
+    const inUrl = fingerprint(
+      entry({ method: 'GET', url: 'http://127.0.0.1:41000/items?user=alice', options: {} }),
+    );
+    expect(inUrl).toBe(alice);
+    expect(withParams({ user: 'alice', page: 2 })).not.toBe(alice);
+    expect(withParams({})).not.toBe(alice);
+  });
 });

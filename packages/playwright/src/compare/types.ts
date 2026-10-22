@@ -112,7 +112,8 @@ export interface UnresolvedItem {
     | 'measurement-basis-differs'
     | 'evidence-unavailable'
     | 'state-reported-on-one-side'
-    | 'state-annotations-rejected';
+    | 'state-annotations-rejected'
+    | 'evidence-truncated';
   readonly detail: string;
 }
 

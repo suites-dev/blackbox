@@ -59,6 +59,26 @@ function invocation(
   return named(left) !== '' && named(left) === named(right) ? 'same' : 'unestablished';
 }
 
+/**
+ * A final snapshot keeps a bounded number of effects, observations and owners. When anything was cut, the retained
+ * part can agree while the omitted part differs, so agreement on it is not agreement.
+ */
+function truncationOf(name: string, side: ComparisonSide): readonly UnresolvedItem[] {
+  if (side.snapshot === null || side.snapshot.evidence.kind !== 'admitted') {
+    return [];
+  }
+  const cut = Object.entries(side.snapshot.evidence.omitted).filter(([, count]) => count > 0);
+  if (cut.length === 0) {
+    return [];
+  }
+  const what = cut.map(([kind, count]) => `${String(count)} ${kind}`).join(', ');
+  return [{ kind: 'evidence-truncated', detail: `${name}: the final snapshot omitted ${what}` }];
+}
+
+function truncation(reference: ComparisonSide, head: ComparisonSide): readonly UnresolvedItem[] {
+  return [...truncationOf('reference', reference), ...truncationOf('head', head)];
+}
+
 function limits(checks: BehavioralDelta['comparability']['checks']): readonly UnresolvedItem[] {
   return checks
     .filter(({ effect }) => effect === 'limits-conclusions')
@@ -128,6 +148,7 @@ export function compareSides(
     : diffState(reference.envelope, head.envelope);
   const unresolved = [
     ...limits(comparability.checks),
+    ...(invalid ? [] : truncation(reference, head)),
     ...effects.coverage.map(({ cause, effect, change }) => ({
       kind: 'coverage-explained-difference' as const,
       detail: `${change} ${effect.actor} ${effect.kind} ${effect.operation}: ${cause}`,

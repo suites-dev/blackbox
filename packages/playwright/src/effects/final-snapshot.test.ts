@@ -223,4 +223,14 @@ describe('attached evidence digests', () => {
     expect(attached.digest).toBe(digestBytes(bodies[0] ?? ''));
     expect(attached.bytes).toBe(Buffer.byteLength(bodies[0] ?? ''));
   });
+
+  it('registers no evidence for an attachment that failed, so an envelope cannot cite it', async () => {
+    const testInfo = {
+      attach: (_name: string, _options: { readonly body: string }): Promise<void> =>
+        Promise.reject(new Error('disk full')),
+    } as TestInfo;
+    const report = new AttemptReport(testInfo);
+    await expect(report.finalSnapshot(buildFinalSnapshot(input()))).rejects.toThrow('disk full');
+    expect(report.attachedEvidence()).toEqual([]);
+  });
 });

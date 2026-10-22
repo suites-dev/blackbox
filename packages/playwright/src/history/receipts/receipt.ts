@@ -5,6 +5,8 @@ import {
   type BehaviorIdentity,
 } from '../../envelope/index.js';
 
+import { receiptShapeProblems } from './receipt-shape.js';
+
 export const receiptVersion = 1;
 
 export type LifecycleState =
@@ -129,6 +131,10 @@ export function verifyReceipt(value: unknown): {
     value.receiptVersion !== receiptVersion
   ) {
     return { ok: false, problems: ['not a supported attempt receipt'] };
+  }
+  const shape = receiptShapeProblems(value);
+  if (shape.length > 0) {
+    return { ok: false, problems: shape };
   }
   const receipt = value as AttemptReceipt;
   const problems: string[] = [];

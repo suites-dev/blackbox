@@ -216,7 +216,12 @@ describe('records with a correct digest and the wrong shape', () => {
     await store.put('delta', malformedDelta.digest, JSON.stringify(malformedDelta));
     const report = await history.verifyStore();
     expect(report.corrupt.map(({ kind }) => kind).sort()).toEqual(['delta', 'receipt']);
-    expect(report.corrupt.every(({ reason }) => reason.startsWith('malformed'))).toBe(true);
+    expect(
+      Object.fromEntries(report.corrupt.map(({ kind, reason }) => [kind, reason.split(':')[0]])),
+    ).toEqual({
+      delta: 'malformed',
+      receipt: 'shape',
+    });
     expect((await history.index()).executions.map(({ envelopeId }) => envelopeId)).toEqual([good]);
   });
 });

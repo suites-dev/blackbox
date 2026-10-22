@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 
 import { buildEnvelope } from '../../envelope/build.js';
 import { inputFixture } from '../../envelope/testing/envelope.fixture.js';
+import { digestOf } from '../../envelope/index.js';
 import { HistoryError } from '../history.js';
 import {
   cleanup,
@@ -77,13 +78,28 @@ describe('ingesting immutable records', () => {
         .sort(),
     ).toEqual(['receipt-1:true', 'receipt-2:false']);
   });
+});
 
+describe('refusing receipts that break their own rules', () => {
   it('refuses a receipt that breaks its own invariants', async () => {
     const history = await openHistory();
     const receipt = failedAcquisition(behaviorOf('x'), 5);
     await expect(
       history.ingestReceipt({ ...receipt, invocation: 'tampered' }),
     ).rejects.toBeInstanceOf(HistoryError);
+  });
+
+  it('refuses a self-digested receipt that lacks the fields every query relies on, and stores nothing', async () => {
+    const history = await openHistory();
+    const hollow = {
+      receiptVersion: 1,
+      kind: 'attempt-receipt',
+      canonicalization: 'bb-jcs-1',
+      lifecycle: [{ state: 'scheduled', at: '2026-01-01T00:00:00.000Z', detail: '' }],
+    };
+    const body = { ...hollow, digest: digestOf(hollow) };
+    await expect(history.ingestReceipt(body)).rejects.toThrow('shape: attempt');
+    expect(await history.verifyStore()).toMatchObject({ objects: { receipt: 0 } });
   });
 
   it('is unaffected by ingesting many distinct executions at once', async () => {

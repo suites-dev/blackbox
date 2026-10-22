@@ -79,15 +79,31 @@ function headerSummary(
   return Object.fromEntries(entries.sort(([left], [right]) => (left < right ? -1 : 1)));
 }
 
+/** The query the request carries: the URL's own pairs, then Playwright's `params` option applied over them. */
+function queryPairs(parsed: URL, params: unknown): [string, string][] {
+  const search = new URLSearchParams(parsed.search);
+  const applied: Iterable<[string, string]> =
+    params instanceof URLSearchParams
+      ? params.entries()
+      : typeof params === 'string'
+        ? new URLSearchParams(params).entries()
+        : record(params)
+          ? Object.entries(params).map(([name, value]): [string, string] => [name, String(value)])
+          : [];
+  for (const [name, value] of applied) {
+    search.set(name, value);
+  }
+  return [...search.entries()].sort(([a, av], [b, bv]) => (a + av < b + bv ? -1 : 1));
+}
+
 function location(
   url: string,
   entrypointUrl: string | null,
+  params: unknown,
 ): Pick<RecordedRequest, 'target' | 'path' | 'query'> {
   const base = entrypointUrl === null ? 'http://entrypoint.invalid/' : `${entrypointUrl}/`;
   const parsed = new URL(url, base);
-  const pairs = [...parsed.searchParams.entries()].sort(([a, av], [b, bv]) =>
-    a + av < b + bv ? -1 : 1,
-  );
+  const pairs = queryPairs(parsed, params);
   const target =
     !URL.canParse(url) ||
     (entrypointUrl !== null && parsed.origin === new URL(entrypointUrl).origin)
@@ -106,7 +122,7 @@ export function summarizeRequest(
   const contentType = Object.hasOwn(headers, 'content-type') ? headers['content-type'] : 'secret';
   return {
     method: declared.toUpperCase(),
-    ...location(entry.url, entrypointUrl),
+    ...location(entry.url, entrypointUrl, options.params),
     body: bodyDigest(options),
     contentType: contentType === 'secret' ? null : contentType,
     headers,
