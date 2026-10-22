@@ -1,4 +1,4 @@
-import { readdir, readFile, realpath, stat } from 'node:fs/promises';
+import { open, readdir, readFile, realpath, type FileHandle } from 'node:fs/promises';
 import { isAbsolute, join, relative, resolve, sep } from 'node:path';
 
 import { digestBytes, digestOf, type Digest } from '../canonical.js';
@@ -82,14 +82,27 @@ export async function evidencePathInside(
   }
 }
 
+/**
+ * Digest of a regular file no larger than `maxEvidenceBytes`. The file is opened once and checked through that
+ * descriptor, so what is read is what was checked even if the path is replaced in between.
+ */
 async function regularFileDigest(path: string): Promise<Digest | null> {
+  let handle: FileHandle | null = null;
   try {
-    const info = await stat(path);
-    return info.isFile() && info.size <= maxEvidenceBytes
-      ? digestBytes(await readFile(path))
-      : null;
+    handle = await open(path, 'r');
+    const info = await handle.stat();
+    if (!info.isFile() || info.size > maxEvidenceBytes) {
+      return null;
+    }
+    const buffer = Buffer.alloc(info.size);
+    const { bytesRead } = await handle.read(buffer, 0, info.size, 0);
+    return digestBytes(buffer.subarray(0, bytesRead));
   } catch {
     return null;
+  } finally {
+    if (handle !== null) {
+      await handle.close();
+    }
   }
 }
 
@@ -119,11 +132,10 @@ async function fragmentsRef(root: string, directory: string): Promise<EvidenceRe
     return null;
   }
   const parts = await Promise.all(
-    files.map(async (file) => ({
-      name: file.name,
-      digest: digestBytes(await readFile(file.path)),
-      bytes: (await stat(file.path)).size,
-    })),
+    files.map(async (file) => {
+      const content = await readFile(file.path);
+      return { name: file.name, digest: digestBytes(content), bytes: content.byteLength };
+    }),
   );
   return {
     id: digestOf(parts.map(({ name, digest }) => ({ name, digest }))),
