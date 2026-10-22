@@ -225,5 +225,106 @@ completed collector shutdown proves that a business workflow finished; the test
 must await its completion boundary before asserting behavior. Effect contract
 diagnostics will be added with the effect evaluator.
 
+## Behavioral history
+
+Each attempt also attaches three documents, on by default (`blackboxFinalSnapshot: false` turns
+this off): `blackbox-effects-final` (the attempt's effects after cleanup, also when the test
+failed), `blackbox-envelope` (the attempt's identity, source revision, configuration fingerprints,
+stimulus fingerprint, reported state and evidence digests) and `blackbox-receipt` (how the attempt
+ended, including attempts that never got a sandbox, which have no envelope). `EffectsRecord` v0
+and the assertion attachments are unchanged. The Blackbox reporter sets `BLACKBOX_INVOCATION_ID`
+once per Playwright invocation so retries can be grouped.
+
+Declare which behavior a test exercises, and optionally report authoritative state, from the test:
+
+```ts
+test.info().annotations.push({ type: 'bb:behavior', description: 'subscription.payment' });
+test.info().annotations.push({
+  type: 'bb:state',
+  description: JSON.stringify({
+    subject: 'payment-intents',
+    source: 'payment service',
+    identities: ['pi_1'],
+  }),
+});
+```
+
+Without `bb:behavior` the id is derived from the system, project and test titles (not the file).
+Reported state is the test's statement; identities are stored as digests. Only the first
+`bb:state` report per subject is kept; later or malformed ones are counted and make a comparison
+that includes the attempt unresolved.
+
+Store and query attempts with the `./history` entry point. Add the JSON reporter so attachments
+are in the results file:
+
+```ts
+import { BehaviorHistory, ingestPlaywrightResults } from '@suites/blackbox-playwright/history';
+
+const history = await BehaviorHistory.open('.blackbox/history');
+await ingestPlaywrightResults(history, 'test-results/results.json'); // idempotent
+
+const [behavior] = await history.behaviors();
+const runs = await history.behaviorHistory(behavior.behaviorId, { followAliases: false });
+const executions = runs.flatMap(({ envelopeId }) => (envelopeId === null ? [] : [envelopeId]));
+
+const delta = await history.compare(executions[0], executions[executions.length - 1], {
+  claims: [
+    {
+      id: 'one-payment',
+      n: 1,
+      selector: {
+        kind: 'http',
+        actor: 'payment',
+        side: 'server',
+        operation: 'POST',
+        target: 'unknown',
+      },
+      stateSubject: 'payment-intents',
+    },
+  ],
+  record: true,
+});
+// delta.outcome: invalid | inconclusive | no-observed-difference | observed-difference
+// delta.drift (what changed) is separate from delta.verification.claims (limits that held or not)
+
+const checks = await history.verifyEvidence(executions[0], 'test-results/<attempt output dir>');
+const findings = await history.findings(behavior.behaviorId, { followAliases: false });
+```
+
+`behaviors()`, `behaviorHistory()` (chronological, marks revision changes and attempts without
+evidence), `execution()` (envelope, snapshot, receipts, evidence status), `compare()`, `findings()`,
+`recordAlias()`, `rebuildIndex()` and `verifyStore()` are the rest of the surface.
+
+Storage semantics:
+
+- The directory holds `objects/<kind>/<xx>/<sha256>` (envelope, blob, receipt, alias, delta), `tmp/`
+  and a derived `index/index.json`. Objects are written once (temporary file, `fsync`, hard link);
+  writing the same record again is a no-op, and different bytes under one id is a `ConflictError`.
+- There is no database and no shared mutable head, so independent processes can write the same
+  directory. A write interrupted by a crash leaves a `tmp/*.partial` file that is never read.
+- The index is a cache built from the objects and can be deleted at any time. Records that fail
+  verification, or have a valid digest and the wrong shape, are listed by `verifyStore()` and never
+  served. Every read re-verifies the record against the identity it is stored under.
+- `compare()` checks comparability first. Spans alone never refute a limit; reported state does.
+  Nothing in the history marks an observation as accepted.
+- Aliases are recorded claims that two behavior ids are the same. Ambiguity and cycles are
+  reported; nothing is inferred from names or rewritten.
+
+Limitations:
+
+- A digest shows a record is the one that was written, not who wrote it. Treat the directory as
+  trusted local storage with owner-only access.
+- A worker killed before teardown leaves no receipt or envelope. An attempt that fails before the
+  test body runs can only be attributed to a declared behavior through its derived id.
+- State identities, request bodies and non-secret environment values are stored as unsalted digests,
+  so a low-entropy value can be guessed from its digest; request paths and up to 50 changed file
+  names are stored in clear. Credential-named variables and headers, and URLs with credentials,
+  are recorded by name only. Do not put secrets in innocuously named variables or in request paths.
+- Evidence verification needs the original output directory and refuses locators that leave it.
+  Raw collector fragments are referenced, not copied.
+- Captures are never proven complete, so healthy limits read "not refuted", and "no observed
+  difference" is not equivalence. The index is rebuilt in full after a write; there is no merge,
+  retention or sync.
+
 Effect projection, accepted baselines, drivers, and shared worker
 sandboxes are intentionally outside this package's current surface.
