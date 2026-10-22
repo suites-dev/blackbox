@@ -13,8 +13,7 @@ import { stimulusFingerprint } from '../stimulus/summary.js';
 import type { BehaviorEnvelope, LegacyBehaviorEnvelope } from './types.js';
 
 export type EnvelopeVerification =
-  | { readonly ok: true }
-  | { readonly ok: false; readonly problems: readonly string[] };
+  { readonly ok: true } | { readonly ok: false; readonly problems: readonly string[] };
 
 type AnyEnvelope = BehaviorEnvelope | LegacyBehaviorEnvelope;
 type Check = (name: string, ok: boolean) => void;
@@ -81,7 +80,9 @@ function inputChecks(envelope: BehaviorEnvelope, check: Check): void {
 }
 
 function invariantChecks(envelope: AnyEnvelope, check: Check): void {
-  check('expectations.acceptedBaselines', envelope.expectations.acceptedBaselines.length === 0);
+  if (envelope.envelopeVersion === 1) {
+    check('expectations.acceptedBaselines', envelope.expectations.acceptedBaselines.length === 0);
+  }
   check('expectations.acceptedContracts', envelope.expectations.acceptedContracts.length === 0);
   check(
     'observed.effectsRecord',

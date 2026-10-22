@@ -27,6 +27,7 @@ function legacyOf(envelope: BehaviorEnvelope) {
   const body = {
     ...rest,
     envelopeVersion: 1,
+    expectations: { ...envelope.expectations, acceptedBaselines: [] },
     identity: {
       ...identity,
       experiment: experimentDigest(
@@ -39,6 +40,27 @@ function legacyOf(envelope: BehaviorEnvelope) {
   };
   return { ...body, digest: envelopeDigest(body) };
 }
+
+describe('the version 1 expectations field', () => {
+  it('is not part of a version 2 envelope, and a forged value in a version 1 envelope is rejected', () => {
+    const side = sideFixture({ spans: healthy });
+    expect(Object.keys(side.envelope.expectations).sort()).toEqual([
+      'acceptedContracts',
+      'declaredInTest',
+    ]);
+    const legacy = legacyOf(side.envelope);
+    expect(verifyEnvelope(legacy)).toEqual({ ok: true });
+    const forged = {
+      ...legacy,
+      expectations: { ...legacy.expectations, acceptedBaselines: ['x'] },
+    };
+    const result = verifyEnvelope(forged);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.problems).toContain('expectations.acceptedBaselines');
+    }
+  });
+});
 
 describe('loading a side', () => {
   it('rejects an envelope whose content no longer matches its digest', () => {

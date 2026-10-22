@@ -114,7 +114,6 @@ export function buildEnvelope(input: BuildEnvelopeInput): BehaviorEnvelope {
     observed,
     state: input.state,
     expectations: {
-      acceptedBaselines: [],
       acceptedContracts: [],
       declaredInTest: [...contracts.entries()]
         .sort(([left], [right]) => (left < right ? -1 : 1))

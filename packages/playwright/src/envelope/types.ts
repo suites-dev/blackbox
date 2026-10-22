@@ -163,7 +163,6 @@ export interface ObservedSection {
 
 /** Expectations are what someone authored or accepted. Observation never writes here. */
 export interface ExpectationsSection {
-  readonly acceptedBaselines: readonly never[];
   readonly acceptedContracts: readonly never[];
   readonly declaredInTest: readonly {
     readonly contractDigest: Digest;
@@ -273,9 +272,11 @@ export interface BehaviorEnvelope {
 /** The version 1 shape: no stimulus, no reported state, no noise profile. Still readable and verifiable. */
 export type LegacyBehaviorEnvelope = Omit<
   BehaviorEnvelope,
-  'envelopeVersion' | 'identity' | 'configuration' | 'stimulus' | 'state'
+  'envelopeVersion' | 'identity' | 'configuration' | 'stimulus' | 'state' | 'expectations'
 > & {
   readonly envelopeVersion: 1;
+  /** Version 1 also carried an always-empty `acceptedBaselines`; version 2 does not. */
+  readonly expectations: ExpectationsSection & { readonly acceptedBaselines: readonly never[] };
   readonly identity: Omit<BehaviorEnvelope['identity'], 'stimulus'>;
   readonly configuration: Omit<ConfigurationSection, 'capture'> & {
     readonly capture: Omit<CaptureConfiguration, 'noiseProfile'>;

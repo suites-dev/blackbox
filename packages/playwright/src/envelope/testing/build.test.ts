@@ -109,7 +109,6 @@ describe('observation, expectation and verification stay apart', () => {
     expect(envelope.observed.coverage.gaps).toEqual(['activated-without-observation:worker']);
     expect(envelope.verification.assertions).toEqual([]);
     expect(envelope.expectations).toEqual({
-      acceptedBaselines: [],
       acceptedContracts: [],
       declaredInTest: [],
     });
@@ -224,12 +223,12 @@ describe('content addressing', () => {
     expect(result.ok).toBe(false);
     const forged = {
       ...envelope,
-      expectations: { ...envelope.expectations, acceptedBaselines: ['baseline'] },
+      expectations: { ...envelope.expectations, acceptedContracts: ['contract'] },
     };
     const forgedResult = verifyEnvelope(forged);
     expect(forgedResult.ok).toBe(false);
     if (!forgedResult.ok) {
-      expect(forgedResult.problems).toContain('expectations.acceptedBaselines');
+      expect(forgedResult.problems).toContain('expectations.acceptedContracts');
     }
     expect(verifyEnvelope({ kind: 'behavior-envelope', envelopeVersion: 2 }).ok).toBe(false);
     expect(verifyEnvelope(null).ok).toBe(false);

@@ -167,7 +167,6 @@ describe('comparing selected executions', () => {
     const { a } = await accumulate(history);
     const detail = await history.execution(a);
     expect(defined(detail).envelope.expectations).toEqual({
-      acceptedBaselines: [],
       acceptedContracts: [],
       declaredInTest: [],
     });

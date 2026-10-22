@@ -26,6 +26,10 @@ function normalized(envelope: BehaviorEnvelope | LegacyBehaviorEnvelope): Compar
     ...envelope,
     envelopeVersion: 2,
     sourceVersion: 1,
+    expectations: {
+      acceptedContracts: envelope.expectations.acceptedContracts,
+      declaredInTest: envelope.expectations.declaredInTest,
+    },
     identity: { ...envelope.identity, stimulus: null },
     configuration: {
       ...envelope.configuration,
