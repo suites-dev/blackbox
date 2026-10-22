@@ -95,6 +95,32 @@ describe('behavior identity evolution', () => {
     const delta = await history.compare(old, current, { claims: [], record: false });
     expect(delta.outcome).toBe('invalid');
   });
+});
+
+describe('behavior history along aliases', () => {
+  it('does not merge executions along an ambiguous alias chain when listing a behavior history', async () => {
+    const history = await openHistory();
+    await ingest(
+      history,
+      execution({ attemptId: 'old', behavior: behaviorOf('subscription.pay') }),
+    );
+    await ingest(
+      history,
+      execution({ attemptId: 'cur', behavior: behaviorOf('subscription.payment') }),
+    );
+    await ingest(
+      history,
+      execution({ attemptId: 'other', behavior: behaviorOf('subscription.other') }),
+    );
+    await history.recordAlias(alias('subscription.pay', 'subscription.payment'));
+    await history.recordAlias(alias('subscription.pay', 'subscription.other'));
+    const followed = await history.behaviorHistory('subscription.payment', { followAliases: true });
+    expect(followed.map(({ behaviorId }) => behaviorId)).toEqual(['subscription.payment']);
+    const findings = await history.findings('subscription.payment', { followAliases: true });
+    expect(findings.attempts.map(({ behaviorId }) => behaviorId)).not.toContain(
+      'subscription.other',
+    );
+  });
 
   it('attaches a receipt with only a derived id to the declared behavior when exactly one declares it', async () => {
     const history = await openHistory();

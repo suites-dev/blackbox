@@ -58,4 +58,12 @@ describe('attempt progress redaction', () => {
       expect(isSecretEnvironmentName(name), name).toBe(false);
     }
   });
+
+  it('redacts a URL with embedded credentials whatever the variable is called', () => {
+    const secrets = new SecretValues();
+    const url = 'postgres://app:hunter2@db:5432/app';
+    secrets.protect({ DATABASE_URL: url, PUBLIC_URL: 'https://example.test/path' });
+    expect(secrets.redact(`connecting to ${url}`)).toBe('connecting to [REDACTED]');
+    expect(secrets.redact('https://example.test/path')).toBe('https://example.test/path');
+  });
 });

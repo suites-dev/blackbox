@@ -159,7 +159,9 @@ export function behaviorHistory(
   id: string,
   followAliases: boolean,
 ): HistoryEntry[] {
-  const ids = new Set(followAliases ? resolveAliases(index.aliases, id).ids : [id]);
+  const resolution = resolveAliases(index.aliases, id);
+  // An ambiguous chain (two successors, a cycle) is not followed: merging it would attribute unrelated behavior.
+  const ids = new Set(followAliases && resolution.conflicts.length === 0 ? resolution.ids : [id]);
   const derived = derivedMap(index);
   const joined = new Map(
     index.receipts.flatMap((receipt) =>

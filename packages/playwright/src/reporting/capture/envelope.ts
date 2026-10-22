@@ -36,11 +36,11 @@ function evidenceRef(item: AttachedEvidence): EvidenceRef {
 export function stimulusSection(recorded: RecordedStimuli): StimulusSection {
   const sent = recorded.stimuli.reduce((sum, { requests }) => sum + requests.length, 0);
   return {
-    state: sent === 0 && recorded.opaque === 0 ? 'none' : 'recorded',
+    state: sent === 0 && recorded.opaque === 0 && recorded.unscoped === 0 ? 'none' : 'recorded',
     activities: recorded.stimuli,
     unscopedRequests: recorded.unscoped,
     opaqueRequests: recorded.opaque,
-    fingerprint: stimulusFingerprint(recorded.stimuli, recorded.opaque),
+    fingerprint: stimulusFingerprint(recorded.stimuli, recorded.opaque + recorded.unscoped),
   };
 }
 

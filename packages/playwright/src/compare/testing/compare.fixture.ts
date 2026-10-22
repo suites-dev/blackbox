@@ -36,6 +36,8 @@ export interface SideSpec {
   readonly dirty: boolean;
   /** Effects the final snapshot's retention limit cut off. */
   readonly omittedEffects: number;
+  /** Strings the attachment cut at its display limit. */
+  readonly truncatedStrings: number;
   readonly assertions: readonly { readonly outcome: string; readonly evaluation: string }[];
 }
 
@@ -83,6 +85,7 @@ export function rawSide(overrides: Partial<SideSpec>): {
     invocation: null,
     dirty: false,
     omittedEffects: 0,
+    truncatedStrings: 0,
     assertions: [],
     ...overrides,
   } satisfies SideSpec;
@@ -90,6 +93,7 @@ export function rawSide(overrides: Partial<SideSpec>): {
     activated: spec.activated,
     status: spec.status,
     omittedEffects: spec.omittedEffects,
+    truncatedStrings: spec.truncatedStrings,
   });
   const body = JSON.stringify(snapshot);
   const ref = {

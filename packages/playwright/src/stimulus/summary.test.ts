@@ -99,6 +99,18 @@ describe('stimulus summary of requests that vary', () => {
     expect(stimulusFingerprint(summarized, 1)).toBeNull();
   });
 
+  it('tells requests to different external systems apart and keeps the entrypoint anonymous', () => {
+    const to = (url: string) =>
+      summarizeRequest(entry({ method: 'GET', url, options: {} }), 'http://127.0.0.1:41000');
+    expect(to('https://service-a.test/x')).toMatchObject({
+      target: 'other-origin',
+      origin: 'https://service-a.test',
+    });
+    expect(to('https://service-a.test/x').origin).not.toBe(to('https://service-b.test/x').origin);
+    expect(to('/x').origin).toBeNull();
+    expect(to('http://127.0.0.1:41000/x').origin).toBeNull();
+  });
+
   it('counts Playwright params as part of the request, wherever the query is written', () => {
     const withParams = (params: unknown) =>
       fingerprint(

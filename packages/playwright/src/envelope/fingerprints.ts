@@ -1,4 +1,4 @@
-import { isSecretEnvironmentName } from '../reporting/redaction/secret-environment.js';
+import { isSecretEnvironmentEntry } from '../reporting/redaction/secret-environment.js';
 import { digestOf, type Digest } from './canonical.js';
 import type {
   CaptureConfiguration,
@@ -61,12 +61,6 @@ export function environmentDigest(value: Omit<EnvironmentConfiguration, 'digest'
   return digestOf(value);
 }
 
-// A URL with credentials in it (scheme://user:password@host) carries a secret whatever the variable is called.
-const credentialUrl = /:\/\/[^/\s:@]*:[^/\s@]*@/u;
-
-const isSecretVariable = (name: string, value: string): boolean =>
-  isSecretEnvironmentName(name) || credentialUrl.test(value);
-
 /**
  * Credential-named variables, and variables whose value is a URL with credentials, contribute their names only;
  * every other value is reduced to a digest. That digest is unsalted so equal environments compare equal, which
@@ -84,7 +78,8 @@ export function environmentConfiguration(input: {
   readonly variables: Readonly<Record<string, string>>;
 }): EnvironmentConfiguration {
   const names = Object.keys(input.variables).sort();
-  const secret = (name: string): boolean => isSecretVariable(name, input.variables[name]);
+  const secret = (name: string): boolean =>
+    isSecretEnvironmentEntry(name, input.variables[name]);
   const variables = Object.fromEntries(
     names
       .filter((name) => !secret(name))

@@ -92,24 +92,34 @@ function spansOf(specs: readonly SpanSpec[]): {
 }
 
 /** A final snapshot built to the shape the real one has, with one span identity per counted span. */
+export interface SnapshotOptions {
+  readonly activated: readonly string[] | null;
+  readonly status: string;
+  /** Effects the snapshot's retention limit cut off. */
+  readonly omittedEffects: number;
+  /** Strings the attachment cut at its display limit. */
+  readonly truncatedStrings: number;
+}
+
+const defaultSnapshotOptions = {
+  activated: null,
+  status: 'passed',
+  omittedEffects: 0,
+  truncatedStrings: 0,
+} satisfies SnapshotOptions;
+
 export function snapshotWith(
   specs: readonly SpanSpec[],
-  options: {
-    readonly activated: readonly string[] | null;
-    readonly status: string;
-    /** Effects the snapshot's retention limit cut off. */
-    readonly omittedEffects: number;
-  } = {
-    activated: null,
-    status: 'passed',
-    omittedEffects: 0,
-  },
+  options: SnapshotOptions = defaultSnapshotOptions,
 ): FinalSnapshotDocument {
   const { effects, excerpts, ownership } = spansOf(specs);
   const actors = [...new Set(specs.map(({ actor }) => actor))].sort();
   return {
     schemaVersion: 1,
     kind: 'final-snapshot',
+    ...(options.truncatedStrings > 0
+      ? { display: { stringLimit: 1000, truncatedStrings: options.truncatedStrings } }
+      : {}),
     attempt: {
       testId: 'runner-id',
       retry: 0,

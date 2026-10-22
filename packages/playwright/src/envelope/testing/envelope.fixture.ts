@@ -210,6 +210,7 @@ export function requestFixture(overrides: Partial<RecordedRequest> = {}): Record
   return {
     method: 'POST',
     target: 'entrypoint',
+    origin: null,
     path: '/subscriptions',
     query: null,
     body: digestBytes('body-alice'),

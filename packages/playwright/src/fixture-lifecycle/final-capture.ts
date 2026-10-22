@@ -28,8 +28,13 @@ export interface FinalCaptureInput {
   readonly variables: Readonly<Record<string, string>>;
 }
 
-/** Read before the attempt starts, so the source and configuration are the ones the test ran against. */
-export function captureBeforeAttempt(input: FinalCaptureInput): Promise<EnvelopePrelude | null> {
+/**
+ * Starts reading the source, catalog and environment once the test body has finished, beside sandbox cleanup.
+ * Reading them when the attempt begins put git and Docker subprocesses inside the test's own timeout budget (a
+ * test with a 100 ms timeout failed 6 of 8 times under CPU load). The cost is that a test which edits tracked
+ * files changes the recorded source. It never rejects; the envelope waits for it.
+ */
+export function startPreludeCapture(input: FinalCaptureInput): Promise<EnvelopePrelude | null> {
   return input.enabled ? captureEnvelopePrelude(input) : Promise.resolve(null);
 }
 
@@ -63,21 +68,22 @@ export async function attachFinalCapture(
     readonly stimuli: CompletedStimuli;
     readonly recorded: RecordedStimuli;
     readonly stopReason: SandboxStopReason;
-    readonly prelude: EnvelopePrelude | null;
+    readonly prelude: Promise<EnvelopePrelude | null>;
   },
 ): Promise<Digest | null> {
   if (!input.enabled) {
     return null;
   }
   const snapshot = await snapshotOf(input, report, captured);
-  if (captured.prelude === null) {
+  const prelude = await captured.prelude;
+  if (prelude === null) {
     report.emit('envelope', 'failed', 'catalog, source or environment could not be captured');
     return null;
   }
   try {
     const envelope = await buildAttemptEnvelope({
       testInfo: input.testInfo,
-      prelude: captured.prelude,
+      prelude,
       attempt: captured.attempt,
       snapshot,
       recorded: captured.recorded,
@@ -104,7 +110,7 @@ export async function settleAttempt(input: {
   readonly report: AttemptReport;
   readonly attempt: RunningBlackboxAttempt;
   readonly stopReason: SandboxStopReason;
-  readonly prelude: EnvelopePrelude | null;
+  readonly prelude: Promise<EnvelopePrelude | null>;
   readonly product: AttemptProduct;
   readonly cleanup: () => Promise<void>;
 }): Promise<void> {

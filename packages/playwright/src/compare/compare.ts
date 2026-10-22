@@ -1,4 +1,6 @@
+import type { FinalSnapshotDocument } from '../effects/final-snapshot.js';
 import { digestOf } from '../envelope/index.js';
+import { isCount, isObject } from '../envelope/shape/fields.js';
 import { evaluateClaims } from './claims.js';
 import { assessComparability } from './comparability.js';
 import { diffEffects, diffInfrastructure } from './effects.js';
@@ -63,20 +65,53 @@ function invocation(
  * A final snapshot keeps a bounded number of effects, observations and owners. When anything was cut, the retained
  * part can agree while the omitted part differs, so agreement on it is not agreement.
  */
+/** Strings the attachment cut at its display limit: two values with the same first characters look equal. */
+function cutStrings(snapshot: FinalSnapshotDocument): number {
+  const display: unknown = Reflect.get(snapshot, 'display');
+  const count = isObject(display) ? display.truncatedStrings : 0;
+  return isCount(count) ? count : 0;
+}
+
 function truncationOf(name: string, side: ComparisonSide): readonly UnresolvedItem[] {
-  if (side.snapshot === null || side.snapshot.evidence.kind !== 'admitted') {
+  if (side.snapshot === null) {
     return [];
   }
-  const cut = Object.entries(side.snapshot.evidence.omitted).filter(([, count]) => count > 0);
-  if (cut.length === 0) {
-    return [];
-  }
-  const what = cut.map(([kind, count]) => `${String(count)} ${kind}`).join(', ');
-  return [{ kind: 'evidence-truncated', detail: `${name}: the final snapshot omitted ${what}` }];
+  const omitted =
+    side.snapshot.evidence.kind === 'admitted'
+      ? Object.entries(side.snapshot.evidence.omitted).filter(([, count]) => count > 0)
+      : [];
+  const cut = cutStrings(side.snapshot);
+  const parts = [
+    ...omitted.map(([kind, count]) => `${String(count)} ${kind}`),
+    ...(cut > 0 ? [`${String(cut)} strings cut at the display limit`] : []),
+  ];
+  return parts.length === 0
+    ? []
+    : [
+        {
+          kind: 'evidence-truncated',
+          detail: `${name}: the final snapshot omitted ${parts.join(', ')}`,
+        },
+      ];
 }
 
 function truncation(reference: ComparisonSide, head: ComparisonSide): readonly UnresolvedItem[] {
   return [...truncationOf('reference', reference), ...truncationOf('head', head)];
+}
+
+/** Credential header values are never recorded, so two runs that sent different credentials look the same. */
+function credentialsOf(name: string, side: ComparisonSide): readonly UnresolvedItem[] {
+  const sent = side.envelope.stimulus.activities.some(({ requests }) =>
+    requests.some(({ headers }) => Object.values(headers).includes('secret')),
+  );
+  return sent
+    ? [
+        {
+          kind: 'stimulus-credentials-unverified',
+          detail: `${name}: credential headers were sent; their values are hidden and not compared`,
+        },
+      ]
+    : [];
 }
 
 function limits(checks: BehavioralDelta['comparability']['checks']): readonly UnresolvedItem[] {
@@ -149,6 +184,7 @@ export function compareSides(
   const unresolved = [
     ...limits(comparability.checks),
     ...(invalid ? [] : truncation(reference, head)),
+    ...(invalid ? [] : [...credentialsOf('reference', reference), ...credentialsOf('head', head)]),
     ...effects.coverage.map(({ cause, effect, change }) => ({
       kind: 'coverage-explained-difference' as const,
       detail: `${change} ${effect.actor} ${effect.kind} ${effect.operation}: ${cause}`,

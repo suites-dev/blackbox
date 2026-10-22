@@ -69,7 +69,12 @@ function inputChecks(envelope: BehaviorEnvelope, check: Check): void {
   check(
     'stimulus.fingerprint',
     stimulus.fingerprint ===
-      (recorded ? stimulusFingerprint(stimulus.activities, stimulus.opaqueRequests) : null),
+      (recorded
+        ? stimulusFingerprint(
+            stimulus.activities,
+            stimulus.opaqueRequests + stimulus.unscopedRequests,
+          )
+        : null),
   );
   check('identity.stimulus', envelope.identity.stimulus === stimulus.fingerprint);
   for (const record of envelope.state.records) {

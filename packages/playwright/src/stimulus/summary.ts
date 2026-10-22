@@ -11,6 +11,8 @@ export interface RequestEntry {
 export interface RecordedRequest {
   readonly method: string;
   readonly target: 'entrypoint' | 'other-origin';
+  /** Scheme, host and port of a request to anything other than the entrypoint; `null` for the entrypoint. */
+  readonly origin: string | null;
   readonly path: string;
   /** Digest of the sorted query pairs, or `null` when there are none. */
   readonly query: Digest | null;
@@ -100,7 +102,7 @@ function location(
   url: string,
   entrypointUrl: string | null,
   params: unknown,
-): Pick<RecordedRequest, 'target' | 'path' | 'query'> {
+): Pick<RecordedRequest, 'target' | 'origin' | 'path' | 'query'> {
   const base = entrypointUrl === null ? 'http://entrypoint.invalid/' : `${entrypointUrl}/`;
   const parsed = new URL(url, base);
   const pairs = queryPairs(parsed, params);
@@ -109,7 +111,12 @@ function location(
     (entrypointUrl !== null && parsed.origin === new URL(entrypointUrl).origin)
       ? 'entrypoint'
       : 'other-origin';
-  return { target, path: parsed.pathname, query: pairs.length === 0 ? null : valueDigest(pairs) };
+  return {
+    target,
+    origin: target === 'entrypoint' ? null : parsed.origin,
+    path: parsed.pathname,
+    query: pairs.length === 0 ? null : valueDigest(pairs),
+  };
 }
 
 export function summarizeRequest(
@@ -129,16 +136,19 @@ export function summarizeRequest(
   };
 }
 
-/** The ordered requests only: titles are display text and do not change what was sent. `null` when any request could not be summarized. */
+/**
+ * The ordered requests only: titles are display text and do not change what was sent. `unestablished` counts the
+ * requests that could not be summarized (an opaque request object, or a call made outside any stimulus step).
+ * Any of them makes the fingerprint `null`, so the stimulus is reported as unestablished rather than equal to
+ * another run with the same count.
+ */
 export function stimulusFingerprint(
   stimuli: readonly RecordedStimulus[],
-  opaque: number,
+  unestablished: number,
 ): Digest | null {
   const requests = stimuli.flatMap(({ requests: sent }) => sent);
-  // A request object that cannot be summarized is an input nobody can compare: no fingerprint, so the
-  // stimulus is reported as unestablished rather than equal to any other run with the same count.
-  if ((requests.length === 0 && opaque === 0) || opaque > 0) {
+  if (requests.length === 0 || unestablished > 0) {
     return null;
   }
-  return digestOf({ requests, opaque });
+  return digestOf({ requests });
 }

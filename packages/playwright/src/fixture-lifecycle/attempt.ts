@@ -13,11 +13,10 @@ import type { BlackboxAttemptRuntime, RunningBlackboxAttempt } from '../runtime/
 import { retainAttempt, retainedAttemptDirectory } from '../retention/retention.js';
 import type { BlackboxTestOptions } from '../types.js';
 import {
-  captureBeforeAttempt,
+  startPreludeCapture,
   newAttemptProduct,
   settleAttempt,
   type AttemptProduct,
-  type EnvelopePrelude,
   type FinalCaptureInput,
 } from './final-capture.js';
 import {
@@ -144,12 +143,11 @@ async function useAttempt(
   report: AttemptReport,
   context: {
     readonly capture: FinalCaptureInput;
-    readonly prelude: EnvelopePrelude | null;
     readonly attempt: RunningBlackboxAttempt;
     readonly product: AttemptProduct;
   },
 ): Promise<void> {
-  const { capture, prelude, attempt, product } = context;
+  const { capture, attempt, product } = context;
   report.acquired(attempt.sandbox, attempt.telemetry);
   bindEffectAssertionReporter(attempt.effects, report);
   report.emit(
@@ -170,7 +168,7 @@ async function useAttempt(
       report,
       attempt,
       stopReason: reason,
-      prelude,
+      prelude: startPreludeCapture(capture),
       product,
       cleanup: () => finishAttempt(attempt, report, reason, input.policy),
     });
@@ -185,12 +183,11 @@ export async function runAttemptFixture(input: AttemptFixtureInput): Promise<voi
   const recorder = capture.enabled ? startReceipt(input.testInfo, entryId) : null;
   const product = newAttemptProduct();
   try {
-    const prelude = await captureBeforeAttempt(capture);
     const attempt = await acquire(input, report, recorder);
     if (recorder !== null) {
       recorder.started(attempt.sandbox.sandboxId);
     }
-    await useAttempt(input, report, { capture, prelude, attempt, product });
+    await useAttempt(input, report, { capture, attempt, product });
   } catch (error) {
     report.emit('attempt', 'failed', 'setup or teardown failed; see test error');
     throw error;

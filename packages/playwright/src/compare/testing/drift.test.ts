@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { compareSides } from '../compare.js';
+import { requestFixture, stimulusFixture } from '../../envelope/testing/envelope.fixture.js';
 import { healthy, sideFixture, span, type SpanSpec } from './compare.fixture.js';
 
 const payment = (spans: number) => span({ actor: 'payment', operation: 'POST', spans });
@@ -10,45 +11,34 @@ const compareSpans = (reference: readonly SpanSpec[], head: readonly SpanSpec[])
     sideFixture({ spans: head, attemptId: 'attempt-2' }),
   );
 
-describe('a snapshot that kept only part of what was observed', () => {
-  const reference = () => sideFixture({ spans: [...healthy, payment(1)] });
+describe('credential headers in the stimulus', () => {
+  const withCredentials = (attemptId: string) =>
+    sideFixture({
+      attemptId,
+      spans: [...healthy, payment(1)],
+      stimulus: stimulusFixture([requestFixture({ headers: { authorization: 'secret' } })]),
+    });
 
-  it('never reports no observed difference when either side omitted effects', () => {
-    const same = [...healthy, payment(1)];
-    const headCut = compareSides(
-      reference(),
-      sideFixture({ spans: same, attemptId: 'b', omittedEffects: 7 }),
-    );
-    expect(headCut.outcome).toBe('inconclusive');
-    expect(headCut.unresolved).toEqual([
-      expect.objectContaining({
-        kind: 'evidence-truncated',
-        detail: expect.stringContaining('7 effects'),
-      }),
+  it('keeps equal-looking runs from reading as agreement, because the credentials are hidden', () => {
+    const delta = compareSides(withCredentials('a'), withCredentials('b'));
+    expect(delta.outcome).toBe('inconclusive');
+    expect(delta.unresolved.map(({ kind }) => kind)).toEqual([
+      'stimulus-credentials-unverified',
+      'stimulus-credentials-unverified',
     ]);
-    const referenceCut = compareSides(
-      sideFixture({ spans: same, omittedEffects: 3 }),
-      sideFixture({ spans: same, attemptId: 'b' }),
-    );
-    expect(referenceCut.outcome).toBe('inconclusive');
   });
 
-  it('keeps a witnessed difference in the retained part, and still says part was omitted', () => {
+  it('still reports a witnessed difference, and says credentials were not compared', () => {
     const delta = compareSides(
-      reference(),
-      sideFixture({ spans: [...healthy, payment(2)], attemptId: 'b', omittedEffects: 4 }),
+      withCredentials('a'),
+      sideFixture({
+        attemptId: 'b',
+        spans: [...healthy, payment(2)],
+        stimulus: stimulusFixture([requestFixture({ headers: { authorization: 'secret' } })]),
+      }),
     );
     expect(delta.outcome).toBe('observed-difference');
-    expect(delta.unresolved.map(({ kind }) => kind)).toContain('evidence-truncated');
-  });
-
-  it('adds nothing when nothing was omitted', () => {
-    const delta = compareSides(
-      reference(),
-      sideFixture({ spans: [...healthy, payment(1)], attemptId: 'b' }),
-    );
-    expect(delta.outcome).toBe('no-observed-difference');
-    expect(delta.unresolved).toEqual([]);
+    expect(delta.unresolved.map(({ kind }) => kind)).toContain('stimulus-credentials-unverified');
   });
 });
 

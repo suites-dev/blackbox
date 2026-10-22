@@ -113,7 +113,8 @@ export interface UnresolvedItem {
     | 'evidence-unavailable'
     | 'state-reported-on-one-side'
     | 'state-annotations-rejected'
-    | 'evidence-truncated';
+    | 'evidence-truncated'
+    | 'stimulus-credentials-unverified';
   readonly detail: string;
 }
 
