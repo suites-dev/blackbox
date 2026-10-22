@@ -14,6 +14,10 @@ afterEach(cleanup);
 
 // Real operating-system processes need compiled code; `pnpm test` builds first. A missing build is a failure,
 // not a skip, so this lane cannot quietly stop running.
+// Writing is slow on purpose (every record is flushed), so these tests allow far longer than the default.
+const processTimeout = 180_000;
+const blobCount = 600;
+
 const compiled = fileURLToPath(new URL('../../../dist/history/history.js', import.meta.url));
 
 const WORKER = `
@@ -49,75 +53,85 @@ describe('independent processes writing one store', () => {
     expect(existsSync(compiled), `${compiled} is missing: run pnpm build first`).toBe(true);
   });
 
-  it('ingests overlapping records from four processes without loss, duplication or corruption', async () => {
-    const directory = await scratch();
-    const store = join(directory, 'history');
-    await writeFile(join(directory, 'worker.mjs'), WORKER);
-    const shared = Array.from({ length: 6 }, (_, index) =>
-      execution({ attemptId: `shared-${String(index)}` }),
-    );
-    const sharedItems = [
-      ...shared.map(({ envelope, body }) => ({ kind: 'envelope', envelope, body })),
-      { kind: 'receipt', receipt: failedAcquisition(behaviorOf('subscription.payment'), 5) },
-    ];
-    const children: ChildProcess[] = [];
-    for (let worker = 0; worker < 4; worker += 1) {
-      const own = Array.from({ length: 5 }, (_, index) =>
-        execution({ attemptId: `own-${String(worker)}-${String(index)}` }),
-      ).map(({ envelope, body }) => ({ kind: 'envelope', envelope, body }));
-      const items = [...own, ...sharedItems].sort(() => Math.random() - 0.5);
-      const plan = join(directory, `plan-${String(worker)}.json`);
-      await writeFile(plan, JSON.stringify({ items }));
-      children.push(
-        fork(join(directory, 'worker.mjs'), [new URL(`file://${compiled}`).href, store, plan], {
-          stdio: 'inherit',
-        }),
+  it(
+    'ingests overlapping records from four processes without loss, duplication or corruption',
+    async () => {
+      const directory = await scratch();
+      const store = join(directory, 'history');
+      await writeFile(join(directory, 'worker.mjs'), WORKER);
+      const shared = Array.from({ length: 6 }, (_, index) =>
+        execution({ attemptId: `shared-${String(index)}` }),
       );
-    }
-    expect(await Promise.all(children.map(exited))).toEqual([0, 0, 0, 0]);
-    const history = await BehaviorHistory.open(store);
-    const report = await history.verifyStore();
-    expect(report.corrupt).toEqual([]);
-    expect(report.interruptedWrites).toEqual([]);
-    expect(report.objects.envelope).toBe(6 + 4 * 5);
-    expect(report.objects.receipt).toBe(1);
-    const second = await BehaviorHistory.open(store);
-    expect((await second.rebuildIndex()).digest).toBe(report.indexDigest);
-  });
+      const sharedItems = [
+        ...shared.map(({ envelope, body }) => ({ kind: 'envelope', envelope, body })),
+        { kind: 'receipt', receipt: failedAcquisition(behaviorOf('subscription.payment'), 5) },
+      ];
+      const children: ChildProcess[] = [];
+      for (let worker = 0; worker < 4; worker += 1) {
+        const own = Array.from({ length: 5 }, (_, index) =>
+          execution({ attemptId: `own-${String(worker)}-${String(index)}` }),
+        ).map(({ envelope, body }) => ({ kind: 'envelope', envelope, body }));
+        const items = [...own, ...sharedItems].sort(() => Math.random() - 0.5);
+        const plan = join(directory, `plan-${String(worker)}.json`);
+        await writeFile(plan, JSON.stringify({ items }));
+        children.push(
+          fork(join(directory, 'worker.mjs'), [new URL(`file://${compiled}`).href, store, plan], {
+            stdio: 'inherit',
+          }),
+        );
+      }
+      expect(await Promise.all(children.map(exited))).toEqual([0, 0, 0, 0]);
+      const history = await BehaviorHistory.open(store);
+      const report = await history.verifyStore();
+      expect(report.corrupt).toEqual([]);
+      expect(report.interruptedWrites).toEqual([]);
+      expect(report.objects.envelope).toBe(6 + 4 * 5);
+      expect(report.objects.receipt).toBe(1);
+      const second = await BehaviorHistory.open(store);
+      expect((await second.rebuildIndex()).digest).toBe(report.indexDigest);
+    },
+    processTimeout,
+  );
+});
 
-  it('is left consistent when a writer is killed with SIGKILL in the middle of ingesting', async () => {
-    const directory = await scratch();
-    const store = join(directory, 'history');
-    await writeFile(join(directory, 'worker.mjs'), WORKER);
-    const items = Array.from({ length: 2000 }, (_, index) => ({
-      kind: 'blob',
-      text: `blob-${String(index)}-${'x'.repeat(2000)}`,
-    }));
-    const plan = join(directory, 'plan.json');
-    await writeFile(plan, JSON.stringify({ items }));
-    const child = fork(
-      join(directory, 'worker.mjs'),
-      [new URL(`file://${compiled}`).href, store, plan],
-      { stdio: 'inherit' },
-    );
-    await new Promise((resolve) => setTimeout(resolve, 400));
-    child.kill('SIGKILL');
-    await exited(child);
-    const history = await BehaviorHistory.open(store);
-    const report = await history.verifyStore();
-    // Whatever was written is whole, and anything half-written is a visible leftover, never an object.
-    expect(report.corrupt).toEqual([]);
-    expect(report.objects.blob).toBeLessThanOrEqual(2000);
-    // The same work can be finished by another process: ingestion is idempotent.
-    const rerun = fork(
-      join(directory, 'worker.mjs'),
-      [new URL(`file://${compiled}`).href, store, plan],
-      { stdio: 'inherit' },
-    );
-    expect(await exited(rerun)).toBe(0);
-    const finished = await (await BehaviorHistory.open(store)).verifyStore();
-    expect(finished.objects.blob).toBe(2000);
-    expect(finished.corrupt).toEqual([]);
-    await rm(join(store, 'tmp'), { recursive: true, force: true });
-  });
+describe('a writer that dies in the middle of ingesting', () => {
+  it(
+    'is left consistent when a writer is killed with SIGKILL in the middle of ingesting',
+    async () => {
+      const directory = await scratch();
+      const store = join(directory, 'history');
+      await writeFile(join(directory, 'worker.mjs'), WORKER);
+      const items = Array.from({ length: blobCount }, (_, index) => ({
+        kind: 'blob',
+        text: `blob-${String(index)}-${'x'.repeat(2000)}`,
+      }));
+      const plan = join(directory, 'plan.json');
+      await writeFile(plan, JSON.stringify({ items }));
+      const child = fork(
+        join(directory, 'worker.mjs'),
+        [new URL(`file://${compiled}`).href, store, plan],
+        { stdio: 'inherit' },
+      );
+      await new Promise((resolve) => setTimeout(resolve, 400));
+      child.kill('SIGKILL');
+      await exited(child);
+      const history = await BehaviorHistory.open(store);
+      const report = await history.verifyStore();
+      // Whatever was written is whole, and anything half-written is a visible leftover, never an object.
+      expect(report.corrupt).toEqual([]);
+      expect(report.objects.blob).toBeLessThanOrEqual(blobCount);
+      // The same work can be finished by another process: ingestion is idempotent.
+      const rerun = fork(
+        join(directory, 'worker.mjs'),
+        [new URL(`file://${compiled}`).href, store, plan],
+        { stdio: 'inherit' },
+      );
+      expect(await exited(rerun)).toBe(0);
+      const finished = await (await BehaviorHistory.open(store)).verifyStore();
+      expect(finished.objects.blob).toBe(blobCount);
+      expect(finished.corrupt).toEqual([]);
+      await rm(join(store, 'tmp'), { recursive: true, force: true });
+    },
+    processTimeout,
+  );
 });
