@@ -270,7 +270,7 @@ export interface BehaviorEnvelope {
   readonly provenance: Provenance;
 }
 
-/** The Milestone 2 shape: no stimulus, no reported state, no noise profile. Still readable and verifiable. */
+/** The version 1 shape: no stimulus, no reported state, no noise profile. Still readable and verifiable. */
 export type LegacyBehaviorEnvelope = Omit<
   BehaviorEnvelope,
   'envelopeVersion' | 'identity' | 'configuration' | 'stimulus' | 'state'

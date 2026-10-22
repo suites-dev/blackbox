@@ -130,7 +130,7 @@ export class BehaviorHistory {
     return detail.evidence;
   }
 
-  /** Compares two stored executions with the Milestone 3 comparator, optionally keeping the result as a record. */
+  /** Compares two stored executions with the comparator, optionally keeping the result as a record. */
   async compare(
     referenceId: Digest,
     headId: Digest,

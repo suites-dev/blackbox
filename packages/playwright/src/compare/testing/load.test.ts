@@ -9,7 +9,7 @@ import { checkOf } from './delta.fixture.js';
 import { healthy, rawSide, sideFixture } from './compare.fixture.js';
 import { loadSide } from '../side.js';
 
-/** The Milestone 2 document for the same attempt: no stimulus, no state, no infrastructure profile. */
+/** The version 1 document for the same attempt: no stimulus, no state, no infrastructure profile. */
 function legacyOf(envelope: BehaviorEnvelope) {
   const { stimulus: _stimulus, state: _state, digest: _digest, ...rest } = envelope;
   const {
