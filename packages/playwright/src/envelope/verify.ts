@@ -10,6 +10,7 @@ import {
 } from './fingerprints.js';
 import { stateRecordDigest } from './state.js';
 import { stimulusFingerprint } from '../stimulus/summary.js';
+import { envelopeShapeProblems } from './shape/envelope-shape.js';
 import type { BehaviorEnvelope, LegacyBehaviorEnvelope } from './types.js';
 
 export type EnvelopeVerification =
@@ -116,6 +117,10 @@ export function verifyEnvelope(value: unknown): EnvelopeVerification {
       ok: false,
       problems: ['not a supported behavior envelope (kind, version or canonicalization)'],
     };
+  }
+  const shape = envelopeShapeProblems(value, value.envelopeVersion);
+  if (shape.length > 0) {
+    return { ok: false, problems: shape };
   }
   const problems: string[] = [];
   const check: Check = (name, ok) => {

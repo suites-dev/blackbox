@@ -1,3 +1,4 @@
+import { snapshotShapeProblems } from '../../compare/snapshot-shape.js';
 import type { BehavioralDelta } from '../../compare/types.js';
 import { canonicalize, digestBytes, type Digest } from '../../envelope/index.js';
 import { verifyEnvelope } from '../../envelope/verify.js';
@@ -6,6 +7,14 @@ import { HistoryError, type AnyEnvelope, type IngestResult } from '../history-ty
 import { verifyReceipt, type AttemptReceipt } from '../receipts/receipt.js';
 import { verifyDelta } from '../storage/records.js';
 import type { ObjectKind, ObjectStore } from '../storage/store.js';
+
+function snapshotBodyProblems(body: string): string[] {
+  try {
+    return snapshotShapeProblems(JSON.parse(body));
+  } catch {
+    return ['not JSON'];
+  }
+}
 
 /**
  * Verifies a record and writes it once. Nothing is stored that fails its own verification, and nothing is ever
@@ -41,6 +50,10 @@ export class Ingestion {
     const document = envelope as AnyEnvelope;
     const { finalSnapshot } = document.observed;
     if (snapshotBody !== null) {
+      const shape = snapshotBodyProblems(snapshotBody);
+      if (shape.length > 0) {
+        throw new HistoryError('Refusing a malformed final snapshot', shape);
+      }
       if (
         finalSnapshot.state !== 'attached' ||
         digestBytes(snapshotBody) !== finalSnapshot.evidence

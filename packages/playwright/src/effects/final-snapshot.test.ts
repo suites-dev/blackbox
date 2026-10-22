@@ -233,4 +233,23 @@ describe('attached evidence digests', () => {
     await expect(report.finalSnapshot(buildFinalSnapshot(input()))).rejects.toThrow('disk full');
     expect(report.attachedEvidence()).toEqual([]);
   });
+
+  it('returns the document as attached, so an envelope built from it holds the redacted content', async () => {
+    const bodies: string[] = [];
+    const testInfo = {
+      attach: (_name: string, options: { readonly body: string }) => {
+        bodies.push(options.body);
+        return Promise.resolve();
+      },
+    } as TestInfo;
+    const report = new AttemptReport(testInfo);
+    report.protect({ token: 'synthetic-secret' });
+    const returned = await report.finalSnapshot(
+      buildFinalSnapshot(
+        input({ read: { kind: 'unavailable', message: 'token=synthetic-secret' } }),
+      ),
+    );
+    expect(JSON.stringify(returned)).not.toContain('synthetic-secret');
+    expect(returned).toEqual(JSON.parse(bodies[0] ?? ''));
+  });
 });

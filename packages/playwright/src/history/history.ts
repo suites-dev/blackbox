@@ -136,14 +136,18 @@ export class BehaviorHistory {
     headId: Digest,
     options: { readonly claims: readonly AtMostClaim[]; readonly record: boolean },
   ): Promise<BehavioralDelta> {
-    const delta = compareThroughAliases(
-      await this.records.side(referenceId),
-      await this.records.side(headId),
-      {
-        aliases: (await this.index()).aliases,
-        claims: options.claims,
-      },
-    );
+    const reference = await this.records.side(referenceId);
+    const head = await this.records.side(headId);
+    const aliases = (await this.index()).aliases;
+    let delta: BehavioralDelta;
+    try {
+      delta = compareThroughAliases(reference, head, { aliases, claims: options.claims });
+    } catch (error) {
+      // A record that verified but cannot be read as a comparison input is reported, not thrown as a TypeError.
+      throw new HistoryError('A stored record could not be compared', [
+        error instanceof Error ? error.message : String(error),
+      ]);
+    }
     if (options.record) {
       await this.recordComparison(delta);
     }

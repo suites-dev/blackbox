@@ -84,9 +84,19 @@ describe('stimulus summary', () => {
     ).toMatchObject({ target: 'other-origin' });
   });
 
-  it('has no fingerprint when nothing was sent, and counts opaque requests', () => {
+  it('has no fingerprint when nothing was sent, or when any request could not be summarized', () => {
     expect(stimulusFingerprint([], 0)).toBeNull();
-    expect(stimulusFingerprint([], 1)).not.toBeNull();
+    expect(stimulusFingerprint([], 1)).toBeNull();
+  });
+});
+
+describe('stimulus summary of requests that vary', () => {
+  it('does not treat a stimulus with an opaque request as equal to another one with the same count', () => {
+    const summarized = [
+      { title: 'When', requests: [summarizeRequest(entry(), 'http://127.0.0.1:41000')] },
+    ] satisfies RecordedStimulus[];
+    expect(stimulusFingerprint(summarized, 0)).not.toBeNull();
+    expect(stimulusFingerprint(summarized, 1)).toBeNull();
   });
 
   it('counts Playwright params as part of the request, wherever the query is written', () => {

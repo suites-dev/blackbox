@@ -1,7 +1,8 @@
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { buildEnvelope } from '../../envelope/build.js';
+import { buildEnvelope, envelopeDigest } from '../../envelope/build.js';
 import { inputFixture } from '../../envelope/testing/envelope.fixture.js';
+import { envelopeWithSnapshotBody } from '../../compare/testing/compare.fixture.js';
 import { digestOf } from '../../envelope/index.js';
 import { HistoryError } from '../history.js';
 import {
@@ -77,6 +78,30 @@ describe('ingesting immutable records', () => {
         .map(({ receiptId, envelopeStored }) => `${receiptId}:${String(envelopeStored)}`)
         .sort(),
     ).toEqual(['receipt-1:true', 'receipt-2:false']);
+  });
+});
+
+describe('refusing records that break their own rules', () => {
+  it('refuses an envelope whose sections are missing even when its digest is right', async () => {
+    const history = await openHistory();
+    const {
+      digest: _digest,
+      provenance: _provenance,
+      ...hollow
+    } = execution({ attemptId: 'x' }).envelope;
+    await expect(
+      history.ingestEnvelope({ ...hollow, digest: envelopeDigest(hollow) }, null),
+    ).rejects.toThrow('shape: provenance');
+    expect((await history.verifyStore()).objects.envelope).toBe(0);
+  });
+
+  it('refuses a snapshot body that matches the recorded digest but is not a snapshot', async () => {
+    const history = await openHistory();
+    const hollow = JSON.stringify({ kind: 'final-snapshot', schemaVersion: 1 });
+    await expect(history.ingestEnvelope(envelopeWithSnapshotBody(hollow), hollow)).rejects.toThrow(
+      'Refusing a malformed final snapshot',
+    );
+    expect((await history.verifyStore()).objects.blob).toBe(0);
   });
 });
 

@@ -6,7 +6,7 @@ import type { BehaviorEnvelope } from '../../envelope/index.js';
 import { verifyEnvelope } from '../../envelope/verify.js';
 import { compareSides } from '../compare.js';
 import { checkOf } from './delta.fixture.js';
-import { healthy, rawSide, sideFixture } from './compare.fixture.js';
+import { envelopeWithSnapshotBody, healthy, rawSide, sideFixture } from './compare.fixture.js';
 import { loadSide } from '../side.js';
 
 /** The version 1 document for the same attempt: no stimulus, no state, no infrastructure profile. */
@@ -54,6 +54,18 @@ describe('the version 1 expectations field', () => {
       if (!result.ok) {
         expect(result.problems).toContain(`expectations.${field}`);
       }
+    }
+  });
+});
+
+describe('a snapshot body that matches its digest but is not a snapshot', () => {
+  it('is reported as unavailable evidence instead of being read', () => {
+    const hollow = JSON.stringify({ kind: 'final-snapshot', schemaVersion: 1 });
+    const loaded = loadSide({ envelope: envelopeWithSnapshotBody(hollow), snapshotBody: hollow });
+    expect(loaded.kind).toBe('loaded');
+    if (loaded.kind === 'loaded') {
+      expect(loaded.side.snapshot).toBeNull();
+      expect(loaded.side.snapshotProblem).toContain('unsupported shape');
     }
   });
 });

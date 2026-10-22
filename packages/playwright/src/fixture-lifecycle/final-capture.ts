@@ -43,8 +43,8 @@ async function snapshotOf(
   },
 ): Promise<FinalSnapshotDocument | null> {
   try {
-    const snapshot = await collectFinalSnapshot({ testInfo: input.testInfo, ...captured });
-    await report.finalSnapshot(snapshot);
+    const collected = await collectFinalSnapshot({ testInfo: input.testInfo, ...captured });
+    const snapshot = await report.finalSnapshot(collected);
     report.emit('final-snapshot', 'completed', 'attached');
     return snapshot;
   } catch {

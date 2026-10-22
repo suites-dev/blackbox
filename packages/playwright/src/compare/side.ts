@@ -4,6 +4,7 @@ import {
   type BehaviorEnvelope,
   type LegacyBehaviorEnvelope,
 } from '../envelope/index.js';
+import { snapshotShapeProblems } from './snapshot-shape.js';
 import { verifyEnvelope } from '../envelope/verify.js';
 import type { ComparableEnvelope, ComparisonSide } from './types.js';
 
@@ -41,17 +42,6 @@ function normalized(envelope: BehaviorEnvelope | LegacyBehaviorEnvelope): Compar
     },
     state: { records: [], rejected: 0 },
   };
-}
-
-function isSnapshot(value: unknown): value is FinalSnapshotDocument {
-  return (
-    value !== null &&
-    typeof value === 'object' &&
-    'kind' in value &&
-    value.kind === 'final-snapshot' &&
-    'schemaVersion' in value &&
-    value.schemaVersion === 1
-  );
 }
 
 /** Excerpts written before infrastructure classification existed are unclassified, not malformed. */
@@ -98,9 +88,13 @@ function snapshotOf(
   }
   try {
     const parsed: unknown = JSON.parse(body);
-    return isSnapshot(parsed)
-      ? { snapshot: withClassification(parsed), problem: null }
-      : { snapshot: null, problem: 'the final snapshot has an unsupported shape' };
+    const problems = snapshotShapeProblems(parsed);
+    return problems.length === 0
+      ? { snapshot: withClassification(parsed as FinalSnapshotDocument), problem: null }
+      : {
+          snapshot: null,
+          problem: `the final snapshot has an unsupported shape (${problems.slice(0, 3).join(', ')})`,
+        };
   } catch {
     return { snapshot: null, problem: 'the final snapshot is not valid JSON' };
   }

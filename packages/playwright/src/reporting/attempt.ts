@@ -148,8 +148,12 @@ export class AttemptReport implements AttemptProgress {
     return this.evidence;
   }
 
-  /** Attaches the final snapshot with the same redaction and truncation accounting as an assertion. */
-  async finalSnapshot(snapshot: FinalSnapshotDocument): Promise<void> {
+  /**
+   * Attaches the final snapshot with the same redaction and truncation accounting as an assertion, and returns the
+   * document exactly as attached, so anything derived from it (the envelope) holds the redacted content and the
+   * same identity as the attachment.
+   */
+  async finalSnapshot(snapshot: FinalSnapshotDocument): Promise<FinalSnapshotDocument> {
     let truncatedStrings = 0;
     const render = (display: number): string =>
       JSON.stringify(
@@ -181,6 +185,7 @@ export class AttemptReport implements AttemptProgress {
       evaluation: snapshot.observation.state,
       contractDigest: null,
     });
+    return JSON.parse(body) as FinalSnapshotDocument;
   }
 
   emit(phase: string, status: AttemptEvent['status'], detail: string): void {

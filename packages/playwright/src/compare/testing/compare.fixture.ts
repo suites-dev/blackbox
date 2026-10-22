@@ -157,3 +157,15 @@ export { configurationFixture, requestFixture, stimulusFixture };
 
 export { span, snapshotWith };
 export type { SpanSpec };
+
+/** An envelope whose recorded final snapshot is `body`, whatever that body contains. */
+export function envelopeWithSnapshotBody(body: string): BehaviorEnvelope {
+  const base = inputFixture();
+  const ref = {
+    id: digestBytes(body),
+    kind: 'final-snapshot',
+    bytes: body.length,
+    locator: { type: 'attachment', name: 'blackbox-effects-final', sequence: 1 },
+  } satisfies EvidenceRef;
+  return buildEnvelope({ ...base, snapshotEvidence: ref, evidence: [ref] });
+}

@@ -129,13 +129,15 @@ export function summarizeRequest(
   };
 }
 
-/** The ordered requests only: titles are display text and do not change what was sent. */
+/** The ordered requests only: titles are display text and do not change what was sent. `null` when any request could not be summarized. */
 export function stimulusFingerprint(
   stimuli: readonly RecordedStimulus[],
   opaque: number,
 ): Digest | null {
   const requests = stimuli.flatMap(({ requests: sent }) => sent);
-  if (requests.length === 0 && opaque === 0) {
+  // A request object that cannot be summarized is an input nobody can compare: no fingerprint, so the
+  // stimulus is reported as unestablished rather than equal to any other run with the same count.
+  if ((requests.length === 0 && opaque === 0) || opaque > 0) {
     return null;
   }
   return digestOf({ requests, opaque });
