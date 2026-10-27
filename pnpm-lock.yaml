@@ -28,8 +28,8 @@ catalogs:
       specifier: ^4.6.1
       version: 4.16.2
     eslint-plugin-unicorn:
-      specifier: ^78.0.0
-      version: 78.0.0
+      specifier: ^79.0.0
+      version: 79.0.0
     globals:
       specifier: ^17.12.0
       version: 17.12.0
@@ -148,7 +148,7 @@ importers:
         version: 4.16.2(@typescript-eslint/utils@8.59.1(eslint@10.11.0(jiti@2.6.1))(typescript@5.7.3))(eslint@10.11.0(jiti@2.6.1))
       eslint-plugin-unicorn:
         specifier: 'catalog:'
-        version: 78.0.0(eslint@10.11.0(jiti@2.6.1))(typescript@5.7.3)
+        version: 79.0.0(eslint@10.11.0(jiti@2.6.1))(typescript@5.7.3)
       globals:
         specifier: 'catalog:'
         version: 17.12.0
@@ -2596,8 +2596,8 @@ packages:
       eslint-import-resolver-node:
         optional: true
 
-  eslint-plugin-unicorn@78.0.0:
-    resolution: {integrity: sha512-XTDqxcJeAmh2lhgU75TpuMDdFtPDnAU+DCW56nR5UzXTG+uOyvOGjV80O11my7kNb2bYSCPlWa8c4K8/rwlYog==}
+  eslint-plugin-unicorn@79.0.0:
+    resolution: {integrity: sha512-k7MWrjoVTVCnjKpgaxBuScPNSPomLvDpsd9uADpWrIFzrnwiec27eWhGrmmyuTj1bC3xVNYP4QfG3MEzEw6ifg==}
     engines: {node: '>=22'}
     peerDependencies:
       eslint: '>=10.4'
@@ -6468,7 +6468,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  eslint-plugin-unicorn@78.0.0(eslint@10.11.0(jiti@2.6.1))(typescript@5.7.3):
+  eslint-plugin-unicorn@79.0.0(eslint@10.11.0(jiti@2.6.1))(typescript@5.7.3):
     dependencies:
       '@eslint-community/eslint-utils': 4.10.1(eslint@10.11.0(jiti@2.6.1))
       '@eslint/css-tree': 4.1.1
