@@ -10,7 +10,7 @@ when reviewing a feature branch, run that branch to evaluate its implementation.
 
 Prerequisites:
 
-- Node.js 22.15 or newer in the Node 22 line and pnpm 9.15.4.
+- Node.js 22.22.2 or newer in the Node 22 line and pnpm 9.15.4.
 - Docker with a reachable daemon (`docker info`). The daemon runs both the fixture's Compose stack and the
   disposable package registry.
 - Bash, `jq`, and `curl` on the host. The fixture images provide the participant-side PostgreSQL and Redis clients.
