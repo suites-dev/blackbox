@@ -1,3 +1,4 @@
+import { execFileSync } from 'node:child_process';
 import { mkdir, mkdtemp, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -75,7 +76,9 @@ describe('retained evidence references', () => {
     });
     expect(refs).toEqual([]);
   });
+});
 
+describe('retained evidence that is not an ordinary file', () => {
   it('never follows a symbolic link when it reads fragments, at capture or at verification', async () => {
     const found = await attempt({ '1.json': 'a' });
     const outside = join(found.root, 'outside.txt');
@@ -105,5 +108,18 @@ describe('retained evidence references', () => {
     const fragments = join(found.collector, 'session', 'execution', 'fragments');
     await symlink(outside, join(fragments, '1.json'));
     expect(await fragmentsDigest(fragments)).toBeNull();
+  });
+
+  it('reports a pipe in place of evidence as unavailable instead of waiting on it', async () => {
+    const found = await attempt({});
+    const pipe = join(found.root, 'blackbox', 'pipe.json');
+    execFileSync('mkfifo', [pipe]);
+    const ref = {
+      id: digestBytes('x'),
+      kind: 'sandbox-record',
+      bytes: 1,
+      locator: { type: 'file', root: 'test-output', path: 'blackbox/pipe.json' },
+    } as const;
+    expect(await currentEvidenceDigest(found.root, ref)).toBeNull();
   });
 });

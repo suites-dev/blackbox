@@ -127,7 +127,9 @@ describe('stimulus summary of requests that vary', () => {
     expect(withParams({ user: 'alice', page: 2 })).not.toBe(alice);
     expect(withParams({})).not.toBe(alice);
   });
+});
 
+describe('stimulus summary of bodies and destinations', () => {
   it('does not mistake a string body for the bytes of another string', () => {
     const sent = (data: string | Buffer) => fingerprint(entry({ options: { data } }));
     expect(sent('abc')).not.toBe(sent(Buffer.from('data:abc')));
@@ -170,5 +172,12 @@ describe('stimulus summary of requests that vary', () => {
     expect(repeated(new URLSearchParams('user=a&user=b'))).not.toBe(
       repeated(new URLSearchParams('user=b&user=a')),
     );
+  });
+
+  it('tells scheme-relative URLs by the origin they resolve to', () => {
+    const to = (url: string) => fingerprint(entry({ method: 'GET', url, options: {} }));
+    expect(to('//service-a.test/x')).not.toBe(to('//service-b.test/x'));
+    expect(to('//service-a.test/x')).not.toBe(to('/x'));
+    expect(to('//127.0.0.1:41000/x')).toBe(to('/x'));
   });
 });

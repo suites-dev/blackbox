@@ -121,11 +121,8 @@ function location(
   const base = entrypointUrl === null ? 'http://entrypoint.invalid/' : `${entrypointUrl}/`;
   const parsed = new URL(url, base);
   const pairs = queryPairs(parsed, params);
-  const target =
-    !URL.canParse(url) ||
-    (entrypointUrl !== null && parsed.origin === new URL(entrypointUrl).origin)
-      ? 'entrypoint'
-      : 'other-origin';
+  // The resolved origin decides, so `//other-host/x` is another system even though it is not an absolute URL.
+  const target = parsed.origin === new URL(base).origin ? 'entrypoint' : 'other-origin';
   return {
     target,
     origin: target === 'entrypoint' ? null : parsed.origin,
