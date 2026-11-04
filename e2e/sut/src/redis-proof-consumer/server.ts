@@ -5,7 +5,13 @@ import { writeError } from '../lib/log.js';
 import { retry } from '../lib/retry.js';
 import { RedisProofConsumer, redisProofList, type RedisProofSource } from './consumer.js';
 
-function createProofSource(client: ReturnType<typeof createClient>): RedisProofSource {
+function createProofClient() {
+  return createClient({
+    url: requiredEnvironment('REDIS_URL'),
+  });
+}
+
+function createProofSource(client: ReturnType<typeof createProofClient>): RedisProofSource {
   let closeState = { kind: 'open' } as { readonly kind: 'open' } | { readonly kind: 'closed' };
   return {
     async take() {
@@ -15,21 +21,22 @@ function createProofSource(client: ReturnType<typeof createClient>): RedisProofS
       }
       return result.element;
     },
-    async close() {
+    close() {
       if (closeState.kind === 'closed') {
-        return;
+        return Promise.resolve();
       }
       closeState = { kind: 'closed' };
-      await client.disconnect();
+      client.destroy();
+      return Promise.resolve();
     },
   };
 }
 
 async function main(): Promise<void> {
   const fixtureToken = requiredEnvironment('FIXTURE_CONTROL_TOKEN');
-  const client = createClient({ url: requiredEnvironment('REDIS_URL') });
+  const client = createProofClient();
   client.on('error', (error) =>
-    writeError(new Error('Redis proof consumer error', { cause: error })),
+    { writeError(new Error('Redis proof consumer error', { cause: error })); },
   );
   await retry('redis proof source', () => client.connect());
   const consumer = new RedisProofConsumer({

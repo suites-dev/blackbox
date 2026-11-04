@@ -17,9 +17,6 @@ export function expectClientSandboxEndpoints(
   const redis = redisContainer.testcontainer;
   const postgres = postgresContainer.testcontainer;
   const redisOptions = clients.redis.options;
-  if (redisOptions === undefined) {
-    throw new Error('Registered database clients require inspectable sandbox endpoints');
-  }
   expect(redisOptions.url).toBe(
     `redis://${redis.host}:${redis.getMappedPort({ containerPort: 6379 })}`,
   );

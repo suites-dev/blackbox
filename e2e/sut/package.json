@@ -9,12 +9,12 @@
     "verify:source-maps": "npm run build && node scripts/verify-source-maps.mjs"
   },
   "dependencies": {
-    "@aws-sdk/client-sqs": "3.1149.0",
+    "@aws-sdk/client-sqs": "3.1152.0",
     "pg": "8.23.1",
-    "redis": "4.7.1"
+    "redis": "6.3.1"
   },
   "devDependencies": {
-    "@types/node": "22.19.17",
+    "@types/node": "26.6.6",
     "@types/pg": "8.23.1",
     "typescript": "5.7.3"
   },

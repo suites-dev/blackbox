@@ -20,7 +20,7 @@ concurrency:
   cancel-in-progress: true
 
 # One source of truth for the toolchain. NODE_VERSION tracks the root
-# package.json `engines.node` (>=22.15); PNPM_VERSION tracks `packageManager`.
+# package.json `engines.node` (>=22.22.2); PNPM_VERSION tracks `packageManager`.
 env:
   CI: true
   PNPM_VERSION: 9.15.4

@@ -1,16 +1,22 @@
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import test from 'node:test';
+import test, { after } from 'node:test';
 
 import { evaluateAuditReport, parseAuditOutput } from './audit-workspace.mjs';
+
+const fixtureRoots = [];
+after(() => {
+  for (const root of fixtureRoots) rmSync(root, { recursive: true, force: true });
+});
 
 const patch = 'reviewed patch fixture\n';
 const patchDigest = '7fa3a872575f53565c6b9c571ec551e758ca0b38f7dd0c092c65c960833de11a';
 
 function fixture() {
   const root = mkdtempSync(join(tmpdir(), 'blackbox-audit-'));
+  fixtureRoots.push(root);
   mkdirSync(join(root, 'patches'));
   mkdirSync(join(root, 'scripts/security'), { recursive: true });
   writeFileSync(join(root, 'patches/cache.patch'), patch);
@@ -184,5 +190,95 @@ test('rejects patch drift and affected paths outside the reviewed package versio
   assert.throws(
     () => evaluateAuditReport(report, { dispositions: [disposition] }, options(root)),
     /unexpected affected path/,
+  );
+});
+
+test('counts affected versions per severity while retaining the unique advisory gate', () => {
+  const { root, report, advisory } = fixture();
+  const finding = (version) => ({ version, paths: [`root > package@${version}`] });
+  report.advisories = {
+    1: { ...advisory, severity: 'moderate', findings: ['1', '2', '3', '4', '5'].map(finding) },
+    2: { ...advisory, severity: 'moderate', findings: ['6', '7', '8'].map(finding) },
+  };
+  report.metadata.vulnerabilities = { info: 0, low: 0, moderate: 8, high: 0, critical: 0 };
+  assert.throws(
+    () => evaluateAuditReport(report, { dispositions: [] }, options(root)),
+    /reported 2 advisories but 0 are dispositioned/,
+  );
+  delete report.advisories[2];
+  assert.throws(
+    () => evaluateAuditReport(report, { dispositions: [] }, options(root)),
+    /counts do not match/,
+  );
+});
+
+test('rejects wrong per-severity totals even when the grand total matches', () => {
+  const { root, disposition, report } = fixture();
+  report.metadata.vulnerabilities = { info: 0, low: 0, moderate: 1, high: 0, critical: 0 };
+  assert.throws(
+    () => evaluateAuditReport(report, { dispositions: [disposition] }, options(root)),
+    /counts do not match/,
+  );
+  report.metadata.vulnerabilities.high = 2;
+  assert.throws(
+    () => evaluateAuditReport(report, { dispositions: [disposition] }, options(root)),
+    /counts do not match/,
+  );
+});
+
+test('rejects malformed findings instead of accepting incomplete scanner data', () => {
+  for (const findings of [
+    undefined,
+    null,
+    [],
+    {},
+    [null],
+    ['finding'],
+    [{}],
+    [{ version: '', paths: ['root'] }],
+    [{ version: '1', paths: [] }],
+    [{ version: '1', paths: [''] }],
+    [{ version: '1', paths: [null] }],
+    [{ version: '1', paths: 'root' }],
+  ]) {
+    const { root, disposition, report, advisory } = fixture();
+    advisory.findings = findings;
+    assert.throws(
+      () => evaluateAuditReport(report, { dispositions: [disposition] }, options(root)),
+      /no findings|invalid finding/,
+    );
+  }
+  for (const severity of [undefined, null, 'unknown']) {
+    const { root, disposition, report, advisory } = fixture();
+    advisory.severity = severity;
+    assert.throws(
+      () => evaluateAuditReport(report, { dispositions: [disposition] }, options(root)),
+      /invalid severity/,
+    );
+  }
+});
+
+test('accepts a clean audit only with no obsolete dispositions', () => {
+  const { root, report } = fixture();
+  report.actions = [];
+  report.advisories = {};
+  report.metadata.vulnerabilities.high = 0;
+  assert.deepEqual(evaluateAuditReport(report, { dispositions: [] }, options(root)), []);
+});
+
+test('rejects missing and noninteger scanner counts', () => {
+  for (const count of [undefined, null, -1, 0.5, '1', Number.NaN]) {
+    const { root, disposition, report } = fixture();
+    report.metadata.vulnerabilities.high = count;
+    assert.throws(
+      () => evaluateAuditReport(report, { dispositions: [disposition] }, options(root)),
+      /counts are missing or invalid/,
+    );
+  }
+  const { root, disposition, report } = fixture();
+  report.metadata.vulnerabilities.high = 0;
+  assert.throws(
+    () => evaluateAuditReport(report, { dispositions: [disposition] }, options(root)),
+    /counts do not match/,
   );
 });
