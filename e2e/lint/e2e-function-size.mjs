@@ -1,10 +1,13 @@
 const maximumCodeLines = 80;
 const suiteCallbacks = new Set([
-  'test.system',
-  'test.system.sandbox',
-  'system.sandbox',
-  'sandbox.describe',
-  'suite.describe',
+  'test.describe',
+  'test.describe.only',
+  'test.describe.skip',
+  'test.describe.fixme',
+  'test.describe.parallel',
+  'test.describe.serial',
+  'test.describe.parallel.only',
+  'test.describe.serial.only',
 ]);
 
 function memberName(node) {
@@ -43,7 +46,7 @@ const rule = {
     type: 'suggestion',
     docs: {
       description:
-        'Limit executable E2E functions while allowing synchronous Blackbox suite declarations.',
+        'Limit executable E2E functions while allowing synchronous native Playwright suite declarations.',
     },
     schema: [],
     messages: {

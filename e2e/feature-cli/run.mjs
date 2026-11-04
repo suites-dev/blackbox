@@ -174,7 +174,6 @@ export default defineConfig({
   blackboxConfigFile: './blackbox.config.yaml', testDir: ${JSON.stringify(directory)},
   testMatch: '*.spec.ts', workers: 2, fullyParallel: true, retries: 0, timeout: 180000,
   preserveOutput: 'always', outputDir: ${JSON.stringify(join(results, 'output'))},
-  use: { blackboxEnvironment: { FIXTURE_CONTROL_TOKEN: process.env.FIXTURE_CONTROL_TOKEN } },
   reporter: [['./feature-reporter.mjs', { outputFile: ${JSON.stringify(join(results, 'steps.json'))} }], ['list', { printSteps: true }], ['@suites/blackbox-playwright/reporter', { sandboxLifecycle: true }], ['json', { outputFile: ${JSON.stringify(join(results, 'results.json'))} }]],
 });\n`;
 }
@@ -238,16 +237,23 @@ async function compile(project, blackbox, generated, transcript) {
       output,
     ]);
     const hand = await readFile(join(project, `features/${name}.spec.ts`), 'utf8');
-    const cases = await compareStructure(pristine, hand);
+    const selection = /@(system|subsystem):([\w-]+)/u.exec(await readFile(join(project, source), 'utf8'));
+    assert.ok(selection, 'Reviewed Feature must declare its catalog selection');
+    const catalog = [{ kind: selection[1], id: selection[2] }];
+    const cases = await compareStructure(pristine, hand, catalog);
     model.push(...cases);
     await assert.rejects(
       compareStructure(
         pristine.replace('Then the response status is', 'Then WRONG response status is'),
         hand,
+        catalog,
       ),
       /structure differs/u,
     );
-    await writeFile(join(project, `skeleton/${name}.spec.ts`), skeleton(pristine));
+    const environmentSources = { FIXTURE_CONTROL_TOKEN: 'FIXTURE_CONTROL_TOKEN' };
+    const execution = skeleton(pristine, environmentSources);
+    await compareStructure(execution, skeleton(hand, environmentSources), catalog);
+    await writeFile(join(project, `skeleton/${name}.spec.ts`), execution);
     transcript.push(
       `${name}: file validate; suite emit; pristine suite validate`,
       `  overwrite refused; drift rejected; restored suite validated`,
@@ -281,55 +287,57 @@ async function compile(project, blackbox, generated, transcript) {
   return model;
 }
 
-async function nestedNegative(project, playwright, transcript) {
-  await mkdir(join(project, 'nested'));
-  await mkdir(join(project, 'nested-results'));
-  await writeFile(join(project, 'nested.spec.config.ts'), config('./nested', './nested-results'));
+async function unselectedNegative(project, playwright, transcript) {
+  await mkdir(join(project, 'unselected'));
+  await mkdir(join(project, 'unselected-results'));
   await writeFile(
-    join(project, 'nested/illegal.spec.ts'),
+    join(project, 'unselected.spec.config.ts'),
+    config('./unselected', './unselected-results'),
+  );
+  await writeFile(
+    join(project, 'unselected/missing-system.spec.ts'),
     `import { writeFileSync } from 'node:fs';
 import { test } from '@suites/blackbox-playwright';
-test.system({ kind: 'subsystem', id: 'payment-mock' }, (system) => {
-  system.sandbox('outer', (suite) => {
-    suite.test('must not execute', ({ sandbox }) => { writeFileSync('body-ran', sandbox.sandboxId); });
-    system.sandbox('nested', () => {});
-  });
-});\n`,
+test('must not execute', ({ sandbox }) => { writeFileSync('body-ran', sandbox.sandboxId); });\n`,
   );
   const before = await dockerResources();
   const output = await command(
     project,
     playwright,
-    ['test', '--config', 'nested.spec.config.ts'],
+    ['test', '--config', 'unselected.spec.config.ts'],
     'failure',
   );
-  assert.match(output, /sandbox declarations cannot be nested/u);
+  assert.match(output, /selects a system/u);
   assert.doesNotMatch(output, /Blackbox: sandbox (?:ready|cleaned up)|acquisition: started/u);
-  const report = JSON.parse(await readFile(join(project, 'nested-results/results.json'), 'utf8'));
-  assert.ok(
-    report.errors.some((error) => error.message.includes('sandbox declarations cannot be nested')),
+  const report = JSON.parse(
+    await readFile(join(project, 'unselected-results/results.json'), 'utf8'),
   );
+  assert.ok(report.suites.some((suite) => JSON.stringify(suite).includes('selects a system')));
   assert.equal(
-    report.stats.expected + report.stats.unexpected + report.stats.skipped + report.stats.flaky,
-    0,
-    'Nested declaration executed a test',
+    report.stats.unexpected,
+    1,
+    'Missing-system fixture did not fail its discovered test',
   );
   await assert.rejects(stat(join(project, 'body-ran')), { code: 'ENOENT' });
   assert.deepEqual(
-    await recordsUnder(join(project, 'nested-results')),
+    await recordsUnder(join(project, 'unselected-results')),
     [],
-    'Nested declaration acquired a Sandbox',
+    'Missing-system fixture acquired a Sandbox',
   );
-  assert.deepEqual(await dockerResources(), before, 'Nested declaration changed Docker resources');
+  assert.deepEqual(
+    await dockerResources(),
+    before,
+    'Missing-system fixture changed Docker resources',
+  );
   transcript.push(
-    'nested sandbox: collection rejected; 0 executed tests; 0 Sandbox records; Docker resources unchanged',
+    'unselected system: fixture rejected; 1 failed test; body not executed; 0 Sandbox records; Docker resources unchanged',
   );
 }
 
 async function cleanup(project, retained, runtime) {
   if (runtime) {
     const records = [];
-    for (const name of ['results', 'nested-results']) {
+    for (const name of ['results', 'unselected-results']) {
       try {
         records.push(...(await recordsUnder(join(project, name))));
       } catch (error) {
@@ -339,7 +347,7 @@ async function cleanup(project, retained, runtime) {
     const recovery = await recoverRecords(records, runtime.recoverSandbox);
     await writeFile(join(retained, 'recovery.json'), JSON.stringify(recovery, null, 2));
   }
-  for (const name of ['generated', 'skeleton', 'results', 'nested-results']) {
+  for (const name of ['generated', 'skeleton', 'results', 'unselected-results']) {
     try {
       await cp(join(project, name), join(retained, name), { recursive: true });
     } catch (error) {
@@ -367,7 +375,7 @@ async function run(pass) {
     const model = await compile(project, runtime.blackbox, 'generated', transcript);
     assert.equal(model.length, 7, 'Expected five subscription and two refund scenarios');
     await writeFile(join(retained, 'structure.json'), JSON.stringify(model, null, 2));
-    await nestedNegative(project, runtime.playwright, transcript);
+    await unselectedNegative(project, runtime.playwright, transcript);
     await mkdir(join(project, 'results'));
     await writeFile(join(project, 'playwright.config.ts'), config('./skeleton', './results'));
     await command(project, runtime.playwright, ['test', '--config', 'playwright.config.ts']);

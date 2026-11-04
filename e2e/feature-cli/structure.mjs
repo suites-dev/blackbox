@@ -3,13 +3,66 @@ import vm from 'node:vm';
 import ts from 'typescript';
 
 /** Preserve declarations and step titles; never execute the generated business closures. */
-export function skeleton(source) {
+export function skeleton(source, environmentSources = {}) {
   const file = ts.createSourceFile('suite.ts', source, ts.ScriptTarget.Latest, true);
   assert.equal(file.parseDiagnostics.length, 0, 'Suite is not valid TypeScript');
   let steps = 0;
   const transformed = ts.transform(file, [
     (context) => {
       function visit(node) {
+        if (
+          ts.isCallExpression(node) &&
+          ts.isPropertyAccessExpression(node.expression) &&
+          ts.isIdentifier(node.expression.expression) &&
+          node.expression.expression.text === 'test' &&
+          node.expression.name.text === 'use' &&
+          Object.keys(environmentSources).length > 0
+        ) {
+          const options = node.arguments[0];
+          assert.ok(
+            ts.isObjectLiteralExpression(options),
+            'Scaffold test.use needs literal options',
+          );
+          const properties = options.properties.map((property) => {
+            if (!ts.isPropertyAssignment(property) || property.name.getText(file) !== 'blackbox')
+              return property;
+            assert.ok(
+              ts.isObjectLiteralExpression(property.initializer),
+              'Scaffold blackbox needs literal options',
+            );
+            assert.ok(
+              !property.initializer.properties.some(
+                (item) => item.name?.getText(file) === 'environment',
+              ),
+              'Scaffold must not overwrite an existing environment',
+            );
+            const environment = ts.factory.createObjectLiteralExpression(
+              Object.entries(environmentSources).map(([name, source]) =>
+                ts.factory.createPropertyAssignment(
+                  ts.factory.createStringLiteral(name),
+                  ts.factory.createElementAccessExpression(
+                    ts.factory.createPropertyAccessExpression(
+                      ts.factory.createIdentifier('process'),
+                      'env',
+                    ),
+                    ts.factory.createStringLiteral(source),
+                  ),
+                ),
+              ),
+            );
+            return ts.factory.updatePropertyAssignment(
+              property,
+              property.name,
+              ts.factory.updateObjectLiteralExpression(property.initializer, [
+                ...property.initializer.properties,
+                ts.factory.createPropertyAssignment('environment', environment),
+              ]),
+            );
+          });
+          return ts.factory.updateCallExpression(node, node.expression, undefined, [
+            ts.factory.updateObjectLiteralExpression(options, properties),
+          ]);
+        }
         if (
           ts.isCallExpression(node) &&
           ts.isIdentifier(node.expression) &&
@@ -50,8 +103,19 @@ function rowTitle(title) {
     : { title };
 }
 
-/** Execute trusted repository declaration code with an inert recording facade, not Playwright. */
-export async function structure(source) {
+function selectionInCatalog(selection, catalog) {
+  if (catalog.length === 0) return selection;
+  const id = typeof selection === 'string' ? selection : selection.id;
+  const entry = catalog.find((candidate) => candidate.id === id);
+  assert.ok(entry, `Unknown catalog selection ${id}`);
+  if (typeof selection !== 'string') {
+    assert.equal(selection.kind, entry.kind, `Catalog kind mismatch for ${id}`);
+  }
+  return { kind: entry.kind, id: entry.id };
+}
+
+/** Execute trusted repository declaration code with inert native declaration recorders. */
+export async function structure(source, catalog = []) {
   const file = ts.createSourceFile('skeleton.ts', skeleton(source), ts.ScriptTarget.Latest, true);
   const bindings = {};
   for (const statement of file.statements) {
@@ -77,45 +141,43 @@ export async function structure(source) {
       scope = parent;
     }
   }
-  const suite = {
-    describe(title, ...args) {
-      scoped(
-        {
-          path: [...scope.path, title],
-          tags: [...scope.tags, ...(args[0]?.tag ?? [])],
-          hooks: [...scope.hooks],
-        },
-        args.at(-1),
-      );
-    },
-    beforeEach(title, callback) {
-      scope.hooks.push({ title, callback });
-    },
-    test(title, ...args) {
-      cases.push({
-        ...scope,
-        rawTitle: title,
-        ...rowTitle(title),
-        callback: args.at(-1),
+  const test = (title, ...args) => {
+    cases.push({
+      ...scope,
+      rawTitle: title,
+      ...rowTitle(title),
+      callback: args.at(-1),
+      tags: [...scope.tags, ...(args[0]?.tag ?? [])],
+    });
+  };
+  test.describe = (title, ...args) => {
+    scoped(
+      {
+        path: [...scope.path, title],
         tags: [...scope.tags, ...(args[0]?.tag ?? [])],
-      });
-    },
+        hooks: [...scope.hooks],
+      },
+      args.at(-1),
+    );
   };
-  const test = {
-    system(selection, callback) {
-      if (typeof selection === 'string') selection = { kind: 'system', id: selection };
-      scoped({ selection }, () =>
-        callback({
-          sandbox(name, options, callback) {
-            scoped({ sandbox: name, clients: Object.keys(options.clients).sort() }, () =>
-              callback(suite),
-            );
-          },
-        }),
-      );
-    },
+  test.beforeEach = (title, callback) => {
+    scope.hooks.push({ title, callback });
   };
-  vm.runInNewContext(code, { ...bindings, test }, { timeout: 1000 });
+  test.use = ({ blackbox }) => {
+    // Native option values replace the complete preceding object at this scope.
+    scope.selection = selectionInCatalog(blackbox.system, catalog);
+    scope.environment = blackbox.environment ?? {};
+    scope.clients = Object.keys(blackbox.clients ?? {}).sort();
+  };
+  vm.runInNewContext(
+    code,
+    {
+      ...bindings,
+      test,
+      process: { env: new Proxy({}, { get: (_target, name) => `<environment:${String(name)}>` }) },
+    },
+    { timeout: 1000 },
+  );
   const result = [];
   for (const item of cases) {
     const steps = [];
@@ -143,11 +205,11 @@ export async function structure(source) {
   return JSON.parse(JSON.stringify(result));
 }
 
-export async function compareStructure(generated, handAuthored) {
-  const actual = await structure(generated);
+export async function compareStructure(generated, handAuthored, catalog = []) {
+  const actual = await structure(generated, catalog);
   assert.deepEqual(
     actual,
-    await structure(handAuthored),
+    await structure(handAuthored, catalog),
     'Generated declaration/step-title structure differs from the hand-authored suite',
   );
   assert.ok(actual.length > 0, 'Structural comparison found no scenarios');

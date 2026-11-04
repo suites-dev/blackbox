@@ -6,18 +6,17 @@ import { verifyReport, verifySandboxes } from './proof.mjs';
 
 const source = `import { expect, test } from '@suites/blackbox-playwright';
 import { api } from './clients.js';
-test.system({ kind: 'system', id: 'example' }, (system) => {
-  system.sandbox('default', { clients: { api } }, (suite) => {
-    suite.describe('Feature: Example', { tag: ['@sync'] }, () => {
-      suite.beforeEach('Background: reset', async ({ clients, step }) => {
+test.describe('default', () => {
+  test.use({ blackbox: { system: 'example', clients: { api } } });
+    test.describe('Feature: Example', { tag: ['@sync'] }, () => {
+      test.beforeEach('Background: reset', async ({ clients, step }) => {
         await step('Given setup', () => { throw new Error('business setup ran'); });
       });
-      suite.test('Scenario: Example', async ({ clients, step }) => {
+      test('Scenario: Example', async ({ clients, step }) => {
         const response = await step('When request', () => clients.api.post('/business'));
         await step('Then response', () => { expect(response.status()).toBe(200); });
       });
     });
-  });
 });`;
 
 test('skeleton preserves client acquisition declarations and step titles with empty business closures', async () => {
@@ -25,8 +24,12 @@ test('skeleton preserves client acquisition declarations and step titles with em
   assert.doesNotMatch(code, /business setup ran|\.post\(|response\.status/u);
   const [item] = await structure(code);
   assert.deepEqual(item.clients, ['api']);
-  assert.deepEqual(item.selection, { kind: 'system', id: 'example' });
+  assert.equal(item.selection, 'example');
   assert.deepEqual(item.tags, ['@sync']);
+  await assert.rejects(
+    compareStructure(code.replace("system: 'example'", "system: 'wrong'"), source),
+    /structure differs/u,
+  );
   assert.deepEqual(item.backgrounds, [{ title: 'Background: reset', steps: ['Given setup'] }]);
   assert.deepEqual(item.steps, ['When request', 'Then response']);
   await compareStructure(code, source);
@@ -37,6 +40,42 @@ test('skeleton preserves client acquisition declarations and step titles with em
   await assert.rejects(
     compareStructure(code.replace('clients: { api }', 'clients: { other: api }'), source),
     /structure differs/u,
+  );
+});
+
+test('execution scaffold explicitly carries environment into the complete blackbox option', async () => {
+  const sources = { FIXTURE_CONTROL_TOKEN: 'FIXTURE_CONTROL_TOKEN' };
+  const execution = skeleton(source, sources);
+  const [plain] = await structure(source);
+  const [configured] = await structure(execution);
+  assert.deepEqual(plain.environment, {});
+  assert.deepEqual(configured.environment, {
+    FIXTURE_CONTROL_TOKEN: '<environment:FIXTURE_CONTROL_TOKEN>',
+  });
+  assert.equal(configured.selection, plain.selection);
+  assert.deepEqual(configured.clients, plain.clients);
+  assert.deepEqual(configured.steps, plain.steps);
+  assert.match(execution, /process.env\["FIXTURE_CONTROL_TOKEN"\]/u);
+  await assert.rejects(compareStructure(execution, source), /structure differs/u);
+  assert.throws(
+    () =>
+      skeleton(source.replace('clients: { api }', 'clients: { api }, environment: {}'), sources),
+    /must not overwrite/u,
+  );
+});
+
+test('explicit generated catalog kind survives native selection and rejects catalog drift', async () => {
+  const explicit = source.replace("system: 'example'", "system: { kind: 'system', id: 'example' }");
+  const catalog = [{ kind: 'system', id: 'example' }];
+  const [selected] = await compareStructure(explicit, source, catalog);
+  assert.deepEqual(selected.selection, { kind: 'system', id: 'example' });
+  await assert.rejects(
+    compareStructure(explicit, source, [{ kind: 'subsystem', id: 'example' }]),
+    /Catalog kind mismatch/u,
+  );
+  await assert.rejects(
+    compareStructure(explicit.replace("kind: 'system'", "kind: 'subsystem'"), source, catalog),
+    /Catalog kind mismatch/u,
   );
 });
 

@@ -118,7 +118,6 @@ export function compileFeature(options: CompileFeatureOptions): CompileFeatureRe
   if (context.diagnostics.length > 0 || !system) {return { code: '', diagnostics: context.diagnostics };}
   const tags = feature.tags.map((tag) => tag.name).filter((tag) => !tag.startsWith('@subsystem:') && !tag.startsWith('@system:') && !tag.startsWith('@sandbox:'));
   const sandbox = feature.tags.find((tag) => tag.name.startsWith('@sandbox:'))?.name.slice(9) ?? 'default';
-  const systemSelector = `{ kind: '${system.kind}', id: ${quote(system.id)} }`;
   const clientNames = Object.keys(options.clients).sort();
   const clientProperties = clientNames.map((name) => `${quote(name)}: ${localName(name)}`).join(', ');
   const imports = clientNames.map((name) => {
@@ -126,16 +125,15 @@ export function compileFeature(options: CompileFeatureOptions): CompileFeatureRe
     return `import { ${binding.export} as ${localName(name)} } from ${quote(binding.from)};`;
   });
   const featureDetails = tags.length ? `, { tag: ${JSON.stringify(tags)} }` : '';
-  const suiteBody = declarations.map((declaration) => indent(declaration, 6)).join('\n');
+  const suiteBody = declarations.map((declaration) => indent(declaration, 4)).join('\n');
   const code = [
     `import { expect, test } from '@suites/blackbox-playwright';`,
     ...imports,
     '',
-    `test.system(${systemSelector}, (system) => {`,
-    `  system.sandbox(${quote(sandbox)}, { clients: { ${clientProperties} } }, (suite) => {`,
-    `    suite.describe(${quote(`Feature: ${feature.name}`)}${featureDetails}, () => {`,
+    `test.describe(${quote(sandbox)}, () => {`,
+    `  test.use({ blackbox: { system: { kind: '${system.kind}', id: ${quote(system.id)} }, clients: { ${clientProperties} } } });`,
+    `  test.describe(${quote(`Feature: ${feature.name}`)}${featureDetails}, () => {`,
     suiteBody,
-    `    });`,
     `  });`,
     `});`,
     '',
@@ -195,12 +193,12 @@ function emitRule(rule: Rule, context: CompilerContext): string {
   }
   const tags = rule.tags.map((tag) => tag.name);
   const details = tags.length ? `, { tag: ${JSON.stringify(tags)} }` : '';
-  return `suite.describe(${quote(`Rule: ${rule.name}`)}${details}, () => {\n${indent(children.join('\n\n'), 2)}\n});`;
+  return `test.describe(${quote(`Rule: ${rule.name}`)}${details}, () => {\n${indent(children.join('\n\n'), 2)}\n});`;
 }
 
 function emitBackground(background: Background, context: CompilerContext): string {
   const steps = background.steps.map((step) => emitStep(step, context));
-  return `suite.beforeEach(${quote(`Background: ${background.name || 'setup'}`)}, async ({ clients, step }) => {\n${indent(steps.join('\n'), 2)}\n});`;
+  return `test.beforeEach(${quote(`Background: ${background.name || 'setup'}`)}, async ({ clients, step }) => {\n${indent(steps.join('\n'), 2)}\n});`;
 }
 
 function emitScenario(scenario: Scenario, context: CompilerContext): string[] {
@@ -223,7 +221,7 @@ function emitScenario(scenario: Scenario, context: CompilerContext): string[] {
     const exampleDetails = exampleTags.length ? `, { tag: ${JSON.stringify(exampleTags)} }` : '';
     const rowTitle = stringExpression(`Scenario: ${scenario.name} [Examples ${exampleIndex + 1}: ${example.name || 'Examples'}, row __BLACKBOX_ROW_INDEX__]`, true)
       .replace('__BLACKBOX_ROW_INDEX__', '${rowIndex + 1}');
-    output.push(`suite.describe(${quote(`Scenario Outline: ${scenario.name}`)}, () => {\n  suite.describe(${quote(`Examples: ${example.name || `Examples ${exampleIndex + 1}`}`)}${exampleDetails}, () => {\n    const ${rowsName} = ${JSON.stringify(rowValues)};\n    ${rowsName}.forEach((row, rowIndex) => {\n      suite.test(${rowTitle}${scenarioDetails}, async ({ clients, step }) => {\n${indent(emitStepList(scenario.steps, context, true, headers), 8)}\n      });\n    });\n  });\n});`);
+    output.push(`test.describe(${quote(`Scenario Outline: ${scenario.name}`)}, () => {\n  test.describe(${quote(`Examples: ${example.name || `Examples ${exampleIndex + 1}`}`)}${exampleDetails}, () => {\n    const ${rowsName} = ${JSON.stringify(rowValues)};\n    ${rowsName}.forEach((row, rowIndex) => {\n      test(${rowTitle}${scenarioDetails}, async ({ clients, step }) => {\n${indent(emitStepList(scenario.steps, context, true, headers), 8)}\n      });\n    });\n  });\n});`);
   }
   return output;
 }
@@ -232,7 +230,7 @@ function emitTest(scenario: Scenario, context: CompilerContext): string {
   context.lastResponse = null;
   const tags = scenario.tags.map((tag) => tag.name);
   const details = tags.length ? `, { tag: ${JSON.stringify(tags)} }` : '';
-  return `suite.test(${quote(`Scenario: ${scenario.name}`)}${details}, async ({ clients, step }) => {\n${indent(emitStepList(scenario.steps, context), 2)}\n});`;
+  return `test(${quote(`Scenario: ${scenario.name}`)}${details}, async ({ clients, step }) => {\n${indent(emitStepList(scenario.steps, context), 2)}\n});`;
 }
 
 function emitStepList(steps: readonly Step[], context: CompilerContext, dynamicRow = false, dynamicHeaders: readonly string[] = []): string {

@@ -100,8 +100,10 @@ existing Playwright evidence archive preserves this directory on success or fail
 Keep consumer journeys explicit in their `.spec.ts` files. E2E inherits the
 repository ESLint configuration. Playwright spec files replace the general file
 and function line limits with an 80 code-token-line executable-function limit.
-Only direct, synchronous last-argument callbacks to `test.system`,
-`system.sandbox`, and `sandbox.describe` are exempt as declaration containers;
+Only direct, synchronous last-argument callbacks to native `test.describe` and
+its supported `only`, `skip`, `fixme`, `parallel`, `serial`, `parallel.only`, and
+`serial.only` variants are exempt
+as declaration containers;
 nested tests, hooks, steps, helpers, async callbacks, and unrelated describes
 remain limited.
 

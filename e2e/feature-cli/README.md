@@ -21,8 +21,10 @@ It does not compare business implementations.
 A TypeScript AST transform empties every generated business step closure. The
 temporary skeleton retains the client bindings and all declarations and steps.
 Real Playwright runs all seven scenarios, acquiring seven Docker Sandboxes and
-running the real client readiness checks. An intentionally nested sandbox must
-fail collection before any body or acquisition runs. JSON reports, physical
+running the real client readiness checks. The execution scaffold explicitly
+includes the fixture token environment in each complete `blackbox` option;
+project options do not merge into a suite replacement. A test requesting the
+Sandbox fixture without system selection fails before its body or acquisition runs. JSON reports, physical
 Sandbox records, and Docker resource queries establish execution and cleanup.
 This journey does **not** prove the Feature's business semantics.
 

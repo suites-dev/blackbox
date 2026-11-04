@@ -1,13 +1,14 @@
 import { expect as playwrightExpect } from '@playwright/test';
 
-import { createBlackboxSystemTest } from '../../fixtures.js';
+import { createBlackboxTest } from '../../fixtures.js';
 import { record, systemSandboxRuntime } from './runtime.fixture.js';
 
-const test = createBlackboxSystemTest(systemSandboxRuntime);
+const test = createBlackboxTest(systemSandboxRuntime);
 
-test.system('failure-cases', (system) => {
-  system.sandbox('cleanup after failures', (suite) => {
-    suite.beforeEach(({ sandbox }, testInfo) => {
+test.describe('failure-cases', () => {
+  test.use({ blackbox: { system: { kind: 'system', id: 'failure-cases' } } });
+  test.describe('cleanup after failures', () => {
+    test.beforeEach(({ sandbox }, testInfo) => {
       record({
         kind: 'failure-beforeEach',
         executionId: sandbox.executionId,
@@ -18,7 +19,7 @@ test.system('failure-cases', (system) => {
       }
     });
 
-    suite.afterEach(({ sandbox }, testInfo) => {
+    test.afterEach(({ sandbox }, testInfo) => {
       record({
         kind: 'failure-afterEach',
         executionId: sandbox.executionId,
@@ -26,11 +27,11 @@ test.system('failure-cases', (system) => {
       });
     });
 
-    suite.test('hook setup failure still cleans up', () => {
+    test('hook setup failure still cleans up', () => {
       record({ kind: 'forbidden-body' });
     });
 
-    suite.test('body failure still cleans up', ({ sandbox }) => {
+    test('body failure still cleans up', ({ sandbox }) => {
       record({ kind: 'failing-body', executionId: sandbox.executionId });
       playwrightExpect('actual').toBe('intentionally-wrong');
     });

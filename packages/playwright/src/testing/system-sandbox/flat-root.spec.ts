@@ -1,9 +1,11 @@
-import { createBlackboxSystemTest } from '../../fixtures.js';
-import { systemSandboxRuntime } from './runtime.fixture.js';
+import { expect } from '@playwright/test';
+import { createBlackboxTest } from '../../fixtures.js';
+import { record, systemSandboxRuntime } from './runtime.fixture.js';
 
-const test = createBlackboxSystemTest(systemSandboxRuntime);
+const test = createBlackboxTest(systemSandboxRuntime);
 
-// @ts-expect-error Public types reject this call; the runtime guard protects JavaScript users.
-test('flat root test must be rejected', () => {
-  throw new Error('Flat root body must not execute');
+test('ordinary unselected tests retain native fixtures', ({ request }, info) => {
+  expect(request).toBeDefined();
+  expect(info.title).toBe('ordinary unselected tests retain native fixtures');
+  record({ kind: 'ordinary-body' });
 });

@@ -2,8 +2,11 @@ import { runInNewContext } from 'node:vm';
 import { describe, expect, it } from 'vitest';
 import { compileFeature } from '../src/index.js';
 import { catalog } from './fixtures/catalog.js';
+import { nativeDeclarationRecorder } from './support/native-declaration-recorder.js';
 
 const clients = { api: { from: '../clients.js', export: 'api' } } as const;
+
+const nestedArrays = { matrix: [[1, 2], [3, 4, 5]] };
 
 const validationErrors = {
   statusCode: 400,
@@ -31,24 +34,24 @@ async function outcomes(source: string, responseJson: unknown): Promise<boolean[
   const result = compileFeature({ catalog, clients, source });
   expect(result.diagnostics).toEqual([]);
   const tests: ((fixtures: unknown) => Promise<void>)[] = [];
-  const suite = {
-    describe: (...args: unknown[]) => { (args.at(-1) as () => void)(); },
-    test: (...args: unknown[]) => tests.push(args.at(-1) as (fixtures: unknown) => Promise<void>),
-  };
+  const nativeTest = nativeDeclarationRecorder(tests, {
+    blackbox: { system: { kind: 'subsystem', id: 'orders' }, clients: { api: {} } },
+  });
   const response = { status: () => 200, json: () => Promise.resolve(responseJson) };
   const api = { get: () => Promise.resolve(response) };
   runInNewContext(result.code.replace(/^import .*;$/gmu, ''), {
     client_api: {},
     expect,
-    test: { system: (_selector: unknown, callback: (system: unknown) => void) => { callback({
-      sandbox: (_name: string, _options: unknown, callback: (value: unknown) => void) => { callback(suite); },
-    }); } },
+    test: nativeTest,
   });
   expect(tests.length).toBeGreaterThan(0);
   const passed: boolean[] = [];
   for (const test of tests) {
     try {
-      await test({ clients: { api }, step: (_title: string, operation: () => unknown) => operation() });
+      await test({
+        clients: { api },
+        step: (_title: string, operation: () => unknown) => operation(),
+      });
       passed.push(true);
     } catch {
       passed.push(false);
@@ -82,14 +85,17 @@ describe('"contains" is an order-insensitive subset at every level', () => {
   });
 
   it('applies the same rule to nested arrays', async () => {
-    const actual = { matrix: [[1, 2], [3, 4, 5]] };
-    expect(await outcomes(containsFeature('{"matrix": [[5, 3]]}'), actual)).toEqual([true]);
-    expect(await outcomes(containsFeature('{"matrix": [[2, 3]]}'), actual)).toEqual([false]);
+    expect(await outcomes(containsFeature('{"matrix": [[5, 3]]}'), nestedArrays)).toEqual([true]);
+    expect(await outcomes(containsFeature('{"matrix": [[2, 3]]}'), nestedArrays)).toEqual([false]);
   });
 
   it('keeps primitives literal, so a different type or value fails', async () => {
-    expect(await outcomes(containsFeature('{"statusCode": "400"}'), validationErrors)).toEqual([false]);
-    expect(await outcomes(containsFeature('{"statusCode": 400}'), validationErrors)).toEqual([true]);
+    expect(await outcomes(containsFeature('{"statusCode": "400"}'), validationErrors)).toEqual([
+      false,
+    ]);
+    expect(await outcomes(containsFeature('{"statusCode": 400}'), validationErrors)).toEqual([
+      true,
+    ]);
   });
 
   it('builds the same matchers from Scenario Outline rows', async () => {

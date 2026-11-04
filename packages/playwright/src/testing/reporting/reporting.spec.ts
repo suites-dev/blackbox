@@ -5,8 +5,10 @@ import { runtime, waitForReporter } from './runtime.fixture.js';
 
 const test = createBlackboxTest(runtime);
 test.use({
-  catalogEntry: { kind: 'system', id: 'orders' },
-  blackboxEnvironment: { TOKEN: 'synthetic-secret' },
+  blackbox: {
+    system: { kind: 'system', id: 'orders' },
+    environment: { TOKEN: 'synthetic-secret' },
+  },
 });
 
 test('business steps', async () => {
@@ -27,7 +29,7 @@ test('retry isolation', ({ sandbox }, info) => {
 
 test.describe('startup failure', () => {
   test.describe.configure({ retries: 0 });
-  test.use({ catalogEntry: { kind: 'system', id: 'setup-failure' } });
+  test.use({ blackbox: { system: { kind: 'system', id: 'setup-failure' } } });
   test('cannot enter the body', async () => {
     await test.info().attach('setup-body-entered', { body: 'entered' });
     throw new Error('BODY_MUST_NOT_EXECUTE');
@@ -36,7 +38,7 @@ test.describe('startup failure', () => {
 
 test.describe('cleanup failure', () => {
   test.describe.configure({ retries: 0 });
-  test.use({ catalogEntry: { kind: 'system', id: 'cleanup-failure' } });
+  test.use({ blackbox: { system: { kind: 'system', id: 'cleanup-failure' } } });
   test('retains cleanup failure', () => {
     expect(true).toBe(true);
   });
