@@ -154,4 +154,21 @@ describe('stimulus summary of requests that vary', () => {
     cycle.self = cycle;
     expect(summarizeRequest(entry({ options: { data: cycle } }), null)).toBeNull();
   });
+
+  it('does not merge params into a query the URL already has, and keeps repeated values', () => {
+    const url = 'http://127.0.0.1:41000/items?user=alice';
+    expect(
+      summarizeRequest(entry({ method: 'GET', url, options: { params: { user: 'bob' } } }), null),
+    ).toBeNull();
+    const repeated = (params: URLSearchParams) =>
+      fingerprint(
+        entry({ method: 'GET', url: 'http://127.0.0.1:41000/items', options: { params } }),
+      );
+    expect(repeated(new URLSearchParams('user=a&user=b'))).not.toBe(
+      repeated(new URLSearchParams('user=a')),
+    );
+    expect(repeated(new URLSearchParams('user=a&user=b'))).not.toBe(
+      repeated(new URLSearchParams('user=b&user=a')),
+    );
+  });
 });

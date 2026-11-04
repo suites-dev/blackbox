@@ -96,22 +96,21 @@ function headerSummary(
   return Object.fromEntries(entries.sort(([left], [right]) => (left < right ? -1 : 1)));
 }
 
-/** The query the request carries: the URL's own pairs, then Playwright's `params` option applied over them. */
+/**
+ * The query pairs the request carries, in the order they were written. `params` is only summarized when the URL
+ * has no query of its own (see `summarizeRequest`), so there is nothing to merge and no value is collapsed.
+ */
 function queryPairs(parsed: URL, params: unknown): [string, string][] {
-  const search = new URLSearchParams(parsed.search);
-  const applied: Iterable<[string, string]> =
+  const written: [string, string][] =
     params instanceof URLSearchParams
-      ? params.entries()
+      ? [...params.entries()]
       : typeof params === 'string'
-        ? new URLSearchParams(params).entries()
+        ? [...new URLSearchParams(params).entries()]
         : record(params)
           ? Object.entries(params).map(([name, value]): [string, string] => [name, String(value)])
-          : [];
-  for (const [name, value] of applied) {
-    search.set(name, value);
-  }
+          : [...parsed.searchParams.entries()];
   // By name only: the order of one name's values is part of the input (`sort=a&sort=b` is not `sort=b&sort=a`).
-  return [...search.entries()].sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
+  return written.sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
 }
 
 function location(
@@ -155,6 +154,10 @@ function multipartEstablished(value: unknown): boolean {
   );
 }
 
+function hasQuery(url: string): boolean {
+  return new URL(url, 'http://entrypoint.invalid/').search !== '';
+}
+
 /** Returns `null` for bodies whose content this synchronous summary cannot establish. */
 export function summarizeRequest(
   entry: RequestEntry,
@@ -164,6 +167,8 @@ export function summarizeRequest(
   if (
     ['data', 'form', 'multipart'].some((key) => options[key] instanceof FormData) ||
     !multipartEstablished(options.multipart) ||
+    // Playwright appends object `params` to a query the URL already has and replaces it for encoded ones.
+    (options.params !== undefined && hasQuery(entry.url)) ||
     ['data', 'form'].some(
       (key) => options[key] !== undefined && serialized(options[key]) === undefined,
     )

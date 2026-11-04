@@ -2,7 +2,6 @@ import { createAttemptStep } from './steps/step-context.js';
 import { runClients } from './clients/clients.js';
 import {
   test as playwrightTest,
-  type APIRequestContext,
   type PlaywrightTestArgs,
   type PlaywrightTestOptions,
   type PlaywrightWorkerArgs,
@@ -19,8 +18,7 @@ import {
   type RunningBlackboxAttempt,
 } from './runtime/acquisition.js';
 import { createSystemTestFacade } from './system-test.js';
-import { recordStimulusRequest } from './effects/attempt-effects.js';
-import { sandboxRequest } from './request/sandbox-request.js';
+import { requestFixtureFor } from './request/request-fixture.js';
 import type {
   BlackboxStep,
   BlackboxNativeTestArgs,
@@ -110,34 +108,6 @@ async function stepFixture(
   } finally {
     fixture.revoke();
   }
-}
-
-function requestFixtureFor(activeAttempts: WeakMap<TestInfo, RunningBlackboxAttempt>) {
-  return async (
-    { request }: { readonly request: APIRequestContext },
-    use: (request: APIRequestContext) => Promise<void>,
-    testInfo: TestInfo,
-  ): Promise<void> => {
-    await use(
-      sandboxRequest(
-        request,
-        () => {
-          const attempt = activeAttempts.get(testInfo);
-          return attempt === undefined ? undefined : attempt.sandbox.entrypoint;
-        },
-        (entry, opaque) => {
-          const attempt = activeAttempts.get(testInfo);
-          if (attempt !== undefined) {
-            recordStimulusRequest(attempt.effects, {
-              entry,
-              entrypointUrl: attempt.sandbox.entrypoint.url,
-              opaque,
-            });
-          }
-        },
-      ),
-    );
-  };
 }
 
 async function useSelectedAttempt(
