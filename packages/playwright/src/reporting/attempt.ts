@@ -86,8 +86,8 @@ export class AttemptReport implements AttemptProgress {
   }
 
   /**
-   * The recorded stimuli with known secrets removed from titles and request paths. A request whose path held a
-   * secret is counted as unestablished: the redacted path cannot show that two runs sent the same input.
+   * The recorded stimuli with known secrets removed from titles, request paths and origins. A request whose path held a
+   * secret is counted as unestablished: the redacted path or origin cannot show that two runs sent the same input.
    */
   redactStimuli(recorded: RecordedStimuli): RecordedStimuli {
     let redactedRequests = 0;
@@ -95,8 +95,9 @@ export class AttemptReport implements AttemptProgress {
       title: this.secrets.redact(title),
       requests: requests.map((request) => {
         const path = this.secrets.redact(request.path);
-        redactedRequests += path === request.path ? 0 : 1;
-        return { ...request, path };
+        const origin = request.origin === null ? null : this.secrets.redact(request.origin);
+        redactedRequests += path === request.path && origin === request.origin ? 0 : 1;
+        return { ...request, path, origin };
       }),
     }));
     return { ...recorded, stimuli, opaque: recorded.opaque + redactedRequests };

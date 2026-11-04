@@ -5,7 +5,7 @@ import { compareSides } from '../compare.js';
 import { loadSide } from '../side.js';
 import { checkOf } from './delta.fixture.js';
 import { envelopeWithSnapshotBody, sideFixture, snapshotWith } from './compare.fixture.js';
-import type { ComparisonSide } from '../types.js';
+import type { AtMostClaim, ComparisonSide } from '../types.js';
 
 function unavailable(kind: 'unavailable' | 'rejected'): ComparisonSide {
   const template = snapshotWith([]);
@@ -59,5 +59,30 @@ describe('snapshot presence does not establish evidence admission', () => {
     expect(delta.outcome).toBe('no-observed-difference');
     expect(checkOf(delta, 'evidence').result).toBe('equal');
     expect(delta.unresolved).toEqual([]);
+  });
+});
+
+describe('a span-only claim over evidence that was not admitted', () => {
+  const claim = {
+    id: 'one-payment',
+    n: 1,
+    selector: {
+      kind: 'http',
+      actor: 'payment',
+      side: 'server',
+      operation: 'POST',
+      target: 'unknown',
+    },
+    stateSubject: null,
+  } satisfies AtMostClaim;
+
+  it('cannot be evaluated, like a missing snapshot', () => {
+    const delta = compareSides(unavailable('unavailable'), unavailable('rejected'), {
+      claims: [claim],
+    });
+    expect(delta.verification.claims.map(({ status, basis }) => [status, basis])).toEqual([
+      ['unevaluable', 'none'],
+      ['unevaluable', 'none'],
+    ]);
   });
 });

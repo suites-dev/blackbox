@@ -5,7 +5,7 @@ import type { RecordedStimuli } from '../../../effects/attempt-effects.js';
 import { AttemptReport } from '../../attempt.js';
 import { stimulusSection } from '../envelope.js';
 
-const recorded = (path: string): RecordedStimuli => ({
+const recorded = (path: string, origin: string | null = null): RecordedStimuli => ({
   stimuli: [
     {
       title: 'When',
@@ -13,7 +13,7 @@ const recorded = (path: string): RecordedStimuli => ({
         {
           method: 'POST',
           target: 'entrypoint',
-          origin: null,
+          origin,
           path,
           query: null,
           body: null,
@@ -40,5 +40,15 @@ describe('recorded stimuli of an attempt', () => {
     const report = new AttemptReport({} as TestInfo);
     report.protect({ API_TOKEN: 'synthetic-token-value' });
     expect(stimulusSection(report.redactStimuli(recorded('/orders'))).fingerprint).not.toBeNull();
+  });
+
+  it('lose a known secret from an external origin and become unestablished', () => {
+    const report = new AttemptReport({} as TestInfo);
+    report.protect({ API_TOKEN: 'synthetic-token-value' });
+    const redacted = report.redactStimuli(
+      recorded('/x', 'https://synthetic-token-value.example.test'),
+    );
+    expect(JSON.stringify(redacted)).not.toContain('synthetic-token-value');
+    expect(stimulusSection(redacted).fingerprint).toBeNull();
   });
 });

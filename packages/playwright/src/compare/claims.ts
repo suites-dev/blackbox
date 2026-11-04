@@ -1,8 +1,13 @@
 import { observedEffects } from '../envelope/effects.js';
 import type { AtMostClaim, ClaimFinding, ComparisonSide } from './types.js';
 
+/** A snapshot whose observations were admitted; one that was not holds no spans to count. */
+function observed(side: ComparisonSide): boolean {
+  return side.snapshot !== null && side.snapshot.evidence.kind === 'admitted';
+}
+
 function matching(side: ComparisonSide, claim: AtMostClaim): readonly string[] {
-  if (side.snapshot === null) {
+  if (side.snapshot === null || !observed(side)) {
     return [];
   }
   const { selector } = claim;
@@ -31,7 +36,7 @@ function finding(
       ? undefined
       : side.envelope.state.records.find(({ subject }) => subject === claim.stateSubject);
   const base = { claim: claim.id, side: which, spans: refs.length, evidence: refs };
-  if (side.snapshot === null && record === undefined) {
+  if (!observed(side) && record === undefined) {
     return {
       ...base,
       status: 'unevaluable',
