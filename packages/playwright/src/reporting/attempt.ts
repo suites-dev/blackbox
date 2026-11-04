@@ -2,6 +2,7 @@ import { realpathSync } from 'node:fs';
 import { relative } from 'node:path';
 
 import type { TestInfo } from '@playwright/test';
+import type { RecordedStimuli } from '../effects/attempt-effects.js';
 import type { EffectAssertionReport } from '../effects/runtime.js';
 import type { BlackboxSandbox, BlackboxTelemetry } from '../types.js';
 
@@ -82,6 +83,23 @@ export class AttemptReport implements AttemptProgress {
   /** The sandbox that owns this attempt, once acquisition has named it. */
   sandboxId(): string | null {
     return this.identity.kind === 'acquired' ? this.identity.sandboxId : null;
+  }
+
+  /**
+   * The recorded stimuli with known secrets removed from titles and request paths. A request whose path held a
+   * secret is counted as unestablished: the redacted path cannot show that two runs sent the same input.
+   */
+  redactStimuli(recorded: RecordedStimuli): RecordedStimuli {
+    let redactedRequests = 0;
+    const stimuli = recorded.stimuli.map(({ title, requests }) => ({
+      title: this.secrets.redact(title),
+      requests: requests.map((request) => {
+        const path = this.secrets.redact(request.path);
+        redactedRequests += path === request.path ? 0 : 1;
+        return { ...request, path };
+      }),
+    }));
+    return { ...recorded, stimuli, opaque: recorded.opaque + redactedRequests };
   }
 
   protect(environment: Readonly<Record<string, string>>): void {

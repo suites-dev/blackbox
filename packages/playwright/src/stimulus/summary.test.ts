@@ -127,4 +127,11 @@ describe('stimulus summary of requests that vary', () => {
     expect(withParams({ user: 'alice', page: 2 })).not.toBe(alice);
     expect(withParams({})).not.toBe(alice);
   });
+
+  it('does not mistake a string body for the bytes of another string', () => {
+    const sent = (data: string | Buffer) => fingerprint(entry({ options: { data } }));
+    expect(sent('abc')).not.toBe(sent(Buffer.from('data:abc')));
+    expect(sent('abc')).not.toBe(sent(Buffer.from('abc')));
+    expect(sent('abc')).toBe(sent('abc'));
+  });
 });

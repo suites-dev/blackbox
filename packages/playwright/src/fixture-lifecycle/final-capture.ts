@@ -86,7 +86,7 @@ export async function attachFinalCapture(
       prelude,
       attempt: captured.attempt,
       snapshot,
-      recorded: captured.recorded,
+      recorded: report.redactStimuli(captured.recorded),
       attached: report.attachedEvidence(),
     });
     await input.testInfo.attach(envelopeAttachment, {

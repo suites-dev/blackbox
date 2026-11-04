@@ -52,7 +52,11 @@ function bodyDigest(options: Readonly<Record<string, unknown>>): Digest | null {
       continue;
     }
     if (typeof value === 'string' || value instanceof Uint8Array) {
-      return digestBytes(typeof value === 'string' ? `${key}:${value}` : value);
+      // Text and bytes share one framing, so a string never equals the bytes of another string.
+      const bytes = typeof value === 'string' ? Buffer.from(value) : value;
+      return digestOf({
+        [key]: { kind: typeof value === 'string' ? 'text' : 'bytes', digest: digestBytes(bytes) },
+      });
     }
     return valueDigest({
       [key]: record(value) || Array.isArray(value) ? value : JSON.stringify(value),
