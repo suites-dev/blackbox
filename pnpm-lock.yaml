@@ -240,7 +240,7 @@ importers:
     dependencies:
       '@oclif/core':
         specifier: ^5.1.0
-        version: 5.1.7
+        version: 5.1.11
       '@suites/blackbox-catalog':
         specifier: workspace:*
         version: link:../catalog
@@ -292,7 +292,7 @@ importers:
     dependencies:
       '@oclif/core':
         specifier: ^5.1.0
-        version: 5.1.7
+        version: 5.1.11
       '@suites/blackbox-cli-contract':
         specifier: workspace:*
         version: link:../cli-contract
@@ -382,7 +382,7 @@ importers:
     dependencies:
       '@oclif/core':
         specifier: ^5.1.0
-        version: 5.1.7
+        version: 5.1.11
       '@suites/blackbox-cli-contract':
         specifier: workspace:*
         version: link:../cli-contract
@@ -437,7 +437,7 @@ importers:
         version: 34.2.1
       '@oclif/core':
         specifier: ^5.1.0
-        version: 5.1.7
+        version: 5.1.11
       '@suites/blackbox-catalog':
         specifier: workspace:*
         version: link:../catalog
@@ -477,7 +477,7 @@ importers:
     dependencies:
       '@oclif/core':
         specifier: ^5.1.0
-        version: 5.1.7
+        version: 5.1.11
       '@suites/blackbox-cli-contract':
         specifier: workspace:*
         version: link:../cli-contract
@@ -600,7 +600,7 @@ importers:
     dependencies:
       '@oclif/core':
         specifier: ^5.1.0
-        version: 5.1.7
+        version: 5.1.11
       '@suites/blackbox-cli-contract':
         specifier: workspace:*
         version: link:../cli-contract
@@ -1370,10 +1370,6 @@ packages:
 
   '@oclif/core@5.1.11':
     resolution: {integrity: sha512-SIB9o3zofFA8CzjnCWbBWjdDNOKV7zYlKnDeE0V7+kHl89qzMPRNhrbAAh0+0HkUiVpiR6wIoL8yJI6QtoWsqg==}
-    engines: {node: '>=22.0.0'}
-
-  '@oclif/core@5.1.7':
-    resolution: {integrity: sha512-70BOI+dbtg3dsk8oevulaIsJLXkQzhjmg9CZQ0sI+uSmBg1iLYqlv/QDAzbtOvLZEVHXXvCyU/5uW9k9VB+ljQ==}
     engines: {node: '>=22.0.0'}
 
   '@octokit/auth-token@4.0.0':
@@ -5265,27 +5261,6 @@ snapshots:
     optional: true
 
   '@oclif/core@5.1.11':
-    dependencies:
-      ansi-escapes: 4.3.2
-      ansis: 3.17.0
-      clean-stack: 3.0.1
-      cli-spinners: 2.9.2
-      debug: 4.4.3(supports-color@8.1.1)
-      ejs: 6.0.1
-      get-package-type: 0.1.0
-      indent-string: 4.0.0
-      lilconfig: 3.1.3
-      minimatch: 10.2.6
-      semver: 7.8.5
-      string-width: 4.2.3
-      supports-color: 8.1.1
-      tinyglobby: 0.2.17
-      widest-line: 3.1.0
-      wordwrap: 1.0.0
-      wrap-ansi: 7.0.0
-      wsl-utils: 0.4.0
-
-  '@oclif/core@5.1.7':
     dependencies:
       ansi-escapes: 4.3.2
       ansis: 3.17.0
