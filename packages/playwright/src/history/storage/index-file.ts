@@ -1,17 +1,21 @@
 import { randomUUID } from 'node:crypto';
-import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
+import { mkdir, rename, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
+import { regularFileBytes } from '../../envelope/capture/regular-file.js';
 import { canonicalize, digestOf, type Digest } from '../../envelope/index.js';
 import type { HistoryIndex } from './index-build.js';
-import { objectKinds, type ObjectKind, type ObjectStore } from './store.js';
+import { maxObjectBytes, objectKinds, type ObjectKind, type ObjectStore } from './store.js';
 
 /** The persisted index, only if it is intact. It is a cache: any doubt means "rebuild". */
 export async function readIndexFile(root: string): Promise<HistoryIndex | null> {
   try {
-    const parsed = JSON.parse(
-      await readFile(join(root, 'index', 'index.json'), 'utf8'),
-    ) as HistoryIndex;
+    // A pipe, a link target that is not a file, or an oversized cache is not an index: rebuild instead of waiting.
+    const bytes = await regularFileBytes(join(root, 'index', 'index.json'), maxObjectBytes);
+    if (bytes === null) {
+      return null;
+    }
+    const parsed = JSON.parse(bytes.toString('utf8')) as HistoryIndex;
     const { digest, ...rest } = parsed;
     return digest === digestOf(rest) ? parsed : null;
   } catch {

@@ -83,4 +83,14 @@ describe('object files that are not ordinary, bounded files', () => {
     }
     expect(report.corrupt.map(({ id: corrupt }) => corrupt)).toEqual([id]);
   });
+
+  it('rebuilds the index instead of waiting on a cache that is a pipe', async () => {
+    const root = await emptyRoot();
+    const store = new ObjectStore(root);
+    await store.put('blob', id, content);
+    await mkdir(join(root, 'index'), { recursive: true });
+    execFileSync('mkfifo', [join(root, 'index', 'index.json')]);
+    const history = await BehaviorHistory.open(root);
+    expect((await history.index()).blobs).toEqual([id]);
+  });
 });
