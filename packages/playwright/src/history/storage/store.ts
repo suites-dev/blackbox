@@ -65,6 +65,18 @@ const readFlags = constants.O_RDONLY | constants.O_NONBLOCK | constants.O_NOFOLL
 const hasCode = (error: unknown, code: string): boolean =>
   error instanceof Error && 'code' in error && error.code === code;
 
+/** The names in a directory; an absent one is empty, but a directory that cannot be read is an error, not emptiness. */
+async function namesIn(directory: string): Promise<string[]> {
+  try {
+    return await readdir(directory);
+  } catch (error) {
+    if (hasCode(error, 'ENOENT')) {
+      return [];
+    }
+    throw error;
+  }
+}
+
 async function readIfPresent(
   path: string,
   object: { readonly kind: ObjectKind; readonly id: Digest; readonly limit: number },
@@ -172,8 +184,8 @@ export class ObjectStore {
   async list(kind: ObjectKind): Promise<Digest[]> {
     const base = join(this.root, 'objects', kind);
     const found: Digest[] = [];
-    for (const shard of await readdir(base).catch(() => [])) {
-      for (const name of await readdir(join(base, shard)).catch(() => [])) {
+    for (const shard of await namesIn(base)) {
+      for (const name of await namesIn(join(base, shard))) {
         if (/^[0-9a-f]{64}$/u.test(name) && name.startsWith(shard)) {
           found.push(`sha256:${name}`);
         }
@@ -184,7 +196,7 @@ export class ObjectStore {
 
   /** Files left by writes that were interrupted before they were linked into place. They are never visible as objects. */
   async interrupted(): Promise<string[]> {
-    return (await readdir(join(this.root, 'tmp')).catch(() => []))
+    return (await namesIn(join(this.root, 'tmp')))
       .filter((name) => name.endsWith('.partial'))
       .sort();
   }

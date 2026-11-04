@@ -83,7 +83,9 @@ describe('object files that are not ordinary, bounded files', () => {
     }
     expect(report.corrupt.map(({ id: corrupt }) => corrupt)).toEqual([id]);
   });
+});
 
+describe('the store and its cache when parts of them cannot be read', () => {
   it('rebuilds the index instead of waiting on a cache that is a pipe', async () => {
     const root = await emptyRoot();
     const store = new ObjectStore(root);
@@ -92,5 +94,24 @@ describe('object files that are not ordinary, bounded files', () => {
     execFileSync('mkfifo', [join(root, 'index', 'index.json')]);
     const history = await BehaviorHistory.open(root);
     expect((await history.index()).blobs).toEqual([id]);
+  });
+
+  it('are not hidden by a shard directory that cannot be listed', async () => {
+    const root = await emptyRoot();
+    const store = new ObjectStore(root);
+    await store.put('blob', id, content);
+    const shard = dirname(store.path('blob', id));
+    await chmod(shard, 0o000);
+    const listed = await store.list('blob').then(
+      (found) => found,
+      (error: unknown) => error,
+    );
+    await chmod(shard, 0o755);
+    if (typeof process.getuid === 'function' && process.getuid() === 0) {
+      return;
+    }
+    expect(listed).toBeInstanceOf(Error);
+    expect(await store.list('blob')).toEqual([id]);
+    expect(await store.list('receipt')).toEqual([]);
   });
 });
