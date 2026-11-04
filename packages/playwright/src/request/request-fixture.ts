@@ -10,18 +10,20 @@ export function requestFixtureFor(activeAttempts: WeakMap<TestInfo, RunningBlack
     {
       request,
       extraHTTPHeaders,
+      userAgent,
       httpCredentials,
       storageState,
     }: {
       readonly request: APIRequestContext;
       readonly extraHTTPHeaders: unknown;
+      readonly userAgent: unknown;
       readonly httpCredentials: unknown;
       readonly storageState: unknown;
     },
     use: (request: APIRequestContext) => Promise<void>,
     testInfo: TestInfo,
   ): Promise<void> => {
-    const defaults = { extraHTTPHeaders, httpCredentials, storageState };
+    const defaults = { extraHTTPHeaders, userAgent, httpCredentials, storageState };
     await use(
       sandboxRequest(
         request,

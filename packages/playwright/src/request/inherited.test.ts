@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import type { RunningBlackboxAttempt } from '../runtime/acquisition.js';
 import { summarizeRequest, type RequestEntry } from '../stimulus/summary.js';
-import { hasUnrecordedDefaults, withDefaultHeaders } from './inherited.js';
+import { hasUnrecordedDefaults, withDefaultHeaders, type RequestDefaults } from './inherited.js';
 import { requestFixtureFor } from './request-fixture.js';
 
 const recorded = vi.hoisted(() => [] as { entry: unknown; opaque: boolean }[]);
@@ -13,7 +13,12 @@ vi.mock('../effects/attempt-effects.js', () => ({
   },
 }));
 
-const none = { extraHTTPHeaders: undefined, httpCredentials: undefined, storageState: undefined };
+const none = {
+  extraHTTPHeaders: undefined,
+  userAgent: undefined,
+  httpCredentials: undefined,
+  storageState: undefined,
+};
 const entry = (headers: unknown): RequestEntry => ({
   method: 'GET',
   url: '/x',
@@ -41,6 +46,18 @@ describe('headers a request context sends by default', () => {
     expect(alice['x-tenant']).not.toBe(bob['x-tenant']);
     expect(overridden['x-tenant']).toBe(bob['x-tenant']);
     expect(Object.keys(overridden).sort()).toEqual(['x-keep', 'x-tenant']);
+  });
+
+  it('include the context user agent, which an explicit header overrides', () => {
+    const mobile = { ...none, userAgent: 'Mobile/1' };
+    const desktop = { ...none, userAgent: 'Desktop/1' };
+    const sent = (defaults: RequestDefaults, headers?: unknown) =>
+      headersOf(withDefaultHeaders(entry(headers), defaults))['user-agent'];
+    expect(sent(mobile)).not.toBe(sent(desktop));
+    expect(sent(mobile, { 'User-Agent': 'Desktop/1' })).toBe(sent(desktop));
+    expect(sent({ ...mobile, extraHTTPHeaders: { 'user-agent': 'Desktop/1' } })).toBe(
+      sent(desktop),
+    );
   });
 
   it('leave a request alone when there are none', () => {
@@ -77,6 +94,7 @@ describe('the request fixture', () => {
     } as APIRequestContext;
     const run = async (extra: {
       extraHTTPHeaders: unknown;
+      userAgent: unknown;
       httpCredentials: unknown;
       storageState: unknown;
     }) => {

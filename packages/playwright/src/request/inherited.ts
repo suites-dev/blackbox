@@ -3,6 +3,7 @@ import type { RequestEntry } from '../stimulus/summary.js';
 /** What the Playwright request context sends on every call, beside what each call names. */
 export interface RequestDefaults {
   readonly extraHTTPHeaders: unknown;
+  readonly userAgent: unknown;
   readonly httpCredentials: unknown;
   readonly storageState: unknown;
 }
@@ -15,9 +16,11 @@ function lowercased(headers: unknown): Record<string, unknown> {
     : {};
 }
 
-/** The request as sent: the context's default headers first, each call's own headers over them. */
+/** The request as sent: the context's user agent and default headers first, each call's own headers over them. */
 export function withDefaultHeaders(entry: RequestEntry, defaults: RequestDefaults): RequestEntry {
-  if (typeof defaults.extraHTTPHeaders !== 'object' || defaults.extraHTTPHeaders === null) {
+  const agent = typeof defaults.userAgent === 'string' ? { 'user-agent': defaults.userAgent } : {};
+  const inherited = { ...agent, ...lowercased(defaults.extraHTTPHeaders) };
+  if (Object.keys(inherited).length === 0) {
     return entry;
   }
   const options = typeof entry.options === 'object' && entry.options !== null ? entry.options : {};
@@ -26,7 +29,7 @@ export function withDefaultHeaders(entry: RequestEntry, defaults: RequestDefault
     ...entry,
     options: {
       ...options,
-      headers: { ...lowercased(defaults.extraHTTPHeaders), ...lowercased(own) },
+      headers: { ...inherited, ...lowercased(own) },
     },
   };
 }
