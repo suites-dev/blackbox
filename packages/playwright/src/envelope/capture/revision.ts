@@ -1,6 +1,7 @@
 import { execFile } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { open, realpath } from 'node:fs/promises';
+import { constants } from 'node:fs';
+import { open, readlink, realpath } from 'node:fs/promises';
 import { isAbsolute, join, relative } from 'node:path';
 import { promisify } from 'node:util';
 
@@ -33,14 +34,28 @@ async function tryGit(directory: string, args: readonly string[]): Promise<strin
   }
 }
 
+const hasCode = (error: unknown, code: string): boolean =>
+  error instanceof Error && 'code' in error && error.code === code;
+
+/**
+ * A regular file's content digest. The file is opened without following a link or waiting on a pipe; a link is
+ * digested as its target text (git tracks it the same way), and anything else that is not a regular file, or is too
+ * large, has no digest and leaves the source coverage partial.
+ */
 async function fileDigest(path: string): Promise<string | null> {
-  const handle = await open(path, 'r').catch(() => null);
-  if (handle === null) {
-    return null;
+  let handle;
+  try {
+    handle = await open(path, constants.O_RDONLY | constants.O_NONBLOCK | constants.O_NOFOLLOW);
+  } catch (error) {
+    if (!hasCode(error, 'ELOOP')) {
+      return null;
+    }
+    const target = await readlink(path).catch(() => null);
+    return target === null ? null : createHash('sha256').update(`link:${target}`).digest('hex');
   }
   try {
-    const { size } = await handle.stat();
-    if (size > limits.untrackedBytes) {
+    const info = await handle.stat();
+    if (!info.isFile() || info.size > limits.untrackedBytes) {
       return null;
     }
     const hash = createHash('sha256');

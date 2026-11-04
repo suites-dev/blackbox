@@ -1,4 +1,5 @@
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { execFileSync } from 'node:child_process';
+import { mkdir, mkdtemp, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -93,5 +94,25 @@ describe('source capture', () => {
       state: 'unavailable',
       reason: 'no-commits',
     });
+  });
+});
+
+describe('source capture of special files', () => {
+  it('digests an untracked link as its target text and never opens what it points to, even a pipe', async () => {
+    const root = await repo();
+    const clean = await source(root);
+    execFileSync('mkfifo', [join(root, '.git', 'pipe')]);
+    await symlink('.git/pipe', join(root, 'pipelink'));
+    const withPipe = await source(root);
+    expect(withPipe.source.workingTree).toMatchObject({ state: 'dirty', coverage: 'complete' });
+    await rm(join(root, 'pipelink'));
+    await writeFile(join(root, 'elsewhere.txt'), 'one');
+    await symlink('elsewhere.txt', join(root, 'link'));
+    await rm(join(root, 'elsewhere.txt'));
+    const linked = await source(root);
+    await rm(join(root, 'link'));
+    await symlink('other.txt', join(root, 'link'));
+    expect((await source(root)).source.fingerprint).not.toBe(linked.source.fingerprint);
+    expect(clean.source.workingTree.state).toBe('clean');
   });
 });
