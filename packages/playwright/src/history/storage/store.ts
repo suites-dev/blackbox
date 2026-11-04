@@ -43,10 +43,8 @@ export async function readWithReason(
   try {
     return { bytes: await store.get(kind, id), problem: null };
   } catch (error) {
-    if (error instanceof UnreadableObjectError) {
-      return { bytes: null, problem: error.message };
-    }
-    throw error;
+    // Any failure to read this one object (a permission or I/O error as much as a pipe) is its own problem.
+    return { bytes: null, problem: error instanceof Error ? error.message : 'unreadable' };
   }
 }
 

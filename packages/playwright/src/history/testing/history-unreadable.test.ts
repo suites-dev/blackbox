@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { mkdir, mkdtemp, rm, symlink, writeFile } from 'node:fs/promises';
+import { chmod, mkdir, mkdtemp, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 
@@ -64,5 +64,23 @@ describe('object files that are not ordinary, bounded files', () => {
         reason: expect.stringContaining('regular file'),
       }),
     ]);
+  });
+
+  it('are reported per object when the file cannot be opened, without aborting the rest of the index', async () => {
+    const root = await emptyRoot();
+    const store = new ObjectStore(root);
+    const other = digestBytes('another blob');
+    await store.put('blob', other, 'another blob');
+    const path = store.path('blob', id);
+    await mkdir(dirname(path), { recursive: true });
+    await writeFile(path, content);
+    await chmod(path, 0o000);
+    const history = await BehaviorHistory.open(root);
+    const report = await history.verifyStore();
+    await chmod(path, 0o644);
+    if (typeof process.getuid === 'function' && process.getuid() === 0) {
+      return;
+    }
+    expect(report.corrupt.map(({ id: corrupt }) => corrupt)).toEqual([id]);
   });
 });
