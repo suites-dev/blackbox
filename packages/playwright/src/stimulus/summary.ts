@@ -45,6 +45,16 @@ function valueDigest(value: unknown): Digest {
   }
 }
 
+/** The value as its JSON serialization sends it (a `Date` is its timestamp); `undefined` when it has none. */
+function serialized(value: unknown): unknown {
+  try {
+    const text = JSON.stringify(value) as string | undefined;
+    return text === undefined ? undefined : (JSON.parse(text) as unknown);
+  } catch {
+    return undefined;
+  }
+}
+
 function bodyDigest(options: Readonly<Record<string, unknown>>): Digest | null {
   for (const key of ['data', 'form', 'multipart']) {
     const value = options[key];
@@ -58,8 +68,9 @@ function bodyDigest(options: Readonly<Record<string, unknown>>): Digest | null {
         [key]: { kind: typeof value === 'string' ? 'text' : 'bytes', digest: digestBytes(bytes) },
       });
     }
+    const sent = key === 'multipart' ? value : serialized(value);
     return valueDigest({
-      [key]: record(value) || Array.isArray(value) ? value : JSON.stringify(value),
+      [key]: record(value) || Array.isArray(value) ? sent : JSON.stringify(value),
     });
   }
   return null;
@@ -152,7 +163,10 @@ export function summarizeRequest(
   const options = record(entry.options) ? entry.options : {};
   if (
     ['data', 'form', 'multipart'].some((key) => options[key] instanceof FormData) ||
-    !multipartEstablished(options.multipart)
+    !multipartEstablished(options.multipart) ||
+    ['data', 'form'].some(
+      (key) => options[key] !== undefined && serialized(options[key]) === undefined,
+    )
   ) {
     return null;
   }

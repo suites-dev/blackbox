@@ -141,4 +141,17 @@ describe('stimulus summary of requests that vary', () => {
     expect(sent('sort=a&sort=b')).not.toBe(sent('sort=b&sort=a'));
     expect(sent('a=1&b=2')).toBe(sent('b=2&a=1'));
   });
+
+  it('tells JSON bodies apart by what their serialization sends', () => {
+    const sent = (at: Date) => fingerprint(entry({ options: { data: { at } } }));
+    expect(sent(new Date('2025-01-01'))).not.toBe(sent(new Date('2026-01-01')));
+    expect(sent(new Date('2025-01-01'))).toBe(sent(new Date('2025-01-01')));
+  });
+
+  it('does not summarize a body that has no JSON serialization', () => {
+    expect(summarizeRequest(entry({ options: { data: { n: 1n } } }), null)).toBeNull();
+    const cycle: Record<string, unknown> = {};
+    cycle.self = cycle;
+    expect(summarizeRequest(entry({ options: { data: cycle } }), null)).toBeNull();
+  });
 });
