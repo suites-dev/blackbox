@@ -2,11 +2,12 @@ import { spawn, type ChildProcess } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 import type { CapsuleManagerBootstrap } from '../protocol.js';
-import { appendCapsuleProgress } from '../progress/store.js';
+import { appendCapsuleProgress, readCapsuleProgress } from '../progress/store.js';
 import { canonicalProjectDirectory, capsuleFailure } from './validation.js';
 import {
   admitCapsuleRecord,
   capsuleSocketPath,
+  readCapsuleRecord,
   writeCapsuleRecord,
   capsuleSessionDirectory,
   type CapsuleSessionRecord,
@@ -145,12 +146,14 @@ export async function startCapsule(input: CapsuleStartInput): Promise<CapsuleSta
     const projectDirectory = await canonicalProjectDirectory(input.projectDirectory);
     const admitted = await admitAndLaunch(input, projectDirectory);
     sessionId = admitted.sessionId;
-    const started = await waitForStartup({
-      projectDirectory,
-      sessionId,
-      manager: admitted.manager,
-      progress: input.progress,
-    });
+    const started = await waitForStartup(
+      { projectDirectory, sessionId, manager: admitted.manager, progress: input.progress },
+      {
+        readProgress: readCapsuleProgress,
+        readRecord: readCapsuleRecord,
+        writeRecord: writeCapsuleRecord,
+      },
+    );
     if (
       started.state !== 'running' ||
       started.entrypoint.kind !== 'available' ||

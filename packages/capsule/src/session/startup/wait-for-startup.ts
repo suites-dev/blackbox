@@ -1,7 +1,7 @@
 import type { ChildProcess } from 'node:child_process';
-import { appendCapsuleProgress, readCapsuleProgress } from '../../progress/store.js';
+import { appendCapsuleProgress, type readCapsuleProgress } from '../../progress/store.js';
 import type { CapsuleProgressMode } from '../../progress/events.js';
-import { readCapsuleRecord, writeCapsuleRecord, type CapsuleSessionRecord } from '../../records.js';
+import type { CapsuleSessionRecord } from '../../persistence/session-record.js';
 import { reconcileDeadCapsuleManager } from '../recovery/index.js';
 import { managerTermination } from './manager-termination.js';
 
@@ -30,7 +30,17 @@ export async function waitForStartup(
     readonly manager: ChildProcess;
     readonly progress: CapsuleProgressMode;
   },
-  ports = { readProgress: readCapsuleProgress, readRecord: readCapsuleRecord },
+  ports: {
+    readonly readProgress: typeof readCapsuleProgress;
+    readonly readRecord: (selector: {
+      readonly projectDirectory: string;
+      readonly sessionId: string;
+    }) => Promise<CapsuleSessionRecord>;
+    readonly writeRecord: (input: {
+      readonly projectDirectory: string;
+      readonly record: CapsuleSessionRecord;
+    }) => Promise<void>;
+  },
 ): Promise<CapsuleSessionRecord> {
   let delivered = 0;
   for (;;) {
@@ -55,7 +65,7 @@ export async function waitForStartup(
               failure: { kind: 'recorded', error: termination.error },
             } satisfies CapsuleSessionRecord);
       if (reconciliation.kind !== 'capsule-manager-reconciled') {
-        await writeCapsuleRecord({ projectDirectory: input.projectDirectory, record: failed });
+        await ports.writeRecord({ projectDirectory: input.projectDirectory, record: failed });
       }
       await appendCapsuleProgress({
         ...input,

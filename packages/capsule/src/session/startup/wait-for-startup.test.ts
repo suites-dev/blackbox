@@ -47,6 +47,8 @@ describe('startup terminal progress', () => {
         },
       },
       {
+        writeRecord: () =>
+          Promise.reject(new Error('Terminal observation must not rewrite records')),
         readProgress: () => {
           reads.push('journal');
           return Promise.resolve(journal);
