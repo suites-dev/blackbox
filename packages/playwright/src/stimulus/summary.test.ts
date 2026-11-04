@@ -15,7 +15,7 @@ const fingerprint = (...entries: ReturnType<typeof entry>[]) => {
   const stimuli = [
     {
       title: 'When',
-      requests: entries.map((item) => summarizeRequest(item, 'http://127.0.0.1:41000')),
+      requests: entries.map((item) => summarizeRequest(item, 'http://127.0.0.1:41000')!),
     },
   ] satisfies RecordedStimulus[];
   return stimulusFingerprint(stimuli, 0);
@@ -35,7 +35,7 @@ describe('stimulus summary', () => {
           },
         }),
         'http://127.0.0.1:52000',
-      ),
+      )!,
     ];
     expect(stimulusFingerprint([{ title: 'x', requests: other }], 0)).toBe(base);
     expect(moved).toHaveLength(1);
@@ -68,7 +68,7 @@ describe('stimulus summary', () => {
         },
       }),
       'http://127.0.0.1:41000',
-    );
+    )!;
     expect(summary.headers).toEqual({ authorization: 'secret', 'x-api-key': 'secret' });
     expect(JSON.stringify(summary)).not.toContain('hunter2');
     expect(JSON.stringify(summary)).not.toContain('abc');
@@ -93,7 +93,7 @@ describe('stimulus summary', () => {
 describe('stimulus summary of requests that vary', () => {
   it('does not treat a stimulus with an opaque request as equal to another one with the same count', () => {
     const summarized = [
-      { title: 'When', requests: [summarizeRequest(entry(), 'http://127.0.0.1:41000')] },
+      { title: 'When', requests: [summarizeRequest(entry(), 'http://127.0.0.1:41000')!] },
     ] satisfies RecordedStimulus[];
     expect(stimulusFingerprint(summarized, 0)).not.toBeNull();
     expect(stimulusFingerprint(summarized, 1)).toBeNull();
@@ -101,7 +101,7 @@ describe('stimulus summary of requests that vary', () => {
 
   it('tells requests to different external systems apart and keeps the entrypoint anonymous', () => {
     const to = (url: string) =>
-      summarizeRequest(entry({ method: 'GET', url, options: {} }), 'http://127.0.0.1:41000');
+      summarizeRequest(entry({ method: 'GET', url, options: {} }), 'http://127.0.0.1:41000')!;
     expect(to('https://service-a.test/x')).toMatchObject({
       target: 'other-origin',
       origin: 'https://service-a.test',

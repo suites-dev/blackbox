@@ -74,7 +74,12 @@ export class AttemptStimuli {
     } else if (slot === undefined) {
       this.#unscoped++;
     } else {
-      this.#stimuli[slot].requests.push(summarizeRequest(entry, entrypointUrl));
+      const summary = summarizeRequest(entry, entrypointUrl);
+      if (summary === null) {
+        this.#opaque++;
+      } else {
+        this.#stimuli[slot].requests.push(summary);
+      }
     }
   }
 

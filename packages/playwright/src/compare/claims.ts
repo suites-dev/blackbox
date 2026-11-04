@@ -14,7 +14,8 @@ function matching(side: ComparisonSide, claim: AtMostClaim): readonly string[] {
         effect.kind === selector.kind &&
         effect.actor === selector.actor &&
         effect.side === selector.side &&
-        effect.operation === selector.operation,
+        effect.operation === selector.operation &&
+        effect.target === selector.target,
     )
     .flatMap(({ spanRefs }) => spanRefs);
 }

@@ -119,11 +119,15 @@ function location(
   };
 }
 
+/** Returns `null` for bodies whose content this synchronous summary cannot establish. */
 export function summarizeRequest(
   entry: RequestEntry,
   entrypointUrl: string | null,
-): RecordedRequest {
+): RecordedRequest | null {
   const options = record(entry.options) ? entry.options : {};
+  if (['data', 'form', 'multipart'].some((key) => options[key] instanceof FormData)) {
+    return null;
+  }
   const headers = headerSummary(options);
   const declared = typeof options.method === 'string' ? options.method : entry.method;
   const contentType = Object.hasOwn(headers, 'content-type') ? headers['content-type'] : 'secret';

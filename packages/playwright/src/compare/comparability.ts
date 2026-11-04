@@ -117,19 +117,30 @@ function conditions(a: ComparableEnvelope, b: ComparableEnvelope): Comparability
   ];
 }
 
-function evidence(reference: ComparisonSide, head: ComparisonSide): ComparabilityCheck {
-  const problems = [
-    ...(reference.snapshot === null
-      ? [`reference: ${reference.snapshotProblem ?? 'no snapshot'}`]
-      : []),
-    ...(head.snapshot === null ? [`head: ${head.snapshotProblem ?? 'no snapshot'}`] : []),
+function evidenceProblems(name: string, side: ComparisonSide): readonly string[] {
+  const { snapshot } = side;
+  if (snapshot === null) {
+    return [`${name}: ${side.snapshotProblem ?? 'no snapshot'}`];
+  }
+  if (snapshot.evidence.kind === 'admitted') {
+    return [];
+  }
+  const message = snapshot.observation.message;
+  const detail = typeof message === 'string' && message !== '' ? `: ${message}` : '';
+  const reasons = snapshot.completeness.reasons.join(', ');
+  return [
+    `${name}: evidence not admitted (${snapshot.observation.state})${detail}; reasons: ${reasons}`,
   ];
+}
+
+function evidence(reference: ComparisonSide, head: ComparisonSide): ComparabilityCheck {
+  const problems = [...evidenceProblems('reference', reference), ...evidenceProblems('head', head)];
   return check(
     'evidence',
     problems.length === 0 ? 'equal' : 'unknown',
     'limits-conclusions',
     problems.length === 0
-      ? 'both final snapshots present and matching their recorded digests'
+      ? 'both final snapshots present, matching their recorded digests and containing admitted evidence'
       : problems.join('; '),
   );
 }
