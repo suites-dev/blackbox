@@ -4,7 +4,7 @@ import { digestBytes, type Digest } from '../envelope/index.js';
 import { checkEvidence } from './evidence-check.js';
 import { HistoryError, type AnyEnvelope, type ExecutionDetail } from './history-types.js';
 import { verifyReceipt, type AttemptReceipt } from './receipts/receipt.js';
-import type { ObjectStore } from './storage/store.js';
+import { readWithReason, type ObjectStore } from './storage/store.js';
 import { checkStoredEnvelope } from './stored-envelope.js';
 
 /**
@@ -14,8 +14,16 @@ import { checkStoredEnvelope } from './stored-envelope.js';
 export class StoredRecords {
   constructor(private readonly store: ObjectStore) {}
 
+  private async read(kind: 'envelope' | 'blob' | 'receipt', id: Digest): Promise<Buffer | null> {
+    const { bytes, problem } = await readWithReason(this.store, kind, id);
+    if (problem !== null) {
+      throw new HistoryError(`A stored ${kind} cannot be read`, [id, problem]);
+    }
+    return bytes;
+  }
+
   async envelope(id: Digest): Promise<AnyEnvelope | null> {
-    const bytes = await this.store.get('envelope', id);
+    const bytes = await this.read('envelope', id);
     if (bytes === null) {
       return null;
     }
@@ -31,7 +39,7 @@ export class StoredRecords {
     if (finalSnapshot.state !== 'attached') {
       return null;
     }
-    const bytes = await this.store.get('blob', finalSnapshot.evidence);
+    const bytes = await this.read('blob', finalSnapshot.evidence);
     if (bytes === null) {
       return null;
     }
@@ -44,7 +52,7 @@ export class StoredRecords {
   }
 
   async receipt(id: Digest): Promise<AttemptReceipt | null> {
-    const bytes = await this.store.get('receipt', id);
+    const bytes = await this.read('receipt', id);
     if (bytes === null) {
       return null;
     }

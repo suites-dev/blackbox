@@ -1,3 +1,4 @@
+import { constants } from 'node:fs';
 import { open, readdir, realpath, type FileHandle } from 'node:fs/promises';
 import { isAbsolute, join, relative, resolve, sep } from 'node:path';
 
@@ -75,7 +76,8 @@ export async function evidencePathInside(
 async function regularFileBytes(path: string): Promise<Buffer | null> {
   let handle: FileHandle | null = null;
   try {
-    handle = await open(path, 'r');
+    // Non-blocking, so a pipe in place of a file is reported instead of waited on.
+    handle = await open(path, constants.O_RDONLY | constants.O_NONBLOCK);
     const info = await handle.stat();
     if (!info.isFile() || info.size > maxEvidenceBytes) {
       return null;

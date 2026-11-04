@@ -14,7 +14,7 @@ import {
 } from './index-rows.js';
 import { verifyReceipt, type AttemptReceipt } from '../receipts/receipt.js';
 import { verifyDelta } from './records.js';
-import type { ObjectKind, ObjectStore } from './store.js';
+import { readWithReason, type ObjectKind, type ObjectStore } from './store.js';
 
 export type { CorruptObject, IndexedDelta, IndexedExecution, IndexedReceipt };
 
@@ -67,11 +67,11 @@ async function loadEnvelopes(store: ObjectStore, bad: Reject): Promise<AnyEnvelo
 async function loadBlobs(store: ObjectStore, bad: Reject): Promise<Digest[]> {
   const found: Digest[] = [];
   for (const id of await store.list('blob')) {
-    const bytes = await store.get('blob', id);
+    const { bytes, problem } = await readWithReason(store, 'blob', id);
     if (bytes !== null && digestBytes(bytes) === id) {
       found.push(id);
     } else {
-      bad('blob', id, 'content does not match its identity');
+      bad('blob', id, problem ?? 'content does not match its identity');
     }
   }
   return found;

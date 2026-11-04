@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
-import { link, mkdir, open, readdir, readFile, stat, unlink } from 'node:fs/promises';
+import { constants } from 'node:fs';
+import { link, mkdir, open, readdir, stat, unlink } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 
 import type { Digest } from '../../envelope/index.js';
@@ -33,14 +34,72 @@ function hexOf(id: Digest): string {
   return match[1];
 }
 
-async function readIfPresent(path: string): Promise<Buffer | null> {
+/** An object read that reports an unreadable file as a reason instead of throwing. */
+export async function readWithReason(
+  store: ObjectStore,
+  kind: ObjectKind,
+  id: Digest,
+): Promise<{ readonly bytes: Buffer | null; readonly problem: string | null }> {
   try {
-    return await readFile(path);
+    return { bytes: await store.get(kind, id), problem: null };
   } catch (error) {
-    if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
-      return null;
+    if (error instanceof UnreadableObjectError) {
+      return { bytes: null, problem: error.message };
     }
     throw error;
+  }
+}
+
+/** An object file that is not a regular file within the size limit; it is never read. */
+export class UnreadableObjectError extends Error {
+  constructor(
+    readonly kind: ObjectKind,
+    readonly id: Digest,
+    readonly reason: string,
+  ) {
+    super(`The ${kind} ${id} cannot be read: ${reason}`);
+  }
+}
+
+// Never follow a link, and never wait on a pipe: the object is checked through the descriptor it is read from.
+const readFlags = constants.O_RDONLY | constants.O_NONBLOCK | constants.O_NOFOLLOW;
+
+const hasCode = (error: unknown, code: string): boolean =>
+  error instanceof Error && 'code' in error && error.code === code;
+
+async function readIfPresent(
+  path: string,
+  object: { readonly kind: ObjectKind; readonly id: Digest; readonly limit: number },
+): Promise<Buffer | null> {
+  let handle;
+  try {
+    handle = await open(path, readFlags);
+  } catch (error) {
+    if (hasCode(error, 'ENOENT')) {
+      return null;
+    }
+    if (hasCode(error, 'ELOOP')) {
+      throw new UnreadableObjectError(object.kind, object.id, 'it is a symbolic link');
+    }
+    throw error;
+  }
+  try {
+    const info = await handle.stat();
+    if (!info.isFile()) {
+      throw new UnreadableObjectError(object.kind, object.id, 'it is not a regular file');
+    }
+    if (info.size > object.limit) {
+      throw new UnreadableObjectError(
+        object.kind,
+        object.id,
+        `it exceeds ${String(object.limit)} bytes`,
+      );
+    }
+    const buffer = Buffer.alloc(info.size);
+    const { bytesRead } = await handle.read(buffer, 0, info.size, 0);
+    return buffer.subarray(0, bytesRead);
+  } finally {
+    await handle.close();
   }
 }
 
@@ -76,13 +135,13 @@ export class ObjectStore {
     }
     const target = this.path(kind, id);
     const same = async (): Promise<{ readonly created: false }> => {
-      const existing = await readIfPresent(target);
+      const existing = await readIfPresent(target, { kind, id, limit: this.limit });
       if (existing === null || !existing.equals(data)) {
         throw new ConflictError(kind, id);
       }
       return { created: false };
     };
-    if ((await readIfPresent(target)) !== null) {
+    if ((await readIfPresent(target, { kind, id, limit: this.limit })) !== null) {
       return same();
     }
     await mkdir(dirname(target), { recursive: true, mode: privateDirectory });
@@ -109,7 +168,7 @@ export class ObjectStore {
   }
 
   get(kind: ObjectKind, id: Digest): Promise<Buffer | null> {
-    return readIfPresent(this.path(kind, id));
+    return readIfPresent(this.path(kind, id), { kind, id, limit: this.limit });
   }
 
   async list(kind: ObjectKind): Promise<Digest[]> {

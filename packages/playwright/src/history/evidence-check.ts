@@ -1,7 +1,7 @@
 import { digestBytes } from '../envelope/index.js';
 import { currentEvidenceDigest, evidencePathInside } from '../envelope/capture/evidence.js';
 import type { AnyEnvelope, EvidenceCheck } from './history-types.js';
-import type { ObjectStore } from './storage/store.js';
+import { readWithReason, type ObjectStore } from './storage/store.js';
 
 /**
  * Where each piece of an execution's evidence stands: stored in the history and matching, re-verified against the
@@ -14,7 +14,7 @@ export async function checkEvidence(
 ): Promise<EvidenceCheck[]> {
   const checks: EvidenceCheck[] = [];
   for (const ref of envelope.evidence) {
-    const bytes = await store.get('blob', ref.id);
+    const { bytes } = await readWithReason(store, 'blob', ref.id);
     const base = { kind: ref.kind, id: ref.id, locator: ref.locator };
     if (bytes !== null && digestBytes(bytes) === ref.id) {
       checks.push({ ...base, status: 'stored' });
