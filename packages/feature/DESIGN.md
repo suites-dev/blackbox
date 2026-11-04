@@ -23,7 +23,8 @@ and observation. Client definitions select a catalog participant and container
 port. Their declarations request the required port exposure before acquisition;
 client factories receive the resulting endpoint after the Sandbox is ready.
 
-Client names and types come from the TypeScript registration object. No generated
+Client runtime definitions come from the TypeScript registration object. Project
+fixture types come from the exported `BlackboxClients` module-augmentation interface. No generated
 JSON driver list is required for client autocomplete. Existing command drivers
 remain available for their separate command workflows.
 
@@ -60,24 +61,31 @@ const database = defineClient(pg, {
   dispose: (pool) => pool.end(),
 });
 
-test.system('orders', (system) => {
-  system.sandbox('default', { clients: { db: database } }, (suite) => {
-    suite.test('can query the database', async ({ clients, step }) => {
-      const result = await step('When I query the database', () =>
-        clients.db.query('SELECT 1 AS value'),
-      );
-      await step('Then the query returns one', async () => {
-        expect(result.rows).toEqual([{ value: 1 }]);
-      });
+declare module '@suites/blackbox-playwright' {
+  interface BlackboxClients {
+    db: pg.Pool;
+  }
+}
+
+test.describe('default', () => {
+  test.use({ blackbox: { system: 'orders', clients: { db: database } } });
+  test('can query the database', async ({ clients, step }) => {
+    const result = await step('When I query the database', () =>
+      clients.db.query('SELECT 1 AS value'),
+    );
+    await step('Then the query returns one', async () => {
+      expect(result.rows).toEqual([{ value: 1 }]);
     });
   });
 });
 ```
 
-`clients.db` is inferred as the created `pg.Pool`, including its SDK method types.
+`BlackboxClients` registers `clients.db` as `pg.Pool`, including its SDK method types.
 Async factories are supported; the exposed type is the resolved client type.
-The Sandbox name is a configuration group, not a shared live resource or a named
-profile already present in the catalog schema.
+The named native describe groups configuration. Each physical attempt still
+acquires a fresh Sandbox. `blackbox` follows native whole-object replacement: a
+scoped `test.use` supplies the complete selection, clients, environment, retention,
+and final-snapshot options needed at that scope; values are not deeply merged.
 
 The `env` tuple declares required keys. The factory receives only those keys,
 each typed as `string`. Values come from the selected participant's effective
@@ -87,9 +95,9 @@ container environment variables. Diagnostics must redact credentials.
 
 ## Step fixture
 
-The locked authoring shape is `suite.test(title, async ({ clients, step }) => ...)`.
+The locked authoring shape is `test(title, async ({ clients, step }) => ...)`.
 `step` is a test-scoped fixture bound to the current physical attempt. It is also
-available to `suite.beforeEach` and `suite.afterEach`, so Backgrounds and the body
+available to `test.beforeEach` and `test.afterEach`, so Backgrounds and the body
 use the same attempt while each step invocation has its own identity. Declaration
 callbacks and `beforeAll` / `afterAll` have no attempt-scoped `step` fixture.
 
@@ -111,13 +119,13 @@ For each invocation, Blackbox must:
 Retries receive new fixture instances and identities. Internal activity records
 may support correlation, but activities stay out of the authoring API. Native
 suites and generated suites use the same fixture; no Gherkin runtime is required.
-The existing declaration-level `suite.step()` / `test.step()` pass-throughs do not
+The existing declaration-level `test.step()` pass-through do not
 provide this proposed context behavior. Generated suites use the fixture.
 
 ## Startup and teardown
 
 An automatic Playwright fixture initializes every client registered for the
-Sandbox group, even if a test callback does not request `clients` explicitly.
+selected `blackbox` option, even if a test callback does not request `clients` explicitly.
 All clients must pass their declared `ready` checks before any per-test hook runs.
 Construction alone is not proof of connectivity.
 
@@ -158,11 +166,11 @@ response variables, and use ordinary assertions. Features remain optional.
 
 | Gherkin                   | Playwright output                                           |
 | ------------------------- | ----------------------------------------------------------- |
-| Feature                   | Outer `suite.describe()`                                    |
-| Rule                      | Nested `suite.describe()`                                   |
-| Feature / Rule Background | `suite.beforeEach()` at the owning level                    |
-| Scenario                  | `suite.test()`                                              |
-| Scenario Outline          | `suite.describe()` containing one test per Examples row     |
+| Feature                   | Outer `test.describe()`                                     |
+| Rule                      | Nested `test.describe()`                                    |
+| Feature / Rule Background | `test.beforeEach()` at the owning level                     |
+| Scenario                  | `test()`                                                    |
+| Scenario Outline          | `test.describe()` containing one test per Examples row      |
 | Examples                  | Values and distinct block/row identities in test titles     |
 | Given / When / Then       | Fixture `step()` wrapping compiled operations or assertions |
 | And / But / *             | Same mapping, preserving the authored keyword in the title  |
@@ -176,7 +184,7 @@ sentence and its arguments and preserves the original keyword in the native
 
 Outline rows are declared synchronously with `Array.forEach()`, following
 [Playwright parameterization](https://playwright.dev/docs/test-parameterize).
-Each iteration declares an independent `suite.test()` with its own fixtures,
+Each iteration declares an independent `test()` with its own fixtures,
 retry lifecycle, and row identity. Background hooks stay at their owning describe
 scope. Playwright has no native `test.each()` API.
 
@@ -392,8 +400,9 @@ container. The endpoint uses its mapped host port and the catalog entrypoint's
 HTTP protocol. Missing environment or failed authenticated readiness stops setup
 before any Background runs.
 
-Registration as `{ clients: { api } }` gives hooks and tests an inferred
-`clients.api: APIRequestContext`. The factory runs once per physical attempt,
+Register `api: APIRequestContext` in the project's `BlackboxClients` module
+augmentation, then supply `{ blackbox: { system: 'orders', clients: { api } } }`
+to `test.use`. Hooks and tests receive the declared `clients.api` SDK type. The factory runs once per physical attempt,
 including retries. Importing this definition during test discovery opens no
 connection. Blackbox awaits the asynchronous factory and its readiness check.
 
@@ -408,7 +417,7 @@ claim that SDK registration alone supplies causally scoped application evidence.
 `e2e/features/order-pricing.feature` covers Feature and Rule Backgrounds, an
 ordinary Scenario, an Outline, Examples, tags, JSON Doc Strings, and a Data Table.
 Here `@subsystem:orders` names the catalog entry the compiler checks and
-`@sandbox:default` the sandbox declaration;
+`@sandbox:default` the named native describe;
 `@sync` and `@validation` are ordinary native report/filter tags.
 
 ```gherkin
@@ -485,83 +494,80 @@ This is the proposed complete emitted file, with no runtime step interpreter:
 import { expect, test } from '@suites/blackbox-playwright';
 import { api } from '../clients.js';
 
-test.system({ kind: 'subsystem', id: 'orders' }, (system) => {
-  system.sandbox('default', { clients: { api } }, (suite) => {
-    suite.describe('Feature: Order pricing', { tag: ['@sync'] }, () => {
-      suite.beforeEach('Background: A product is available', async ({ clients, step }) => {
-        await step(
-          'Given client "api" has sent POST "/products" with JSON and received 201:',
-          async () => {
-            const response = await clients.api.post('/products', {
-              data: { sku: 'keyboard', price: 100, stock: 3 },
-            });
-            expect(response.status()).toBe(201);
-          },
-        );
-      });
-
-      suite.describe('Rule: Valid quantities produce a quote', () => {
-        suite.test('Scenario: Quote two keyboards', async ({ clients, step }) => {
-          const response = await step('When client "api" sends POST "/quotes" with JSON:', () =>
-            clients.api.post('/quotes', { data: { sku: 'keyboard', quantity: 2 } }),
-          );
-          await step('Then the response status is 200', async () => {
-            expect(response.status()).toBe(200);
+test.describe('default', () => {
+  test.use({ blackbox: { system: { kind: 'subsystem', id: 'orders' }, clients: { api } } });
+  test.describe('Feature: Order pricing', { tag: ['@sync'] }, () => {
+    test.beforeEach('Background: A product is available', async ({ clients, step }) => {
+      await step(
+        'Given client "api" has sent POST "/products" with JSON and received 201:',
+        async () => {
+          const response = await clients.api.post('/products', {
+            data: { sku: 'keyboard', price: 100, stock: 3 },
           });
-          await step('* the response JSON contains these fields:', async () => {
-            expect(await response.json()).toEqual(
-              expect.objectContaining({ sku: 'keyboard', quantity: 2, total: 200 }),
-            );
-          });
-        });
-      });
-
-      suite.describe(
-        'Rule: Quantities must be positive and within available stock',
-        { tag: ['@validation'] },
-        () => {
-          suite.beforeEach('Background: Only one item is available', async ({ clients, step }) => {
-            await step(
-              'Given client "api" has sent PATCH "/products/keyboard" with JSON and received 200:',
-              async () => {
-                const response = await clients.api.patch('/products/keyboard', {
-                  data: { stock: 1 },
-                });
-                expect(response.status()).toBe(200);
-              },
-            );
-          });
-
-          suite.describe('Scenario Outline: Reject quantity <quantity>', () => {
-            const examples = [
-              { quantity: 0, status: 422, code: 'INVALID_QUANTITY' },
-              { quantity: 2, status: 409, code: 'INSUFFICIENT_STOCK' },
-            ] as const;
-
-            examples.forEach(({ quantity, status, code }, row) => {
-              suite.test(
-                `Examples 1: Rejected quantities / row ${row + 1}: Reject quantity ${quantity}`,
-                async ({ clients, step }) => {
-                  const response = await step(
-                    'When client "api" sends POST "/quotes" with JSON:',
-                    () =>
-                      clients.api.post('/quotes', {
-                        data: { sku: 'keyboard', quantity: quantity },
-                      }),
-                  );
-                  await step(`Then the response status is ${status}`, async () => {
-                    expect(response.status()).toBe(status);
-                  });
-                  await step('But the response JSON contains:', async () => {
-                    expect(await response.json()).toEqual(expect.objectContaining({ code: code }));
-                  });
-                },
-              );
-            });
-          });
+          expect(response.status()).toBe(201);
         },
       );
     });
+
+    test.describe('Rule: Valid quantities produce a quote', () => {
+      test('Scenario: Quote two keyboards', async ({ clients, step }) => {
+        const response = await step('When client "api" sends POST "/quotes" with JSON:', () =>
+          clients.api.post('/quotes', { data: { sku: 'keyboard', quantity: 2 } }),
+        );
+        await step('Then the response status is 200', async () => {
+          expect(response.status()).toBe(200);
+        });
+        await step('* the response JSON contains these fields:', async () => {
+          expect(await response.json()).toEqual(
+            expect.objectContaining({ sku: 'keyboard', quantity: 2, total: 200 }),
+          );
+        });
+      });
+    });
+
+    test.describe(
+      'Rule: Quantities must be positive and within available stock',
+      { tag: ['@validation'] },
+      () => {
+        test.beforeEach('Background: Only one item is available', async ({ clients, step }) => {
+          await step(
+            'Given client "api" has sent PATCH "/products/keyboard" with JSON and received 200:',
+            async () => {
+              const response = await clients.api.patch('/products/keyboard', {
+                data: { stock: 1 },
+              });
+              expect(response.status()).toBe(200);
+            },
+          );
+        });
+
+        test.describe('Scenario Outline: Reject quantity <quantity>', () => {
+          const examples = [
+            { quantity: 0, status: 422, code: 'INVALID_QUANTITY' },
+            { quantity: 2, status: 409, code: 'INSUFFICIENT_STOCK' },
+          ] as const;
+
+          examples.forEach(({ quantity, status, code }, row) => {
+            test(`Examples 1: Rejected quantities / row ${row + 1}: Reject quantity ${quantity}`, async ({
+              clients,
+              step,
+            }) => {
+              const response = await step('When client "api" sends POST "/quotes" with JSON:', () =>
+                clients.api.post('/quotes', {
+                  data: { sku: 'keyboard', quantity: quantity },
+                }),
+              );
+              await step(`Then the response status is ${status}`, async () => {
+                expect(response.status()).toBe(status);
+              });
+              await step('But the response JSON contains:', async () => {
+                expect(await response.json()).toEqual(expect.objectContaining({ code: code }));
+              });
+            });
+          });
+        });
+      },
+    );
   });
 });
 ```
@@ -661,3 +667,8 @@ Sources: [Playwright public types](../playwright/src/types.ts),
 [Sandbox connection inspection](../sandbox/src/inspection/sandbox-container.ts),
 [catalog schema](../catalog/schema/blackbox-config-v1.json), and the
 [Redis example of missing causal propagation](../../e2e/journeys/04-redis.golden).
+
+Native title paths omit the former synthetic system wrapper. Named Sandbox
+groups remain ordinary describes. This breaking authoring migration changes test
+IDs and history identities; retained attempts remain available, but old and new
+authoring identities are not automatically comparable.

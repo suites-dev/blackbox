@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import * as ts from 'typescript';
 
 import asyncRedisProof from './fixtures/async-redis-proof.feature.js';
 import { catalog } from './fixtures/catalog.js';
@@ -8,6 +7,7 @@ import orderPricing from './fixtures/order-pricing.feature.js';
 import subscriptionActivationE2E from './fixtures/subscription-activation-e2e.feature.js';
 import subscriptionOutlineInterpolation from './fixtures/subscription-outline-interpolation.feature.js';
 import { compileFeature } from '../src/index.js';
+import { expectValidTypeScript, expectGeneratedCodeTypechecks, generatedCodeDiagnostics } from './support/generated-typecheck.js';
 
 const clients = { api: { from: '../clients.js', export: 'api' } } as const;
 
@@ -31,23 +31,27 @@ describe('Feature compiler literal safety', () => {
     expectValidTypeScript(result.code, 'safe-literals.generated.ts');
     expect(result.code).not.toContain('</script>');
     expect(result.code).toContain('\\u003C');
-    const title = /suite\.describe\(("(?:\\.|[^"\\])*")/u.exec(result.code);
+    const title = /test\.describe\(("Feature: (?:\\.|[^"\\])*")/u.exec(result.code);
     const body = /data: JSON\.parse\(("(?:\\.|[^"\\])*")\)/u.exec(result.code);
-    if (!title || !body) {throw new Error('Generated suite is missing the title or JSON body.');}
+    if (!title || !body) {
+      throw new Error('Generated suite is missing the title or JSON body.');
+    }
     expect(JSON.parse(title[1])).toBe(`Feature: ${featureName}`);
     const serializedBody: unknown = JSON.parse(body[1]);
     expect(typeof serializedBody).toBe('string');
-    if (typeof serializedBody !== 'string') {throw new Error('JSON body must be a serialized string.');}
+    if (typeof serializedBody !== 'string') {
+      throw new Error('JSON body must be a serialized string.');
+    }
     expect(JSON.parse(serializedBody)).toEqual({ value });
   });
 });
 
 describe('Feature compiler snapshots', () => {
   it('compiles hierarchy, backgrounds, tags, tables, doc strings, and outline rows', () => {
-    const result = compileFeature({ catalog, source: orderPricing, uri: 'order-pricing.feature', clients });
+    const result = compileExample(orderPricing, 'order-pricing.feature');
     expect(result.diagnostics).toEqual([]);
-    expect(result.code.match(/suite\.test\(/gu)).toHaveLength(2);
-    expect(result.code).toContain('id: "orders"');
+    expect(result.code.match(/test\(/gu)).toHaveLength(2);
+    expect(result.code).toContain("system: { kind: 'subsystem', id: \"orders\" }");
     expect(result.code).toContain('clients.api.');
     expect(result.code).not.toContain('clients.client_api.');
     expect(result.code).toContain('"quantity":0');
@@ -60,11 +64,7 @@ describe('Feature compiler snapshots', () => {
   it('compiles the E2E subscription Outline with placeholders embedded in JSON strings', () => {
     let result: ReturnType<typeof compileFeature> | undefined;
     expect(() => {
-      result = compileFeature({ catalog,
-        source: subscriptionOutlineInterpolation,
-        uri: 'subscription-activation.feature',
-        clients,
-      });
+      result = compileExample(subscriptionOutlineInterpolation, 'subscription-activation.feature');
     }).not.toThrow();
     if (!result) {
       throw new Error('Feature compilation did not return a result.');
@@ -87,11 +87,7 @@ describe('Feature compiler snapshots', () => {
   });
 
   it('compiles exact-state assertions in the full E2E Feature', () => {
-    const result = compileFeature({ catalog,
-      source: subscriptionActivationE2E,
-      uri: 'subscription-activation.feature',
-      clients,
-    });
+    const result = compileExample(subscriptionActivationE2E, 'subscription-activation.feature');
     expect(result.diagnostics).toEqual([]);
     expect(result.code).toContain('expect(await response.json()).toEqual(');
     expect(result.code).toContain('"reg:${JSON.stringify(String(row["userId"])).slice(1, -1)}"');
@@ -101,13 +97,9 @@ describe('Feature compiler snapshots', () => {
   });
 
   it('preserves escaping, And/But/* titles, multiple Act/Assert phases, and duplicate row identity', () => {
-    const result = compileFeature({ catalog,
-      source: escapingAndDuplicateRows,
-      uri: 'escaping-and-duplicate-rows.feature',
-      clients,
-    });
+    const result = compileExample(escapingAndDuplicateRows, 'escaping-and-duplicate-rows.feature');
     expect(result.diagnostics).toEqual([]);
-    expect(result.code.match(/suite\.test\(/gu)).toHaveLength(2);
+    expect(result.code.match(/test\(/gu)).toHaveLength(2);
     expect(result.code).toContain('${rowIndex + 1}');
     expect(result.code).not.toContain('__ROW_INDEX__');
     expect(result.code).not.toContain('"value": "<value>"');
@@ -120,13 +112,14 @@ describe('Feature compiler snapshots', () => {
     expectGeneratedCodeTypechecks(result.code);
     expect(result.code).toMatchSnapshot();
   });
-
 });
 
 describe('Feature compiler diagnostics', () => {
   it('catches a lost response binding in the generated-code typecheck negative control', () => {
-    const result = compileFeature({ catalog, source: orderPricing, uri: 'order-pricing.feature', clients });
-    const reference = [...result.code.matchAll(/\bresponse\d+\b/gu)][1] as RegExpMatchArray & { index: number };
+    const result = compileExample(orderPricing, 'order-pricing.feature');
+    const reference = [...result.code.matchAll(/\bresponse\d+\b/gu)][1] as RegExpMatchArray & {
+      index: number;
+    };
     const wrongResponseBinding = `${result.code.slice(0, reference.index)}lostResponse${result.code.slice(reference.index + reference[0].length)}`;
     expect(wrongResponseBinding).not.toBe(result.code);
     expect(generatedCodeDiagnostics(wrongResponseBinding)).toEqual(
@@ -135,11 +128,7 @@ describe('Feature compiler diagnostics', () => {
   });
 
   it('rejects the natural-language async Redis feature without emitting a suite', () => {
-    const result = compileFeature({ catalog,
-      source: asyncRedisProof,
-      uri: 'redis-proof-delivery.feature',
-      clients,
-    });
+    const result = compileExample(asyncRedisProof, 'redis-proof-delivery.feature');
     expect(result.code).toBe('');
     expect(result.diagnostics.map(({ code }) => code)).toEqual(
       expect.arrayContaining(['FEATURE_STEP_UNSUPPORTED']),
@@ -152,7 +141,8 @@ describe('Feature compiler diagnostics', () => {
     expect(malformed.code).toBe('');
     expect(malformed.diagnostics.map(({ code }) => code)).toContain('FEATURE_SYNTAX');
 
-    const invalidJson = compileFeature({ catalog,
+    const invalidJson = compileFeature({
+      catalog,
       clients,
       source: `@subsystem:orders
 Feature: Invalid JSON
@@ -166,7 +156,8 @@ Feature: Invalid JSON
     expect(invalidJson.code).toBe('');
     expect(invalidJson.diagnostics.map(({ code }) => code)).toContain('FEATURE_JSON_INVALID');
 
-    const unbound = compileFeature({ catalog,
+    const unbound = compileFeature({
+      catalog,
       clients: {},
       source: `@subsystem:orders
 Feature: Unknown client
@@ -180,85 +171,6 @@ Feature: Unknown client
   });
 });
 
-function expectValidTypeScript(code: string, fileName: string): void {
-  const result = ts.transpileModule(code, {
-    fileName,
-    reportDiagnostics: true,
-    compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.Latest },
-  });
-  expect(result.diagnostics ?? [], fileName).toEqual([]);
-}
-
-function expectGeneratedCodeTypechecks(code: string): void {
-  expect(generatedCodeDiagnostics(code)).toEqual([]);
-}
-
-function generatedCodeDiagnostics(code: string): string[] {
-  const root = '/__feature_compiler_typecheck__';
-  const generatedPath = `${root}/test/generated.ts`;
-  const declarationsPath = `${root}/test/playwright.d.ts`;
-  const clientsPath = `${root}/clients.d.ts`;
-  const virtualFiles = new Map<string, string>([
-    [generatedPath, code],
-    [declarationsPath, `
-      declare module '@suites/blackbox-playwright' {
-        export interface ApiResponse { status(): number; json(): Promise<unknown> }
-        export interface ApiClient {
-          get(path: string): Promise<ApiResponse>;
-          post(path: string, options?: { data: unknown }): Promise<ApiResponse>;
-          patch(path: string, options?: { data: unknown }): Promise<ApiResponse>;
-        }
-        interface Fixtures {
-          clients: { api: ApiClient };
-          step<T>(title: string, body: () => T | Promise<T>): Promise<Awaited<T>>;
-        }
-        interface Suite {
-          describe(title: string, body: () => void): void;
-          describe(title: string, details: { tag: string[] }, body: () => void): void;
-          beforeEach(title: string, body: (fixtures: Fixtures) => unknown): void;
-          test(title: string, body: (fixtures: Fixtures) => unknown): void;
-          test(title: string, details: { tag: string[] }, body: (fixtures: Fixtures) => unknown): void;
-        }
-        interface System { sandbox(name: string, options: { clients: { api: ApiClient } }, body: (suite: Suite) => void): void }
-        export const expect: {
-          (actual: unknown): { toBe(expected: unknown): void; toEqual(expected: unknown): void };
-          arrayContaining(sample: readonly unknown[]): unknown;
-          objectContaining(sample: Record<string, unknown>): unknown;
-        };
-        export const test: { system(selector: { kind: 'system' | 'subsystem'; id: string }, body: (system: System) => void): void };
-      }
-    `],
-    [clientsPath, `import type { ApiClient } from '@suites/blackbox-playwright'; export declare const api: ApiClient;`],
-  ]);
-  const options = {
-    strict: true,
-    noEmit: true,
-    skipLibCheck: true,
-    target: ts.ScriptTarget.ES2022,
-    module: ts.ModuleKind.ESNext,
-    moduleResolution: ts.ModuleResolutionKind.Bundler,
-  } satisfies ts.CompilerOptions;
-  const host = ts.createCompilerHost(options);
-  const originalFileExists = host.fileExists.bind(host);
-  const originalReadFile = host.readFile.bind(host);
-  const originalGetSourceFile = host.getSourceFile.bind(host);
-  host.directoryExists = (directoryName) =>
-    directoryName.startsWith(root) || ts.sys.directoryExists(directoryName);
-  host.fileExists = (fileName) => virtualFiles.has(fileName) || originalFileExists(fileName);
-  host.readFile = (fileName) => virtualFiles.get(fileName) ?? originalReadFile(fileName);
-  host.getSourceFile = (fileName, languageVersion, onError, shouldCreateNewSourceFile) => {
-    const contents = virtualFiles.get(fileName);
-    if (contents !== undefined) {
-      return ts.createSourceFile(fileName, contents, languageVersion, true);
-    }
-    return originalGetSourceFile(fileName, languageVersion, onError, shouldCreateNewSourceFile);
-  };
-  const program = ts.createProgram([generatedPath, declarationsPath], options, host);
-  const diagnostics = [
-    ...program.getSyntacticDiagnostics(),
-    ...program.getSemanticDiagnostics(),
-  ];
-  return diagnostics.map((diagnostic) =>
-    ts.flattenDiagnosticMessageText(diagnostic.messageText, '\n'),
-  );
+function compileExample(source: string, uri: string) {
+  return compileFeature({ catalog, source, uri, clients });
 }

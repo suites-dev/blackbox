@@ -11,7 +11,7 @@ function record(value: object): void {
 
 const runtime = {
   start(input) {
-    if (input.selection.kind === 'unselected') {
+    if (input.selection.kind === 'unselected' || input.selection.kind === 'catalog-entry') {
       throw new Error('test fixture did not select a catalog entry');
     }
     const executionId = randomUUID();
@@ -60,7 +60,7 @@ const runtime = {
 
 const test = createBlackboxTest(runtime);
 
-test.use({ catalogEntry: { kind: 'system', id: 'orders' } });
+test.use({ blackbox: { system: { kind: 'system', id: 'orders' } } });
 
 test('starts the automatic sandbox even without destructuring its fixture', () => {
   playwrightExpect(true).toBe(true);

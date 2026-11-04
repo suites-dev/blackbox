@@ -89,14 +89,14 @@ function selectedPlan(input: {
 }): CatalogSandboxInput {
   if (input.selection.kind === 'unselected') {
     throw new Error(
-      'Blackbox catalog entry is not selected. Declare test.use({ catalogEntry: { kind, id } }).',
+      'Blackbox catalog entry is not selected. Declare test.use({ blackbox: { system: id } }).',
     );
   }
   const plan = input.ports.resolveCatalog({
     catalog: input.catalog,
     selection: { kind: 'explicit-entry', entryId: input.selection.id },
   });
-  if (plan.metadata.kind !== input.selection.kind) {
+  if (input.selection.kind !== 'catalog-entry' && plan.metadata.kind !== input.selection.kind) {
     throw new Error(
       `Catalog entry ${JSON.stringify(input.selection.id)} is ${JSON.stringify(plan.metadata.kind)}, ` +
         `not ${JSON.stringify(input.selection.kind)}.`,

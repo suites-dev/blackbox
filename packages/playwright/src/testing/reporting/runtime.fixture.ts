@@ -20,7 +20,7 @@ export async function waitForReporter(file = 'reporter-observed-startup'): Promi
 }
 
 function runningAttempt(input: BlackboxAttemptInput) {
-  if (input.selection.kind === 'unselected') {
+  if (input.selection.kind === 'unselected' || input.selection.kind === 'catalog-entry') {
     throw new Error('Missing selection');
   }
   const executionId = randomUUID();

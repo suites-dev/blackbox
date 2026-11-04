@@ -6,7 +6,7 @@ import {
 } from '../testing/system-sandbox-harness/native-runner.js';
 
 afterEach(cleanupNativeRuns);
-it.each(['default', 'direct-sandbox', 'client-readiness-failure'])(
+it.each(['default', 'direct-native', 'client-readiness-failure'])(
   'owns native client lifecycle for %s',
   async (scenario) => {
     const run = await runPlaywright({

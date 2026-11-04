@@ -33,10 +33,10 @@ describe('Feature system tags are checked against the catalog', () => {
   it('compiles a tag that names a catalog entry of the same kind', () => {
     const subsystem = compileFeature({ catalog, clients, source: feature('@subsystem:orders @sandbox:default') });
     expect(subsystem.diagnostics).toEqual([]);
-    expect(subsystem.code).toContain(`test.system({ kind: 'subsystem', id: "orders" }`);
+    expect(subsystem.code).toContain(`test.use({ blackbox: { system: { kind: 'subsystem', id: "orders" }`);
     const system = compileFeature({ catalog, clients, source: feature('@system:subscription-system') });
     expect(system.diagnostics).toEqual([]);
-    expect(system.code).toContain(`test.system({ kind: 'system', id: "subscription-system" }`);
+    expect(system.code).toContain(`test.use({ blackbox: { system: { kind: 'system', id: "subscription-system" }`);
   });
 
   it('rejects an unknown id at the tag and lists the catalog ids', () => {
