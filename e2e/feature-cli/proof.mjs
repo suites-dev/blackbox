@@ -104,7 +104,7 @@ function verifyBusinessStep(step, failureMatcher) {
       step.requests.some((item) => {
         const description = `${item.title} ${item.subtitle ?? ''}`;
         return (
-          new RegExp(`\\b${request[1]}\\b`, 'iu').test(description) &&
+          description.split(/\W+/iu).some((word) => word.toUpperCase() === request[1]) &&
           description.includes(request[2]) &&
           item.failed === false
         );
