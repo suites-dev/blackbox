@@ -24,6 +24,10 @@ export const listOf =
   (rule: Rule) =>
   (value: unknown): boolean =>
     Array.isArray(value) && (value as unknown[]).every((item) => holds(item, rule));
+export const nonEmptyListOf =
+  (rule: Rule) =>
+  (value: unknown): boolean =>
+    Array.isArray(value) && value.length > 0 && listOf(rule)(value);
 export const oneOf =
   (...allowed: readonly string[]) =>
   (value: unknown): boolean =>

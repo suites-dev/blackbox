@@ -174,6 +174,14 @@ describe('stimulus summary of bodies and destinations', () => {
     );
   });
 
+  it('does not summarize a request whose URL carries credentials', () => {
+    const to = (url: string) => summarizeRequest(entry({ method: 'GET', url, options: {} }), null);
+    expect(to('http://alice:one@127.0.0.1:41000/x')).toBeNull();
+    expect(to('http://alice@127.0.0.1:41000/x')).toBeNull();
+    expect(to('//bob:two@service.test/x')).toBeNull();
+    expect(to('http://127.0.0.1:41000/x')).not.toBeNull();
+  });
+
   it('tells scheme-relative URLs by the origin they resolve to', () => {
     const to = (url: string) => fingerprint(entry({ method: 'GET', url, options: {} }));
     expect(to('//service-a.test/x')).not.toBe(to('//service-b.test/x'));

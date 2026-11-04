@@ -5,6 +5,7 @@ import {
   isObject,
   isText,
   listOf,
+  nonEmptyListOf,
   shapeProblems,
   type Rules,
 } from '../envelope/shape/fields.js';
@@ -37,7 +38,7 @@ const admitted = {
       target: isText,
       actor: isText,
       outcome: isText,
-      source: listOf({ traceId: isText, spanId: isText }),
+      source: nonEmptyListOf({ traceId: isText, spanId: isText }),
     }),
   },
   ownership: listOf({

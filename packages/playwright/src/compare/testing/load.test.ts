@@ -70,6 +70,23 @@ describe('a snapshot body that matches its digest but is not a snapshot', () => 
   });
 });
 
+describe('a snapshot with an effect that names no source observation', () => {
+  it('is reported as unavailable evidence instead of failing the comparison later', () => {
+    const { body } = rawSide({ spans: healthy });
+    const parsed = JSON.parse(body) as {
+      evidence: { projection: { effects: { source: unknown[] }[] } };
+    };
+    parsed.evidence.projection.effects[0].source = [];
+    const hollow = JSON.stringify(parsed);
+    const loaded = loadSide({ envelope: envelopeWithSnapshotBody(hollow), snapshotBody: hollow });
+    expect(loaded.kind).toBe('loaded');
+    if (loaded.kind === 'loaded') {
+      expect(loaded.side.snapshot).toBeNull();
+      expect(loaded.side.snapshotProblem).toContain('unsupported shape');
+    }
+  });
+});
+
 describe('loading a side', () => {
   it('rejects an envelope whose content no longer matches its digest', () => {
     const side = sideFixture({ spans: healthy });

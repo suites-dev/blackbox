@@ -151,6 +151,12 @@ function multipartEstablished(value: unknown): boolean {
   );
 }
 
+/** A URL that carries Basic Auth: the caller is part of the input, and its Authorization header is not recorded. */
+function hasUrlCredentials(url: string): boolean {
+  const parsed = new URL(url, 'http://entrypoint.invalid/');
+  return parsed.username !== '' || parsed.password !== '';
+}
+
 function hasQuery(url: string): boolean {
   return new URL(url, 'http://entrypoint.invalid/').search !== '';
 }
@@ -164,6 +170,7 @@ export function summarizeRequest(
   if (
     ['data', 'form', 'multipart'].some((key) => options[key] instanceof FormData) ||
     !multipartEstablished(options.multipart) ||
+    hasUrlCredentials(entry.url) ||
     // Playwright appends object `params` to a query the URL already has and replaces it for encoded ones.
     (options.params !== undefined && hasQuery(entry.url)) ||
     ['data', 'form'].some(
