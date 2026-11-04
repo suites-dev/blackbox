@@ -10,7 +10,8 @@ import {
   inspectComposeStartup,
 } from './observation/observation-inspector.js';
 import { observeComposeStartup } from './observation/startup-observer.js';
-import { upUnlessParticipantExits } from './observation/participant-exit.js';
+import { upUnlessParticipantExits } from './participant-exit/participant-exit.js';
+import { participantLogReader } from './participant-exit/participant-logs.js';
 import { inspectComposeResources, inspectRemainingContainers } from './resources/resource-inspector.js';
 import { writeTelemetryComposeOverride } from '../telemetry/compose-override.js';
 import { composeTelemetryController, stopGrace } from '../telemetry/compose-controller.js';
@@ -172,8 +173,9 @@ async function composeDown(input: {
 export class TestcontainersComposeDriver implements ComposeSandboxDriver {
   async start(request: ComposeStartRequest): Promise<StartedComposeSandbox> {
     const client = await getContainerRuntimeClient();
-    const observation = composeObservationClient(client.container.dockerode);
-    const composeFiles = await composeFilesFor(request, client.container.dockerode);
+    const docker = client.container.dockerode;
+    const observation = composeObservationClient(docker);
+    const composeFiles = await composeFilesFor(request, docker);
     const environment = new DockerComposeEnvironment(request.projectDirectory, [
       ...composeFiles,
     ])
@@ -196,16 +198,13 @@ export class TestcontainersComposeDriver implements ComposeSandboxDriver {
       up: () => environment.up(services),
       requiredServices: requiredServiceNames(request),
       inspect,
+      readLogs: participantLogReader(docker),
       down: () => composeDown({ client, request, composeFiles }),
       intervalMs: 500,
     }).finally(() => observer.stop());
     const containers = await afterStartOrCleanup({
       started,
-      operation: () => inspectSelectedContainers({
-        request,
-        started,
-        docker: client.container.dockerode,
-      }),
+      operation: () => inspectSelectedContainers({ request, started, docker }),
       failureMessage: 'Container inspection failed and Compose cleanup also failed',
     });
     const telemetry = await afterStartOrCleanup({
@@ -250,7 +249,7 @@ export class TestcontainersComposeDriver implements ComposeSandboxDriver {
         });
       },
       inspectRemainingContainers: () =>
-        inspectRemainingContainers({ docker: client.container.dockerode, projectName: request.projectName }),
+        inspectRemainingContainers({ docker, projectName: request.projectName }),
     };
   }
 }
