@@ -2,8 +2,7 @@ import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import ts from 'typescript';
 
-/** Preserve declarations and step titles; never execute the generated business closures. */
-export function skeleton(source, environmentSources = {}) {
+function transformSuite(source, environmentSources, inert) {
   const file = ts.createSourceFile('suite.ts', source, ts.ScriptTarget.Latest, true);
   assert.equal(file.parseDiagnostics.length, 0, 'Suite is not valid TypeScript');
   let steps = 0;
@@ -70,6 +69,7 @@ export function skeleton(source, environmentSources = {}) {
         ) {
           assert.equal(node.arguments.length, 2, 'Unexpected step signature');
           steps += 1;
+          if (!inert) return node;
           return ts.factory.updateCallExpression(node, node.expression, undefined, [
             node.arguments[0],
             ts.factory.createArrowFunction(
@@ -91,6 +91,64 @@ export function skeleton(source, environmentSources = {}) {
   transformed.dispose();
   assert.ok(steps > 0, 'Suite has no step closures');
   return code;
+}
+
+/** Collect complete test, hook, and step callbacks independently of printed formatting. */
+export function businessCallbacks(source) {
+  const file = ts.createSourceFile('suite.ts', source, ts.ScriptTarget.Latest, true);
+  assert.equal(file.parseDiagnostics.length, 0, 'Suite is not valid TypeScript');
+  const callbacks = [];
+  function semantic(node) {
+    if (ts.isParenthesizedExpression(node)) return semantic(node.expression);
+    const children = [];
+    ts.forEachChild(node, (child) => {
+      children.push(semantic(child));
+    });
+    return [
+      ts.SyntaxKind[node.kind],
+      typeof node.text === 'string' ? node.text : null,
+      ...children,
+    ];
+  }
+  function visit(node) {
+    if (ts.isCallExpression(node)) {
+      const name = ts.isIdentifier(node.expression)
+        ? node.expression.text
+        : ts.isPropertyAccessExpression(node.expression)
+          ? node.expression.name.text
+          : '';
+      if (
+        ['test', 'step', 'beforeEach', 'afterEach', 'beforeAll', 'afterAll', 'stimulus'].includes(
+          name,
+        )
+      ) {
+        const callback = node.arguments.at(-1);
+        if (callback && (ts.isArrowFunction(callback) || ts.isFunctionExpression(callback))) {
+          callbacks.push({ kind: name, body: semantic(callback) });
+        }
+      }
+    }
+    ts.forEachChild(node, visit);
+  }
+  visit(file);
+  assert.ok(callbacks.length > 0, 'Suite has no business callbacks');
+  return callbacks;
+}
+
+/** Prepare runnable generated source by changing only the complete blackbox environment option. */
+export function executionSuite(source, environmentSources = {}) {
+  const code = transformSuite(source, environmentSources, false);
+  assert.deepEqual(
+    businessCallbacks(code),
+    businessCallbacks(source),
+    'Execution suite changed generated business callbacks',
+  );
+  return code;
+}
+
+/** Structural inspection only: never run the resulting empty callbacks as acceptance tests. */
+export function skeleton(source, environmentSources = {}) {
+  return transformSuite(source, environmentSources, true);
 }
 
 function rowTitle(title) {

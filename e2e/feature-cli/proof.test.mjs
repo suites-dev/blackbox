@@ -1,7 +1,13 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { compareStructure, skeleton, structure } from './structure.mjs';
+import {
+  businessCallbacks,
+  compareStructure,
+  executionSuite,
+  skeleton,
+  structure,
+} from './structure.mjs';
 import { verifyReport, verifySandboxes } from './proof.mjs';
 
 const source = `import { expect, test } from '@suites/blackbox-playwright';
@@ -10,11 +16,11 @@ test.describe('default', () => {
   test.use({ blackbox: { system: 'example', clients: { api } } });
     test.describe('Feature: Example', { tag: ['@sync'] }, () => {
       test.beforeEach('Background: reset', async ({ clients, step }) => {
-        await step('Given setup', () => { throw new Error('business setup ran'); });
+        await step('Given client "api" has sent POST "/fixture/reset" and received 200', () => { throw new Error('business setup ran'); });
       });
       test('Scenario: Example', async ({ clients, step }) => {
-        const response = await step('When request', () => clients.api.post('/business'));
-        await step('Then response', () => { expect(response.status()).toBe(200); });
+        const response = await step('When client "api" sends POST "/business"', () => clients.api.post('/business'));
+        await step('Then the response status is 200', () => { expect(response.status()).toBe(200); });
       });
     });
 });`;
@@ -30,11 +36,19 @@ test('skeleton preserves client acquisition declarations and step titles with em
     compareStructure(code.replace("system: 'example'", "system: 'wrong'"), source),
     /structure differs/u,
   );
-  assert.deepEqual(item.backgrounds, [{ title: 'Background: reset', steps: ['Given setup'] }]);
-  assert.deepEqual(item.steps, ['When request', 'Then response']);
+  assert.deepEqual(item.backgrounds, [
+    {
+      title: 'Background: reset',
+      steps: ['Given client "api" has sent POST "/fixture/reset" and received 200'],
+    },
+  ]);
+  assert.deepEqual(item.steps, [
+    'When client "api" sends POST "/business"',
+    'Then the response status is 200',
+  ]);
   await compareStructure(code, source);
   await assert.rejects(
-    compareStructure(code.replace('Then response', 'Then wrong'), source),
+    compareStructure(code.replace('Then the response status is 200', 'Then wrong'), source),
     /structure differs/u,
   );
   await assert.rejects(
@@ -45,7 +59,7 @@ test('skeleton preserves client acquisition declarations and step titles with em
 
 test('execution scaffold explicitly carries environment into the complete blackbox option', async () => {
   const sources = { FIXTURE_CONTROL_TOKEN: 'FIXTURE_CONTROL_TOKEN' };
-  const execution = skeleton(source, sources);
+  const execution = executionSuite(source, sources);
   const [plain] = await structure(source);
   const [configured] = await structure(execution);
   assert.deepEqual(plain.environment, {});
@@ -59,7 +73,10 @@ test('execution scaffold explicitly carries environment into the complete blackb
   await assert.rejects(compareStructure(execution, source), /structure differs/u);
   assert.throws(
     () =>
-      skeleton(source.replace('clients: { api }', 'clients: { api }, environment: {}'), sources),
+      executionSuite(
+        source.replace('clients: { api }', 'clients: { api }, environment: {}'),
+        sources,
+      ),
     /must not overwrite/u,
   );
 });
@@ -83,7 +100,7 @@ test('report proof rejects zero discovery, missing steps, skipped cases, retries
   const model = await structure(source);
   const report = {
     errors: [],
-    stats: { skipped: 0, flaky: 0, unexpected: 0 },
+    stats: { expected: 1, skipped: 0, flaky: 0, unexpected: 0 },
     suites: [
       {
         specs: [
@@ -92,10 +109,15 @@ test('report proof rejects zero discovery, missing steps, skipped cases, retries
             title: 'Scenario: Example',
             tests: [
               {
+                expectedStatus: 'passed',
                 results: [
                   {
                     status: 'passed',
-                    steps: ['When request', 'Then response'].map((title) => ({
+                    retry: 0,
+                    steps: [
+                      'When client "api" sends POST "/business"',
+                      'Then the response status is 200',
+                    ].map((title) => ({
                       title,
                     })),
                   },
@@ -112,18 +134,47 @@ test('report proof rejects zero discovery, missing steps, skipped cases, retries
       testId: 'example-id',
       retry: 0,
       status: 'passed',
-      steps: ['Given setup', 'When request', 'Then response'].map((title) => ({
+      steps: [
+        'Given client "api" has sent POST "/fixture/reset" and received 200',
+        'When client "api" sends POST "/business"',
+        'Then the response status is 200',
+      ].map((title) => ({
         title,
         failed: false,
+        assertions: title.startsWith('When') ? [] : [{ title: 'expect.toBe', failed: false }],
+        requests: title.startsWith('Then')
+          ? []
+          : [
+              {
+                title: 'POST',
+                subtitle: title.startsWith('Given') ? '/fixture/reset' : '/business',
+                failed: false,
+              },
+            ],
       })),
     },
   ];
   assert.equal(verifyReport(report, model, live), 1);
+  const emptyBusiness = structuredClone(live);
+  for (const step of emptyBusiness[0].steps) {
+    step.assertions = [];
+    step.requests = [];
+  }
+  assert.throws(() => verifyReport(report, model, emptyBusiness), /did not execute/u);
+  const wrongRequest = structuredClone(live);
+  wrongRequest[0].steps[1].requests[0].subtitle = '/unrelated';
+  assert.throws(() => verifyReport(report, model, wrongRequest), /Business request/u);
   const missingHook = structuredClone(live);
   missingHook[0].steps.shift();
   assert.throws(() => verifyReport(report, model, missingHook), /Live Background/);
   assert.throws(() => verifyReport(report, model, []), /live attempt count/);
   const mutants = [
+    (copy) => {
+      copy.suites[0].specs[0].tests[0].expectedStatus = 'failed';
+    },
+    (copy) => {
+      copy.suites[0].specs[0].tests[0].results[0].retry = 1;
+    },
     (copy) => {
       copy.suites = [];
     },
@@ -177,5 +228,21 @@ test('Sandbox proof rejects absent acquisitions, reused projects, incomplete tea
   await assert.rejects(
     verifySandboxes(records, 2, async () => ['live-container']),
     /Docker resources remain/u,
+  );
+});
+
+test('execution transformation preserves actual business closures and detects erased semantics', () => {
+  const execution = executionSuite(source, { TOKEN: 'TOKEN' });
+  assert.deepEqual(businessCallbacks(execution), businessCallbacks(source));
+  assert.match(execution, /business setup ran/u);
+  assert.match(execution, /clients.api.post/u);
+  assert.notDeepEqual(businessCallbacks(skeleton(source)), businessCallbacks(source));
+  assert.notDeepEqual(
+    businessCallbacks(execution.replace("'/business'", "'/wrong'")),
+    businessCallbacks(source),
+  );
+  assert.notDeepEqual(
+    businessCallbacks(execution.replace('toBe(200)', 'toBe(201)')),
+    businessCallbacks(source),
   );
 });

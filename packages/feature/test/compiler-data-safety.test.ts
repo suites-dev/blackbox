@@ -2,7 +2,7 @@ import { runInNewContext } from 'node:vm';
 import { expect, it } from 'vitest';
 import { compileFeature } from '../src/index.js';
 import { catalog } from './fixtures/catalog.js';
-import { nativeDeclarationRecorder } from './support/native-declaration-recorder.js';
+import { nativeDeclarationRecorder } from './support/native-declaration-recorder.fixture.js';
 
 const clients = { api: { from: '../clients.js', export: 'api' } } as const;
 

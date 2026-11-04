@@ -7,7 +7,7 @@ import orderPricing from './fixtures/order-pricing.feature.js';
 import subscriptionActivationE2E from './fixtures/subscription-activation-e2e.feature.js';
 import subscriptionOutlineInterpolation from './fixtures/subscription-outline-interpolation.feature.js';
 import { compileFeature } from '../src/index.js';
-import { expectValidTypeScript, expectGeneratedCodeTypechecks, generatedCodeDiagnostics } from './support/generated-typecheck.js';
+import { expectValidTypeScript, expectGeneratedCodeTypechecks, generatedCodeDiagnostics } from './support/generated-typecheck.fixture.js';
 
 const clients = { api: { from: '../clients.js', export: 'api' } } as const;
 
