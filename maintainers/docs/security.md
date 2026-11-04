@@ -142,3 +142,35 @@ For a suspected leak, rotate the credential first, investigate exposure, and fol
 the private incident process. Do not just remove the current line: history and
 published artifacts may still contain it. Follow the false-positive review process
 in [SECURITY.md](../../SECURITY.md) for a narrow, justified exception.
+
+## Withdrawn cache advisory disposition
+
+The November 2026 dependency consolidation removes the scanner exception for
+[GHSA-ch52-4w7c-c8xp](https://github.com/advisories/GHSA-ch52-4w7c-c8xp).
+GitHub withdrew that advisory on October 28, 2026 because it was not a valid
+vulnerability. The current scanner no longer reports it, so retaining the
+exception would violate the clean-audit stale-disposition gate. This is a
+withdrawal-based reassessment, not an extension of the expired exception or a
+claim that an upstream release fixed the withdrawn advisory.
+
+The pinned `http-cache-semantics@4.2.0` local patch and its nine semantic
+regression tests remain in place. Removing those behavioral protections requires
+a separate upstream behavior assessment; no new advisory is dispositioned here.
+
+## Patched matcher compatibility
+
+The workspace pins advisory-fixed `glob@14.0.2` and `minimatch@11.0.1`.
+Lerna 10.1.1 uses the supported named matcher API; its maintainer Node minimum
+requires Node 22.22.2. Import-x 4.16.2 still imports the removed `makeRe` API,
+so a pinned local patch uses `Minimatch.match` for the same allow/forbid rule.
+`scripts/security/import-x-minimatch.test.mjs` exercises both ESM and CommonJS
+entrypoints and proves allowed imports remain allowed and forbidden imports
+remain errors. Remove that compatibility patch after an upstream plugin release
+supports the fixed matcher API and passes these regression tests.
+
+Workspace overrides are not published with Blackbox packages. A clean workspace
+audit therefore does not establish a clean public npm consumer graph. In
+particular, the current oclif and Testcontainers parent ranges can still select
+older matcher/archive dependency majors. Verify upstream parent releases and an
+installed consumer graph before publication; this consolidation does not claim
+those public graphs are fixed or that the vulnerable functions are reachable.

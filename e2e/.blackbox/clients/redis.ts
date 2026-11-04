@@ -9,5 +9,7 @@ export const redis = defineClient(createClient, {
     await client.connect();
     await client.ping();
   },
-  dispose: (client) => client.disconnect(),
+  dispose: (client) => {
+    client.destroy();
+  },
 });

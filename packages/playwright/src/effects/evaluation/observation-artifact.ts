@@ -1,6 +1,6 @@
 import type { EffectScalar } from '@suites/blackbox-effects';
 
-import type { ObservationExcerpt } from './artifact-types.js';
+import type { InfrastructureClass, ObservationExcerpt } from './artifact-types.js';
 
 const semanticFields = new Set([
   'db.collection.name',
@@ -62,9 +62,33 @@ function attributes(value: unknown): ReadonlyMap<string, EffectScalar> {
   return result;
 }
 
+/** Identifies the allowlist below; it is part of the capture configuration so a change is visible. */
+export const infrastructureProfile = 'infrastructure-1';
+
+// Exact (instrumentation scope, span name) pairs that only manage connections. Nothing is inferred from other
+// names, and an unlisted span stays an application observation.
+const infrastructureSpans = [
+  { scope: '@opentelemetry/instrumentation-pg', name: 'pg-pool.connect', class: 'connection-pool' },
+  {
+    scope: '@opentelemetry/instrumentation-pg',
+    name: 'pg.connect',
+    class: 'connection-establishment',
+  },
+] as const satisfies readonly {
+  readonly scope: string;
+  readonly name: string;
+  readonly class: InfrastructureClass;
+}[];
+
+export function infrastructureClass(scope: string, name: string): InfrastructureClass | null {
+  const found = infrastructureSpans.find((entry) => entry.scope === scope && entry.name === name);
+  return found === undefined ? null : found.class;
+}
+
 function excerpt(input: {
   readonly resource: Readonly<Record<string, unknown>>;
   readonly span: Readonly<Record<string, unknown>>;
+  readonly scope: string;
 }): ObservationExcerpt | null {
   if (typeof input.span.traceId !== 'string' || typeof input.span.spanId !== 'string') {
     return null;
@@ -82,6 +106,10 @@ function excerpt(input: {
         ? String(input.span.kind)
         : 'unknown',
     status: typeof status === 'string' || typeof status === 'number' ? String(status) : 'unknown',
+    infrastructure: infrastructureClass(
+      input.scope,
+      typeof input.span.name === 'string' ? input.span.name : '',
+    ),
     fields: [...spanAttributes]
       .filter(([key]) => semanticFields.has(key))
       .map(([key, value]) => ({ key, value })),
@@ -100,11 +128,15 @@ function visitPayload(payload: unknown, visit: (observation: ObservationExcerpt)
       if (!record(scopeSpans)) {
         continue;
       }
+      const scopeName =
+        record(scopeSpans.scope) && typeof scopeSpans.scope.name === 'string'
+          ? scopeSpans.scope.name
+          : '';
       for (const span of array(scopeSpans.spans)) {
         if (!record(span)) {
           continue;
         }
-        const candidate = excerpt({ resource: resourceSpans.resource, span });
+        const candidate = excerpt({ resource: resourceSpans.resource, span, scope: scopeName });
         if (candidate !== null) {
           visit(candidate);
         }

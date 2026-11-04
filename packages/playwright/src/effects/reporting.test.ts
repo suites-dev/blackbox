@@ -31,6 +31,7 @@ function evidence(input: {
           service: input.service,
           kind: '3',
           status: '1',
+          infrastructure: null,
           fields: [{ key: 'http.route', value: input.route }],
         },
       ],

@@ -24,7 +24,7 @@ export interface ScopedObservationSource extends EffectObservationSource {
   read(): Promise<ScopedObservationReadResult>;
 }
 
-function admitSnapshot(
+export function admitSnapshot(
   snapshot: Extract<CollectorSnapshotReadResult, { kind: 'collector-snapshot-found' }>,
   selection: ActivitySelection,
 ): ScopedObservationReadResult {

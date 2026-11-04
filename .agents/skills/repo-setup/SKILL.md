@@ -17,7 +17,8 @@ installed background daemon or an additional enforced GitHub check.
    `.github/workflows/`. If this branch contains only policy documents, skip runtime
    setup and explain which validation is unavailable.
 3. Check `node --version` and `pnpm --version` against engines, `packageManager`,
-   and CI. Currently CI uses Node 22.x and pnpm 9.15.4. Prefer a compatible installed
+   and CI. Currently CI uses Node 22.x and pnpm 9.15.4. The maintainer checkout requires
+   Node >=22.22.2 because its release tooling declares that minimum. Prefer a compatible installed
    toolchain; do not silently change global tools or manifests.
 4. When dependencies are needed, run `pnpm install --frozen-lockfile`. Report
    network/authentication/toolchain failures separately from source failures.
