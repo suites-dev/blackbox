@@ -119,13 +119,36 @@ function location(
   };
 }
 
+/** Only these multipart parts carry their content in memory; stream metadata cannot establish bytes. */
+function multipartEstablished(value: unknown): boolean {
+  if (value === undefined) {
+    return true;
+  }
+  return (
+    record(value) &&
+    Object.values(value).every(
+      (part) =>
+        typeof part === 'string' ||
+        (typeof part === 'number' && Number.isFinite(part)) ||
+        typeof part === 'boolean' ||
+        (record(part) &&
+          typeof part.name === 'string' &&
+          typeof part.mimeType === 'string' &&
+          Buffer.isBuffer(part.buffer)),
+    )
+  );
+}
+
 /** Returns `null` for bodies whose content this synchronous summary cannot establish. */
 export function summarizeRequest(
   entry: RequestEntry,
   entrypointUrl: string | null,
 ): RecordedRequest | null {
   const options = record(entry.options) ? entry.options : {};
-  if (['data', 'form', 'multipart'].some((key) => options[key] instanceof FormData)) {
+  if (
+    ['data', 'form', 'multipart'].some((key) => options[key] instanceof FormData) ||
+    !multipartEstablished(options.multipart)
+  ) {
     return null;
   }
   const headers = headerSummary(options);

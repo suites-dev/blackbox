@@ -54,7 +54,7 @@ export class AttemptReport implements AttemptProgress {
   private pending = Promise.resolve();
   private attachmentFailure: unknown = null;
   private dropped = 0;
-  private effectAssertions = 0;
+  private effectAssertionSequence = 0;
   private readonly evidence: AttachedEvidence[] = [];
   private closed = false;
   private identity:
@@ -106,26 +106,21 @@ export class AttemptReport implements AttemptProgress {
   }
 
   async effectAssertion(report: EffectAssertionReport): Promise<void> {
-    this.effectAssertions++;
+    const sequence = ++this.effectAssertionSequence;
     const body = effectAttachmentBody({
-      sequence: this.effectAssertions,
+      sequence,
       report,
       sanitize: (value) => {
         const redacted = this.secrets.redact(value);
         return { text: reportText(redacted), truncated: redacted.length > reportTextLimit };
       },
     });
-    try {
-      await this.testInfo.attach(effectAttachment, { contentType: 'application/json', body });
-    } catch (error) {
-      // Nothing was attached, so the next assertion reuses this sequence number and no evidence is registered.
-      this.effectAssertions--;
-      throw error;
-    }
+    // An allocation is never reused, even when attachment fails while another call is still pending.
+    await this.testInfo.attach(effectAttachment, { contentType: 'application/json', body });
     this.evidence.push({
       kind: 'assertion-evidence',
       name: effectAttachment,
-      sequence: this.effectAssertions,
+      sequence,
       digest: digestBytes(body),
       bytes: Buffer.byteLength(body),
       ...assertionFields(body),
