@@ -2,10 +2,13 @@ import { realpathSync } from 'node:fs';
 import { relative } from 'node:path';
 
 import type { TestInfo } from '@playwright/test';
+import type { RecordedStimuli } from '../effects/attempt-effects.js';
 import type { EffectAssertionReport } from '../effects/runtime.js';
 import type { BlackboxSandbox, BlackboxTelemetry } from '../types.js';
 
 import { effectAttachment, effectAttachmentBody } from './effects/attachment.js';
+import { finalSnapshotAttachment, type FinalSnapshotDocument } from '../effects/final-snapshot.js';
+import { digestBytes, digestOf, type Digest } from '../envelope/index.js';
 import {
   attemptAttachment,
   progressAttachment,
@@ -16,6 +19,34 @@ import { SecretValues } from './redaction/secret-environment.js';
 import { reportText, reportTextLimit } from './text.js';
 import { sandboxLifecycleEnabled } from './options.js';
 
+export interface AttachedEvidence {
+  readonly kind: 'assertion-evidence' | 'final-snapshot';
+  readonly name: string;
+  readonly sequence: number;
+  readonly digest: Digest;
+  readonly bytes: number;
+  readonly outcome: string;
+  readonly evaluation: string;
+  readonly contractDigest: Digest | null;
+}
+
+function assertionFields(
+  body: string,
+): Pick<AttachedEvidence, 'outcome' | 'evaluation' | 'contractDigest'> {
+  try {
+    const { assertion } = JSON.parse(body) as {
+      assertion: { outcome: string; evaluation: string; contract: unknown };
+    };
+    return {
+      outcome: assertion.outcome,
+      evaluation: assertion.evaluation,
+      contractDigest: digestOf(assertion.contract),
+    };
+  } catch {
+    return { outcome: 'unknown', evaluation: 'unknown', contractDigest: null };
+  }
+}
+
 /** Attachments use Playwright's worker transport and remain available to other reporters. */
 export class AttemptReport implements AttemptProgress {
   private readonly started = Date.now();
@@ -24,7 +55,8 @@ export class AttemptReport implements AttemptProgress {
   private pending = Promise.resolve();
   private attachmentFailure: unknown = null;
   private dropped = 0;
-  private effectAssertions = 0;
+  private effectAssertionSequence = 0;
+  private readonly evidence: AttachedEvidence[] = [];
   private closed = false;
   private identity:
     | { readonly kind: 'not-ready' }
@@ -53,6 +85,24 @@ export class AttemptReport implements AttemptProgress {
     return this.identity.kind === 'acquired' ? this.identity.sandboxId : null;
   }
 
+  /**
+   * The recorded stimuli with known secrets removed from titles, request paths and origins. A request whose path held a
+   * secret is counted as unestablished: the redacted path or origin cannot show that two runs sent the same input.
+   */
+  redactStimuli(recorded: RecordedStimuli): RecordedStimuli {
+    let redactedRequests = 0;
+    const stimuli = recorded.stimuli.map(({ title, requests }) => ({
+      title: this.secrets.redact(title),
+      requests: requests.map((request) => {
+        const path = this.secrets.redact(request.path);
+        const origin = request.origin === null ? null : this.secrets.redact(request.origin);
+        redactedRequests += path === request.path && origin === request.origin ? 0 : 1;
+        return { ...request, path, origin };
+      }),
+    }));
+    return { ...recorded, stimuli, opaque: recorded.opaque + redactedRequests };
+  }
+
   protect(environment: Readonly<Record<string, string>>): void {
     this.secrets.protect(environment);
   }
@@ -75,18 +125,81 @@ export class AttemptReport implements AttemptProgress {
   }
 
   async effectAssertion(report: EffectAssertionReport): Promise<void> {
-    this.effectAssertions++;
-    await this.testInfo.attach(effectAttachment, {
-      contentType: 'application/json',
-      body: effectAttachmentBody({
-        sequence: this.effectAssertions,
-        report,
-        sanitize: (value) => {
-          const redacted = this.secrets.redact(value);
-          return { text: reportText(redacted), truncated: redacted.length > reportTextLimit };
-        },
-      }),
+    const sequence = ++this.effectAssertionSequence;
+    const body = effectAttachmentBody({
+      sequence,
+      report,
+      sanitize: (value) => {
+        const redacted = this.secrets.redact(value);
+        return { text: reportText(redacted), truncated: redacted.length > reportTextLimit };
+      },
     });
+    // An allocation is never reused, even when attachment fails while another call is still pending.
+    await this.testInfo.attach(effectAttachment, { contentType: 'application/json', body });
+    this.evidence.push({
+      kind: 'assertion-evidence',
+      name: effectAttachment,
+      sequence,
+      digest: digestBytes(body),
+      bytes: Buffer.byteLength(body),
+      ...assertionFields(body),
+    });
+  }
+
+  /** The phase of the last progress event, which names where an attempt that failed to start was. */
+  lastPhase(): string {
+    const last = this.events.at(-1);
+    return last === undefined ? 'start' : last.phase;
+  }
+
+  /** An error as one redacted, bounded line. */
+  describe(error: unknown): string {
+    return this.sanitize(error instanceof Error ? error.message : String(error));
+  }
+
+  /** What this attempt attached as evidence, with the digest of each exact body. */
+  attachedEvidence(): readonly AttachedEvidence[] {
+    return this.evidence;
+  }
+
+  /**
+   * Attaches the final snapshot with the same redaction and truncation accounting as an assertion, and returns the
+   * document exactly as attached, so anything derived from it (the envelope) holds the redacted content and the
+   * same identity as the attachment.
+   */
+  async finalSnapshot(snapshot: FinalSnapshotDocument): Promise<FinalSnapshotDocument> {
+    let truncatedStrings = 0;
+    const render = (display: number): string =>
+      JSON.stringify(
+        { ...snapshot, display: { stringLimit: reportTextLimit, truncatedStrings: display } },
+        (_key, value: unknown) => {
+          if (typeof value !== 'string') {
+            return value;
+          }
+          const redacted = this.secrets.redact(value);
+          if (redacted.length > reportTextLimit) {
+            truncatedStrings++;
+          }
+          return reportText(redacted);
+        },
+      );
+    render(0);
+    const counted = truncatedStrings;
+    truncatedStrings = 0;
+    const body = render(counted);
+    // Registered only once attached: the envelope must never reference a document that was not produced.
+    await this.testInfo.attach(finalSnapshotAttachment, { contentType: 'application/json', body });
+    this.evidence.push({
+      kind: 'final-snapshot',
+      name: finalSnapshotAttachment,
+      sequence: 1,
+      digest: digestBytes(body),
+      bytes: Buffer.byteLength(body),
+      outcome: snapshot.attempt.status,
+      evaluation: snapshot.observation.state,
+      contractDigest: null,
+    });
+    return JSON.parse(body) as FinalSnapshotDocument;
   }
 
   emit(phase: string, status: AttemptEvent['status'], detail: string): void {

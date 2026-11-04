@@ -24,6 +24,12 @@
       "import": "./dist/config.js",
       "default": "./dist/config.js"
     },
+    "./history": {
+      "blackbox-source": "./src/history/index.ts",
+      "types": "./dist/history/index.d.ts",
+      "import": "./dist/history/index.js",
+      "default": "./dist/history/index.js"
+    },
     "./reporter": {
       "blackbox-source": "./src/reporter.ts",
       "types": "./dist/reporter.d.ts",

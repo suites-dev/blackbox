@@ -16,4 +16,9 @@ export interface BlackboxTestOptions extends Partial<Record<'blackboxClients', C
    * next Playwright run does not clear it. Default: false.
    */
   readonly blackboxRetainAttempts: boolean;
+  /**
+   * Attach `blackbox-effects-final` after each attempt's sandbox is cleaned up: one read of every
+   * completed stimulus activity, with the collector's own shutdown state beside it. Default: true.
+   */
+  readonly blackboxFinalSnapshot: boolean;
 }

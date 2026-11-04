@@ -21,6 +21,14 @@ const secretSegments = new Set([
 // Compound spellings without separators, such as DBPASSWORD or apiKey.
 const secretFragment = /(?:password|passwd|passphrase|secret|token|credential|apikey|privatekey)/u;
 
+// A URL with credentials in it (scheme://user:password@host) carries a secret whatever the variable is called.
+const credentialUrl = /:\/\/[^/\s:@]*:[^/\s@]*@/u;
+
+/** Whether an environment entry is a secret by its name, or by holding a URL with embedded credentials. */
+export function isSecretEnvironmentEntry(name: string, value: string): boolean {
+  return isSecretEnvironmentName(name) || credentialUrl.test(value);
+}
+
 /** Whether an environment entry's name marks its value as a secret. */
 export function isSecretEnvironmentName(name: string): boolean {
   const segments = name
@@ -43,7 +51,7 @@ export class SecretValues {
     // Redacting every value garbles IDs and paths whenever a profile sets a
     // short flag such as `1`.
     for (const [name, value] of Object.entries(environment)) {
-      if (value.length > 0 && isSecretEnvironmentName(name)) {
+      if (value.length > 0 && isSecretEnvironmentEntry(name, value)) {
         this.values.add(value);
       }
     }

@@ -1,8 +1,16 @@
+import { AsyncLocalStorage } from 'node:async_hooks';
+
 import { injectW3CTextMap, type TelemetryScopeResult } from '@suites/blackbox-telemetry';
 
 import { createActivityRegistry } from '../activity-registry.js';
 import type { ActivitySelection, OwnedActivity } from '../types.js';
 import type { BlackboxStimulusScope } from '../../steps/types.js';
+import {
+  summarizeRequest,
+  type RecordedRequest,
+  type RecordedStimulus,
+  type RequestEntry,
+} from '../../stimulus/summary.js';
 
 export type CompletedStimuli =
   { readonly kind: 'none' } | { readonly kind: 'selected'; readonly selection: ActivitySelection };
@@ -26,6 +34,11 @@ function stimulusScope(activity: OwnedActivity): BlackboxStimulusScope {
 export class AttemptStimuli {
   readonly #registry: ReturnType<typeof createActivityRegistry>;
   readonly #completed: OwnedActivity[] = [];
+  readonly #current = new AsyncLocalStorage<number>();
+  readonly #stimuli: { title: string; requests: RecordedRequest[] }[] = [];
+  #unscoped = 0;
+  #opaque = 0;
+  #running = 0;
   #active = true;
 
   constructor(input: { readonly sessionId: string; readonly executionId: string }) {
@@ -43,14 +56,45 @@ export class AttemptStimuli {
       );
     }
     const activity = this.#registry.begin({ purpose: 'stimulus', name });
+    const slot = this.#stimuli.push({ title: name, requests: [] }) - 1;
+    // Requests are listed per scope, so the order between scopes that overlap cannot be represented.
+    this.#opaque += this.#running > 0 ? 1 : 0;
+    this.#running++;
     try {
-      const result = await action(stimulusScope(activity));
+      const result = await this.#current.run(slot, () => action(stimulusScope(activity)));
       this.#finish(activity, { kind: 'telemetry-scope-succeeded' });
       return result;
     } catch (error) {
       this.#finish(activity, failure(error));
       throw error;
+    } finally {
+      this.#running--;
     }
+  }
+
+  /** Called by the request fixture for every request the test makes; attributed to the running stimulus. */
+  record(entry: RequestEntry, entrypointUrl: string | null, opaque: boolean): void {
+    const slot = this.#current.getStore();
+    if (opaque) {
+      this.#opaque++;
+    } else if (slot === undefined) {
+      this.#unscoped++;
+    } else {
+      const summary = summarizeRequest(entry, entrypointUrl);
+      if (summary === null) {
+        this.#opaque++;
+      } else {
+        this.#stimuli[slot].requests.push(summary);
+      }
+    }
+  }
+
+  recorded(): {
+    readonly stimuli: readonly RecordedStimulus[];
+    readonly unscoped: number;
+    readonly opaque: number;
+  } {
+    return { stimuli: this.#stimuli, unscoped: this.#unscoped, opaque: this.#opaque };
   }
 
   completed(): CompletedStimuli {

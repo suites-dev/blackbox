@@ -2,7 +2,6 @@ import { createAttemptStep } from './steps/step-context.js';
 import { runClients } from './clients/clients.js';
 import {
   test as playwrightTest,
-  type APIRequestContext,
   type PlaywrightTestArgs,
   type PlaywrightTestOptions,
   type PlaywrightWorkerArgs,
@@ -19,7 +18,7 @@ import {
   type RunningBlackboxAttempt,
 } from './runtime/acquisition.js';
 import { createSystemTestFacade } from './system-test.js';
-import { sandboxRequest } from './request/sandbox-request.js';
+import { requestFixtureFor } from './request/request-fixture.js';
 import type {
   BlackboxStep,
   BlackboxNativeTestArgs,
@@ -111,21 +110,6 @@ async function stepFixture(
   }
 }
 
-function requestFixtureFor(activeAttempts: WeakMap<TestInfo, RunningBlackboxAttempt>) {
-  return async (
-    { request }: { readonly request: APIRequestContext },
-    use: (request: APIRequestContext) => Promise<void>,
-    testInfo: TestInfo,
-  ): Promise<void> => {
-    await use(
-      sandboxRequest(request, () => {
-        const attempt = activeAttempts.get(testInfo);
-        return attempt === undefined ? undefined : attempt.sandbox.entrypoint;
-      }),
-    );
-  };
-}
-
 async function useSelectedAttempt(
   attempt: RunningBlackboxAttempt,
   testInfo: TestInfo,
@@ -140,6 +124,23 @@ async function useSelectedAttempt(
   }
 }
 
+function testScopeFixture(testScopes: WeakSet<TestInfo>, testStartedAt: WeakMap<TestInfo, number>) {
+  return async (
+    { catalogEntry: _catalogEntry }: Pick<BlackboxTestOptions, 'catalogEntry'>,
+    use: (value: undefined) => Promise<void>,
+    testInfo: TestInfo,
+  ): Promise<void> => {
+    testScopes.add(testInfo);
+    testStartedAt.set(testInfo, performance.now());
+    try {
+      await use(undefined);
+    } finally {
+      testScopes.delete(testInfo);
+      testStartedAt.delete(testInfo);
+    }
+  };
+}
+
 export function createBlackboxTest(
   runtime: BlackboxAttemptRuntime,
   policy: BlackboxFixturePolicy = defaultPolicy,
@@ -151,23 +152,18 @@ export function createBlackboxTest(
     catalogEntry: [{ kind: 'unselected' }, { option: true }],
     blackboxEnvironment: [Object.freeze({}), { option: true }],
     blackboxRetainAttempts: [false, { option: true }],
+    blackboxFinalSnapshot: [true, { option: true }],
     blackboxClients: [{}, { option: true }],
-    _blackboxTestScope: [
-      async ({ catalogEntry: _catalogEntry }, use, testInfo) => {
-        testScopes.add(testInfo);
-        testStartedAt.set(testInfo, performance.now());
-        try {
-          await use(undefined);
-        } finally {
-          testScopes.delete(testInfo);
-          testStartedAt.delete(testInfo);
-        }
-      },
-      { auto: true, timeout: 0 },
-    ],
+    _blackboxTestScope: [testScopeFixture(testScopes, testStartedAt), { auto: true, timeout: 0 }],
     _blackboxAttempt: [
       async (
-        { catalogEntry, blackboxEnvironment, blackboxRetainAttempts, blackboxClients },
+        {
+          catalogEntry,
+          blackboxEnvironment,
+          blackboxRetainAttempts,
+          blackboxFinalSnapshot,
+          blackboxClients,
+        },
         use,
         testInfo,
       ) => {
@@ -187,6 +183,7 @@ export function createBlackboxTest(
           catalogEntry,
           blackboxEnvironment,
           blackboxRetainAttempts,
+          blackboxFinalSnapshot,
           blackboxClients,
           use: (attempt) => useSelectedAttempt(attempt, testInfo, activeAttempts, use),
         });
