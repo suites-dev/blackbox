@@ -134,4 +134,11 @@ describe('stimulus summary of requests that vary', () => {
     expect(sent('abc')).not.toBe(sent(Buffer.from('abc')));
     expect(sent('abc')).toBe(sent('abc'));
   });
+
+  it('keeps the order of the values of a repeated query name', () => {
+    const sent = (query: string) =>
+      fingerprint(entry({ url: `http://127.0.0.1:41000/items?${query}` }));
+    expect(sent('sort=a&sort=b')).not.toBe(sent('sort=b&sort=a'));
+    expect(sent('a=1&b=2')).toBe(sent('b=2&a=1'));
+  });
 });

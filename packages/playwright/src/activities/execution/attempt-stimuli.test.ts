@@ -38,6 +38,25 @@ describe('recorded stimulus requests', () => {
         .stimuli.map(({ title, requests }) => [title, requests.map(({ path }) => path)]),
     );
     expect(byTitle).toEqual({ first: ['/a'], second: ['/b'] });
+    expect(stimuli.recorded().opaque).toBe(1);
+  });
+
+  it('counts overlapping stimuli as unestablished, since their relative request order is not recorded', async () => {
+    const stimuli = attempt();
+    await Promise.all([
+      stimuli.run('first', () => Promise.resolve()),
+      stimuli.run('second', () => Promise.resolve()),
+    ]);
+    expect(stimuli.recorded().opaque).toBe(1);
+  });
+
+  it('does not count stimuli that run one after the other', async () => {
+    const stimuli = attempt();
+    await stimuli.run('first', () => Promise.resolve());
+    await stimuli.run('second', () => Promise.resolve());
+    await stimuli.run('third', () => Promise.reject(new Error('boom'))).catch(() => undefined);
+    await stimuli.run('fourth', () => Promise.resolve());
+    expect(stimuli.recorded().opaque).toBe(0);
   });
 
   it('counts a request object it cannot summarize instead of ignoring it', async () => {

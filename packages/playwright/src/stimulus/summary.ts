@@ -99,7 +99,8 @@ function queryPairs(parsed: URL, params: unknown): [string, string][] {
   for (const [name, value] of applied) {
     search.set(name, value);
   }
-  return [...search.entries()].sort(([a, av], [b, bv]) => (a + av < b + bv ? -1 : 1));
+  // By name only: the order of one name's values is part of the input (`sort=a&sort=b` is not `sort=b&sort=a`).
+  return [...search.entries()].sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
 }
 
 function location(

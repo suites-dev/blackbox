@@ -38,6 +38,7 @@ export class AttemptStimuli {
   readonly #stimuli: { title: string; requests: RecordedRequest[] }[] = [];
   #unscoped = 0;
   #opaque = 0;
+  #running = 0;
   #active = true;
 
   constructor(input: { readonly sessionId: string; readonly executionId: string }) {
@@ -56,6 +57,9 @@ export class AttemptStimuli {
     }
     const activity = this.#registry.begin({ purpose: 'stimulus', name });
     const slot = this.#stimuli.push({ title: name, requests: [] }) - 1;
+    // Requests are listed per scope, so the order between scopes that overlap cannot be represented.
+    this.#opaque += this.#running > 0 ? 1 : 0;
+    this.#running++;
     try {
       const result = await this.#current.run(slot, () => action(stimulusScope(activity)));
       this.#finish(activity, { kind: 'telemetry-scope-succeeded' });
@@ -63,6 +67,8 @@ export class AttemptStimuli {
     } catch (error) {
       this.#finish(activity, failure(error));
       throw error;
+    } finally {
+      this.#running--;
     }
   }
 
