@@ -1,9 +1,9 @@
-import { constants } from 'node:fs';
-import { open, readdir, realpath, type FileHandle } from 'node:fs/promises';
+import { readdir, realpath } from 'node:fs/promises';
 import { isAbsolute, join, relative, resolve, sep } from 'node:path';
 
 import { digestBytes, digestOf, type Digest } from '../canonical.js';
 import type { EvidenceRef } from '../types.js';
+import { regularFileBytes as readRegularFile } from './regular-file.js';
 
 async function entries(
   directory: string,
@@ -69,30 +69,8 @@ export async function evidencePathInside(
   }
 }
 
-/**
- * Digest of a regular file no larger than `maxEvidenceBytes`. The file is opened once and checked through that
- * descriptor, so what is read is what was checked even if the path is replaced in between.
- */
-async function regularFileBytes(path: string): Promise<Buffer | null> {
-  let handle: FileHandle | null = null;
-  try {
-    // Non-blocking, so a pipe in place of a file is reported instead of waited on.
-    handle = await open(path, constants.O_RDONLY | constants.O_NONBLOCK);
-    const info = await handle.stat();
-    if (!info.isFile() || info.size > maxEvidenceBytes) {
-      return null;
-    }
-    const buffer = Buffer.alloc(info.size);
-    const { bytesRead } = await handle.read(buffer, 0, info.size, 0);
-    return buffer.subarray(0, bytesRead);
-  } catch {
-    return null;
-  } finally {
-    if (handle !== null) {
-      await handle.close();
-    }
-  }
-}
+const regularFileBytes = (path: string): Promise<Buffer | null> =>
+  readRegularFile(path, maxEvidenceBytes);
 
 async function regularFileDigest(path: string): Promise<Digest | null> {
   const bytes = await regularFileBytes(path);

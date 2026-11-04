@@ -1,3 +1,4 @@
+import { execFileSync } from 'node:child_process';
 import { rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
@@ -105,5 +106,18 @@ describe('catalog capture', () => {
         'blackbox.config.yaml': catalogYaml.replace('.blackbox/drivers/api.mjs', '../outside.mjs'),
       }),
     ).rejects.toThrow(/Invalid Blackbox catalog/u);
+  });
+});
+
+describe('catalog capture of a referenced file that is not an ordinary file', () => {
+  it('reports a pipe as unreadable instead of waiting on it', async () => {
+    const { catalog } = await capture({}, async (root) => {
+      await rm(join(root, '.blackbox/drivers/api.mjs'));
+      execFileSync('mkfifo', [join(root, '.blackbox/drivers/api.mjs')]);
+    });
+    expect(catalog.inputs.find(({ role }) => role === 'driver')).toMatchObject({
+      state: 'unreadable',
+      digest: null,
+    });
   });
 });

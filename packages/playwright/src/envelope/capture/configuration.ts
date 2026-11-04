@@ -1,5 +1,5 @@
 import { execFile } from 'node:child_process';
-import { readFile, realpath } from 'node:fs/promises';
+import { realpath } from 'node:fs/promises';
 import { arch, platform } from 'node:os';
 import { dirname, isAbsolute, relative, resolve, sep } from 'node:path';
 import { promisify } from 'node:util';
@@ -14,6 +14,7 @@ import { activityAdmissionLimits } from '../../activities/limits.js';
 import { evidenceLimits } from '../../effects/evaluation/artifact.js';
 import { infrastructureProfile } from '../../effects/evaluation/observation-artifact.js';
 import { digestBytes, type Digest } from '../canonical.js';
+import { regularFileBytes } from './regular-file.js';
 import {
   captureConfiguration,
   catalogConfiguration,
@@ -31,6 +32,9 @@ import type {
 
 const run = promisify(execFile);
 
+/** The largest manifest or lock file a configuration digest reads. */
+const maxInputBytes = 64 * 1024 * 1024;
+
 async function readContained(
   root: string,
   path: string,
@@ -42,7 +46,10 @@ async function readContained(
     if (inside.startsWith(`..${sep}`) || inside === '..' || isAbsolute(inside)) {
       return { state: 'unreadable', digest: null };
     }
-    return { state: 'present', digest: digestBytes(await readFile(real)) };
+    const bytes = await regularFileBytes(real, maxInputBytes);
+    return bytes === null
+      ? { state: 'unreadable', digest: null }
+      : { state: 'present', digest: digestBytes(bytes) };
   } catch (error) {
     const code = error instanceof Error && 'code' in error ? error.code : undefined;
     return { state: code === 'ENOENT' ? 'missing' : 'unreadable', digest: null };
@@ -188,7 +195,8 @@ export async function captureCapture(telemetryComposeFile: string): Promise<Capt
   const limits: Record<string, string> = {};
   let state: CaptureConfiguration['state'] = 'collector-config-unavailable';
   try {
-    const parsed: unknown = JSON.parse(await readFile(telemetryComposeFile, 'utf8'));
+    const composed = await regularFileBytes(telemetryComposeFile, maxInputBytes);
+    const parsed: unknown = JSON.parse(composed === null ? '' : composed.toString('utf8'));
     const services = isRecord(parsed) && isRecord(parsed.services) ? parsed.services : {};
     const collector = services['blackbox-otel-collector'];
     if (isRecord(collector)) {
