@@ -105,7 +105,11 @@ function advisoryEntries(report) {
     const detail = report.error?.message || report.error?.code || 'unknown scanner error';
     fail(`scanner returned an error: ${detail}`);
   }
-  if (report.advisories === null || typeof report.advisories !== 'object') {
+  if (
+    report.advisories === null ||
+    typeof report.advisories !== 'object' ||
+    Array.isArray(report.advisories)
+  ) {
     fail('scanner output has no advisories object');
   }
   if (!Array.isArray(report.muted)) {
@@ -124,7 +128,35 @@ function advisoryEntries(report) {
   ) {
     fail('scanner vulnerability counts are missing or invalid');
   }
-  if (severities.reduce((total, severity) => total + counts[severity], 0) !== entries.length) {
+  // npm's legacy audit metadata counts affected installed versions, not unique IDs.
+  const findingCounts = Object.fromEntries(severities.map((severity) => [severity, 0]));
+  for (const [, advisory] of entries) {
+    if (
+      advisory === null ||
+      typeof advisory !== 'object' ||
+      !severities.includes(advisory.severity)
+    ) {
+      fail('scanner advisory has an invalid severity');
+    }
+    if (!Array.isArray(advisory.findings) || advisory.findings.length === 0) {
+      fail('scanner advisory has no findings');
+    }
+    for (const finding of advisory.findings) {
+      if (
+        finding === null ||
+        typeof finding !== 'object' ||
+        typeof finding.version !== 'string' ||
+        finding.version.trim() === '' ||
+        !Array.isArray(finding.paths) ||
+        finding.paths.length === 0 ||
+        finding.paths.some((path) => typeof path !== 'string' || path.trim() === '')
+      ) {
+        fail('scanner advisory has an invalid finding');
+      }
+      findingCounts[advisory.severity] += 1;
+    }
+  }
+  if (severities.some((severity) => counts[severity] !== findingCounts[severity])) {
     fail('scanner vulnerability counts do not match its advisories');
   }
   return entries;

@@ -32,13 +32,13 @@
     "prepare": "husky"
   },
   "engines": {
-    "node": ">=22.15"
+    "node": ">=22.22.2"
   },
   "packageManager": "pnpm@9.15.4",
   "pnpm": {
     "overrides": {
       "@grpc/grpc-js": "1.14.5",
-      "@nx/devkit": "23.2.1",
+      "@nx/devkit": "23.3.1",
       "@protobufjs/utf8": "1.1.1",
       "axios": "1.20.0",
       "baseline-browser-mapping": "2.11.0",
@@ -46,23 +46,28 @@
       "brace-expansion@2": "2.1.7",
       "brace-expansion@5": "5.0.12",
       "browserslist": "4.28.7",
-      "fast-uri": "3.1.8",
+      "fast-uri": "3.1.9",
+      "follow-redirects": "1.16.2",
+      "glob": "14.0.2",
       "handlebars": "4.7.10",
-      "ip-address": "10.7.2",
+      "ip-address": "10.7.4",
       "js-yaml": "4.3.2",
+      "minimatch": "11.0.1",
       "nanoid@3": "3.3.18",
-      "nx": "23.2.1",
+      "nx": "23.3.1",
       "pacote": "21.5.1",
       "postcss-selector-parser": "7.1.6",
       "protobufjs": "7.6.5",
       "smol-toml": "1.9.0",
       "source-map-js": "1.2.2",
       "tmp": "0.2.7",
-      "undici": "6.28.1",
-      "uuid": "11.1.1"
+      "undici": "6.29.1",
+      "uuid": "11.1.1",
+      "vite": "7.3.7"
     },
     "patchedDependencies": {
-      "http-cache-semantics@4.2.0": "patches/http-cache-semantics@4.2.0.patch"
+      "http-cache-semantics@4.2.0": "patches/http-cache-semantics@4.2.0.patch",
+      "eslint-plugin-import-x@4.16.2": "patches/eslint-plugin-import-x@4.16.2.patch"
     }
   },
   "devDependencies": {
@@ -80,7 +85,7 @@
     "@suites/blackbox-inst-runtime-node": "workspace:*",
     "@suites/blackbox-skills": "workspace:*",
     "@types/node": "catalog:",
-    "@vitest/coverage-v8": "5.0.1",
+    "@vitest/coverage-v8": "5.0.3",
     "dependency-cruiser": "18.7.0",
     "eslint": "catalog:",
     "eslint-config-prettier": "catalog:",
@@ -88,11 +93,12 @@
     "eslint-plugin-unicorn": "catalog:",
     "globals": "catalog:",
     "husky": "catalog:",
-    "lerna": "10.0.1",
+    "lerna": "10.1.1",
     "lint-staged": "catalog:",
     "prettier": "catalog:",
     "typescript": "catalog:",
     "typescript-eslint": "catalog:",
+    "vite": "7.3.7",
     "vitest": "catalog:"
   },
   "lint-staged": {

@@ -10,7 +10,7 @@ still in progress.
 
 ## Set up and validate
 
-Use Node.js 22.15 or newer in the Node 22 line and pnpm 9.15.4 (the pinned
+Use Node.js 22.22.2 or newer in the Node 22 line and pnpm 9.15.4 (the pinned
 `packageManager`). Docker is required for Capsule end-to-end tests.
 
 ```sh
