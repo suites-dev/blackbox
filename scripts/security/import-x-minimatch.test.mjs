@@ -19,6 +19,7 @@ const plugins = {
 
 for (const [entrypoint, plugin] of Object.entries(plugins)) {
   test(`patched import-x ${entrypoint} retains allow and forbid matching`, async (context) => {
+    mkdirSync(resolve('.blackbox/tmp'), { recursive: true });
     const directory = mkdtempSync(resolve('.blackbox/tmp/import-x-rule-'));
     context.after(() => rmSync(directory, { recursive: true, force: true }));
     for (const name of ['allowed', 'blocked']) {
