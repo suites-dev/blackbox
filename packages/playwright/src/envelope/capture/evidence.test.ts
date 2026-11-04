@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 
 import { digestBytes } from '../canonical.js';
 import { remove } from './capture.fixture.js';
-import { retainedEvidence } from './evidence.js';
+import { currentEvidenceDigest, fragmentsDigest, retainedEvidence } from './evidence.js';
 
 const roots: string[] = [];
 afterEach(async () => {
@@ -74,5 +74,36 @@ describe('retained evidence references', () => {
       collectorDirectory: join(tmpdir(), 'bb-missing-collector'),
     });
     expect(refs).toEqual([]);
+  });
+
+  it('never follows a symbolic link when it reads fragments, at capture or at verification', async () => {
+    const found = await attempt({ '1.json': 'a' });
+    const outside = join(found.root, 'outside.txt');
+    await writeFile(outside, 'outside bytes');
+    const fragments = join(found.collector, 'session', 'execution', 'fragments');
+    const capture = () =>
+      retainedEvidence({
+        root: found.root,
+        sandboxRecord: found.record,
+        collectorDirectory: found.collector,
+      });
+    const before = (await capture()).find(({ kind }) => kind === 'collector-fragments');
+    await symlink(outside, join(fragments, '2.json'));
+    const after = (await capture()).find(({ kind }) => kind === 'collector-fragments');
+    expect(after).toEqual(before);
+    if (before === undefined) {
+      throw new Error('fixture has no fragments reference');
+    }
+    expect(await fragmentsDigest(fragments)).toBe(before.id);
+    expect(await currentEvidenceDigest(found.root, before)).toBe(before.id);
+  });
+
+  it('reports fragments whose only entries are links as missing', async () => {
+    const found = await attempt({});
+    const outside = join(found.root, 'outside.txt');
+    await writeFile(outside, 'outside bytes');
+    const fragments = join(found.collector, 'session', 'execution', 'fragments');
+    await symlink(outside, join(fragments, '1.json'));
+    expect(await fragmentsDigest(fragments)).toBeNull();
   });
 });

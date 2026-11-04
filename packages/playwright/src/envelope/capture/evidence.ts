@@ -1,4 +1,4 @@
-import { open, readdir, readFile, realpath, type FileHandle } from 'node:fs/promises';
+import { open, readdir, realpath, type FileHandle } from 'node:fs/promises';
 import { isAbsolute, join, relative, resolve, sep } from 'node:path';
 
 import { digestBytes, digestOf, type Digest } from '../canonical.js';
@@ -6,12 +6,13 @@ import type { EvidenceRef } from '../types.js';
 
 async function entries(
   directory: string,
-): Promise<{ name: string; path: string; directory: boolean }[]> {
+): Promise<{ name: string; path: string; directory: boolean; regular: boolean }[]> {
   try {
     return (await readdir(directory, { withFileTypes: true })).map((entry) => ({
       name: entry.name,
       path: join(directory, entry.name),
       directory: entry.isDirectory(),
+      regular: entry.isFile(),
     }));
   } catch {
     return [];
@@ -24,7 +25,10 @@ async function fileRef(
   kind: EvidenceRef['kind'],
 ): Promise<EvidenceRef | null> {
   try {
-    const bytes = await readFile(path);
+    const bytes = await regularFileBytes(path);
+    if (bytes === null) {
+      return null;
+    }
     return {
       id: digestBytes(bytes),
       kind,
@@ -34,24 +38,6 @@ async function fileRef(
   } catch {
     return null;
   }
-}
-
-/** The digest a fragments directory has now, computed the way the reference was when it was captured. */
-export async function fragmentsDigest(directory: string): Promise<Digest | null> {
-  const files = (await entries(directory))
-    .filter((entry) => !entry.directory)
-    .sort((a, b) => (a.name < b.name ? -1 : 1));
-  if (files.length === 0) {
-    return null;
-  }
-  return digestOf(
-    await Promise.all(
-      files.map(async (file) => ({
-        name: file.name,
-        digest: digestBytes(await readFile(file.path)),
-      })),
-    ),
-  );
 }
 
 /** The largest retained file a re-verification will read. */
@@ -86,7 +72,7 @@ export async function evidencePathInside(
  * Digest of a regular file no larger than `maxEvidenceBytes`. The file is opened once and checked through that
  * descriptor, so what is read is what was checked even if the path is replaced in between.
  */
-async function regularFileDigest(path: string): Promise<Digest | null> {
+async function regularFileBytes(path: string): Promise<Buffer | null> {
   let handle: FileHandle | null = null;
   try {
     handle = await open(path, 'r');
@@ -96,7 +82,7 @@ async function regularFileDigest(path: string): Promise<Digest | null> {
     }
     const buffer = Buffer.alloc(info.size);
     const { bytesRead } = await handle.read(buffer, 0, info.size, 0);
-    return digestBytes(buffer.subarray(0, bytesRead));
+    return buffer.subarray(0, bytesRead);
   } catch {
     return null;
   } finally {
@@ -104,6 +90,43 @@ async function regularFileDigest(path: string): Promise<Digest | null> {
       await handle.close();
     }
   }
+}
+
+async function regularFileDigest(path: string): Promise<Digest | null> {
+  const bytes = await regularFileBytes(path);
+  return bytes === null ? null : digestBytes(bytes);
+}
+
+/**
+ * The regular files of a fragments directory with their contents, or `null` when it has none or one cannot be
+ * read within the bounds (a symbolic link is not a regular file here; it is never followed).
+ */
+async function fragmentFiles(
+  directory: string,
+): Promise<{ name: string; content: Buffer }[] | null> {
+  const listed = (await entries(directory))
+    .filter((entry) => entry.regular)
+    .sort((a, b) => (a.name < b.name ? -1 : 1));
+  if (listed.length === 0) {
+    return null;
+  }
+  const files: { name: string; content: Buffer }[] = [];
+  for (const file of listed) {
+    const content = await regularFileBytes(file.path);
+    if (content === null) {
+      return null;
+    }
+    files.push({ name: file.name, content });
+  }
+  return files;
+}
+
+/** The digest a fragments directory has now, computed the way the reference was when it was captured. */
+export async function fragmentsDigest(directory: string): Promise<Digest | null> {
+  const files = await fragmentFiles(directory);
+  return files === null
+    ? null
+    : digestOf(files.map(({ name, content }) => ({ name, digest: digestBytes(content) })));
 }
 
 /**
@@ -125,22 +148,14 @@ export async function currentEvidenceDigest(
 }
 
 async function fragmentsRef(root: string, directory: string): Promise<EvidenceRef | null> {
-  const files = (await entries(directory))
-    .filter((entry) => !entry.directory)
-    .sort((a, b) => (a.name < b.name ? -1 : 1));
-  if (files.length === 0) {
+  const files = await fragmentFiles(directory);
+  if (files === null) {
     return null;
   }
-  const parts = await Promise.all(
-    files.map(async (file) => {
-      const content = await readFile(file.path);
-      return { name: file.name, digest: digestBytes(content), bytes: content.byteLength };
-    }),
-  );
   return {
-    id: digestOf(parts.map(({ name, digest }) => ({ name, digest }))),
+    id: digestOf(files.map(({ name, content }) => ({ name, digest: digestBytes(content) }))),
     kind: 'collector-fragments',
-    bytes: parts.reduce((sum, part) => sum + part.bytes, 0),
+    bytes: files.reduce((sum, { content }) => sum + content.byteLength, 0),
     locator: { type: 'file', root: 'test-output', path: relative(root, directory) },
   };
 }
@@ -162,7 +177,7 @@ async function collectorRefs(
       }
     } else if (entry.directory) {
       found.push(...(await collectorRefs(root, entry.path, depth - 1)));
-    } else if (entry.name === 'collector-lifecycle.json') {
+    } else if (entry.regular && entry.name === 'collector-lifecycle.json') {
       const ref = await fileRef(root, entry.path, 'collector-lifecycle');
       if (ref !== null) {
         found.push(ref);
