@@ -14,6 +14,7 @@ export default [
     files: [
       'tests/playwright/*.spec.ts',
       'tests/playwright-features/*.spec.ts',
+      'tests/playwright-assertions/*.spec.ts',
       'tests/features-suites/*.spec.ts',
     ],
     plugins: {

@@ -108,6 +108,7 @@ mkdir -p "$CONSUMER_ROOT/.blackbox/catalog" "$CONSUMER_ROOT/.blackbox/drivers"
 mkdir -p "$CONSUMER_ROOT/.blackbox/clients"
 mkdir -p "$CONSUMER_ROOT/tests/playwright"
 mkdir -p "$CONSUMER_ROOT/tests/playwright-features"
+mkdir -p "$CONSUMER_ROOT/tests/playwright-assertions"
 mkdir -p "$CONSUMER_ROOT/reporters"
 cp "$E2E_ROOT/blackbox.config.yaml" "$CONSUMER_ROOT/blackbox.config.yaml"
 cp "$E2E_ROOT/.blackbox/catalog/"*.yml "$CONSUMER_ROOT/.blackbox/catalog/"
@@ -125,10 +126,13 @@ NPM_CONFIG_CACHE="$ASSET_ROOT/npm-cache" \
 cp -R "$E2E_ROOT/sut" "$CONSUMER_ROOT/sut"
 cp "$E2E_ROOT/playwright.config.ts" "$CONSUMER_ROOT/playwright.config.ts"
 cp "$E2E_ROOT/playwright-features.config.ts" "$CONSUMER_ROOT/playwright-features.config.ts"
+cp "$E2E_ROOT/playwright-assertions.config.ts" "$CONSUMER_ROOT/playwright-assertions.config.ts"
 cp "$E2E_ROOT/reporters/"*.ts "$CONSUMER_ROOT/reporters/"
 cp "$E2E_ROOT/tests/playwright/"*.ts "$CONSUMER_ROOT/tests/playwright/"
 cp "$E2E_ROOT/tests/playwright-features/"*.ts "$CONSUMER_ROOT/tests/playwright-features/"
 cp "$E2E_ROOT/tests/playwright-features/"*.golden "$CONSUMER_ROOT/tests/playwright-features/"
+cp "$E2E_ROOT/tests/playwright-assertions/"*.ts "$CONSUMER_ROOT/tests/playwright-assertions/"
+cp "$SCRIPT_DIR/"playwright-assertions*.mjs "$CONSUMER_ROOT/"
 cp "$SCRIPT_DIR/"playwright-features*.mjs "$CONSUMER_ROOT/"
 cp "$SCRIPT_DIR/playwright-boundary.mjs" "$CONSUMER_ROOT/playwright-boundary.mjs"
 cp "$SCRIPT_DIR/playwright-evidence.mjs" "$CONSUMER_ROOT/playwright-evidence.mjs"
@@ -211,6 +215,10 @@ jq -e '.kind == "playwright-effects-proof" and .attempts == 8 and (.sandboxes | 
 # Its runner owns recovery and keeps each invocation under test-results/features.
 BLACKBOX_E2E_FIXTURE_TOKEN="$FIXTURE_TOKEN" \
   node "$CONSUMER_ROOT/playwright-features.mjs"
+
+# Scope accounting uses the installed public API and a disposable loopback HTTP
+# fixture. Its three intentional native failures must be rejected semantically.
+node "$CONSUMER_ROOT/playwright-assertions.mjs"
 
 printf '%s\n' \
   'Playwright journey passed' \

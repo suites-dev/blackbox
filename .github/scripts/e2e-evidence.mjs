@@ -166,6 +166,10 @@ export async function retainE2eEvidence({
           'e2e/test-results/features/run-result.json',
           'e2e/test-results/features/acceptance.actual.txt',
           'e2e/test-results/features/acceptance.expected.txt',
+          'e2e/test-results/assertions/receipt.json',
+          'e2e/test-results/assertions/run-result.json',
+          'e2e/test-results/assertions/results.json',
+          'e2e/test-results/assertions/cleanup.json',
         );
       }
       const missing = required.filter(
