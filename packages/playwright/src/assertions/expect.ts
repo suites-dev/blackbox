@@ -32,13 +32,13 @@ function invokeMatcher(input: {
   if (scope === null) { return call(original, input.target, input.args); }
   const invocation = beginInvocation(scope, input.method, input.session.poll);
   return invokeTracked(invocation, () => {
-    if (input.method !== 'toPass' || typeof input.session.actual !== 'function') {
+    if ((!input.session.poll && input.method !== 'toPass') || typeof input.session.actual !== 'function') {
       return call(original, input.target, input.args);
     }
     const actual = input.session.actual;
     const callback = retryCallback((...args) => call(actual, undefined, args), invocation);
     const rebuilt = atPath(input.session.create(callback), input.path);
-    if (typeof rebuilt !== 'object' || rebuilt === null) { throw new TypeError('Invalid native toPass matcher'); }
+    if (typeof rebuilt !== 'object' || rebuilt === null) { throw new TypeError('Invalid native retry matcher'); }
     return call(Reflect.get(rebuilt, input.method), rebuilt, input.args);
   });
 }

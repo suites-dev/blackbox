@@ -10,8 +10,8 @@ it('executes the native assertion compatibility matrix with exact discovery and 
   expect(run.exitCode, `${run.directory}\n${run.output}`).toBe(0);
   expect(run.report.errors).toEqual([]);
   const specs = discovered(run.report.suites);
-  expect(specs).toHaveLength(13);
-  expect(run.report.stats).toMatchObject({ expected: 13, unexpected: 0, skipped: 0, flaky: 0 });
+  expect(specs).toHaveLength(15);
+  expect(run.report.stats).toMatchObject({ expected: 15, unexpected: 0, skipped: 0, flaky: 0 });
   for (const spec of specs) {
     expect(spec.tests).toHaveLength(1);
     expect(spec.tests[0].expectedStatus).toBe('passed');
@@ -43,6 +43,7 @@ const negativeGroups = [
       'swallowed asynchronous failure',
       'swallowed custom matcher failure',
       'swallowed terminal polling failure',
+      'poll provider cannot hide a swallowed final sample failure',
       'swallowed terminal toPass failure',
       'toPass cannot hide a swallowed final iteration failure',
       'toPass cannot hide a soft final iteration failure',
@@ -66,8 +67,8 @@ for (const { name, titles } of negativeGroups) {
     if (name === negativeGroups[0].name) {
       const listing = await runAssertions('failures.spec.ts', [], true);
       const expectedTitles = negativeGroups.flatMap((group) => group.titles);
-      expect(expectedTitles).toHaveLength(19);
-      expect(new Set(expectedTitles).size).toBe(19);
+      expect(expectedTitles).toHaveLength(20);
+      expect(new Set(expectedTitles).size).toBe(20);
       expect(listing.exitCode).toBe(0);
       expect(listing.report.errors).toEqual([]);
       expect(discovered(listing.report.suites).map(({ title }) => title)).toEqual(expectedTitles);

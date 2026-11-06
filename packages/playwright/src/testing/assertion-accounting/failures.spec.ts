@@ -105,6 +105,24 @@ const cases = [
     },
   ],
   [
+    'poll provider cannot hide a swallowed final sample failure',
+    async () => {
+      await expect
+        .poll(
+          () => {
+            try {
+              expect(1).toBe(2);
+            } catch {
+              // Returning the matching value must not hide this final sample's failed assertion.
+            }
+            return 'matched';
+          },
+          { intervals: [1], timeout: 500 },
+        )
+        .toBe('matched');
+    },
+  ],
+  [
     'swallowed terminal toPass failure',
     async () => {
       try {

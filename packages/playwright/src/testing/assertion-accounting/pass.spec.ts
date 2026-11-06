@@ -154,3 +154,42 @@ test('nested scope failures in an earlier toPass retry remain provisional', asyn
   nativeExpect(attempts).toBe(2);
   accounting(result.accounting, 1);
 });
+
+test('poll provider failures in earlier samples remain provisional after a clean final sample', async () => {
+  let samples = 0;
+  const result = await assertionScope(async () => {
+    await expect
+      .poll(
+        () => {
+          samples += 1;
+          try {
+            expect(samples).toBe(2);
+          } catch {
+            // The first sample deliberately swallows a failed assertion and does not match.
+          }
+          return samples;
+        },
+        { intervals: [1], timeout: 500 },
+      )
+      .toBe(2);
+  });
+  nativeExpect(samples).toBe(2);
+  accounting(result.accounting, 1);
+});
+
+test('composed custom matcher negation trusts the native terminal matcher verdict', async () => {
+  const composed = expect.extend({
+    toMatchValue(received: number, expected: number) {
+      try {
+        expect(received).toBe(expected);
+        return { pass: true, message: () => 'Expected values to differ' };
+      } catch {
+        return { pass: false, message: () => 'Expected values to match' };
+      }
+    },
+  });
+  const result = await assertionScope(() => {
+    composed(1).not.toMatchValue(2);
+  });
+  accounting(result.accounting, 1);
+});
