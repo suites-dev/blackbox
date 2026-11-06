@@ -142,8 +142,8 @@ importers:
         specifier: 5.0.3
         version: 5.0.3(vitest@5.0.3)
       dependency-cruiser:
-        specifier: 18.7.1
-        version: 18.7.1
+        specifier: 18.7.2
+        version: 18.7.2
       eslint:
         specifier: 'catalog:'
         version: 10.11.0(jiti@2.6.1)
@@ -2474,8 +2474,8 @@ packages:
     resolution: {integrity: sha512-N+MeXYoqr3pOgn8xfyRPREN7gHakLYjhsHhWGT3fWAiL4IkAt0iDw14QiiEm2bE30c5XX5q0FtAA3CK5f9/BUg==}
     engines: {node: '>=12'}
 
-  dependency-cruiser@18.7.1:
-    resolution: {integrity: sha512-vanJIqmFjgupsXQN+hD2ygve2w/PVkiE1tvnr3SiObMC2U67QL7yJDNh9dvShn8HtwOyfBWwyvi6ch60AsYpbA==}
+  dependency-cruiser@18.7.2:
+    resolution: {integrity: sha512-3Pkco0Kx3GI8tG6DTUDfl9RSZVOXMqD+lvili8m0qw2+zhGFcZMyPspUgb7Crqps1UkL23SFXslpj7a9hj11+A==}
     engines: {node: ^22||^24||>=26}
     hasBin: true
 
@@ -6297,7 +6297,7 @@ snapshots:
 
   define-lazy-prop@3.0.0: {}
 
-  dependency-cruiser@18.7.1:
+  dependency-cruiser@18.7.2:
     dependencies:
       acorn: 8.19.0
       acorn-jsx: 5.3.2(acorn@8.19.0)
@@ -6314,7 +6314,7 @@ snapshots:
       prompts: 2.4.2
       rechoir: 0.8.0
       safe-regex: 2.1.1
-      semver: 7.8.5
+      semver: 7.8.6
       tsconfig-paths-webpack-plugin: 4.2.0
       watskeburt: 6.0.0
 
