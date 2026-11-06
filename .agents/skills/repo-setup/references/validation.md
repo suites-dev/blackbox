@@ -111,6 +111,16 @@ Run `pnpm --dir e2e run test:lint` to verify the local rule and
 `pnpm --dir e2e run lint` for consumer test/config/reporter/lint sources. Keep
 both separate from the repository's `pnpm lint`; CI runs all three as separate
 named steps in the lint job.
+The same packed-consumer command also runs assertion accounting against an owned
+loopback HTTP fixture with the explicitly pinned Playwright 1.64.1 runner. Its six
+native cases must report three passes and three intentional failures: empty,
+swallowed, and soft assertions. The outer proof checks public scope accounting,
+matching rejection diagnostics, asynchronous polling, isolated concurrent scopes,
+real requests, and listener cleanup; a nonzero child exit alone is insufficient.
+Reports and `assertions/receipt.json`, `run-result.json`, and `cleanup.json` are
+retained under `e2e/test-results/` in the existing archive. Missing assertion
+evidence fails successful evidence collection.
+
 The console uses Playwright's native list reporter. Verify ready/cleanup messages
 in each attempt's captured stdout, no streamed container polling, and retained
 `blackbox-diagnostics` attachments. Lifecycle messages can be disabled using the
