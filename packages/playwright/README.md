@@ -220,12 +220,16 @@ the scope. Misuse rejects with `AssertionScopeError`, whose `code` and
 `accounting` describe the reason. An error thrown by the callback still propagates
 as its original error. Counts establish assertion execution and outcomes, not the
 adequacy of the business contract.
+Custom matcher implementations remain trusted: accounting follows their terminal
+native verdict and does not verify the quality of their internal comparisons.
 
 Await every asynchronous matcher, or return it directly from the callback.
 Starting a matcher with `void`, leaving it pending, or returning it inside an
 unawaited object does not consume it. Nested scopes aggregate logical assertions
 once; concurrent scopes keep their accounting separate. Polling and `toPass`
 account for the terminal assertion, not their intermediate retry samples.
+A caught Blackbox assertion failure in the final polling sample still fails the
+scope, even when the sampled value satisfies the outer matcher.
 `expect(async () => {}).toPass()` still counts as one native assertion; accounting
 does not establish that its callback contains a useful oracle.
 Native snapshot creation or update follows its native outcome; a counted pass
