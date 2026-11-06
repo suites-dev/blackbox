@@ -1,3 +1,4 @@
+import { accountingExpect } from '../assertions/expect.js';
 import { expect as playwrightExpect } from '@playwright/test';
 import { setTimeout as delay } from 'node:timers/promises';
 
@@ -9,7 +10,7 @@ import {
   reportEffectAssertion,
 } from './runtime.js';
 
-export const expect = playwrightExpect.extend({
+export const expect = accountingExpect(playwrightExpect.extend({
   async toSatisfy(received: BlackboxEffects, builder: EffectContractBuilder) {
     if (typeof builder !== 'function') {
       throw new TypeError('Use toSatisfy((effects) => [...])');
@@ -44,4 +45,4 @@ export const expect = playwrightExpect.extend({
           : evaluation.message,
     };
   },
-});
+}));

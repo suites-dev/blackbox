@@ -190,6 +190,63 @@ reasons. Setup failure also attempts cleanup before surfacing the error.
   inconclusive, including under negation; an observed operation does not prove
   durable state.
 
+## Account for assertions in a callback
+
+`assertionScope(callback)` preserves the callback's return value and reports
+logical assertion outcomes. Use Blackbox's exported `test` and `expect`:
+
+```ts
+import { assertionScope, expect, test } from '@suites/blackbox-playwright';
+
+test.use({ blackbox: { system: 'payment-system' } });
+
+test('checks the returned payment', async ({ request }) => {
+  const response = await request.post('/v1/payment_intents', {
+    data: { paymentMethodId: 'pm_primary', userId: 'alice' },
+  });
+  const { value: intent, accounting } = await assertionScope(async () => {
+    expect(response.status()).toBe(201);
+    const body = await response.json() as { status: string };
+    expect(body.status).toBe('succeeded');
+    return body;
+  });
+  // intent is the callback's result; accounting.total and accounting.passed are 2.
+});
+```
+
+Accounting contains `total`, `passed`, `failed`, `pending`, and `unconsumed`.
+An empty callback, a swallowed assertion failure, or a soft failure cannot pass
+the scope. Misuse rejects with `AssertionScopeError`, whose `code` and
+`accounting` describe the reason. An error thrown by the callback still propagates
+as its original error. Counts establish assertion execution and outcomes, not the
+adequacy of the business contract.
+Custom matcher implementations remain trusted: accounting follows their terminal
+native verdict and does not verify the quality of their internal comparisons.
+
+Await every asynchronous matcher, or return it directly from the callback.
+Starting a matcher with `void`, leaving it pending, or returning it inside an
+unawaited object does not consume it. Nested scopes aggregate logical assertions
+once; concurrent scopes keep their accounting separate. Polling and `toPass`
+account for the terminal assertion, not their intermediate retry samples.
+A caught Blackbox assertion failure in the final polling sample still fails the
+scope, even when the sampled value satisfies the outer matcher.
+`expect(async () => {}).toPass()` still counts as one native assertion; accounting
+does not establish that its callback contains a useful oracle.
+Native snapshot creation or update follows its native outcome; a counted pass
+does not establish that an existing baseline was compared or reviewed.
+
+This scoped feature supports **Playwright 1.64.1 only** and checks the native
+completion-hook shape before use. Other versions or raw `@playwright/test`
+expectations inside a scope are unsupported. Use Blackbox's exported `expect`,
+including its `extend` and `configure` variants. Ordinary assertions outside a
+scope retain the package's existing Playwright peer support.
+
+Scopes belong to physical test attempts and need no selected Sandbox by
+themselves. They work in test bodies and per-test hooks from Blackbox's native
+`test`; they reject outside an active attempt and in `beforeAll`/`afterAll`.
+The primitive does not add preconditions, state observers, or a durable execution
+evidence schema.
+
 ## Execution reporting
 
 Playwright's native reporter owns test progress, steps, colors, errors, and the

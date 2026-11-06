@@ -74,6 +74,15 @@ test('Playwright evidence uses its own transport identity and output directory',
   for (const [name, value] of Object.entries(features)) {
     await write(root, `e2e/test-results/features/${name}`, value);
   }
+  const assertions = {
+    'receipt.json': '{"kind":"playwright-assertion-accounting-proof","tests":6}',
+    'run-result.json': '{"exitCode":1,"status":"verified"}',
+    'results.json': '{"stats":{"expected":3,"unexpected":3}}',
+    'cleanup.json': '{"closed":true}',
+  };
+  for (const [name, value] of Object.entries(assertions)) {
+    await write(root, `e2e/test-results/assertions/${name}`, value);
+  }
   const outputDir = '.blackbox/tmp/ci-playwright-e2e-transport';
   const untrustedOutput = `../${path.basename(root)}-untrusted-output`;
   const wrapper = fileURLToPath(new URL('./playwright-e2e-evidence.mjs', import.meta.url));
@@ -108,7 +117,26 @@ test('Playwright evidence uses its own transport identity and output directory',
       value,
     );
   }
+  for (const [name, value] of Object.entries(assertions)) {
+    assert.equal(await fs.readFile(path.join(extracted, 'e2e/test-results/assertions', name), 'utf8'), value);
+  }
   await assert.rejects(fs.stat(path.resolve(root, untrustedOutput)), /ENOENT/);
+});
+
+test('Playwright success cannot omit the assertion accounting journey receipt', async (t) => {
+  const root = await workspace(t);
+  await write(root, 'e2e/test-results/junit.xml', '<testsuites/>');
+  await write(root, 'e2e/test-results/results.json', '{"status":"passed"}');
+  for (const name of ['receipt.json', 'run-result.json', 'acceptance.actual.txt', 'acceptance.expected.txt']) {
+    await write(root, `e2e/test-results/features/${name}`, 'retention evidence');
+  }
+  await write(root, 'e2e/test-results/features/golden-diff.txt', '');
+  await write(root, 'e2e/test-results/assertions/results.json', '{"status":"partial"}');
+  const receipt = await retainE2eEvidence({ root, project: 'playwright', testOutcome: 'success' });
+  assert.equal(receipt.status, 'failed');
+  assert.match(receipt.error, /assertions\/receipt\.json/u);
+  assert(receipt.entries.some(({ path: name }) => name.endsWith('assertions/results.json')));
+  assert.ok(receipt.archive.sha256, 'Missing scope proof must not discard partial evidence');
 });
 
 test('Playwright success requires retention evidence while failures retain partial output', async (t) => {
