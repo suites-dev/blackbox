@@ -2,6 +2,9 @@ import type { EmissionAssertionReport } from '../../effects/emissions/types.js';
 import { evidenceLimits } from '../../effects/evaluation/artifact.js';
 import { reportTextLimit } from '../text.js';
 
+export { attachExecutionArtifact, type AttachedEvidence, type ExecutionArtifactKind } from '../capture/execution-artifact.js';
+export { evidenceForClaim, linkClaim } from '../../assertions/claims/context.js';
+
 export const emissionAttachment = 'blackbox-emissions';
 
 export function emissionAttachmentBody(input: {

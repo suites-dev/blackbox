@@ -1,0 +1,62 @@
+schemaVersion: 1
+catalog:
+  default: orders
+  entries:
+    orders: &system
+      kind: system
+      acquisition:
+        adapter: docker-compose@1
+        files:
+          - catalog-fixture/catalog/system.yml
+      entrypoint:
+        participant: api
+        protocol: http
+        containerPort: 3000
+        readiness:
+          path: /health
+          timeoutMs: 1000
+      participants:
+        api:
+          service: api
+          role: entrypoint
+          runtime: node
+          activation: node
+        db:
+          service: db
+          role: dependency
+          runtime: infra
+      drivers:
+        api:
+          kind: project-driver
+          runtime: node
+          ref: catalog-fixture/drivers/api.fixture
+          target:
+            kind: participant
+            participant: api
+            protocol: http
+            containerPort: 3000
+          execution:
+            kind: host
+          propagation:
+            kind: w3c-trace-context-propagation
+            carrier: http-headers
+      observation:
+        policyId: policy-1
+        boundaries:
+          - id: effects.http
+            kind: http
+            authoritativeFor: [http effects]
+        requiredBoundaries: [effects.http]
+        terminalObservationWindowMs: 1000
+        redaction:
+          requestBodies: not-captured
+          headers: [authorization]
+          dynamicIdentifiers: normalized
+    cleanup-failure: *system
+    setup-failure: *system
+
+activations:
+  node:
+    ref: catalog-fixture/instrumentation/instrumentation.fixture
+    adapter: node-preload
+    version: 1

@@ -282,7 +282,8 @@ updates. Keep reviewed `.yaml` files beside the tests and set
 `updateSnapshots: 'none'` in CI. Creating or updating a baseline does not establish
 that its contents are correct; review the selected fields, normalization and diff.
 Actual matcher evidence remains JSON in the `blackbox-emissions` attachment.
-This does not add the planned automatic per-stimulus `effects.json` artifact.
+Each completed `stimulus` also captures its own `effects.json`; `evidence.effects`
+selects recorders from that immutable cut. An open cut does not prove absence.
 
 ## Account for assertions in a callback
 
@@ -418,13 +419,26 @@ diagnostics will be added with the effect evaluator.
 
 ## Behavioral history
 
-Each attempt also attaches three documents, on by default (`blackbox.finalSnapshot: false` turns
-this off): `blackbox-effects-final` (the attempt's effects after cleanup, also when the test
+Each attempt with final capture enabled attaches `blackbox-effects-final` (the attempt's effects after cleanup, also when the test
 failed), `blackbox-envelope` (the attempt's identity, source revision, configuration fingerprints,
 stimulus fingerprint, reported state and evidence digests) and `blackbox-receipt` (how the attempt
 ended, including attempts that never got a sandbox, which have no envelope). `EffectsRecord` v0
 and the assertion attachments are unchanged. The Blackbox reporter sets `BLACKBOX_INVOCATION_ID`
 once per Playwright invocation so retries can be grouped.
+
+A `stimulus` also attaches its execution record and per-stimulus `effects.json`, even when
+`finalSnapshot` is false. The execution record links bounded, redacted checkpoints, diffs,
+output and claim outcomes to that attempt. It records instrumented snapshot matcher outcomes
+without inventing a file-level reference, and links emission assertions to their evidence digests.
+Retention copies these artifacts with the sandbox.
+Response body capture supports UTF-8 responses with a valid `Content-Length` of at most
+256 KiB and no transfer or content encoding. Unsupported or failed capture fails the attempt;
+JSON values are also limited to 16,384 characters per string, 10,000 nodes and 1 MiB.
+The native response object remains available in memory. Redaction covers credential-named
+fields and configured credential values; it cannot identify every secret in arbitrary data.
+Each live cut selects one stimulus. The current supplemental final capture can select at most
+the eight most recent completed stimuli. Earlier activities are explicitly counted as omitted;
+their individual cuts remain retained, and the supplemental aggregate stays incomplete.
 
 Declare which behavior a test exercises, and optionally report authoritative state, from the test:
 
@@ -526,7 +540,8 @@ sandboxes are intentionally outside this package's current surface.
 The `state` fixture registers named readers synchronously with `state.observe(name, readers)`.
 Registration does not invoke the readers or modify the observed system. Readers may return
 JSON-compatible scalar values, objects, or row arrays with a unique nonempty `id` on every row.
-Unsupported, cyclic, oversized, missing-ID, and duplicate-ID values fail capture. Checkpoints
+Unsupported, proxy, accessor, cyclic, oversized, missing-ID, and duplicate-ID values fail capture.
+Readers may return values synchronously or native promises; custom thenables are not supported. Checkpoints
 copy and freeze their values, so later changes to reader results cannot rewrite evidence.
 Readers belong to one physical test attempt; handles cannot be reused in another attempt.
 The stimulus lifecycle will capture registered readers at its initial and final boundaries.

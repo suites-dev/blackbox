@@ -42,4 +42,21 @@ describe('finalizing an attempt', () => {
     });
     expect(product.envelope).toBeNull();
   });
+
+  it('preserves both cleanup and capture failures and a previously attached envelope', async () => {
+    const product = newAttemptProduct();
+    const cleanupError = new Error('cleanup failure');
+    const captureError = new Error('capture failure');
+    let failure: unknown;
+    try {
+      await finalizeAttempt(product, {
+        cleanup: () => Promise.reject(cleanupError),
+        capture: () => { product.envelope = envelope; return Promise.reject(captureError); },
+      });
+    } catch (error) { failure = error; }
+    expect(failure).toBeInstanceOf(AggregateError);
+    expect((failure as AggregateError).errors).toEqual([cleanupError, captureError]);
+    expect(product.cleanupFailed).toBe(true);
+    expect(product.envelope).toBe(envelope);
+  });
 });
