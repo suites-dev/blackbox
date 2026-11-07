@@ -1,3 +1,4 @@
+import type { Stimulus } from './stimulus/lifecycle/types.js';
 import type { BlackboxState } from './state/types.js';
 import type { BlackboxTestOptions } from './config/options.js';
 import type { EffectCapture } from '@suites/blackbox-effects';
@@ -69,6 +70,7 @@ export interface BlackboxTestFixtures {
   readonly clients: Readonly<BlackboxClients>;
   /** Register attempt-owned state readers for later checkpoint capture. */
   readonly state: BlackboxState;
+  readonly stimulus: Stimulus;
   /** Read-only identity and resources for this test's isolated sandbox. */
   readonly sandbox: BlackboxSandbox;
   /** Raw retained telemetry for this physical test attempt. */

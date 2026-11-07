@@ -5,7 +5,7 @@ import {
 } from './context.js';
 import { installAssertionBridge, installedPlaywrightVersion } from './bridge.js';
 import { consumptionPromise } from './promises.js';
-import { AssertionScopeError, type AssertionScopeResult } from './types.js';
+import { AssertionScopeError, InconclusiveAssertionError, type AssertionScopeResult } from './types.js';
 
 function ownershipError() {
   return new AssertionScopeError('ownership', { total: 0, passed: 0, failed: 0, pending: 0, unconsumed: 0 });
@@ -93,7 +93,10 @@ async function executeScope<Value>(scope: AssertionScopeState, callback: () => V
     const value = await scopeContext.run(scope, callback);
     validateScope(scope);
     return Object.freeze({ value, accounting: accounting(scope) });
-  } catch (error) {
+  } catch (caught) {
+    const error = caught instanceof InconclusiveAssertionError &&
+      (accounting(scope).failed > 1 || scope.issues.length > 0)
+      ? scopeError(scope, 'failed') : caught;
     if (scope.parent !== null) {
       const trial = trialContext.getStore();
       if (trial === undefined) { issue(scope.parent, 'failed', error); }
