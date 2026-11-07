@@ -2,6 +2,10 @@ import { execFileSync } from 'node:child_process';
 import { readFile, readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import {
+  proveEmissionReports,
+  proveObservedSnapshot,
+} from './playwright-effects-proof-emissions.mjs';
 
 export const expectedEffects = [
   'PostgreSQL activity is observed while its operation remains unknown',
@@ -22,7 +26,7 @@ function specsIn(suite) {
   return [...(suite.specs ?? []), ...(suite.suites ?? []).flatMap(specsIn)];
 }
 
-export function proveEffects(report, discovery, goldens) {
+export function proveEffects(report, discovery, goldens, observedSnapshot) {
   const specs = (report.suites ?? []).flatMap(specsIn);
   assert(
     JSON.stringify(specs.map(({ title }) => title).sort()) ===
@@ -40,6 +44,8 @@ export function proveEffects(report, discovery, goldens) {
       report.stats.skipped === 0,
     'Effects acceptance did not pass cleanly',
   );
+  const recorders = [];
+  const snapshots = [];
   for (const spec of specs) {
     assert(spec.tests.length === 1, `Unexpected projects for ${spec.title}`);
     const test = spec.tests[0];
@@ -72,10 +78,24 @@ export function proveEffects(report, discovery, goldens) {
       JSON.stringify(assertions) === JSON.stringify(expected),
       `Effects semantic verdicts changed: ${spec.title}`,
     );
+    recorders.push(proveEmissionReports(spec.title, result.attachments));
+    if (spec.title === 'forbidden database activity produces a definite matcher failure') {
+      snapshots.push(proveObservedSnapshot(result.attachments, observedSnapshot));
+    }
     // The spec's snapshot compares contracts, verdicts and distinct witnesses.
     // Its awaited assertions also independently inspect HTTP and database state.
   }
-  return { kind: 'playwright-effects-proof', specs: expectedEffects, attempts: 8 };
+  assert(
+    new Set(recorders.map(({ executionId }) => executionId)).size === 8,
+    'Effect recorder execution identity reused across attempts',
+  );
+  return {
+    kind: 'playwright-effects-proof',
+    specs: expectedEffects,
+    attempts: 8,
+    emissionAssertions: recorders.reduce((total, { assertions }) => total + assertions, 0),
+    snapshots,
+  };
 }
 
 export async function verifyEffects() {
@@ -104,6 +124,10 @@ export async function verifyEffects() {
     JSON.parse(await readFile(join(root, 'results.json'), 'utf8')),
     await readFile(join(consumer, 'test-results', 'effects-discovery.txt'), 'utf8'),
     goldens,
+    await readFile(
+      join(consumer, 'effects-acceptance', 'tests', 'goldens', 'request-observations.yaml'),
+      'utf8',
+    ),
   );
   const records = [];
   for (const file of await readdir(root, { recursive: true })) {

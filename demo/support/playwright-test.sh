@@ -150,6 +150,7 @@ done
 cp "$REPO_ROOT/packages/playwright/tests/effects/"{support,golden}.ts "$EFFECTS_ROOT/tests/"
 cp "$E2E_ROOT/playwright-effects.config.ts" "$CONSUMER_ROOT/playwright-effects.config.ts"
 cp "$SCRIPT_DIR/playwright-effects-proof.mjs" "$CONSUMER_ROOT/playwright-effects-proof.mjs"
+cp "$SCRIPT_DIR/playwright-effects-proof-emissions.mjs" "$CONSUMER_ROOT/playwright-effects-proof-emissions.mjs"
 cp "$SCRIPT_DIR/playwright-effects-proof-run.mjs" "$CONSUMER_ROOT/playwright-effects-proof-run.mjs"
 
 cd "$CONSUMER_ROOT"
@@ -198,6 +199,9 @@ node "$CONSUMER_ROOT/playwright-verify.mjs" >"$RUN_RESULT_ROOT/receipt.json"
 
 # Effects cases run against the same packed packages and transport their reports,
 # snapshots and physical Sandbox records through the existing evidence archive.
+mkdir -p "$RUN_RESULT_ROOT/effects"
+cp "$EFFECTS_ROOT/tests/goldens/request-observations.yaml" \
+  "$RUN_RESULT_ROOT/effects/request-observations.expected.yaml"
 BLACKBOX_E2E_RESULTS_ROOT="$RUN_RESULT_ROOT" \
   "$PLAYWRIGHT_BIN" test --config "$CONSUMER_ROOT/playwright-effects.config.ts" \
     --list --reporter=line >"$RUN_RESULT_ROOT/effects-discovery.txt"
@@ -208,7 +212,7 @@ BLACKBOX_E2E_RESULTS_ROOT="$RUN_RESULT_ROOT" \
 recover_sandboxes
 node "$CONSUMER_ROOT/playwright-effects-proof-run.mjs" >"$RUN_RESULT_ROOT/effects-receipt.json"
 test -s "$RUN_RESULT_ROOT/effects-receipt.json"
-jq -e '.kind == "playwright-effects-proof" and .attempts == 8 and (.sandboxes | length) == 8' \
+jq -e '.kind == "playwright-effects-proof" and .attempts == 8 and (.sandboxes | length) == 8 and .emissionAssertions == 29 and (.snapshots | length) == 1' \
   "$RUN_RESULT_ROOT/effects-receipt.json" >/dev/null
 
 # Run the retention contract after the native and effects cases.

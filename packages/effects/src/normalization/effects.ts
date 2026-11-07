@@ -1,4 +1,4 @@
-import type { ObservedEffect } from '../verification/model.js';
+import type { ObservedEffect } from '../graph/model.js';
 import { textAttribute, type Attributes } from './attributes.js';
 import type { SpanRecord } from './records.js';
 import { record } from './values.js';

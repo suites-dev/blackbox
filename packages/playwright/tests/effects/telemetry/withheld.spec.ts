@@ -29,5 +29,9 @@ test.describe('controlled telemetry withholding', () => {
     await expect(expect(effects).not.toSatisfy(contract)).rejects.toThrow(
       /inconclusive|No retained|activity-trace-not-received/,
     );
+    const database = (await effects.capture()).db({});
+    await expect(expect(database).toHaveEmitted()).rejects.toThrow(/inconclusive/i);
+    await expect(expect(database).not.toHaveEmitted()).rejects.toThrow(/inconclusive/i);
+    await expect(expect(database).toHaveEmittedTimes(0)).rejects.toThrow(/inconclusive/i);
   });
 });

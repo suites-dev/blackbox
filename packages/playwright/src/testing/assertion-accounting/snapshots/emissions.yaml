@@ -1,0 +1,21 @@
+"availability":
+  "available": true
+  "reason": null
+"coverage":
+  "attestation": "controlled-test-only"
+  "closed": true
+  "coverage": "complete"
+  "orderCoverage": "complete"
+  "reasons": []
+"emissions":
+  -
+    "count": 1
+    "value":
+      "operation": "POST"
+      "target": "/payments"
+"kind": "recorded-effect-observations"
+"possibleEmissions": []
+"schemaVersion": 1
+"selector":
+  "kind": "http"
+  "node": "selector"

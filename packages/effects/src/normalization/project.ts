@@ -1,4 +1,4 @@
-import type { EffectGraph } from '../verification/model.js';
+import type { EffectGraph } from '../graph/model.js';
 import { projectEffect } from './effects.js';
 import { collectRecords } from './records.js';
 import { projectRelations } from './relations.js';

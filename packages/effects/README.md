@@ -40,12 +40,17 @@ checking durable database or cache state requires a separate read from that syst
 | `projectEffects`        | `{ format: 'otlp-json', scopeId, payloads }` | `EffectGraph` with effects, source span identities, relations, and coverage diagnostics |
 | `compileEffectContract` | Builder callback returning constraints       | Canonical, serializable `EffectContract`                                                |
 | `evaluateEffects`       | Graph and contract                           | `EffectAssessment` with status and per-constraint findings, reasons, and evidence IDs   |
+| `createEffectCapture` | Graph or unavailable reason, plus capture identity | Immutable capture with typed recorder selections |
+| `assessEffectRecorder` | Recorder, count constraint and optional fact predicate | Verdict with coverage and occurrence references |
+| `assessEffectRecorderBefore` | Two recorders from the same capture | Causal ordering verdict with supporting occurrence references |
+| `assessNthEffectEmission` | Recorder, one-based position and fact predicate | Verdict for a justified causal position |
+| `serializeEffectSnapshot` | Recorder and explicit projection/normalization | Stable YAML of selected observations, multiplicity and coverage |
 
 The package also exports `effectContractBuilder` and the graph, selector, builder,
 contract, and assessment types through its root entrypoint. Its internal modules
 are not public entrypoints.
 
-All three functions are synchronous. They snapshot their inputs and deeply freeze
+The projection, contract and evaluation functions are synchronous. They snapshot their inputs and deeply freeze
 their outputs without freezing caller-owned data. Invalid JSON shapes, conflicting
 observations, or malformed graph/contract structures throw `TypeError`. Valid
 observations with missing semantic evidence produce uncertainty instead.
@@ -81,6 +86,38 @@ the projector can infer that kind from every telemetry source.
 | A required effect has not been observed in an open capture                   | `inconclusive`                       |
 | An exact count matches observed effects, but capture completeness is unknown | `inconclusive`                       |
 | Trace parent/link relationships exist, but ordering evidence is insufficient | `inconclusive` for ordering          |
+
+## Record selected occurrences
+
+`createEffectCapture({ graph, identity })` fixes an immutable graph and exposes
+typed selectors such as `capture.db({ actor: 'orders' })`. A recorder retains
+definite `emissions` and `possibleEmissions`, with the capture identity and coverage.
+Distinct occurrences keep their identities even when their normalized values match.
+The recorder is an observation value; it does not replace or call a dependency.
+
+Count and payload assessments reuse the graph's selection and uncertainty rules.
+A supplied predicate returns `true`, `false`, or `null` for a missing fact.
+It cannot promote a possible selector match into a definite occurrence.
+An open capture may establish presence or disprove a count already exceeded;
+it cannot establish an exact matching count or absence from observed length alone.
+
+Order assessments require established `happensBefore` evidence. Concurrent
+occurrences, transport arrival order and timestamps cannot justify causal order
+or an ordinal position. Comparing recorders from different captures is rejected.
+The standalone engine validates identity labels; the integrating runtime owns
+authentication of the attempt, stimulus and admitted observations.
+
+`serializeEffectSnapshot(recorder, { project, normalize? })` requires an explicit
+field projection and optionally normalizes each chosen value. Its YAML groups
+equal projected values with counts, retains possible occurrences and coverage,
+and omits generated identities unless selected. An open capture can be compared
+as recorded observations without establishing complete absence or an exact total.
+Completely unavailable captures reject serialization. The serializer does not
+write or accept baselines; the test runner and code review own that workflow.
+
+The [Playwright adapter](../playwright/README.md#assert-recorded-emissions) supplies
+native emission matchers, assertion accounting, JSON evidence attachments and
+comparison of the YAML string through Playwright snapshots.
 
 ## Supply evidence with explicit boundaries
 
