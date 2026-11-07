@@ -18,17 +18,6 @@ async function boundedBody(response: APIResponse): Promise<Buffer> {
   } finally { if (timer !== undefined) { clearTimeout(timer); } }
 }
 
-function declaredResponseSize(headers: Readonly<Record<string, string>>): number {
-  if (!Object.hasOwn(headers, 'content-length') || !/^\d+$/u.test(headers['content-length']) ||
-    Object.hasOwn(headers, 'transfer-encoding') ||
-    (Object.hasOwn(headers, 'content-encoding') && headers['content-encoding'] !== 'identity')) {
-    throw new Error('Response body cannot be captured within a known size bound');
-  }
-  const declared = Number(headers['content-length']);
-  if (!Number.isSafeInteger(declared) || declared > responseLimit) { throw new Error('Response body exceeds output capture limit'); }
-  return declared;
-}
-
 /** Tracks responses returned by this exact request client without inspecting arbitrary result objects. */
 export function outputCapture(request: APIRequestContext, redact: (value: string) => string) {
   return {
@@ -37,9 +26,8 @@ export function outputCapture(request: APIRequestContext, redact: (value: string
       if (value !== null && typeof value === 'object' && isObservedResponse(request, value)) {
         const response = value as APIResponse;
         const headers = response.headers();
-        const declared = declaredResponseSize(headers);
         const bytes = await boundedBody(response);
-        if (bytes.byteLength !== declared || bytes.byteLength > responseLimit) {
+        if (bytes.byteLength > responseLimit) {
           throw new Error('Response body exceeds output capture limit');
         }
         const text = new TextDecoder('utf-8', { fatal: true }).decode(bytes);

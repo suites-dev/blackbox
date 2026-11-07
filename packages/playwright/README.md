@@ -431,8 +431,10 @@ A `stimulus` also attaches its execution record and per-stimulus `effects.json`,
 output and claim outcomes to that attempt. It records instrumented snapshot matcher outcomes
 without inventing a file-level reference, and links emission assertions to their evidence digests.
 Retention copies these artifacts with the sandbox.
-Response body capture supports UTF-8 responses with a valid `Content-Length` of at most
-256 KiB and no transfer or content encoding. Unsupported or failed capture fails the attempt;
+Response body capture supports UTF-8 decoded bodies of at most 256 KiB, including chunked
+and compressed responses. The limit bounds retained evidence, not transport memory: Playwright
+buffers the response before returning it, and reading its body can make another copy.
+Unsupported or failed capture fails the attempt;
 JSON values are also limited to 16,384 characters per string, 10,000 nodes and 1 MiB.
 The native response object remains available in memory. Redaction covers credential-named
 fields and configured credential values; it cannot identify every secret in arbitrary data.

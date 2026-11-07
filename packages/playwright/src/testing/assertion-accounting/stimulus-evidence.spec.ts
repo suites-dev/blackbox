@@ -1,5 +1,6 @@
 import { createServer } from 'node:http';
 import { randomUUID } from 'node:crypto';
+import { gzipSync } from 'node:zlib';
 import { join } from 'node:path';
 import { lstat, readdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { expect as nativeExpect } from '@playwright/test';
@@ -67,18 +68,36 @@ async function inspectRetained(root: string): Promise<void> {
         leaked: files.some((file) => file.includes('synthetic-password')) });
     } finally { await rm(root, { recursive: true, force: true }); }
 }
-function registerUnboundedResponseTest(): void {
-  fixtureTest('unbounded response capture fails closed', async ({ stimulus }, info) => {
+function registerResponseCaptureTest(): void {
+  fixtureTest('captures ordinary responses and rejects oversized output', async ({ stimulus }, info) => {
     info.fail();
-    const server = createServer((_request, response) => { response.writeHead(200); response.write('chunk'); response.end(); });
+    const server = createServer((request, response) => {
+      if (request.url === '/gzip') {
+        const body = gzipSync(JSON.stringify({ value: 'compressed', password: 'synthetic-password' }));
+        response.writeHead(200, { 'content-encoding': 'gzip', 'content-length': body.length }).end(body);
+      } else if (request.url === '/oversized') {
+        response.writeHead(200).end(JSON.stringify(Array.from({ length: 3_000 }, () => 'x'.repeat(90))));
+      } else if (request.url === '/no-length') {
+        response.useChunkedEncodingByDefault = false;
+        response.writeHead(200, { connection: 'close' });
+        response.write('no-length'); response.end();
+      } else {
+        response.writeHead(200); response.write('chunked'); response.end();
+      }
+    });
     await new Promise<void>((resolve) => { server.listen(0, '127.0.0.1', resolve); });
     try {
       const address = server.address();
       if (address === null || typeof address === 'string') { throw new Error('missing listener'); }
+      for (const path of ['/chunked', '/gzip', '/no-length']) {
+        const { result } = await stimulus(`When ${path} is returned`, ({ request }) => request.get(`http://127.0.0.1:${address.port}${path}`));
+        nativeExpect(result.status()).toBe(200);
+      }
+      record('ordinary-responses-captured', true);
       let caught = false;
-      try { await stimulus('When a chunked response is returned', ({ request }) => request.get(`http://127.0.0.1:${address.port}/`)); }
+      try { await stimulus('When oversized output is returned', ({ request }) => request.get(`http://127.0.0.1:${address.port}/oversized`)); }
       catch { caught = true; }
-      record('unbounded-response-caught', caught);
+      record('oversized-response-caught', caught);
       nativeExpect(caught).toBe(true);
     } finally { await new Promise<void>((resolve, reject) => { server.close((error) => { if (error) { reject(error); } else { resolve(); } }); }); }
   });
@@ -157,6 +176,6 @@ fixtureTest.describe('actual lifecycle fixture', () => {
     fixtureCorruptFinalization = true;
     record('final-capture-body-completed', true);
   });
-  registerUnboundedResponseTest();
+  registerResponseCaptureTest();
   registerOversizedFinalSelectionTest();
 });
