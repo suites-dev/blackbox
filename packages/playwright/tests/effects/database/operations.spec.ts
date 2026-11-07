@@ -5,7 +5,7 @@ import {
   test,
   type EffectContractBuilder,
 } from '@suites/blackbox-playwright';
-import { effectsGolden, json } from '../support.js';
+import { captureObservedPost, effectsGolden, json } from '../support.js';
 
 test.describe('real dependencies', () => {
   test.use({ blackbox: { system: 'effects-acceptance' } });
@@ -94,7 +94,7 @@ test.describe('real dependencies', () => {
     await expect(expect(effects).toSatisfy((e) => [e.absent(e.db({}))])).rejects.toThrow(
       /Scope .*: fail[\s\S]*observed lower=[1-9]/,
     );
-    const captured = await effects.capture();
+    const { capture: captured, http } = await captureObservedPost(effects);
     const database = captured.db({});
     await expect(database).toHaveEmitted();
     await expect(expect(database).toHaveEmittedTimes(0)).rejects.toThrow();
@@ -105,7 +105,7 @@ test.describe('real dependencies', () => {
     await expect(
       expect(database).not.toHaveEmittedTimes(database.emissions.length),
     ).rejects.toThrow(/inconclusive/i);
-    const observations = serializeEffectSnapshot(captured.http({ actor: 'app', method: 'POST' }), {
+    const observations = serializeEffectSnapshot(http, {
       project: ({ kind, actor, operation, target, outcome }) => ({
         kind,
         actor,
