@@ -1,4 +1,4 @@
-import type { EffectGraph } from '../verification/model.js';
+import type { EffectGraph } from '../graph/model.js';
 import { createEffectsRecord } from './create.js';
 import {
   EFFECT_KINDS,

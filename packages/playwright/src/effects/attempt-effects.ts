@@ -9,6 +9,8 @@ import {
   registerBlackboxEffectsClose,
 } from './runtime.js';
 import { createScopedBlackboxEffects } from './scoped-effects.js';
+import { createScopedObservationSource } from '../activities/scoped-observations.js';
+import { captureEffectObservations, unavailableEffectCapture } from './emissions/capture.js';
 
 const attempts = new WeakMap<BlackboxEffects, AttemptStimuli>();
 
@@ -64,6 +66,20 @@ export function createAttemptEffects(input: {
   const effects = createBlackboxEffects({
     sessionId: input.sessionId,
     executionId: input.executionId,
+    async capture() {
+      const completed = attempt.completed();
+      if (completed.kind === 'none') {
+        return unavailableEffectCapture({ ...input, message: 'No completed stimulus activity is available for this Playwright attempt.' });
+      }
+      const selection = completed.selection;
+      return captureEffectObservations({
+        identity: {
+          sessionId: selection.sessionId, executionId: selection.executionId,
+          scopeId: selection.scopeId, activityIds: selection.activities.map(({ activityId }) => activityId),
+        },
+        source: createScopedObservationSource({ selection, storageDirectory: input.storageDirectory }),
+      });
+    },
     evaluator: {
       async evaluate(contract) {
         const completed = attempt.completed();

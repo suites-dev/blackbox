@@ -3,6 +3,7 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { expect as playwrightExpect } from '@playwright/test';
 
 import { createBlackboxTest } from '../fixtures.js';
+import { createUnavailableBlackboxEffects } from '../effects/runtime.js';
 import type { BlackboxAttemptRuntime } from '../runtime/acquisition.js';
 
 const runtime = {
@@ -36,10 +37,10 @@ const runtime = {
         read: () => Promise.reject(new Error('not used by this fixture')),
         readTrace: () => Promise.reject(new Error('not used by this fixture')),
       },
-      effects: {
+      effects: createUnavailableBlackboxEffects({
         sessionId: 'timeout-session',
         executionId: 'timeout-execution',
-      },
+      }),
       stop: (reason) => {
         process.stdout.write(`BLACKBOX_PLAYWRIGHT_TIMEOUT_STOP ${reason}\n`);
         return Promise.resolve();

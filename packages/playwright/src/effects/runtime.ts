@@ -1,6 +1,12 @@
 import type { BlackboxEffects } from '../types.js';
 import type { EffectContract } from './contract.js';
 import type { EffectEvidenceArtifact } from './evaluation/artifact-types.js';
+import { unavailableEffectCapture, type EffectCaptureProvider } from './emissions/capture.js';
+import { effectAttemptOwner } from './emissions/attempt-owner.js';
+import { ownEffectCapture } from './emissions/ownership.js';
+import type { EmissionAssertionReport } from './emissions/types.js';
+
+export type { EmissionAssertionReport } from './emissions/types.js';
 
 export type EffectEvaluation =
   | { readonly kind: 'satisfied' }
@@ -20,6 +26,9 @@ export interface EffectAssertionReport {
 
 export interface EffectAssertionReporter {
   effectAssertion(report: EffectAssertionReport): Promise<void>;
+  emissionAssertion?(report: EmissionAssertionReport): Promise<void>;
+  redactEffectSnapshot?(yaml: string): string;
+  describe?(detail: unknown): string;
 }
 
 const evaluators = new WeakMap<BlackboxEffects, EffectContractEvaluator>();
@@ -33,10 +42,39 @@ export function createBlackboxEffects(input: {
   readonly sessionId: string;
   readonly executionId: string;
   readonly evaluator: EffectContractEvaluator;
-}): BlackboxEffects {
-  const effects = Object.freeze({
+} & Readonly<Partial<{ capture: EffectCaptureProvider }>>): BlackboxEffects {
+  const ownerUnavailable = effectAttemptOwner();
+  const unavailable = (): string | null => expiredEffects.has(effects)
+    ? 'The effects fixture is no longer available after its Playwright attempt ended.'
+    : ownerUnavailable();
+  const effects: BlackboxEffects = Object.freeze({
     sessionId: input.sessionId,
     executionId: input.executionId,
+    async capture() {
+      const reason = unavailable();
+      const captured = reason !== null || input.capture === undefined
+        ? unavailableEffectCapture({ ...input, message: reason ?? 'Effect capture is not available from this provider.' })
+        : await input.capture();
+      return ownEffectCapture(captured.capture, {
+        unavailable, evidence: captured.evidence,
+        describe: (text) => {
+          const reporter = reporters.get(effects);
+          return reporter !== undefined && reporter.describe !== undefined
+            ? reporter.describe(text) : text;
+        },
+        redactSnapshot: (yaml) => {
+          const reporter = reporters.get(effects);
+          return reporter !== undefined && reporter.redactEffectSnapshot !== undefined
+            ? reporter.redactEffectSnapshot(yaml) : yaml;
+        },
+        report: async (report) => {
+          const reporter = reporters.get(effects);
+          if (reporter !== undefined && reporter.emissionAssertion !== undefined) {
+            await reporter.emissionAssertion(report);
+          }
+        },
+      });
+    },
   });
   evaluators.set(effects, input.evaluator);
   return effects;

@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { createServer } from 'node:http';
+import { createUnavailableBlackboxEffects } from '../../effects/runtime.js';
 
 import type {
   BlackboxAttemptInput,
@@ -79,10 +80,10 @@ export async function startRespondingAttempt(
       readTrace: () =>
         Promise.reject(new Error('Telemetry traces are not used by this native-runner fixture')),
     },
-    effects: {
+    effects: createUnavailableBlackboxEffects({
       sessionId: `session-${executionId}`,
       executionId,
-    },
+    }),
     async stop(reason) {
       record({ kind: 'stop', executionId, reason });
       await new Promise<void>((resolveClose, rejectClose) => {

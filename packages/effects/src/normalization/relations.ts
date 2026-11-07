@@ -1,4 +1,4 @@
-import type { EffectRelation } from '../verification/model.js';
+import type { EffectRelation } from '../graph/model.js';
 import { attributesAt } from './attributes.js';
 import type { SpanRecord } from './records.js';
 import { array, identifier, record } from './values.js';
