@@ -3,7 +3,9 @@ import { relative } from 'node:path';
 
 import type { TestInfo } from '@playwright/test';
 import type { RecordedStimuli } from '../effects/attempt-effects.js';
-import type { EffectAssertionReport } from '../effects/runtime.js';
+import type { EffectAssertionReport, EmissionAssertionReport } from '../effects/runtime.js';
+import { emissionAttachment, emissionAttachmentBody } from './effects/emissions.js';
+import { redactEffectSnapshot } from './effects/snapshot-redaction.js';
 import type { BlackboxSandbox, BlackboxTelemetry } from '../types.js';
 
 import { effectAttachment, effectAttachmentBody } from './effects/attachment.js';
@@ -40,7 +42,7 @@ function assertionFields(
     return {
       outcome: assertion.outcome,
       evaluation: assertion.evaluation,
-      contractDigest: digestOf(assertion.contract),
+      contractDigest: assertion.contract === undefined ? null : digestOf(assertion.contract),
     };
   } catch {
     return { outcome: 'unknown', evaluation: 'unknown', contractDigest: null };
@@ -144,6 +146,23 @@ export class AttemptReport implements AttemptProgress {
       bytes: Buffer.byteLength(body),
       ...assertionFields(body),
     });
+  }
+
+  async emissionAssertion(report: EmissionAssertionReport): Promise<void> {
+    const sequence = ++this.effectAssertionSequence;
+    const body = emissionAttachmentBody({ sequence, report, sanitize: (text) => {
+      const redacted = this.secrets.redact(text);
+      return { text: reportText(redacted), truncated: redacted.length > reportTextLimit };
+    } });
+    await this.testInfo.attach(emissionAttachment, { contentType: 'application/json', body });
+    this.evidence.push({
+      kind: 'assertion-evidence', name: emissionAttachment, sequence,
+      digest: digestBytes(body), bytes: Buffer.byteLength(body), ...assertionFields(body),
+    });
+  }
+
+  redactEffectSnapshot(yaml: string): string {
+    return redactEffectSnapshot(yaml, (text) => this.secrets.redact(text));
   }
 
   /** The phase of the last progress event, which names where an attempt that failed to start was. */

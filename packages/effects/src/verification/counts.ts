@@ -1,5 +1,10 @@
 import type { EffectCountOperator, EffectSelector } from '../contract.js';
-import type { VerificationContext, VerificationFinding, VerificationStatus } from './model.js';
+import type {
+  EffectSelection,
+  VerificationContext,
+  VerificationFinding,
+  VerificationStatus,
+} from './model.js';
 import { select } from './selectors.js';
 
 function countStatus(
@@ -34,12 +39,24 @@ export function verifyCount(
     readonly selector: EffectSelector;
   },
 ): VerificationFinding {
+  return verifySelectedCount(
+    select(context.graph, constraint.selector),
+    context.closed,
+    constraint,
+  );
+}
+
+/** Shared interval semantics for contracts and immutable emission recorders. */
+export function verifySelectedCount(
+  selected: EffectSelection,
+  closed: boolean,
+  constraint: { readonly op: EffectCountOperator; readonly n: number },
+): VerificationFinding {
   if (!Number.isSafeInteger(constraint.n) || constraint.n < 0) {
     throw new TypeError('Invalid count');
   }
-  const selected = select(context.graph, constraint.selector);
   const lower = selected.definite.length;
-  const upper = context.closed ? lower + selected.possible.length : Infinity;
+  const upper = closed ? lower + selected.possible.length : Infinity;
   return {
     status: countStatus(constraint.op, constraint.n, lower, upper),
     reason: `${constraint.op} ${constraint.n}; observed lower=${lower}, upper=${upper === Infinity ? 'unbounded' : upper}`,

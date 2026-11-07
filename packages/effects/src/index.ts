@@ -31,6 +31,23 @@ export type {
 export { createEffectsRecord } from './record/create.js';
 export { createEffectsRecordFromGraph } from './record/from-graph.js';
 export { serializeEffectsRecord } from './record/serialize.js';
+export { createEffectCapture } from './recorder/create.js';
+export { assessEffectRecorder } from './recorder/count.js';
+export { assessEffectRecorderBefore, assessNthEffectEmission } from './recorder/order.js';
+export { serializeEffectSnapshot } from './recorder/snapshot/serialize.js';
+export type {
+  EffectCapture,
+  EffectCaptureIdentity,
+  EffectCaptureInput,
+  EffectCaptureCoverage,
+  EffectRecorder,
+  EffectEmissionPredicate,
+  EffectRecorderCount,
+  EffectRecorderAssessment,
+  EffectRecorderCountAssessment,
+  EffectSnapshotValue,
+  EffectSnapshotOptions,
+} from './recorder/model.js';
 export { EFFECT_KINDS, EFFECTS_RECORD_SCHEMA_VERSION } from './record/types.js';
 export type {
   Effect as RecordedEffect,
