@@ -18,6 +18,28 @@ function integerEnvironment(name: string): number {
   return value;
 }
 
+function redactionEnvironment():
+  { readonly kind: 'credentials-v1'; readonly secrets: readonly string[] } | undefined {
+  const raw = process.env.BLACKBOX_OTEL_REDACTION_SECRETS;
+  const policy = process.env.BLACKBOX_OTEL_REDACTION_POLICY;
+  if (raw === undefined && policy === undefined) {
+    return undefined;
+  }
+  if (raw === undefined || policy !== 'credentials-v1') {
+    throw new Error('Invalid collector redaction configuration.');
+  }
+  let value: unknown;
+  try {
+    value = JSON.parse(raw) as unknown;
+  } catch {
+    throw new Error('Invalid collector redaction configuration.');
+  }
+  if (!Array.isArray(value) || value.some((item) => typeof item !== 'string')) {
+    throw new Error('Invalid collector redaction configuration.');
+  }
+  return { kind: 'credentials-v1', secrets: value as string[] };
+}
+
 async function run(): Promise<void> {
   const collector = await startCollector({
     kind: 'start-collector',
@@ -38,6 +60,7 @@ async function run(): Promise<void> {
       ingestToken: requiredEnvironment('BLACKBOX_OTEL_INGEST_TOKEN'),
       controlToken: requiredEnvironment('BLACKBOX_OTEL_CONTROL_TOKEN'),
     },
+    redaction: redactionEnvironment(),
     limits: {
       maxRequestBytes: integerEnvironment('BLACKBOX_OTEL_MAX_REQUEST_BYTES'),
       maxRetainedBytes: integerEnvironment('BLACKBOX_OTEL_MAX_RETAINED_BYTES'),

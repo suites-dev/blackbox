@@ -74,7 +74,7 @@ export function createScopedObservationSource(
   input: {
     readonly selection: ActivitySelection;
     readonly storageDirectory: string;
-  },
+  } & Readonly<Partial<{ requireLiveCollector: boolean }>>,
   ports: { readonly readSnapshot: typeof readCollectorSnapshot } = {
     readSnapshot: readCollectorSnapshot,
   },
@@ -108,6 +108,13 @@ export function createScopedObservationSource(
       }
       if (snapshot.kind === 'collector-snapshot-corrupt') {
         return { kind: 'rejected', message: 'Retained activity telemetry snapshot is corrupt.' };
+      }
+      const latest = snapshot.lifecycle.runs.at(-1);
+      if (
+        input.requireLiveCollector === true &&
+        (latest === undefined || latest.receiver !== 'ready')
+      ) {
+        return { kind: 'unavailable', message: 'The collector is not healthy for a live capture.' };
       }
       return admitSnapshot(snapshot, selection);
     },

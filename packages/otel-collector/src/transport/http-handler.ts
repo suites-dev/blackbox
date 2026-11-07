@@ -6,6 +6,7 @@ import { recordedFailure } from '../model/validation.js';
 import { validateOtlpTraceRequest } from '../otlp/json.js';
 import { parseActivation } from '../activation/validation.js';
 import { requireAuthorization } from './authorization.js';
+import { redactTraceRequest } from '../otlp/redaction.js';
 import { RequestFailure, writeJson } from './response.js';
 import { serveCollectorRead } from './read-handler.js';
 import { CollectorRetentionLimitError } from '../lifecycle/retention.js';
@@ -119,8 +120,21 @@ async function acceptTraces(input: {
   } catch (error) {
     throw new RequestFailure(400, recordedFailure(error).message);
   }
+  const rawJson =
+    input.config.redaction === undefined
+      ? decoded.rawJson
+      : JSON.stringify(redactTraceRequest(decoded.value, input.config.redaction.secrets));
+  if (Buffer.byteLength(rawJson) > input.config.limits.maxRequestBytes) {
+    throw new Error('Redacted OTLP request exceeds the configured byte limit.');
+  }
+  if (
+    input.config.redaction !== undefined &&
+    validateOtlpTraceRequest(JSON.parse(rawJson) as unknown) !== spanCount
+  ) {
+    throw new Error('Redaction changed the OTLP span inventory.');
+  }
   await input.store.accept({
-    rawJson: decoded.rawJson,
+    rawJson,
     contentEncoding: decoded.encoding,
     spanCount,
   });
