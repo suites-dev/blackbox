@@ -7,6 +7,7 @@ import { expect, it } from 'vitest';
 import { buildEnvelope } from '../../envelope/build.js';
 import { digestBytes } from '../../envelope/index.js';
 import { inputFixture } from '../../envelope/testing/envelope.fixture.js';
+import { nativeResult } from '../receipts/native-result.js';
 import { BehaviorHistory } from '../history.js';
 import { ingestPlaywrightResults } from '../ingestion/playwright-results.js';
 import { defined } from './history.fixture.js';
@@ -79,4 +80,31 @@ it('retains referenced attachment bytes across separate attempts and rejects mis
   } finally {
     await rm(directory, { recursive: true, force: true });
   }
+});
+
+it('retains final runner outcomes across duplicate reports, rebuilds, and conflicts', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'bb-final-result-'));
+  try {
+    const envelope = buildEnvelope(inputFixture());
+    const body = Buffer.from(JSON.stringify(envelope)).toString('base64');
+    const path = join(directory, 'results.json');
+    const report = async (status: string) => writeFile(path, JSON.stringify({ suites: [{ specs: [{ tests: [{ results: [{ status, attachments: [{ name: 'blackbox-envelope', body }] }] }] }] }] }));
+    const history = await BehaviorHistory.open(join(directory, 'history'));
+    await report('failed');
+    await ingestPlaywrightResults(history, path);
+    await ingestPlaywrightResults(history, path);
+    let index = await history.rebuildIndex();
+    expect(index.nativeResults).toHaveLength(1);
+    await history.ingestNativeResult(nativeResult({ kind: 'playwright-result', version: 1, envelope: envelope.digest, attemptId: 'foreign-attempt', status: 'passed' }));
+    index = await history.rebuildIndex();
+    expect(index.executions[0].testStatus).toBe('failed');
+    expect(index.executions[0]).toMatchObject({ testStatus: 'failed', finalStatus: 'failed', captureTestStatus: envelope.verification.testStatus.status });
+    expect((await history.behaviorHistory(envelope.identity.behavior.id, { followAliases: false }))[0].status).toBe('failed');
+    await report('passed');
+    await ingestPlaywrightResults(history, path);
+    index = await history.rebuildIndex();
+    expect(index.nativeResults).toHaveLength(3);
+    expect(index.executions[0]).toMatchObject({ testStatus: 'conflicting', finalStatus: 'conflicting', statusDiscrepancy: true });
+    expect((await history.behaviorHistory(envelope.identity.behavior.id, { followAliases: false }))[0].status).toBe('conflicting');
+  } finally { await rm(directory, { recursive: true, force: true }); }
 });

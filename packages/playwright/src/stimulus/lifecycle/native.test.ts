@@ -53,6 +53,13 @@ function assertPartialHealth(specs: ReturnType<typeof discovered>): void {
   });
 }
 
+function assertReceiptEvidence(successfulDetails: Awaited<ReturnType<BehaviorHistory['execution']>>[], rows: Awaited<ReturnType<BehaviorHistory['index']>>['executions']): void {
+  const receiptFailure = successfulDetails.find((item) => item !== null && item.envelope.provenance.test.titlePath.includes('receipt attachment failure preserves cleanup and evidence'));
+  if (receiptFailure === undefined || receiptFailure === null) { throw new Error('missing receipt failure execution'); }
+  expect(rows.find(({ envelopeId }) => envelopeId === receiptFailure.envelope.digest)).toMatchObject({ testStatus: 'failed', finalStatus: 'failed', captureTestStatus: 'passed', statusDiscrepancy: true });
+  expect(receiptFailure.evidence).toContainEqual(expect.objectContaining({ kind: 'execution-evidence', status: 'stored' }));
+}
+
 it('retains bounded execution evidence and capture failures', async () => {
   const run = await runAssertions('stimulus-evidence.spec.ts');
   expect(run.exitCode, `${run.directory}\n${run.output}`).toBe(0);
@@ -63,26 +70,29 @@ it('retains bounded execution evidence and capture failures', async () => {
     'unasserted output capture failure still fails the attempt',
     'unwritable evidence fails the attempt',
     'lost final collector state fails even without a final snapshot',
+    'receipt attachment failure preserves cleanup and evidence',
     'captures ordinary responses and rejects oversized output',
     'bounds the supplemental capture while retaining nine stimuli',
   ]);
-  expect(specs.map((spec) => spec.tests[0].results[0].status)).toEqual(['passed', 'failed', 'failed', 'failed', 'failed', 'passed']);
-  expect(run.report.stats).toMatchObject({ expected: 6, unexpected: 0, skipped: 0, flaky: 0 });
+  expect(specs.map((spec) => spec.tests[0].results[0].status)).toEqual(['passed', 'failed', 'failed', 'failed', 'failed', 'failed', 'passed']);
+  expect(run.report.stats).toMatchObject({ expected: 7, unexpected: 0, skipped: 0, flaky: 0 });
   expect(run.events).toContainEqual({ kind: 'unasserted-capture-caught', value: true });
   expect(run.events).toContainEqual({ kind: 'persistence-failure-caught', value: true });
   expect(run.events).toContainEqual({ kind: 'final-capture-body-completed', value: true });
+  expect(run.events).toContainEqual({ kind: 'receipt-attachment-rejected', value: true });
+  expect(run.events).toContainEqual({ kind: 'receipt-action-completed', value: true });
   expect(run.events).toContainEqual({ kind: 'ordinary-responses-captured', value: true });
   expect(run.events).toContainEqual({ kind: 'oversized-response-caught', value: true });
   expect(run.events).toContainEqual({ kind: 'completed-nine-stimuli', value: true });
-  expect(run.events.filter(({ kind }) => kind === 'fixture-collector-closed')).toHaveLength(6);
-  expect(run.events).toContainEqual({ kind: 'retained-executions', value: { attempts: 6, files: 26, blocked: 1, leaked: false } });
+  expect(run.events.filter(({ kind }) => kind === 'fixture-collector-closed')).toHaveLength(7);
+  expect(run.events).toContainEqual({ kind: 'retained-executions', value: { attempts: 7, files: 29, blocked: 1, leaked: false } });
   assertResponseEvidence(specs);
   assertPartialHealth(specs);
   const history = await BehaviorHistory.open(join(run.directory, 'history'));
   const ingestion = await ingestPlaywrightResults(history, join(run.directory, 'results.json'));
-  expect(ingestion).toMatchObject({ envelopes: 6, rejected: [] });
+  expect(ingestion).toMatchObject({ envelopes: 7, rejected: [] });
   const index = await history.index();
-  expect(index.executions).toHaveLength(6);
+  expect(index.executions).toHaveLength(7);
   const successful = index.executions.filter(({ testStatus }) => testStatus === 'passed');
   expect(successful).toHaveLength(2);
   const successfulDetails = await Promise.all(successful.map(({ envelopeId }) => history.execution(envelopeId)));
@@ -94,8 +104,9 @@ it('retains bounded execution evidence and capture failures', async () => {
     expect.objectContaining({ kind: 'capture-health', status: 'stored' }),
   ]));
   const failed = index.executions.filter(({ testStatus }) => testStatus === 'failed');
-  expect(failed).toHaveLength(4);
+  expect(failed).toHaveLength(5);
   const failedDetails = await Promise.all(failed.map(({ envelopeId }) => history.execution(envelopeId)));
+  assertReceiptEvidence(failedDetails, index.executions);
   const failedDetail = failedDetails.find((item) => item !== null && item.evidence.some(({ kind }) => kind === 'execution-evidence'));
   if (failedDetail === null || failedDetail === undefined) { throw new Error('missing failed execution evidence'); }
   expect(failedDetail.evidence).toEqual(expect.arrayContaining([

@@ -176,6 +176,16 @@ fixtureTest.describe('actual lifecycle fixture', () => {
     fixtureCorruptFinalization = true;
     record('final-capture-body-completed', true);
   });
+  fixtureTest('receipt attachment failure preserves cleanup and evidence', async ({ stimulus }, info) => {
+    info.fail();
+    const attach = info.attach.bind(info);
+    info.attach = async (name, options) => {
+      if (name === 'blackbox-receipt') { record('receipt-attachment-rejected', true); throw new Error('receipt blocked'); }
+      await attach(name, options);
+    };
+    await stimulus('When the receipt will fail', () => ({ status: 'ok' }));
+    record('receipt-action-completed', true);
+  });
   registerResponseCaptureTest();
   registerOversizedFinalSelectionTest();
 });

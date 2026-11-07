@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises';
 
 import { digestBytes, type BehaviorEnvelope } from '../../envelope/index.js';
+import { nativeResult, type NativeResult } from '../receipts/native-result.js';
 import type { BehaviorHistory } from '../history.js';
 
 export interface IngestSummary {
@@ -29,18 +30,19 @@ function list(value: unknown): readonly unknown[] {
 }
 
 /** The attachments of every result in a Playwright JSON report; each keeps its exact bytes. */
-function* attempts(suites: readonly unknown[]): Generator<readonly Attachment[]> {
+function* attempts(suites: readonly unknown[]): Generator<{ attachments: readonly Attachment[]; status: unknown }> {
   for (const suite of suites.filter(isRecord)) {
     for (const spec of list(suite.specs).filter(isRecord)) {
       for (const test of list(spec.tests).filter(isRecord)) {
         for (const result of list(test.results).filter(isRecord)) {
-          yield list(result.attachments)
+          const attachments = list(result.attachments)
             .filter(isRecord)
             .flatMap((item) =>
               typeof item.name === 'string' && typeof item.body === 'string'
                 ? [{ name: item.name, body: Buffer.from(item.body, 'base64') }]
                 : [],
             );
+          yield { attachments, status: result.status };
         }
       }
     }
@@ -97,7 +99,7 @@ export async function ingestPlaywrightResults(
     withoutEnvelope: 0,
   };
   const rejected: string[] = [];
-  for (const attachments of attempts(isRecord(document) ? list(document.suites) : [])) {
+  for (const { attachments, status } of attempts(isRecord(document) ? list(document.suites) : [])) {
     tally.attempts += 1;
     for (const body of attachments.filter(({ name }) => name === 'blackbox-effects')) {
       await history.ingestBlob(body.body);
@@ -117,6 +119,12 @@ export async function ingestPlaywrightResults(
         // Only a verified envelope may select other attachment bodies. Match exact bytes, not
         // attachment names or sequence order, since Playwright can finish attachments out of order.
         await ingestReferencedAttachments(history, document as BehaviorEnvelope, attachments);
+        if (typeof status === 'string' && ['passed', 'failed', 'timedOut', 'skipped', 'interrupted'].includes(status)) {
+          const envelopeDocument = document as BehaviorEnvelope;
+          await history.ingestNativeResult(nativeResult({ kind: 'playwright-result', version: 1,
+            envelope: envelopeDocument.digest, attemptId: envelopeDocument.identity.attempt.attemptId,
+            status: status as NativeResult['status'] }));
+        }
         tally.envelopes += 1;
         tally.newEnvelopes += stored.created ? 1 : 0;
         tally.snapshots += snapshot === null ? 0 : 1;
