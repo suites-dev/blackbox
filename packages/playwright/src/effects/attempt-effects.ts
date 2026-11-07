@@ -91,7 +91,11 @@ async function captureActivity(input: {
       scopeId: selection.scopeId,
       activityIds: selection.activities.map(({ activityId }) => activityId),
     },
-    source: createScopedObservationSource({ selection, storageDirectory: input.storageDirectory }),
+    source: createScopedObservationSource({
+      selection,
+      storageDirectory: input.storageDirectory,
+      requireLiveCollector: true,
+    }),
   });
   if (captured.evidence === null) {
     throw new Error('The stimulus effects capture could not be admitted.');

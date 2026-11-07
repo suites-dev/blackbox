@@ -51,6 +51,7 @@ async function validateTelemetry(input: SandboxInput): Promise<void> {
     return;
   }
   const telemetry = input.telemetry;
+  validateRedaction(telemetry.redaction);
   if (!ID_PATTERN.test(telemetry.sessionId) || !ID_PATTERN.test(telemetry.executionId)) {
     throw new SandboxInputError('telemetry sessionId and executionId must be valid identifiers');
   }
@@ -111,6 +112,19 @@ async function validateTelemetry(input: SandboxInput): Promise<void> {
   validateCollectorNumber(telemetry.collector.readiness.retries, 'readiness retries', 1_000);
   if (!telemetry.collector.readiness.path.startsWith('/')) {
     throw new SandboxInputError('collector readiness path must start with /');
+  }
+}
+
+function validateRedaction(value: unknown): void {
+  if (value === undefined) { return; }
+  if (typeof value !== 'object' || value === null || !('kind' in value) || value.kind !== 'credentials-v1' ||
+    !('secrets' in value) || !Array.isArray(value.secrets)) {
+    throw new SandboxInputError('telemetry redaction configuration is invalid');
+  }
+  const secrets: unknown[] = value.secrets;
+  if (secrets.length > 128 || secrets.some((secret) => typeof secret !== 'string' || secret.length > 4096) ||
+    (secrets as string[]).reduce((total, secret) => total + secret.length, 0) > 32768) {
+    throw new SandboxInputError('telemetry redaction configuration is invalid');
   }
 }
 

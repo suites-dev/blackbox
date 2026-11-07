@@ -11,6 +11,8 @@ export interface SandboxTelemetryEnabledInput {
     readonly ingestToken: string;
     readonly controlToken: string;
   };
+  // eslint-disable-next-line no-restricted-syntax -- omission preserves the legacy sandbox input
+  readonly redaction?: { readonly kind: 'credentials-v1'; readonly secrets: readonly string[] };
   readonly collector: SandboxCollectorInput;
   readonly participants: readonly SandboxTelemetryParticipant[];
 }

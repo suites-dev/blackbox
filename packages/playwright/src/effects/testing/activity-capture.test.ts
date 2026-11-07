@@ -67,3 +67,32 @@ it('reports an unavailable collector read as a capture failure', async () => {
     closeBlackboxEffects(effects);
   });
 });
+
+it('rejects a stopped collector even when it retained an earlier observation', async () => {
+  await withPipeline(async ({ storageDirectory, collector, exportSpans }) => {
+    const { effects } = createAttemptEffects({
+      sessionId: 'effects-pipeline-session',
+      executionId: 'effects-pipeline-attempt',
+      storageDirectory,
+    });
+    const activityId = await runEffectStimulus(
+      effects,
+      'one request',
+      async ({ activityId, headers }) => {
+        await exportSpans([
+          operationSpan({
+            traceId: headers.traceparent.split('-')[1],
+            spanId: '3333333333333333',
+            attributes: { 'http.request.method': 'POST' },
+          }),
+        ]);
+        return activityId;
+      },
+    );
+    expect((await collector.close()).kind).toBe('collector-stopped');
+    await expect(captureAttemptActivity(effects, activityId)).rejects.toThrow(
+      'could not be admitted',
+    );
+    closeBlackboxEffects(effects);
+  });
+});

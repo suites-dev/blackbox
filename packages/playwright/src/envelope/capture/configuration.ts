@@ -183,6 +183,7 @@ const collectorLimitNames = [
   'BLACKBOX_OTEL_MAX_RETAINED_BYTES',
   'BLACKBOX_OTEL_MAX_RETAINED_FRAGMENTS',
   'BLACKBOX_OTEL_SHUTDOWN_TIMEOUT_MS',
+  'BLACKBOX_OTEL_REDACTION_POLICY',
 ];
 
 function isRecord(value: unknown): value is Record<string, unknown> {
