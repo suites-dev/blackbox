@@ -94,3 +94,14 @@ it('lets the Playwright test timeout govern sandbox acquisition', async () => {
     'Blackbox sandbox cleanup did not settle within 30ms after completed',
   );
 });
+
+it('owns state readers and checkpoints within one native Playwright attempt', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'blackbox-playwright-state-'));
+  directories.push(directory);
+  const result = await runPlaywright({
+    configFile: 'state-attempt.config.ts',
+    outputDirectory: join(directory, 'output'),
+  });
+  expect(result.exitCode, result.output).toBe(0);
+  expect(result.output).toContain('2 passed');
+});
