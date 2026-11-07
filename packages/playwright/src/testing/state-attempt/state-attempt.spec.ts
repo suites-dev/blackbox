@@ -1,14 +1,14 @@
 import { randomUUID } from 'node:crypto';
 import { expect } from '@playwright/test';
-import { createBlackboxTest } from '../fixtures.js';
-import { createUnavailableBlackboxEffects } from '../effects/runtime.js';
-import type { BlackboxAttemptRuntime } from '../runtime/acquisition.js';
+import { createBlackboxTest } from '../../fixtures.js';
+import { createUnavailableBlackboxEffects } from '../../effects/runtime.js';
+import type { BlackboxAttemptRuntime } from '../../runtime/acquisition.js';
 import type {
   StateCheckpoint,
   StateObserver,
   StateReaders,
   StateSelection,
-} from '../state/types.js';
+} from '../../state/types.js';
 
 const runtime = {
   start(input) {
