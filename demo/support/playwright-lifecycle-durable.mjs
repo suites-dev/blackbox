@@ -12,7 +12,7 @@ function attachment(result, name) {
     digest: `sha256:${createHash('sha256').update(bytes).digest('hex')}` };
 }
 
-function verifySuccess(events, result) {
+function verifySuccess(events, result, execution) {
   assert.deepEqual(events.map(({ kind }) => kind), ['begin', 'precondition', 'action', 'final', 'claim', 'claim']);
   const [begin, precondition, action, final, claim, snapshot] = events;
   const expected = [{ id: 'subscription_alice', status: 'active' }];
@@ -34,6 +34,9 @@ function verifySuccess(events, result) {
   const effects = attachment(result, 'effects.json');
   assert.equal(effects.value.kind, 'stimulus-effects');
   assert.equal(effects.value.executionId, begin.executionId);
+  assert.equal(effects.value.identity.sessionId, execution.sessionId);
+  assert.equal(effects.value.identity.executionId, execution.attemptExecutionId);
+  assert.deepEqual(effects.value.identity.activityIds, [action.activityId]);
   assert.equal(action.captured.effects, effects.digest);
   // The cut is allowed to be open. Presence, order and completeness remain separate claims.
   assert(Array.isArray(effects.value.graph.effects));
@@ -76,7 +79,7 @@ export async function verifyDurableLifecycle(results, cases) {
     const events = execution.value.events;
     assert(events.every((event) => event.executionId === events[0].executionId), 'foreign stimulus events');
     if (position === 0) {
-      const effectsId = verifySuccess(events, result);
+      const effectsId = verifySuccess(events, result, execution.value);
       assert(detail.evidence.some(({ id, status }) => id === effectsId && status === 'stored'), 'effects bytes were not retained');
     } else verifyStopped(events, position);
     executions.push({ title: spec.title, envelope: envelope.digest, execution: execution.digest, finalStatus: row.finalStatus });
