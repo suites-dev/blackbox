@@ -1,3 +1,5 @@
+import { createStateRegistry } from './state/registry.js';
+import type { StateRegistry } from './state/types.js';
 import { registerAssertionOwner } from './assertions/scope.js';
 import { createAttemptStep } from './steps/step-context.js';
 import { runClients } from './clients/clients.js';
@@ -39,6 +41,7 @@ interface SelectedAttemptFixture {
 type AttemptFixture = UnselectedAttemptFixture | SelectedAttemptFixture;
 
 interface PrivateFixtures {
+  readonly _blackboxState: StateRegistry;
   readonly _blackboxClients: Readonly<Record<string, unknown>>;
   readonly _blackboxOptions: BlackboxAttemptOptions;
   readonly _blackboxTestScope: undefined;
@@ -196,6 +199,18 @@ export function createBlackboxTest(
       // the attempt fixture, even when the test's own deadline has expired.
       { auto: true, timeout: 0 },
     ],
+    _blackboxState: async ({ _blackboxAttempt }, use) => {
+      selectedAttempt(_blackboxAttempt, 'state');
+      const registry = createStateRegistry();
+      try {
+        await use(registry);
+      } finally {
+        registry.close();
+      }
+    },
+    state: async ({ _blackboxState }, use) => {
+      await use(_blackboxState.state);
+    },
     clients: async ({ _blackboxAttempt, _blackboxClients }, use) => {
       selectedAttempt(_blackboxAttempt, 'clients');
       await use(registeredClients(_blackboxClients));

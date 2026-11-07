@@ -67,7 +67,11 @@ test('starts the automatic sandbox even without destructuring its fixture', () =
   playwrightExpect(true).toBe(true);
 });
 
-test('second physical attempt', ({ effects, sandbox }) => {
+test('second physical attempt', ({ effects, sandbox, state }) => {
+  let reads = 0;
+  const observer = state.observe('payments', { rows: () => { reads++; return []; } });
+  playwrightExpect(observer).toBeTruthy();
+  playwrightExpect(reads).toBe(0);
   playwrightExpect(sandbox.catalogEntry).toMatchObject({ id: 'orders', kind: 'system' });
   playwrightExpect(effects.executionId).toBe(sandbox.executionId);
 });
