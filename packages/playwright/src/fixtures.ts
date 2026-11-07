@@ -1,5 +1,4 @@
-import { createStateRegistry } from './state/registry.js';
-import type { StateRegistry } from './state/types.js';
+import { createStateRegistry, createStimulusLifecycle, type StateRegistry } from './fixture-lifecycle/execution.js';
 import { registerAssertionOwner } from './assertions/scope.js';
 import { createAttemptStep } from './steps/step-context.js';
 import { runClients } from './clients/clients.js';
@@ -42,6 +41,7 @@ type AttemptFixture = UnselectedAttemptFixture | SelectedAttemptFixture;
 
 interface PrivateFixtures {
   readonly _blackboxState: StateRegistry;
+  readonly _blackboxExecution: ReturnType<typeof createStimulusLifecycle>;
   readonly _blackboxClients: Readonly<Record<string, unknown>>;
   readonly _blackboxOptions: BlackboxAttemptOptions;
   readonly _blackboxTestScope: undefined;
@@ -111,6 +111,28 @@ async function stepFixture(
   } finally {
     fixture.revoke();
   }
+}
+
+async function executionFixture(
+  { _blackboxState, request, step }: Pick<PrivateFixtures, '_blackboxState'> & Pick<PlaywrightTestArgs, 'request'> & Pick<BlackboxTestFixtures, 'step'>,
+  use: (value: ReturnType<typeof createStimulusLifecycle>) => Promise<void>,
+): Promise<void> {
+  const lifecycle = createStimulusLifecycle({ registry: _blackboxState, request, step });
+  try { await use(lifecycle); } finally { lifecycle.close(); }
+}
+
+async function stimulusFixture(
+  { _blackboxExecution }: Pick<PrivateFixtures, '_blackboxExecution'>,
+  use: (stimulus: BlackboxTestFixtures['stimulus']) => Promise<void>,
+): Promise<void> {
+  await use(_blackboxExecution.stimulus);
+}
+
+async function stateFixture(
+  { _blackboxState }: Pick<PrivateFixtures, '_blackboxState'>,
+  use: (state: BlackboxTestFixtures['state']) => Promise<void>,
+): Promise<void> {
+  await use(_blackboxState.state);
 }
 
 async function useSelectedAttempt(
@@ -208,9 +230,9 @@ export function createBlackboxTest(
         registry.close();
       }
     },
-    state: async ({ _blackboxState }, use) => {
-      await use(_blackboxState.state);
-    },
+    _blackboxExecution: executionFixture,
+    stimulus: stimulusFixture,
+    state: stateFixture,
     clients: async ({ _blackboxAttempt, _blackboxClients }, use) => {
       selectedAttempt(_blackboxAttempt, 'clients');
       await use(registeredClients(_blackboxClients));

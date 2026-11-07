@@ -19,3 +19,5 @@ export { AssertionScopeError } from './assertions/types.js';
 export type { AssertionAccounting, AssertionScopeResult, AssertionScopeErrorCode } from './assertions/types.js';
 
 export type { BlackboxState, StateObserver, StateReaders, StateValues, StateDiff, StateComparison } from './state/types.js';
+
+export type { Stimulus, ExecutionResult, ExecutionEvidence, InitialState, WhenTitle, GivenTitle, VerifyTitle } from './stimulus/lifecycle/types.js';
