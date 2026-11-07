@@ -145,3 +145,53 @@ it('serializes each observer independently with checkpoint-linked diffs', async 
     selection.serializeBetween(before.checkpoint, after.checkpoint, (value) => value).observers[1],
   ).toEqual({ name: 'bad', status: 'failed' });
 });
+
+it('rejects proxy and accessor values without invoking their traps', async () => {
+  let traps = 0;
+  const proxy = new Proxy(
+    { id: 'one' },
+    {
+      get() {
+        traps++;
+        throw new Error('get trap');
+      },
+      getPrototypeOf() {
+        traps++;
+        throw new Error('prototype trap');
+      },
+      ownKeys() {
+        traps++;
+        throw new Error('keys trap');
+      },
+    },
+  );
+  const accessor = Object.defineProperty({}, 'then', {
+    enumerable: true,
+    get() {
+      traps++;
+      throw new Error('getter');
+    },
+  });
+  const revoked = Proxy.revocable({}, {});
+  revoked.revoke();
+  const registry = createStateRegistry();
+  registry.state.observe('payments', {
+    direct: () => proxy,
+    nested: () => ({ value: proxy }),
+    accessor: () => accessor,
+    revoked: () => revoked.proxy,
+    normal: () => Promise.resolve('ok'),
+  });
+  const selection = registry.select();
+  const captured = await selection.capture();
+  expect(traps).toBe(0);
+  expect(captured.failures).toEqual([
+    { observer: 'payments', reader: 'direct', reason: 'invalid-value' },
+    { observer: 'payments', reader: 'nested', reason: 'invalid-value' },
+    { observer: 'payments', reader: 'accessor', reason: 'invalid-value' },
+    { observer: 'payments', reader: 'revoked', reason: 'invalid-value' },
+  ]);
+  expect(
+    selection.serialize(captured.checkpoint, (value) => value).observers[0].readers[4],
+  ).toEqual({ name: 'normal', status: 'captured', value: 'ok' });
+});

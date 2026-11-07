@@ -1,3 +1,4 @@
+import { types } from 'node:util';
 import { isSecretEnvironmentName } from '../reporting/redaction/secret-environment.js';
 import type { JsonValue } from './types.js';
 
@@ -5,6 +6,16 @@ const maxDepth = 16;
 const maxNodes = 10_000;
 const maxString = 16_384;
 const maxBytes = 1_000_000;
+
+function assertSafeObject(value: object, active: ReadonlySet<object>): void {
+  if (types.isProxy(value) || active.has(value)) {
+    throw new Error('Unsupported state value');
+  }
+  const proto = Object.getPrototypeOf(value) as unknown;
+  if (!Array.isArray(value) && proto !== Object.prototype && proto !== null) {
+    throw new Error('Unsupported state object');
+  }
+}
 
 /** Copy only bounded JSON data properties; do not invoke getters or custom serializers. */
 export function copyValue(input: unknown): JsonValue {
@@ -29,13 +40,7 @@ export function copyValue(input: unknown): JsonValue {
     return copyObject(value, depth);
   }
   function copyObject(value: object, depth: number): JsonValue {
-    if (active.has(value)) {
-      throw new Error('Unsupported state value');
-    }
-    const proto = Object.getPrototypeOf(value) as unknown;
-    if (!Array.isArray(value) && proto !== Object.prototype && proto !== null) {
-      throw new Error('Unsupported state object');
-    }
+    assertSafeObject(value, active);
     active.add(value);
     const descriptors = Object.getOwnPropertyDescriptors(value);
     const result: Record<string, JsonValue> = Object.create(null) as Record<string, JsonValue>;

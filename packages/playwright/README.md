@@ -526,7 +526,8 @@ sandboxes are intentionally outside this package's current surface.
 The `state` fixture registers named readers synchronously with `state.observe(name, readers)`.
 Registration does not invoke the readers or modify the observed system. Readers may return
 JSON-compatible scalar values, objects, or row arrays with a unique nonempty `id` on every row.
-Unsupported, cyclic, oversized, missing-ID, and duplicate-ID values fail capture. Checkpoints
+Unsupported, proxy, accessor, cyclic, oversized, missing-ID, and duplicate-ID values fail capture.
+Readers may return values synchronously or native promises; custom thenables are not supported. Checkpoints
 copy and freeze their values, so later changes to reader results cannot rewrite evidence.
 Readers belong to one physical test attempt; handles cannot be reused in another attempt.
 The stimulus lifecycle will capture registered readers at its initial and final boundaries.
