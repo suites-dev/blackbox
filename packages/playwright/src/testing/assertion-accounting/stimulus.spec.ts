@@ -16,7 +16,7 @@ function lifecycle(request: Parameters<typeof createStimulusLifecycle>[0]['reque
   const attempt = { sandbox: { executionId: 'attempt' }, telemetry: { sessionId: 'session' }, effects } as RunningBlackboxAttempt;
   const step = createAttemptStep(test.step.bind(test), attempt);
   const run = createStimulusLifecycle({ registry, request, step: step.step });
-  return { registry, run, close() { run.close(); step.revoke(); registry.close(); } };
+  return { registry, run, close() { try { run.close(); } finally { step.revoke(); registry.close(); } } };
 }
 
 test('captures exact initial values and binds sequential verification', async ({ request }, info) => {
@@ -193,7 +193,7 @@ test('interrupted actions retain initial evidence without a final checkpoint', a
     return 1;
   });
   await entered.promise;
-  fixture.close();
+  nativeExpect(() => { fixture.close(); }).toThrow(/unfinished operations/);
   release.resolve(undefined);
   await nativeExpect(operation).rejects.toThrow(/no longer active/);
   nativeExpect(fixture.run.journal.events().map(({ kind }) => kind)).toEqual(['begin', 'action']);
