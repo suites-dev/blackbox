@@ -17,3 +17,5 @@ export type {
 export { assertionScope } from './assertions/scope.js';
 export { AssertionScopeError } from './assertions/types.js';
 export type { AssertionAccounting, AssertionScopeResult, AssertionScopeErrorCode } from './assertions/types.js';
+
+export type { BlackboxState, StateObserver, StateReaders, StateValues, StateDiff, StateComparison } from './state/types.js';

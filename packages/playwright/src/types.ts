@@ -1,3 +1,4 @@
+import type { BlackboxState } from './state/types.js';
 import type { BlackboxTestOptions } from './config/options.js';
 import type { EffectCapture } from '@suites/blackbox-effects';
 import type { BlackboxStep } from './steps/types.js';
@@ -66,6 +67,8 @@ export interface BlackboxEffects {
 
 export interface BlackboxTestFixtures {
   readonly clients: Readonly<BlackboxClients>;
+  /** Register attempt-owned state readers for later checkpoint capture. */
+  readonly state: BlackboxState;
   /** Read-only identity and resources for this test's isolated sandbox. */
   readonly sandbox: BlackboxSandbox;
   /** Raw retained telemetry for this physical test attempt. */
