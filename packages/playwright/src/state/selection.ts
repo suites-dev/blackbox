@@ -1,5 +1,6 @@
 import type { Entry, Reading, Snapshot } from './internal.js';
 import { randomUUID } from 'node:crypto';
+import { types } from 'node:util';
 import { diffValue, StateIdentityError, validateValue } from './diff.js';
 import { serializeCheckpoint, serializeComparison } from './serialization.js';
 import { copyValue } from './value.js';
@@ -70,7 +71,10 @@ export class StateSelectionImpl implements StateSelection {
         this.active();
         let raw: unknown;
         try {
-          raw = await read();
+          raw = read();
+          if (types.isPromise(raw)) {
+            raw = await raw;
+          }
         } catch {
           failures.push(
             Object.freeze({ observer: entry.name, reader: name, reason: 'reader-failed' }),
