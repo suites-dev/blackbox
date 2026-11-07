@@ -30,6 +30,13 @@ test.describe('real dependencies', () => {
       await expect(
         expect(effects).toSatisfy((e) => [e.exists(e.message({ destination: foreign }))]),
       ).rejects.toThrow(/Scope .*: inconclusive/);
+      const captured = await effects.capture();
+      await expect(captured.message({ destination: `acceptance.${own}` })).toHaveEmittedWith({
+        target: `acceptance.${own}`,
+      });
+      await expect(
+        expect(captured.message({ destination: foreign })).toHaveEmitted(),
+      ).rejects.toThrow(/inconclusive/i);
     });
   }
 });

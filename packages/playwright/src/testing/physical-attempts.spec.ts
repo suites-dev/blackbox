@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { expect as playwrightExpect } from '@playwright/test';
 
 import { createBlackboxTest } from '../fixtures.js';
+import { createUnavailableBlackboxEffects } from '../effects/runtime.js';
 import type { BlackboxAttemptRuntime } from '../runtime/acquisition.js';
 
 function record(value: object): void {
@@ -46,10 +47,10 @@ const runtime = {
         read: () => Promise.reject(new Error('not used by this fixture')),
         readTrace: () => Promise.reject(new Error('not used by this fixture')),
       },
-      effects: {
+      effects: createUnavailableBlackboxEffects({
         sessionId: `session-${executionId}`,
         executionId,
-      },
+      }),
       stop: (reason) => {
         record({ kind: 'stop', executionId, reason });
         return Promise.resolve();

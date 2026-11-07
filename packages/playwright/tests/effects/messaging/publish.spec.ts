@@ -39,6 +39,20 @@ test.describe('real dependencies', () => {
     await expect(expect(effects).toSatisfy(sending)).rejects.toThrow(/Scope .*: inconclusive/);
     await expect(expect(effects).not.toSatisfy(sending)).rejects.toThrow(/Scope .*: inconclusive/);
 
+    const captured = await effects.capture();
+    await expect(captured.message({ destination: 'acceptance.alpha' })).toHaveEmittedWith({
+      target: expect.stringContaining('acceptance.alpha'),
+      actor: 'app',
+    });
+    await expect(
+      expect(captured.message({ destination: 'acceptance.alpha' })).toHaveEmittedWith({
+        target: 'acceptance.beta',
+      }),
+    ).rejects.toThrow(/inconclusive/i);
+    const sends = captured.message({ operation: 'send', destination: 'acceptance.alpha' });
+    await expect(expect(sends).toHaveEmitted()).rejects.toThrow(/inconclusive/i);
+    await expect(expect(sends).not.toHaveEmitted()).rejects.toThrow(/inconclusive/i);
+
     const delivery = await step('read alpha delivery independently', async () => {
       const url = new URL(
         `/deliveries/${encodeURIComponent(published.messageId)}`,

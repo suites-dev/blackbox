@@ -1,4 +1,5 @@
 import type { BlackboxTestOptions } from './config/options.js';
+import type { EffectCapture } from '@suites/blackbox-effects';
 import type { BlackboxStep } from './steps/types.js';
 import type { CatalogEntryKind } from '@suites/blackbox-catalog';
 import type {
@@ -59,6 +60,8 @@ export interface BlackboxTelemetry {
 export interface BlackboxEffects {
   readonly sessionId: string;
   readonly executionId: string;
+  /** Freeze the currently admitted observations of this attempt's completed stimuli. */
+  capture(): Promise<EffectCapture>;
 }
 
 export interface BlackboxTestFixtures {

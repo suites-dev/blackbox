@@ -32,6 +32,10 @@ test.describe('real dependencies', () => {
     await expect(expect(effects).toSatisfy((e) => [e.exists(e.db({}))])).rejects.toThrow(
       /Scope .*: inconclusive/,
     );
+    const captured = await effects.capture();
+    await expect(captured.message({ destination: 'acceptance.alpha' })).toHaveEmitted();
+    await expect(expect(captured.db({})).toHaveEmitted()).rejects.toThrow(/inconclusive/i);
+    await expect(expect(captured.db({})).not.toHaveEmitted()).rejects.toThrow(/inconclusive/i);
     await expect(telemetry.readTrace(stimulusTrace)).resolves.toMatchObject({
       kind: 'collector-trace-found',
       traceId: stimulusTrace,

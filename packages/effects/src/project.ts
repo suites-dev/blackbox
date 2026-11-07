@@ -1,7 +1,7 @@
 import { freezeOwned, snapshotJson } from './boundary/ownership.js';
 import { fields, items, text } from './boundary/values.js';
 import { projectObservations } from './normalization/project.js';
-import type { EffectGraph } from './verification/model.js';
+import type { EffectGraph } from './graph/model.js';
 
 export interface EffectProjectionInput {
   readonly format: 'otlp-json';
