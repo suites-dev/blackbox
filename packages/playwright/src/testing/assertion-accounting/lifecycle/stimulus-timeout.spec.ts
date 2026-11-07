@@ -1,9 +1,9 @@
-import { test as base } from '../../index.js';
-import { createAttemptEffects } from '../../effects/attempt-effects.js';
-import { createAttemptStep } from '../../steps/step-context.js';
-import { createStateRegistry } from '../../state/registry.js';
-import { createStimulusLifecycle } from '../../stimulus/lifecycle/runtime.js';
-import type { RunningBlackboxAttempt } from '../../runtime/acquisition.js';
+import { test as base } from '../../../index.js';
+import { createAttemptEffects } from '../../../effects/attempt-effects.js';
+import { createAttemptStep } from '../../../steps/step-context.js';
+import { createStateRegistry } from '../../../state/registry.js';
+import { createStimulusLifecycle } from '../../../stimulus/lifecycle/runtime.js';
+import type { RunningBlackboxAttempt } from '../../../runtime/acquisition.js';
 
 type Fixture = ReturnType<typeof createStimulusLifecycle>;
 const test = base.extend<{ readonly lifecycle: Fixture }>({
