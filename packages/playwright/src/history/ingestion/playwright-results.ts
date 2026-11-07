@@ -1,5 +1,6 @@
 import { readFile } from 'node:fs/promises';
 
+import { digestBytes, type BehaviorEnvelope } from '../../envelope/index.js';
 import type { BehaviorHistory } from '../history.js';
 
 export interface IngestSummary {
@@ -53,6 +54,28 @@ const last = (attachments: readonly Attachment[], name: string): Attachment | nu
 const failure = (kind: string, error: unknown): string =>
   `${kind}: ${error instanceof Error ? error.message : String(error)}`;
 
+async function ingestReferencedAttachments(
+  history: BehaviorHistory,
+  document: BehaviorEnvelope,
+  attachments: readonly Attachment[],
+): Promise<void> {
+  const refs = document.evidence.filter((ref) => ref.locator.type === 'attachment');
+  for (const attachment of attachments) {
+    const id = digestBytes(attachment.body);
+    if (
+      refs.some(
+        (ref) =>
+          ref.id === id &&
+          ref.bytes === attachment.body.byteLength &&
+          ref.locator.type === 'attachment' &&
+          ref.locator.name === attachment.name,
+      )
+    ) {
+      await history.ingestBlob(attachment.body);
+    }
+  }
+}
+
 /**
  * Reads a Playwright JSON results file and stores what each attempt produced: its envelope, final snapshot,
  * assertion evidence bodies and receipt. Anything that fails verification is reported and left out; nothing is
@@ -86,10 +109,14 @@ export async function ingestPlaywrightResults(
       tally.withoutEnvelope += 1;
     } else {
       try {
+        const document: unknown = JSON.parse(envelope.body.toString('utf8'));
         const stored = await history.ingestEnvelope(
-          JSON.parse(envelope.body.toString('utf8')),
+          document,
           snapshot === null ? null : snapshot.body.toString('utf8'),
         );
+        // Only a verified envelope may select other attachment bodies. Match exact bytes, not
+        // attachment names or sequence order, since Playwright can finish attachments out of order.
+        await ingestReferencedAttachments(history, document as BehaviorEnvelope, attachments);
         tally.envelopes += 1;
         tally.newEnvelopes += stored.created ? 1 : 0;
         tally.snapshots += snapshot === null ? 0 : 1;
