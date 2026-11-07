@@ -2,6 +2,7 @@ import { setTimeout as delay } from 'node:timers/promises';
 
 import { expect as playwrightExpect } from '@playwright/test';
 
+import { normalizeBlackboxOptions } from '../config/normalization.js';
 import { createBlackboxTest } from '../fixtures.js';
 import { createUnavailableBlackboxEffects } from '../effects/runtime.js';
 import type { BlackboxAttemptRuntime } from '../runtime/acquisition.js';
@@ -11,6 +12,7 @@ const runtime = {
     if (input.selection.kind === 'unselected' || input.selection.kind === 'catalog-entry') {
       throw new Error('test fixture did not select a catalog entry');
     }
+    process.stdout.write('BLACKBOX_PLAYWRIGHT_TIMEOUT_ENTER slow\n');
     await delay(100);
     return {
       sandbox: {
@@ -49,10 +51,13 @@ const runtime = {
   },
 } satisfies BlackboxAttemptRuntime;
 
-const test = createBlackboxTest(runtime);
+const test = createBlackboxTest(runtime).extend({
+  _blackboxOptions: [async ({ blackbox }, use) => { await use(normalizeBlackboxOptions(blackbox)); }, { scope: 'test', timeout: 5000 }],
+});
 
 const veryLateRuntime = {
   async start() {
+    process.stdout.write('BLACKBOX_PLAYWRIGHT_TIMEOUT_ENTER late\n');
     await delay(500);
     throw new Error('very late acquisition failure');
   },
@@ -60,6 +65,8 @@ const veryLateRuntime = {
 
 const boundedTest = createBlackboxTest(veryLateRuntime, {
   sandboxCleanupTimeoutMs: 30,
+}).extend({
+  _blackboxOptions: [async ({ blackbox }, use) => { await use(normalizeBlackboxOptions(blackbox)); }, { scope: 'test', timeout: 5000 }],
 });
 
 const verySlowStopRuntime = {
@@ -83,6 +90,7 @@ test.describe('fixture acquisition timeout', () => {
   test.setTimeout(20);
 
   test('times out before a slow acquisition reaches the test body', () => {
+    process.stdout.write('BLACKBOX_PLAYWRIGHT_TIMEOUT_BODY slow\n');
     playwrightExpect(true).toBe(true);
   });
 });
@@ -92,6 +100,7 @@ boundedTest.describe('bounded fixture acquisition cleanup', () => {
   boundedTest.setTimeout(20);
 
   boundedTest('reports when late acquisition cleanup does not settle', () => {
+    process.stdout.write('BLACKBOX_PLAYWRIGHT_TIMEOUT_BODY late\n');
     playwrightExpect(true).toBe(true);
   });
 });
