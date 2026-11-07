@@ -110,6 +110,17 @@ export class AttemptStimuli {
     };
   }
 
+  /** Select one completed activity without admitting other stimuli from this attempt. */
+  completedActivity(activityId: string): CompletedStimuli {
+    const activity = this.#completed.find((candidate) => candidate.activityId === activityId);
+    return activity === undefined
+      ? { kind: 'none' }
+      : {
+          kind: 'selected',
+          selection: this.#registry.select({ kind: 'stimulus', activities: [activity] }),
+        };
+  }
+
   #finish(activity: OwnedActivity, outcome: TelemetryScopeResult): void {
     this.#registry.finish(activity, outcome);
     this.#completed.push(activity);

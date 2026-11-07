@@ -10,9 +10,29 @@ import {
 } from './runtime.js';
 import { createScopedBlackboxEffects } from './scoped-effects.js';
 import { createScopedObservationSource } from '../activities/scoped-observations.js';
-import { captureEffectObservations, unavailableEffectCapture } from './emissions/capture.js';
+import {
+  captureEffectObservations,
+  unavailableEffectCapture,
+  type CapturedEffects,
+} from './emissions/capture.js';
 
 const attempts = new WeakMap<BlackboxEffects, AttemptStimuli>();
+const activityCaptures = new WeakMap<
+  BlackboxEffects,
+  (activityId: string) => Promise<CapturedEffects>
+>();
+
+/** Capture a single completed activity. An unavailable read is a capture operation failure. */
+export function captureAttemptActivity(
+  effects: BlackboxEffects,
+  activityId: string,
+): Promise<CapturedEffects> {
+  const capture = activityCaptures.get(effects);
+  if (capture === undefined) {
+    return Promise.reject(new Error('This Blackbox attempt does not provide activity capture.'));
+  }
+  return capture(activityId);
+}
 
 export function runEffectStimulus<T>(
   effects: BlackboxEffects,
@@ -54,6 +74,31 @@ export function recordStimulusRequest(
   }
 }
 
+async function captureActivity(input: {
+  readonly attempt: AttemptStimuli;
+  readonly activityId: string;
+  readonly storageDirectory: string;
+}): Promise<CapturedEffects> {
+  const completed = input.attempt.completedActivity(input.activityId);
+  if (completed.kind === 'none') {
+    throw new Error('The stimulus activity is not completed by this attempt.');
+  }
+  const selection = completed.selection;
+  const captured = await captureEffectObservations({
+    identity: {
+      sessionId: selection.sessionId,
+      executionId: selection.executionId,
+      scopeId: selection.scopeId,
+      activityIds: selection.activities.map(({ activityId }) => activityId),
+    },
+    source: createScopedObservationSource({ selection, storageDirectory: input.storageDirectory }),
+  });
+  if (captured.evidence === null) {
+    throw new Error('The stimulus effects capture could not be admitted.');
+  }
+  return captured;
+}
+
 export function createAttemptEffects(input: {
   readonly sessionId: string;
   readonly executionId: string;
@@ -69,15 +114,23 @@ export function createAttemptEffects(input: {
     async capture() {
       const completed = attempt.completed();
       if (completed.kind === 'none') {
-        return unavailableEffectCapture({ ...input, message: 'No completed stimulus activity is available for this Playwright attempt.' });
+        return unavailableEffectCapture({
+          ...input,
+          message: 'No completed stimulus activity is available for this Playwright attempt.',
+        });
       }
       const selection = completed.selection;
       return captureEffectObservations({
         identity: {
-          sessionId: selection.sessionId, executionId: selection.executionId,
-          scopeId: selection.scopeId, activityIds: selection.activities.map(({ activityId }) => activityId),
+          sessionId: selection.sessionId,
+          executionId: selection.executionId,
+          scopeId: selection.scopeId,
+          activityIds: selection.activities.map(({ activityId }) => activityId),
         },
-        source: createScopedObservationSource({ selection, storageDirectory: input.storageDirectory }),
+        source: createScopedObservationSource({
+          selection,
+          storageDirectory: input.storageDirectory,
+        }),
       });
     },
     evaluator: {
@@ -100,7 +153,11 @@ export function createAttemptEffects(input: {
   registerBlackboxEffectsClose(effects, () => {
     attempt.close();
     attempts.delete(effects);
+    activityCaptures.delete(effects);
   });
+  activityCaptures.set(effects, (activityId) =>
+    captureActivity({ attempt, activityId, storageDirectory: input.storageDirectory }),
+  );
   markBlackboxEffectsLive(effects);
   attempts.set(effects, attempt);
   return { effects };
