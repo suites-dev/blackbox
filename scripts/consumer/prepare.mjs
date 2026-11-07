@@ -18,7 +18,11 @@ import { promisify } from 'node:util';
 
 import { cleanupCapsuleAssets, verifyCapsuleAssetBoundary } from './capsule-asset-boundary.mjs';
 import { resetCapsuleDemo } from './capsule-reset.mjs';
-import { consumerPackages, verifyConsumerComposition } from './composition.mjs';
+import {
+  consumerPackages,
+  consumerRunnerDependency,
+  verifyConsumerComposition,
+} from './composition.mjs';
 
 const execute = promisify(execFile);
 const scriptDirectory = dirname(fileURLToPath(import.meta.url));
@@ -62,7 +66,10 @@ async function installConsumer(input) {
     name: 'blackbox-registry-consumer',
     private: true,
     type: 'module',
-    dependencies: Object.fromEntries(consumerPackages.map((name) => [name, input.version])),
+    dependencies: {
+      ...Object.fromEntries(consumerPackages.map((name) => [name, input.version])),
+      ...(await consumerRunnerDependency()),
+    },
   };
   await writeFile(
     join(input.consumerRoot, 'package.json'),

@@ -25,9 +25,11 @@
   "include": [
     "playwright.config.ts",
     "playwright-features.config.ts",
+    "playwright-assertions.config.ts",
     "playwright-effects.config.ts",
     "tests/playwright/**/*.ts",
     "tests/playwright-features/**/*.ts",
+    "tests/playwright-assertions/**/*.ts",
     "reporters/**/*.ts",
     "tests/features-suites/**/*.ts",
     ".blackbox/clients/**/*.ts"
