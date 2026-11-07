@@ -221,3 +221,12 @@ it('retains interrupted execution evidence after a native timeout', async () => 
   await ingestPlaywrightResults(history, join(run.directory, 'results.json'));
   expect((await history.index()).executions[0]).toMatchObject({ testStatus: 'timedOut', finalStatus: 'timedOut' });
 }, 60_000);
+
+it('uses one frozen observer set and the same precondition checkpoint', async () => {
+  const run = await runAssertions('frozen-selection.spec.ts');
+  expect(run.exitCode, `${run.directory}\n${run.output}`).toBe(0);
+  const specs = discovered(run.report.suites);
+  expect(specs.map(({ title }) => title)).toEqual(['frozen selection excludes observers registered while the action runs']);
+  expect(specs[0].tests[0].results[0].status).toBe('passed');
+  expect(run.report.stats).toMatchObject({ expected: 1, unexpected: 0, skipped: 0, flaky: 0 });
+}, 60_000);
