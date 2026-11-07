@@ -3,7 +3,10 @@ import type { RunningBlackboxAttempt } from '../runtime/acquisition.js';
 import type { BlackboxStep } from '../steps/types.js';
 import type { StateRegistry } from '../state/types.js';
 import { createStimulusLifecycle } from '../stimulus/lifecycle/runtime.js';
-import { durableExecution } from '../stimulus/lifecycle/durable.js';
+import { durableExecution, executionCaptureTimeoutMs } from '../stimulus/lifecycle/durable.js';
+
+// One capture drain, a terminal write deadline and drain, plus a finite fixture margin.
+export const executionFixtureTimeoutMs = 4 * executionCaptureTimeoutMs;
 
 async function finishExecution(lifecycle: ReturnType<typeof createStimulusLifecycle>,
   durable: ReturnType<typeof durableExecution>, unsubscribe: () => void): Promise<void> {

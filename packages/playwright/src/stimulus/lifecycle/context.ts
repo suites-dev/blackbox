@@ -37,6 +37,7 @@ export function prefix(title: string, allowed: readonly string[]): void {
 }
 export function close(context: LifecycleContext): void {
   context.active = false;
+  const unfinished = context.pending.size > 0 || context.claims.size > 0;
   for (const [executionId, item] of context.pending) {
     if (item.phase === 'initial' || item.phase === 'final' || item.phase === 'effects') {
       context.captureFailed = true;
@@ -50,4 +51,5 @@ export function close(context: LifecycleContext): void {
   for (const [claimId, item] of context.claims) { context.journal.append({ kind: 'claim', executionId: item.executionId, claimId, title: item.title, status: 'interrupted', snapshots: takeSnapshots(claimId) }); }
   context.pending.clear(); context.claims.clear();
   if (context.captureFailed) { throw new Error('Blackbox state capture failed during this attempt'); }
+  if (unfinished) { throw new Error('Blackbox stimulus lifecycle closed with unfinished operations'); }
 }

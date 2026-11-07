@@ -1,5 +1,5 @@
 import { createStateRegistry, type createStimulusLifecycle, type StateRegistry } from './fixture-lifecycle/execution.js';
-import { executionFixture } from './fixture-lifecycle/execution-fixture.js';
+import { executionFixture, executionFixtureTimeoutMs } from './fixture-lifecycle/execution-fixture.js';
 import { registerAssertionOwner } from './assertions/scope.js';
 import { createAttemptStep } from './steps/step-context.js';
 import { runClients } from './clients/clients.js';
@@ -223,7 +223,7 @@ export function createBlackboxTest(
         registry.close();
       }
     },
-    _blackboxExecution: executionFixture,
+    _blackboxExecution: [executionFixture, { timeout: executionFixtureTimeoutMs }],
     stimulus: stimulusFixture,
     state: stateFixture,
     clients: async ({ _blackboxAttempt, _blackboxClients }, use) => {
