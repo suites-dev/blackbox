@@ -6,12 +6,13 @@ import { lstat, readdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { expect as nativeExpect } from '@playwright/test';
 import { startCollector, type CollectorHandle } from '@suites/blackbox-otel-collector';
 import { sandboxTelemetryStorageDirectory } from '@suites/blackbox-sandbox';
-import { expect } from '../../index.js';
-import { createBlackboxTest } from '../../fixtures.js';
-import { createAttemptEffects } from '../../effects/attempt-effects.js';
-import { project } from '../../envelope/capture/capture.fixture.js';
-import { operationSpan } from '../../effects/testing/collector.fixture.js';
-import { record } from './evidence.fixture.js';
+import { expect } from '../../../index.js';
+import type { ExecutionResult } from '../../../stimulus/lifecycle/types.js';
+import { createBlackboxTest } from '../../../fixtures.js';
+import { createAttemptEffects } from '../../../effects/attempt-effects.js';
+import { project } from '../../../envelope/capture/capture.fixture.js';
+import { operationSpan } from '../../../effects/testing/collector.fixture.js';
+import { record } from '../evidence.fixture.js';
 
 let fixtureCollector: CollectorHandle | null = null;
 let fixtureCorruptFinalization = false;
@@ -110,6 +111,17 @@ function registerOversizedFinalSelectionTest(): void {
     record('completed-nine-stimuli', true);
   });
 }
+async function concurrentClaims(verify: ExecutionResult<unknown>['verify'], check: () => void, emission: () => Promise<void>): Promise<void> {
+  let release: (() => void) | undefined;
+  let entered: (() => void) | undefined;
+  const ready = new Promise<void>((resolve) => { entered = resolve; });
+  const gate = new Promise<void>((resolve) => { release = resolve; });
+  const first = verify('And the delayed claim passes', async () => { if (entered !== undefined) { entered(); } await gate; check(); });
+  await ready;
+  await verify('And the concurrent emission is observed', emission);
+  if (release !== undefined) { release(); }
+  await first;
+}
 fixtureTest.describe('actual lifecycle fixture', () => {
   let root = '';
   fixtureTest.beforeAll(async ({ browserName }, info) => { void browserName; root = await project(); info.config.metadata.blackboxConfigFile = join(root, 'blackbox.config.yaml'); });
@@ -148,6 +160,7 @@ fixtureTest.describe('actual lifecycle fixture', () => {
       const recorder = evidence.effects.http({ method: 'POST', route: '/payments' });
       await verify('And the request was observed', async () => { await expect(recorder).toHaveEmitted(); });
       await verify('And the state matches the reviewed baseline', () => { expect(`${String(evidence.state(counter).final.value)}\n`).toMatchSnapshot('counter.txt'); });
+      await concurrentClaims(verify, () => { expect(result.status()).toBe(201); }, async () => { await expect(recorder).toHaveEmitted(); });
       await nativeExpect(expect(evidence.effects.http({ method: 'GET' })).not.toHaveEmitted()).rejects.toThrow(/inconclusive/);
       nativeExpect(traceparent).toMatch(/^00-/);
     } finally { await new Promise<void>((resolve, reject) => { server.close((error) => { if (error) { reject(error); } else { resolve(); } }); }); }
