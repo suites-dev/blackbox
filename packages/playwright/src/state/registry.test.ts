@@ -33,6 +33,15 @@ it('registers without reads, freezes independent cuts and derives row and scalar
   }).toThrow();
   expect(selection.initial(first.checkpoint, observer).rows[0].status).toBe('new');
   expect(reads).toBe(2);
+  rows.shift();
+  const third = await selection.capture();
+  const later = selection.between(second.checkpoint, third.checkpoint, observer);
+  expect(later.diff.rows).toEqual({
+    added: [],
+    removed: [{ id: 'one', status: 'paid' }],
+    changed: [],
+  });
+  expect(later.diff.cached).toEqual({ before: 'one', after: 'one', changed: false });
 });
 it('rejects missing and duplicate row IDs and preserves independent successful readers', async () => {
   const registry = createStateRegistry();
