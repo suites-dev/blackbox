@@ -1,8 +1,9 @@
-import { defineConfig } from '../../config.js';
+import { join } from 'node:path';
+import { defineConfig } from '../config.js';
 
 export default defineConfig({
   blackboxConfigFile: './blackbox.config.yaml',
-  testDir: import.meta.dirname,
+  testDir: join(import.meta.dirname, 'state-attempt'),
   testMatch: 'state-attempt.spec.ts',
   retries: 0,
   workers: 1,
