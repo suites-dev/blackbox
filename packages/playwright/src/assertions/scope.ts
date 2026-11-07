@@ -94,7 +94,8 @@ async function executeScope<Value>(scope: AssertionScopeState, callback: () => V
     validateScope(scope);
     return Object.freeze({ value, accounting: accounting(scope) });
   } catch (caught) {
-    const error = caught instanceof InconclusiveAssertionError && accounting(scope).failed > 1
+    const error = caught instanceof InconclusiveAssertionError &&
+      (accounting(scope).failed > 1 || scope.issues.length > 0)
       ? scopeError(scope, 'failed') : caught;
     if (scope.parent !== null) {
       const trial = trialContext.getStore();

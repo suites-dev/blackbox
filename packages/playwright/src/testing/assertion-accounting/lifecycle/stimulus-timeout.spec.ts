@@ -16,9 +16,11 @@ const test = base.extend<{ readonly lifecycle: Fixture }>({
     const lifecycle = createStimulusLifecycle({ registry, request, step: step.step });
     try { await use(lifecycle); }
     finally {
-      lifecycle.close();
-      await info.attach('interrupted-lifecycle', { body: JSON.stringify(lifecycle.journal.events().map((event) => ({ kind: event.kind, ...('status' in event ? { status: event.status } : {}) }))), contentType: 'application/json' });
-      step.revoke(); registry.close();
+      try { lifecycle.close(); }
+      finally {
+        await info.attach('interrupted-lifecycle', { body: JSON.stringify(lifecycle.journal.events().map((event) => ({ kind: event.kind, ...('status' in event ? { status: event.status } : {}) }))), contentType: 'application/json' });
+        step.revoke(); registry.close();
+      }
     }
   },
 });
