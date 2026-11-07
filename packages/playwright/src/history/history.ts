@@ -62,6 +62,10 @@ export class BehaviorHistory {
     return this.ingestion.receipt(receipt);
   }
 
+  ingestNativeResult(result: unknown): Promise<IngestResult> {
+    return this.ingestion.nativeResult(result);
+  }
+
   recordAlias(body: AliasBody): Promise<IngestResult & { readonly alias: BehaviorAlias }> {
     return this.ingestion.alias(body);
   }

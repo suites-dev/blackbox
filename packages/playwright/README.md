@@ -512,6 +512,10 @@ Storage semantics:
 - The index is a cache built from the objects and can be deleted at any time. Records that fail
   verification, or have a valid digest and the wrong shape, are listed by `verifyStore()` and never
   served. Every read re-verifies the record against the identity it is stored under.
+- Playwright result ingestion stores final runner status as a versioned observation linked to the
+  exact envelope and attempt. Index and history entries expose `captureTestStatus`, `finalStatus`,
+  and `statusDiscrepancy`; `status` uses the final result when available. Conflicting final reports
+  produce `conflicting`. The immutable envelope and fixture receipt keep their original capture-time facts.
 - `compare()` checks comparability first. Spans alone never refute a limit; reported state does.
   Nothing in the history marks an observation as accepted.
 - Aliases are recorded claims that two behavior ids are the same. Ambiguity and cycles are
