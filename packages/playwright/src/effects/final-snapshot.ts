@@ -186,6 +186,7 @@ export function buildFinalSnapshot(input: FinalSnapshotInput): FinalSnapshotDocu
       reasons: sorted([
         ...reasons,
         ...graph.quality.reasons,
+        ...input.read.diagnostics.filter((entry) => entry.startsWith('final-aggregate-omitted:')),
         ...(missing.length > 0 ? ['activity-trace-not-received'] : []),
         ...silent.map((service) => `activated-without-observation:${service}`),
       ]),

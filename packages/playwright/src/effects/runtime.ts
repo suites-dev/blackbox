@@ -1,7 +1,7 @@
 import type { BlackboxEffects } from '../types.js';
 import type { EffectContract } from './contract.js';
 import type { EffectEvidenceArtifact } from './evaluation/artifact-types.js';
-import { unavailableEffectCapture, type EffectCaptureProvider } from './emissions/capture.js';
+import { unavailableEffectCapture, type CapturedEffects, type EffectCaptureProvider } from './emissions/capture.js';
 import { effectAttemptOwner } from './emissions/attempt-owner.js';
 import { ownEffectCapture } from './emissions/ownership.js';
 import type { EmissionAssertionReport } from './emissions/types.js';
@@ -37,6 +37,18 @@ const expiredEffects = new WeakSet<BlackboxEffects>();
 const evidence = new WeakMap<EffectEvaluation, EffectEvidenceArtifact>();
 const reporters = new WeakMap<BlackboxEffects, EffectAssertionReporter>();
 const closeCallbacks = new WeakMap<BlackboxEffects, () => void>();
+
+export function bindCapturedEffects(effects: BlackboxEffects, captured: CapturedEffects) {
+  const ownerUnavailable = effectAttemptOwner();
+  return ownEffectCapture(captured.capture, {
+    unavailable: () => expiredEffects.has(effects)
+      ? 'The effects fixture is no longer available after its Playwright attempt ended.' : ownerUnavailable(),
+    evidence: captured.evidence,
+    describe: (text) => { const reporter = reporters.get(effects); return reporter !== undefined && reporter.describe !== undefined ? reporter.describe(text) : text; },
+    redactSnapshot: (yaml) => { const reporter = reporters.get(effects); return reporter !== undefined && reporter.redactEffectSnapshot !== undefined ? reporter.redactEffectSnapshot(yaml) : yaml; },
+    report: async (report) => { const reporter = reporters.get(effects); if (reporter !== undefined && reporter.emissionAssertion !== undefined) { await reporter.emissionAssertion(report); } },
+  });
+}
 
 export function createBlackboxEffects(input: {
   readonly sessionId: string;
@@ -113,6 +125,10 @@ export function bindEffectAssertionReporter(
   reporter: EffectAssertionReporter,
 ): void {
   reporters.set(effects, reporter);
+}
+
+export function effectAssertionReporter(effects: BlackboxEffects): EffectAssertionReporter | undefined {
+  return reporters.get(effects);
 }
 
 export function registerBlackboxEffectsClose(effects: BlackboxEffects, close: () => void): void {

@@ -1,16 +1,16 @@
 import { randomUUID } from 'node:crypto';
 import {
-  createEffectCapture, projectEffects, type EffectCapture, type EffectCaptureIdentity,
+  createEffectCapture, projectEffects, type EffectCapture, type EffectCaptureIdentity, type EffectGraph,
 } from '@suites/blackbox-effects';
 
 import { createEffectSnapshotArtifact } from '../evaluation/artifact.js';
 import type { EffectSnapshotArtifact } from '../evaluation/artifact-types.js';
 import type { EffectObservationSource } from '../evaluation/source.js';
 
-export interface CapturedEffects {
+export type CapturedEffects = {
   readonly capture: EffectCapture;
   readonly evidence: EffectSnapshotArtifact | null;
-}
+} & Readonly<Partial<{ graph: EffectGraph }>>;
 export type EffectCaptureProvider = () => Promise<CapturedEffects>;
 
 export function unavailableEffectCapture(input: {
@@ -44,7 +44,7 @@ export async function captureEffectObservations(input: {
   try {
     const graph = projectEffects({ format: 'otlp-json', scopeId: read.scopeId, payloads: read.payloads });
     const capture = createEffectCapture({ graph, identity });
-    return { capture, evidence: createEffectSnapshotArtifact({ read, graph }) };
+    return { capture, graph, evidence: createEffectSnapshotArtifact({ read, graph }) };
   } catch (error) {
     if (!(error instanceof TypeError)) { throw error; }
     return {

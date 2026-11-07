@@ -3,6 +3,7 @@ import { AsyncLocalStorage } from 'node:async_hooks';
 import { injectW3CTextMap, type TelemetryScopeResult } from '@suites/blackbox-telemetry';
 
 import { createActivityRegistry } from '../activity-registry.js';
+import { activityAdmissionLimits } from '../limits.js';
 import type { ActivitySelection, OwnedActivity } from '../types.js';
 import type { BlackboxStimulusScope } from '../../steps/types.js';
 import {
@@ -13,7 +14,9 @@ import {
 } from '../../stimulus/summary.js';
 
 export type CompletedStimuli =
-  { readonly kind: 'none' } | { readonly kind: 'selected'; readonly selection: ActivitySelection };
+  | { readonly kind: 'none' }
+  | { readonly kind: 'selected'; readonly selection: ActivitySelection }
+  | { readonly kind: 'partial'; readonly message: string; readonly omitted: number; readonly selection: ActivitySelection; readonly activities: readonly { readonly activityId: string; readonly purpose: 'stimulus' }[] };
 
 function failure(error: unknown): TelemetryScopeResult {
   const message = error instanceof Error ? error.message : String(error);
@@ -100,6 +103,12 @@ export class AttemptStimuli {
   completed(): CompletedStimuli {
     if (this.#completed.length === 0) {
       return { kind: 'none' };
+    }
+    if (this.#completed.length > activityAdmissionLimits.selectedTraces) {
+      return { kind: 'partial', message: 'Final activity selection omits earlier activities',
+        omitted: this.#completed.length - activityAdmissionLimits.selectedTraces,
+        selection: this.#registry.select({ kind: 'stimulus', activities: this.#completed.slice(-activityAdmissionLimits.selectedTraces) }),
+        activities: this.#completed.map(({ activityId }) => ({ activityId, purpose: 'stimulus' as const })) };
     }
     return {
       kind: 'selected',

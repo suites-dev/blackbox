@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { AssertionScopeError, InconclusiveAssertionError } from '../../assertions/types.js';
 import { assertionScope } from '../../assertions/scope.js';
+import { takeSnapshots, withClaim } from '../../assertions/claims/context.js';
 import { ensureActive, prefix, type LifecycleContext } from './context.js';
 import type { LifecycleStatus } from './journal.js';
 import type { ExecutionResult } from './types.js';
@@ -18,12 +19,12 @@ export function createVerification(context: LifecycleContext, executionId: strin
     const claimId = randomUUID();
     context.claims.set(claimId, { executionId, title });
     try {
-      const value = await context.input.step(title, async () => (await assertionScope(callback)).value);
+      const value = await context.input.step(title, async () => (await withClaim(claimId, () => assertionScope(callback))).value);
       ensureActive(context);
-      context.journal.append({ kind: 'claim', executionId, claimId, title, status: 'passed' });
+      context.journal.append({ kind: 'claim', executionId, claimId, title, status: 'passed', snapshots: takeSnapshots(claimId) });
       return value;
     } catch (error) {
-      if (context.active) { context.journal.append({ kind: 'claim', executionId, claimId, title, status: failureStatus(error), error }); }
+      if (context.active) { context.journal.append({ kind: 'claim', executionId, claimId, title, status: failureStatus(error), error, snapshots: takeSnapshots(claimId) }); }
       throw error;
     } finally { context.claims.delete(claimId); }
   };

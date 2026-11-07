@@ -103,6 +103,7 @@ async function closeReport(report: AttemptReport, input: AttemptFixtureInput): P
 function finalCaptureInput(input: AttemptFixtureInput): FinalCaptureInput {
   return {
     enabled: input.blackboxFinalSnapshot && input.catalogEntry.kind !== 'unselected',
+    snapshotEnabled: input.blackboxFinalSnapshot,
     testInfo: input.testInfo,
     configFile: configFilePath(input.testInfo),
     entryId: input.catalogEntry.kind === 'unselected' ? '' : input.catalogEntry.id,
@@ -156,23 +157,33 @@ async function useAttempt(
     `${attempt.sandbox.sandboxId}; ${attempt.sandbox.entrypoint.url}`,
   );
   report.emit('execution', 'started', 'test fixtures, hooks and body');
+  let executionError: unknown = null;
   try {
     await report.flush();
     report.lifecycle('ready', attempt.sandbox.catalogEntry);
     await input.use(attempt);
-  } finally {
-    const reason = stopReason(input.testInfo.status);
+  } catch (error) {
+    product.executionFailed = true;
+    executionError = error;
+  }
+  try {
+    const reason = product.executionFailed ? 'failed' : stopReason(input.testInfo.status);
     report.emit('execution', 'info', input.testInfo.status ?? 'unknown');
+    const actualCapture = { ...capture, enabled: capture.enabled || report.hasStimulus() };
     await settleAttempt({
-      capture,
+      capture: actualCapture,
       report,
       attempt,
       stopReason: reason,
-      prelude: startPreludeCapture(capture),
+      prelude: startPreludeCapture(actualCapture),
       product,
       cleanup: () => finishAttempt(attempt, report, reason, input.policy),
     });
+  } catch (error) {
+    if (executionError !== null) { throw new AggregateError([executionError, error], 'Blackbox execution and cleanup failed'); }
+    throw error;
   }
+  if (executionError !== null) { throw new Error('Blackbox execution failed', { cause: executionError }); }
 }
 
 export async function runAttemptFixture(input: AttemptFixtureInput): Promise<void> {
@@ -180,8 +191,9 @@ export async function runAttemptFixture(input: AttemptFixtureInput): Promise<voi
   report.protect(input.blackboxEnvironment);
   const capture = finalCaptureInput(input);
   const entryId = input.catalogEntry.kind === 'unselected' ? '' : input.catalogEntry.id;
-  const recorder = capture.enabled ? startReceipt(input.testInfo, entryId) : null;
+  const recorder = input.catalogEntry.kind !== 'unselected' ? startReceipt(input.testInfo, entryId) : null;
   const product = newAttemptProduct();
+  const errors: unknown[] = [];
   try {
     const attempt = await acquire(input, report, recorder);
     if (recorder !== null) {
@@ -190,18 +202,31 @@ export async function runAttemptFixture(input: AttemptFixtureInput): Promise<voi
     await useAttempt(input, report, { capture, attempt, product });
   } catch (error) {
     report.emit('attempt', 'failed', 'setup or teardown failed; see test error');
-    throw error;
-  } finally {
-    if (recorder !== null) {
+    errors.push(error);
+  }
+  if (recorder !== null && (capture.enabled || report.hasStimulus())) {
+    try {
       await attachReceipt({
         testInfo: input.testInfo,
         recorder,
         catalogEntryId: entryId,
         envelope: product.envelope,
-      }).catch(() => {
-        report.emit('receipt', 'failed', 'could not attach the attempt receipt');
+        attemptFailed: errors.length > 0,
       });
+    } catch (error) {
+      report.emit('receipt', 'failed', 'could not attach the attempt receipt');
+      errors.push(error);
     }
-    await closeReport(report, input);
   }
+  try {
+    await closeReport(report, input);
+  } catch (error) {
+    errors.push(error);
+  }
+  if (errors.length === 1) {
+    const error = errors[0];
+    if (error instanceof Error) { throw error; }
+    throw new Error('Blackbox attempt failed', { cause: error });
+  }
+  if (errors.length > 1) { throw new AggregateError(errors, 'Blackbox attempt failed'); }
 }

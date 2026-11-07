@@ -80,7 +80,7 @@ async function captureActivity(input: {
   readonly storageDirectory: string;
 }): Promise<CapturedEffects> {
   const completed = input.attempt.completedActivity(input.activityId);
-  if (completed.kind === 'none') {
+  if (completed.kind !== 'selected') {
     throw new Error('The stimulus activity is not completed by this attempt.');
   }
   const selection = completed.selection;
@@ -117,10 +117,10 @@ export function createAttemptEffects(input: {
     executionId: input.executionId,
     async capture() {
       const completed = attempt.completed();
-      if (completed.kind === 'none') {
+      if (completed.kind !== 'selected') {
         return unavailableEffectCapture({
           ...input,
-          message: 'No completed stimulus activity is available for this Playwright attempt.',
+          message: completed.kind === 'partial' ? completed.message : 'No completed stimulus activity is available for this Playwright attempt.',
         });
       }
       const selection = completed.selection;
@@ -140,10 +140,10 @@ export function createAttemptEffects(input: {
     evaluator: {
       async evaluate(contract) {
         const completed = attempt.completed();
-        if (completed.kind === 'none') {
+        if (completed.kind !== 'selected') {
           return {
             kind: 'inconclusive',
-            message: 'No completed stimulus activity is available for this Playwright attempt.',
+            message: completed.kind === 'partial' ? completed.message : 'No completed stimulus activity is available for this Playwright attempt.',
           };
         }
         const selected = createScopedBlackboxEffects({

@@ -4,7 +4,7 @@ import { relative } from 'node:path';
 import type { TestInfo } from '@playwright/test';
 import type { RecordedStimuli } from '../effects/attempt-effects.js';
 import type { EffectAssertionReport, EmissionAssertionReport } from '../effects/runtime.js';
-import { emissionAttachment, emissionAttachmentBody } from './effects/emissions.js';
+import { emissionAttachment, emissionAttachmentBody, attachExecutionArtifact, evidenceForClaim, linkClaim, type AttachedEvidence, type ExecutionArtifactKind } from './effects/emissions.js';
 import { redactEffectSnapshot } from './effects/snapshot-redaction.js';
 import type { BlackboxSandbox, BlackboxTelemetry } from '../types.js';
 
@@ -21,16 +21,7 @@ import { SecretValues } from './redaction/secret-environment.js';
 import { reportText, reportTextLimit } from './text.js';
 import { sandboxLifecycleEnabled } from './options.js';
 
-export interface AttachedEvidence {
-  readonly kind: 'assertion-evidence' | 'final-snapshot';
-  readonly name: string;
-  readonly sequence: number;
-  readonly digest: Digest;
-  readonly bytes: number;
-  readonly outcome: string;
-  readonly evaluation: string;
-  readonly contractDigest: Digest | null;
-}
+export type { AttachedEvidence } from './effects/emissions.js';
 
 function assertionFields(
   body: string,
@@ -58,6 +49,8 @@ export class AttemptReport implements AttemptProgress {
   private attachmentFailure: unknown = null;
   private dropped = 0;
   private effectAssertionSequence = 0;
+  private executionSequence = 0;
+  private executedStimulus = false;
   private readonly evidence: AttachedEvidence[] = [];
   private closed = false;
   private identity:
@@ -126,6 +119,15 @@ export class AttemptReport implements AttemptProgress {
     return reportText(this.secrets.redact(detail));
   }
 
+  redact(text: string): string { return this.sanitize(text); }
+  markStimulus(): void { this.executedStimulus = true; }
+  hasStimulus(): boolean { return this.executedStimulus; }
+  evidenceForClaim(claimId: string): readonly Digest[] { return evidenceForClaim(this, claimId); }
+  executionArtifact(kind: ExecutionArtifactKind, value: unknown): Promise<Digest> {
+    return attachExecutionArtifact({ testInfo: this.testInfo, kind, value, sequence: ++this.executionSequence,
+      sanitize: (text) => this.sanitize(text), register: (item) => { this.evidence.push(item); } });
+  }
+
   async effectAssertion(report: EffectAssertionReport): Promise<void> {
     const sequence = ++this.effectAssertionSequence;
     const body = effectAttachmentBody({
@@ -146,6 +148,7 @@ export class AttemptReport implements AttemptProgress {
       bytes: Buffer.byteLength(body),
       ...assertionFields(body),
     });
+    linkClaim(this, digestBytes(body));
   }
 
   async emissionAssertion(report: EmissionAssertionReport): Promise<void> {
@@ -159,6 +162,7 @@ export class AttemptReport implements AttemptProgress {
       kind: 'assertion-evidence', name: emissionAttachment, sequence,
       digest: digestBytes(body), bytes: Buffer.byteLength(body), ...assertionFields(body),
     });
+    linkClaim(this, digestBytes(body));
   }
 
   redactEffectSnapshot(yaml: string): string {
