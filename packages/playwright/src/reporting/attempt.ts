@@ -1,5 +1,6 @@
 import { realpathSync } from 'node:fs';
 import { relative } from 'node:path';
+import type { CaptureLease } from '../capture/operations.js';
 
 import type { TestInfo } from '@playwright/test';
 import type { RecordedStimuli } from '../effects/attempt-effects.js';
@@ -18,7 +19,7 @@ import {
   type AttemptProgress,
 } from './events.js';
 import { SecretValues } from './redaction/secret-environment.js';
-import { reportText, reportTextLimit } from './text.js';
+import { redactText, reportText, reportTextLimit } from './text.js';
 import { sandboxLifecycleEnabled } from './options.js';
 
 export type { AttachedEvidence } from './effects/emissions.js';
@@ -115,17 +116,16 @@ export class AttemptReport implements AttemptProgress {
     }
   }
 
-  private sanitize(detail: string): string {
-    return reportText(this.secrets.redact(detail));
-  }
+  private sanitize(detail: string): string { return reportText(this.secrets.redact(detail)); }
 
-  redact(text: string): string { return this.sanitize(text); }
+  redact(text: string): string { return redactText(this.secrets.redact(text)); }
   markStimulus(): void { this.executedStimulus = true; }
   hasStimulus(): boolean { return this.executedStimulus; }
   evidenceForClaim(claimId: string): readonly Digest[] { return evidenceForClaim(this, claimId); }
-  executionArtifact(kind: ExecutionArtifactKind, value: unknown): Promise<Digest> {
+  executionArtifact(kind: ExecutionArtifactKind, value: unknown, lease: CaptureLease | undefined = undefined): Promise<Digest> {
+    if (lease !== undefined) { lease.check(); }
     return attachExecutionArtifact({ testInfo: this.testInfo, kind, value, sequence: ++this.executionSequence,
-      sanitize: (text) => this.sanitize(text), register: (item) => { this.evidence.push(item); } });
+      lease, sanitize: (text) => this.redact(text), register: (item) => { this.evidence.push(item); } });
   }
 
   async effectAssertion(report: EffectAssertionReport): Promise<void> {
@@ -151,13 +151,15 @@ export class AttemptReport implements AttemptProgress {
     linkClaim(this, digestBytes(body));
   }
 
-  async emissionAssertion(report: EmissionAssertionReport): Promise<void> {
+  async emissionAssertion(report: EmissionAssertionReport, lease: CaptureLease | undefined = undefined): Promise<void> {
+    if (lease !== undefined) { lease.check(); }
     const sequence = ++this.effectAssertionSequence;
     const body = emissionAttachmentBody({ sequence, report, sanitize: (text) => {
       const redacted = this.secrets.redact(text);
       return { text: reportText(redacted), truncated: redacted.length > reportTextLimit };
     } });
     await this.testInfo.attach(emissionAttachment, { contentType: 'application/json', body });
+    if (lease !== undefined) { lease.check(); }
     this.evidence.push({
       kind: 'assertion-evidence', name: emissionAttachment, sequence,
       digest: digestBytes(body), bytes: Buffer.byteLength(body), ...assertionFields(body),
