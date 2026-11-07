@@ -518,7 +518,8 @@ Storage semantics:
   produce `conflicting`. `execution()` also returns the verified `nativeResults` and `finalStatus`.
   The immutable envelope and fixture receipt keep their original capture-time facts.
 - `compare()` checks comparability first. Spans alone never refute a limit; reported state does.
-  Nothing in the history marks an observation as accepted.
+  Comparison verification fields describe the envelopes at capture time; use `execution().finalStatus`
+  for the runner outcome. Nothing in the history marks an observation as accepted.
 - Aliases are recorded claims that two behavior ids are the same. Ambiguity and cycles are
   reported; nothing is inferred from names or rewritten.
 
