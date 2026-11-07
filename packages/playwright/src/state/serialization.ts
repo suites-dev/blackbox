@@ -1,5 +1,7 @@
 import type { Entry, Reading, Snapshot, StateProjection } from './internal.js';
-import { copyValue, redactValue } from './value.js';
+import { redactValue } from './value.js';
+import { validateStateEnvelope } from './serialization-limit.js';
+import { isSecretEnvironmentName } from '../reporting/redaction/secret-environment.js';
 import type { SerializedCheckpoint, SerializedComparison, StateCheckpoint } from './types.js';
 
 function safeText(value: string, redact: (value: string) => string): string {
@@ -37,7 +39,9 @@ export function serializeCheckpoint(
         : {
             name: safeText(reading.name, redact),
             status: 'captured' as const,
-            value: redactValue(reading.value, (value) => safeText(value, redact)),
+            value: isSecretEnvironmentName(reading.name)
+              ? '[REDACTED]'
+              : redactValue(reading.value, (value) => safeText(value, redact)),
           },
     ),
   }));
@@ -49,7 +53,7 @@ export function serializeCheckpoint(
       .filter((reader) => reader.status === 'failed').length,
     observers,
   };
-  copyValue(result);
+  validateStateEnvelope(result);
   return result;
 }
 export function serializeComparison(
@@ -85,6 +89,6 @@ export function serializeComparison(
     finalCheckpointId: last.id,
     observers,
   };
-  copyValue(result);
+  validateStateEnvelope(result);
   return result;
 }

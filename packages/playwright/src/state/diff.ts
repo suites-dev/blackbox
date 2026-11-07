@@ -45,7 +45,7 @@ function canonical(value: JsonValue): string {
     return `[${value.map(canonical).join(',')}]`;
   }
   return `{${Object.entries(value)
-    .sort(([a], [b]) => a.localeCompare(b))
+    .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
     .map(([key, child]) => `${JSON.stringify(key)}:${canonical(child)}`)
     .join(',')}}`;
 }
