@@ -99,7 +99,7 @@ it('owns state readers and checkpoints within one native Playwright attempt', as
   const directory = await mkdtemp(join(tmpdir(), 'blackbox-playwright-state-'));
   directories.push(directory);
   const result = await runPlaywright({
-    configFile: 'state-attempt.config.ts',
+    configFile: 'state-attempt/state-attempt.config.ts',
     outputDirectory: join(directory, 'output'),
   });
   expect(result.exitCode, result.output).toBe(0);

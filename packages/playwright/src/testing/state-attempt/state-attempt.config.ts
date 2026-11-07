@@ -1,4 +1,4 @@
-import { defineConfig } from '../config.js';
+import { defineConfig } from '../../config.js';
 
 export default defineConfig({
   blackboxConfigFile: './blackbox.config.yaml',
