@@ -173,6 +173,11 @@ export async function retainE2eEvidence({
           'e2e/test-results/effects-receipt.json',
           'e2e/test-results/effects/results.json',
           'e2e/test-results/effects/request-observations.expected.yaml',
+          'e2e/test-results/lifecycle/receipt.json',
+          'e2e/test-results/lifecycle/results.json',
+          'e2e/test-results/lifecycle/discovery.txt',
+          'e2e/test-results/lifecycle/execution.txt',
+          'e2e/test-results/lifecycle/subscription-state.expected.txt',
         );
       }
       const missing = required.filter(

@@ -1,4 +1,4 @@
-import type { APIRequestContext } from '@playwright/test';
+import { test as nativeTest, type APIRequestContext, type TestInfo } from '@playwright/test';
 import type { BlackboxStep } from '../../steps/types.js';
 import type { StateRegistry } from '../../state/types.js';
 import { createExecutionJournal } from './journal.js';
@@ -11,6 +11,7 @@ export type LifecycleInput = {
 export type Pending = { readonly title: string; readonly phase: 'initial' | 'precondition' | 'action' | 'final' | 'effects' } & Readonly<Partial<{ activityId: string }>>;
 export interface LifecycleContext {
   readonly input: LifecycleInput;
+  readonly owner: TestInfo;
   readonly journal: ReturnType<typeof createExecutionJournal>;
   readonly pending: Map<string, Pending>;
   readonly claims: Map<string, { readonly executionId: string; readonly title: string }>;
@@ -19,10 +20,13 @@ export interface LifecycleContext {
   captureFailed: boolean;
 }
 export function createContext(input: LifecycleInput): LifecycleContext {
-  return { input, journal: createExecutionJournal(), pending: new Map(), claims: new Map(), active: true, running: false, captureFailed: false };
+  return { input, owner: nativeTest.info(), journal: createExecutionJournal(), pending: new Map(), claims: new Map(), active: true, running: false, captureFailed: false };
 }
 export function ensureActive(context: LifecycleContext): void {
   if (!context.active) { throw new Error('Blackbox stimulus fixture is no longer active'); }
+  let owner: TestInfo;
+  try { owner = nativeTest.info(); } catch { throw new Error('Blackbox stimulus belongs to another test attempt'); }
+  if (owner !== context.owner) { throw new Error('Blackbox stimulus belongs to another test attempt'); }
 }
 export function prefix(title: string, allowed: readonly string[]): void {
   if (!allowed.some((word) => title.startsWith(`${word} `) && title.slice(word.length + 1).trim().length > 0)) {
