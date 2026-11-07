@@ -29,6 +29,30 @@ it('executes lifecycle claims under the native Playwright runner', async () => {
   expect(run.events).toContainEqual({ kind: 'stimulus-events', value: ['begin', 'precondition', 'action', 'final', 'claim', 'begin', 'action', 'final'] });
 }, 60_000);
 
+function assertResponseEvidence(specs: ReturnType<typeof discovered>): void {
+  const responseSpec = specs.find(({ title }) => title === 'captures ordinary responses and rejects oversized output');
+  if (responseSpec === undefined) { throw new Error('missing response test'); }
+  const responseAttachment = responseSpec.tests[0].results[0].attachments.find(({ name }) => name === 'blackbox-execution');
+  if (responseAttachment === undefined || responseAttachment.body === undefined) { throw new Error('missing response evidence'); }
+  const responseEvidence = JSON.parse(Buffer.from(responseAttachment.body, 'base64').toString('utf8')) as { events: unknown[] };
+  expect(responseEvidence.events).toEqual(expect.arrayContaining([
+    expect.objectContaining({ kind: 'action', captured: expect.objectContaining({ output: expect.objectContaining({ body: 'chunked' }) }) }),
+    expect.objectContaining({ kind: 'action', captured: expect.objectContaining({ output: expect.objectContaining({ body: { value: 'compressed', password: '[REDACTED]' } }) }) }),
+    expect.objectContaining({ kind: 'action', captured: expect.objectContaining({ output: expect.objectContaining({ body: 'no-length' }) }) }),
+  ]));
+}
+
+function assertPartialHealth(specs: ReturnType<typeof discovered>): void {
+  const partial = specs.find(({ title }) => title === 'bounds the supplemental capture while retaining nine stimuli');
+  if (partial === undefined) { throw new Error('missing bounded aggregate test'); }
+  const health = partial.tests[0].results[0].attachments.find(({ name }) => name === 'blackbox-capture-health');
+  if (health === undefined || health.body === undefined) { throw new Error('missing capture health'); }
+  expect(JSON.parse(Buffer.from(health.body, 'base64').toString('utf8'))).toMatchObject({
+    status: 'captured', observation: { diagnostics: expect.arrayContaining(['final-aggregate-omitted:1']) },
+    completeness: { closed: false, reasons: expect.arrayContaining(['final-aggregate-omitted:1']) },
+  });
+}
+
 it('retains bounded execution evidence and capture failures', async () => {
   const run = await runAssertions('stimulus-evidence.spec.ts');
   expect(run.exitCode, `${run.directory}\n${run.output}`).toBe(0);
@@ -39,7 +63,7 @@ it('retains bounded execution evidence and capture failures', async () => {
     'unasserted output capture failure still fails the attempt',
     'unwritable evidence fails the attempt',
     'lost final collector state fails even without a final snapshot',
-    'unbounded response capture fails closed',
+    'captures ordinary responses and rejects oversized output',
     'bounds the supplemental capture while retaining nine stimuli',
   ]);
   expect(specs.map((spec) => spec.tests[0].results[0].status)).toEqual(['passed', 'failed', 'failed', 'failed', 'failed', 'passed']);
@@ -47,18 +71,13 @@ it('retains bounded execution evidence and capture failures', async () => {
   expect(run.events).toContainEqual({ kind: 'unasserted-capture-caught', value: true });
   expect(run.events).toContainEqual({ kind: 'persistence-failure-caught', value: true });
   expect(run.events).toContainEqual({ kind: 'final-capture-body-completed', value: true });
-  expect(run.events).toContainEqual({ kind: 'unbounded-response-caught', value: true });
+  expect(run.events).toContainEqual({ kind: 'ordinary-responses-captured', value: true });
+  expect(run.events).toContainEqual({ kind: 'oversized-response-caught', value: true });
   expect(run.events).toContainEqual({ kind: 'completed-nine-stimuli', value: true });
   expect(run.events.filter(({ kind }) => kind === 'fixture-collector-closed')).toHaveLength(6);
-  expect(run.events).toContainEqual({ kind: 'retained-executions', value: { attempts: 6, files: 23, blocked: 1, leaked: false } });
-  const partial = specs.find(({ title }) => title === 'bounds the supplemental capture while retaining nine stimuli');
-  if (partial === undefined) { throw new Error('missing bounded aggregate test'); }
-  const health = partial.tests[0].results[0].attachments.find(({ name }) => name === 'blackbox-capture-health');
-  if (health === undefined || health.body === undefined) { throw new Error('missing capture health'); }
-  expect(JSON.parse(Buffer.from(health.body, 'base64').toString('utf8'))).toMatchObject({
-    status: 'captured', observation: { diagnostics: expect.arrayContaining(['final-aggregate-omitted:1']) },
-    completeness: { closed: false, reasons: expect.arrayContaining(['final-aggregate-omitted:1']) },
-  });
+  expect(run.events).toContainEqual({ kind: 'retained-executions', value: { attempts: 6, files: 26, blocked: 1, leaked: false } });
+  assertResponseEvidence(specs);
+  assertPartialHealth(specs);
   const history = await BehaviorHistory.open(join(run.directory, 'history'));
   const ingestion = await ingestPlaywrightResults(history, join(run.directory, 'results.json'));
   expect(ingestion).toMatchObject({ envelopes: 6, rejected: [] });
