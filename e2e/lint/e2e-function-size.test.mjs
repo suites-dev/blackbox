@@ -22,28 +22,23 @@ function messages(source) {
   return linter.verify(source, configuration, { filename: 'journey.spec.js' });
 }
 
-test('allows long direct synchronous Blackbox suite declaration callbacks', () => {
+test('allows long direct synchronous native Playwright suite declaration callbacks', () => {
   const sources = [
-    `test.system('suite', ${callback(100)});`,
-    `test.system.sandbox('suite', ${callback(100)});`,
-    `test.system.sandbox('suite', {}, ${callback(100)});`,
-    `system.sandbox('suite', ${callback(100)});`,
-    `system.sandbox('suite', {}, ${callback(100)});`,
-    `sandbox.describe('suite', ${callback(100)});`,
-    `suite.describe('suite', ${callback(100)});`,
+    `test.describe('suite', ${callback(100)});`,
+    `test.describe('suite', { tag: '@acceptance' }, ${callback(100)});`,
+    ...['only', 'skip', 'fixme', 'parallel', 'serial', 'parallel.only', 'serial.only'].map(
+      (mode) => `test.describe.${mode}('suite', ${callback(100)});`,
+    ),
   ];
-  for (const source of sources) {
-    assert.deepEqual(messages(source), []);
-  }
+  for (const source of sources) assert.deepEqual(messages(source), []);
 });
 
 test('rejects oversized tests, steps, hooks, and helper functions', () => {
   const sources = [
     `test('journey', ${callback(81, { async: true })});`,
-    `sandbox.test('journey', ${callback(81, { async: true })});`,
     `test.step('action', ${callback(81, { async: true })});`,
-    `sandbox.beforeEach(${callback(81, { async: true })});`,
-    `sandbox.afterEach(${callback(81, { async: true })});`,
+    `test.beforeEach(${callback(81, { async: true })});`,
+    `test.afterEach(${callback(81, { async: true })});`,
     `function helper() {\n${'value;\n'.repeat(79)}}`,
   ];
   for (const source of sources) {
@@ -52,24 +47,20 @@ test('rejects oversized tests, steps, hooks, and helper functions', () => {
 });
 
 test('still rejects an oversized test nested inside an exempt suite callback', () => {
-  const source = `test.system('orders', () => {\nsandbox.test('journey', ${callback(81)});\n});`;
+  const source = `test.describe('orders', () => {\ntest('journey', ${callback(81)});\n});`;
   assert.equal(messages(source).filter(({ ruleId }) => ruleId === 'e2e/function-size').length, 1);
-  const direct = `test.system.sandbox('orders', () => {\nsuite.test('journey', ${callback(81)});\n});`;
-  assert.equal(messages(direct).filter(({ ruleId }) => ruleId === 'e2e/function-size').length, 1);
 });
 
-test('rejects unrelated describe, async suite, and callback in the wrong position', () => {
+test('rejects removed facade declarations, unrelated describes, async suites and misplaced callbacks', () => {
   const sources = [
-    `test.describe('suite', ${callback(81)});`,
-    `test.system('suite', ${callback(81, { async: true })});`,
-    `test.system.sandbox('suite', ${callback(81, { async: true })});`,
-    `test.system.sandbox(${callback(81)}, 'suite');`,
-    `other.system.sandbox('suite', ${callback(81)});`,
-    `test.system['sandbox']('suite', ${callback(81)});`,
-    `system.sandbox('suite', ${callback(81, { async: true })});`,
-    `sandbox.describe('suite', ${callback(81, { async: true })});`,
-    `suite.describe('suite', ${callback(81, { async: true })});`,
-    `test.system(${callback(81)}, 'suite');`,
+    `test.system('suite', ${callback(81)});`,
+    `system.sandbox('suite', ${callback(81)});`,
+    `sandbox.describe('suite', ${callback(81)});`,
+    `suite.describe('suite', ${callback(81)});`,
+    `other.describe('suite', ${callback(81)});`,
+    `test.describe('suite', ${callback(81, { async: true })});`,
+    `test.describe(${callback(81)}, 'suite');`,
+    `test['describe']('suite', ${callback(81)});`,
   ];
   for (const source of sources) {
     assert.equal(messages(source).filter(({ ruleId }) => ruleId === 'e2e/function-size').length, 1);

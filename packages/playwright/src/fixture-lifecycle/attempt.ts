@@ -11,7 +11,7 @@ import { reportObservations } from '../reporting/observations.js';
 import { attachReceipt, startReceipt } from '../reporting/capture/receipt.js';
 import type { BlackboxAttemptRuntime, RunningBlackboxAttempt } from '../runtime/acquisition.js';
 import { retainAttempt, retainedAttemptDirectory } from '../retention/retention.js';
-import type { BlackboxTestOptions } from '../types.js';
+import type { BlackboxAttemptOptions } from '../config/options.js';
 import {
   startPreludeCapture,
   newAttemptProduct,
@@ -25,7 +25,7 @@ import {
   type BlackboxFixturePolicy,
 } from './timeouts.js';
 
-interface AttemptFixtureInput extends BlackboxTestOptions {
+interface AttemptFixtureInput extends BlackboxAttemptOptions {
   readonly runtime: BlackboxAttemptRuntime;
   readonly policy: BlackboxFixturePolicy;
   readonly testInfo: TestInfo;
@@ -125,7 +125,7 @@ async function acquire(
         selection: input.catalogEntry,
         configFile: configFilePath(input.testInfo),
         environment: input.blackboxEnvironment,
-        clientTargets: Object.values(input.blackboxClients ?? {}).map(({ target }) => target),
+        clientTargets: Object.values(input.blackboxClients).map(({ target }) => target),
         artifactDirectory: input.testInfo.outputPath('blackbox'),
         progress: report,
       },

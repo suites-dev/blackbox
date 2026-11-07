@@ -17,13 +17,11 @@ import {
   type BlackboxAttemptRuntime,
   type RunningBlackboxAttempt,
 } from './runtime/acquisition.js';
-import { createSystemTestFacade } from './system-test.js';
+import { normalizeBlackboxOptions, registeredClients } from './config/normalization.js';
+import type { BlackboxAttemptOptions } from './config/options.js';
 import { requestFixtureFor } from './request/request-fixture.js';
 import type {
   BlackboxStep,
-  BlackboxNativeTestArgs,
-  BlackboxNativeWorkerArgs,
-  BlackboxSystemTest,
   BlackboxTestFixtures,
   BlackboxTestOptions,
 } from './types.js';
@@ -40,7 +38,8 @@ interface SelectedAttemptFixture {
 type AttemptFixture = UnselectedAttemptFixture | SelectedAttemptFixture;
 
 interface PrivateFixtures {
-  readonly clients: Readonly<Record<string, unknown>>;
+  readonly _blackboxClients: Readonly<Record<string, unknown>>;
+  readonly _blackboxOptions: BlackboxAttemptOptions;
   readonly _blackboxTestScope: undefined;
   readonly _blackboxAttempt: AttemptFixture;
 }
@@ -62,7 +61,7 @@ function selectedAttempt(
 ): RunningBlackboxAttempt {
   if (fixture.kind === 'unselected') {
     throw new Error(
-      `Blackbox fixture ${JSON.stringify(name)} is only available inside a test.system(...).sandbox(...) group`,
+      `Blackbox fixture ${JSON.stringify(name)} is only available when test.use({ blackbox: { system } }) selects a system`,
     );
   }
   return fixture.attempt;
@@ -76,7 +75,7 @@ function clientSetupTimeoutMs(testInfo: TestInfo, startedAt: number): number {
 
 interface RunClientFixtureInput {
   readonly attempt: AttemptFixture;
-  readonly blackboxClients: BlackboxFixtures['blackboxClients'];
+  readonly blackboxClients: BlackboxAttemptOptions['blackboxClients'];
   readonly use: (clients: Readonly<Record<string, unknown>>) => Promise<void>;
   readonly testInfo: TestInfo;
   readonly testStartedAt: WeakMap<TestInfo, number>;
@@ -91,7 +90,7 @@ async function runClientFixture(input: RunClientFixtureInput): Promise<void> {
   if (startedAt === undefined) {
     throw new Error('Blackbox client setup could not read the native test start time');
   }
-  await runClients(input.blackboxClients ?? {}, input.attempt.attempt.sandbox, input.use, {
+  await runClients(input.blackboxClients, input.attempt.attempt.sandbox, input.use, {
     cleanupTimeoutMs: 25_000,
     setupTimeoutMs: clientSetupTimeoutMs(input.testInfo, startedAt),
   });
@@ -126,7 +125,7 @@ async function useSelectedAttempt(
 
 function testScopeFixture(testScopes: WeakSet<TestInfo>, testStartedAt: WeakMap<TestInfo, number>) {
   return async (
-    { catalogEntry: _catalogEntry }: Pick<BlackboxTestOptions, 'catalogEntry'>,
+    { blackbox: _blackbox }: Pick<BlackboxTestOptions, 'blackbox'>,
     use: (value: undefined) => Promise<void>,
     testInfo: TestInfo,
   ): Promise<void> => {
@@ -149,25 +148,18 @@ export function createBlackboxTest(
   const testStartedAt = new WeakMap<TestInfo, number>();
   const activeAttempts = new WeakMap<TestInfo, RunningBlackboxAttempt>();
   return playwrightTest.extend<BlackboxFixtures>({
-    catalogEntry: [{ kind: 'unselected' }, { option: true }],
-    blackboxEnvironment: [Object.freeze({}), { option: true }],
-    blackboxRetainAttempts: [false, { option: true }],
-    blackboxFinalSnapshot: [true, { option: true }],
-    blackboxClients: [{}, { option: true }],
+    blackbox: [Object.freeze({}), { option: true }],
+    _blackboxOptions: async ({ blackbox }, use) => {
+      await use(normalizeBlackboxOptions(blackbox));
+    },
     _blackboxTestScope: [testScopeFixture(testScopes, testStartedAt), { auto: true, timeout: 0 }],
     _blackboxAttempt: [
       async (
-        {
-          catalogEntry,
-          blackboxEnvironment,
-          blackboxRetainAttempts,
-          blackboxFinalSnapshot,
-          blackboxClients,
-        },
+        { _blackboxOptions },
         use,
         testInfo,
       ) => {
-        if (catalogEntry.kind === 'unselected') {
+        if (_blackboxOptions.catalogEntry.kind === 'unselected') {
           await use({ kind: 'unselected' });
           return;
         }
@@ -180,22 +172,18 @@ export function createBlackboxTest(
           runtime,
           policy,
           testInfo,
-          catalogEntry,
-          blackboxEnvironment,
-          blackboxRetainAttempts,
-          blackboxFinalSnapshot,
-          blackboxClients,
+          ..._blackboxOptions,
           use: (attempt) => useSelectedAttempt(attempt, testInfo, activeAttempts, use),
         });
       },
       // The helper enforces the test deadline and bounds every sandbox cleanup wait.
       { auto: true, timeout: 0 },
     ],
-    clients: [
-      async ({ _blackboxAttempt, blackboxClients }, use, testInfo) => {
+    _blackboxClients: [
+      async ({ _blackboxAttempt, _blackboxOptions }, use, testInfo) => {
         await runClientFixture({
           attempt: _blackboxAttempt,
-          blackboxClients,
+          blackboxClients: _blackboxOptions.blackboxClients,
           use,
           testInfo,
           testStartedAt,
@@ -205,6 +193,10 @@ export function createBlackboxTest(
       // the attempt fixture, even when the test's own deadline has expired.
       { auto: true, timeout: 0 },
     ],
+    clients: async ({ _blackboxAttempt, _blackboxClients }, use) => {
+      selectedAttempt(_blackboxAttempt, 'clients');
+      await use(registeredClients(_blackboxClients));
+    },
     request: requestFixtureFor(activeAttempts),
     step: stepFixture,
     sandbox: async ({ _blackboxAttempt }, use) => {
@@ -219,15 +211,6 @@ export function createBlackboxTest(
   });
 }
 
-export function createBlackboxSystemTest(
-  runtime: BlackboxAttemptRuntime,
-  policy: BlackboxFixturePolicy = defaultPolicy,
-): BlackboxSystemTest {
-  return createSystemTestFacade<BlackboxNativeTestArgs, BlackboxNativeWorkerArgs, PrivateFixtures>(
-    createBlackboxTest(runtime, policy),
-  );
-}
-
 export type { BlackboxFixturePolicy } from './fixture-lifecycle/timeouts.js';
 
-export const test = createBlackboxSystemTest(productionBlackboxRuntime);
+export const test = createBlackboxTest(productionBlackboxRuntime);

@@ -30,43 +30,54 @@ export const redis = defineClient({}, {
 
 const validSpec = `
 import { expect, test } from '@suites/blackbox-playwright';
+import { mergeTests, test as base, type TestType } from '@playwright/test';
 import * as clients from './clients/index.js';
 
-const extended = test.extend<{ readonly tenant: string }>({
-  tenant: async ({}, use) => {
-    await use('alpha');
-  },
-});
+declare module '@suites/blackbox-playwright' {
+  interface BlackboxClients {
+    readonly redis: { get(key: string): Promise<string | null> };
+  }
+}
 
-extended.system('orders', (system) => {
-  system.sandbox('isolated', { environment: { TENANT: 'alpha' } }, (sandbox) => {
-    sandbox.beforeEach(async ({ sandbox: attempt, tenant }) => {
-      await test.step('prepare tenant', async () => {
-        expect(attempt.catalogEntry.id).toBe('orders');
-        expect(tenant).toBe('alpha');
-      });
+const extended = test.extend<{ readonly tenant: string }>({
+  tenant: async ({}, use) => use('alpha'),
+});
+const auxiliary = base.extend<{ readonly audit: string }>({
+  audit: async ({}, use) => use('native'),
+});
+const merged = mergeTests(extended, auxiliary);
+const native: TestType<import('@suites/blackbox-playwright').BlackboxTestArgs,
+  import('@playwright/test').PlaywrightWorkerArgs & import('@playwright/test').PlaywrightWorkerOptions> = test;
+void native;
+
+merged.describe('Rule: independent Playwright consumer', { tag: '@acceptance' }, () => {
+  merged.use({ blackbox: { system: 'orders', environment: { TENANT: 'alpha' } } });
+  merged.beforeAll(({ audit }) => expect(audit).toBe('native'));
+  merged.beforeEach(async ({ sandbox: attempt, tenant }) => {
+    await test.step('prepare tenant', async () => {
+      expect(attempt.catalogEntry.id).toBe('orders');
+      expect(tenant).toBe('alpha');
     });
-    sandbox.afterEach(({ effects, telemetry }) => {
-      expect(effects.executionId).toBe(telemetry.executionId);
-    });
-    sandbox.describe('Rule: independent Playwright consumer', () => {
-      sandbox.test('Scenario: inferred fixtures are available', async ({ request, sandbox }) => {
-        await test.step('use native and Blackbox fixtures', async () => {
-          expect(request).toBeDefined();
-          expect(sandbox.entrypoint.url).toContain('http');
-        });
-      });
+  });
+  merged.afterEach(({ effects, telemetry }) => {
+    expect(effects.executionId).toBe(telemetry.executionId);
+  });
+  merged('Scenario: inferred fixtures are available', async ({ request, sandbox }) => {
+    await test.step('use native and Blackbox fixtures', async () => {
+      expect(request).toBeDefined();
+      expect(sandbox.entrypoint.url).toContain('http');
     });
   });
 });
 
-extended.system.sandbox({ kind: 'subsystem', id: 'product-service' }, { clients }, (suite) => {
-  suite.beforeEach(async ({ clients, tenant }) => {
+extended.describe('typed clients', () => {
+  extended.use({ blackbox: { system: { kind: 'subsystem', id: 'product-service' }, clients } });
+  extended.beforeEach(async ({ clients, tenant }) => {
     const value: string | null = await clients.redis.get(tenant);
     void value;
   });
-  suite.afterEach(({ clients }) => void clients.redis.get('after'));
-  suite.test('Scenario: typed registered clients', async ({ clients, request, tenant }) => {
+  extended.afterEach(({ clients }) => void clients.redis.get('after'));
+  extended('Scenario: typed registered clients', async ({ clients, request, tenant }) => {
     const value: string | null = await clients.redis.get(tenant);
     // @ts-expect-error registry names remain exact
     clients.postgres;
@@ -77,29 +88,21 @@ extended.system.sandbox({ kind: 'subsystem', id: 'product-service' }, { clients 
     void request;
   });
 });
-test.system.sandbox('plain', (suite) => {
-  suite.test('Scenario: default sandbox shorthand', ({ sandbox }) => void sandbox);
-});
+test('Scenario: ordinary native test', ({ request }) => void request);
 `;
 
 const negativeTypes = `
 import { test } from '@suites/blackbox-playwright';
 import { defineConfig } from '@suites/blackbox-playwright/config';
 
-const extended = test.extend<{ readonly tenant: string }>({
-  tenant: async ({}, use) => use('alpha'),
-});
-
-// @ts-expect-error root hooks cannot access attempt-scoped fixtures
-extended.beforeAll(({ sandbox }) => void sandbox);
-// @ts-expect-error flat root tests must be declared in a system sandbox
-extended('flat test', () => undefined);
-extended.system('orders', (system) => {
-  system.sandbox('isolated', (sandbox) => {
-    // @ts-expect-error sandbox suites intentionally have no beforeAll
-    sandbox.beforeAll(() => undefined);
-  });
-});
+// @ts-expect-error facade removed in the breaking native migration
+test.system('orders', () => undefined);
+// @ts-expect-error old flat option is no longer public
+test.use({ catalogEntry: { kind: 'system', id: 'orders' } });
+// @ts-expect-error environment values must be strings
+test.use({ blackbox: { environment: { PORT: 3000 } } });
+// @ts-expect-error final capture and retention have independent boolean options
+test.use({ blackbox: { system: 'orders', finalSnapshot: 'off' } });
 // @ts-expect-error blackboxConfigFile must be a string
 defineConfig({ blackboxConfigFile: 123 });
 `;
@@ -210,18 +213,12 @@ test('independent Playwright consumer compiles and discovers a journey', async (
   assert.equal(listed.kind, 'success', `${listed.stdout}\n${listed.stderr}`);
   assert.match(
     listed.stdout,
-    /system "orders" › sandbox "isolated" › Rule: independent Playwright consumer › Scenario: inferred fixtures are available/u,
+    /Rule: independent Playwright consumer › Scenario: inferred fixtures are available/u,
   );
   assert.match(listed.stdout, /Total: 3 tests in 1 file/u);
 
-  assert.match(
-    listed.stdout,
-    /subsystem "product-service" › sandbox "default" › Scenario: typed registered clients/u,
-  );
-  assert.match(
-    listed.stdout,
-    /system "plain" › sandbox "default" › Scenario: default sandbox shorthand/u,
-  );
+  assert.match(listed.stdout, /typed clients › Scenario: typed registered clients/u);
+  assert.match(listed.stdout, /Scenario: ordinary native test/u);
 
   const consumerSources = await Promise.all(
     [

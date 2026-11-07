@@ -121,8 +121,7 @@ function assertParallelAndRootHooks(run: NativeRun): void {
         event.kind === 'native-hook-request' && eventString(event, 'phase') === 'beforeAll',
     );
     const afterAll = processEvents.findIndex(
-      (event) =>
-        event.kind === 'native-hook-request' && eventString(event, 'phase') === 'afterAll',
+      (event) => event.kind === 'native-hook-request' && eventString(event, 'phase') === 'afterAll',
     );
     expect(beforeAll).toBeGreaterThanOrEqual(0);
     expect(beforeAll).toBeLessThan(firstStart);
@@ -164,9 +163,7 @@ function specsIn(
         path: [...suitePath, spec.title],
         file: spec.file,
         line: spec.line,
-        steps: spec.tests.flatMap((test) =>
-          test.results.flatMap((result) => result.steps ?? []),
-        ),
+        steps: spec.tests.flatMap((test) => test.results.flatMap((result) => result.steps ?? [])),
         statuses: spec.tests.flatMap((test) =>
           test.results.map(({ status }) => status ?? 'missing'),
         ),
@@ -188,17 +185,9 @@ function assertDiscoveryAndSteps(run: NativeRun): void {
   }
   expect(discovered.map(({ path }) => path)).toEqual(
     expect.arrayContaining([
-      ['system "orders"', 'sandbox "green"', 'second sandbox group has isolated options'],
-      [
-        'subsystem "invoice-worker"',
-        'sandbox "subsystem group"',
-        'subsystem selection is preserved',
-      ],
-      [
-        'system "billing"',
-        'sandbox "fixtureless group"',
-        'acquires without any Blackbox fixture dependency',
-      ],
+      ['orders', 'green', 'second sandbox group has isolated options'],
+      ['invoice-worker', 'subsystem group', 'subsystem selection is preserved'],
+      ['billing', 'fixtureless group', 'acquires without any Blackbox fixture dependency'],
     ]),
   );
   const fixtureless = discovered.find(

@@ -19,6 +19,21 @@ Emission creates a new `.spec.ts` file and refuses to overwrite an existing one.
 Follow [Generating Playwright suites](../../docs/features/generating-suites.md)
 for prerequisites, expected output, and drift checks after changes.
 
+Generated suites use native `test.describe`, `test.use({ blackbox: { system, clients } })`,
+and callable `test`. System and subsystem tags are checked against the Catalog
+before generation. The emitted selection keeps the resolved kind so a later
+Catalog kind change fails at execution; the acceptance tag only labels tests. `@sandbox` names an
+ordinary native describe, and every physical attempt owns a fresh Sandbox.
+
+Register project client SDK types through the exported `BlackboxClients` interface
+as described in the [Playwright package guide](../playwright/README.md). A scoped
+`blackbox` option replaces the whole previous value, so include any environment,
+retention, or final-snapshot settings needed in that scope.
+
+The migration removes synthetic system title wrappers and changes native test IDs.
+Existing retained attempts remain available; their history identities are not
+automatically comparable with newly authored tests.
+
 The current compiler accepts a defined
 [HTTP vocabulary](../../docs/features/authoring.md#sentence-reference).
 Native Playwright suites can use other SDK clients; see

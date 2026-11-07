@@ -1,8 +1,7 @@
-import { createBlackboxSystemTest } from '../../fixtures.js';
-import type { BlackboxTestFixtures } from '../../types.js';
+import { createBlackboxTest } from '../../fixtures.js';
 import { systemSandboxRuntime } from './runtime.fixture.js';
 
-const test = createBlackboxSystemTest(systemSandboxRuntime);
+const test = createBlackboxTest(systemSandboxRuntime);
 const extended = test.extend<{ readonly sandboxDependent: string }>({
   sandboxDependent: async ({ sandbox }, use) => {
     await use(sandbox.executionId);
@@ -10,9 +9,10 @@ const extended = test.extend<{ readonly sandboxDependent: string }>({
 });
 
 function declareTest(target: typeof test, id: string): void {
-  target.system(id, (system) => {
-    system.sandbox('one legitimate attempt', (suite) => {
-      suite.test('runs only when the suite hook is afterAll', ({ sandbox }) => {
+  target.describe(id, () => {
+    target.use({ blackbox: { system: { kind: 'system', id } } });
+    target.describe('one legitimate attempt', () => {
+      target('runs only when the suite hook is afterAll', ({ sandbox }) => {
         if (sandbox.catalogEntry.id !== id) {
           throw new Error('Unexpected sandbox selection');
         }
@@ -22,8 +22,7 @@ function declareTest(target: typeof test, id: string): void {
 }
 
 function directBeforeAll(): void {
-  // @ts-expect-error Direct hook misuse intentionally requests an excluded Blackbox fixture.
-  test.beforeAll(({ sandbox }: BlackboxTestFixtures) => {
+  test.beforeAll(({ sandbox }) => {
     void sandbox;
   });
   declareTest(test, 'direct-before-all');
@@ -37,8 +36,7 @@ function transitiveBeforeAll(): void {
 }
 
 function directAfterAll(): void {
-  // @ts-expect-error Direct hook misuse intentionally requests an excluded Blackbox fixture.
-  test.afterAll(({ sandbox }: BlackboxTestFixtures) => {
+  test.afterAll(({ sandbox }) => {
     void sandbox;
   });
   declareTest(test, 'direct-after-all');

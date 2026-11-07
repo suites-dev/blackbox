@@ -55,7 +55,7 @@ is not an expectation.
 
 Not available on this release, so do not invent commands: Features and Spec Kit flows, `feature validate|verify`,
 `spec draft`, and the Playwright-feature flow. They are planned. Native Playwright (`@suites/blackbox-playwright`,
-`test.system`) exists as a package, but it is not needed for the first verification; use the discovery
+`test.use({ blackbox: { system } })`) exists as a package, but it is not needed for the first verification; use the discovery
 Playwright reference only if the user asks for a test.
 
 ## When it fails

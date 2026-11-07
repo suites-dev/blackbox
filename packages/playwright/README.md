@@ -1,29 +1,31 @@
 # Blackbox Playwright
 
 `@suites/blackbox-playwright` groups native Playwright tests by a catalog system
-and Sandbox configuration. Every physical test attempt, including a retry, runs
-in a fresh Sandbox. Tests keep their native Playwright callbacks, hooks, steps,
+and Sandbox configuration. Every selected physical test attempt, including a retry,
+runs in a fresh Sandbox. Tests keep their native Playwright callbacks, hooks, steps,
 reporters, and parallel scheduling.
 
-Clients can wrap HTTP, messaging, database, or project-owned SDKs. Start with the
-[Playwright guide](../../docs/playwright/README.md) for syntax and configuration,
-or [clients and fixtures](../../docs/playwright/clients-and-fixtures.md) for shared
-setup. The [testing guides](../../docs/guides/README.md) cover HTTP APIs,
-asynchronous flows, and PostgreSQL and Redis seeding and state assertions.
+Clients can wrap HTTP, messaging, database, or project-owned SDKs. The
+[consumer tests](../../e2e/tests/playwright/) show selected systems, client setup,
+and response and state assertions.
 
 ## Prerequisites
 
-This alpha is available in the source workspace. The package requires Node.js
-22.15 or later and `@playwright/test` 1.61 or later within major version 1.
-The examples assume the Blackbox workspace packages have been built, Docker is
-available, and `blackbox.config.yaml` declares the selected system. Application
-code imports directly from the adapter paths below.
+Install the adapter and Playwright in your project:
+
+```sh
+pnpm add -D @suites/blackbox-playwright@alpha @playwright/test
+```
+
+The package requires Node.js 22.15 or later and Playwright 1.61 or later within
+major version 1. The examples assume Docker is available and
+`blackbox.config.yaml` declares the selected system.
 
 ## Use
 
 Configure the catalog once in `playwright.config.ts`. The path is resolved
-relative to that file. Test files then select a system or subsystem and declare
-one or more named Sandbox configurations.
+relative to that file. Test files select a system or subsystem with the native `test.use` option.
+Group scenarios with ordinary `test.describe` blocks.
 
 ```ts
 import { defineConfig } from '@suites/blackbox-playwright/config';
@@ -45,81 +47,120 @@ export default defineConfig({
 });
 ```
 
-Then [write a native test](../../docs/playwright/README.md#add-clients-and-a-test).
-Use `test.system.sandbox(selection, callback)` for one default-named configuration
-or `test.system.sandbox(selection, { clients, environment }, callback)` to supply options:
+Select a catalog entry and write a native test:
+
+```ts
+import { test, expect } from '@suites/blackbox-playwright';
+
+test.describe('Rule: valid payments are accepted', { tag: '@acceptance' }, () => {
+  test.use({ blackbox: { system: 'payment-system' } });
+
+  test('Scenario: a valid method creates an intent', async ({ request }) => {
+    const response = await request.post('/v1/payment_intents', {
+      data: { paymentMethodId: 'pm_primary', userId: 'alice' },
+    });
+    expect(response.status()).toBe(201);
+  });
+});
+```
+
+A string selects the ID using its kind in the catalog. To require a particular
+kind, use `system: { kind: 'subsystem', id: 'payment-mock' }`. The ID must exist,
+and an explicit kind must agree with the catalog. Selection creates a fresh
+Sandbox for every physical test attempt, including retries, even if the test
+callback requests no Blackbox fixtures.
+
+The exported `test` is a native Playwright `TestType`. Use `test.extend`,
+`mergeTests`, nested `test.describe`, tags, hooks, retries, and parallel scheduling
+normally. An unselected test runs as ordinary Playwright; requesting `clients`,
+`step`, `sandbox`, `telemetry`, or `effects` without selecting a system fails.
+
+## Register typed clients
+
+Export named `defineClient(...)` definitions from ordinary modules and register
+only the participants available in this system:
 
 ```ts
 import { test } from '@suites/blackbox-playwright';
 import * as clients from './.blackbox/clients/index.js';
 
-test.system.sandbox({ kind: 'subsystem', id: 'product-service' }, { clients }, (suite) => {
-  suite.test('reads stored data', async ({ clients }) => {
-    const value = await clients.redis.get('product:1');
-    // value retains the Redis SDK return type.
-  });
+test.use({ blackbox: { system: 'product-service', clients } });
+
+test('reads stored data', async ({ clients }) => {
+  const value = await clients.redis.get('product:1');
+  // value retains the Redis SDK return type.
 });
 ```
 
-Export named `defineClient(...)` definitions from ordinary modules and pass the
-module namespace as `{ clients }`. A normal export barrel can collect several
-participant clients. Each handle retains its SDK type, readiness and disposal
-lifecycle; import only the participants available in the selected sandbox.
-Named configuration groups continue to use the nested API below.
-
-Register your SDK clients in `system.sandbox(...)`; Blackbox readies them before
-per-test hooks and disposes them during cleanup. The [async guide](../../docs/guides/testing-async-flows.md)
-contains a complete Redis-to-PostgreSQL example.
-
-## Migrate the flat fixture API
-
-Replace
-`test.use({ catalogEntry, blackboxEnvironment })` plus root `test(...)` calls with
-`test.system(...)` and nested `system.sandbox(...)` groups, and pass `blackboxEnvironment` as the
-Sandbox option `{ environment: blackboxEnvironment }`. Relative `request` and
-`page` URLs behave differently: the native `request` fixture resolves relative
-URLs against this attempt's HTTP Sandbox entrypoint, while `page` still uses the
-project's configured `baseURL`. Absolute request URLs keep their native meaning.
-
-The Sandbox `environment` is the Compose substitution environment for that group.
-Progress and diagnostics redact the values of entries whose names mark a credential,
-such as `TOKEN`, `PASSWORD`, `SECRET`, `KEY`, `AUTH` or `CREDENTIALS` segments.
-Other values, such as a feature flag `TT_PRICE_STOPPED=1`, are shown as given.
-
-A string passed to `test.system(...)` selects a catalog entry with kind `system`.
-Use an object to select either kind explicitly:
+Declare your project client types once in the registration module. For example,
+if `redis.ts` exports a `defineClient(...)` definition:
 
 ```ts
-test.system({ kind: 'subsystem', id: 'payment-mock' }, (system) => {
-  system.sandbox('default', (suite) => {
-    suite.test('accepts a payment', async ({ request }) => {
-      const response = await request.post('/v1/payment_intents', {
-        data: { paymentMethodId: 'pm_primary', userId: 'alice' },
-      });
-      expect(response.status()).toBe(201);
-    });
-  });
+import type { RegisteredClients } from '@suites/blackbox-playwright';
+import type { redis } from './redis.js';
+
+export { redis } from './redis.js';
+
+type ProjectClients = RegisteredClients<{ redis: typeof redis }>;
+
+declare module '@suites/blackbox-playwright' {
+  interface BlackboxClients {
+    redis: ProjectClients['redis'];
+  }
+}
+```
+
+Include this module in the project's TypeScript compilation. Types describe the
+available handles; each selected suite still supplies its runtime registrations.
+Accessing an unregistered client throws a clear configuration error. Blackbox
+readies registered clients before per-test hooks and disposes them during cleanup.
+See the [consumer client definitions](../../e2e/.blackbox/clients/) for examples.
+
+## Configure suites and migrate existing tests
+
+Attempt options live under `blackbox`: `system`, `clients`, `environment`,
+`retainAttempts` (default `false`), and `finalSnapshot` (default `true`). Native
+Playwright inheritance replaces the whole `blackbox` object at a narrower scope;
+it does not deep-merge its properties. Reuse shared settings explicitly:
+
+```ts
+const shared = { clients, retainAttempts: true };
+
+test.describe('payment service', () => {
+  test.use({ blackbox: { ...shared, system: 'payment-system' } });
 });
 ```
 
-The selected ID must exist in `blackbox.config.yaml`, and its declared kind must
-match the selection. `system.sandbox(...)` creates a configuration group, not a
-live shared resource. Blackbox resolves the catalog and creates a separate
-Sandbox for each physical test attempt. Setup starts the selected Compose
-services, installs the current Node activation adapter where configured, starts
-the collector, verifies activation, waits for application readiness, and then
-enters the native test callback.
+Replace the former `test.system` and sandbox declaration facade with
+`test.describe`, `test.use({ blackbox: { system, clients, environment } })`, and
+native `test(...)` calls. Replace `suite.beforeEach` and `suite.afterEach` with
+native hooks. Flat `catalogEntry`, `blackboxEnvironment`, `blackboxClients`,
+`blackboxRetainAttempts`, and `blackboxFinalSnapshot` options are removed.
+Changing describe titles also changes native test IDs and title-derived behavior
+IDs. Keep explicit `bb:behavior` annotations where a stable behavior identity is
+needed across this authoring migration.
 
-The Sandbox declaration callback is synchronous. Use `suite.describe`,
-`suite.test`, `suite.beforeEach`, and `suite.afterEach` inside it. Test and
-per-test hook callbacks receive the normal Playwright fixtures plus `clients`,
-`step`, `sandbox`, `telemetry`, and `effects`. Use the attempt-bound `step(...)`
-fixture for native Playwright steps with local asynchronous context. Mark the
-action whose effects matter with `step.stimulus(...)` and pass its W3C headers to
-the client request. Step titles alone do not propagate tracing into the system.
-Sandbox-scoped `beforeAll` and `afterAll` hooks are unavailable because there is
-no group-level live Sandbox. Root Playwright `beforeAll` and `afterAll` hooks can
-still perform setup unrelated to a Sandbox.
+`environment` supplies Compose substitutions for the selected system. Progress
+and diagnostics redact credential-named values such as `TOKEN`, `PASSWORD`,
+`SECRET`, `KEY`, `AUTH`, and `CREDENTIALS`. Other values, such as a feature flag
+`TT_PRICE_STOPPED=1`, are shown as given.
+
+The native `request` fixture resolves relative URLs against this attempt's HTTP
+Sandbox entrypoint. Absolute URLs retain their native meaning. Playwright's
+configured `baseURL` remains unchanged for `page`; resolve browser URLs against
+the Sandbox entrypoint explicitly when needed.
+
+Setup starts selected Compose services, installs configured Node instrumentation,
+starts the collector, verifies activation, and waits for application readiness.
+Test and per-test hook callbacks then receive normal Playwright fixtures plus
+`clients`, `step`, `sandbox`, `telemetry`, and `effects`. Use the attempt-bound
+`step(...)` for native steps with local asynchronous context. Mark an owned action
+with `step.stimulus(...)` and pass its W3C headers to the client request. Step
+titles alone do not propagate tracing into the system.
+
+Native `beforeAll` and `afterAll` hooks can perform setup unrelated to a Sandbox.
+They cannot acquire attempt-owned Blackbox fixtures because each test owns a
+separate Sandbox. Use `beforeEach` and `afterEach` for Sandbox setup and inspection.
 
 The fixture always requests Sandbox cleanup after the test body. Assertion
 failure, timeout, skip, and interruption are retained as distinct cleanup
@@ -127,7 +168,7 @@ reasons. Setup failure also attempts cleanup before surfacing the error.
 
 ## Fixtures
 
-- `clients` exposes the typed clients registered in the Sandbox declaration.
+- `clients` exposes the typed clients registered in `blackbox.clients`.
 - `step` creates a native Playwright step with context bound to this attempt.
   `step.stimulus(...)` marks an owned action and supplies propagation headers.
   Ordinary `step(...)` remains useful for setup and inspection. A custom
@@ -152,14 +193,13 @@ reasons. Setup failure also attempts cleanup before surfacing the error.
 ## Execution reporting
 
 Playwright's native reporter owns test progress, steps, colors, errors, and the
-final summary. The async guide produces this title hierarchy:
+final summary. Describe titles and native steps determine the hierarchy:
 
 ```text
-system "job-system"
-└─ sandbox "default"
-   └─ processes a queued job
-      ├─ Queue a job
-      └─ Wait for completion
+Rule: queued jobs complete
+└─ Scenario: processes a queued job
+   ├─ Queue a job
+   └─ Wait for completion
 ```
 
 The grouping does not change the existing `blackbox-progress`,
@@ -197,7 +237,7 @@ import { defineConfig } from '@suites/blackbox-playwright/config';
 
 const use = {
   trace: 'retain-on-failure' as const,
-  blackboxRetainAttempts: true,
+  blackbox: { system: 'payment-system', retainAttempts: true },
 };
 
 export default defineConfig({
@@ -227,7 +267,7 @@ diagnostics will be added with the effect evaluator.
 
 ## Behavioral history
 
-Each attempt also attaches three documents, on by default (`blackboxFinalSnapshot: false` turns
+Each attempt also attaches three documents, on by default (`blackbox.finalSnapshot: false` turns
 this off): `blackbox-effects-final` (the attempt's effects after cleanup, also when the test
 failed), `blackbox-envelope` (the attempt's identity, source revision, configuration fingerprints,
 stimulus fingerprint, reported state and evidence digests) and `blackbox-receipt` (how the attempt

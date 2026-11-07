@@ -228,6 +228,20 @@ it('accepts a subsystem when both the test and catalog declare subsystem', async
   await attempt.stop('completed');
 });
 
+it.each(['system', 'subsystem'] as const)(
+  'resolves id-only selection to the actual Catalog %s kind',
+  async (kind) => {
+    const fixture = runtimeFixture({ catalog: catalog(kind), readinessFailure: null });
+    const attempt = await acquireBlackboxAttempt(
+      attemptInput({ kind: 'catalog-entry', id: 'orders' }), fixture.ports,
+    );
+    expect(attempt.sandbox.catalogEntry).toEqual({ id: 'orders', kind });
+    expect(fixture.starts).toHaveLength(1);
+    await attempt.stop('completed');
+    expect(fixture.stops).toEqual(['completed']);
+  },
+);
+
 it('requires an explicit catalog entry selection', async () => {
   const fixture = runtimeFixture({ catalog: catalog(), readinessFailure: null });
   await expect(

@@ -2,11 +2,11 @@ import { test as blackboxTest } from '@suites/blackbox-playwright';
 
 import type { ScenarioWorld } from './step-types.js';
 
-// Named through the public facade: @suites/blackbox-playwright does not export the facade's type.
+// Preserve the native extended TestType in the package declaration.
 type ScenarioTest = ReturnType<typeof blackboxTest.extend<{ world: ScenarioWorld }>>;
 
 /**
- * The public Blackbox facade plus a scenario-local `world`. Each physical
+ * The native Blackbox test plus a scenario-local `world`. Each physical
  * attempt gets a fresh world, shared by its Background hooks and test body.
  */
 export const test: ScenarioTest = blackboxTest.extend<{ world: ScenarioWorld }>({

@@ -148,7 +148,7 @@ describe('sandboxEnvironment', () => {
 });
 
 describe('step fixture types', () => {
-  it('are the facade fixtures, read from its public signatures', () => {
+  it('match the exported native Playwright fixture types', () => {
     // Checked by the typecheck: a derivation that collapsed to any or unknown would fail here.
     expectTypeOf<NonNullable<StepFixtures['sandbox']>>().toEqualTypeOf<BlackboxSandbox>();
     expectTypeOf<NonNullable<StepFixtures['telemetry']>>().toEqualTypeOf<BlackboxTelemetry>();
