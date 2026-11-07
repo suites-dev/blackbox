@@ -3,6 +3,7 @@ import type { ComparisonSide } from '../compare/types.js';
 import { digestBytes, type Digest } from '../envelope/index.js';
 import { checkEvidence } from './evidence-check.js';
 import { HistoryError, type AnyEnvelope, type ExecutionDetail } from './history-types.js';
+import { verifyNativeResult, type NativeResult } from './receipts/native-result.js';
 import { verifyReceipt, type AttemptReceipt } from './receipts/receipt.js';
 import { readWithReason, type ObjectStore } from './storage/store.js';
 import { checkStoredEnvelope } from './stored-envelope.js';
@@ -67,10 +68,21 @@ export class StoredRecords {
     throw new HistoryError('A stored receipt no longer verifies', [id]);
   }
 
+  async nativeResult(id: Digest): Promise<NativeResult | null> {
+    const bytes = await this.read('receipt', id);
+    if (bytes === null) { return null; }
+    try {
+      const value: unknown = JSON.parse(bytes.toString('utf8'));
+      if (verifyNativeResult(value).ok && (value as NativeResult).digest === id) { return value as NativeResult; }
+    } catch { /* reported below */ }
+    throw new HistoryError('A stored Playwright result no longer verifies', [id]);
+  }
+
   /** One execution, its receipts, and where each piece of its evidence stands. */
   async execution(
     id: Digest,
     receiptIds: readonly Digest[],
+    resultIds: readonly Digest[],
     evidenceRoot: string | null,
   ): Promise<ExecutionDetail | null> {
     const envelope = await this.envelope(id);
@@ -84,8 +96,17 @@ export class StoredRecords {
         receipts.push(receipt);
       }
     }
+    const nativeResults: NativeResult[] = [];
+    for (const resultId of resultIds) {
+      const result = await this.nativeResult(resultId);
+      if (result === null) { throw new HistoryError('A stored Playwright result disappeared', [resultId]); }
+      if (result.envelope === id && result.attemptId === envelope.identity.attempt.attemptId) { nativeResults.push(result); }
+    }
+    const statuses = [...new Set(nativeResults.map(({ status }) => status))];
     return {
       envelope,
+      nativeResults,
+      finalStatus: statuses.length === 0 ? null : statuses.length === 1 ? statuses[0] : 'conflicting',
       snapshotBody: await this.snapshot(envelope),
       receipts,
       evidence: await checkEvidence(this.store, envelope, evidenceRoot),

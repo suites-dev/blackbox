@@ -5,6 +5,7 @@ import type {
   LegacyBehaviorEnvelope,
 } from '../envelope/index.js';
 import type { HistoryIndex } from './storage/index-build.js';
+import type { NativeResult } from './receipts/native-result.js';
 import type { AttemptReceipt } from './receipts/receipt.js';
 import type { ObjectKind } from './storage/store.js';
 
@@ -37,6 +38,9 @@ export interface ExecutionDetail {
   readonly envelope: AnyEnvelope;
   readonly snapshotBody: string | null;
   readonly receipts: readonly AttemptReceipt[];
+  /** Verified final runner reports, separate from the envelope's capture-time status. */
+  readonly nativeResults: readonly NativeResult[];
+  readonly finalStatus: NativeResult['status'] | 'conflicting' | null;
   readonly evidence: readonly EvidenceCheck[];
 }
 

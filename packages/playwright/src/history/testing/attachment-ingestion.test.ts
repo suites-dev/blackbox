@@ -95,6 +95,7 @@ it('retains final runner outcomes across duplicate reports, rebuilds, and confli
     await ingestPlaywrightResults(history, path);
     let index = await history.rebuildIndex();
     expect(index.nativeResults).toHaveLength(1);
+    expect(defined(await history.execution(envelope.digest)).finalStatus).toBe('failed');
     await history.ingestNativeResult(nativeResult({ kind: 'playwright-result', version: 1, envelope: envelope.digest, attemptId: 'foreign-attempt', status: 'passed' }));
     index = await history.rebuildIndex();
     expect(index.executions[0].testStatus).toBe('failed');
@@ -104,6 +105,7 @@ it('retains final runner outcomes across duplicate reports, rebuilds, and confli
     await ingestPlaywrightResults(history, path);
     index = await history.rebuildIndex();
     expect(index.nativeResults).toHaveLength(3);
+    expect(defined(await history.execution(envelope.digest)).finalStatus).toBe('conflicting');
     expect(index.executions[0]).toMatchObject({ testStatus: 'conflicting', finalStatus: 'conflicting', statusDiscrepancy: true });
     expect((await history.behaviorHistory(envelope.identity.behavior.id, { followAliases: false }))[0].status).toBe('conflicting');
   } finally { await rm(directory, { recursive: true, force: true }); }
@@ -112,4 +114,23 @@ it('retains final runner outcomes across duplicate reports, rebuilds, and confli
 it('rejects a digest-valid native result with a non-string status', () => {
   const body = { kind: 'playwright-result', version: 1, envelope: digestBytes('envelope'), attemptId: 'attempt', status: ['passed'] };
   expect(verifyNativeResult({ ...body, digest: digestOf(body) }).ok).toBe(false);
+});
+
+it('revalidates final-result bytes when reading execution details', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'bb-final-result-integrity-'));
+  try {
+    const envelope = buildEnvelope(inputFixture());
+    const history = await BehaviorHistory.open(directory);
+    await history.ingestEnvelope(envelope, null);
+    const observation = nativeResult({ kind: 'playwright-result', version: 1, envelope: envelope.digest, attemptId: envelope.identity.attempt.attemptId, status: 'failed' });
+    await history.ingestNativeResult(observation);
+    expect(defined(await history.execution(envelope.digest)).finalStatus).toBe('failed');
+    const hex = observation.digest.slice('sha256:'.length);
+    const path = join(directory, 'objects', 'receipt', hex.slice(0, 2), hex);
+    await rm(path);
+    await writeFile(path, '{}');
+    await expect(history.execution(envelope.digest)).rejects.toThrow('no longer verifies');
+    await rm(path);
+    await expect(history.execution(envelope.digest)).rejects.toThrow('disappeared');
+  } finally { await rm(directory, { recursive: true, force: true }); }
 });
