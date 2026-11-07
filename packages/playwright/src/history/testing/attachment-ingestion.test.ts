@@ -5,9 +5,9 @@ import { join } from 'node:path';
 import { expect, it } from 'vitest';
 
 import { buildEnvelope } from '../../envelope/build.js';
-import { digestBytes } from '../../envelope/index.js';
+import { digestBytes, digestOf } from '../../envelope/index.js';
 import { inputFixture } from '../../envelope/testing/envelope.fixture.js';
-import { nativeResult } from '../receipts/native-result.js';
+import { nativeResult, verifyNativeResult } from '../receipts/native-result.js';
 import { BehaviorHistory } from '../history.js';
 import { ingestPlaywrightResults } from '../ingestion/playwright-results.js';
 import { defined } from './history.fixture.js';
@@ -107,4 +107,9 @@ it('retains final runner outcomes across duplicate reports, rebuilds, and confli
     expect(index.executions[0]).toMatchObject({ testStatus: 'conflicting', finalStatus: 'conflicting', statusDiscrepancy: true });
     expect((await history.behaviorHistory(envelope.identity.behavior.id, { followAliases: false }))[0].status).toBe('conflicting');
   } finally { await rm(directory, { recursive: true, force: true }); }
+});
+
+it('rejects a digest-valid native result with a non-string status', () => {
+  const body = { kind: 'playwright-result', version: 1, envelope: digestBytes('envelope'), attemptId: 'attempt', status: ['passed'] };
+  expect(verifyNativeResult({ ...body, digest: digestOf(body) }).ok).toBe(false);
 });

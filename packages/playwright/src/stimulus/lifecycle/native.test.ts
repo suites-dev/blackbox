@@ -64,6 +64,40 @@ function assertReceiptEvidence(successfulDetails: Awaited<ReturnType<BehaviorHis
   expect(receiptFailure.evidence).toContainEqual(expect.objectContaining({ kind: 'execution-evidence', status: 'stored' }));
 }
 
+function assertExecutionArtifacts(specs: ReturnType<typeof discovered>, detail: NonNullable<Awaited<ReturnType<BehaviorHistory['execution']>>>): void {
+  const native = specs.find(({ title }) => title === 'injects the native stimulus fixture and verifies its captured state');
+  if (native === undefined) { throw new Error('native execution was not discovered'); }
+  const attachment = native.tests[0].results[0].attachments.find(({ name }) => name === 'blackbox-execution');
+  if (attachment === undefined || attachment.body === undefined) { throw new Error('execution attachment missing'); }
+  const body = Buffer.from(attachment.body, 'base64').toString('utf8');
+  expect(body).toContain('pi_created');
+  expect(body).not.toContain('synthetic-password');
+  const effects = native.tests[0].results[0].attachments.find(({ name }) => name === 'effects.json');
+  if (effects === undefined || effects.body === undefined) { throw new Error('effects attachment missing'); }
+  expect(JSON.parse(Buffer.from(effects.body, 'base64').toString('utf8'))).toMatchObject({
+    kind: 'stimulus-effects', graph: { effects: [expect.objectContaining({ kind: 'http', operation: 'POST', target: '/payments', attributes: {} })] },
+  });
+  const emission = native.tests[0].results[0].attachments.find(({ name }) => name === 'blackbox-emissions');
+  if (emission === undefined || emission.body === undefined) { throw new Error('emission attachment missing'); }
+  const emissionId = digestBytes(Buffer.from(emission.body, 'base64'));
+  const emissions = native.tests[0].results[0].attachments.filter(({ name }) => name === 'blackbox-emissions');
+  if (emissions[1].body === undefined) { throw new Error('missing concurrent emission'); }
+  const concurrentEmissionId = digestBytes(Buffer.from(emissions[1].body, 'base64'));
+  expect(detail.evidence).toContainEqual(expect.objectContaining({ id: concurrentEmissionId, kind: 'assertion-evidence', status: 'stored' }));
+  expect(detail.evidence).toContainEqual(expect.objectContaining({ id: emissionId, kind: 'assertion-evidence', status: 'stored' }));
+  expect(JSON.parse(body)).toMatchObject({ kind: 'stimulus-executions', events: [
+    { kind: 'begin', initial: { observers: [{ name: 'counter', readers: [{ name: 'value', value: 0 }] }] } },
+    { kind: 'precondition', status: 'passed' },
+    { kind: 'action', status: 'completed', captured: { output: { kind: 'response', status: 201, body: { id: 'pi_created', password: '[REDACTED]' } } } },
+    { kind: 'final', diff: { observers: [{ name: 'counter', status: 'captured', diff: { value: { before: 0, after: 1, changed: true } } }] } },
+    { kind: 'claim', status: 'passed' },
+    { kind: 'claim', status: 'passed', evidence: [emissionId] },
+    { kind: 'claim', status: 'passed', snapshots: [{ matcher: 'toMatchSnapshot', status: 'passed' }] },
+    { kind: 'claim', title: 'And the concurrent emission is observed', status: 'passed', evidence: [concurrentEmissionId] },
+    { kind: 'claim', title: 'And the delayed claim passes', status: 'passed', evidence: [] },
+  ] });
+}
+
 it('retains bounded execution evidence and capture failures', async () => {
   const run = await runAssertions('stimulus-evidence.spec.ts');
   expect(run.exitCode, `${run.directory}\n${run.output}`).toBe(0);
@@ -117,31 +151,7 @@ it('retains bounded execution evidence and capture failures', async () => {
     expect.objectContaining({ kind: 'execution-evidence', status: 'stored' }),
     expect.objectContaining({ kind: 'stimulus-effects', status: 'stored' }),
   ]));
-  const native = specs.find(({ title }) => title === 'injects the native stimulus fixture and verifies its captured state');
-  if (native === undefined) { throw new Error('native execution was not discovered'); }
-  const attachment = native.tests[0].results[0].attachments.find(({ name }) => name === 'blackbox-execution');
-  if (attachment === undefined || attachment.body === undefined) { throw new Error('execution attachment missing'); }
-  const body = Buffer.from(attachment.body, 'base64').toString('utf8');
-  expect(body).toContain('pi_created');
-  expect(body).not.toContain('synthetic-password');
-  const effects = native.tests[0].results[0].attachments.find(({ name }) => name === 'effects.json');
-  if (effects === undefined || effects.body === undefined) { throw new Error('effects attachment missing'); }
-  expect(JSON.parse(Buffer.from(effects.body, 'base64').toString('utf8'))).toMatchObject({
-    kind: 'stimulus-effects', graph: { effects: [expect.objectContaining({ kind: 'http', operation: 'POST', target: '/payments', attributes: {} })] },
-  });
-  const emission = native.tests[0].results[0].attachments.find(({ name }) => name === 'blackbox-emissions');
-  if (emission === undefined || emission.body === undefined) { throw new Error('emission attachment missing'); }
-  const emissionId = digestBytes(Buffer.from(emission.body, 'base64'));
-  expect(detail.evidence).toContainEqual(expect.objectContaining({ id: emissionId, kind: 'assertion-evidence', status: 'stored' }));
-  expect(JSON.parse(body)).toMatchObject({ kind: 'stimulus-executions', events: [
-    { kind: 'begin', initial: { observers: [{ name: 'counter', readers: [{ name: 'value', value: 0 }] }] } },
-    { kind: 'precondition', status: 'passed' },
-    { kind: 'action', status: 'completed', captured: { output: { kind: 'response', status: 201, body: { id: 'pi_created', password: '[REDACTED]' } } } },
-    { kind: 'final', diff: { observers: [{ name: 'counter', status: 'captured', diff: { value: { before: 0, after: 1, changed: true } } }] } },
-    { kind: 'claim', status: 'passed' },
-    { kind: 'claim', status: 'passed', evidence: [emissionId] },
-    { kind: 'claim', status: 'passed', snapshots: [{ matcher: 'toMatchSnapshot', status: 'passed' }] },
-  ] });
+  assertExecutionArtifacts(specs, detail);
 }, 60_000);
 
 it('blocks the action for a native soft failure while the native test remains failed', async () => {
@@ -191,4 +201,23 @@ it('retains independent executions of the same contract across reruns', async ()
       expect.objectContaining({ kind: 'execution-evidence', status: 'stored' }),
     ]));
   }
+}, 60_000);
+
+it('retains interrupted execution evidence after a native timeout', async () => {
+  const run = await runAssertions('durable-timeout.spec.ts');
+  expect(run.exitCode).toBe(1);
+  const specs = discovered(run.report.suites);
+  expect(specs.map(({ title }) => title)).toEqual(['timeout retains interrupted execution']);
+  expect(specs[0].tests[0].results[0].status).toBe('timedOut');
+  expect(run.events).toContainEqual({ kind: 'timeout-action-started', value: true });
+  expect(run.events).toContainEqual({ kind: 'timeout-collector-closed', value: 'collector-stopped' });
+  expect(run.events).toContainEqual({ kind: 'timeout-retained-attempts', value: 1 });
+  const attachment = specs[0].tests[0].results[0].attachments.find(({ name }) => name === 'blackbox-execution');
+  if (attachment === undefined || attachment.body === undefined) { throw new Error('missing interrupted execution'); }
+  expect(JSON.parse(Buffer.from(attachment.body, 'base64').toString('utf8'))).toMatchObject({ events: [
+    { kind: 'begin' }, { kind: 'action', status: 'interrupted' },
+  ] });
+  const history = await BehaviorHistory.open(join(run.directory, 'timeout-history'));
+  await ingestPlaywrightResults(history, join(run.directory, 'results.json'));
+  expect((await history.index()).executions[0]).toMatchObject({ testStatus: 'timedOut', finalStatus: 'timedOut' });
 }, 60_000);

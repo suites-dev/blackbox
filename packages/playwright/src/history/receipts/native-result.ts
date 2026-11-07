@@ -19,7 +19,7 @@ export function verifyNativeResult(value: unknown): { ok: boolean; problems: str
   const row = value as Record<string, unknown>;
   if (row.kind !== 'playwright-result' || row.version !== 1 || typeof row.attemptId !== 'string' || row.attemptId.length === 0 ||
       typeof row.envelope !== 'string' || !/^sha256:[0-9a-f]{64}$/u.test(row.envelope) ||
-      !['passed', 'failed', 'timedOut', 'skipped', 'interrupted'].includes(String(row.status)) || typeof row.digest !== 'string') {
+      (typeof row.status !== 'string' || !['passed', 'failed', 'timedOut', 'skipped', 'interrupted'].includes(row.status)) || typeof row.digest !== 'string') {
     return { ok: false, problems: ['invalid Playwright result'] };
   }
   const { digest, ...body } = row;
