@@ -338,7 +338,7 @@ scope retain the package's existing Playwright peer support.
 Scopes belong to physical test attempts and need no selected Sandbox by
 themselves. They work in test bodies and per-test hooks from Blackbox's native
 `test`; they reject outside an active attempt and in `beforeAll`/`afterAll`.
-The primitive does not add preconditions, state observers, or a durable execution
+The primitive does not add preconditions, stimulus checkpoints, or a durable execution
 evidence schema.
 
 ## Execution reporting
@@ -519,3 +519,51 @@ Limitations:
 
 Effect projection, accepted baselines, drivers, and shared worker
 sandboxes are intentionally outside this package's current surface.
+
+
+### Registering state observations
+
+The `state` fixture registers named readers synchronously with `state.observe(name, readers)`.
+Registration does not invoke the readers or modify the observed system. Readers may return
+JSON-compatible scalar values, objects, or row arrays with a unique nonempty `id` on every row.
+Unsupported, cyclic, oversized, missing-ID, and duplicate-ID values fail capture. Checkpoints
+copy and freeze their values, so later changes to reader results cannot rewrite evidence.
+Readers belong to one physical test attempt; handles cannot be reused in another attempt.
+The stimulus lifecycle will capture registered readers at its initial and final boundaries.
+
+## Stimulus and state verification
+
+Register state readers before starting the stimulus. Readers run once for each
+checkpoint; accessing `evidence.state` reads the captured values without I/O.
+
+```ts
+const payments = state.observe('payments', {
+  intents: () =>
+    clients.pg.query('SELECT id, status FROM payment_intent ORDER BY id').then(({ rows }) => rows),
+});
+const { result, evidence, verify } = await stimulus(
+  'When a payment is submitted',
+  ({ request, headers }) => request.post('/payments', { data: { user: 'alice' }, headers }),
+  {
+    precondition: {
+      name: 'Given no prior intents',
+      check: ({ initial }) => {
+        expect(initial(payments).intents).toEqual([]);
+      },
+    },
+  },
+);
+const { diff } = evidence.state(payments);
+await verify('Then one intent is retained', () => {
+  expect(result.status()).toBe(201);
+  expect(diff.intents.added).toHaveLength(1);
+});
+```
+
+Preconditions and verification callbacks must execute a tracked `expect` assertion.
+A failed or empty precondition blocks the action. A failed state capture makes the
+attempt unsuccessful even if its immediate error is caught. Each stimulus captures
+fresh checkpoints; overlapping stimuli in one attempt are rejected. `verify` is
+bound to its execution and records its outcome. Captured observations are independent
+reads rather than an atomic cross-system snapshot. Pass the supplied propagation
+headers to requests; unrelated SDKs do not automatically receive them.

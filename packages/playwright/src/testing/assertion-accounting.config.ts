@@ -4,6 +4,7 @@ import { defineConfig } from '@playwright/test';
 
 export default defineConfig({
   testDir: join(import.meta.dirname, 'assertion-accounting'),
+  metadata: { blackboxConfigFile: join(import.meta.dirname, 'assertion-accounting.config.ts') },
   testMatch: '*.spec.ts',
   fullyParallel: false,
   retries: 0,
