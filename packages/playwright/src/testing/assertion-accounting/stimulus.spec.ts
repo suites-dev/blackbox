@@ -20,8 +20,7 @@ function lifecycle(request: Parameters<typeof createStimulusLifecycle>[0]['reque
 test('captures exact initial values and binds sequential verification', async ({ request }, info) => {
   const fixture = lifecycle(request, info.outputDir);
   let rows: { id: string; status: string }[] = [];
-  let reads = 0;
-  const payments = fixture.registry.state.observe('payments', { rows: () => { reads++; return rows; } });
+  let reads = 0; const payments = fixture.registry.state.observe('payments', { rows: () => { reads++; return rows; } });
   const first = await fixture.run.stimulus('When payment is accepted', ({ request: supplied, headers }) => {
     nativeExpect(supplied).toBe(request);
     nativeExpect(headers.traceparent).toMatch(/^00-/);
@@ -58,8 +57,7 @@ test('precondition failures and overlap block the action', async ({ request }, i
       precondition: { name: 'Given blocked', check },
     })).rejects.toThrow();
   }
-  const entered = deferred<undefined>();
-  const release = deferred<undefined>();
+  const entered = deferred<undefined>(); const release = deferred<undefined>();
   const first = fixture.run.stimulus('When waiting', async () => { entered.resolve(undefined); await release.promise; calls++; });
   await entered.promise;
   await nativeExpect(fixture.run.stimulus('When overlapping', () => { calls++; })).rejects.toThrow(/Overlapping/);
@@ -135,8 +133,7 @@ test('unavailable effect coverage records an inconclusive claim', async ({ reque
 
 test('interrupted actions retain initial evidence without a final checkpoint', async ({ request }, info) => {
   const fixture = lifecycle(request, info.outputDir);
-  const entered = deferred<undefined>();
-  const release = deferred<undefined>();
+  const entered = deferred<undefined>(); const release = deferred<undefined>();
   fixture.registry.state.observe('state', { value: () => 0 });
   const operation = fixture.run.stimulus('When interrupted', async () => {
     entered.resolve(undefined);
@@ -161,4 +158,56 @@ test('a caught final capture failure remains visible at fixture teardown', async
   await nativeExpect(fixture.run.stimulus('When state changes', () => { changed = true; })).rejects.toThrow(/final state capture failed/);
   nativeExpect(fixture.run.journal.events().map(({ kind }) => kind)).toEqual(['begin', 'action', 'final']);
   nativeExpect(() => { fixture.close(); }).toThrow(/capture failed/);
+});
+
+test('mixed failed and inconclusive assertions remain failed', async ({ request }, info) => {
+  const fixture = lifecycle(request, info.outputDir);
+  const graph = completeGraph([]);
+  const open = { ...graph, scope: { ...graph.scope, closed: false }, quality: { ...graph.quality, coverage: 'partial' as const, reasons: ['open'] } };
+  const selected = (await recordedEffects(open).capture()).http();
+  const outcome = await fixture.run.stimulus('When mixed claims run', () => 1);
+  await nativeExpect(outcome.verify('Then mixed failures fail', async () => {
+    try { expect(1).toBe(2); } catch { /* deliberately swallowed */ }
+    await expect(selected).not.toHaveEmitted();
+  })).rejects.toThrow();
+  nativeExpect(fixture.run.journal.events().filter((event) => event.kind === 'claim')).toMatchObject([{ status: 'failed' }]);
+  fixture.close();
+});
+
+test('concurrent claims remain attributed to their own executions', async ({ request }, info) => {
+  const fixture = lifecycle(request, info.outputDir);
+  const one = await fixture.run.stimulus('When first executes', () => 1);
+  const two = await fixture.run.stimulus('When second executes', () => 2);
+  const entered = deferred<undefined>(); const release = deferred<undefined>();
+  const first = one.verify('Then first succeeds', async () => {
+    entered.resolve(undefined);
+    await release.promise;
+    expect(one.result).toBe(1);
+  });
+  await entered.promise;
+  await nativeExpect(two.verify('Then second fails', () => { expect(two.result).toBe(3); })).rejects.toThrow();
+  release.resolve(undefined);
+  await first;
+  const events = fixture.run.journal.events();
+  const begins = events.filter((event) => event.kind === 'begin');
+  const claims = events.filter((event) => event.kind === 'claim');
+  nativeExpect(claims).toMatchObject([
+    { executionId: begins[1].executionId, status: 'failed' },
+    { executionId: begins[0].executionId, status: 'passed' },
+  ]);
+  fixture.close();
+});
+
+let retainedVerify: Awaited<ReturnType<ReturnType<typeof createStimulusLifecycle>['stimulus']>>['verify'];
+let retainedClose: () => void;
+test('retains an execution verification handle for ownership checking', async ({ request }, info) => {
+  const fixture = lifecycle(request, info.outputDir);
+  retainedVerify = (await fixture.run.stimulus('When ownership is retained', () => 1)).verify;
+  retainedClose = () => { fixture.close(); };
+});
+
+test('a foreign test cannot use an active or expired verification handle', async () => {
+  await nativeExpect(retainedVerify('Then foreign verification fails', () => { expect(1).toBe(1); })).rejects.toThrow(/another test attempt/);
+  retainedClose();
+  await nativeExpect(retainedVerify('Then expired verification fails', () => { expect(1).toBe(1); })).rejects.toThrow(/no longer active/);
 });
