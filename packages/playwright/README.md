@@ -553,6 +553,10 @@ Readers may return values synchronously or native promises; custom thenables are
 copy and freeze their values, so later changes to reader results cannot rewrite evidence.
 Readers belong to one physical test attempt; handles cannot be reused in another attempt.
 The stimulus lifecycle will capture registered readers at its initial and final boundaries.
+Raw checkpoint payloads are limited to 1 MB. Serialized state envelopes have a separate
+8 MB limit for checkpoint metadata and before/after diffs; artifact writers may impose a
+smaller limit on the combined execution report. Credential-like reader names redact their
+entire values in serialized evidence, while in-memory checkpoints retain the original values.
 
 ## Stimulus and state verification
 
