@@ -70,8 +70,8 @@ exports and copy commands without Docker. The lane covers the main-owned
 absence, CLI-owned executable and no root-package launcher, and a standalone CLI with no Skills dependency. Package
 tests alone do not prove that the portable files were included in npm archives.
 
-`e2e/` is not a pnpm workspace package; do not substitute its older Playwright
-scripts for the active Bash CI acceptance lane. Read the Capsule skill before
+`e2e/` is listed in the pnpm workspace; do not substitute its Playwright
+scripts for the separate Bash CI acceptance lane. Read the Capsule skill before
 running that lane because asset preparation resets local E2E state.
 
 For native Playwright configuration, fixtures, or reporting changes, use
@@ -138,6 +138,17 @@ real requests, and listener cleanup; a nonzero child exit alone is insufficient.
 Reports and `assertions/receipt.json`, `run-result.json`, and `cleanup.json` are
 retained under `e2e/test-results/` in the existing archive. Missing assertion
 evidence fails successful evidence collection.
+
+The same packed-consumer command runs the lifecycle lane against the subscription
+system and PostgreSQL. It discovers three cases: checkpoint/diff and a reviewed
+state snapshot, a rejected precondition with zero action calls, and an intentional
+capture-failure attempt. The outer proof checks exact native statuses and the
+capture-specific teardown error, distinct sandbox identities, actual cleanup
+records and absence of owned Docker resources. The archive retains lifecycle
+discovery, execution, results, receipt, and the fixed expected snapshot. A missing
+or empty artifact fails successful evidence collection. The lane proves
+subscription state, not payment-intent persistence.
+
 
 The console uses Playwright's native list reporter. Verify ready/cleanup messages
 in each attempt's captured stdout, no streamed container polling, and retained
