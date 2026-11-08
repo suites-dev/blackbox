@@ -143,14 +143,52 @@ function verifyStopped(events, index) {
   }
 }
 
+export function verifySubscriptionAcceptance(events, result, execution) {
+  assert.deepEqual(events.map(({ kind }) => kind), ['begin', 'precondition', 'action', 'final', 'claim', 'claim', 'claim']);
+  const [begin, precondition, action, final, ...claims] = events;
+  assert.equal(begin.title, 'When Alice subscribes with her payment method');
+  assert.equal(begin.initial.failureCount, 0);
+  assert.deepEqual(begin.initial.observers, [{ name: 'subscriptions', readers: [{ name: 'rows', status: 'captured', value: [] }] }]);
+  assert.equal(precondition.title, 'Given no subscriptions exist');
+  assert.equal(precondition.status, 'passed');
+  assert.equal(action.status, 'completed');
+  assert.equal(action.captured.output.kind, 'response');
+  assert.equal(action.captured.output.status, 201);
+  const subscription = action.captured.output.body.subscription;
+  assert.equal(typeof subscription.id, 'string');
+  assert.deepEqual(subscription, { id: subscription.id, status: 'active' });
+  const expected = [subscription];
+  assert.equal(final.final.failureCount, 0);
+  assert.deepEqual(final.final.observers, [{ name: 'subscriptions', readers: [{ name: 'rows', status: 'captured', value: expected }] }]);
+  assert.equal(final.diff.initialCheckpointId, begin.initial.checkpointId);
+  assert.equal(final.diff.finalCheckpointId, final.final.checkpointId);
+  assert.deepEqual(final.diff.observers, [{ name: 'subscriptions', status: 'captured', diff: { rows: { added: expected, removed: [], changed: [] } } }]);
+  assert.deepEqual(claims.map(({ title, status, evidence, snapshots }) => ({ title, status, evidence, snapshots })), [
+    { title: 'Then an active subscription is returned', status: 'passed', evidence: [], snapshots: [] },
+    { title: 'And exactly that subscription is retained', status: 'passed', evidence: [], snapshots: [] },
+    { title: 'And retained state matches the reviewed baseline', status: 'passed', evidence: [], snapshots: [{ matcher: 'toMatchSnapshot', status: 'passed' }] },
+  ]);
+  assert.equal(attachments(result, 'blackbox-emissions').length, 0, 'acceptance case unexpectedly asserted effects');
+  assert.equal(attachments(result, 'blackbox-effects').length, 0, 'acceptance case unexpectedly asserted attempt effects');
+  const cuts = attachments(result, 'effects.json');
+  assert.equal(cuts.length, 1, 'acceptance case must retain only its initial effects cut');
+  const initial = cutWithDigest(cuts, action.captured.effects);
+  verifyCut(initial, { stimulus: begin.executionId, session: execution.sessionId,
+    attempt: execution.attemptExecutionId, activity: action.activityId });
+  assert.deepEqual(action.captured.effectCaptures, [{ captureId: initial.value.identity.captureId, reference: initial.digest, purpose: 'initial' }]);
+  assert.deepEqual(execution.artifacts, [{ executionId: begin.executionId, ...action.captured }]);
+  return [initial];
+}
+
 export async function verifyDurableLifecycle(results, cases, { BehaviorHistory, ingestPlaywrightResults }) {
-  const history = await BehaviorHistory.open(join(results, 'history'));
-  const ingestion = await ingestPlaywrightResults(history, join(results, 'results.json'));
-  assert.equal(ingestion.attempts, 3);
-  assert.equal(ingestion.envelopes, 3);
+  const writer = await BehaviorHistory.open(join(results, 'history'));
+  const ingestion = await ingestPlaywrightResults(writer, join(results, 'results.json'));
+  assert.equal(ingestion.attempts, 4);
+  assert.equal(ingestion.envelopes, 4);
   assert.deepEqual(ingestion.rejected, []);
+  const history = await BehaviorHistory.open(join(results, 'history'));
   const index = await history.index();
-  assert.equal(index.executions.length, 3);
+  assert.equal(index.executions.length, 4);
   assert.deepEqual(index.corrupt, []);
   const executions = [];
   for (const [position, spec] of cases.entries()) {
@@ -165,10 +203,14 @@ export async function verifyDurableLifecycle(results, cases, { BehaviorHistory, 
     assert.equal(detail.envelope.digest, envelope.digest);
     verifyStoredLifecycleEvidence(detail, [execution]);
     assert.equal(execution.value.attemptExecutionId, envelope.identity.attempt.executionId);
+    assert.equal(execution.value.sessionId, envelope.identity.attempt.sessionId);
     const events = execution.value.events;
     assert(events.every((event) => event.executionId === events[0].executionId), 'foreign stimulus events');
     if (position === 0) {
       const artifacts = verifySuccess(events, result, execution.value);
+      verifyStoredLifecycleEvidence(detail, artifacts);
+    } else if (position === 3) {
+      const artifacts = verifySubscriptionAcceptance(events, result, execution.value);
       verifyStoredLifecycleEvidence(detail, artifacts);
     } else verifyStopped(events, position);
     executions.push({ title: spec.title, envelope: envelope.digest, execution: execution.digest, finalStatus: row.finalStatus });
@@ -177,5 +219,5 @@ export async function verifyDurableLifecycle(results, cases, { BehaviorHistory, 
   const repeated = await ingestPlaywrightResults(history, join(results, 'results.json'));
   assert.equal(repeated.newEnvelopes, 0);
   assert.equal((await history.rebuildIndex()).digest, index.digest);
-  return { executions, historyDigest: index.digest, rebuilt: true, duplicateIngestionStable: true };
+  return { executions, historyDigest: index.digest, reopened: true, rebuilt: true, duplicateIngestionStable: true };
 }

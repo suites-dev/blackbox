@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { test } from 'node:test';
-import { verifyLifecycleEffects, verifyStoredLifecycleEvidence } from './playwright-lifecycle-durable.mjs';
+import { verifyLifecycleEffects, verifyStoredLifecycleEvidence, verifySubscriptionAcceptance } from './playwright-lifecycle-durable.mjs';
 
 function encoded(name, value) {
   const bytes = Buffer.from(JSON.stringify(value));
@@ -104,5 +104,89 @@ test('requires unique stored hash-verified bytes with the exact attachment byte 
     const { artifacts, retained } = fixture();
     change(retained);
     assert.throws(() => verifyStoredLifecycleEvidence(retained, artifacts));
+  }
+});
+
+function acceptanceFixture(change = () => {}) {
+  const { input } = fixture(change);
+  const subscription = { id: 'subscription_alice', status: 'active' };
+  const checkpoint = (checkpointId, value) => ({ checkpointId, failureCount: 0,
+    observers: [{ name: 'subscriptions', readers: [{ name: 'rows', status: 'captured', value }] }] });
+  const initial = JSON.parse(Buffer.from(input.result.attachments[0].body, 'base64').toString('utf8'));
+  const captured = { output: { kind: 'response', status: 201, body: { userId: 'alice', subscription } },
+    effects: input.action.captured.effects,
+    effectCaptures: [{ captureId: initial.identity.captureId, reference: input.action.captured.effects, purpose: 'initial' }] };
+  const events = [
+    { kind: 'begin', executionId: 'stimulus', title: 'When Alice subscribes with her payment method', initial: checkpoint('initial-state', []) },
+    { kind: 'precondition', title: 'Given no subscriptions exist', status: 'passed' },
+    { kind: 'action', activityId: 'activity', status: 'completed', captured },
+    { kind: 'final', final: checkpoint('final-state', [subscription]),
+      diff: { initialCheckpointId: 'initial-state', finalCheckpointId: 'final-state',
+        observers: [{ name: 'subscriptions', status: 'captured', diff: { rows: { added: [subscription], removed: [], changed: [] } } }] } },
+    { kind: 'claim', title: 'Then an active subscription is returned', status: 'passed', evidence: [], snapshots: [] },
+    { kind: 'claim', title: 'And exactly that subscription is retained', status: 'passed', evidence: [], snapshots: [] },
+    { kind: 'claim', title: 'And retained state matches the reviewed baseline', status: 'passed', evidence: [], snapshots: [{ matcher: 'toMatchSnapshot', status: 'passed' }] },
+  ];
+  return structuredClone({ events, result: { attachments: [input.result.attachments[0]] },
+    execution: { ...input.execution, artifacts: [{ executionId: 'stimulus', ...captured }] } });
+}
+
+test('accepts the clean subscription contract with one recorded initial cut and three named claims', () => {
+  const { events, result, execution } = acceptanceFixture();
+  const [cut] = verifySubscriptionAcceptance(events, result, execution);
+  assert.equal(cut.digest, events[2].captured.effects);
+  assert.equal(cut.bytes, Buffer.from(result.attachments[0].body, 'base64').length);
+});
+
+test('rejects captured response and PostgreSQL checkpoint or diff disagreement', () => {
+  for (const change of [
+    (events) => { events[0].initial.observers[0].readers[0].value = [{ id: 'prior', status: 'active' }]; },
+    (events) => { events[2].captured.output.status = 200; },
+    (events) => { events[2].captured.output.body.subscription = { id: 42, status: 'active' }; },
+    (events) => { events[2].captured.output.body.subscription = { id: 'subscription_alice', status: 'inactive' }; },
+    (events) => { events[3].final.observers[0].readers[0].value = [{ id: 'other', status: 'active' }]; },
+    (events) => { events[3].diff.observers[0].diff.rows.added = []; },
+    (events) => { events[3].diff.initialCheckpointId = 'another-checkpoint'; },
+  ]) {
+    const { events, result, execution } = acceptanceFixture();
+    change(events);
+    assert.throws(() => verifySubscriptionAcceptance(events, result, execution));
+  }
+});
+
+test('requires all three named passed claims, the native snapshot and no effect assertion', () => {
+  for (const change of [
+    ({ events }) => { events.pop(); },
+    ({ events }) => { events[4].title = 'Another claim'; },
+    ({ events }) => { events[5].status = 'inconclusive'; },
+    ({ events }) => { events[5].evidence = ['unexpected-effect-assertion']; },
+    ({ events }) => { events[6].snapshots = []; },
+    ({ result }) => { result.attachments.push(encoded('blackbox-emissions', { assertion: { outcome: 'passed' } }).attachment); },
+    ({ result }) => { result.attachments.push(encoded('blackbox-effects', { outcome: 'passed' }).attachment); },
+    ({ result }) => { result.attachments.push(result.attachments[0]); },
+  ]) {
+    const input = acceptanceFixture();
+    change(input);
+    assert.throws(() => verifySubscriptionAcceptance(input.events, input.result, input.execution));
+  }
+});
+
+test('requires the recorded initial cut to belong to this stimulus with exact artifact links', () => {
+  for (const change of [
+    ({ initial }) => { initial.identity.executionId = 'foreign-attempt'; },
+    ({ initial }) => { initial.identity.activityIds = ['foreign-activity']; },
+  ]) {
+    const { events, result, execution } = acceptanceFixture(change);
+    assert.throws(() => verifySubscriptionAcceptance(events, result, execution));
+  }
+  for (const change of [
+    ({ events }) => { events[2].captured.effects = `sha256:${'0'.repeat(64)}`; },
+    ({ events }) => { events[2].captured.effectCaptures[0].purpose = 'assertion'; },
+    ({ execution }) => { execution.artifacts[0].executionId = 'foreign-stimulus'; },
+    ({ result }) => { result.attachments = []; },
+  ]) {
+    const input = acceptanceFixture();
+    change(input);
+    assert.throws(() => verifySubscriptionAcceptance(input.events, input.result, input.execution));
   }
 });
