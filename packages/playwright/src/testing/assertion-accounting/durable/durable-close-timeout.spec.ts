@@ -32,7 +32,6 @@ let root = '';
 test.beforeAll(async ({ browserName }, info) => { void browserName; root = await project(); info.config.metadata.blackboxConfigFile = join(root, 'blackbox.config.yaml'); });
 test.afterAll(async () => { await rm(root, { recursive: true, force: true }); });
 test.use({ blackbox: { system: { kind: 'system', id: 'system' }, finalSnapshot: false } });
-test.describe.configure({ timeout: 500 });
 test('short native timeout allows bounded execution teardown before the envelope', async ({ stimulus }, info) => {
   const attach = info.attach.bind(info);
   info.attach = async (name, options) => {
