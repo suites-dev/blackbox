@@ -2,14 +2,14 @@ import { test as nativeTest, type APIRequestContext, type TestInfo } from '@play
 import type { BlackboxStep } from '../../steps/types.js';
 import type { StateRegistry } from '../../state/types.js';
 import { createExecutionJournal } from './journal.js';
-import type { EffectCapture } from '@suites/blackbox-effects';
+import type { LazyEffectCapture } from '../../effects/emissions/lazy/types.js';
 import { takeSnapshots } from '../../assertions/claims/context.js';
 
 export type LifecycleInput = {
   readonly registry: StateRegistry;
   readonly request: APIRequestContext;
   readonly step: BlackboxStep;
-} & Readonly<Partial<{ afterActionCapture: (input: { readonly executionId: string; readonly activityId: string }) => Promise<EffectCapture | undefined> }>>;
+} & Readonly<Partial<{ afterActionCapture: (input: { readonly executionId: string; readonly activityId: string }) => Promise<LazyEffectCapture | undefined> }>>;
 export type Pending = { readonly title: string; readonly phase: 'initial' | 'precondition' | 'action' | 'final' | 'effects' } & Readonly<Partial<{ activityId: string }>>;
 export interface LifecycleContext {
   readonly input: LifecycleInput;

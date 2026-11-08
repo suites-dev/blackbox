@@ -3,7 +3,7 @@ import type { StateCapture, StateSelection } from '../../state/types.js';
 import { ensureActive, type LifecycleContext } from './context.js';
 import { failureStatus } from './verification.js';
 import type { InitialState } from './types.js';
-import type { EffectCapture } from '@suites/blackbox-effects';
+import type { LazyEffectCapture } from '../../effects/emissions/lazy/types.js';
 
 export async function capture(context: LifecycleContext, executionId: string, selection: StateSelection, input: { readonly title: string; readonly phase: 'initial' | 'final' }): Promise<StateCapture> {
   const { title, phase } = input;
@@ -50,7 +50,7 @@ export async function action<T>(context: LifecycleContext, executionId: string, 
     throw error;
   } finally { context.pending.delete(executionId); }
 }
-export async function effectCut(context: LifecycleContext, executionId: string, activityId: string): Promise<EffectCapture | undefined> {
+export async function effectCut(context: LifecycleContext, executionId: string, activityId: string): Promise<LazyEffectCapture | undefined> {
   if (context.input.afterActionCapture === undefined) { return; }
   context.pending.set(executionId, { title: 'Effects capture', phase: 'effects', activityId });
   try { const captured = await context.input.afterActionCapture({ executionId, activityId }); ensureActive(context); return captured; }

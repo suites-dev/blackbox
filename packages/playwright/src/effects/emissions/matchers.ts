@@ -2,41 +2,43 @@ import { InconclusiveAssertionError } from '../../assertions/types.js';
 import type { ExpectMatcherState, MatcherReturnType } from '@playwright/test';
 import {
   assessEffectRecorder, assessEffectRecorderBefore, assessNthEffectEmission,
-  type EffectRecorder, type EffectRecorderAssessment,
 } from '@suites/blackbox-effects';
 
 import { emissionPredicate } from './payload.js';
 import { recorderOwner } from './ownership.js';
 import type { ExpectedEmission } from './types.js';
+import { resolveEmission, type EmissionEvaluation } from './lazy/resolve.js';
+import type { EmissionSelection } from './lazy/types.js';
+import { lazySelection } from './lazy/selection.js';
 
-function unavailable(recorder: EffectRecorder, reason: string): EffectRecorderAssessment {
-  return {
-    status: 'inconclusive', reason, identity: recorder.identity, coverage: recorder.coverage,
-    evidence: [], possibleEvidence: [], relations: [],
-  };
-}
-
-async function verify(input: {
+type Verification = {
   readonly context: ExpectMatcherState;
-  readonly recorder: EffectRecorder;
+  readonly recorder: EmissionSelection;
   readonly matcher: string;
   readonly expected: unknown;
-  readonly evaluate: () => EffectRecorderAssessment;
-} & Readonly<Partial<{ other: EffectRecorder }>>): Promise<MatcherReturnType> {
-  const owner = recorderOwner(input.recorder);
-  const reason = owner.unavailable() ?? (input.other === undefined
-    ? null : recorderOwner(input.other).unavailable());
-  const assessment = reason === null ? input.evaluate() : unavailable(input.recorder, reason);
+  readonly evaluate: EmissionEvaluation;
+} & Readonly<Partial<{ other: EmissionSelection }>>;
+
+async function reportVerification(input: Verification) {
+  const { recorder, other, assessment } = await resolveEmission({ ...input, other: input.other, timeout: input.context.timeout });
+  const owner = recorderOwner(recorder);
   const expected = input.context.utils.stringify(input.expected);
   const ids = new Set([...assessment.evidence, ...assessment.possibleEvidence]);
-  const candidates = [...input.recorder.emissions, ...input.recorder.possibleEmissions,
-    ...(input.other === undefined ? [] : [...input.other.emissions, ...input.other.possibleEmissions])];
+  const candidates = [...recorder.emissions, ...recorder.possibleEmissions,
+    ...(other === undefined ? [] : [...other.emissions, ...other.possibleEmissions])];
   const witnesses = [...new Map(candidates.filter(({ id }) => ids.has(id)).map((effect) => [effect.id, effect])).values()];
   await owner.report({
     matcher: input.matcher, expected, negated: input.context.isNot, assessment,
     evidence: owner.evidence, witnesses,
-    otherCapture: input.other === undefined ? null : input.other.identity,
+    otherCapture: other === undefined ? null : other.identity,
   });
+  return { assessment, owner, expected };
+}
+
+async function verify(input: Verification): Promise<MatcherReturnType> {
+  const selection = lazySelection(input.recorder);
+  const { assessment, owner, expected } = await (selection === undefined
+    ? reportVerification(input) : selection.provider.run(() => reportVerification(input)));
   const message = owner.describe(`Effect recorder ${input.matcher}: ${assessment.status}; ${assessment.reason}`);
   if (assessment.status === 'inconclusive') { throw new InconclusiveAssertionError(message); }
   return {
@@ -49,26 +51,29 @@ async function verify(input: {
 }
 
 export const emissionMatchers = {
-  async toHaveEmitted(this: ExpectMatcherState, received: EffectRecorder) {
+  async toHaveEmitted(this: ExpectMatcherState, received: EmissionSelection) {
     return verify({ context: this, recorder: received, matcher: 'toHaveEmitted', expected: undefined,
-      evaluate: () => assessEffectRecorder(received, { operator: 'atLeast', count: 1 }) });
+      evaluate: (recorder) => assessEffectRecorder(recorder, { operator: 'atLeast', count: 1 }) });
   },
-  async toHaveEmittedTimes(this: ExpectMatcherState, received: EffectRecorder, count: number) {
+  async toHaveEmittedTimes(this: ExpectMatcherState, received: EmissionSelection, count: number) {
     return verify({ context: this, recorder: received, matcher: 'toHaveEmittedTimes', expected: count,
-      evaluate: () => assessEffectRecorder(received, { operator: 'exactly', count }) });
+      evaluate: (recorder) => assessEffectRecorder(recorder, { operator: 'exactly', count }) });
   },
-  async toHaveEmittedWith(this: ExpectMatcherState, received: EffectRecorder, expected: ExpectedEmission) {
+  async toHaveEmittedWith(this: ExpectMatcherState, received: EmissionSelection, expected: ExpectedEmission) {
     const predicate = emissionPredicate(expected);
     return verify({ context: this, recorder: received, matcher: 'toHaveEmittedWith', expected,
-      evaluate: () => assessEffectRecorder(received, { operator: 'atLeast', count: 1 }, predicate) });
+      evaluate: (recorder) => assessEffectRecorder(recorder, { operator: 'atLeast', count: 1 }, predicate) });
   },
-  async toHaveEmittedBefore(this: ExpectMatcherState, received: EffectRecorder, other: EffectRecorder) {
+  async toHaveEmittedBefore(this: ExpectMatcherState, received: EmissionSelection, other: EmissionSelection) {
     return verify({ context: this, recorder: received, matcher: 'toHaveEmittedBefore', expected: other.selector, other,
-      evaluate: () => assessEffectRecorderBefore(received, other) });
+      evaluate: (recorder, compared) => {
+        if (compared === undefined) { throw new TypeError('Missing effect ordering operand'); }
+        return assessEffectRecorderBefore(recorder, compared);
+      } });
   },
-  async toHaveNthEmittedWith(this: ExpectMatcherState, received: EffectRecorder, ordinal: number, expected: ExpectedEmission) {
+  async toHaveNthEmittedWith(this: ExpectMatcherState, received: EmissionSelection, ordinal: number, expected: ExpectedEmission) {
     const predicate = emissionPredicate(expected);
     return verify({ context: this, recorder: received, matcher: 'toHaveNthEmittedWith', expected: { ordinal, ...expected },
-      evaluate: () => assessNthEffectEmission(received, ordinal, predicate) });
+      evaluate: (recorder) => assessNthEffectEmission(recorder, ordinal, predicate) });
   },
 };
