@@ -1,9 +1,6 @@
 import { expect, test } from '@suites/blackbox-playwright';
-import * as clients from '../../.blackbox/clients/index.js';
-import { blackboxEnvironment, readFixtureState } from '../playwright/support.js';
+import { readFixtureState } from '../playwright/support.js';
 import { emptySystemState, type SystemState } from '../playwright/subscription-state.js';
-
-test.use({ blackbox: { system: 'subscription-system', environment: blackboxEnvironment, clients } });
 
 test('lifecycle: PostgreSQL checkpoints and bound verification', async ({ stimulus, state, clients, sandbox }, info) => {
   let reads = 0;

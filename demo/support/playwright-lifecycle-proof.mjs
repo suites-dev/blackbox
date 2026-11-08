@@ -34,8 +34,18 @@ for (const [index, name, calls] of [[0, 'lifecycle-action', 1], [1, 'lifecycle-b
   if (index === 2) assert.equal(value.phase, 'initial-capture');
   observations.push(value);
 }
-assert.equal(new Set(observations.map(({ sandboxId }) => sandboxId)).size, 3);
-assert.equal(new Set(observations.map(({ executionId }) => executionId)).size, 3);
+const acceptanceEnvelopes = cases[3].tests[0].results[0].attachments.filter(({ name }) => name === 'blackbox-envelope');
+assert.equal(acceptanceEnvelopes.length, 1, 'missing unique acceptance envelope');
+assert.equal(typeof acceptanceEnvelopes[0].body, 'string', 'missing inline acceptance envelope');
+const acceptance = JSON.parse(Buffer.from(acceptanceEnvelopes[0].body, 'base64').toString('utf8'));
+const { attemptId: sandboxId, executionId } = acceptance.identity.attempt;
+assert.equal(typeof sandboxId, 'string');
+assert(sandboxId.length > 0);
+assert.equal(typeof executionId, 'string');
+assert(executionId.length > 0);
+observations.push({ sandboxId, executionId });
+assert.equal(new Set(observations.map(({ sandboxId }) => sandboxId)).size, 4);
+assert.equal(new Set(observations.map(({ executionId }) => executionId)).size, 4);
 const recovery = JSON.parse(await readFile(join(root, 'test-results/recovery.json'), 'utf8'));
 assert.equal(recovery.kind, 'playwright-sandbox-recovery');
 const execute = promisify(execFile);
