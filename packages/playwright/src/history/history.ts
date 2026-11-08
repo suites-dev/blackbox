@@ -62,6 +62,10 @@ export class BehaviorHistory {
     return this.ingestion.receipt(receipt);
   }
 
+  ingestNativeResult(result: unknown): Promise<IngestResult> {
+    return this.ingestion.nativeResult(result);
+  }
+
   recordAlias(body: AliasBody): Promise<IngestResult & { readonly alias: BehaviorAlias }> {
     return this.ingestion.alias(body);
   }
@@ -116,10 +120,10 @@ export class BehaviorHistory {
     id: Digest,
     options: { readonly evidenceRoot: string | null } = { evidenceRoot: null },
   ): Promise<ExecutionDetail | null> {
-    const receipts = (await this.index()).receipts
-      .filter(({ envelope }) => envelope === id)
-      .map((receipt) => receipt.id);
-    return this.records.execution(id, receipts, options.evidenceRoot);
+    const index = await this.index();
+    const receipts = index.receipts.filter(({ envelope }) => envelope === id).map((receipt) => receipt.id);
+    const results = index.nativeResults.filter(({ envelope }) => envelope === id).map(({ digest }) => digest);
+    return this.records.execution(id, receipts, results, options.evidenceRoot);
   }
 
   async verifyEvidence(id: Digest, evidenceRoot: string): Promise<readonly EvidenceCheck[]> {

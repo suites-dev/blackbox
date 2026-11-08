@@ -135,12 +135,14 @@ export async function createSandboxTelemetry(input: {
   readonly authorization: TelemetryAuthorization;
   readonly collectorRuntime: SandboxCollectorRuntime;
   readonly adapters: readonly RuntimeActivationAdapter[];
+  readonly redactionSecrets: readonly string[];
 }): Promise<SandboxTelemetryEnabledInput> {
   return {
     kind: 'enabled',
     sessionId: input.sessionId,
     executionId: input.executionId,
     authorization: input.authorization,
+    redaction: { kind: 'credentials-v1', secrets: input.redactionSecrets },
     collector: {
       service: 'blackbox-otel-collector',
       containerPort: 4318,

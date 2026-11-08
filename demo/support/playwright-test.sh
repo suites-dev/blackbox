@@ -137,6 +137,7 @@ cp "$E2E_ROOT/tests/playwright-assertions/"*.ts "$CONSUMER_ROOT/tests/playwright
 cp -R "$E2E_ROOT/tests/playwright-lifecycle/." "$CONSUMER_ROOT/tests/playwright-lifecycle/"
 cp "$SCRIPT_DIR/playwright-lifecycle-proof.mjs" "$CONSUMER_ROOT/playwright-lifecycle-proof.mjs"
 cp "$SCRIPT_DIR/playwright-lifecycle-report.mjs" "$CONSUMER_ROOT/playwright-lifecycle-report.mjs"
+cp "$SCRIPT_DIR/playwright-lifecycle-durable.mjs" "$CONSUMER_ROOT/playwright-lifecycle-durable.mjs"
 cp "$SCRIPT_DIR/"playwright-assertions*.mjs "$CONSUMER_ROOT/"
 cp "$SCRIPT_DIR/"playwright-features*.mjs "$CONSUMER_ROOT/"
 cp "$SCRIPT_DIR/playwright-boundary.mjs" "$CONSUMER_ROOT/playwright-boundary.mjs"

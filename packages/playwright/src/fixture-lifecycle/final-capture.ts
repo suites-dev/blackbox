@@ -22,6 +22,7 @@ export type { EnvelopePrelude };
 
 export interface FinalCaptureInput {
   readonly enabled: boolean;
+  readonly snapshotEnabled: boolean;
   readonly testInfo: TestInfo;
   readonly configFile: string;
   readonly entryId: string;
@@ -46,20 +47,29 @@ async function snapshotOf(
     readonly stimuli: CompletedStimuli;
     readonly stopReason: SandboxStopReason;
   },
-): Promise<FinalSnapshotDocument | null> {
+): Promise<{ readonly snapshot: FinalSnapshotDocument | null; readonly failure: Error | null }> {
   try {
     const collected = await collectFinalSnapshot({ testInfo: input.testInfo, ...captured });
-    const snapshot = await report.finalSnapshot(collected);
-    report.emit('final-snapshot', 'completed', 'attached');
-    return snapshot;
-  } catch {
-    // A snapshot that cannot be attached is reported, never allowed to replace the test's own result.
+    const snapshot = input.snapshotEnabled ? await report.finalSnapshot(collected) : null;
+    if (snapshot !== null) { report.emit('final-snapshot', 'completed', 'attached'); }
+    const status = await captured.attempt.telemetry.inspect();
+    const collector = collected.finalization.collector;
+    const failed = status.kind !== 'disabled' && (collector.state !== 'found' ||
+      collector.receiver !== 'stopped' || collector.shutdown !== 'complete' || collector.failure !== null ||
+      ['unavailable', 'rejected', 'projection-rejected'].includes(collected.observation.state));
+    if (report.hasStimulus()) {
+      await report.executionArtifact('capture-health', { schemaVersion: 1, kind: 'capture-health',
+        collector, observation: collected.observation, completeness: collected.completeness,
+        status: status.kind === 'disabled' ? 'not-configured' : failed ? 'failed' : 'captured' });
+    }
+    return { snapshot, failure: failed ? new Error('Blackbox final collector capture failed') : null };
+  } catch (cause) {
     report.emit('final-snapshot', 'failed', 'could not attach the final snapshot');
-    return null;
+    throw new Error('Blackbox final snapshot capture failed', { cause });
   }
 }
 
-/** Final snapshot, then the envelope that wraps it. Neither can fail the test. */
+/** Final snapshot, then the envelope that wraps it. */
 export async function attachFinalCapture(
   input: FinalCaptureInput,
   report: AttemptReport,
@@ -69,17 +79,26 @@ export async function attachFinalCapture(
     readonly recorded: RecordedStimuli;
     readonly stopReason: SandboxStopReason;
     readonly prelude: Promise<EnvelopePrelude | null>;
+    readonly product: AttemptProduct;
   },
 ): Promise<Digest | null> {
   if (!input.enabled) {
     return null;
   }
-  const snapshot = await snapshotOf(input, report, captured);
+  let snapshot: FinalSnapshotDocument | null = null;
+  let snapshotError: unknown = null;
+  try {
+    const result = await snapshotOf(input, report, captured);
+    snapshot = result.snapshot;
+    snapshotError = result.failure;
+  } catch (error) { snapshotError = error; }
   const prelude = await captured.prelude;
   if (prelude === null) {
     report.emit('envelope', 'failed', 'catalog, source or environment could not be captured');
-    return null;
+    if (snapshotError !== null) { throw new AggregateError([snapshotError, new Error('Blackbox envelope prelude capture failed')], 'Blackbox capture failed'); }
+    throw new Error('Blackbox envelope prelude capture failed');
   }
+  let digest: Digest;
   try {
     const envelope = await buildAttemptEnvelope({
       testInfo: input.testInfo,
@@ -88,17 +107,22 @@ export async function attachFinalCapture(
       snapshot,
       recorded: report.redactStimuli(captured.recorded),
       attached: report.attachedEvidence(),
+      attemptFailed: captured.product.cleanupFailed || captured.product.executionFailed || snapshotError !== null,
     });
     await input.testInfo.attach(envelopeAttachment, {
       contentType: 'application/json',
       body: JSON.stringify(envelope),
     });
     report.emit('envelope', 'completed', envelope.digest);
-    return envelope.digest;
-  } catch {
+    captured.product.envelope = envelope.digest;
+    digest = envelope.digest;
+  } catch (cause) {
     report.emit('envelope', 'failed', 'could not build or attach the envelope');
-    return null;
+    if (snapshotError !== null) { throw new AggregateError([snapshotError, cause], 'Blackbox capture failed'); }
+    throw new Error('Blackbox envelope capture failed', { cause });
   }
+  if (snapshotError !== null) { throw new Error('Blackbox final snapshot capture failed', { cause: snapshotError }); }
+  return digest;
 }
 
 /**
@@ -129,6 +153,7 @@ export async function settleAttempt(input: {
         recorded,
         stopReason: input.stopReason,
         prelude: input.prelude,
+        product: input.product,
       }),
   });
 }

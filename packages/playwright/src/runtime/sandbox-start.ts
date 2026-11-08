@@ -6,6 +6,7 @@ import type { resolveCollectorRuntime } from './collector-runtime.js';
 import type { createSandboxTelemetry, TelemetryAuthorization } from './telemetry.js';
 import type { AttemptProgress } from '../reporting/events.js';
 import { reportSandboxProgress } from '../reporting/sandbox-progress.js';
+import { isSecretEnvironmentEntry } from '../reporting/redaction/secret-environment.js';
 
 interface SandboxStartPorts {
   readonly resolveCollectorRuntime: typeof resolveCollectorRuntime;
@@ -31,6 +32,9 @@ export async function startAttemptSandbox(input: {
     authorization: input.authorization,
     collectorRuntime,
     adapters: nodeRuntimeActivationAdapters,
+    redactionSecrets: Object.entries({ ...input.plan.environment, ...input.environment })
+      .filter(([name, value]) => isSecretEnvironmentEntry(name, value))
+      .map(([, value]) => value),
   });
   return input.ports.startSandbox({
     sandbox: {

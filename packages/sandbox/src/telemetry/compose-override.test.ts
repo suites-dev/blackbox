@@ -87,6 +87,18 @@ it('writes a Compose override without retaining the bearer token', async () => {
   expect(document).not.toContain('private-token');
 });
 
+it('passes redaction secrets by interpolation without writing them into Compose', async () => {
+  const fixture = await telemetryFixture();
+  const path = await writeTelemetryComposeOverride({
+    ...fixture,
+    telemetry: { ...fixture.telemetry, redaction: { kind: 'credentials-v1', secrets: ['fixture-secret-value'] } },
+    effectiveEnvironments: new Map([['orders', {}]]),
+  });
+  const document = await readFile(path, 'utf8');
+  expect(document).toContain('${BLACKBOX_SANDBOX_OTEL_REDACTION_SECRETS}');
+  expect(document).not.toContain('fixture-secret-value');
+});
+
 it('injects Blackbox identity and standard OTLP configuration', async () => {
   const { telemetry } = await telemetryFixture();
   const environment = participantEnvironment({

@@ -78,6 +78,9 @@ function composeEnvironment(request: ComposeStartRequest): Readonly<Record<strin
     ...request.environment,
     BLACKBOX_SANDBOX_OTEL_INGEST_TOKEN: request.telemetry.authorization.ingestToken,
     BLACKBOX_SANDBOX_OTEL_CONTROL_TOKEN: request.telemetry.authorization.controlToken,
+    ...(request.telemetry.redaction === undefined ? {} : {
+      BLACKBOX_SANDBOX_OTEL_REDACTION_SECRETS: JSON.stringify(request.telemetry.redaction.secrets),
+    }),
   };
 }
 

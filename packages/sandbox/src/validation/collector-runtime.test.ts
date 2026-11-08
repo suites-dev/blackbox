@@ -64,3 +64,13 @@ it('rejects a mounted collector entrypoint symlink that escapes its runtime', as
     'collector entrypoint escapes its runtime',
   );
 });
+
+it('rejects an oversized redaction policy before starting a sandbox', async () => {
+  const { input, root } = await sandboxFixture();
+  const configured = mountedInput(input, root);
+  if (configured.telemetry.kind !== 'enabled') { throw new Error('expected telemetry'); }
+  const bad = { ...configured, telemetry: { ...configured.telemetry, redaction: {
+    kind: 'credentials-v1' as const, secrets: Array.from({ length: 129 }, () => 'synthetic-secret'),
+  } } };
+  await expect(validateSandboxInput(bad)).rejects.toThrow('redaction configuration is invalid');
+});

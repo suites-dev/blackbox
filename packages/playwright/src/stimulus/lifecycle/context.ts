@@ -2,12 +2,14 @@ import { test as nativeTest, type APIRequestContext, type TestInfo } from '@play
 import type { BlackboxStep } from '../../steps/types.js';
 import type { StateRegistry } from '../../state/types.js';
 import { createExecutionJournal } from './journal.js';
+import type { EffectCapture } from '@suites/blackbox-effects';
+import { takeSnapshots } from '../../assertions/claims/context.js';
 
 export type LifecycleInput = {
   readonly registry: StateRegistry;
   readonly request: APIRequestContext;
   readonly step: BlackboxStep;
-} & Readonly<Partial<{ afterActionCapture: (input: { readonly executionId: string; readonly activityId: string }) => Promise<void> }>>;
+} & Readonly<Partial<{ afterActionCapture: (input: { readonly executionId: string; readonly activityId: string }) => Promise<EffectCapture | undefined> }>>;
 export type Pending = { readonly title: string; readonly phase: 'initial' | 'precondition' | 'action' | 'final' | 'effects' } & Readonly<Partial<{ activityId: string }>>;
 export interface LifecycleContext {
   readonly input: LifecycleInput;
@@ -46,7 +48,7 @@ export function close(context: LifecycleContext): void {
       context.journal.append({ kind: 'action', executionId, status: 'not-executed' });
     } else { context.journal.append({ kind: 'action', executionId, status: 'interrupted', ...(item.activityId === undefined ? {} : { activityId: item.activityId }) }); }
   }
-  for (const [claimId, item] of context.claims) { context.journal.append({ kind: 'claim', executionId: item.executionId, claimId, title: item.title, status: 'interrupted' }); }
+  for (const [claimId, item] of context.claims) { context.journal.append({ kind: 'claim', executionId: item.executionId, claimId, title: item.title, status: 'interrupted', snapshots: takeSnapshots(claimId) }); }
   context.pending.clear(); context.claims.clear();
   if (context.captureFailed) { throw new Error('Blackbox state capture failed during this attempt'); }
   if (unfinished) { throw new Error('Blackbox stimulus lifecycle closed with unfinished operations'); }

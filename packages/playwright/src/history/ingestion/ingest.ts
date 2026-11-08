@@ -4,6 +4,7 @@ import { canonicalize, digestBytes, type Digest } from '../../envelope/index.js'
 import { verifyEnvelope } from '../../envelope/verify.js';
 import { buildAlias, verifyAlias, type AliasBody, type BehaviorAlias } from '../aliases/alias.js';
 import { HistoryError, type AnyEnvelope, type IngestResult } from '../history-types.js';
+import { verifyNativeResult, type NativeResult } from '../receipts/native-result.js';
 import { verifyReceipt, type AttemptReceipt } from '../receipts/receipt.js';
 import { verifyDelta } from '../storage/records.js';
 import type { ObjectKind, ObjectStore } from '../storage/store.js';
@@ -71,6 +72,13 @@ export class Ingestion {
       throw new HistoryError('Refusing an invalid receipt', verified.problems);
     }
     const document = receipt as AttemptReceipt;
+    return this.put('receipt', document.digest, canonicalize(document));
+  }
+
+  async nativeResult(result: unknown): Promise<IngestResult> {
+    const verified = verifyNativeResult(result);
+    if (!verified.ok) { throw new HistoryError('Refusing an invalid Playwright result', verified.problems); }
+    const document = result as NativeResult;
     return this.put('receipt', document.digest, canonicalize(document));
   }
 

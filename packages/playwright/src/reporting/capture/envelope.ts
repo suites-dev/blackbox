@@ -58,7 +58,7 @@ export async function buildAttemptEnvelope(input: {
   readonly snapshot: FinalSnapshotDocument | null;
   readonly recorded: RecordedStimuli;
   readonly attached: readonly AttachedEvidence[];
-}): Promise<BehaviorEnvelope> {
+} & Readonly<Partial<{ attemptFailed: boolean }>>): Promise<BehaviorEnvelope> {
   const { testInfo, prelude, attempt } = input;
   const { sandbox } = attempt;
   const snapshotAttachment = input.attached.find(({ kind }) => kind === 'final-snapshot');
@@ -102,9 +102,9 @@ export async function buildAttemptEnvelope(input: {
         evidence: item.digest,
       })),
     testStatus: {
-      status: testInfo.status ?? 'unknown',
+      status: input.attemptFailed === true ? 'failed' : testInfo.status ?? 'unknown',
       expectedStatus: testInfo.expectedStatus,
-      errorCount: testInfo.errors.length,
+      errorCount: testInfo.errors.length + (input.attemptFailed === true ? 1 : 0),
     },
     provenance: provenanceOf(testInfo, prelude, titlePath),
   });

@@ -4,7 +4,7 @@ import { join } from 'node:path';
 
 import { regularFileBytes } from '../../envelope/capture/regular-file.js';
 import { canonicalize, digestOf, type Digest } from '../../envelope/index.js';
-import type { HistoryIndex } from './index-build.js';
+import { indexVersion, type HistoryIndex } from './index-build.js';
 import { maxObjectBytes, objectKinds, type ObjectKind, type ObjectStore } from './store.js';
 
 /** The persisted index, only if it is intact. It is a cache: any doubt means "rebuild". */
@@ -15,9 +15,9 @@ export async function readIndexFile(root: string): Promise<HistoryIndex | null> 
     if (bytes === null) {
       return null;
     }
-    const parsed = JSON.parse(bytes.toString('utf8')) as HistoryIndex;
+    const parsed = JSON.parse(bytes.toString('utf8')) as Omit<HistoryIndex, 'indexVersion'> & { indexVersion: number };
     const { digest, ...rest } = parsed;
-    return digest === digestOf(rest) ? parsed : null;
+    return parsed.indexVersion === indexVersion && digest === digestOf(rest) ? parsed as HistoryIndex : null;
   } catch {
     return null;
   }
@@ -34,7 +34,7 @@ export async function writeIndexFile(root: string, index: HistoryIndex): Promise
 function known(index: HistoryIndex): Record<ObjectKind, readonly Digest[]> {
   return {
     envelope: index.executions.map(({ envelopeId }) => envelopeId),
-    receipt: index.receipts.map(({ id }) => id),
+    receipt: [...index.receipts.map(({ id }) => id), ...index.nativeResults.map(({ digest }) => digest)],
     alias: index.aliases.map(({ digest }) => digest),
     delta: index.deltas.map(({ id }) => id),
     blob: index.blobs,

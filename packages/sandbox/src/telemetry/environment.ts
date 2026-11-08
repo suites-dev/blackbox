@@ -33,6 +33,12 @@ export function collectorEnvironment(
     BLACKBOX_OTEL_READ_PATH: COLLECTOR_STATUS_PATH,
     BLACKBOX_OTEL_INGEST_TOKEN: authorization.ingestToken,
     BLACKBOX_OTEL_CONTROL_TOKEN: authorization.controlToken,
+    ...(input.redaction === undefined
+      ? {}
+      : {
+          BLACKBOX_OTEL_REDACTION_SECRETS: '${BLACKBOX_SANDBOX_OTEL_REDACTION_SECRETS}',
+        BLACKBOX_OTEL_REDACTION_POLICY: 'credentials-v1',
+        }),
     BLACKBOX_OTEL_STORAGE_DIRECTORY: '/blackbox/telemetry',
   });
 }

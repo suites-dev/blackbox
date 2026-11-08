@@ -1,8 +1,6 @@
-import { createServer } from 'node:http';
 import { expect as nativeExpect } from '@playwright/test';
 import { test, expect } from '../../index.js';
 import { completeGraph, recordedEffects } from '../../effects/testing/emissions.fixture.js';
-import { createBlackboxTest } from '../../fixtures.js';
 import { createAttemptEffects } from '../../effects/attempt-effects.js';
 import { createAttemptStep } from '../../steps/step-context.js';
 import { createStateRegistry } from '../../state/registry.js';
@@ -115,56 +113,6 @@ test('reviewed normalized final state uses native snapshots', async ({ request }
     expect(JSON.stringify(normalized, null, 2) + '\n').toMatchSnapshot('stimulus-state.txt');
   });
   fixture.close();
-});
-
-const fixtureTest = createBlackboxTest({
-  start(input) {
-    const executionId = 'fixture-attempt';
-    return Promise.resolve({
-      sandbox: {
-        sandboxId: executionId, executionId, catalogEntry: { id: 'payments', kind: 'system' },
-        projectName: executionId, artifactDirectory: input.artifactDirectory,
-        entrypoint: { url: 'http://127.0.0.1:1', host: '127.0.0.1', port: 1, protocol: 'http' },
-        containers: new Map(),
-      },
-      telemetry: {
-        sessionId: 'fixture-session', executionId,
-        inspect: () => Promise.resolve({ kind: 'disabled' as const }),
-        read: () => Promise.reject(new Error('not used')),
-        readTrace: () => Promise.reject(new Error('not used')),
-      },
-      effects: createAttemptEffects({ sessionId: 'fixture-session', executionId, storageDirectory: input.artifactDirectory }).effects,
-      stop: () => Promise.resolve(),
-    });
-  },
-});
-fixtureTest.describe('actual lifecycle fixture', () => {
-  fixtureTest.use({ blackbox: { system: { kind: 'system', id: 'payments' }, finalSnapshot: false } });
-  fixtureTest('injects the native stimulus fixture and verifies its captured state', async ({ stimulus, state, request }) => {
-    let value = 0;
-    let traceparent: string | string[] | undefined;
-    const server = createServer((incoming, response) => {
-      traceparent = incoming.headers.traceparent;
-      response.writeHead(201).end('accepted');
-    });
-    await new Promise<void>((resolve) => { server.listen(0, '127.0.0.1', resolve); });
-    try {
-      const address = server.address();
-      if (address === null || typeof address === 'string') { throw new Error('missing owned listener'); }
-      const counter = state.observe('counter', { value: () => value });
-      const { result, evidence, verify } = await stimulus('When incrementing', async (scope) => {
-        nativeExpect(scope.request).toBe(request);
-        value++;
-        return scope.request.post(`http://127.0.0.1:${address.port}/payments`, { headers: scope.headers });
-      }, { precondition: { name: 'Given zero', check: ({ initial }) => { expect(initial(counter).value).toBe(0); } } });
-      await verify('Then the state changed', () => {
-        expect(result.status()).toBe(201);
-        expect(evidence.state(counter).diff.value).toEqual({ before: 0, after: 1, changed: true });
-      });
-      nativeExpect(traceparent).toMatch(/^00-/);
-    } finally { await new Promise<void>((resolve, reject) => { server.close((error) => { if (error) { reject(error); } else { resolve(); } }); }); }
-
-  });
 });
 
 test('unavailable effect coverage records an inconclusive claim', async ({ request }, info) => {

@@ -3,6 +3,8 @@ import type { Digest } from '../envelope/index.js';
 /** What an attempt produced that the receipt must be able to name, even when the attempt then fails. */
 export interface AttemptProduct {
   envelope: Digest | null;
+  cleanupFailed: boolean;
+  executionFailed: boolean;
 }
 
 /**
@@ -17,13 +19,15 @@ export async function finalizeAttempt(
     readonly capture: () => Promise<Digest | null>;
   },
 ): Promise<void> {
-  try {
-    await steps.cleanup();
-  } finally {
-    product.envelope = await steps.capture();
-  }
+  const cleanup = await Promise.allSettled([steps.cleanup()]);
+  product.cleanupFailed = cleanup[0].status === 'rejected';
+  const capture = await Promise.allSettled([steps.capture()]);
+  if (capture[0].status === 'fulfilled') { product.envelope = capture[0].value; }
+  const failures = [...cleanup, ...capture].flatMap((result) => result.status === 'rejected' ? [result.reason as unknown] : []);
+  if (failures.length === 1) { throw failures[0]; }
+  if (failures.length > 1) { throw new AggregateError(failures, 'Blackbox cleanup and capture failed'); }
 }
 
 export function newAttemptProduct(): AttemptProduct {
-  return { envelope: null };
+  return { envelope: null, cleanupFailed: false, executionFailed: false };
 }

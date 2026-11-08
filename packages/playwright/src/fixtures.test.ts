@@ -1,3 +1,4 @@
+import './testing/state-attempt/config.js';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -86,6 +87,10 @@ it('lets the Playwright test timeout govern sandbox acquisition', async () => {
   expect(result.output).toContain(
     'Blackbox sandbox acquisition exceeded the Playwright test timeout of 20ms',
   );
+  expect(result.output).toContain('BLACKBOX_PLAYWRIGHT_TIMEOUT_ENTER slow');
+  expect(result.output).toContain('BLACKBOX_PLAYWRIGHT_TIMEOUT_ENTER late');
+  expect(result.output).not.toContain('BLACKBOX_PLAYWRIGHT_TIMEOUT_BODY slow');
+  expect(result.output).not.toContain('BLACKBOX_PLAYWRIGHT_TIMEOUT_BODY late');
   expect(result.output).toContain('BLACKBOX_PLAYWRIGHT_TIMEOUT_STOP failed');
   expect(result.output).toContain(
     'Blackbox sandbox acquisition cleanup did not settle within 30ms',
@@ -99,7 +104,7 @@ it('owns state readers and checkpoints within one native Playwright attempt', as
   const directory = await mkdtemp(join(tmpdir(), 'blackbox-playwright-state-'));
   directories.push(directory);
   const result = await runPlaywright({
-    configFile: 'state-attempt.config.ts',
+    configFile: 'state-attempt/config.ts',
     outputDirectory: join(directory, 'output'),
   });
   expect(result.exitCode, result.output).toBe(0);

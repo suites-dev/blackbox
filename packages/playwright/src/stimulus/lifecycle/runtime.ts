@@ -27,8 +27,8 @@ export function createStimulusLifecycle(input: LifecycleInput) {
       const final = await capture(context, executionId, selection, { title, phase: 'final' });
       context.journal.append({ kind: 'final', executionId, final });
       checkCapture(context, final, 'final');
-      await effectCut(context, executionId, completed.activityId);
-      const evidence = { state: (observer) => selection.between(initial.checkpoint, final.checkpoint, observer) } satisfies ExecutionEvidence;
+      const effects = await effectCut(context, executionId, completed.activityId);
+      const evidence = { state: (observer) => selection.between(initial.checkpoint, final.checkpoint, observer), ...(effects === undefined ? {} : { effects }) } satisfies ExecutionEvidence;
       return { result: completed.result, evidence: Object.freeze(evidence), verify: createVerification(context, executionId) };
     } catch (error) {
       if (context.active && !started) { context.journal.append({ kind: 'action', executionId, status: 'not-executed' }); }
