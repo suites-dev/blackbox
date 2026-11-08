@@ -140,15 +140,33 @@ retained under `e2e/test-results/` in the existing archive. Missing assertion
 evidence fails successful evidence collection.
 
 The same packed-consumer command runs the lifecycle lane against the subscription
-system and PostgreSQL. It discovers three cases: checkpoint/diff and a reviewed
-state snapshot, a rejected precondition with zero action calls, and an intentional
-capture-failure attempt. The outer proof checks exact native statuses and the
+system and PostgreSQL. It discovers four cases: a user-facing subscription scenario,
+checkpoint/diff and a reviewed state snapshot, a rejected precondition with zero
+action calls, and an intentional capture-failure attempt. The user scenario checks
+that the active subscription returned by the API is exactly the row retained in
+PostgreSQL, then compares the final rows with a reviewed native text snapshot.
+Its Rule, Scenario, and verification steps describe the accepted behavior without
+adding an interaction requirement. The outer proof checks exact native statuses and the
 capture-specific teardown error, distinct sandbox identities, actual cleanup
 records and absence of owned Docker resources. The archive retains lifecycle
 discovery, execution, results, receipt, and the fixed expected snapshot. A missing
 or empty artifact fails successful evidence collection. The lane proves
-subscription state, not payment-intent persistence.
+subscription state, not payment-intent persistence. The complete journey owns
+24 sandboxes: eight original scenarios, eight effects cases, four retention
+invocations, and four lifecycle cases; assertion-accounting cases use a loopback
+fixture instead of Sandbox.
 
+The technical checkpoint case also awaits a stimulus-owned lazy HTTP emission
+matcher against the real payment service. Its proof resolves repeated `effects.json`
+attachments by their byte-derived digests: the automatic initial cut stays separate
+from the terminal assertion cut, and the claim links the terminal cut and assertion
+artifact. It checks activity ownership, witnessed observations, retained byte counts,
+and reopened history. This consumer lane establishes installed-package integration;
+deterministically delayed telemetry is covered by the native controlled-collector
+tests under `packages/playwright/src/testing/assertion-accounting/lazy/`.
+Those tests gate export after the first empty matcher read, reject another stimulus's
+telemetry, and verify cancellation without a fabricated terminal artifact. Keep
+open coverage explicit; a timeout with admitted incomplete cuts is inconclusive.
 
 The console uses Playwright's native list reporter. Verify ready/cleanup messages
 in each attempt's captured stdout, no streamed container polling, and retained

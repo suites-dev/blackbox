@@ -1,5 +1,5 @@
 import type { APIRequestContext } from '@playwright/test';
-import type { EffectCapture } from '@suites/blackbox-effects';
+import type { LazyEffectCapture } from '../../effects/emissions/lazy/types.js';
 import type { BlackboxEffects } from '../../types.js';
 import { captureAttemptActivity } from '../../effects/attempt-effects.js';
 import { bindCapturedEffects, effectAssertionReporter } from '../../effects/runtime.js';
@@ -9,17 +9,19 @@ import { outputCapture } from './output.js';
 import { durableEvents } from './durable-events.js';
 import { boundedEffectGraph } from '../capture/effects.js';
 import { createCaptureOperations, type CaptureLease, type CaptureOperations } from '../../capture/operations.js';
+import { liveStimulusEffects, type StimulusCutReference } from '../capture/live-effects.js';
 
 export const executionCaptureTimeoutMs = 5_000;
 
 interface Cut { readonly executionId: string; readonly activityId: string }
+interface ExecutionArtifacts { output: unknown; effects: string | null; effectCaptures: StimulusCutReference[] }
 interface DurableContext {
   readonly effects: BlackboxEffects;
   readonly report: AttemptReport;
   readonly operations: CaptureOperations;
   readonly timeoutMs: number;
   readonly actions: Map<string, Promise<PromiseSettledResult<unknown>>>;
-  readonly artifacts: Map<string, { output: unknown; effects: string | null }>;
+  readonly artifacts: Map<string, ExecutionArtifacts>;
 }
 
 async function captureEffects(context: DurableContext, cut: Cut, lease: CaptureLease) {
@@ -39,7 +41,7 @@ async function captureEffects(context: DurableContext, cut: Cut, lease: CaptureL
   return { reference, capture: bindCapturedEffects(context.effects, captured) };
 }
 
-function captureExecution(context: DurableContext, cut: Cut): Promise<EffectCapture> {
+function captureExecution(context: DurableContext, cut: Cut): Promise<LazyEffectCapture> {
   return context.operations.run(async (lease) => {
     const outputResult = context.actions.get(cut.executionId);
     if (outputResult === undefined) { throw new Error('Stimulus output capture was not started'); }
@@ -48,16 +50,22 @@ function captureExecution(context: DurableContext, cut: Cut): Promise<EffectCapt
       Promise.allSettled([captureEffects(context, cut, lease)]),
     ]);
     lease.check();
+    const effectCaptures: StimulusCutReference[] = effectsResult.status === 'fulfilled' ? [{
+      captureId: effectsResult.value.capture.identity.captureId,
+      reference: effectsResult.value.reference, purpose: 'initial',
+    }] : [];
     context.artifacts.set(cut.executionId, {
       output: result.status === 'fulfilled' ? result.value : { kind: 'capture-failed' },
       effects: effectsResult.status === 'fulfilled' ? effectsResult.value.reference : null,
+      effectCaptures,
     });
     const errors = [result, effectsResult].flatMap((item) =>
       item.status === 'rejected' ? [item.reason as unknown] : [],
     );
     if (errors.length > 0) { throw new AggregateError(errors, 'Blackbox execution capture failed'); }
     if (effectsResult.status !== 'fulfilled') { throw new Error('Blackbox effects capture failed'); }
-    return effectsResult.value.capture;
+    return liveStimulusEffects({ effects: context.effects, report: context.report,
+      operations: context.operations, ...cut, record: (reference) => { effectCaptures.push(reference); } });
   });
 }
 
@@ -83,7 +91,7 @@ async function finishExecution(context: DurableContext, journal: ExecutionJourna
   for (const [executionId, pending] of context.actions) {
     if (!context.artifacts.has(executionId)) {
       const result = await pending;
-      context.artifacts.set(executionId, { output: result.status === 'fulfilled' ? result.value : { kind: 'capture-failed' }, effects: null });
+      context.artifacts.set(executionId, { output: result.status === 'fulfilled' ? result.value : { kind: 'capture-failed' }, effects: null, effectCaptures: [] });
     }
   }
   try { await persistExecution(context, journal); } catch (error) { failures.push(error); }
@@ -102,7 +110,7 @@ export function durableExecution(input: {
   const output = outputCapture(input.request, (text) => report.redact(text));
   const context = { effects: input.effects, report, operations, timeoutMs,
     actions: new Map<string, Promise<PromiseSettledResult<unknown>>>(),
-    artifacts: new Map<string, { output: unknown; effects: string | null }>() } satisfies DurableContext;
+    artifacts: new Map<string, ExecutionArtifacts>() } satisfies DurableContext;
   return {
     operations,
     request: output.request,
