@@ -4,6 +4,7 @@ import { promisify } from 'node:util';
 import { readFile, realpath, writeFile } from 'node:fs/promises';
 import { dirname, isAbsolute, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { BehaviorHistory, ingestPlaywrightResults } from '@suites/blackbox-playwright/history';
 import { verifyDurableLifecycle } from './playwright-lifecycle-durable.mjs';
 import { expectedLifecycleCases, verifyLifecycleReport } from './playwright-lifecycle-report.mjs';
 
@@ -61,7 +62,7 @@ const entrypoint = fileURLToPath(import.meta.resolve('@suites/blackbox-playwrigh
 const difference = relative(root, packageRoot);
 assert(difference !== '' && !difference.startsWith('..') && !isAbsolute(difference));
 assert(entrypoint.startsWith(`${packageRoot}/dist/`));
-const durable = await verifyDurableLifecycle(results, cases);
+const durable = await verifyDurableLifecycle(results, cases, { BehaviorHistory, ingestPlaywrightResults });
 const receipt = { kind: 'playwright-lifecycle-proof', durable, cases: expectedLifecycleCases.map(([title, status]) => ({ title, status })),
   snapshot: 'subscription-state.txt', observations, recovery, packageBoundary: { packageRoot, entrypoint } };
 await writeFile(join(results, 'receipt.json'), JSON.stringify(receipt, null, 2));

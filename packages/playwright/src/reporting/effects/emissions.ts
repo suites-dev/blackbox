@@ -22,6 +22,7 @@ export function emissionAttachmentBody(input: {
   });
   const document = {
     schemaVersion: 1,
+    ...(report.captureReference === undefined ? {} : { captureReference: report.captureReference }),
     assertion: {
       sequence: input.sequence, matcher: report.matcher, expected: report.expected,
       negated: report.negated, outcome, evaluation: assessment.status, diagnostic: assessment.reason,

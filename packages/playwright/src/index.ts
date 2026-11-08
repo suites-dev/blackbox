@@ -4,6 +4,7 @@ export type { EffectContractBuilder } from './effects/contract.js';
 export { serializeEffectSnapshot } from './effects/emissions/snapshot.js';
 export type { EffectCapture, EffectCaptureIdentity, EffectRecorder, EffectRecorderAssessment, EffectSnapshotOptions, EffectSnapshotValue } from '@suites/blackbox-effects';
 export type { ExpectedEmission } from './effects/emissions/types.js';
+export type { LazyEffectCapture, LazyEffectRecorder } from './effects/emissions/lazy/types.js';
 export type { BlackboxClients, BlackboxEffects, BlackboxSandbox, BlackboxTelemetry, BlackboxTestFixtures, BlackboxTestArgs, BlackboxNativeStep, BlackboxStep, BlackboxOptions, BlackboxSystemSelection, BlackboxTestOptions } from './types.js';
 
 export { defineClient } from './clients/clients.js';

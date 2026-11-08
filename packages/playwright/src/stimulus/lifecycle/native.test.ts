@@ -80,9 +80,15 @@ function assertExecutionArtifacts(specs: ReturnType<typeof discovered>, detail: 
   const emission = native.tests[0].results[0].attachments.find(({ name }) => name === 'blackbox-emissions');
   if (emission === undefined || emission.body === undefined) { throw new Error('emission attachment missing'); }
   const emissionId = digestBytes(Buffer.from(emission.body, 'base64'));
+  const emissionCut = (JSON.parse(Buffer.from(emission.body, 'base64').toString('utf8')) as { captureReference: string }).captureReference;
   const emissions = native.tests[0].results[0].attachments.filter(({ name }) => name === 'blackbox-emissions');
   if (emissions[1].body === undefined) { throw new Error('missing concurrent emission'); }
   const concurrentEmissionId = digestBytes(Buffer.from(emissions[1].body, 'base64'));
+  const concurrentCut = (JSON.parse(Buffer.from(emissions[1].body, 'base64').toString('utf8')) as { captureReference: string }).captureReference;
+  expect(emissionCut).not.toBe(concurrentCut);
+  for (const id of [emissionCut, concurrentCut]) {
+    expect(detail.evidence).toContainEqual(expect.objectContaining({ id, kind: 'stimulus-effects', status: 'stored' }));
+  }
   expect(detail.evidence).toContainEqual(expect.objectContaining({ id: concurrentEmissionId, kind: 'assertion-evidence', status: 'stored' }));
   expect(detail.evidence).toContainEqual(expect.objectContaining({ id: emissionId, kind: 'assertion-evidence', status: 'stored' }));
   expect(JSON.parse(body)).toMatchObject({ kind: 'stimulus-executions', events: [
@@ -91,9 +97,9 @@ function assertExecutionArtifacts(specs: ReturnType<typeof discovered>, detail: 
     { kind: 'action', status: 'completed', captured: { output: { kind: 'response', status: 201, body: { id: 'pi_created', password: '[REDACTED]' } } } },
     { kind: 'final', diff: { observers: [{ name: 'counter', status: 'captured', diff: { value: { before: 0, after: 1, changed: true } } }] } },
     { kind: 'claim', status: 'passed' },
-    { kind: 'claim', status: 'passed', evidence: [emissionId] },
+    { kind: 'claim', status: 'passed', evidence: [emissionCut, emissionId] },
     { kind: 'claim', status: 'passed', snapshots: [{ matcher: 'toMatchSnapshot', status: 'passed' }] },
-    { kind: 'claim', title: 'And the concurrent emission is observed', status: 'passed', evidence: [concurrentEmissionId] },
+    { kind: 'claim', title: 'And the concurrent emission is observed', status: 'passed', evidence: [concurrentCut, concurrentEmissionId] },
     { kind: 'claim', title: 'And the delayed claim passes', status: 'passed', evidence: [] },
   ] });
 }
@@ -123,7 +129,7 @@ it('retains bounded execution evidence and capture failures', async () => {
   expect(run.events).toContainEqual({ kind: 'oversized-response-caught', value: true });
   expect(run.events).toContainEqual({ kind: 'completed-nine-stimuli', value: true });
   expect(run.events.filter(({ kind }) => kind === 'fixture-collector-closed')).toHaveLength(7);
-  expect(run.events).toContainEqual({ kind: 'retained-executions', value: { attempts: 7, files: 29, blocked: 1, leaked: false } });
+  expect(run.events).toContainEqual({ kind: 'retained-executions', value: { attempts: 7, files: 32, blocked: 1, leaked: false } });
   assertResponseEvidence(specs);
   assertPartialHealth(specs);
   const history = await BehaviorHistory.open(join(run.directory, 'history'));

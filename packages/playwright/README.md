@@ -282,8 +282,38 @@ updates. Keep reviewed `.yaml` files beside the tests and set
 `updateSnapshots: 'none'` in CI. Creating or updating a baseline does not establish
 that its contents are correct; review the selected fields, normalization and diff.
 Actual matcher evidence remains JSON in the `blackbox-emissions` attachment.
-Each completed `stimulus` also captures its own `effects.json`; `evidence.effects`
-selects recorders from that immutable cut. An open cut does not prove absence.
+Each completed `stimulus` automatically retains an initial `effects.json` cut after
+the action. `evidence.effects` provides lazy selections scoped to that stimulus.
+Creating a selection performs no telemetry reads; awaiting an emission matcher
+reads fresh cuts within the configured assertion timeout. Its terminal cut and
+assertion evidence are retained and linked to the active verification claim.
+
+```ts
+const { evidence, verify } = await stimulus(
+  'When a payment is submitted',
+  ({ request, headers }) =>
+    request.post('/payments', { headers, data: { user: 'alice' } }),
+);
+const effects = evidence.effects;
+if (effects === undefined) {
+  throw new Error('Stimulus effects are unavailable');
+}
+await verify('Then the payment service receives a request', async () => {
+  await expect(effects.http({ actor: 'payments', method: 'POST' })).toHaveEmitted();
+});
+
+const frozen = await effects.capture();
+const observed = serializeEffectSnapshot(frozen.http({ actor: 'payments' }), {
+  project: ({ kind, actor, operation, target }) => ({ kind, actor, operation, target }),
+});
+expect(observed).toMatchSnapshot('payment-observations.yaml');
+```
+
+`evidence.effects.capture()` explicitly reads and retains one immutable cut for
+inspection or snapshots. Later telemetry and matcher polling cannot change that
+cut. The top-level `effects.capture()` fixture API also remains immutable. An open
+cut does not establish absence or an exact count; ordering still requires causal
+evidence.
 
 ## Account for assertions in a callback
 

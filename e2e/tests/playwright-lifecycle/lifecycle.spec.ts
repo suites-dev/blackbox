@@ -21,13 +21,16 @@ test('lifecycle: PostgreSQL checkpoints and bound verification', async ({ stimul
       expect(initial(subscriptions).rows).toEqual([]);
     } } });
   const captured = evidence.state(subscriptions);
+  const effects = evidence.effects;
+  if (effects === undefined) { throw new Error('Stimulus effects are unavailable'); }
   expect(reads).toBe(2);
   expect(captured.initial.rows).toEqual([]);
   expect(captured.final.rows).toEqual([{ id: 'subscription_alice', status: 'active' }]);
   expect(captured.diff.rows.added).toEqual(captured.final.rows);
-  await verify('Then the response and durable state agree', () => {
+  await verify('Then the response and durable state agree', async () => {
     expect(result.status()).toBe(201);
     expect(captured.diff.rows.removed).toEqual([]);
+    await expect(effects.http({ actor: 'payment-mock', method: 'POST' })).toHaveEmitted();
   });
   await verify('And the reviewed state matches', () => {
     expect(JSON.stringify(captured.final.rows, null, 2) + '\n').toMatchSnapshot('subscription-state.txt');

@@ -149,6 +149,17 @@ discovery, execution, results, receipt, and the fixed expected snapshot. A missi
 or empty artifact fails successful evidence collection. The lane proves
 subscription state, not payment-intent persistence.
 
+The successful lifecycle case also awaits a stimulus-owned lazy HTTP emission
+matcher against the real payment service. Its proof resolves repeated `effects.json`
+attachments by their byte-derived digests: the automatic initial cut stays separate
+from the terminal assertion cut, and the claim links the terminal cut and assertion
+artifact. It checks activity ownership, witnessed observations, retained byte counts,
+and reopened history. This consumer lane establishes installed-package integration;
+deterministically delayed telemetry is covered by the native controlled-collector
+tests under `packages/playwright/src/testing/assertion-accounting/lazy/`.
+Those tests gate export after the first empty matcher read, reject another stimulus's
+telemetry, and verify cancellation without a fabricated terminal artifact. Keep
+open coverage explicit; a timeout with admitted incomplete cuts is inconclusive.
 
 The console uses Playwright's native list reporter. Verify ready/cleanup messages
 in each attempt's captured stdout, no streamed container polling, and retained
