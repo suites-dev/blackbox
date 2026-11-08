@@ -5,13 +5,12 @@ import type { CaptureLease } from '../capture/operations.js';
 import type { TestInfo } from '@playwright/test';
 import type { RecordedStimuli } from '../effects/attempt-effects.js';
 import type { EffectAssertionReport, EmissionAssertionReport } from '../effects/runtime.js';
-import { emissionAttachment, emissionAttachmentBody, attachExecutionArtifact, evidenceForClaim, linkClaim, type AttachedEvidence, type ExecutionArtifactKind } from './effects/emissions.js';
+import { AttemptEvidence, type AttachedEvidence, type ExecutionArtifactKind } from './capture/evidence.js';
 import { redactEffectSnapshot } from './effects/snapshot-redaction.js';
 import type { BlackboxSandbox, BlackboxTelemetry } from '../types.js';
 
-import { effectAttachment, effectAttachmentBody } from './effects/attachment.js';
 import { finalSnapshotAttachment, type FinalSnapshotDocument } from '../effects/final-snapshot.js';
-import { digestBytes, digestOf, type Digest } from '../envelope/index.js';
+import { digestBytes, type Digest } from '../envelope/index.js';
 import {
   attemptAttachment,
   progressAttachment,
@@ -22,24 +21,7 @@ import { SecretValues } from './redaction/secret-environment.js';
 import { redactText, reportText, reportTextLimit } from './text.js';
 import { sandboxLifecycleEnabled } from './options.js';
 
-export type { AttachedEvidence } from './effects/emissions.js';
-
-function assertionFields(
-  body: string,
-): Pick<AttachedEvidence, 'outcome' | 'evaluation' | 'contractDigest'> {
-  try {
-    const { assertion } = JSON.parse(body) as {
-      assertion: { outcome: string; evaluation: string; contract: unknown };
-    };
-    return {
-      outcome: assertion.outcome,
-      evaluation: assertion.evaluation,
-      contractDigest: assertion.contract === undefined ? null : digestOf(assertion.contract),
-    };
-  } catch {
-    return { outcome: 'unknown', evaluation: 'unknown', contractDigest: null };
-  }
-}
+export type { AttachedEvidence } from './capture/evidence.js';
 
 /** Attachments use Playwright's worker transport and remain available to other reporters. */
 export class AttemptReport implements AttemptProgress {
@@ -49,10 +31,8 @@ export class AttemptReport implements AttemptProgress {
   private pending = Promise.resolve();
   private attachmentFailure: unknown = null;
   private dropped = 0;
-  private effectAssertionSequence = 0;
-  private executionSequence = 0;
   private executedStimulus = false;
-  private readonly evidence: AttachedEvidence[] = [];
+  private readonly evidence: AttemptEvidence;
   private closed = false;
   private identity:
     | { readonly kind: 'not-ready' }
@@ -64,7 +44,10 @@ export class AttemptReport implements AttemptProgress {
         readonly catalogEntry: BlackboxSandbox['catalogEntry'];
       } = { kind: 'not-ready' };
 
-  constructor(private readonly testInfo: TestInfo) {}
+  constructor(private readonly testInfo: TestInfo) {
+    this.evidence = new AttemptEvidence({ owner: this, testInfo,
+      redact: (text) => this.secrets.redact(text), redactData: (text) => this.redact(text) });
+  }
 
   acquired(sandbox: BlackboxSandbox, telemetry: BlackboxTelemetry): void {
     this.identity = {
@@ -121,50 +104,17 @@ export class AttemptReport implements AttemptProgress {
   redact(text: string): string { return redactText(this.secrets.redact(text)); }
   markStimulus(): void { this.executedStimulus = true; }
   hasStimulus(): boolean { return this.executedStimulus; }
-  evidenceForClaim(claimId: string): readonly Digest[] { return evidenceForClaim(this, claimId); }
+  evidenceForClaim(claimId: string): readonly Digest[] { return this.evidence.forClaim(claimId); }
   executionArtifact(kind: ExecutionArtifactKind, value: unknown, lease: CaptureLease | undefined = undefined): Promise<Digest> {
-    if (lease !== undefined) { lease.check(); }
-    return attachExecutionArtifact({ testInfo: this.testInfo, kind, value, sequence: ++this.executionSequence,
-      lease, sanitize: (text) => this.redact(text), register: (item) => { this.evidence.push(item); } });
+    return this.evidence.execution(kind, value, lease);
   }
 
   async effectAssertion(report: EffectAssertionReport): Promise<void> {
-    const sequence = ++this.effectAssertionSequence;
-    const body = effectAttachmentBody({
-      sequence,
-      report,
-      sanitize: (value) => {
-        const redacted = this.secrets.redact(value);
-        return { text: reportText(redacted), truncated: redacted.length > reportTextLimit };
-      },
-    });
-    // An allocation is never reused, even when attachment fails while another call is still pending.
-    await this.testInfo.attach(effectAttachment, { contentType: 'application/json', body });
-    this.evidence.push({
-      kind: 'assertion-evidence',
-      name: effectAttachment,
-      sequence,
-      digest: digestBytes(body),
-      bytes: Buffer.byteLength(body),
-      ...assertionFields(body),
-    });
-    linkClaim(this, digestBytes(body));
+    await this.evidence.effect(report);
   }
 
   async emissionAssertion(report: EmissionAssertionReport, lease: CaptureLease | undefined = undefined): Promise<void> {
-    if (lease !== undefined) { lease.check(); }
-    const sequence = ++this.effectAssertionSequence;
-    const body = emissionAttachmentBody({ sequence, report, sanitize: (text) => {
-      const redacted = this.secrets.redact(text);
-      return { text: reportText(redacted), truncated: redacted.length > reportTextLimit };
-    } });
-    await this.testInfo.attach(emissionAttachment, { contentType: 'application/json', body });
-    if (lease !== undefined) { lease.check(); }
-    this.evidence.push({
-      kind: 'assertion-evidence', name: emissionAttachment, sequence,
-      digest: digestBytes(body), bytes: Buffer.byteLength(body), ...assertionFields(body),
-    });
-    linkClaim(this, digestBytes(body));
+    await this.evidence.emission(report, lease);
   }
 
   redactEffectSnapshot(yaml: string): string {
@@ -184,7 +134,7 @@ export class AttemptReport implements AttemptProgress {
 
   /** What this attempt attached as evidence, with the digest of each exact body. */
   attachedEvidence(): readonly AttachedEvidence[] {
-    return this.evidence;
+    return this.evidence.attached();
   }
 
   /**
@@ -214,7 +164,7 @@ export class AttemptReport implements AttemptProgress {
     const body = render(counted);
     // Registered only once attached: the envelope must never reference a document that was not produced.
     await this.testInfo.attach(finalSnapshotAttachment, { contentType: 'application/json', body });
-    this.evidence.push({
+    this.evidence.register({
       kind: 'final-snapshot',
       name: finalSnapshotAttachment,
       sequence: 1,
