@@ -250,7 +250,7 @@ importers:
     dependencies:
       '@oclif/core':
         specifier: ^5.1.0
-        version: 5.1.11
+        version: 5.1.12
       '@suites/blackbox-catalog':
         specifier: workspace:*
         version: link:../catalog
@@ -302,7 +302,7 @@ importers:
     dependencies:
       '@oclif/core':
         specifier: ^5.1.0
-        version: 5.1.11
+        version: 5.1.12
       '@suites/blackbox-cli-contract':
         specifier: workspace:*
         version: link:../cli-contract
@@ -336,7 +336,7 @@ importers:
     dependencies:
       '@oclif/core':
         specifier: ^5.1.0
-        version: 5.1.11
+        version: 5.1.12
       '@suites/blackbox-cli-contract':
         specifier: workspace:*
         version: link:../cli-contract
@@ -392,7 +392,7 @@ importers:
     dependencies:
       '@oclif/core':
         specifier: ^5.1.0
-        version: 5.1.11
+        version: 5.1.12
       '@suites/blackbox-cli-contract':
         specifier: workspace:*
         version: link:../cli-contract
@@ -447,7 +447,7 @@ importers:
         version: 34.2.1
       '@oclif/core':
         specifier: ^5.1.0
-        version: 5.1.11
+        version: 5.1.12
       '@suites/blackbox-catalog':
         specifier: workspace:*
         version: link:../catalog
@@ -487,7 +487,7 @@ importers:
     dependencies:
       '@oclif/core':
         specifier: ^5.1.0
-        version: 5.1.11
+        version: 5.1.12
       '@suites/blackbox-cli-contract':
         specifier: workspace:*
         version: link:../cli-contract
@@ -610,7 +610,7 @@ importers:
     dependencies:
       '@oclif/core':
         specifier: ^5.1.0
-        version: 5.1.11
+        version: 5.1.12
       '@suites/blackbox-cli-contract':
         specifier: workspace:*
         version: link:../cli-contract
@@ -1181,8 +1181,8 @@ packages:
     resolution: {integrity: sha512-wgm9Ehl2jpeqP3zw/7mo3kRHFp5MEDhqAdwy1fTGkHAwnkGOVsgpvQhL8B5n1qlb01jV3n/bI0ZfZp5lWA1k4w==}
     engines: {node: '>=18.0.0'}
 
-  '@isaacs/nonrecursive-glob-match@1.0.3':
-    resolution: {integrity: sha512-SI7kyKHq4XXDRozw+r9GlRZkia1ZkFrpLW98r2IC2Bpr8YkFGE3fvjzmxCG0x78A++69HmDNrDvSMYBZmHGpKA==}
+  '@isaacs/nonrecursive-glob-match@1.1.0':
+    resolution: {integrity: sha512-GPm/Dbvk5RLmhRnxXIa7nTpK0xtl4E0wj0MslsuNiJ1FIROU+2+9lgUC/dgF7Ey4QCWhfEsgxilMRMCdHPfDfw==}
 
   '@isaacs/string-locale-compare@1.1.0':
     resolution: {integrity: sha512-SQ7Kzhh9+D+ZW9MA0zkYv3VXhIDNx+LzM6EJ+/65I3QY+enU6Itte7E5XX7EWrqLW2FN4n06GWzBnPoC3th2aQ==}
@@ -1399,8 +1399,8 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@oclif/core@5.1.11':
-    resolution: {integrity: sha512-SIB9o3zofFA8CzjnCWbBWjdDNOKV7zYlKnDeE0V7+kHl89qzMPRNhrbAAh0+0HkUiVpiR6wIoL8yJI6QtoWsqg==}
+  '@oclif/core@5.1.12':
+    resolution: {integrity: sha512-t8W/ljOb9DIsFNXbfLU4UpZ8+C/X0QuvJOuQXQVCthiw5zSdwKnKoq7HmyBUJwwo28302eiN0rRj8vN9k1U1Mw==}
     engines: {node: '>=22.0.0'}
 
   '@octokit/auth-token@6.0.0':
@@ -3177,8 +3177,8 @@ packages:
     resolution: {integrity: sha512-gG32Hgikbb8mx+c+b2MKseuQcwKbiIl7wM4a5+scxuRtu/Q7L/fbywMyLD4naUfL0yexdKWzfi6kglMz6BGOWQ==}
     engines: {node: ^22.22.2 || ^24.15.0 || >=26.0.0}
 
-  lilconfig@3.1.3:
-    resolution: {integrity: sha512-/vlFKAoH5Cgt3Ie+JLhRbwOsCQePABiU3tJ1egGvyQ+33R/vcwM2Zl2QR/LzjsBeItPt3oSVXapn+m4nQDvpzw==}
+  lilconfig@3.1.5:
+    resolution: {integrity: sha512-aRAOI9Ia43ygL4o1EOmC/sc/0OFxrm7qcQngiIyWaqVnSnz932ybJ07zyCcgMNGSDP8Yxaf88Xj1zHEXmvQ4SA==}
     engines: {node: '>=14'}
 
   lines-and-columns@1.2.4:
@@ -4979,7 +4979,7 @@ snapshots:
     dependencies:
       minipass: 7.1.3
 
-  '@isaacs/nonrecursive-glob-match@1.0.3': {}
+  '@isaacs/nonrecursive-glob-match@1.1.0': {}
 
   '@isaacs/string-locale-compare@1.1.0': {}
 
@@ -5109,7 +5109,7 @@ snapshots:
       proggy: 4.0.0
       promise-all-reject-late: 1.0.1
       promise-call-limit: 3.0.2
-      semver: 7.8.6
+      semver: 7.8.5
       ssri: 14.0.0
       treeverse: 3.0.0
       validate-npm-package-name: 8.0.0
@@ -5120,11 +5120,11 @@ snapshots:
 
   '@npmcli/fs@5.0.0':
     dependencies:
-      semver: 7.8.6
+      semver: 7.8.5
 
   '@npmcli/fs@6.0.0':
     dependencies:
-      semver: 7.8.6
+      semver: 7.8.5
 
   '@npmcli/git@7.0.2':
     dependencies:
@@ -5134,7 +5134,7 @@ snapshots:
       lru-cache: 11.5.2
       npm-pick-manifest: 11.0.3
       proc-log: 6.1.0
-      semver: 7.8.6
+      semver: 7.8.5
       which: 6.0.1
 
   '@npmcli/git@8.0.0':
@@ -5145,7 +5145,7 @@ snapshots:
       lru-cache: 11.5.2
       npm-pick-manifest: 12.0.0
       proc-log: 7.0.0
-      semver: 7.8.6
+      semver: 7.8.5
       which: 7.0.0
 
   '@npmcli/installed-package-contents@4.0.0':
@@ -5171,7 +5171,7 @@ snapshots:
       json-parse-even-better-errors: 6.0.0
       pacote: 21.5.1
       proc-log: 7.0.0
-      semver: 7.8.6
+      semver: 7.8.5
     transitivePeerDependencies:
       - supports-color
 
@@ -5188,7 +5188,7 @@ snapshots:
       hosted-git-info: 9.0.3
       json-parse-even-better-errors: 5.0.0
       proc-log: 6.1.0
-      semver: 7.8.6
+      semver: 7.8.5
       validate-npm-package-license: 3.0.4
 
   '@npmcli/package-json@8.0.0':
@@ -5198,7 +5198,7 @@ snapshots:
       hosted-git-info: 10.1.1
       json-parse-even-better-errors: 6.0.0
       proc-log: 7.0.0
-      semver: 7.8.6
+      semver: 7.8.5
       spdx-expression-parse: 4.0.0
 
   '@npmcli/promise-spawn@10.0.1':
@@ -5241,7 +5241,7 @@ snapshots:
       ejs: 5.0.1
       minimatch: 11.0.1
       nx: 23.3.1
-      semver: 7.8.6
+      semver: 7.8.5
       tslib: 2.8.1
       yargs-parser: 21.1.1
 
@@ -5275,7 +5275,7 @@ snapshots:
   '@nx/nx-win32-x64-msvc@23.3.1':
     optional: true
 
-  '@oclif/core@5.1.11':
+  '@oclif/core@5.1.12':
     dependencies:
       ansi-escapes: 4.3.2
       ansis: 3.17.0
@@ -5285,9 +5285,9 @@ snapshots:
       ejs: 6.0.1
       get-package-type: 0.1.0
       indent-string: 4.0.0
-      lilconfig: 3.1.3
+      lilconfig: 3.1.5
       minimatch: 11.0.1
-      semver: 7.8.5
+      semver: 7.8.6
       string-width: 4.2.3
       supports-color: 8.1.1
       tinyglobby: 0.2.17
@@ -5575,7 +5575,7 @@ snapshots:
   '@simple-libs/normalize-package-data@1.0.0':
     dependencies:
       '@simple-libs/hosted-git-info': 2.0.0
-      semver: 7.8.6
+      semver: 7.8.5
 
   '@simple-libs/stream-utils@2.0.0': {}
 
@@ -6852,7 +6852,7 @@ snapshots:
       npm-package-arg: 14.0.0
       promzard: 4.0.0
       read: 6.0.0
-      semver: 7.8.6
+      semver: 7.8.5
       validate-npm-package-name: 8.0.0
 
   inquirer@14.2.2(@types/node@26.6.3):
@@ -7066,14 +7066,14 @@ snapshots:
       npm-package-arg: 14.0.0
       npm-registry-fetch: 20.0.1
       proc-log: 7.0.0
-      semver: 7.8.6
+      semver: 7.8.5
       sigstore: 5.0.0
       ssri: 14.0.0
     transitivePeerDependencies:
       - kerberos
       - supports-color
 
-  lilconfig@3.1.3: {}
+  lilconfig@3.1.5: {}
 
   lines-and-columns@1.2.4: {}
 
@@ -7293,7 +7293,7 @@ snapshots:
 
   minimatch@11.0.1:
     dependencies:
-      '@isaacs/nonrecursive-glob-match': 1.0.3
+      '@isaacs/nonrecursive-glob-match': 1.1.0
       brace-expansion: 5.0.12
 
   minimist@1.2.8: {}
@@ -7382,7 +7382,7 @@ snapshots:
       graceful-fs: 4.2.11
       nopt: 9.0.0
       proc-log: 6.1.0
-      semver: 7.8.6
+      semver: 7.8.5
       tar: 7.5.22
       tinyglobby: 0.2.17
       undici: 6.29.1
@@ -7395,7 +7395,7 @@ snapshots:
       graceful-fs: 4.2.11
       nopt: 10.0.1
       proc-log: 7.0.0
-      semver: 7.8.6
+      semver: 7.8.5
       tar: 7.5.22
       tinyglobby: 0.2.17
       undici: 6.29.1
@@ -7423,11 +7423,11 @@ snapshots:
 
   npm-install-checks@8.0.0:
     dependencies:
-      semver: 7.8.6
+      semver: 7.8.5
 
   npm-install-checks@9.0.0:
     dependencies:
-      semver: 7.8.6
+      semver: 7.8.5
 
   npm-normalize-package-bin@5.0.0: {}
 
@@ -7437,14 +7437,14 @@ snapshots:
     dependencies:
       hosted-git-info: 9.0.3
       proc-log: 5.0.0
-      semver: 7.8.6
+      semver: 7.8.5
       validate-npm-package-name: 6.0.2
 
   npm-package-arg@14.0.0:
     dependencies:
       hosted-git-info: 10.1.1
       proc-log: 7.0.0
-      semver: 7.8.6
+      semver: 7.8.5
       validate-npm-package-name: 8.0.0
 
   npm-packlist@10.0.3:
@@ -7463,14 +7463,14 @@ snapshots:
       npm-install-checks: 8.0.0
       npm-normalize-package-bin: 5.0.0
       npm-package-arg: 13.0.1
-      semver: 7.8.6
+      semver: 7.8.5
 
   npm-pick-manifest@12.0.0:
     dependencies:
       npm-install-checks: 9.0.0
       npm-normalize-package-bin: 6.0.0
       npm-package-arg: 14.0.0
-      semver: 7.8.6
+      semver: 7.8.5
 
   npm-registry-fetch@19.1.0:
     dependencies:
@@ -7634,7 +7634,7 @@ snapshots:
       default-browser: 5.2.1
       define-lazy-prop: 3.0.0
       is-inside-container: 1.0.0
-      is-wsl: 3.1.1
+      is-wsl: 3.1.0
 
   optionator@0.9.4:
     dependencies:
@@ -7650,7 +7650,7 @@ snapshots:
       bl: 4.1.0
       chalk: 4.1.2
       cli-cursor: 3.1.0
-      cli-spinners: 2.9.2
+      cli-spinners: 2.6.1
       is-interactive: 1.0.0
       is-unicode-supported: 0.1.0
       log-symbols: 4.1.0
