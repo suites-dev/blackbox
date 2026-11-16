@@ -282,8 +282,8 @@ importers:
         specifier: 8.20.0
         version: 8.20.0
       string-width:
-        specifier: 8.3.0
-        version: 8.3.0
+        specifier: 9.0.0
+        version: 9.0.0
     devDependencies:
       '@types/node':
         specifier: 'catalog:'
@@ -344,8 +344,8 @@ importers:
         specifier: 4.2.0
         version: 4.2.0
       string-width:
-        specifier: 8.3.0
-        version: 8.3.0
+        specifier: 9.0.0
+        version: 9.0.0
     devDependencies:
       '@types/node':
         specifier: 'catalog:'
@@ -2065,8 +2065,8 @@ packages:
     resolution: {integrity: sha512-quJQXlTSUGL2LH9SUXo8VwsY4soanhgo6LNSm84E1LBcE8s3O0wpdiRzyR9z/ZZJMlMWv37qOOb9pdJlMUEKFQ==}
     engines: {node: '>=8'}
 
-  ansi-regex@6.4.0:
-    resolution: {integrity: sha512-KzTVk2tCWAHtYrvvvaP8bJKJq2pVinhLcGEQdtLIYPbmNGNyYe8QwNaTUYQp2J7/vIsUKt5QCqAfUkYyG9DkOw==}
+  ansi-regex@6.6.0:
+    resolution: {integrity: sha512-XZ5apbzreCbXSKwPjJstu8R0zOi247w3XYwWxtwBXgpZrCyc1Ka7p9/xY0A9/diMewmHbEKz+FIraWaEWjlN5g==}
     engines: {node: '>=12'}
 
   ansi-styles@4.3.0:
@@ -4067,6 +4067,10 @@ packages:
     resolution: {integrity: sha512-ZbmZM0JCihQN91dWnxoipT2KOEyHqEyfRXUyjuRhW8b/xnqPDoq4gWEVApTVa9db2wN8mmoikgFBbjh71+cGeQ==}
     engines: {node: '>=20'}
 
+  string-width@9.0.0:
+    resolution: {integrity: sha512-2MOboAIRIszVGZVPA2Zqwj0ujd0o+xAZ5y2ft4OcD4kuVQ4phZxq0Sv7YTY8yaDA2CSMXch1EWTkJw+tTJZTzA==}
+    engines: {node: '>=22'}
+
   string_decoder@1.1.1:
     resolution: {integrity: sha512-n/ShnvDi6FHbbVfviro+WojiFzv+s8MPMHBczVePfUpDJLwoLT0ht1l4YwBCbi8pJAveEEdnkHyPyTP/mzRfwg==}
 
@@ -5900,7 +5904,7 @@ snapshots:
 
   ansi-regex@5.0.1: {}
 
-  ansi-regex@6.4.0: {}
+  ansi-regex@6.6.0: {}
 
   ansi-styles@4.3.0:
     dependencies:
@@ -8229,6 +8233,11 @@ snapshots:
       get-east-asian-width: 1.7.0
       strip-ansi: 7.2.0
 
+  string-width@9.0.0:
+    dependencies:
+      get-east-asian-width: 1.7.0
+      strip-ansi: 7.2.0
+
   string_decoder@1.1.1:
     dependencies:
       safe-buffer: 5.1.2
@@ -8243,7 +8252,7 @@ snapshots:
 
   strip-ansi@7.2.0:
     dependencies:
-      ansi-regex: 6.4.0
+      ansi-regex: 6.6.0
 
   strip-bom@3.0.0: {}
 
