@@ -89,7 +89,7 @@
     "@suites/blackbox-skills": "workspace:*",
     "@suites/blackbox-telemetry": "workspace:*",
     "ajv": "8.20.0",
-    "string-width": "8.3.0"
+    "string-width": "9.0.0"
   },
   "devDependencies": {
     "@types/node": "catalog:",
