@@ -46,7 +46,7 @@
   "dependencies": {
     "@cucumber/cucumber-expressions": "20.1.0",
     "@cucumber/gherkin": "42.0.1",
-    "@cucumber/messages": "34.2.1",
+    "@cucumber/messages": "35.0.0",
     "@oclif/core": "^5.1.0",
     "@suites/blackbox-catalog": "workspace:*",
     "@suites/blackbox-playwright": "workspace:*"

@@ -443,8 +443,8 @@ importers:
         specifier: 42.0.1
         version: 42.0.1
       '@cucumber/messages':
-        specifier: 34.2.1
-        version: 34.2.1
+        specifier: 35.0.0
+        version: 35.0.0
       '@oclif/core':
         specifier: ^5.1.0
         version: 5.1.11
@@ -783,6 +783,9 @@ packages:
 
   '@cucumber/messages@34.2.1':
     resolution: {integrity: sha512-aj2iCAG9ZOpMVcMxcgShifv5fbR96b7SMgdWcPXXh2QbFp7OEcAnQ5MC5YfWUDSDasmw7FU5NJEsOrXdTQOU1A==}
+
+  '@cucumber/messages@35.0.0':
+    resolution: {integrity: sha512-lubB5srgXxXwz9uVIJXdk4dm+CdKj7qfrGNHqFvlBtt4wrUb9413KBOJUpdUWTasJmQe9pYAa2rYNIl3yfW4Ag==}
 
   '@emnapi/core@1.4.5':
     resolution: {integrity: sha512-XsLw1dEOpkSX/WucdqUhPWP7hDxSvZiY+fsUC14h+FtQ2Ifni4znbBt8punRX+Uj2JG/uDb8nEHVKvrVlvdZ5Q==}
@@ -4673,6 +4676,8 @@ snapshots:
       '@cucumber/messages': 34.2.1
 
   '@cucumber/messages@34.2.1': {}
+
+  '@cucumber/messages@35.0.0': {}
 
   '@emnapi/core@1.4.5':
     dependencies:
