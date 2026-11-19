@@ -6,7 +6,14 @@ export type CapsuleExecutionLocation =
       readonly service: string;
     };
 
-export type CapsuleOutputRetention =
+export type CapsuleOutputRedactionKind =
+  | 'authorization-credential'
+  | 'environment-value'
+  | 'sensitive-header'
+  | 'sensitive-output'
+  | 'private-ipc-path';
+
+type CaptureRetention =
   | { readonly kind: 'complete'; readonly originalBytes: number }
   | {
       readonly kind: 'truncated';
@@ -15,6 +22,9 @@ export type CapsuleOutputRetention =
       readonly omittedBytes: number;
       readonly retained: 'head-and-tail';
     };
+
+export type CapsuleOutputRetention = CaptureRetention |
+  (CaptureRetention & { readonly redactions: readonly CapsuleOutputRedactionKind[] });
 
 interface CapsuleProcessFields {
   readonly argv: readonly string[];

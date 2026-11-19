@@ -1,3 +1,4 @@
+import { redactStructuredLines } from './structured-lines.js';
 import type { DriverArgvRedaction } from '@suites/blackbox-driver';
 
 import type { CapsuleReportRedaction } from '../types.js';
@@ -71,6 +72,18 @@ function note(
 }
 
 export function redactText(input: string, location: string, context: RedactionContext): string {
+  return redactStructuredLines(input, (value) => redactPlainText(value, location, context),
+    (value) => redactJsonFields(value, location, context));
+}
+
+function redactJsonFields(input: string, location: string, context: RedactionContext): string {
+  return input.replace(context.jsonFieldPattern, (_match, prefix: string, suffix: string) => {
+    note(context, 'sensitive-output', location);
+    return `${prefix}${MASK}${suffix}`;
+  });
+}
+
+function redactPlainText(input: string, location: string, context: RedactionContext): string {
   // `scheme://user:password@host`: the user information is a credential.
   let value = input.replace(
     /\b([a-z][a-z0-9+.-]*:\/\/)[^\s/?#@:]*:[^\s/?#@]*@/giu,
@@ -98,13 +111,7 @@ export function redactText(input: string, location: string, context: RedactionCo
       return `${match.slice(0, match.indexOf(':') + 1)} ${MASK}`;
     },
   );
-  value = value.replace(
-    context.jsonFieldPattern,
-    (_match, prefix: string, suffix: string) => {
-      note(context, 'sensitive-output', location);
-      return `${prefix}${MASK}${suffix}`;
-    },
-  );
+  value = redactJsonFields(value, location, context);
   value = value.replace(
     /([?&](?:token|secret|password|passwd|api[-_]?key|authorization)=)[^&#\s]+/giu,
     (_match, prefix: string) => {

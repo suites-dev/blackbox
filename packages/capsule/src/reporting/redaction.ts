@@ -13,7 +13,7 @@ import type { CapsuleProcessOutcome } from '../model/execution/process-outcome.j
 import type { CapsuleRecordedError } from '../model/recorded-error.js';
 import type { CapsuleReportActivity } from './types.js';
 
-import { retainedTextForRedaction } from '../execution/output-retention.js';
+import { redactCapturedStream } from './redaction/captured-stream.js';
 import { isUnstartedProcess } from '../execution/unstarted-process.js';
 import {
   createRedactionContext,
@@ -40,21 +40,12 @@ function redactProcess(
       remediation: redactText(outcome.remediation, `${location}.remediation`, context),
     };
   }
-  const output = {
-    ...outcome,
-    argv,
-    stdout: redactText(
-      retainedTextForRedaction(outcome.stdout, outcome.retention.stdout),
-      `${location}.stdout`,
-      context,
-    ),
-    stderr: redactText(
-      retainedTextForRedaction(outcome.stderr, outcome.retention.stderr),
-      `${location}.stderr`,
-      context,
-    ),
+  const stdout = redactCapturedStream(outcome.stdout, outcome.retention.stdout, `${location}.stdout`, context);
+  const stderr = redactCapturedStream(outcome.stderr, outcome.retention.stderr, `${location}.stderr`, context);
+  return {
+    ...outcome, argv, stdout: stdout.value, stderr: stderr.value,
+    retention: { stdout: stdout.retention, stderr: stderr.retention },
   };
-  return output;
 }
 
 function redactPropagation(

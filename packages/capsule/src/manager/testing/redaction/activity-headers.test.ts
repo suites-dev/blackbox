@@ -5,6 +5,7 @@ import { expect, it } from 'vitest';
 
 import { managerRequest } from '../../../ipc/client.js';
 import { capsuleActivityPath, readCapsuleActivities } from '../../../records.js';
+import { createRedactionContext, redactActivity } from '../../../reporting/redaction.js';
 import { requestFixture } from '../request.fixture.js';
 
 const stdout =
@@ -143,6 +144,36 @@ it.each(['host', 'driver'] as const)(
     }
   },
 );
+
+it('retains output masking provenance through disk and report projection without changing the live stream', async () => {
+  const fixture = await requestFixture(() => Promise.resolve());
+  const child = join(fixture.projectDirectory, 'structured.mjs');
+  const structured = JSON.stringify({ message: 'Cookie: id=fixture-cookie; other=fixture-other', status: 200, body: 'visible' });
+  const raw = 'token=fixture-assignment\n' + structured;
+  try {
+    await writeFile(child, `process.stdout.write(${JSON.stringify(raw)});process.stderr.write('unchanged');`);
+    await expect(managerRequest({
+      socketPath: fixture.socketPath,
+      request: { kind: 'exec-request', requestId: 'structured', purpose: 'stimulus', name: { kind: 'omitted' },
+        target: { kind: 'host', argv: [process.execPath, child] } },
+    })).resolves.toMatchObject({ outcome: { stdout: raw } });
+    const [activity] = await readCapsuleActivities(fixture);
+    expect(activity).toMatchObject({ outcome: { retention: {
+      stdout: { redactions: ['sensitive-output', 'sensitive-header'] }, stderr: { kind: 'complete' },
+    } } });
+    const context = createRedactionContext();
+    const report = redactActivity(activity, 0, context);
+    expect(report).toMatchObject({ outcome: {
+      stdout: 'token=[REDACTED]\n' + JSON.stringify({ message: 'Cookie: [REDACTED]', status: 200, body: 'visible' }),
+      stderr: 'unchanged', retention: { stdout: { originalBytes: Buffer.byteLength(raw) } },
+    } });
+    expect(context.entries.filter(({ location }) => location === 'activities[0].outcome.stdout')
+      .map(({ kind }) => kind).sort()).toEqual(['sensitive-header', 'sensitive-output']);
+    expect(context.entries.filter(({ location }) => location === 'activities[0].outcome.stderr')).toEqual([]);
+  } finally {
+    await fixture.close();
+  }
+});
 
 it('masks a truncated header tail whose field name fell in the omitted middle', async () => {
   const fixture = await requestFixture(() => Promise.resolve());
