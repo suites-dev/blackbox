@@ -51,7 +51,8 @@ function declareSuite(): void {
     scenario === 'client-create-late' ||
     scenario === 'client-healthy-short-timeout'
   ) {
-    test.describe.configure({ timeout: scenario === 'client-healthy-short-timeout' ? 100 : 300 });
+    // The 100 ms setup budget is tested with virtual time; this run includes loopback startup.
+    test.describe.configure({ timeout: 300 });
   }
   test.beforeEach(async ({ clients, step }) => {
     expect(events).toEqual(['create', 'ready']);
