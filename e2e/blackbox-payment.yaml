@@ -1,0 +1,54 @@
+schemaVersion: 1
+catalog:
+  default: payment-system
+  entries:
+    payment-system:
+      kind: system
+      acquisition:
+        adapter: docker-compose@1
+        files: [.blackbox/catalog/payment-system.yml]
+      entrypoint:
+        participant: payment-api
+        protocol: http
+        containerPort: 8080
+        readiness:
+          path: /health
+          timeoutMs: 60000
+      participants:
+        payment-api:
+          service: payment-api
+          role: entrypoint
+          runtime: node
+          activation: payment-node
+        postgres:
+          service: postgres
+          role: dependency
+          runtime: infra
+        redis:
+          service: redis
+          role: dependency
+          runtime: infra
+      drivers: {}
+      observation:
+        policyId: payment-http-and-storage
+        boundaries:
+          - id: effects.http
+            kind: http
+            authoritativeFor: [instrumented payment HTTP operations]
+          - id: effects.postgres
+            kind: postgres
+            authoritativeFor: [instrumented payment SQL statements]
+          - id: effects.redis
+            kind: redis
+            authoritativeFor: [instrumented payment cache operations]
+        requiredBoundaries: [effects.http, effects.postgres, effects.redis]
+        terminalObservationWindowMs: 5000
+        redaction:
+          requestBodies: not-captured
+          headers: [authorization, cookie, set-cookie]
+          dynamicIdentifiers: normalized in effect identities and paths
+activations:
+  payment-node:
+    ref: .blackbox/instrumentation/instrumentation.js
+    adapter: node-preload
+    version: 1

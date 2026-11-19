@@ -28,10 +28,12 @@
     "playwright-assertions.config.ts",
     "playwright-effects.config.ts",
     "playwright-lifecycle.config.ts",
+    "playwright-payment.config.ts",
     "tests/playwright/**/*.ts",
     "tests/playwright-features/**/*.ts",
     "tests/playwright-assertions/**/*.ts",
     "tests/playwright-lifecycle/**/*.ts",
+    "tests/playwright-payment/**/*.ts",
     "reporters/**/*.ts",
     "tests/features-suites/**/*.ts",
     ".blackbox/clients/**/*.ts"

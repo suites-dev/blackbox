@@ -112,6 +112,9 @@ mkdir -p "$CONSUMER_ROOT/tests/playwright-assertions"
 mkdir -p "$CONSUMER_ROOT/tests/playwright-lifecycle"
 mkdir -p "$CONSUMER_ROOT/reporters"
 cp "$E2E_ROOT/blackbox.config.yaml" "$CONSUMER_ROOT/blackbox.config.yaml"
+cp "$E2E_ROOT/blackbox-payment.yaml" "$E2E_ROOT/playwright-payment.config.ts" "$CONSUMER_ROOT/"
+cp -R "$E2E_ROOT/tests/playwright-payment" "$CONSUMER_ROOT/tests/"
+cp "$SCRIPT_DIR/playwright-payment.mjs" "$SCRIPT_DIR/playwright-payment-proof.mjs" "$SCRIPT_DIR/playwright-payment-cleanup.mjs" "$CONSUMER_ROOT/"
 cp "$E2E_ROOT/.blackbox/catalog/"*.yml "$CONSUMER_ROOT/.blackbox/catalog/"
 cp "$E2E_ROOT/.blackbox/drivers/"*.mjs "$CONSUMER_ROOT/.blackbox/drivers/"
 cp "$E2E_ROOT/.blackbox/clients/"*.ts "$CONSUMER_ROOT/.blackbox/clients/"
@@ -242,6 +245,11 @@ BLACKBOX_E2E_FIXTURE_TOKEN="$FIXTURE_TOKEN" BLACKBOX_E2E_RESULTS_ROOT="$RUN_RESU
   | tee "$RUN_RESULT_ROOT/lifecycle/execution.txt"
 recover_sandboxes
 node "$CONSUMER_ROOT/playwright-lifecycle-proof.mjs"
+
+RECOVERY_RECORDED=0
+node "$CONSUMER_ROOT/playwright-payment.mjs"
+recover_sandboxes
+node "$CONSUMER_ROOT/playwright-payment-cleanup.mjs"
 
 printf '%s\n' \
   'Playwright journey passed' \

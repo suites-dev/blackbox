@@ -15,6 +15,7 @@ export default [
       'tests/playwright/*.spec.ts',
       'tests/playwright-features/*.spec.ts',
       'tests/playwright-assertions/*.spec.ts',
+      'tests/playwright-payment/*.spec.ts',
       'tests/features-suites/*.spec.ts',
     ],
     plugins: {
