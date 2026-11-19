@@ -59,8 +59,13 @@ test('unconsumed verification with unavailable effects records a failed claim', 
     void expect(Promise.resolve(1)).resolves.toBe(1);
     await nextTurn();
   })).rejects.toThrow('unconsumed');
+  await nativeExpect(outcome.verify('And an escaping unavailable assertion still fails structurally', async () => {
+    void expect(Promise.resolve(1)).resolves.toBe(1);
+    await nextTurn();
+    await expect(selected).not.toHaveEmitted();
+  })).rejects.toThrow('unconsumed');
   const statuses = lifecycle.journal.events().filter((event) => event.kind === 'claim').map(({ status }) => status);
   record('structural-mixed-status', statuses);
-  nativeExpect(statuses).toEqual(['failed']);
+  nativeExpect(statuses).toEqual(['failed', 'failed']);
   lifecycle.close(); step.revoke(); registry.close();
 });

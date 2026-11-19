@@ -5,7 +5,7 @@ import {
 } from './context.js';
 import { installAssertionBridge, installedPlaywrightVersion } from './bridge.js';
 import { consumptionPromise } from './promises.js';
-import { AssertionScopeError, InconclusiveAssertionError, type AssertionScopeResult } from './types.js';
+import { AssertionScopeError, InconclusiveAssertionError, type AssertionScopeErrorCode, type AssertionScopeResult } from './types.js';
 
 function ownershipError() {
   return new AssertionScopeError('ownership', { total: 0, passed: 0, failed: 0, pending: 0, unconsumed: 0 });
@@ -76,16 +76,31 @@ function currentOwner(): AssertionOwner {
   return owner;
 }
 
-function validateScope(scope: AssertionScopeState): void {
-  const counts = accounting(scope);
-  const unsupported = scope.issues.find(({ code }) => code === 'unsupported');
-  if (unsupported !== undefined) { throw scopeError(scope, 'unsupported'); }
+function structuralFailure(scope: AssertionScopeState): AssertionScopeErrorCode | null {
+  if (scope.issues.some(({ code }) => code === 'unsupported')) { return 'unsupported'; }
   if ([...scope.records].some((record) => !record.settled) || [...scope.children].some((child) => child.active)) {
-    throw scopeError(scope, 'pending');
+    return 'pending';
   }
-  if ([...scope.records].some((record) => !record.consumed)) { throw scopeError(scope, 'unconsumed'); }
+  if ([...scope.records].some((record) => !record.consumed)) { return 'unconsumed'; }
+  return null;
+}
+
+function validateScope(scope: AssertionScopeState): void {
+  const structural = structuralFailure(scope);
+  if (structural !== null) { throw scopeError(scope, structural); }
+  const counts = accounting(scope);
   if (counts.failed > 0 || scope.issues.length > 0) { throw scopeError(scope, 'failed'); }
   if (counts.total === 0) { throw scopeError(scope, 'empty'); }
+}
+
+function caughtScopeError(scope: AssertionScopeState, caught: unknown): unknown {
+  if (!(caught instanceof InconclusiveAssertionError)) { return caught; }
+  const structural = structuralFailure(scope);
+  if (structural !== null) { return scopeError(scope, structural); }
+  const counts = accounting(scope);
+  if (counts.total === 0) { return scopeError(scope, 'empty'); }
+  if (counts.failed > 1 || scope.issues.length > 0) { return scopeError(scope, 'failed'); }
+  return caught;
 }
 
 async function executeScope<Value>(scope: AssertionScopeState, callback: () => Value | Promise<Value>) {
@@ -94,9 +109,7 @@ async function executeScope<Value>(scope: AssertionScopeState, callback: () => V
     validateScope(scope);
     return Object.freeze({ value, accounting: accounting(scope) });
   } catch (caught) {
-    const error = caught instanceof InconclusiveAssertionError &&
-      (accounting(scope).failed > 1 || scope.issues.length > 0)
-      ? scopeError(scope, 'failed') : caught;
+    const error = caughtScopeError(scope, caught);
     if (scope.parent !== null) {
       const trial = trialContext.getStore();
       if (trial === undefined) { issue(scope.parent, 'failed', error); }
