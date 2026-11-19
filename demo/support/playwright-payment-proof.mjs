@@ -24,10 +24,14 @@ export function omitPaymentWrite(source) {
   );
 }
 
-function attachment(result, name) {
+function attachmentBytes(result, name) {
   const found = result.attachments.filter((item) => item.name === name);
   assert.equal(found.length, 1, 'expected one ' + name);
-  const bytes = Buffer.from(found[0].body, 'base64');
+  return Buffer.from(found[0].body, 'base64');
+}
+
+function attachment(result, name) {
+  const bytes = attachmentBytes(result, name);
   return { data: JSON.parse(bytes), digest: digest(bytes) };
 }
 
@@ -69,6 +73,8 @@ export function verifyPaymentReport(report, broken) {
   const envelope = attachment(result, 'blackbox-envelope').data;
   const execution = attachment(result, 'blackbox-execution').data;
   const cut = attachment(result, 'effects.json');
+  const rendered = attachment(result, 'blackbox-report-json');
+  const html = attachmentBytes(result, 'blackbox-report-html');
   const { attemptId, executionId, sessionId } = envelope.identity.attempt;
   for (const id of [attemptId, executionId, sessionId])
     assert.ok(typeof id === 'string' && id.length > 0);
@@ -121,6 +127,27 @@ export function verifyPaymentReport(report, broken) {
     assert.deepEqual(result.errors, []);
     assert.deepEqual(claims[2].snapshots, [{ matcher: 'toMatchSnapshot', status: 'passed' }]);
   }
+  const view = rendered.data;
+  assert.equal(view.kind, 'blackbox-attempt-view');
+  assert.equal(view.attempt.nativeStatus, expectedStatus);
+  assert.equal(view.verification.status, broken ? 'failed' : 'verified');
+  assert.equal(view.evidence.status, 'available');
+  assert.equal(view.executions.length, 1);
+  const [shown] = view.executions;
+  assert.equal(shown.executionId, begin.executionId);
+  assert.equal(shown.output.status, 201);
+  state(shown.initial, [], null);
+  state(shown.final, expected, intent.id);
+  assert.deepEqual(shown.diff.observers[0].diff.rows, { added: expected, removed: [], changed: [] });
+  assert.equal(shown.effects.status, 'captured');
+  assert.equal(shown.effects.digest, cut.digest);
+  assert.deepEqual(
+    shown.steps.filter(({ kind }) => kind === 'claim').map(({ title, status }) => ({ title, status })),
+    claims.map(({ title, status }) => ({ title, status })),
+  );
+  const htmlText = html.toString('utf8');
+  for (const value of [scenario, responseTitle, stateTitle, '201'])
+    assert.ok(htmlText.includes(value), 'HTML report omitted ' + value);
   return {
     scenario,
     sandboxId: attemptId,
@@ -131,5 +158,6 @@ export function verifyPaymentReport(report, broken) {
     persistedRows: expected,
     effects: cut.digest,
     claims: claims.map(({ title, status }) => ({ title, status })),
+    report: { jsonDigest: rendered.digest, htmlDigest: digest(html) },
   };
 }
