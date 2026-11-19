@@ -40,6 +40,37 @@ function effectGraph(data: Record<string, unknown>): Record<string, unknown> | n
   return record(data.graph);
 }
 
+function supportedPurpose(value: unknown): boolean {
+  return value === 'initial' || value === 'assertion' || value === 'explicit';
+}
+
+function matchesCapture(
+  linked: ParsedAttachment | undefined,
+  executionId: string,
+  captureId: string,
+): boolean {
+  if (linked === undefined || linked.name !== 'effects.json' || linked.data.kind !== 'stimulus-effects' ||
+    linked.data.executionId !== executionId) { return false; }
+  const identity = record(linked.data.identity);
+  const graph = effectGraph(linked.data);
+  return identity !== null && identity.captureId === captureId && graph !== null &&
+    Array.isArray(graph.effects) && Array.isArray(graph.relations) &&
+    record(linked.data.coverage) !== null;
+}
+
+function captureProblem(
+  executionId: string,
+  value: Json,
+  byDigest: ReadonlyMap<string, ParsedAttachment>,
+): string | null {
+  const capture = record(value);
+  const reference = capture === null ? null : str(capture.reference);
+  const label = `Effects capture ${reference ?? 'without a reference'} is unavailable or invalid`;
+  const captureId = capture === null ? null : str(capture.captureId);
+  if (reference === null || captureId === null || !supportedPurpose(capture === null ? null : capture.purpose)) { return label; }
+  return matchesCapture(byDigest.get(reference), executionId, captureId) ? null : label;
+}
+
 function effectsFor(
   executionId: string,
   artifact: Record<string, unknown> | null,
@@ -47,7 +78,10 @@ function effectsFor(
   problems: string[],
 ): EffectsView {
   const digest = artifact === null ? null : str(artifact.effects);
-  const captures = artifact === null ? [] : items(artifact.effectCaptures).map(json).filter((value): value is Json => value !== null);
+  const captures = artifact === null ? [] : items(artifact.effectCaptures).map(json);
+  const captureProblems = captures.map((value) => captureProblem(executionId, value, byDigest))
+    .filter((value): value is string => value !== null);
+  problems.push(...captureProblems);
   if (digest === null) {
     return { status: 'missing', digest: null, coverage: null, effects: [], relations: [], omitted: null, captures };
   }
@@ -64,16 +98,31 @@ function effectsFor(
     return { status: 'unavailable', digest, coverage: null, effects: [], relations: [], omitted: null, captures };
   }
   return {
-    status: 'captured', digest, coverage: json(match.data.coverage),
+    status: captureProblems.length === 0 ? 'captured' : 'unavailable', digest, coverage: json(match.data.coverage),
     effects: items(graph.effects).map(json),
     relations: items(graph.relations).map(json),
     omitted: json(match.data.omitted), captures,
   };
 }
 
+function validateClaimEvidence(
+  events: readonly Record<string, unknown>[],
+  availableDigests: ReadonlySet<string>,
+  problems: string[],
+): void {
+  for (const event of events.filter((item) => item.kind === 'claim')) {
+    for (const reference of items(event.evidence)) {
+      if (typeof reference !== 'string' || !availableDigests.has(reference)) {
+        problems.push(`Claim evidence ${typeof reference === 'string' ? reference : 'without a reference'} is unavailable`);
+      }
+    }
+  }
+}
+
 function buildExecutions(
   documents: readonly ParsedAttachment[],
   byDigest: ReadonlyMap<string, ParsedAttachment>,
+  availableDigests: ReadonlySet<string>,
   problems: string[],
 ): ExecutionView[] {
   const executions: ExecutionView[] = [];
@@ -88,6 +137,7 @@ function buildExecutions(
     const ids = [...new Set(events.map((event) => str(event.executionId)).filter((id): id is string => id !== null))];
     for (const executionId of ids) {
       const ownEvents = events.filter((event) => event.executionId === executionId);
+      validateClaimEvidence(ownEvents, availableDigests, problems);
       const begin = ownEvents.find((event) => event.kind === 'begin');
       const final = ownEvents.find((event) => event.kind === 'final');
       const artifact = artifacts.find((item) => item.executionId === executionId) ?? null;
@@ -133,16 +183,18 @@ function collectAttachments(result: TestResult, problems: string[]) {
   const parsed: ParsedAttachment[] = [];
   const artifacts: ArtifactView[] = [];
   const byDigest = new Map<string, ParsedAttachment>();
+  const availableDigests = new Set<string>();
   for (const attachment of result.attachments) {
     if (!attachment.name.startsWith('blackbox-') && attachment.name !== 'effects.json') { continue; }
     const artifact = artifactOf(attachment);
     artifacts.push(artifact);
+    if (artifact.digest !== null) { availableDigests.add(artifact.digest); }
     const entry = parsedOf(attachment, problems);
     if (entry === null) { continue; }
     parsed.push(entry);
     if (artifact.digest !== null) { byDigest.set(artifact.digest, entry); }
   }
-  return { parsed, artifacts, byDigest };
+  return { parsed, artifacts, byDigest, availableDigests };
 }
 
 function captureHealthOf(parsed: readonly ParsedAttachment[], executions: readonly ExecutionView[], problems: string[]): AttemptView['evidence']['captureHealth'] {
@@ -179,8 +231,8 @@ function verificationOf(executions: readonly ExecutionView[], problems: readonly
 /** Adapt the exact Playwright attempt attachments; never infer a claim from an unasserted observation. */
 export function buildAttemptView(test: TestCase, result: TestResult): AttemptView {
   const problems: string[] = [];
-  const { parsed, artifacts, byDigest } = collectAttachments(result, problems);
-  const executions = buildExecutions(parsed.filter(({ name }) => name === 'blackbox-execution'), byDigest, problems);
+  const { parsed, artifacts, byDigest, availableDigests } = collectAttachments(result, problems);
+  const executions = buildExecutions(parsed.filter(({ name }) => name === 'blackbox-execution'), byDigest, availableDigests, problems);
   if (!artifacts.some(({ name }) => name === 'blackbox-execution')) {
     problems.push(artifacts.some(({ name }) => name === 'blackbox-attempt')
       ? 'Legacy attempt artifacts were retained, but no stimulus execution record was retained'
