@@ -29,6 +29,7 @@ export interface RunningManager {
   readonly sandbox: SandboxHandle;
   readonly entrypoint: CapsuleEntrypoint;
   readonly telemetryAuthorization: CapsuleTelemetryAuthorization;
+  readonly redactionHeaders: readonly string[];
   readonly drivers: CatalogSandboxInput['drivers'];
   activities: CapsuleActivityReport[];
   record: CapsuleSessionRecord;
@@ -170,9 +171,7 @@ export async function prepareManager(
   });
   record = await persist(
     bootstrap.projectDirectory,
-    transition(record, 'sandbox-starting', {
-      manager: startedManager(),
-    }),
+    transition(record, 'sandbox-starting', { manager: startedManager() }),
   );
   let sandbox: SandboxHandle | undefined;
   const telemetryAuthorization = createTelemetryAuthorization();
@@ -219,6 +218,7 @@ export async function prepareManager(
       entrypoint: acquired.entrypoint,
       telemetryAuthorization,
       drivers: plan.drivers,
+      redactionHeaders: entry.observation.redaction.headers,
       record,
       activities: [...(await readCapsuleActivities(bootstrap))],
     };

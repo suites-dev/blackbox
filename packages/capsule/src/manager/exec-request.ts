@@ -5,7 +5,6 @@ import {
   createTelemetryExecutionScope,
   type TelemetryScopeResult,
 } from '@suites/blackbox-telemetry';
-import type { DriverArgvRedaction } from '@suites/blackbox-driver';
 
 import { normalizeCapsuleActivityName } from '../execution/activity-name.js';
 import {
@@ -15,6 +14,7 @@ import {
 import { executeCapsuleTarget } from '../execution/target.js';
 import { sendResponse } from '../ipc/server.js';
 import type { CapsuleManagerBootstrap, CapsuleManagerRequest } from '../protocol.js';
+import { createRedactionContext, redactActivity } from '../reporting/redaction.js';
 import { recordedError, writeCapsuleActivities } from '../records.js';
 import type { CapsuleActivityReport } from '../model/execution/activity.js';
 import type { CapsuleExecutionInteraction } from '../model/execution/interaction.js';
@@ -69,12 +69,17 @@ async function persistActivity(
   activity: CapsuleActivityReport,
 ): Promise<void> {
   const { input } = context;
-  input.manager.activities = [...input.manager.activities.slice(0, -1), activity];
+  const index = activity.sequence - 1;
+  const redaction = createRedactionContext(input.manager.redactionHeaders);
+  const retained = redactActivity(activity, index, redaction);
+  const activities = [...input.manager.activities];
+  activities[index] = retained;
   await writeCapsuleActivities({
     projectDirectory: input.bootstrap.projectDirectory,
     sessionId: input.bootstrap.sessionId,
-    activities: input.manager.activities,
+    activities,
   });
+  input.manager.activities = activities;
 }
 
 async function exportRoot(
@@ -140,22 +145,13 @@ async function recordCompletedExecution(
   });
 }
 
-function applyArgvRedaction(
-  argv: readonly string[],
-  redaction: DriverArgvRedaction,
-): readonly string[] {
-  return redaction.kind === 'none'
-    ? [...argv]
-    : argv.map((value, index) => (redaction.positions.includes(index) ? '[REDACTED]' : value));
-}
-
 function completedActivityArgv(
   context: ExecutionContext,
   outcome: CapsuleExecutionOutcome,
 ): readonly string[] {
   const target = context.input.request.target;
   return target.kind === 'driver' && outcome.kind === 'driver-completed'
-    ? applyArgvRedaction(target.argv, outcome.redaction.requestArgv)
+    ? target.argv
     : context.admitted.argv;
 }
 
@@ -195,12 +191,7 @@ export async function handleExec(input: HandleExecInput): Promise<void> {
     throw new Error(`Cannot execute against Capsule in ${input.manager.record.state} state`);
   }
   const context = executionContext(input);
-  input.manager.activities = [...input.manager.activities, context.admitted];
-  await writeCapsuleActivities({
-    projectDirectory: input.bootstrap.projectDirectory,
-    sessionId: input.bootstrap.sessionId,
-    activities: input.manager.activities,
-  });
+  await persistActivity(context, context.admitted);
   let outcome: CapsuleExecutionOutcome;
   try {
     outcome = await executeTarget(context);

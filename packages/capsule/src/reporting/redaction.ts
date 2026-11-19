@@ -13,6 +13,7 @@ import type { CapsuleProcessOutcome } from '../model/execution/process-outcome.j
 import type { CapsuleRecordedError } from '../model/recorded-error.js';
 import type { CapsuleReportActivity } from './types.js';
 
+import { retainedTextForRedaction } from '../execution/output-retention.js';
 import { isUnstartedProcess } from '../execution/unstarted-process.js';
 import {
   createRedactionContext,
@@ -42,8 +43,16 @@ function redactProcess(
   const output = {
     ...outcome,
     argv,
-    stdout: redactText(outcome.stdout, `${location}.stdout`, context),
-    stderr: redactText(outcome.stderr, `${location}.stderr`, context),
+    stdout: redactText(
+      retainedTextForRedaction(outcome.stdout, outcome.retention.stdout),
+      `${location}.stdout`,
+      context,
+    ),
+    stderr: redactText(
+      retainedTextForRedaction(outcome.stderr, outcome.retention.stderr),
+      `${location}.stderr`,
+      context,
+    ),
   };
   return output;
 }
@@ -187,50 +196,49 @@ export function redactOutcomeArgv(outcome: CapsuleExecutionOutcome): CapsuleExec
   }
 }
 
-export function redactActivities(input: {
-  readonly activities: readonly CapsuleActivityReport[];
-  readonly context: RedactionContext;
-}): readonly CapsuleReportActivity[] {
-  return input.activities.map((activity, index) => {
-    const location = `activities[${String(index)}]`;
-    const argv = redactArgv({
-      argv: activity.argv,
-      location: `${location}.argv`,
-      context: input.context,
-      explicit: redactionForActivity(activity),
-    });
-    switch (activity.kind) {
-      case 'running':
-        return { ...activity, argv };
-      case 'completed':
-        return {
-          ...activity,
-          argv,
-          telemetry: redactCompletedTelemetry(
-            activity.telemetry,
-            `${location}.telemetry`,
-            input.context,
-          ),
-          outcome: redactOutcome(activity.outcome, `${location}.outcome`, input.context),
-        };
-      case 'interrupted':
-      case 'failed':
-        return {
-          ...activity,
-          argv,
-          telemetry: redactCompletedTelemetry(
-            activity.telemetry,
-            `${location}.telemetry`,
-            input.context,
-          ),
-          error: redactError({
-            error: activity.error,
-            location: `${location}.error`,
-            context: input.context,
-          }),
-        };
-    }
+export function redactActivity(
+  activity: CapsuleActivityReport,
+  index: number,
+  context: RedactionContext,
+): CapsuleReportActivity {
+  const location = `activities[${String(index)}]`;
+  const argv = redactArgv({
+    argv: activity.argv,
+    location: `${location}.argv`,
+    context,
+    explicit: redactionForActivity(activity),
   });
+  switch (activity.kind) {
+    case 'running':
+      return { ...activity, argv };
+    case 'completed':
+      return {
+        ...activity,
+        argv,
+        telemetry: redactCompletedTelemetry(
+          activity.telemetry,
+          `${location}.telemetry`,
+          context,
+        ),
+        outcome: redactOutcome(activity.outcome, `${location}.outcome`, context),
+      };
+    case 'interrupted':
+    case 'failed':
+      return {
+        ...activity,
+        argv,
+        telemetry: redactCompletedTelemetry(
+          activity.telemetry,
+          `${location}.telemetry`,
+          context,
+        ),
+        error: redactError({
+          error: activity.error,
+          location: `${location}.error`,
+          context,
+        }),
+      };
+  }
 }
 
 export function redactError(input: {

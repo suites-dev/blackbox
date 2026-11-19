@@ -5,7 +5,7 @@ import type { CapsuleProgressEvent } from '../progress/events.js';
 import type { CapsuleSessionState } from '../model/session-state.js';
 import { evidenceUpdatedAt, projectObservationPolicy } from './policy.js';
 import { infrastructureContainers } from './resources.js';
-import { createRedactionContext, redactActivities, redactError, redactText } from './redaction.js';
+import { createRedactionContext, redactActivity, redactError, redactText } from './redaction.js';
 import type { CapsuleReportCausality } from './causality/types.js';
 import type {
   CapsuleReportBody,
@@ -139,7 +139,8 @@ function sessionProjection(
 }
 
 export function projectCapsuleReport(input: CapsuleReportProjectionInput): CapsuleReportDocument {
-  const context = createRedactionContext();
+  const policy = projectObservationPolicy(input.progress);
+  const context = createRedactionContext(policy.kind === 'recorded' ? policy.redaction.headers : []);
   const cleanup = cleanupProjection(input, context);
   const entrypoint = input.record.entrypoint;
   const readiness = input.record.readiness;
@@ -150,7 +151,7 @@ export function projectCapsuleReport(input: CapsuleReportProjectionInput): Capsu
     generatedAt: input.generatedAt,
     session,
     lifecycle: lifecycle(input.record.state),
-    observationPolicy: projectObservationPolicy(input.progress),
+    observationPolicy: policy,
     composeProject: input.record.composeProject,
     entrypoint:
       entrypoint.kind === 'unavailable'
@@ -181,7 +182,7 @@ export function projectCapsuleReport(input: CapsuleReportProjectionInput): Capsu
               url: redactText(readiness.value.url, 'readiness.url', context),
             },
           },
-    activities: redactActivities({ activities: input.activities, context }),
+    activities: input.activities.map((activity, index) => redactActivity(activity, index, context)),
     progress: redactProgress({ events: input.progress, context }),
     activityTelemetry: activityTelemetry(input, context),
     observations: projectObservations({
