@@ -29,7 +29,7 @@ export async function runCli(
       await plugin.load();
       plugins.set(plugin.name, plugin);
     }
-    const configuration = { root, plugins };
+    const configuration = { root, plugins, selectedPackages: packages };
     bindCliSkillModules(
       configuration,
       await loadCliSkillModules(new Map(packages.map((candidate) => [candidate.name, candidate]))),
