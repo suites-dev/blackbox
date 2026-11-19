@@ -39,7 +39,7 @@ it('blocks the action for a native soft failure while the native test remains fa
   expect(run.report.stats).toMatchObject({ expected: 0, unexpected: 3, skipped: 0, flaky: 0 });
   expect(run.events).toContainEqual({ kind: 'soft-precondition-blocked', value: 0 });
   expect(run.events).toContainEqual({ kind: 'soft-mixed-failed', value: true });
-  expect(run.events).toContainEqual({ kind: 'structural-mixed-status', value: ['failed', 'failed', 'failed'] });
+  expect(run.events).toContainEqual({ kind: 'structural-mixed-status', value: ['failed', 'failed', 'failed', 'failed', 'failed'] });
 }, 60_000);
 
 it('records real native timeout as interrupted and retains only initial evidence', async () => {

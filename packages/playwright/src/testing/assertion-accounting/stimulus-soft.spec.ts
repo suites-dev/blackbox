@@ -71,8 +71,20 @@ test('unconsumed verification with unavailable effects records a failed claim', 
       try { await expect(selected).not.toHaveEmitted(); } catch { /* deliberately caught inconclusive assertion */ }
     });
   })).rejects.toThrow('unconsumed');
+  await nativeExpect(outcome.verify('And ordinary failures outrank nested unavailable evidence', async () => {
+    try { expect(1).toBe(2); } catch { /* deliberately caught assertion failure */ }
+    await assertionScope(async () => {
+      try { await expect(selected).not.toHaveEmitted(); } catch { /* deliberately caught inconclusive assertion */ }
+    });
+  })).rejects.toThrow();
+  await nativeExpect(outcome.verify('And empty scopes outrank nested unavailable evidence', async () => {
+    try { await assertionScope(() => undefined); } catch { /* deliberately caught empty scope */ }
+    await assertionScope(async () => {
+      try { await expect(selected).not.toHaveEmitted(); } catch { /* deliberately caught inconclusive assertion */ }
+    });
+  })).rejects.toThrow();
   const statuses = lifecycle.journal.events().filter((event) => event.kind === 'claim').map(({ status }) => status);
   record('structural-mixed-status', statuses);
-  nativeExpect(statuses).toEqual(['failed', 'failed', 'failed']);
+  nativeExpect(statuses).toEqual(['failed', 'failed', 'failed', 'failed', 'failed']);
   lifecycle.close(); step.revoke(); registry.close();
 });

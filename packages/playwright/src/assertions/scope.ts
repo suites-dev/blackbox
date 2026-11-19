@@ -96,6 +96,10 @@ function validateScope(scope: AssertionScopeState): void {
 function caughtScopeError(scope: AssertionScopeState, caught: unknown): unknown {
   const structural = structuralFailure(scope);
   if (structural !== null) { return scopeError(scope, structural); }
+  if (caught instanceof AssertionScopeError && caught.code === 'failed') {
+    const aggregate = scopeError(scope, 'failed');
+    return aggregate.failures.length > 0 ? aggregate : caught;
+  }
   if (!(caught instanceof InconclusiveAssertionError)) { return caught; }
   const counts = accounting(scope);
   if (counts.total === 0) { return scopeError(scope, 'empty'); }
