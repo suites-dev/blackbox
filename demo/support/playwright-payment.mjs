@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { copyFile, mkdir, readFile, realpath, writeFile } from 'node:fs/promises';
+import { copyFile, mkdir, readFile, readdir, realpath, writeFile } from 'node:fs/promises';
 import { basename, dirname, join } from 'node:path';
 import { tmpdir } from 'node:os';
 
@@ -73,6 +73,16 @@ try {
       JSON.parse(await readFile(join(directory, 'results.json'))),
       phase === 'broken',
     );
+    const reportRoot = join(directory, 'output/blackbox-report');
+    const scenarios = await readdir(reportRoot);
+    assert.equal(scenarios.length, 1, 'expected one retained Blackbox report');
+    const attemptRoot = join(reportRoot, scenarios[0]);
+    const attempts = await readdir(attemptRoot);
+    assert.equal(attempts.length, 1, 'expected one physical payment attempt report');
+    assert.match(attempts[0], /^retry-0-worker-\d+$/u);
+    const reportDirectory = join(attemptRoot, attempts[0]);
+    assert.equal(digest(await readFile(join(reportDirectory, 'report.json'))), summary.report.jsonDigest);
+    assert.equal(digest(await readFile(join(reportDirectory, 'report.html'))), summary.report.htmlDigest);
     assert.equal(digest(await readFile(contractPath)), hashes.contract);
     assert.equal(digest(await readFile(snapshotPath)), hashes.snapshot);
     const receipt = { phase, exit, inputs, ...summary };

@@ -19,6 +19,7 @@ export default defineConfig({
   snapshotPathTemplate: '{testDir}/snapshots/{arg}{ext}',
   outputDir: join(results, 'output'),
   reporter: [
+    ['@suites/blackbox-playwright/reporter'],
     ['list', { printSteps: true }],
     ['json', { outputFile: join(results, 'results.json') }],
     ['html', { open: 'never', outputFolder: join(results, 'html') }],
