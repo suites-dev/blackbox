@@ -8,7 +8,7 @@ function shortId(id) {
 function statusText(d) {
   if (d.status === 'provisional') return 'provisional (capsule running)';
   if (d.status === 'incomplete') return 'incomplete (' + d.reason + ')';
-  return d.status === 'complete' ? 'complete' : null;
+  return d.status === 'complete' ? 'telemetry window complete' : null;
 }
 function statusTone(d) {
   return d.status === 'complete' ? 'good' : d.status === 'incomplete' ? 'bad' : 'warn';
@@ -26,7 +26,7 @@ function statusBanner(d) {
     p(d.status === 'provisional'
       ? 'Observations may still arrive; export again for the final state.'
       : d.status === 'complete'
-        ? 'The collector stopped cleanly; no further observations will arrive.'
+        ? 'The collector stopped cleanly. Participant operations may emit no spans. A request can write to a database or file and leave only an HTTP span.'
         : 'Some observations may be missing; a missing observation is a limitation, not proof that an operation did not happen.', 'muted'));
   return block;
 }

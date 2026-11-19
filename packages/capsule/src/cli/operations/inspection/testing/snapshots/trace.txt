@@ -1,4 +1,4 @@
-trace e0000002000000000000000000000000 · capsule calm-comet-ada-000000000001 · 19 spans · complete
+trace e0000002000000000000000000000000 · capsule calm-comet-ada-000000000001 · 19 spans · telemetry window complete (participant operations may emit no spans)
   public-api  POST /subscriptions  201
   ├─ public-api  GET
   ├─ public-api  pg-pool.connect

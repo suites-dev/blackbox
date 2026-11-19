@@ -4,7 +4,7 @@ activity c0000003  Queue proof stimulus
   via       redis → redis (redis)
   process   exit 0 on participant redis
   context   not carried: redis is shared state (expected for this driver)
-  observed  nothing observed · complete
+  observed  nothing observed · telemetry window complete (participant operations may emit no spans)
   later in this capsule, no known cause:
     e0000023  redis-proof-consumer  POST /fixture/shared-state-proof/proof-journey  202  +212ms
   ⚠ Blackbox cannot prove that c0000003 caused e0000023.
