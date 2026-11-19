@@ -1,156 +1,19 @@
-import { createBlackboxSystemTest } from '../../fixtures.js';
-import type {
-  BlackboxNativeTestArgs,
-  BlackboxNativeWorkerArgs,
-  BlackboxSandboxSuite,
-  BlackboxSystemScope,
-} from '../../types.js';
+import { createBlackboxTest } from '../../fixtures.js';
 import { systemSandboxRuntime } from './runtime.fixture.js';
 
-const test = createBlackboxSystemTest(systemSandboxRuntime);
-type SystemScope = BlackboxSystemScope<BlackboxNativeTestArgs, BlackboxNativeWorkerArgs>;
-type SandboxSuite = BlackboxSandboxSuite<BlackboxNativeTestArgs, BlackboxNativeWorkerArgs>;
-
-function declareLeaf(system: SystemScope, title: string): void {
-  system.sandbox('guard bypass probe', (suite) => {
-    suite.test(title, ({ sandbox }) => {
-      void sandbox.executionId;
-    });
-  });
+const test = createBlackboxTest(systemSandboxRuntime);
+const scenario = process.env.BLACKBOX_SYSTEM_SANDBOX_SCENARIO;
+if (scenario === 'invalid-selection') {
+  // @ts-expect-error Runtime validation protects JavaScript consumers too.
+  test.use({ blackbox: { system: { kind: 'service', id: 'orders' } } });
+} else if (scenario === 'invalid-environment') {
+  // @ts-expect-error Environment values must also be validated at runtime.
+  test.use({ blackbox: { system: 'orders', environment: { PORT: 3000 } } });
+} else if (scenario !== 'unselected-fixture') {
+  throw new Error('Unknown option validation scenario');
 }
 
-function nestedSandbox(): void {
-  test.system('orders', (system) => {
-    system.sandbox('outer', (suite) => {
-      suite.test('outer body must not run', () => {
-        throw new Error('Outer sandbox body must not execute');
-      });
-      system.sandbox('nested', (suite) => {
-        suite.test('must never be discovered', () => {
-          throw new Error('Nested sandbox body must not execute');
-        });
-      });
-    });
-  });
-}
-
-function nestedFacade(extended: boolean): void {
-  const otherTest = extended ? test.extend({}) : createBlackboxSystemTest(systemSandboxRuntime);
-  test.system('orders', (system) => {
-    system.sandbox('outer', (suite) => {
-      suite.test('outer body must not run', () => {
-        throw new Error('Outer sandbox body must not execute');
-      });
-      otherTest.system('orders', (otherSystem) => {
-        declareLeaf(otherSystem, 'nested facade guard bypass probe');
-      });
-    });
-  });
-}
-
-function asyncSystem(): void {
-  // The public callback result is intentionally broad; runtime validation rejects promises.
-  test.system('orders', async (system) => {
-    declareLeaf(system, 'async system guard bypass probe');
-    await Promise.resolve();
-  });
-}
-
-function asyncSandbox(): void {
-  test.system('orders', (system) => {
-    // The public callback result is intentionally broad; runtime validation rejects promises.
-    system.sandbox('async', async (suite) => {
-      suite.test('async sandbox guard bypass probe', ({ sandbox }) => {
-        void sandbox.executionId;
-      });
-      await Promise.resolve();
-    });
-  });
-}
-
-function escapedSystem(): void {
-  let escaped: (() => void) | undefined;
-  test.system('orders', (system) => {
-    escaped = () => {
-      system.sandbox('escaped', (suite) => {
-        suite.test('must never be discovered', () => {
-          throw new Error('Escaped system body must not execute');
-        });
-      });
-    };
-  });
-  escaped!();
-}
-
-function invalidSelection(): void {
-  Reflect.apply(test.system.bind(test), undefined, [
-    { kind: 'service', id: 'orders' },
-    (system: SystemScope) => {
-      declareLeaf(system, 'invalid selection guard bypass probe');
-    },
-  ]);
-}
-
-function invalidEnvironment(): void {
-  test.system('orders', (system) => {
-    Reflect.apply(system.sandbox.bind(system), undefined, [
-      'invalid environment',
-      { environment: { PORT: 3000 } },
-      (suite: SandboxSuite) => {
-        suite.test('invalid environment guard bypass probe', ({ sandbox }) => {
-          void sandbox.executionId;
-        });
-      },
-    ]);
-  });
-}
-
-function directSandboxMisuse(): void {
-  test.system.sandbox('orders', async (suite) => {
-    suite.test('async direct guard bypass probe', () => undefined);
-    await Promise.resolve();
-  });
-}
-
-function nestedDirectSandbox(): void {
-  test.system.sandbox('orders', () => {
-    test.system.sandbox('nested', (suite) => {
-      suite.test('nested direct guard bypass probe', () => undefined);
-    });
-  });
-}
-
-switch (process.env.BLACKBOX_SYSTEM_SANDBOX_SCENARIO) {
-  case 'async-direct-sandbox':
-    directSandboxMisuse();
-    break;
-  case 'nested-direct-sandbox':
-    nestedDirectSandbox();
-    break;
-  case 'nested-sandbox':
-    nestedSandbox();
-    break;
-  case 'nested-independent-facade':
-    nestedFacade(false);
-    break;
-  case 'nested-extended-facade':
-    nestedFacade(true);
-    break;
-  case 'async-system':
-    asyncSystem();
-    break;
-  case 'async-sandbox':
-    asyncSandbox();
-    break;
-  case 'escaped-system':
-    escapedSystem();
-    break;
-  case 'invalid-selection':
-    invalidSelection();
-    break;
-  case 'invalid-environment':
-    invalidEnvironment();
-    break;
-  default:
-    throw new Error('Unknown declaration validation scenario');
-}
+test('invalid options cannot enter the body', ({ sandbox }) => {
+  void sandbox;
+  throw new Error('Invalid option body must not execute');
+});

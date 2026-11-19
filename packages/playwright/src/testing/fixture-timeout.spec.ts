@@ -7,7 +7,7 @@ import type { BlackboxAttemptRuntime } from '../runtime/acquisition.js';
 
 const runtime = {
   async start(input) {
-    if (input.selection.kind === 'unselected') {
+    if (input.selection.kind === 'unselected' || input.selection.kind === 'catalog-entry') {
       throw new Error('test fixture did not select a catalog entry');
     }
     await delay(100);
@@ -78,7 +78,7 @@ const boundedStopTest = createBlackboxTest(verySlowStopRuntime, {
 });
 
 test.describe('fixture acquisition timeout', () => {
-  test.use({ catalogEntry: { kind: 'system', id: 'orders' } });
+  test.use({ blackbox: { system: { kind: 'system', id: 'orders' } } });
   test.setTimeout(20);
 
   test('times out before a slow acquisition reaches the test body', () => {
@@ -87,7 +87,7 @@ test.describe('fixture acquisition timeout', () => {
 });
 
 boundedTest.describe('bounded fixture acquisition cleanup', () => {
-  boundedTest.use({ catalogEntry: { kind: 'system', id: 'orders' } });
+  boundedTest.use({ blackbox: { system: { kind: 'system', id: 'orders' } } });
   boundedTest.setTimeout(20);
 
   boundedTest('reports when late acquisition cleanup does not settle', () => {
@@ -96,7 +96,7 @@ boundedTest.describe('bounded fixture acquisition cleanup', () => {
 });
 
 boundedStopTest.describe('bounded fixture teardown', () => {
-  boundedStopTest.use({ catalogEntry: { kind: 'system', id: 'orders' } });
+  boundedStopTest.use({ blackbox: { system: { kind: 'system', id: 'orders' } } });
   boundedStopTest.setTimeout(500);
 
   boundedStopTest('reports when sandbox teardown does not settle', () => {

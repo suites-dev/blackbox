@@ -1,8 +1,8 @@
 #!/usr/bin/env node
-// Real CLI and Playwright/Sandbox lifecycle proof. Business closures are deliberately empty.
+// Execute generated Feature business callbacks against packed packages and isolated real systems.
 import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
-import { randomBytes } from 'node:crypto';
+import { createHash, randomBytes } from 'node:crypto';
 import {
   cp,
   mkdir,
@@ -19,12 +19,15 @@ import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 
-import { compareStructure, skeleton } from './structure.mjs';
+import { businessCallbacks, compareStructure, executionSuite } from './structure.mjs';
+import { prepareRefundPersistenceFault } from './fault-control.mjs';
 import {
   dockerResources,
   recordsUnder,
   recoverRecords,
   verifyReport,
+  verifyRefundFailure,
+  verifyDisjointSandboxes,
   verifySandboxes,
 } from './proof.mjs';
 
@@ -64,7 +67,7 @@ delete env.NODE_OPTIONS;
 const { version } = JSON.parse(await readFile(join(workspace, 'lerna.json'), 'utf8'));
 let commandIndex = 0;
 
-async function command(cwd, executable, arguments_, expected = 0) {
+async function commandResult(cwd, executable, arguments_, expected = 0) {
   const name = String(++commandIndex).padStart(3, '0');
   let result;
   try {
@@ -98,7 +101,11 @@ async function command(cwd, executable, arguments_, expected = 0) {
       expected,
       `Command failed: ${arguments_.join(' ')}; see ${name}.log`,
     );
-  return `${result.stdout}${result.stderr}`;
+  return { output: `${result.stdout}${result.stderr}`, exitCode: result.status };
+}
+
+async function command(cwd, executable, arguments_, expected = 0) {
+  return (await commandResult(cwd, executable, arguments_, expected)).output;
 }
 
 async function prepare(project, retained) {
@@ -168,13 +175,12 @@ async function prepare(project, retained) {
   return { blackbox, playwright: join(project, 'node_modules/.bin/playwright'), recoverSandbox };
 }
 
-function config(directory, results) {
+function config(directory, results, configFile = './blackbox.config.yaml') {
   return `import { defineConfig } from '@suites/blackbox-playwright/config';
 export default defineConfig({
-  blackboxConfigFile: './blackbox.config.yaml', testDir: ${JSON.stringify(directory)},
+  blackboxConfigFile: ${JSON.stringify(configFile)}, testDir: ${JSON.stringify(directory)},
   testMatch: '*.spec.ts', workers: 2, fullyParallel: true, retries: 0, timeout: 180000,
   preserveOutput: 'always', outputDir: ${JSON.stringify(join(results, 'output'))},
-  use: { blackboxEnvironment: { FIXTURE_CONTROL_TOKEN: process.env.FIXTURE_CONTROL_TOKEN } },
   reporter: [['./feature-reporter.mjs', { outputFile: ${JSON.stringify(join(results, 'steps.json'))} }], ['list', { printSteps: true }], ['@suites/blackbox-playwright/reporter', { sandboxLifecycle: true }], ['json', { outputFile: ${JSON.stringify(join(results, 'results.json'))} }]],
 });\n`;
 }
@@ -238,20 +244,46 @@ async function compile(project, blackbox, generated, transcript) {
       output,
     ]);
     const hand = await readFile(join(project, `features/${name}.spec.ts`), 'utf8');
-    const cases = await compareStructure(pristine, hand);
+    const selection = /@(system|subsystem):([\w-]+)/u.exec(
+      await readFile(join(project, source), 'utf8'),
+    );
+    assert.ok(selection, 'Reviewed Feature must declare its catalog selection');
+    const catalog = [{ kind: selection[1], id: selection[2] }];
+    const cases = await compareStructure(pristine, hand, catalog);
     model.push(...cases);
     await assert.rejects(
       compareStructure(
         pristine.replace('Then the response status is', 'Then WRONG response status is'),
         hand,
+        catalog,
       ),
       /structure differs/u,
     );
-    await writeFile(join(project, `skeleton/${name}.spec.ts`), skeleton(pristine));
+    const environmentSources = { FIXTURE_CONTROL_TOKEN: 'FIXTURE_CONTROL_TOKEN' };
+    const execution = executionSuite(pristine, environmentSources);
+    await compareStructure(execution, executionSuite(hand, environmentSources), catalog);
+    await writeFile(join(project, `execution/${name}.spec.ts`), execution);
+    const callbacks = businessCallbacks(pristine);
+    assert.deepEqual(businessCallbacks(execution), callbacks);
+    await writeFile(
+      join(project, `execution/${name}.callbacks.json`),
+      JSON.stringify(
+        {
+          count: callbacks.length,
+          pristineSha256: createHash('sha256').update(JSON.stringify(callbacks)).digest('hex'),
+          executionSha256: createHash('sha256')
+            .update(JSON.stringify(businessCallbacks(execution)))
+            .digest('hex'),
+        },
+        null,
+        2,
+      ),
+    );
     transcript.push(
       `${name}: file validate; suite emit; pristine suite validate`,
       `  overwrite refused; drift rejected; restored suite validated`,
       `  declaration/step-title structure matches ${cases.length} hand-authored cases; changed-title control rejected`,
+      '  generated business callbacks unchanged; only explicit environment configuration added',
     );
   }
   const unsupported = 'features/redis-proof-delivery.feature';
@@ -281,55 +313,144 @@ async function compile(project, blackbox, generated, transcript) {
   return model;
 }
 
-async function nestedNegative(project, playwright, transcript) {
-  await mkdir(join(project, 'nested'));
-  await mkdir(join(project, 'nested-results'));
-  await writeFile(join(project, 'nested.spec.config.ts'), config('./nested', './nested-results'));
+async function unselectedNegative(project, playwright, transcript) {
+  await mkdir(join(project, 'unselected'));
+  await mkdir(join(project, 'unselected-results'));
   await writeFile(
-    join(project, 'nested/illegal.spec.ts'),
+    join(project, 'unselected.spec.config.ts'),
+    config('./unselected', './unselected-results'),
+  );
+  await writeFile(
+    join(project, 'unselected/missing-system.spec.ts'),
     `import { writeFileSync } from 'node:fs';
 import { test } from '@suites/blackbox-playwright';
-test.system({ kind: 'subsystem', id: 'payment-mock' }, (system) => {
-  system.sandbox('outer', (suite) => {
-    suite.test('must not execute', ({ sandbox }) => { writeFileSync('body-ran', sandbox.sandboxId); });
-    system.sandbox('nested', () => {});
-  });
-});\n`,
+test('must not execute', ({ sandbox }) => { writeFileSync('body-ran', sandbox.sandboxId); });\n`,
   );
   const before = await dockerResources();
   const output = await command(
     project,
     playwright,
-    ['test', '--config', 'nested.spec.config.ts'],
+    ['test', '--config', 'unselected.spec.config.ts'],
     'failure',
   );
-  assert.match(output, /sandbox declarations cannot be nested/u);
+  assert.match(output, /selects a system/u);
   assert.doesNotMatch(output, /Blackbox: sandbox (?:ready|cleaned up)|acquisition: started/u);
-  const report = JSON.parse(await readFile(join(project, 'nested-results/results.json'), 'utf8'));
-  assert.ok(
-    report.errors.some((error) => error.message.includes('sandbox declarations cannot be nested')),
+  const report = JSON.parse(
+    await readFile(join(project, 'unselected-results/results.json'), 'utf8'),
   );
+  assert.ok(report.suites.some((suite) => JSON.stringify(suite).includes('selects a system')));
   assert.equal(
-    report.stats.expected + report.stats.unexpected + report.stats.skipped + report.stats.flaky,
-    0,
-    'Nested declaration executed a test',
+    report.stats.unexpected,
+    1,
+    'Missing-system fixture did not fail its discovered test',
   );
   await assert.rejects(stat(join(project, 'body-ran')), { code: 'ENOENT' });
   assert.deepEqual(
-    await recordsUnder(join(project, 'nested-results')),
+    await recordsUnder(join(project, 'unselected-results')),
     [],
-    'Nested declaration acquired a Sandbox',
+    'Missing-system fixture acquired a Sandbox',
   );
-  assert.deepEqual(await dockerResources(), before, 'Nested declaration changed Docker resources');
+  assert.deepEqual(
+    await dockerResources(),
+    before,
+    'Missing-system fixture changed Docker resources',
+  );
   transcript.push(
-    'nested sandbox: collection rejected; 0 executed tests; 0 Sandbox records; Docker resources unchanged',
+    'unselected system: fixture rejected; 1 failed test; body not executed; 0 Sandbox records; Docker resources unchanged',
+  );
+}
+
+async function refundPersistenceNegative(project, runtime, model, transcript) {
+  const generatedSuite = join(project, 'execution/payment-refunds.spec.ts');
+  const unchangedSuite = await readFile(generatedSuite, 'utf8');
+  const fault = await prepareRefundPersistenceFault(project);
+  runtime.fault = fault;
+  await writeFile(
+    join(project, 'fault-control.json'),
+    JSON.stringify(
+      {
+        ...fault,
+        generatedSuiteSha256: createHash('sha256').update(unchangedSuite).digest('hex'),
+      },
+      null,
+      2,
+    ),
+  );
+  await mkdir(join(project, 'fault-results'));
+  await writeFile(
+    join(project, 'fault.spec.config.ts'),
+    config('./execution', './fault-results', fault.configFile),
+  );
+  const result = await commandResult(
+    project,
+    runtime.playwright,
+    [
+      'test',
+      '--config',
+      'fault.spec.config.ts',
+      '--grep',
+      'Scenario: A repeated refund retains exactly one refund',
+    ],
+    'failure',
+  );
+  const report = JSON.parse(await readFile(join(project, 'fault-results/results.json'), 'utf8'));
+  const live = JSON.parse(await readFile(join(project, 'fault-results/steps.json'), 'utf8'));
+  assert.equal(
+    await readFile(generatedSuite, 'utf8'),
+    unchangedSuite,
+    'Fault control changed the generated refund scenario',
+  );
+  verifyRefundFailure(report, model, live, result.exitCode);
+  const records = await recordsUnder(join(project, 'fault-results'));
+  await verifySandboxes(records, 1, dockerResources, { stopReason: 'failed' });
+  const count = verifyDisjointSandboxes(runtime.positiveRecords, records);
+  assert.equal(count, 8, 'Expected seven positive and one fault Sandbox');
+  await writeFile(
+    join(project, 'attempt-isolation.json'),
+    JSON.stringify(
+      {
+        count,
+        attempts: [...runtime.positiveRecords, ...records].map(({ value }) => ({
+          sandboxId: value.sandboxId,
+          projectName: value.projectName,
+          stopReason: value.stopReason,
+          cleanup: value.cleanup,
+        })),
+      },
+      null,
+      2,
+    ),
+  );
+  transcript.push(
+    'refund persistence fault: unchanged generated repeated-refund scenario; HTTP 201 then 409; final retained-state assertion failed',
+    'Fault Playwright: 1 discovered, 1 failed as intended, 0 skipped, 0 retried',
+    'Fault Sandbox: 1 distinct record; failed; cleanup complete; 0 owned Docker resources remain',
+  );
+}
+
+async function removeFaultImage(project, retained, fault) {
+  const existing = await command(project, 'docker', ['image', 'ls', '--quiet', fault.image]);
+  if (existing.trim()) await command(project, 'docker', ['image', 'rm', fault.image]);
+  const remaining = await command(project, 'docker', ['image', 'ls', '--quiet', fault.image]);
+  assert.equal(remaining.trim(), '', 'Owned fault image remains after cleanup');
+  await writeFile(
+    join(retained, 'fault-image-cleanup.json'),
+    JSON.stringify(
+      {
+        image: fault.image,
+        removed: existing.trim() !== '',
+        remaining: [],
+      },
+      null,
+      2,
+    ),
   );
 }
 
 async function cleanup(project, retained, runtime) {
   if (runtime) {
     const records = [];
-    for (const name of ['results', 'nested-results']) {
+    for (const name of ['results', 'unselected-results', 'fault-results']) {
       try {
         records.push(...(await recordsUnder(join(project, name))));
       } catch (error) {
@@ -338,8 +459,21 @@ async function cleanup(project, retained, runtime) {
     }
     const recovery = await recoverRecords(records, runtime.recoverSandbox);
     await writeFile(join(retained, 'recovery.json'), JSON.stringify(recovery, null, 2));
+    if (runtime.fault) await removeFaultImage(project, retained, runtime.fault);
   }
-  for (const name of ['generated', 'skeleton', 'results', 'nested-results']) {
+  for (const name of [
+    'generated',
+    'execution',
+    'results',
+    'unselected-results',
+    'fault-results',
+    'fault-control.json',
+    'attempt-isolation.json',
+    'fault-blackbox.config.yaml',
+    '.blackbox/catalog/payment-refund-persistence-fault.yml',
+    'refund-persistence-fault.diff',
+    'fault-sut',
+  ]) {
     try {
       await cp(join(project, name), join(retained, name), { recursive: true });
     } catch (error) {
@@ -355,27 +489,28 @@ async function run(pass) {
   await mkdir(retained);
   const transcript = [
     'Feature CLI journey',
-    'Scope: generated declarations, step titles, client readiness, Sandbox acquisition and cleanup.',
-    'Business step bodies: empty; business semantics are not tested.',
+    'Scope: generated business operations and assertions, declarations, client readiness, Sandbox isolation and cleanup.',
+    'Business step bodies: unchanged generated callbacks; real positive execution and retained-refund fault control.',
   ];
   let runtime;
   let failure;
   try {
     runtime = await prepare(project, retained);
     await mkdir(join(project, 'generated'));
-    await mkdir(join(project, 'skeleton'));
+    await mkdir(join(project, 'execution'));
     const model = await compile(project, runtime.blackbox, 'generated', transcript);
     assert.equal(model.length, 7, 'Expected five subscription and two refund scenarios');
     await writeFile(join(retained, 'structure.json'), JSON.stringify(model, null, 2));
-    await nestedNegative(project, runtime.playwright, transcript);
+    await unselectedNegative(project, runtime.playwright, transcript);
     await mkdir(join(project, 'results'));
-    await writeFile(join(project, 'playwright.config.ts'), config('./skeleton', './results'));
+    await writeFile(join(project, 'playwright.config.ts'), config('./execution', './results'));
     await command(project, runtime.playwright, ['test', '--config', 'playwright.config.ts']);
     const report = JSON.parse(await readFile(join(project, 'results/results.json'), 'utf8'));
     const steps = JSON.parse(await readFile(join(project, 'results/steps.json'), 'utf8'));
     verifyReport(report, model, steps);
     const records = await recordsUnder(join(project, 'results'));
     await verifySandboxes(records, model.length);
+    runtime.positiveRecords = records;
     for (const scenario of model) {
       transcript.push(
         `${scenario.path.join(' / ')} / ${scenario.title}${scenario.example ? ` [${scenario.example}]` : ''}`,
@@ -389,6 +524,7 @@ async function run(pass) {
       'Sandbox: 7 distinct records and Compose projects; completed; cleanup complete',
       'Docker: 0 owned containers, networks, or volumes remain',
     );
+    await refundPersistenceNegative(project, runtime, model, transcript);
   } catch (error) {
     failure = error;
   } finally {

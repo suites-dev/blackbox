@@ -1,17 +1,9 @@
-import type { test } from '@suites/blackbox-playwright';
+import type { BlackboxNativeStep, BlackboxTestArgs } from '@suites/blackbox-playwright';
 
 import type { SandboxCredentials } from './credentials.js';
 
-// @suites/blackbox-playwright exports the facade but not its argument types,
-// so they are read from the facade's own signatures. Parameters<> takes the
-// last overload: sandbox(name, options, callback) and test(title, details, body).
-type Facade = typeof test;
-type SystemScope = Parameters<Parameters<Facade['system']>[1]>[0];
-type SandboxSuite = Parameters<Parameters<SystemScope['sandbox']>[2]>[0];
-type NativeTestArgs = Parameters<Parameters<SandboxSuite['test']>[2]>[0];
-
-/** The facade's native step: a titled, optionally boxed and located Playwright step. */
-export type BlackboxStep = Facade['step'];
+/** A native titled Playwright step. */
+export type BlackboxStep = BlackboxNativeStep;
 
 /**
  * What a step contributes to a scenario. The compiler reads the kind to
@@ -43,7 +35,7 @@ export type StepFixtureName =
 
 export type StepFixtures = Partial<
   Readonly<
-    Pick<NativeTestArgs, Exclude<StepFixtureName, 'credentials' | 'world'>> & {
+    Pick<BlackboxTestArgs, Exclude<StepFixtureName, 'credentials' | 'world'>> & {
       readonly credentials: SandboxCredentials;
       readonly world: ScenarioWorld;
     }

@@ -85,88 +85,34 @@ it('does not subtract near-half acquisition time from the native body timeout', 
 });
 
 it.each([
-  {
-    file: 'illegal-nesting.spec.ts',
-    scenario: 'async-direct-sandbox',
-    message: /system\.sandbox callback must be synchronous/u,
-  },
-  {
-    file: 'illegal-nesting.spec.ts',
-    scenario: 'nested-direct-sandbox',
-    message: /test\.system declarations cannot be nested/u,
-  },
-  {
-    file: 'illegal-nesting.spec.ts',
-    scenario: 'nested-sandbox',
-    message: /sandbox declarations cannot be nested/u,
-  },
-  ...['nested-independent-facade', 'nested-extended-facade'].map((scenario) => ({
-    file: 'illegal-nesting.spec.ts',
+  { scenario: 'invalid-selection', message: /system.*(?:system|subsystem)/u },
+  { scenario: 'invalid-environment', message: /environment.*PORT.*string/u },
+  { scenario: 'unselected-fixture', message: /(?:select|selection|selected)/u },
+])('rejects invalid native options $scenario before acquisition', async ({ scenario, message }) => {
+  const run = await runPlaywright({
+    configFile: 'system-sandbox-declarations.config.ts',
+    testFile: 'illegal-nesting.spec.ts',
+    jsonReport: false,
     scenario,
-    message: /test\.system declarations cannot be nested/u,
-  })),
-  {
-    file: 'illegal-nesting.spec.ts',
-    scenario: 'async-system',
-    message: /test\.system callback must be synchronous/u,
-  },
-  {
-    file: 'illegal-nesting.spec.ts',
-    scenario: 'async-sandbox',
-    message: /system\.sandbox callback must be synchronous/u,
-  },
-  {
-    file: 'illegal-nesting.spec.ts',
-    scenario: 'escaped-system',
-    message: /system scope cannot be used after its callback returns/u,
-  },
-  {
-    file: 'illegal-nesting.spec.ts',
-    scenario: 'invalid-selection',
-    message: /system selection must identify a system or subsystem/u,
-  },
-  {
-    file: 'illegal-nesting.spec.ts',
-    scenario: 'invalid-environment',
-    message: /sandbox environment value "PORT" must be a string/u,
-  },
-  {
-    file: 'escaped-declaration.spec.ts',
+  });
+  expect(run.code, run.output).toBe(1);
+  expect(run.output).toMatch(message);
+  expect(eventsOf(run, 'start')).toHaveLength(0);
+  expect(run.output).not.toContain('Invalid option body must not execute');
+});
+
+it('runs an ordinary unselected native test without acquiring a sandbox', async () => {
+  const run = await runPlaywright({
+    configFile: 'system-sandbox-declarations.config.ts',
+    testFile: 'flat-root.spec.ts',
+    jsonReport: false,
     scenario: 'default',
-    message:
-      /(?:sandbox suite cannot be used after its declaration callback returns|Cannot perform 'apply' on a proxy that has been revoked)/u,
-  },
-  {
-    file: 'suite-hooks.spec.ts',
-    scenario: 'default',
-    message: /unsupported\.beforeAll is not a function/u,
-  },
-  {
-    file: 'flat-root.spec.ts',
-    scenario: 'default',
-    message: /tests must be declared inside test\.system\(.+\)\.sandbox\(.+\)/u,
-  },
-  {
-    file: 'nested-root-hook.spec.ts',
-    scenario: 'default',
-    message:
-      /test\.beforeAll must be registered outside test\.system(?: and sandbox)? declarations/u,
-  },
-])(
-  'rejects invalid declaration $scenario in $file before acquisition',
-  async ({ file, scenario, message }) => {
-    const run = await runPlaywright({
-      configFile: 'system-sandbox-declarations.config.ts',
-      testFile: file,
-      jsonReport: false,
-      scenario,
-    });
-    expect(run.code, run.output).toBe(1);
-    expect(run.output).toMatch(message);
-    expect(eventsOf(run, 'start')).toHaveLength(0);
-    expect(run.output).not.toContain('Outer sandbox body must not execute');
-  },
-);
+  });
+  expect(run.code, run.output).toBe(0);
+  expect(eventsOf(run, 'ordinary-body')).toHaveLength(1);
+  expect(eventsOf(run, 'start')).toHaveLength(0);
+  expect(eventsOf(run, 'stop')).toHaveLength(0);
+});
 
 it.each([
   { scenario: 'direct-before-all', attempts: 0 },
@@ -192,4 +138,37 @@ it.each([
     expect(eventString(stops[0], 'executionId')).toBe(eventString(starts[0], 'executionId'));
     expect(eventString(stops[0], 'reason')).toBe('completed');
   }
+});
+
+it('preserves native tags, nested hooks, extension, merging, and option replacement', async () => {
+  const run = await runPlaywright({
+    configFile: 'system-sandbox-declarations.config.ts',
+    testFile: 'native-compatibility.spec.ts',
+    jsonReport: false,
+    scenario: 'default',
+  });
+  expect(run.code, run.output).toBe(0);
+  for (const kind of ['nested-before-all', 'nested-after-all', 'merged-body', 'replacement-body']) {
+    expect(eventsOf(run, kind)).toHaveLength(1);
+  }
+  const starts = eventsOf(run, 'start');
+  const stops = eventsOf(run, 'stop');
+  expect(starts).toHaveLength(2);
+  expect(stops).toHaveLength(2);
+  expect(eventsOf(run, 'merged-hook')).toHaveLength(2);
+  expect(
+    starts.map(({ raw }) => ({ selection: raw.selection, environment: raw.environment })),
+  ).toEqual([
+    { selection: { kind: 'system', id: 'parent' }, environment: { PARENT: 'present' } },
+    { selection: { kind: 'subsystem', id: 'child' }, environment: {} },
+  ]);
+  for (const start of starts) {
+    expect(stops.filter((stop) => stop.raw.executionId === start.raw.executionId)).toHaveLength(1);
+  }
+  expect(run.events.indexOf(eventsOf(run, 'nested-before-all')[0])).toBeLessThan(
+    run.events.indexOf(starts[0]),
+  );
+  expect(run.events.indexOf(eventsOf(run, 'nested-after-all')[0])).toBeGreaterThan(
+    run.events.indexOf(stops[1]),
+  );
 });

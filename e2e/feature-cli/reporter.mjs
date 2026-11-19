@@ -1,6 +1,19 @@
 import { writeFile } from 'node:fs/promises';
 
-/** Playwright's JSON report omits hook steps; capture their completed live events too. */
+function descendants(step) {
+  return (step.steps ?? []).flatMap((child) => [child, ...descendants(child)]);
+}
+
+function observed(step) {
+  return {
+    title: step.title,
+    ...(step.subtitle ? { subtitle: step.subtitle } : {}),
+    failed: Boolean(step.error),
+    ...(step.error ? { error: step.error.message ?? String(step.error) } : {}),
+  };
+}
+
+/** Capture completed business descendants; readiness assertions outside these steps do not count. */
 export default class FeatureSteps {
   constructor(options) {
     this.outputFile = options.outputFile;
@@ -18,7 +31,12 @@ export default class FeatureSteps {
 
   onStepEnd(_test, result, step) {
     if (step.category === 'test.step' && /^(Given|When|Then|And|But|\*) /u.test(step.title)) {
-      this.attempts.get(result).steps.push({ title: step.title, failed: Boolean(step.error) });
+      const children = descendants(step);
+      this.attempts.get(result).steps.push({
+        ...observed(step),
+        assertions: children.filter((child) => child.category === 'expect').map(observed),
+        requests: children.filter((child) => child.category === 'pw:api').map(observed),
+      });
     }
   }
 

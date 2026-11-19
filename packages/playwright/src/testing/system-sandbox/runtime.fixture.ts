@@ -18,7 +18,7 @@ export function record(event: Readonly<Record<string, unknown>>): void {
 export async function startRespondingAttempt(
   input: BlackboxAttemptInput,
 ): Promise<RunningBlackboxAttempt> {
-  if (input.selection.kind === 'unselected') {
+  if (input.selection.kind === 'unselected' || input.selection.kind === 'catalog-entry') {
     throw new Error('System sandbox test did not select a catalog entry');
   }
 

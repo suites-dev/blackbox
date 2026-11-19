@@ -2,6 +2,8 @@ import { join } from 'node:path';
 
 import { defineConfig } from '@suites/blackbox-playwright/config';
 
+import { blackboxEnvironment } from './tests/playwright/support.js';
+
 function requiredEnvironment(name: string): string {
   const value = process.env[name];
   if (value === undefined || value.length === 0) {
@@ -18,7 +20,11 @@ if (!['retained-first', 'retained-second', 'default-off', 'write-failure'].inclu
 // Omitting the option in default-off exercises the shipped fixture default.
 const use = {
   trace: 'off' as const,
-  ...(mode === 'default-off' ? {} : { blackboxRetainAttempts: true }),
+  blackbox: {
+    system: 'payment-mock',
+    environment: blackboxEnvironment,
+    ...(mode === 'default-off' ? {} : { retainAttempts: true }),
+  },
 };
 
 export default defineConfig({

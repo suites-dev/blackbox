@@ -6,7 +6,7 @@ import {
 } from '../testing/system-sandbox-harness/native-runner.js';
 
 afterEach(cleanupNativeRuns);
-it.each(['default', 'direct-sandbox', 'client-readiness-failure'])(
+it.each(['default', 'direct-native', 'client-readiness-failure'])(
   'owns native client lifecycle for %s',
   async (scenario) => {
     const run = await runPlaywright({
@@ -51,7 +51,7 @@ it.each(['client-readiness-timeout', 'client-create-late'])(
   },
 );
 
-it('allows healthy client setup within a 100ms native test timeout', async () => {
+it('allows asynchronous client setup inside a finite native test timeout', async () => {
   const run = await runPlaywright({
     configFile: 'system-sandbox-declarations.config.ts',
     testFile: 'clients.spec.ts',

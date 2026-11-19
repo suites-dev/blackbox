@@ -2,8 +2,7 @@ import { createServer, type Server } from 'node:http';
 
 import { expect as playwrightExpect } from '@playwright/test';
 
-import { createBlackboxSystemTest } from '../../fixtures.js';
-import { test as publicTest } from '../../index.js';
+import { createBlackboxTest } from '../../fixtures.js';
 import type { BlackboxAttemptRuntime } from '../../runtime/acquisition.js';
 import { joinParallelBarrier } from '../system-sandbox-harness/barrier-client.fixture.js';
 import { record, startRespondingAttempt } from './runtime.fixture.js';
@@ -30,7 +29,7 @@ const rendezvousRuntime = {
   },
 } satisfies BlackboxAttemptRuntime;
 
-const test = createBlackboxSystemTest(rendezvousRuntime);
+const test = createBlackboxTest(rendezvousRuntime);
 const extendedTest = test.extend<AuditFixtures>({
   auditAttempt: [
     async ({ sandbox }, use) => {
@@ -84,74 +83,87 @@ test.afterAll(async ({ request }) => {
   });
 });
 
-test.system('orders', (system) => {
-  system.sandbox('blue', { environment: { REGION: 'eu', TENANT: 'blue' } }, (suite) => {
-    suite.beforeEach(({ sandbox }, testInfo) => {
-      record({
-        kind: 'beforeEach',
-        executionId: sandbox.executionId,
-        title: testInfo.title,
-        retry: testInfo.retry,
-      });
-    });
-
-    suite.afterEach(({ sandbox }, testInfo) => {
-      record({
-        kind: 'afterEach',
-        executionId: sandbox.executionId,
-        title: testInfo.title,
-        retry: testInfo.retry,
-      });
-    });
-
-    suite.describe('nested checkout flow', () => {
-      suite.test('fixtureless acquisition keeps native steps', async () => {
-        await test.step('outer user step', async () => {
-          await test.step('nested user step', () => {
-            playwrightExpect(true).toBe(true);
-          });
-        });
-      });
-
-      suite.test(
-        'hooks body and native request share one attempt',
-        async ({ request, sandbox }, testInfo) => {
-          playwrightExpect(testInfo.project.use.baseURL).toBe(
-            'http://127.0.0.1:1/static-native-base/',
-          );
-          const response = await request.get('/orders?source=native');
-          playwrightExpect(response.ok()).toBe(true);
-          playwrightExpect(await response.json()).toEqual({
-            executionId: sandbox.executionId,
-            method: 'GET',
-            path: '/orders?source=native',
-          });
-          record({
-            kind: 'body',
-            executionId: sandbox.executionId,
-            title: testInfo.title,
-            retry: testInfo.retry,
-            workerIndex: testInfo.workerIndex,
-            parallelIndex: testInfo.parallelIndex,
-          });
-        },
-      );
-
-      suite.test('retry receives a fresh attempt', ({ sandbox }, testInfo) => {
-        record({
-          kind: 'retry-body',
-          executionId: sandbox.executionId,
-          retry: testInfo.retry,
-          workerIndex: testInfo.workerIndex,
-          parallelIndex: testInfo.parallelIndex,
-        });
-        playwrightExpect(testInfo.retry).toBe(1);
-      });
+function declareBlue(): void {
+  test.use({
+    blackbox: {
+      system: { kind: 'system', id: 'orders' },
+      environment: { REGION: 'eu', TENANT: 'blue' },
+    },
+  });
+  test.beforeEach(({ sandbox }, testInfo) => {
+    record({
+      kind: 'beforeEach',
+      executionId: sandbox.executionId,
+      title: testInfo.title,
+      retry: testInfo.retry,
     });
   });
 
-  system.sandbox('green', { environment: { REGION: 'us', TENANT: 'green' } }, (suite) => {
-    suite.test('second sandbox group has isolated options', ({ sandbox }, testInfo) => {
+  test.afterEach(({ sandbox }, testInfo) => {
+    record({
+      kind: 'afterEach',
+      executionId: sandbox.executionId,
+      title: testInfo.title,
+      retry: testInfo.retry,
+    });
+  });
+
+  test.describe('nested checkout flow', () => {
+    test('fixtureless acquisition keeps native steps', async () => {
+      await test.step('outer user step', async () => {
+        await test.step('nested user step', () => {
+          playwrightExpect(true).toBe(true);
+        });
+      });
+    });
+
+    test('hooks body and native request share one attempt', async ({
+      request,
+      sandbox,
+    }, testInfo) => {
+      playwrightExpect(testInfo.project.use.baseURL).toBe('http://127.0.0.1:1/static-native-base/');
+      const response = await request.get('/orders?source=native');
+      playwrightExpect(response.ok()).toBe(true);
+      playwrightExpect(await response.json()).toEqual({
+        executionId: sandbox.executionId,
+        method: 'GET',
+        path: '/orders?source=native',
+      });
+      record({
+        kind: 'body',
+        executionId: sandbox.executionId,
+        title: testInfo.title,
+        retry: testInfo.retry,
+        workerIndex: testInfo.workerIndex,
+        parallelIndex: testInfo.parallelIndex,
+      });
+    });
+
+    test('retry receives a fresh attempt', ({ sandbox }, testInfo) => {
+      record({
+        kind: 'retry-body',
+        executionId: sandbox.executionId,
+        retry: testInfo.retry,
+        workerIndex: testInfo.workerIndex,
+        parallelIndex: testInfo.parallelIndex,
+      });
+      playwrightExpect(testInfo.retry).toBe(1);
+    });
+  });
+}
+
+test.describe('orders', () => {
+  test.use({ blackbox: { system: { kind: 'system', id: 'orders' } } });
+  test.describe('blue', declareBlue);
+
+  test.describe('green', () => {
+    test.use({
+      blackbox: {
+        system: { kind: 'system', id: 'orders' },
+        environment: { REGION: 'us', TENANT: 'green' },
+      },
+    });
+    test('second sandbox group has isolated options', ({ sandbox }, testInfo) => {
       record({
         kind: 'body',
         executionId: sandbox.executionId,
@@ -165,9 +177,10 @@ test.system('orders', (system) => {
   });
 });
 
-test.system({ kind: 'system', id: 'billing' }, (system) => {
-  system.sandbox('default options', (suite) => {
-    suite.test('object system selection is preserved', ({ sandbox }, testInfo) => {
+test.describe('billing', () => {
+  test.use({ blackbox: { system: { kind: 'system', id: 'billing' } } });
+  test.describe('default options', () => {
+    test('object system selection is preserved', ({ sandbox }, testInfo) => {
       record({
         kind: 'body',
         executionId: sandbox.executionId,
@@ -180,22 +193,35 @@ test.system({ kind: 'system', id: 'billing' }, (system) => {
     });
   });
 
-  system.sandbox('fixtureless group', { environment: { PROBE: 'fixtureless' } }, (suite) => {
-    suite.test('acquires without any Blackbox fixture dependency', () => {
+  test.describe('fixtureless group', () => {
+    test.use({
+      blackbox: {
+        system: { kind: 'system', id: 'billing' },
+        environment: { PROBE: 'fixtureless' },
+      },
+    });
+    test('acquires without any Blackbox fixture dependency', () => {
       playwrightExpect(true).toBe(true);
     });
-    suite.test.skip('native skip modifier remains available', () => {
+    test.skip('native skip modifier remains available', () => {
       throw new Error('Skipped body must not execute');
     });
-    suite.test.fixme('native fixme modifier remains available', () => {
+    test.fixme('native fixme modifier remains available', () => {
       throw new Error('Fixme body must not execute');
     });
   });
 });
 
-test.system({ kind: 'subsystem', id: 'invoice-worker' }, (system) => {
-  system.sandbox('subsystem group', { environment: { MODE: 'worker' } }, (suite) => {
-    suite.test('subsystem selection is preserved', ({ sandbox }, testInfo) => {
+test.describe('invoice-worker', () => {
+  test.use({ blackbox: { system: { kind: 'subsystem', id: 'invoice-worker' } } });
+  test.describe('subsystem group', () => {
+    test.use({
+      blackbox: {
+        system: { kind: 'subsystem', id: 'invoice-worker' },
+        environment: { MODE: 'worker' },
+      },
+    });
+    test('subsystem selection is preserved', ({ sandbox }, testInfo) => {
       record({
         kind: 'body',
         executionId: sandbox.executionId,
@@ -212,9 +238,10 @@ test.system({ kind: 'subsystem', id: 'invoice-worker' }, (system) => {
   });
 });
 
-extendedTest.system('extended', (system) => {
-  system.sandbox('custom automatic fixture', (suite) => {
-    suite.test(
+extendedTest.describe('extended', () => {
+  extendedTest.use({ blackbox: { system: { kind: 'system', id: 'extended' } } });
+  extendedTest.describe('custom automatic fixture', () => {
+    extendedTest(
       'automatic fixture dependency shares the group attempt',
       ({ auditAttempt, sandbox }) => {
         playwrightExpect(auditAttempt).toBe(sandbox.executionId);
@@ -222,24 +249,3 @@ extendedTest.system('extended', (system) => {
     );
   });
 });
-
-/** Compile-only contract checks. This helper is exported and intentionally never invoked. */
-export function verifyPublicSystemTestTypes(): void {
-  // @ts-expect-error Flat root tests bypass the required system and sandbox declarations.
-  publicTest('flat root test is unavailable', () => {
-    throw new Error('Compile-only flat body');
-  });
-  publicTest.system('type-example', (system) => {
-    system.sandbox('type-example', { environment: { MODE: 'typed' } }, (suite) => {
-      suite.test('public type example', ({ sandbox }) => {
-        void sandbox.entrypoint.url;
-      });
-      // @ts-expect-error Sandbox groups intentionally expose per-attempt hooks only.
-      suite.beforeAll(() => undefined);
-    });
-  });
-  // @ts-expect-error Attempt-scoped Blackbox fixtures are excluded from root suite hooks.
-  publicTest.beforeAll(({ sandbox }) => {
-    void sandbox;
-  });
-}
