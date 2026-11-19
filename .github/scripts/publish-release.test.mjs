@@ -6,10 +6,7 @@ import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
-const workflowPath =
-  process.env.BLACKBOX_PUBLISH_WORKFLOW_TEST_PATH ??
-  path.join(root, '.github/workflows/publish-release.yml');
-const workflow = readFileSync(workflowPath, 'utf8');
+const workflow = readFileSync(path.join(root, '.github/workflows/publish-release.yml'), 'utf8');
 const version = JSON.parse(readFileSync(path.join(root, 'lerna.json'), 'utf8')).version;
 
 function runStep(name) {
