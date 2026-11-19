@@ -6,19 +6,17 @@ add execution adapters only when you need them.
 
 ## Install
 
-This package is prepared for the alpha release but is not published to npm yet.
-Until it is released, use the [source installation](../../docs/installation.md#build-from-source).
-The release installation model is:
+Install the alpha packages in your application:
 
 ```sh
-npm install --save-dev @suites/blackbox@next @suites/blackbox-cli@next
+npm install --save-dev @suites/blackbox@alpha @suites/blackbox-cli@alpha
 ```
 
-Prereleases use the `next` distribution tag. Use your project's package manager
+Alpha releases use the `alpha` distribution tag. Use your project's package manager
 and compatible Blackbox versions. Node 22.15+
 is required; Docker is needed for Compose-backed execution, not skill installation
 or static discovery. Install integrations separately when needed; see
-[installation](../../docs/installation.md).
+[getting started](../../README.md#get-started).
 
 | Included dependency          | Responsibility                                           |
 | ---------------------------- | -------------------------------------------------------- |
@@ -32,8 +30,8 @@ declare it directly in your project to expose its command through the package
 manager; do not depend on transitive binary hoisting.
 
 Integrations are not dependencies of this package. They own the runtime packages
-they need, and installing the main package alone does not install them. See the
-[integration choices](../../docs/installation.md) before adding one.
+they need, and installing the main package alone does not install them. For an
+acceptance test, add [Playwright](../playwright/README.md#prerequisites) explicitly.
 
 ## Start with the agent skill
 
@@ -64,8 +62,8 @@ blackbox skills install capsule --codex
 
 Package installation and skill copying are different operations. The command
 never downloads missing packages. Rerun after upgrading packages to update
-unmodified copies; locally edited copies are preserved as conflicts. See
-[agent skills](../../docs/agent-skills.md) for records, versions, and all outcomes.
+unmodified copies; locally edited copies are preserved as conflicts. The
+[skill installer](../skills/README.md) describes records, versions, and outcomes.
 
 ## Composition and public exports
 
@@ -82,8 +80,8 @@ discovers this composition from the consumer's dependencies. Third-party modules
 
 Resolve portable content through `blackboxSkill.source`, not guessed filesystem
 paths. This package owns `skills/blackbox/`; the generic Skills package owns no
-concrete skills. Integration APIs remain in their owning packages; see the
-[installation guide](../../docs/installation.md) for package choices.
+concrete skills. Integration APIs remain in their owning packages. The
+[Playwright package](../playwright/README.md) owns the acceptance test API.
 
 ## Validate
 
