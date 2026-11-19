@@ -5,6 +5,7 @@ export const scenario = 'Scenario: Alice submits a valid payment method';
 const responseTitle = 'Then a succeeded intent is returned';
 const stateTitle = 'And exactly that payment is persisted';
 const snapshotTitle = 'And retained state matches the reviewed baseline';
+const effectTitle = 'And the payment request is observed at runtime';
 
 export function digest(bytes) {
   return 'sha256:' + createHash('sha256').update(bytes).digest('hex');
@@ -72,7 +73,12 @@ export function verifyPaymentReport(report, broken) {
   assert.equal(result.status, expectedStatus);
   const envelope = attachment(result, 'blackbox-envelope').data;
   const execution = attachment(result, 'blackbox-execution').data;
-  const cut = attachment(result, 'effects.json');
+  const cuts = result.attachments.filter((item) => item.name === 'effects.json').map((item) => {
+    const bytes = Buffer.from(item.body, 'base64');
+    return { data: JSON.parse(bytes), digest: digest(bytes) };
+  });
+  assert.ok(cuts.length > 0, 'expected an initial effects cut');
+  const [cut] = cuts;
   const rendered = attachment(result, 'blackbox-report-json');
   const html = attachmentBytes(result, 'blackbox-report-html');
   const { attemptId, executionId, sessionId } = envelope.identity.attempt;
@@ -117,7 +123,7 @@ export function verifyPaymentReport(report, broken) {
     [
       ['claim', responseTitle, 'passed'],
       ['claim', stateTitle, expectedStatus],
-      ...(broken ? [] : [['claim', snapshotTitle, 'passed']]),
+      ...(broken ? [] : [['claim', snapshotTitle, 'passed'], ['claim', effectTitle, 'passed']]),
     ],
   );
   if (broken) {
@@ -126,6 +132,11 @@ export function verifyPaymentReport(report, broken) {
   } else {
     assert.deepEqual(result.errors, []);
     assert.deepEqual(claims[2].snapshots, [{ matcher: 'toMatchSnapshot', status: 'passed' }]);
+    assert.ok(cuts.length > 1, 'effects matcher did not retain a later cut');
+    const observed = cuts.find(({ data }) => data.graph.effects.some((effect) =>
+      effect.kind === 'http' && effect.actor === 'payment-api' && effect.operation === 'POST'));
+    assert.ok(observed, 'later cut omitted the payment HTTP effect');
+    assert.ok(claims[3].evidence.includes(observed.digest), 'effects claim omitted its evidence cut');
   }
   const view = rendered.data;
   assert.equal(view.kind, 'blackbox-attempt-view');
@@ -141,12 +152,14 @@ export function verifyPaymentReport(report, broken) {
   assert.deepEqual(shown.diff.observers[0].diff.rows, { added: expected, removed: [], changed: [] });
   assert.equal(shown.effects.status, 'captured');
   assert.equal(shown.effects.digest, cut.digest);
+  assert.deepEqual(shown.effects.cuts.map(({ digest }) => digest), cuts.map(({ digest }) => digest));
+  assert.ok(shown.effects.cuts.every(({ status }) => status === 'captured'));
   assert.deepEqual(
     shown.steps.filter(({ kind }) => kind === 'claim').map(({ title, status }) => ({ title, status })),
     claims.map(({ title, status }) => ({ title, status })),
   );
   const htmlText = html.toString('utf8');
-  for (const value of [scenario, responseTitle, stateTitle, '201'])
+  for (const value of [scenario, responseTitle, stateTitle, '201', ...(broken ? [] : [effectTitle, 'Later effects cuts', 'payment-api'])])
     assert.ok(htmlText.includes(value), 'HTML report omitted ' + value);
   return {
     scenario,
