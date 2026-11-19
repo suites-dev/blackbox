@@ -9,6 +9,12 @@ Clients can wrap HTTP, messaging, database, or project-owned SDKs. The
 [consumer tests](../../e2e/tests/playwright/) show selected systems, client setup,
 and response and state assertions.
 
+For acceptance scenarios, use `state.observe()` to register state readers,
+`stimulus()` to capture one action's output, state and effects, and the returned
+`verify()` to name accepted claims. The [payment acceptance test](../../e2e/tests/playwright-payment/payment-intents.spec.ts)
+exercises that API against PostgreSQL and Redis. `step.stimulus()` remains available
+for lower-level owned actions.
+
 ## Prerequisites
 
 Install the adapter and Playwright in your project:
@@ -417,8 +423,9 @@ It prints a short attempt summary and the HTML path after the run, and attaches
 both files to the Playwright result. Configure the Blackbox reporter before a
 native HTML or JSON reporter so those reporters receive the attachments.
 The view reads the retained execution, effects, and capture-health records. It
-shows output, initial and final state, the diff, named claims, and evidence
-availability. An empty effects cut with open or unknown coverage is reported as
+shows output, initial and final state, the diff, named claims, evidence
+availability, and each validated later effects cut. An initial empty cut can be
+followed by a later cut with observed effects. Open or unknown coverage remains
 an observation limit, not proof that no effect occurred. Missing evidence and
 failed report persistence cannot produce a successful report. The original
 `blackbox-execution`, `effects.json`, and capture-health attachments remain the
