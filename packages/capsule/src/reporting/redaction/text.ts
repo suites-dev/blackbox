@@ -73,7 +73,7 @@ function note(
 
 export function redactText(input: string, location: string, context: RedactionContext): string {
   return redactStructuredLines(input, (value) => redactPlainText(value, location, context),
-    (value) => redactJsonFields(value, location, context));
+    (value) => redactJsonFields(value, location, context), context.headerPattern);
 }
 
 function redactJsonFields(input: string, location: string, context: RedactionContext): string {

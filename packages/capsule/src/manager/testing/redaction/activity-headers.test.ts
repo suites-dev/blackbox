@@ -149,7 +149,8 @@ it('retains output masking provenance through disk and report projection without
   const fixture = await requestFixture(() => Promise.resolve());
   const child = join(fixture.projectDirectory, 'structured.mjs');
   const structured = JSON.stringify({ message: 'Cookie: id=fixture-cookie; other=fixture-other', status: 200, body: 'visible' });
-  const raw = 'token=fixture-assignment\n' + structured;
+  const raw = ['token=fixture-assignment', ' ' + structured, '\t' + structured,
+    'Cookie: sid=fixture-fold', ' {"content":"fixture-folded-secret"}', '{"body":"still visible"}'].join('\r\n');
   try {
     await writeFile(child, `process.stdout.write(${JSON.stringify(raw)});process.stderr.write('unchanged');`);
     await expect(managerRequest({
@@ -159,16 +160,17 @@ it('retains output masking provenance through disk and report projection without
     })).resolves.toMatchObject({ outcome: { stdout: raw } });
     const [activity] = await readCapsuleActivities(fixture);
     expect(activity).toMatchObject({ outcome: { retention: {
-      stdout: { redactions: ['sensitive-output', 'sensitive-header'] }, stderr: { kind: 'complete' },
+      stdout: { redactions: ['sensitive-output', 'sensitive-header', 'sensitive-header', 'sensitive-header'] }, stderr: { kind: 'complete' },
     } } });
     const context = createRedactionContext();
     const report = redactActivity(activity, 0, context);
     expect(report).toMatchObject({ outcome: {
-      stdout: 'token=[REDACTED]\n' + JSON.stringify({ message: 'Cookie: [REDACTED]', status: 200, body: 'visible' }),
+      stdout: ['token=[REDACTED]', ' {"message":"Cookie: [REDACTED]","status":200,"body":"visible"}',
+        '\t{"message":"Cookie: [REDACTED]","status":200,"body":"visible"}', 'Cookie: [REDACTED]', '{"body":"still visible"}'].join('\r\n'),
       stderr: 'unchanged', retention: { stdout: { originalBytes: Buffer.byteLength(raw) } },
     } });
     expect(context.entries.filter(({ location }) => location === 'activities[0].outcome.stdout')
-      .map(({ kind }) => kind).sort()).toEqual(['sensitive-header', 'sensitive-output']);
+      .map(({ kind }) => kind).sort()).toEqual(['sensitive-header', 'sensitive-header', 'sensitive-header', 'sensitive-output']);
     expect(context.entries.filter(({ location }) => location === 'activities[0].outcome.stderr')).toEqual([]);
   } finally {
     await fixture.close();
