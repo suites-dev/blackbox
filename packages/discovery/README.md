@@ -17,7 +17,7 @@ blackbox skills install discovery --codex --gitignore
 The command copies [the complete skill](skills/discovery/SKILL.md) to
 `.agents/skills/discovery`, preserving relative references. Omit `--gitignore`
 to commit the copy. Rerun after upgrading the package; user edits are conflicts,
-never silently replaced. See [installation details](../../docs/agent-skills.md).
+never silently replaced. See [installation details](../skills/README.md).
 
 Catalog and Capsule are optional integrations, not automatic dependencies.
 Missing packages contribute no skills. Discovery completes applicable static work

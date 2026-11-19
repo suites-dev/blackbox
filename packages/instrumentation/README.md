@@ -28,7 +28,7 @@ dependency installation, or `NODE_OPTIONS` policy.
 | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | This package                                                          | Select a provider, safely install its declared files, run its preparation callback, and define runtime-neutral activation adapter types.                                 |
 | [`instrumentation-runtime-node`](../instrumentation-runtime-node/src) | Supply the Node provider, bundled OpenTelemetry bootstrap, dependency preparation, and the current `node-preload` and `node-esm` activation adapters.                    |
-| [`cli`](../cli/src/commands)                                          | Choose the supported provider for `inst install`; inject Node activation adapters when starting a Capsule.                                                               |
+| [`cli`](../cli/README.md)                                             | Choose the supported provider for `inst install`; inject Node activation adapters when starting a Capsule.                                                               |
 | [`capsule`](../capsule/src/manager/telemetry/participants.ts)         | Match catalog runtime and adapter names, validate the activation asset, mount the instrumentation directory read-only, and materialize the environment append operation. |
 | [`catalog`](../catalog/src/model/catalog-types.ts)                    | Supply each participant's runtime and the selected activation's adapter and project-relative asset reference.                                                            |
 
@@ -87,7 +87,7 @@ The current Node runtime package exports two adapters:
 | `node-preload` | Appends `--require=<mounted activation asset>` to `NODE_OPTIONS`.                                           |
 | `node-esm`     | Appends the mounted OpenTelemetry loader and then `--require=<mounted activation asset>` to `NODE_OPTIONS`. |
 
-[`capsule up`](../cli/src/commands/capsule/up.ts) is currently the composition
+[`capsule up`](../capsule/src/cli/commands/capsule/up.ts) is currently the composition
 root: it passes `nodeRuntimeActivationAdapters` into Capsule. Capsule remains
 runtime-agnostic and resolves an adapter by the catalog participant's `runtime`
 plus the activation's `adapter` name.
