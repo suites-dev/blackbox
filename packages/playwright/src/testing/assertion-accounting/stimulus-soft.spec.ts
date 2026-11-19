@@ -1,3 +1,4 @@
+import { setImmediate as nextTurn } from 'node:timers/promises';
 import { expect as nativeExpect } from '@playwright/test';
 import { test, expect } from '../../index.js';
 import { completeGraph, recordedEffects } from '../../effects/testing/emissions.fixture.js';
@@ -40,5 +41,26 @@ test('soft failure mixed with unavailable evidence remains failed', async ({ req
   })).rejects.toThrow();
   nativeExpect(lifecycle.journal.events().filter((event) => event.kind === 'claim')).toMatchObject([{ status: 'failed' }]);
   record('soft-mixed-failed', true);
+  lifecycle.close(); step.revoke(); registry.close();
+});
+
+test('unconsumed verification with unavailable effects records a failed claim', async ({ request }, info) => {
+  const registry = createStateRegistry();
+  const effects = createAttemptEffects({ sessionId: 'session', executionId: 'attempt', storageDirectory: info.outputDir }).effects;
+  const attempt = { sandbox: { executionId: 'attempt' }, telemetry: { sessionId: 'session' }, effects } as RunningBlackboxAttempt;
+  const step = createAttemptStep(test.step.bind(test), attempt);
+  const lifecycle = createStimulusLifecycle({ registry, request, step: step.step });
+  const graph = completeGraph([]);
+  const open = { ...graph, scope: { ...graph.scope, closed: false }, quality: { ...graph.quality, coverage: 'partial' as const, reasons: ['open'] } };
+  const selected = (await recordedEffects(open).capture()).http();
+  const outcome = await lifecycle.stimulus('When structural claim executes', () => 1);
+  await nativeExpect(outcome.verify('Then missing evidence and unconsumed assertion fail', async () => {
+    try { await expect(selected).not.toHaveEmitted(); } catch { /* deliberately caught inconclusive assertion */ }
+    void expect(Promise.resolve(1)).resolves.toBe(1);
+    await nextTurn();
+  })).rejects.toThrow('unconsumed');
+  const statuses = lifecycle.journal.events().filter((event) => event.kind === 'claim').map(({ status }) => status);
+  record('structural-mixed-status', statuses);
+  nativeExpect(statuses).toEqual(['failed']);
   lifecycle.close(); step.revoke(); registry.close();
 });
