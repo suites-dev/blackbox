@@ -25,17 +25,26 @@ function redactJson(text: string, plain: (s: string) => string, fields: (s: stri
   });
 }
 
-export function redactStructuredLines(input: string, plain: (s: string) => string, fields: (s: string) => string): string {
+export function redactStructuredLines(
+  input: string, plain: (s: string) => string, fields: (s: string) => string, header: RegExp,
+): string {
   if (isStructured(input)) {
     return redactJson(input, plain, fields);
   }
   let offset = 0;
   const parts: string[] = [];
-  // Keep plain header lines and their indented continuations together.
-  for (const match of input.matchAll(/^[{[][^\r\n]*[}\]][\t ]*(?=\r?$)/gmu)) {
-    if (isStructured(match[0])) {
-      parts.push(plain(input.slice(offset, match.index)), redactJson(match[0], plain, fields));
-      offset = match.index + match[0].length;
+  // An indented JSON record is valid JSON-lines, except when that same line is the
+  // continuation of a plaintext sensitive header. Preserve this boundary across CRLF.
+  let inHeader = false;
+  for (const match of input.matchAll(/([^\r\n]*)(?:\r\n?|\n|$)/gu)) {
+    const line = match[1];
+    const folded: boolean = inHeader && /^[\t ]/u.test(line);
+    if (!folded && isStructured(line)) {
+      parts.push(plain(input.slice(offset, match.index)), redactJson(line, plain, fields));
+      offset = match.index + line.length;
+      inHeader = false;
+    } else {
+      inHeader = folded || line.search(header) !== -1;
     }
   }
   return parts.length === 0 ? plain(input) : parts.join('') + plain(input.slice(offset));
