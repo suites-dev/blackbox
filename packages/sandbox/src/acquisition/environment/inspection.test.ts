@@ -17,6 +17,9 @@ const docker = vi.hoisted(() => {
     getNetworkNames: () => ['owned_default'], getMappedPort: () => 12345,
   };
   return { inspect, down,
+    resolveConfig: vi.fn<(options: { env: NodeJS.ProcessEnv }) => unknown>(),
+    environment: vi.fn(),
+    transport: { DOCKER_HOST: 'tcp://fixture.invalid:2376', DOCKER_TLS_VERIFY: '1', DOCKER_CERT_PATH: '/fixture/certs' },
     clientOptions: vi.fn(),
     defaultWaitStrategy: vi.fn<(strategy: unknown) => void>(),
     selected: vi.fn((_service: string) => container),
@@ -26,14 +29,14 @@ const docker = vi.hoisted(() => {
 });
 
 vi.mock('docker-compose', () => ({ default: {
-  config: () => Promise.resolve({ data: { config: { services: { api: { image: 'fixture' } } } } }),
+  config: docker.resolveConfig,
 } }));
 
 vi.mock('testcontainers', () => ({
   DockerComposeEnvironment: class {
     withClientOptions(options: unknown) { docker.clientOptions(options); return this; }
     withProjectName() { return this; }
-    withEnvironment() { return this; }
+    withEnvironment(environment: unknown) { docker.environment(environment); return this; }
     withDefaultWaitStrategy(strategy: unknown) { docker.defaultWaitStrategy(strategy); return this; }
     withStartupTimeout() { return this; }
     up(services: string[] | undefined) {
@@ -42,7 +45,7 @@ vi.mock('testcontainers', () => ({
     }
   },
   getContainerRuntimeClient: () => Promise.resolve({
-    container: { dockerode: { getContainer: docker.lookup } },
+    compose: { environment: docker.transport }, container: { dockerode: { getContainer: docker.lookup } },
   }),
 }));
 
@@ -95,6 +98,7 @@ async function telemetryRequest(): Promise<ComposeStartRequest> {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  docker.resolveConfig.mockResolvedValue({ data: { config: { services: { api: { image: 'fixture' } } } } });
   docker.inspect.mockResolvedValue({ Config: { Env: ['PRIVATE=effective=value', 'EMPTY='] } });
   docker.down.mockResolvedValue();
 });
@@ -165,4 +169,13 @@ it('preserves the primary inspection error and a secondary cleanup error', async
   await expect(new TestcontainersComposeDriver().start(await request()))
     .rejects.toMatchObject({ name: 'AggregateError', errors: [inspection, cleanup] });
   expect(docker.down).toHaveBeenCalledExactlyOnceWith({ removeVolumes: true });
+});
+
+it('uses the selected Testcontainers daemon and TLS configuration for Compose commands', async () => {
+  const input = await request();
+  await new TestcontainersComposeDriver().start({ ...input, environment: { APP_SETTING: 'kept' } });
+  const [options] = docker.resolveConfig.mock.calls[0];
+  const connection = Object.fromEntries(Object.keys(docker.transport).map((key) => [key, options.env[key]]));
+  expect(connection).toEqual(docker.transport);
+  expect(docker.environment).toHaveBeenCalledExactlyOnceWith({ ...docker.transport, APP_SETTING: 'kept' });
 });

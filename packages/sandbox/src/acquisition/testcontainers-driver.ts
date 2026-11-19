@@ -1,4 +1,5 @@
 import { composeFilesFor } from './compose-files.js';
+import { runtimeComposeEnvironment } from './environment/options.js';
 import { DockerComposeEnvironment, getContainerRuntimeClient } from 'testcontainers';
 import type {
   ComposeContainer,
@@ -148,7 +149,9 @@ async function composeDown(input: {
 export class TestcontainersComposeDriver implements ComposeSandboxDriver {
   async start(request: ComposeStartRequest): Promise<StartedComposeSandbox> {
     const client = await getContainerRuntimeClient();
-    const scoped = await buildSandboxImages(request, client.container.dockerode);
+    const scoped = await buildSandboxImages({
+      ...request, environment: { ...request.environment, ...runtimeComposeEnvironment(client.compose) },
+    }, client.container.dockerode);
     const cleanupImages = () => recoverBuildImages(client.container.dockerode, request.generatedComposeDirectory, request.projectName);
     try {
       return await this.startPrepared(scoped, client, cleanupImages);
