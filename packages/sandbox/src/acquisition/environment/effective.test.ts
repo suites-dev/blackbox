@@ -1,3 +1,4 @@
+import type { IDockerComposeOptions } from 'docker-compose';
 import { expect, it, vi } from 'vitest';
 
 import type { ComposeStartRequest } from '../../model/compose.js';
@@ -55,7 +56,7 @@ function request(): ComposeStartRequest {
 }
 
 it('creates without starting, inspects the exact participant environment, and tears down', async () => {
-  const createMany = vi.fn(() => Promise.resolve());
+  const createMany = vi.fn((_services: string[], _options: IDockerComposeOptions) => Promise.resolve());
   const down = vi.fn(() => Promise.resolve());
   const result = await inspectEffectiveParticipantEnvironmentsWithPorts({
     request: request(),
@@ -70,15 +71,13 @@ it('creates without starting, inspects the exact participant environment, and te
     NODE_OPTIONS: '--enable-source-maps',
     IMAGE_VALUE: 'retained',
   });
-  expect(createMany).toHaveBeenCalledWith(
-    ['api'],
-    expect.objectContaining({
-      cwd: '/project',
-      config: ['compose.yaml'],
-      composeOptions: ['--project-name', 'bb-sandbox-1'],
-      commandOptions: ['--build'],
-    }),
-  );
+  // Project the invocation before comparing it. Compose options include the host environment.
+  expect(createMany.mock.calls.map(([services, { cwd, config, composeOptions, commandOptions }]) => ({
+    services, cwd, config, composeOptions, commandOptions,
+  }))).toEqual([{
+    services: ['api'], cwd: '/project', config: ['compose.yaml'],
+    composeOptions: ['--project-name', 'bb-sandbox-1'], commandOptions: ['--no-build'],
+  }]);
   expect(down).toHaveBeenCalledWith(
     expect.objectContaining({ commandOptions: ['--volumes', '--remove-orphans'] }),
   );

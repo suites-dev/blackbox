@@ -1,3 +1,5 @@
+import { composeFilesFor } from './compose-files.js';
+import { runtimeComposeEnvironment } from './environment/options.js';
 import { DockerComposeEnvironment, getContainerRuntimeClient } from 'testcontainers';
 import type {
   ComposeContainer,
@@ -12,39 +14,11 @@ import {
 import { observeComposeStartup } from './observation/startup-observer.js';
 import { upUnlessParticipantExits } from './observation/participant-exit.js';
 import { inspectComposeResources, inspectRemainingContainers } from './resources/resource-inspector.js';
-import { writeTelemetryComposeOverride } from '../telemetry/compose-override.js';
 import { composeTelemetryController, stopGrace } from '../telemetry/compose-controller.js';
-import { writeEndpointComposeOverride } from './endpoint-override.js';
+import { buildSandboxImages } from '../ownership/images/build.js';
+import { recoverBuildImages } from '../ownership/images/docker.js';
 import { snapshotContainerEnvironment } from './container-environment.js';
-import { inspectEffectiveParticipantEnvironments } from './environment/effective.js';
 import { SandboxReadinessWaitStrategy } from './readiness/wait-strategy.js';
-
-type Dockerode = Awaited<
-  ReturnType<typeof getContainerRuntimeClient>
->['container']['dockerode'];
-
-async function composeFilesFor(
-  request: ComposeStartRequest,
-  docker: Dockerode,
-): Promise<readonly string[]> {
-  const endpointsOverride = await writeEndpointComposeOverride({
-    endpoints: request.endpoints,
-    directory: request.generatedComposeDirectory,
-  });
-  if (request.telemetry.kind === 'disabled') {
-    return [...request.composeFiles, endpointsOverride];
-  }
-  const effectiveEnvironments = await inspectEffectiveParticipantEnvironments({
-    request,
-    docker,
-  });
-  const override = await writeTelemetryComposeOverride({
-    telemetry: request.telemetry,
-    directory: request.generatedComposeDirectory,
-    effectiveEnvironments,
-  });
-  return [...request.composeFiles, endpointsOverride, override];
-}
 
 function selectedServices(request: ComposeStartRequest): string[] | undefined {
   if (request.serviceSelection.kind !== 'selected') {
@@ -175,12 +149,28 @@ async function composeDown(input: {
 export class TestcontainersComposeDriver implements ComposeSandboxDriver {
   async start(request: ComposeStartRequest): Promise<StartedComposeSandbox> {
     const client = await getContainerRuntimeClient();
+    const scoped = await buildSandboxImages({
+      ...request, environment: { ...request.environment, ...runtimeComposeEnvironment(client.compose) },
+    }, client.container.dockerode);
+    const cleanupImages = () => recoverBuildImages(client.container.dockerode, request.generatedComposeDirectory, request.projectName);
+    try {
+      return await this.startPrepared(scoped, client, cleanupImages);
+    } catch (error) {
+      try {
+        await cleanupImages();
+      } catch (cleanupError) {
+        throw new AggregateError([error, cleanupError], 'Compose startup and Sandbox image cleanup failed');
+      }
+      throw error;
+    }
+  }
+
+  private async startPrepared(request: ComposeStartRequest, client: Awaited<ReturnType<typeof getContainerRuntimeClient>>,
+    cleanupImages: () => Promise<void>): Promise<StartedComposeSandbox> {
     const observation = composeObservationClient(client.container.dockerode);
     const composeFiles = await composeFilesFor(request, client.container.dockerode);
-    const environment = new DockerComposeEnvironment(request.projectDirectory, [
-      ...composeFiles,
-    ])
-      .withBuild()
+    const environment = new DockerComposeEnvironment(request.projectDirectory, [...composeFiles])
+      .withClientOptions({ commandOptions: ['--no-build'] })
       .withProjectName(request.projectName)
       .withEnvironment(composeEnvironment(request))
       .withDefaultWaitStrategy(new SandboxReadinessWaitStrategy())
@@ -251,6 +241,7 @@ export class TestcontainersComposeDriver implements ComposeSandboxDriver {
           timeout: stopGrace(input.timeoutMs).participantMs,
           removeVolumes: true,
         });
+        await cleanupImages();
       },
       inspectRemainingContainers: () =>
         inspectRemainingContainers({ docker: client.container.dockerode, projectName: request.projectName }),

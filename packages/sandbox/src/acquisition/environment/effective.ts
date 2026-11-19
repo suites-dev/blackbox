@@ -2,6 +2,7 @@ import dockerCompose, { type IDockerComposeOptions } from 'docker-compose';
 import type { getContainerRuntimeClient } from 'testcontainers';
 
 import type { ComposeStartRequest } from '../../model/compose.js';
+import { composeOptions } from './options.js';
 import { snapshotContainerEnvironment } from '../container-environment.js';
 
 type Dockerode = Awaited<
@@ -28,19 +29,6 @@ interface ContainerInspectionPort {
   readonly environment: (
     containerId: string,
   ) => Promise<Readonly<Record<string, string>>>;
-}
-
-function composeOptions(
-  request: ComposeStartRequest,
-  commandOptions: readonly string[],
-): IDockerComposeOptions {
-  return {
-    cwd: request.projectDirectory,
-    config: [...request.composeFiles],
-    composeOptions: ['--project-name', request.projectName],
-    commandOptions: [...commandOptions],
-    env: { ...process.env, ...request.environment },
-  };
 }
 
 async function inspectCreatedEnvironments(input: {
@@ -92,7 +80,7 @@ export async function inspectEffectiveParticipantEnvironmentsWithPorts(input: {
       }
     | { readonly kind: 'failed'; readonly error: unknown };
   try {
-    await input.compose.createMany(services, composeOptions(input.request, ['--build']));
+    await input.compose.createMany(services, composeOptions(input.request, ['--no-build']));
     outcome = {
       kind: 'succeeded',
       value: await inspectCreatedEnvironments({

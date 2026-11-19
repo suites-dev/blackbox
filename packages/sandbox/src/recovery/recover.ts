@@ -7,8 +7,11 @@ import {
   type StopFailedSandboxRecord,
 } from '../ownership/records.js';
 import { cleanupOwnedComposeProject } from './cleanup.js';
-import { createComposeRecoveryClient } from './docker-client.js';
-import { composeProjectName } from '../lifecycle/helpers.js';
+import { getContainerRuntimeClient } from 'testcontainers';
+import { composeRecoveryClient } from './docker-client.js';
+import { recoverBuildImages } from '../ownership/images/docker.js';
+import { sandboxGeneratedComposeDirectory } from '../telemetry/storage.js';
+import { composeProjectName, withTimeout } from '../lifecycle/helpers.js';
 import { validateSandboxId } from '../validation/input.js';
 import type {
   RecoverSandboxInput,
@@ -125,9 +128,13 @@ export async function recoverSandbox(
     now: () => new Date(),
     readRecord: readSandboxRecord,
     writeRecord: writeSandboxRecord,
-    cleanupOwnedComposeProject: async (cleanup) => {
-      const client = await createComposeRecoveryClient();
-      await cleanupOwnedComposeProject({ cleanup, client });
-    },
+    cleanupOwnedComposeProject: (cleanup) => withTimeout({
+      timeoutMs: cleanup.timeoutMs, label: 'Sandbox recovery cleanup',
+      operation: (async () => {
+        const docker = (await getContainerRuntimeClient()).container.dockerode;
+        await cleanupOwnedComposeProject({ cleanup, client: composeRecoveryClient(docker) });
+        await recoverBuildImages(docker, sandboxGeneratedComposeDirectory(input), cleanup.projectName);
+      })(),
+    }),
   });
 }
