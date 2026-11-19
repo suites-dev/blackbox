@@ -78,7 +78,7 @@ The root workspace manifest is also private. Lerna excludes private packages fro
   the title check. [CI listener](../../.agents/skills/repo-setup/references/ci-listener.md)
 - Obtain independent code-owner approval per the repository PR contract. Confirm a completed
   GitHub `@codex review` for the exact head SHA and resolve review conversations. A pending
-  review request leaves the gate open. [PR review contract](../../.github/PULL_REQUEST_TEMPLATE.md)
+  review request leaves the gate open. [PR review contract](../../.github/pull_request_template.md)
 
 ## Verify publishing prerequisites before tagging
 
