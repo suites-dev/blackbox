@@ -1,6 +1,6 @@
 import { setImmediate as nextTurn } from 'node:timers/promises';
 import { expect as nativeExpect } from '@playwright/test';
-import { test, expect } from '../../index.js';
+import { test, expect, assertionScope } from '../../index.js';
 import { completeGraph, recordedEffects } from '../../effects/testing/emissions.fixture.js';
 import { createAttemptEffects } from '../../effects/attempt-effects.js';
 import { createAttemptStep } from '../../steps/step-context.js';
@@ -64,8 +64,15 @@ test('unconsumed verification with unavailable effects records a failed claim', 
     await nextTurn();
     await expect(selected).not.toHaveEmitted();
   })).rejects.toThrow('unconsumed');
+  await nativeExpect(outcome.verify('And a nested unavailable assertion still fails structurally', async () => {
+    void expect(Promise.resolve(1)).resolves.toBe(1);
+    await nextTurn();
+    await assertionScope(async () => {
+      try { await expect(selected).not.toHaveEmitted(); } catch { /* deliberately caught inconclusive assertion */ }
+    });
+  })).rejects.toThrow('unconsumed');
   const statuses = lifecycle.journal.events().filter((event) => event.kind === 'claim').map(({ status }) => status);
   record('structural-mixed-status', statuses);
-  nativeExpect(statuses).toEqual(['failed', 'failed']);
+  nativeExpect(statuses).toEqual(['failed', 'failed', 'failed']);
   lifecycle.close(); step.revoke(); registry.close();
 });

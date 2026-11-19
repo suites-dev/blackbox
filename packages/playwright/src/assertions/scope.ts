@@ -94,9 +94,9 @@ function validateScope(scope: AssertionScopeState): void {
 }
 
 function caughtScopeError(scope: AssertionScopeState, caught: unknown): unknown {
-  if (!(caught instanceof InconclusiveAssertionError)) { return caught; }
   const structural = structuralFailure(scope);
   if (structural !== null) { return scopeError(scope, structural); }
+  if (!(caught instanceof InconclusiveAssertionError)) { return caught; }
   const counts = accounting(scope);
   if (counts.total === 0) { return scopeError(scope, 'empty'); }
   if (counts.failed > 1 || scope.issues.length > 0) { return scopeError(scope, 'failed'); }
