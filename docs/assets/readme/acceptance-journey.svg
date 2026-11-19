@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="415" viewBox="0 0 1200 415" fill="none">
+<defs>
+<marker id="arr" viewBox="0 0 8 8" markerWidth="8" markerHeight="8" refX="6.3" refY="4" orient="auto"><path d="M1 1 L6.6 4 L1 7" fill="none" stroke="#879CAA" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker>
+<marker id="arr-teal" viewBox="0 0 8 8" markerWidth="8" markerHeight="8" refX="6.3" refY="4" orient="auto"><path d="M1 1 L6.6 4 L1 7" fill="none" stroke="#158F83" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></marker>
+<marker id="arr-pink" viewBox="0 0 8 8" markerWidth="8" markerHeight="8" refX="6.3" refY="4" orient="auto"><path d="M1 1 L6.6 4 L1 7" fill="none" stroke="#EB497A" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></marker>
+</defs>
+<rect x="24" y="35" width="247" height="111" rx="14" fill="#FFFFFF" stroke="#D5E1E7" stroke-width="1.25"/>
+<rect x="24" y="35" width="5" height="111" rx="2" fill="#EB497A" stroke="#EB497A" stroke-width="0"/>
+<text x="44" y="65" font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, Arial, sans-serif" font-size="11" font-weight="750" fill="#EB497A" text-anchor="start" letter-spacing=".8">DEVELOPER</text>
+<text x="44" y="102" font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, Arial, sans-serif" font-size="20" font-weight="700" fill="#192A37" text-anchor="start">Accepted intent</text>
+<text x="44" y="126" font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, Arial, sans-serif" font-size="12.5" font-weight="450" fill="#5D7182" text-anchor="start">Human-approved behavior</text>
+<rect x="327" y="35" width="247" height="111" rx="14" fill="#FFFFFF" stroke="#D5E1E7" stroke-width="1.25"/>
+<rect x="327" y="35" width="5" height="111" rx="2" fill="#527A9D" stroke="#527A9D" stroke-width="0"/>
+<text x="347" y="65" font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, Arial, sans-serif" font-size="11" font-weight="750" fill="#527A9D" text-anchor="start" letter-spacing=".8">CODING AGENT</text>
+<text x="347" y="102" font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, Arial, sans-serif" font-size="20" font-weight="700" fill="#192A37" text-anchor="start">Executable contract</text>
+<text x="347" y="126" font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, Arial, sans-serif" font-size="12.5" font-weight="450" fill="#5D7182" text-anchor="start">Native Playwright · Gherkin optional</text>
+<rect x="631" y="35" width="247" height="111" rx="14" fill="#FFFFFF" stroke="#D5E1E7" stroke-width="1.25"/>
+<rect x="631" y="35" width="5" height="111" rx="2" fill="#158F83" stroke="#158F83" stroke-width="0"/>
+<text x="651" y="65" font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, Arial, sans-serif" font-size="11" font-weight="750" fill="#158F83" text-anchor="start" letter-spacing=".8">BLACKBOX</text>
+<text x="651" y="102" font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, Arial, sans-serif" font-size="20" font-weight="700" fill="#192A37" text-anchor="start">Real Sandbox</text>
+<text x="651" y="126" font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, Arial, sans-serif" font-size="12.5" font-weight="450" fill="#5D7182" text-anchor="start">Catalog · Clients · Stimulus</text>
+<rect x="934" y="35" width="242" height="111" rx="14" fill="#FFFFFF" stroke="#D5E1E7" stroke-width="1.25"/>
+<rect x="934" y="35" width="5" height="111" rx="2" fill="#158F83" stroke="#158F83" stroke-width="0"/>
+<text x="954" y="65" font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, Arial, sans-serif" font-size="11" font-weight="750" fill="#158F83" text-anchor="start" letter-spacing=".8">VERIFIER</text>
+<text x="954" y="102" font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, Arial, sans-serif" font-size="20" font-weight="700" fill="#192A37" text-anchor="start">Saved evidence</text>
+<text x="954" y="126" font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, Arial, sans-serif" font-size="12.5" font-weight="450" fill="#5D7182" text-anchor="start">Output · state · effects · verdict</text>
+<path d="M279 90 L318 90" stroke="#879CAA" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arr)"/>
+<path d="M582 90 L622 90" stroke="#879CAA" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arr)"/>
+<path d="M886 90 L925 90" stroke="#879CAA" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arr)"/>
+<path d="M1055 146 L1055 216" stroke="#158F83" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M1055 216 H601 V245" stroke="#158F83" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arr-teal)"/>
+<rect x="283" y="260" width="654" height="110" rx="14" fill="#F6F9FB" stroke="#D5E1E7" stroke-width="1.25"/>
+<text x="311" y="293" font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, Arial, sans-serif" font-size="18" font-weight="670" fill="#192A37" text-anchor="start">Agent inspects saved evidence and repairs implementation</text>
+<text x="311" y="321" font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, Arial, sans-serif" font-size="14" font-weight="450" fill="#5D7182" text-anchor="start">Rerun the same approved checks after each change</text>
+<rect x="311" y="337" width="195" height="23" rx="11.5" fill="#EAF8F5" stroke="#EAF8F5" stroke-width="0.5"/>
+<text x="408.5" y="352.24" font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, Arial, sans-serif" font-size="11" font-weight="650" fill="#158F83" text-anchor="middle">Unasserted evidence retained</text>
+<rect x="515" y="337" width="163" height="23" rx="11.5" fill="#FDEFF4" stroke="#FDEFF4" stroke-width="0.5"/>
+<text x="596.5" y="352.24" font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, Arial, sans-serif" font-size="11" font-weight="650" fill="#EB497A" text-anchor="middle">Human-owned oracle</text>
+<rect x="686" y="337" width="222" height="23" rx="11.5" fill="#EFF6FC" stroke="#EFF6FC" stroke-width="0.5"/>
+<text x="797.0" y="352.24" font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, Arial, sans-serif" font-size="11" font-weight="650" fill="#527A9D" text-anchor="middle">Evidence-backed findings</text>
+<path d="M283 315 H145 V146" stroke="#879CAA" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="5 6"/>
+<rect x="33" y="214" width="210" height="60" rx="12" fill="#FDEFF4" stroke="#FDEFF4" stroke-width="0.8"/>
+<text x="49" y="237" font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, Arial, sans-serif" font-size="13" font-weight="700" fill="#EB497A" text-anchor="start">Specification changes</text>
+<text x="49" y="257" font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, Arial, sans-serif" font-size="12" font-weight="500" fill="#5D7182" text-anchor="start">require human approval</text>
+<path d="M145 214 V146" stroke="#EB497A" stroke-width="1.7" fill="none" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arr-pink)" stroke-dasharray="4 5"/>
+<path d="M602 260 V199 H758 V146" stroke="#158F83" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arr-teal)"/>
+</svg>

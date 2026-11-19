@@ -1,6 +1,6 @@
 # Verify payment persistence
 
-Alice submits a valid payment method. The approved rule requires HTTP 201 and exactly one matching succeeded intent in PostgreSQL. The test also records the Redis cache value and runtime effects. The reviewed snapshot replaces the returned intent ID with `<created-intent>`.
+Alice submits a valid payment method. The accepted test requires HTTP 201 and exactly one matching succeeded intent in PostgreSQL. It captures the Redis cache value, checks that an HTTP POST effect was observed, and compares final state with a reviewed snapshot. The snapshot replaces the generated intent ID with `<created-intent>`.
 
 ## Run the example
 
@@ -14,7 +14,7 @@ npm exec -- playwright test
 npm exec -- playwright show-report
 ```
 
-`package.json` pins the Blackbox packages to the same version as the package that supplied the example. The Node installer prepares the dependencies for the project-local bootstrap. Catalog validation checks the Compose file, activation file, participant references, and installed adapters. The native Playwright test starts the isolated payment API, PostgreSQL and Redis. The terminal prints the path to each retained Blackbox report. Open its `report.html` for the response, state change, effects, and named claims. The native `playwright-report/index.html` and `test-results/results.json` retain the same Blackbox attachments.
+`package.json` pins the Blackbox packages to the same version as the package that supplied the example. The Node installer prepares the dependencies for the project-local bootstrap. Catalog validation checks the Compose file, activation file, participant references, and installed adapters. The native Playwright test starts the isolated payment API, PostgreSQL and Redis. The terminal prints the path to each retained Blackbox report. Open its `report.html` for the response, state change, initial and later effects cuts, and named claims. The initial cut can be empty while telemetry is arriving; an open cut does not prove absence. The native `playwright-report/index.html` and `test-results/results.json` retain the same Blackbox attachments.
 
 ## Connect a Node participant
 
