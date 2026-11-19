@@ -9,12 +9,19 @@ const ownedLabels = {
   values: { 'com.docker.compose.project': projectName },
 } satisfies RecoveryResource['labels'];
 
-function recoveryClient(events: string[]): ComposeRecoveryClient {
+function initialResources(): Set<string> {
+  return new Set(['container-1', 'network-1', 'volume-1']);
+}
+
+function recoveryClient(events: string[], resources = initialResources()): ComposeRecoveryClient {
+  function list(kind: string, queriedProject: string): Promise<string[]> {
+    expect(queriedProject).toBe(projectName);
+    events.push(`list-${kind}s`);
+    return Promise.resolve([...resources].filter((id) => id.startsWith(`${kind}-`)));
+  }
+
   return {
-    listContainers: () => {
-      events.push('list-containers');
-      return Promise.resolve(['container-1']);
-    },
+    listContainers: (input) => list('container', input.projectName),
     inspectContainer: ({ id }) => {
       events.push(`inspect-container:${id}`);
       return Promise.resolve({ id, running: true, labels: ownedLabels });
@@ -25,30 +32,27 @@ function recoveryClient(events: string[]): ComposeRecoveryClient {
     },
     removeContainer: ({ id, removeAttachedVolumes }) => {
       events.push(`remove-container:${id}:${removeAttachedVolumes}`);
+      resources.delete(id);
       return Promise.resolve();
     },
-    listNetworks: () => {
-      events.push('list-networks');
-      return Promise.resolve(['network-1']);
-    },
+    listNetworks: (input) => list('network', input.projectName),
     inspectNetwork: ({ id }) => {
       events.push(`inspect-network:${id}`);
       return Promise.resolve({ id, labels: ownedLabels });
     },
     removeNetwork: ({ id }) => {
       events.push(`remove-network:${id}`);
+      resources.delete(id);
       return Promise.resolve();
     },
-    listVolumes: () => {
-      events.push('list-volumes');
-      return Promise.resolve(['volume-1']);
-    },
+    listVolumes: (input) => list('volume', input.projectName),
     inspectVolume: ({ id }) => {
       events.push(`inspect-volume:${id}`);
       return Promise.resolve({ id, labels: ownedLabels });
     },
     removeVolume: ({ id }) => {
       events.push(`remove-volume:${id}`);
+      resources.delete(id);
       return Promise.resolve();
     },
   };
@@ -115,8 +119,12 @@ it.each(ownershipCases)(
 
 it('treats resources that disappeared after discovery as already cleaned', async () => {
   const events: string[] = [];
-  const base = recoveryClient(events);
-  const missing = () => Promise.reject(Object.assign(new Error('gone'), { statusCode: 404 }));
+  const resources = initialResources();
+  const base = recoveryClient(events, resources);
+  const missing = ({ id }: { readonly id: string }) => {
+    resources.delete(id);
+    return Promise.reject(Object.assign(new Error('gone'), { statusCode: 404 }));
+  };
   const client = {
     ...base,
     inspectContainer: missing,
@@ -143,4 +151,58 @@ it('gives Docker a stop grace inside the recovery budget, not the whole budget',
     },
   });
   expect(graces).toEqual([10]);
+});
+
+it.each(ownershipCases)(
+  'rejects an acknowledged removal when the $kind remains and retries only that resource',
+  async ({ kind, removal }) => {
+    const events: string[] = [];
+    const base = recoveryClient(events);
+    const acknowledge = () => Promise.resolve();
+    const client = {
+      ...base,
+      removeContainer: kind === 'container' ? acknowledge : base.removeContainer,
+      removeNetwork: kind === 'network' ? acknowledge : base.removeNetwork,
+      removeVolume: kind === 'volume' ? acknowledge : base.removeVolume,
+    } satisfies ComposeRecoveryClient;
+    const cleanup = { projectName, timeoutMs: 1000 };
+
+    await expect(cleanupOwnedComposeProject({ cleanup, client }))
+      .rejects.toThrow(`still present: ${kind} ${kind}-1`);
+
+    events.length = 0;
+    await cleanupOwnedComposeProject({ cleanup, client: base });
+    expect(events.filter((event) => event.startsWith('remove-'))).toEqual([removal]);
+  },
+);
+
+it('rejects recovery when Docker cannot verify the final volume inventory', async () => {
+  const resources = initialResources();
+  const base = recoveryClient([], resources);
+  const client = {
+    ...base,
+    listVolumes: (input) => resources.has('volume-1')
+      ? base.listVolumes(input)
+      : Promise.reject(new Error('volume inventory unavailable')),
+  } satisfies ComposeRecoveryClient;
+
+  await expect(cleanupOwnedComposeProject({ cleanup: { projectName, timeoutMs: 1000 }, client }))
+    .rejects.toThrow('volume inventory unavailable');
+});
+
+it('names resources that appeared after discovery and leaves them for an explicit retry', async () => {
+  const resources = initialResources();
+  const base = recoveryClient([], resources);
+  const client = {
+    ...base,
+    removeVolume: async (input) => {
+      await base.removeVolume(input);
+      resources.add('network-late');
+      resources.add('volume-late');
+    },
+  } satisfies ComposeRecoveryClient;
+
+  await expect(cleanupOwnedComposeProject({ cleanup: { projectName, timeoutMs: 1000 }, client }))
+    .rejects.toThrow('still present: network network-late, volume volume-late');
+  expect(resources).toEqual(new Set(['network-late', 'volume-late']));
 });
