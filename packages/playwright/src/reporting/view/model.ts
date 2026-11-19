@@ -169,9 +169,10 @@ function verificationOf(executions: readonly ExecutionView[], problems: readonly
     inconclusive: claims.filter(({ status }) => status === 'inconclusive').length,
     interrupted: claims.filter(({ status }) => status === 'interrupted').length,
   };
-  const status = problems.length > 0 || executions.length === 0 ? 'unavailable'
-    : counts.failed > 0 ? 'failed' : counts.inconclusive > 0 || counts.interrupted > 0 ? 'inconclusive'
-      : counts.passed > 0 ? 'verified' : 'not-evaluated';
+  const status = counts.failed > 0 ? 'failed'
+    : problems.length > 0 || executions.length === 0 ? 'unavailable'
+      : counts.inconclusive > 0 || counts.interrupted > 0 ? 'inconclusive'
+        : counts.passed > 0 ? 'verified' : 'not-evaluated';
   return { status, ...counts };
 }
 
@@ -181,7 +182,9 @@ export function buildAttemptView(test: TestCase, result: TestResult): AttemptVie
   const { parsed, artifacts, byDigest } = collectAttachments(result, problems);
   const executions = buildExecutions(parsed.filter(({ name }) => name === 'blackbox-execution'), byDigest, problems);
   if (!artifacts.some(({ name }) => name === 'blackbox-execution')) {
-    problems.push('No blackbox-execution attachment was retained');
+    problems.push(artifacts.some(({ name }) => name === 'blackbox-attempt')
+      ? 'Legacy attempt artifacts were retained, but no stimulus execution record was retained'
+      : 'No blackbox-execution attachment was retained');
   }
   const captureHealth = captureHealthOf(parsed, executions, problems);
   const location = test.location;
@@ -194,7 +197,7 @@ export function buildAttemptView(test: TestCase, result: TestResult): AttemptVie
     attempt: { retry: result.retry, workerIndex: result.workerIndex, parallelIndex: result.parallelIndex,
       nativeStatus: result.status, expectedStatus: test.expectedStatus, durationMs: result.duration, errors },
     verification: verificationOf(executions, problems),
-    evidence: { status: executions.length === 0 ? 'unavailable' : problems.length === 0 ? 'available' : 'partial',
+    evidence: { status: artifacts.length === 0 ? 'unavailable' : problems.length === 0 ? 'available' : 'partial',
       problems, artifacts, captureHealth }, executions,
   };
 }

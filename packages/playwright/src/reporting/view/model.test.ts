@@ -94,6 +94,30 @@ it('escapes hostile evidence and never promotes missing effects to a successful 
   expect(html).not.toContain(hostile);
 });
 
+it('keeps a failed named claim failed when its effects artifact is missing', () => {
+  const { test, result } = attempt(true);
+  result.attachments.splice(1, 1);
+  const view = buildAttemptView(test, result);
+  expect(view.evidence.status).toBe('partial');
+  expect(view.verification).toMatchObject({ status: 'failed', failed: 1 });
+  expect(view.executions[0].effects.status).toBe('unavailable');
+});
+
+it('identifies retained legacy attempt evidence without claiming it was verified', () => {
+  const { test, result } = attempt(false);
+  result.attachments = [
+    { name: 'blackbox-attempt', contentType: 'application/json', body: Buffer.from('{"schemaVersion":1}') },
+    { name: 'blackbox-envelope', contentType: 'application/json', body: Buffer.from('{"kind":"behavior-envelope"}') },
+  ];
+  const view = buildAttemptView(test, result);
+  expect(view.attempt.nativeStatus).toBe('passed');
+  expect(view.verification.status).toBe('unavailable');
+  expect(view.evidence).toMatchObject({ status: 'partial', artifacts: [
+    { name: 'blackbox-attempt' }, { name: 'blackbox-envelope' },
+  ] });
+  expect(renderAttemptText(view)).toContain('Legacy attempt artifacts were retained');
+});
+
 it('keeps a failed capture operation unsuccessful when the recorded claims passed', () => {
   const { test, result } = attempt(false);
   result.status = 'failed';
