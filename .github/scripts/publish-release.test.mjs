@@ -23,8 +23,6 @@ function runStep(name) {
 }
 
 const sourceStep = runStep('Verify the immutable release source');
-const distributionSelection = sourceStep.match(/^if \[\[ "\$version"[\s\S]*?^fi$/mu)?.[0];
-assert.ok(distributionSelection, 'release source must select a distribution tag');
 
 const packageStep = runStep('Verify the fixed Lerna package set');
 const packageFilter = packageStep.match(
@@ -35,13 +33,7 @@ assert.ok(packageFilter, 'release package gate must evaluate the Lerna package s
 function distributionFor(releaseVersion) {
   const result = spawnSync(
     'bash',
-    [
-      '-eu',
-      '-c',
-      `version="$1"\n${distributionSelection}\nprintf '%s %s\\n' "$distribution_tag" "$prerelease"`,
-      '--',
-      releaseVersion,
-    ],
+    [path.join(root, '.github/scripts/release-channel.sh'), releaseVersion],
     { encoding: 'utf8' },
   );
   assert.equal(result.status, 0, result.stderr);
@@ -69,6 +61,11 @@ function packageGate(packages) {
     encoding: 'utf8',
   });
 }
+
+test('the workflow uses the tested channel selector', () => {
+  assert.ok(sourceStep.includes('channel="$(bash .github/scripts/release-channel.sh "$version")"'));
+  assert.ok(sourceStep.includes('read -r distribution_tag prerelease <<<"$channel"'));
+});
 
 test('alpha versions publish under alpha; other prereleases and stable versions keep their channels', () => {
   assert.equal(distributionFor('0.0.1-alpha.0'), 'alpha true');
