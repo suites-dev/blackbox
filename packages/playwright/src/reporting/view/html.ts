@@ -1,4 +1,4 @@
-import type { AttemptView, ExecutionView, StepView } from './types.js';
+import type { AttemptView, EffectCutView, ExecutionView, StepView } from './types.js';
 
 function escape(value: string | number | null | undefined): string {
   return String(value ?? '').replaceAll('&', '&amp;').replaceAll('<', '&lt;')
@@ -33,10 +33,25 @@ function evidencePanel(title: string, value: unknown): string {
   return `<details><summary>${escape(title)}</summary>${value === null ? '<p class="empty">Unavailable</p>' : code(value)}</details>`;
 }
 
+function effectCutPanel(cut: EffectCutView, index: number, lastIndex: number): string {
+  return `<details${index === lastIndex ? ' open' : ''}><summary>${escape(cut.purpose ?? 'Unknown')} effects cut ${status(cut.status)}`
+    + ` <span class="count">${cut.effects.length} observed</span></summary>`
+    + `<p class="subtle">Capture ${escape(cut.captureId ?? 'unknown')} · ${escape(cut.digest ?? 'no digest')}</p>`
+    + (cut.coverage === null ? '<p class="empty">Coverage unavailable.</p>' : code(cut.coverage))
+    + (cut.effects.length === 0 ? '<p class="empty">No effects observed in this cut. Open or unknown coverage cannot prove absence.</p>' : code(cut.effects))
+    + (cut.relations.length === 0 ? '' : evidencePanel('Effect relations', cut.relations))
+    + (cut.omitted === null ? '' : evidencePanel('Omitted evidence counts', cut.omitted))
+    + '</details>';
+}
+
 function executionSection(execution: ExecutionView, index: number): string {
   const effectStatus = execution.effects.status;
   const coverage = execution.effects.coverage;
   const effectCount = execution.effects.effects.length;
+  const laterCuts = execution.effects.cuts.filter(({ purpose }) => purpose !== 'initial');
+  const latest = laterCuts.at(-1);
+  const count = latest === undefined ? `${effectCount} in initial cut`
+    : `${effectCount} initial; ${latest.status === 'captured' ? `${latest.effects.length} latest` : 'latest unavailable'}`;
   return `<section class="execution" aria-labelledby="execution-${index}">`
     + `<div class="section-head"><div><span class="eyebrow">Execution ${index + 1}</span><h2 id="execution-${index}">${escape(execution.title)}</h2></div>`
     + `<span class="id">${escape(execution.executionId)}</span></div>`
@@ -47,13 +62,14 @@ function executionSection(execution: ExecutionView, index: number): string {
     + evidencePanel('Initial state', execution.initial)
     + evidencePanel('Final state', execution.final)
     + evidencePanel('State diff', execution.diff)
-    + `<details open><summary>Effects ${status(effectStatus)} <span class="count">${effectCount} recorded</span></summary>`
+    + `<details open><summary>Effects ${status(effectStatus)} <span class="count">${escape(count)}</span></summary>`
     + `<p class="subtle">A recorded effect is diagnostic unless an accepted claim asserts it. Capture coverage determines what absence and exact counts can establish.</p>`
     + (coverage === null ? '<p class="empty">Coverage unavailable.</p>' : code(coverage))
     + (effectStatus === 'captured' && effectCount === 0 ? '<p class="empty">No effects were observed in this capture. An open or unknown coverage cut cannot prove that no effects occurred.</p>' : '')
     + (effectCount === 0 ? '' : code(execution.effects.effects))
     + (execution.effects.relations.length === 0 ? '' : evidencePanel('Effect relations', execution.effects.relations))
     + (execution.effects.omitted === null ? '' : evidencePanel('Omitted evidence counts', execution.effects.omitted))
+    + (laterCuts.length === 0 ? '' : `<h4>Later effects cuts</h4>${laterCuts.map((cut, cutIndex) => effectCutPanel(cut, cutIndex, laterCuts.length - 1)).join('')}`)
     + (execution.effects.captures.length === 0 ? '' : evidencePanel('Capture references', execution.effects.captures))
     + `</details></section></div></section>`;
 }
