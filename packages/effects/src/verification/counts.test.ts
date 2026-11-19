@@ -31,6 +31,9 @@ test.each([
     );
     expect(assessment.status).toBe(status);
     expect(assessment.findings[0].evidence).toEqual(['known']);
+    if (status !== 'inconclusive' || operator === 'atLeast') {
+      expect(assessment.findings[0].reason).not.toContain('requires a closed scope');
+    }
   },
 );
 
@@ -47,6 +50,7 @@ test('unknown possible matches prevent exactness but preserve witnessed positive
     'fail',
   ]);
   expect(assessment.status).toBe('fail');
+  expect(assessment.findings[1].reason).not.toContain('requires a closed scope');
 });
 
 test('missing attributes remain possible and known contradictions exclude them', () => {
