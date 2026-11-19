@@ -22,7 +22,13 @@ export function renderAttemptText(view: AttemptView): string {
     const output = execution.output === null ? 'unavailable' : 'captured';
     const initial = execution.initial === null ? 'unavailable' : 'captured';
     const final = execution.final === null ? 'unavailable' : 'captured';
-    lines.push(line(`  ${execution.title}: output ${output}; state initial ${initial}, final ${final}; effects ${execution.effects.status} (${execution.effects.effects.length}, coverage ${coverageOf(execution.effects.coverage)})`));
+    const latest = execution.effects.cuts.filter(({ purpose }) => purpose !== 'initial').at(-1);
+    const observed = latest === undefined ? `${execution.effects.effects.length} in initial cut`
+      : latest.status === 'captured' ? `${execution.effects.effects.length} initial, ${latest.effects.length} latest`
+        : `${execution.effects.effects.length} initial, latest unavailable`;
+    const coverage = latest !== undefined && latest.status === 'captured'
+      ? latest.coverage : execution.effects.coverage;
+    lines.push(line(`  ${execution.title}: output ${output}; state initial ${initial}, final ${final}; effects ${execution.effects.status} (${observed}, coverage ${coverageOf(coverage)})`));
     for (const claim of execution.steps.filter(({ kind, status }) => kind === 'claim' && status !== 'passed').slice(0, 5)) {
       lines.push(line(`    ${claim.status}: ${claim.title}`));
     }
