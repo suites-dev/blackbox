@@ -5,6 +5,18 @@ this package explicitly alongside [`@suites/blackbox`](../blackbox/README.md),
 which owns the default composition and entry skill but has no launcher.
 The CLI also supports custom compositions; it depends on neither product features nor Skills.
 
+## Start agent onboarding
+
+Run the local `blackbox onboarding start` in the application repository. It prints the
+active CLI package versions, the availability of the commands for a live Node/Capsule
+run, and a prompt to give your coding agent. Use `blackbox onboarding start --json`
+to save or process the same receipt. The command writes to stdout.
+
+The prompt names the direct packages for the live route and the optional Playwright
+adapter and peer for native acceptance tests. Your agent uses the installed skills to
+propose a system boundary, draft the Catalog config and acceptance test, and review
+them with you before execution.
+
 ## Runtime composition
 
 The host reads the consumer's declared dependencies and development dependencies,
