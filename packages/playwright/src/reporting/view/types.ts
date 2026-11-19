@@ -26,6 +26,18 @@ export interface EffectsView {
   readonly relations: readonly Json[];
   readonly omitted: Json | null;
   readonly captures: readonly Json[];
+  readonly cuts: readonly EffectCutView[];
+}
+
+export interface EffectCutView {
+  readonly captureId: string | null;
+  readonly purpose: string | null;
+  readonly digest: string | null;
+  readonly status: 'captured' | 'unavailable';
+  readonly coverage: Json | null;
+  readonly effects: readonly Json[];
+  readonly relations: readonly Json[];
+  readonly omitted: Json | null;
 }
 
 export interface ExecutionView {

@@ -110,7 +110,9 @@ it('requires every retained lazy effects cut before reporting a passed claim as 
   const { test, result } = attempt(false);
   const later = Buffer.from(JSON.stringify({ schemaVersion: 1, kind: 'stimulus-effects',
     executionId: 'execution-1', identity: { captureId: 'capture-later' },
-    coverage: { coverage: 'unknown', closed: false }, graph: { effects: [], relations: [] } }));
+    coverage: { coverage: 'partial', closed: false }, graph: { effects: [
+      { kind: 'http', actor: 'payment-api', operation: 'POST', target: '/payments' },
+    ], relations: [] } }));
   const reference = digestBytes(later);
   const execution = JSON.parse(result.attachments[0].body!.toString('utf8')) as {
     artifacts: { effectCaptures: { captureId: string; reference: string; purpose: string }[] }[];
@@ -123,7 +125,16 @@ it('requires every retained lazy effects cut before reporting a passed claim as 
   claim.evidence = [reference];
   result.attachments[0].body = Buffer.from(JSON.stringify(execution));
   result.attachments.push({ name: 'effects.json', contentType: 'application/json', body: later });
-  expect(buildAttemptView(test, result).verification.status).toBe('verified');
+  const complete = buildAttemptView(test, result);
+  expect(complete.verification.status).toBe('verified');
+  expect(complete.executions[0].effects.cuts.at(-1)).toMatchObject({
+    purpose: 'assertion', status: 'captured', digest: reference,
+    coverage: { coverage: 'partial', closed: false },
+    effects: [{ kind: 'http', operation: 'POST', target: '/payments' }],
+  });
+  expect(renderAttemptHtml(complete)).toContain('1 latest');
+  expect(renderAttemptHtml(complete)).toContain('Later effects cuts');
+  expect(renderAttemptText(complete)).toContain('0 initial, 1 latest, coverage partial, open');
 
   result.attachments.pop();
   const missing = buildAttemptView(test, result);
