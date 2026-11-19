@@ -16,6 +16,7 @@ function attempt(lostPersistence: boolean, outputDir = ''): { test: TestCase; re
     schemaVersion: 1,
     kind: 'stimulus-effects',
     executionId: 'execution-1',
+    identity: { captureId: 'capture-initial' },
     coverage: { coverage: 'unknown', closed: false },
     graph: { effects: [], relations: [] },
   }));
@@ -35,7 +36,9 @@ function attempt(lostPersistence: boolean, outputDir = ''): { test: TestCase; re
       { kind: 'claim', executionId: 'execution-1', title: 'And exactly that subscription is retained',
         status: lostPersistence ? 'failed' : 'passed', evidence: [] },
     ],
-    artifacts: [{ executionId: 'execution-1', output: { kind: 'response', status: 201, body: { subscription } }, effects: digestBytes(effects) }],
+    artifacts: [{ executionId: 'execution-1', output: { kind: 'response', status: 201, body: { subscription } },
+      effects: digestBytes(effects),
+      effectCaptures: [{ captureId: 'capture-initial', reference: digestBytes(effects), purpose: 'initial' }] }],
   }));
   const test = {
     id: 'subscription-contract', title: 'Scenario: Alice subscribes', expectedStatus: 'passed',
@@ -101,6 +104,69 @@ it('keeps a failed named claim failed when its effects artifact is missing', () 
   expect(view.evidence.status).toBe('partial');
   expect(view.verification).toMatchObject({ status: 'failed', failed: 1 });
   expect(view.executions[0].effects.status).toBe('unavailable');
+});
+
+it('requires every retained lazy effects cut before reporting a passed claim as verified', () => {
+  const { test, result } = attempt(false);
+  const later = Buffer.from(JSON.stringify({ schemaVersion: 1, kind: 'stimulus-effects',
+    executionId: 'execution-1', identity: { captureId: 'capture-later' },
+    coverage: { coverage: 'partial', closed: false }, graph: { effects: [
+      { kind: 'http', actor: 'payment-api', operation: 'POST', target: '/payments' },
+    ], relations: [] } }));
+  const reference = digestBytes(later);
+  const execution = JSON.parse(result.attachments[0].body!.toString('utf8')) as {
+    artifacts: { effectCaptures: { captureId: string; reference: string; purpose: string }[] }[];
+    events: Record<string, unknown>[];
+  };
+  execution.artifacts[0].effectCaptures.push({ captureId: 'capture-later', reference, purpose: 'assertion' });
+  const claim = execution.events.find(({ kind }) => kind === 'claim');
+  expect(claim).toBeDefined();
+  if (claim === undefined) { throw new Error('Synthetic claim is missing'); }
+  claim.evidence = [reference];
+  result.attachments[0].body = Buffer.from(JSON.stringify(execution));
+  result.attachments.push({ name: 'effects.json', contentType: 'application/json', body: later });
+  const complete = buildAttemptView(test, result);
+  expect(complete.verification.status).toBe('verified');
+  expect(complete.executions[0].effects.cuts.at(-1)).toMatchObject({
+    purpose: 'assertion', status: 'captured', digest: reference,
+    coverage: { coverage: 'partial', closed: false },
+    effects: [{ kind: 'http', operation: 'POST', target: '/payments' }],
+  });
+  expect(renderAttemptHtml(complete)).toContain('1 latest');
+  expect(renderAttemptHtml(complete)).toContain('Later effects cuts');
+  expect(renderAttemptText(complete)).toContain('0 initial, 1 latest, coverage partial, open');
+
+  result.attachments.pop();
+  const missing = buildAttemptView(test, result);
+  expect(missing.verification.status).toBe('unavailable');
+  expect(missing.evidence.status).toBe('partial');
+  expect(missing.executions[0].effects.status).toBe('unavailable');
+  expect(missing.evidence.problems).toEqual(expect.arrayContaining([
+    expect.stringContaining(`Effects capture ${reference} is unavailable`),
+    expect.stringContaining(`Claim evidence ${reference} is unavailable`),
+  ]));
+});
+
+it('requires a passed claim to retain each assertion artifact it cites', () => {
+  const { test, result } = attempt(false);
+  const assertion = Buffer.from(JSON.stringify({ kind: 'assertion-evidence', status: 'pass' }));
+  const reference = digestBytes(assertion);
+  const execution = JSON.parse(result.attachments[0].body!.toString('utf8')) as {
+    events: Record<string, unknown>[];
+  };
+  const claim = execution.events.find(({ kind }) => kind === 'claim');
+  expect(claim).toBeDefined();
+  if (claim === undefined) { throw new Error('Synthetic claim is missing'); }
+  claim.evidence = [reference];
+  result.attachments[0].body = Buffer.from(JSON.stringify(execution));
+  result.attachments.push({ name: 'blackbox-emissions', contentType: 'application/json', body: assertion });
+  expect(buildAttemptView(test, result).verification.status).toBe('verified');
+
+  result.attachments.pop();
+  const missing = buildAttemptView(test, result);
+  expect(missing.verification.status).toBe('unavailable');
+  expect(missing.evidence.status).toBe('partial');
+  expect(missing.evidence.problems).toContain(`Claim evidence ${reference} is unavailable`);
 });
 
 it('identifies retained legacy attempt evidence without claiming it was verified', () => {

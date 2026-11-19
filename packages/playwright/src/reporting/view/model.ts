@@ -2,7 +2,7 @@ import type { TestCase, TestResult } from '@playwright/test/reporter';
 
 import { digestBytes } from '../../envelope/index.js';
 import { reportText } from '../text.js';
-import type { ArtifactView, AttemptView, EffectsView, ExecutionView, Json, StepView } from './types.js';
+import type { ArtifactView, AttemptView, EffectCutView, EffectsView, ExecutionView, Json, StepView } from './types.js';
 
 function record(value: unknown): Record<string, unknown> | null {
   return value !== null && typeof value === 'object' && !Array.isArray(value)
@@ -40,6 +40,49 @@ function effectGraph(data: Record<string, unknown>): Record<string, unknown> | n
   return record(data.graph);
 }
 
+function supportedPurpose(value: unknown): boolean {
+  return value === 'initial' || value === 'assertion' || value === 'explicit';
+}
+
+function matchesCapture(
+  linked: ParsedAttachment | undefined,
+  executionId: string,
+  captureId: string,
+): boolean {
+  if (linked === undefined || linked.name !== 'effects.json' || linked.data.kind !== 'stimulus-effects' ||
+    linked.data.executionId !== executionId) { return false; }
+  const identity = record(linked.data.identity);
+  const graph = effectGraph(linked.data);
+  return identity !== null && identity.captureId === captureId && graph !== null &&
+    Array.isArray(graph.effects) && Array.isArray(graph.relations) &&
+    record(linked.data.coverage) !== null;
+}
+
+function captureView(
+  executionId: string,
+  value: Json,
+  byDigest: ReadonlyMap<string, ParsedAttachment>,
+): EffectCutView {
+  const capture = record(value) ?? {};
+  const reference = str(capture.reference);
+  const captureId = str(capture.captureId);
+  const purpose = str(capture.purpose);
+  const linked = reference === null ? undefined : byDigest.get(reference);
+  if (linked === undefined || captureId === null || !supportedPurpose(purpose) ||
+    !matchesCapture(linked, executionId, captureId)) {
+    return { captureId, purpose, digest: reference, status: 'unavailable',
+      coverage: null, effects: [], relations: [], omitted: null };
+  }
+  const graph = effectGraph(linked.data);
+  return {
+    captureId, purpose, digest: reference, status: 'captured',
+    coverage: json(linked.data.coverage),
+    effects: graph === null ? [] : items(graph.effects).map(json),
+    relations: graph === null ? [] : items(graph.relations).map(json),
+    omitted: json(linked.data.omitted),
+  };
+}
+
 function effectsFor(
   executionId: string,
   artifact: Record<string, unknown> | null,
@@ -47,33 +90,52 @@ function effectsFor(
   problems: string[],
 ): EffectsView {
   const digest = artifact === null ? null : str(artifact.effects);
-  const captures = artifact === null ? [] : items(artifact.effectCaptures).map(json).filter((value): value is Json => value !== null);
+  const captures = artifact === null ? [] : items(artifact.effectCaptures).map(json);
+  const cuts = captures.map((value) => captureView(executionId, value, byDigest));
+  const captureProblems = cuts.filter(({ status }) => status === 'unavailable')
+    .map(({ digest: reference }) => `Effects capture ${reference ?? 'without a reference'} is unavailable or invalid`);
+  problems.push(...captureProblems);
   if (digest === null) {
-    return { status: 'missing', digest: null, coverage: null, effects: [], relations: [], omitted: null, captures };
+    return { status: 'missing', digest: null, coverage: null, effects: [], relations: [], omitted: null, captures, cuts };
   }
   const match = byDigest.get(digest);
   if (match === undefined || match.name !== 'effects.json') {
     problems.push(`Effects artifact ${digest} is unavailable`);
-    return { status: 'unavailable', digest, coverage: null, effects: [], relations: [], omitted: null, captures };
+    return { status: 'unavailable', digest, coverage: null, effects: [], relations: [], omitted: null, captures, cuts };
   }
   const graph = effectGraph(match.data);
   if (match.data.kind !== 'stimulus-effects' || match.data.executionId !== executionId ||
     graph === null || !Array.isArray(graph.effects) || !Array.isArray(graph.relations) ||
     record(match.data.coverage) === null) {
     problems.push(`Effects artifact ${digest} has an unsupported shape`);
-    return { status: 'unavailable', digest, coverage: null, effects: [], relations: [], omitted: null, captures };
+    return { status: 'unavailable', digest, coverage: null, effects: [], relations: [], omitted: null, captures, cuts };
   }
   return {
-    status: 'captured', digest, coverage: json(match.data.coverage),
+    status: captureProblems.length === 0 ? 'captured' : 'unavailable', digest, coverage: json(match.data.coverage),
     effects: items(graph.effects).map(json),
     relations: items(graph.relations).map(json),
-    omitted: json(match.data.omitted), captures,
+    omitted: json(match.data.omitted), captures, cuts,
   };
+}
+
+function validateClaimEvidence(
+  events: readonly Record<string, unknown>[],
+  availableDigests: ReadonlySet<string>,
+  problems: string[],
+): void {
+  for (const event of events.filter((item) => item.kind === 'claim')) {
+    for (const reference of items(event.evidence)) {
+      if (typeof reference !== 'string' || !availableDigests.has(reference)) {
+        problems.push(`Claim evidence ${typeof reference === 'string' ? reference : 'without a reference'} is unavailable`);
+      }
+    }
+  }
 }
 
 function buildExecutions(
   documents: readonly ParsedAttachment[],
   byDigest: ReadonlyMap<string, ParsedAttachment>,
+  availableDigests: ReadonlySet<string>,
   problems: string[],
 ): ExecutionView[] {
   const executions: ExecutionView[] = [];
@@ -88,6 +150,7 @@ function buildExecutions(
     const ids = [...new Set(events.map((event) => str(event.executionId)).filter((id): id is string => id !== null))];
     for (const executionId of ids) {
       const ownEvents = events.filter((event) => event.executionId === executionId);
+      validateClaimEvidence(ownEvents, availableDigests, problems);
       const begin = ownEvents.find((event) => event.kind === 'begin');
       const final = ownEvents.find((event) => event.kind === 'final');
       const artifact = artifacts.find((item) => item.executionId === executionId) ?? null;
@@ -133,16 +196,18 @@ function collectAttachments(result: TestResult, problems: string[]) {
   const parsed: ParsedAttachment[] = [];
   const artifacts: ArtifactView[] = [];
   const byDigest = new Map<string, ParsedAttachment>();
+  const availableDigests = new Set<string>();
   for (const attachment of result.attachments) {
     if (!attachment.name.startsWith('blackbox-') && attachment.name !== 'effects.json') { continue; }
     const artifact = artifactOf(attachment);
     artifacts.push(artifact);
+    if (artifact.digest !== null) { availableDigests.add(artifact.digest); }
     const entry = parsedOf(attachment, problems);
     if (entry === null) { continue; }
     parsed.push(entry);
     if (artifact.digest !== null) { byDigest.set(artifact.digest, entry); }
   }
-  return { parsed, artifacts, byDigest };
+  return { parsed, artifacts, byDigest, availableDigests };
 }
 
 function captureHealthOf(parsed: readonly ParsedAttachment[], executions: readonly ExecutionView[], problems: string[]): AttemptView['evidence']['captureHealth'] {
@@ -179,8 +244,8 @@ function verificationOf(executions: readonly ExecutionView[], problems: readonly
 /** Adapt the exact Playwright attempt attachments; never infer a claim from an unasserted observation. */
 export function buildAttemptView(test: TestCase, result: TestResult): AttemptView {
   const problems: string[] = [];
-  const { parsed, artifacts, byDigest } = collectAttachments(result, problems);
-  const executions = buildExecutions(parsed.filter(({ name }) => name === 'blackbox-execution'), byDigest, problems);
+  const { parsed, artifacts, byDigest, availableDigests } = collectAttachments(result, problems);
+  const executions = buildExecutions(parsed.filter(({ name }) => name === 'blackbox-execution'), byDigest, availableDigests, problems);
   if (!artifacts.some(({ name }) => name === 'blackbox-execution')) {
     problems.push(artifacts.some(({ name }) => name === 'blackbox-attempt')
       ? 'Legacy attempt artifacts were retained, but no stimulus execution record was retained'
