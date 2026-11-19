@@ -1,0 +1,9 @@
+{
+  "name": "payment-example-service",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "pg": "8.23.1",
+    "redis": "6.3.1"
+  }
+}

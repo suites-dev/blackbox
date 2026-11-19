@@ -1,0 +1,18 @@
+import { defineConfig } from '@suites/blackbox-playwright/config';
+import { postgres } from './clients/postgres.ts';
+import { redis } from './clients/redis.ts';
+
+export default defineConfig({
+  blackboxConfigFile: './blackbox.config.yaml',
+  testDir: './tests',
+  use: { blackbox: { system: 'payment-system', clients: { postgres, redis } } },
+  timeout: 180_000,
+  preserveOutput: 'always',
+  updateSnapshots: 'none',
+  snapshotPathTemplate: '{testDir}/snapshots/{arg}{ext}',
+  reporter: [
+    ['list', { printSteps: true }],
+    ['json', { outputFile: 'test-results/results.json' }],
+    ['html', { open: 'never' }],
+  ],
+});
