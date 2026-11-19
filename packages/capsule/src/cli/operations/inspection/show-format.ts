@@ -11,13 +11,13 @@ import {
 
 import { locationText, processOutcome, processResultText } from '../run/run-output.js';
 
-/** `provisional (capsule running)`, `complete` or `incomplete (<reason>)`. */
+/** Human-readable status of the collector's telemetry window. */
 export function statusText(completeness: ObservationCompleteness): string {
   switch (completeness.status) {
     case 'provisional':
       return 'provisional (capsule running)';
     case 'complete':
-      return 'complete';
+      return 'telemetry window complete (participant operations may emit no spans)';
     case 'incomplete':
       return `incomplete (${completeness.reason})`;
   }

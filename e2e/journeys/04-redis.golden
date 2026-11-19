@@ -21,13 +21,13 @@ activity <ACT_1>  Queue proof stimulus
   via  redis → redis (redis)
   process  exit 0 on participant redis
   context  not carried: redis is shared state (expected for this driver)
-  observed  nothing observed · complete
+  observed  nothing observed · telemetry window complete (participant operations may emit no spans)
   later in this capsule, no known cause:
   <TRACE_1>  redis-proof-consumer  POST /fixture/shared-state-proof/proof-journey → public-api  202  +<DUR>
   ⚠ Blackbox cannot prove that <ACT_1> caused <TRACE_1>.
   Both belong to capsule <CAPSULE_1>, but no trace context links them.
 $ blackbox capsule show $CAPSULE_1 --timeline
-capsule <CAPSULE_1>  subscription-system  stopped  · complete
+capsule <CAPSULE_1>  subscription-system  stopped  · telemetry window complete (participant operations may emit no spans)
   +<DUR>  (no activity)  ┈┈ <N> traces before the first activity
   +<DUR>  <ACT_1>  stimulus  Queue proof stimulus  (no telemetry)
   +<DUR>  (no activity)  ┈┈ <TRACE_1>  redis-proof-consumer  POST /fixture/shared-state-proof/proof-journey → public-api  202

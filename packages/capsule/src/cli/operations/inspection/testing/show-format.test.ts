@@ -57,7 +57,10 @@ void test('durations: <n>ms under 1 s, <n.n>s under 60 s, <m>m<ss>s after', () =
 
 void test('status text for each completeness', () => {
   assert.equal(statusText({ status: 'provisional' }), 'provisional (capsule running)');
-  assert.equal(statusText({ status: 'complete' }), 'complete');
+  assert.equal(
+    statusText({ status: 'complete' }),
+    'telemetry window complete (participant operations may emit no spans)',
+  );
   assert.equal(
     statusText({ status: 'incomplete', reason: 'collector shutdown timed out' }),
     'incomplete (collector shutdown timed out)',
