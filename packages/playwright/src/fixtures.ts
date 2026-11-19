@@ -1,3 +1,4 @@
+import { registerAssertionOwner } from './assertions/scope.js';
 import { createAttemptStep } from './steps/step-context.js';
 import { runClients } from './clients/clients.js';
 import { remainingClientSetupMs } from './clients/client-timeouts.js';
@@ -132,6 +133,7 @@ function testScopeFixture(testScopes: WeakSet<TestInfo>, testStartedAt: WeakMap<
     use: (value: undefined) => Promise<void>,
     testInfo: TestInfo,
   ): Promise<void> => {
+    const releaseAssertions = registerAssertionOwner(testInfo);
     testScopes.add(testInfo);
     testStartedAt.set(testInfo, performance.now());
     try {
@@ -139,6 +141,7 @@ function testScopeFixture(testScopes: WeakSet<TestInfo>, testStartedAt: WeakMap<
     } finally {
       testScopes.delete(testInfo);
       testStartedAt.delete(testInfo);
+      releaseAssertions();
     }
   };
 }

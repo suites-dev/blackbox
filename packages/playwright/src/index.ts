@@ -10,3 +10,7 @@ export type {
   ClientTarget,
   RegisteredClients,
 } from './clients/types.js';
+
+export { assertionScope } from './assertions/scope.js';
+export { AssertionScopeError } from './assertions/types.js';
+export type { AssertionAccounting, AssertionScopeResult, AssertionScopeErrorCode } from './assertions/types.js';
