@@ -17,6 +17,18 @@ test.describe('real dependencies', () => {
     );
     expect(await json(response, 200)).toEqual({ id: 301, rolledBack: true });
     await expect(effects).toSatisfy((e) => [e.exists(e.db({}))]);
+    const capture = await effects.capture();
+    const database = capture.db({});
+    await expect(database).toHaveEmittedWith({ kind: 'db', actor: 'app' });
+    await expect(
+      expect(database).toHaveEmittedBefore(capture.http({ method: 'POST' })),
+    ).rejects.toThrow(/inconclusive/i);
+    await expect(
+      expect(database).not.toHaveEmittedBefore(capture.http({ method: 'POST' })),
+    ).rejects.toThrow(/inconclusive/i);
+    await expect(expect(database).toHaveNthEmittedWith(1, { kind: 'db' })).rejects.toThrow(
+      /inconclusive/i,
+    );
 
     const inspection = await step('read rolled-back record independently', () =>
       request.get(new URL('/records/301', sandbox.entrypoint.url).href),

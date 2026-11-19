@@ -190,6 +190,100 @@ reasons. Setup failure also attempts cleanup before surfacing the error.
   inconclusive, including under negation; an observed operation does not prove
   durable state.
 
+## Assert recorded emissions
+
+Capture the observations available for the attempt's completed stimulus steps,
+then select the interactions the contract requires:
+
+```ts
+await step.stimulus('create the order', ({ headers }) =>
+  request.post('/orders', { headers, data: { productId: 'book' } }),
+);
+await expect(effects).toSatisfy((e) => [e.exists(e.db({}))]);
+
+const capture = await effects.capture();
+const database = capture.db({ actor: 'orders-api' });
+
+await expect(database).toHaveEmitted();
+await expect(database).toHaveEmittedWith({
+  kind: 'db',
+  actor: expect.stringContaining('orders'),
+});
+```
+
+The familiar mock-assertion pattern applies to recorded interactions. The recorder
+contains observations from the real dependency. Each distinct observed occurrence
+remains a separate emission, including identical payloads with different identities.
+Repeated delivery of the same trace/span does not create another occurrence.
+
+`capture` fixes one observation cut and the completed stimulus identities it owns.
+Later stimuli and telemetry arrivals cannot change that capture. Capture again to
+inspect a later cut. Inspection steps, other test attempts, and retries cannot
+contribute emissions to an earlier recorder. Matchers consume the fixed capture;
+they do not poll for new observations. The existing `toSatisfy` matcher in this
+example waits for the required observation before the cut is taken.
+
+| Assertion | Evidence required |
+| --- | --- |
+| `toHaveEmitted()` | At least one definite matching occurrence. |
+| `toHaveEmittedTimes(n)` | A justified exact count; an open capture can still disprove a count already exceeded. |
+| `toHaveEmittedWith(fields)` | One occurrence with the requested known normalized fields. |
+| `toHaveEmittedBefore(other)` | Established causal ordering between the selected occurrences. |
+| `toHaveNthEmittedWith(n, fields)` | A justified causal position and matching known fields. |
+| `.not.toHaveEmitted()` | Sufficient coverage to establish absence. |
+
+Payload expectations use normalized effect fields and supported asymmetric leaf
+matchers such as `expect.any(String)` and `expect.stringContaining(...)`.
+An unknown operation or target remains missing evidence, including when an
+expectation literally contains `'unknown'`. The current OTLP projection does not
+expose arbitrary span attributes, SQL values, request bodies, or message bodies as
+emission payloads.
+
+Missing capture, unknown facts, and insufficient coverage remain inconclusive
+under both positive and negated assertions. An empty recorder alone does not
+establish that nothing happened. Current OTLP captures do not establish complete
+coverage, so matching an observed count does not prove that the exact count occurred.
+Order follows established causal evidence. Arrival order, timestamps and concurrent
+events do not establish before/after or an ordinal position. Reverse the two
+recorders to express the opposite ordering. Current OTLP captures retain parent
+and link observations without treating them as `happensBefore` proof.
+
+Recorder matchers work with `assertionScope` and attach `blackbox-emissions`
+diagnostics containing their capture identity, relevant emissions, coverage and
+verdict. Use independent state observations to verify a committed row or delivered
+message. A database emission can survive a transaction rollback.
+
+### Compare selected observations with reviewed YAML
+
+```ts
+import { serializeEffectSnapshot } from '@suites/blackbox-playwright';
+
+const observed = serializeEffectSnapshot(database, {
+  project: ({ kind, actor, operation, target, outcome }) => ({
+    kind, actor, operation, target, outcome,
+  }),
+});
+expect(observed).toMatchSnapshot('order-database-observations.yaml');
+```
+
+The explicit projection chooses the fields that become regression expectations.
+An optional `normalize(value)` transforms each projected value before comparison.
+The serializer preserves multiplicity and separates definite from possible
+emissions. It also retains availability and coverage. It omits generated capture
+and span identities unless the projection explicitly includes them.
+
+This YAML compares observations at a selected cut. An open capture can match its
+reviewed observed baseline while an exact count or absence claim stays inconclusive.
+A completely unavailable capture cannot produce a snapshot. An admitted empty
+capture remains visibly open when completeness has not been established.
+
+Native Playwright owns snapshot paths, comparison, mismatch output and explicit
+updates. Keep reviewed `.yaml` files beside the tests and set
+`updateSnapshots: 'none'` in CI. Creating or updating a baseline does not establish
+that its contents are correct; review the selected fields, normalization and diff.
+Actual matcher evidence remains JSON in the `blackbox-emissions` attachment.
+This does not add the planned automatic per-stimulus `effects.json` artifact.
+
 ## Account for assertions in a callback
 
 `assertionScope(callback)` preserves the callback's return value and reports

@@ -9,8 +9,10 @@ import {
   isLiveBlackboxEffects,
   reportEffectAssertion,
 } from './runtime.js';
+import { emissionMatchers } from './emissions/matchers.js';
 
 export const expect = accountingExpect(playwrightExpect.extend({
+  ...emissionMatchers,
   async toSatisfy(received: BlackboxEffects, builder: EffectContractBuilder) {
     if (typeof builder !== 'function') {
       throw new TypeError('Use toSatisfy((effects) => [...])');

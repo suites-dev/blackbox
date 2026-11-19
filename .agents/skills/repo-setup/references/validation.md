@@ -89,7 +89,25 @@ acceptance cases against the packed consumer, then the public retention
 contract from `e2e/tests/playwright-features/`. The effects cases reuse the
 package-owned specs and goldens; their discovery, report, snapshots, Sandbox
 records and cleanup receipt live under `e2e/test-results/effects/` in the
-existing archive. These use real participant containers and successive
+existing archive. The same eight cases also exercise immutable `effects.capture()`
+recorders, emission matchers, assertion accounting, and later-cut isolation.
+`blackbox-emissions` JSON attachments retain verdicts, capture ownership, occurrence
+references and coverage. The proof checks every expected verdict, including the
+intentional failures and inconclusive positive/negated assertions.
+
+The effects lane also compares an explicitly selected HTTP observation projection
+with the reviewed `request-observations.yaml` baseline through native Playwright
+snapshots. The YAML preserves multiplicity and coverage; matching an open observed
+cut does not prove an exact system-wide count or absence. Unknown operations and
+unavailable causal order remain inconclusive. The archive retains the YAML attachment,
+`effects/request-observations.expected.yaml`, and actual JSON evidence. A successful
+archive requires the effects receipt, results JSON and nonempty expected YAML.
+Missing or changed baselines fail with the native
+`updateSnapshots: 'none'` setting; inspect a newly generated candidate before explicitly accepting it and
+rerun against the fixed expectation. Do not deduplicate occurrences or declare
+capture completeness to stabilize a baseline.
+
+The effects and retention cases use real participant containers and successive
 Playwright invocations. They check retained telemetry ownership and bytes,
 retention across output cleanup, the default-off option, and retention write
 failures. Their stable acceptance summary must match `acceptance.golden`;

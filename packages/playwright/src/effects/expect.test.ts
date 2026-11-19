@@ -77,6 +77,7 @@ it('does not let matcher negation accept an effects handle from outside the atte
   const foreignEffects = Object.freeze({
     sessionId: 'foreign-session',
     executionId: 'foreign-execution',
+    capture: () => Promise.reject(new Error('Foreign capture must not be invoked.')),
   });
 
   await vitestExpect(

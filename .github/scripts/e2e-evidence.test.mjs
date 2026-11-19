@@ -83,6 +83,14 @@ test('Playwright evidence uses its own transport identity and output directory',
   for (const [name, value] of Object.entries(assertions)) {
     await write(root, `e2e/test-results/assertions/${name}`, value);
   }
+  const effects = {
+    'effects-receipt.json': '{"kind":"playwright-effects-proof","emissionAssertions":29}',
+    'effects/results.json': '{"attachments":[{"name":"blackbox-emissions"}]}',
+    'effects/request-observations.expected.yaml': '"kind": "recorded-effect-observations"\n',
+  };
+  for (const [name, value] of Object.entries(effects)) {
+    await write(root, `e2e/test-results/${name}`, value);
+  }
   const outputDir = '.blackbox/tmp/ci-playwright-e2e-transport';
   const untrustedOutput = `../${path.basename(root)}-untrusted-output`;
   const wrapper = fileURLToPath(new URL('./playwright-e2e-evidence.mjs', import.meta.url));
@@ -120,8 +128,36 @@ test('Playwright evidence uses its own transport identity and output directory',
   for (const [name, value] of Object.entries(assertions)) {
     assert.equal(await fs.readFile(path.join(extracted, 'e2e/test-results/assertions', name), 'utf8'), value);
   }
+  for (const [name, value] of Object.entries(effects)) {
+    assert.equal(await fs.readFile(path.join(extracted, 'e2e/test-results', name), 'utf8'), value);
+  }
   await assert.rejects(fs.stat(path.resolve(root, untrustedOutput)), /ENOENT/);
 });
+
+for (const omitted of ['effects-receipt.json', 'effects/results.json', 'effects/request-observations.expected.yaml']) {
+  for (const state of ['missing', 'empty']) {
+    test(`Playwright success rejects ${state} ${omitted} and retains available evidence`, async (t) => {
+      const root = await workspace(t);
+      const required = [
+        'junit.xml', 'results.json',
+        'features/receipt.json', 'features/run-result.json',
+        'features/acceptance.actual.txt', 'features/acceptance.expected.txt',
+        'assertions/receipt.json', 'assertions/run-result.json',
+        'assertions/results.json', 'assertions/cleanup.json',
+        'effects-receipt.json', 'effects/results.json', 'effects/request-observations.expected.yaml',
+      ];
+      for (const name of required) {
+        if (name !== omitted) await write(root, `e2e/test-results/${name}`, 'retained evidence');
+      }
+      if (state === 'empty') await write(root, `e2e/test-results/${omitted}`, '');
+      await write(root, 'e2e/test-results/features/golden-diff.txt', '');
+      const receipt = await retainE2eEvidence({ root, project: 'playwright', testOutcome: 'success' });
+      assert.equal(receipt.status, 'failed');
+      assert(receipt.error.includes(omitted));
+      assert.ok(receipt.archive.sha256, 'A missing effects artifact must not discard other evidence');
+    });
+  }
+}
 
 test('Playwright success cannot omit the assertion accounting journey receipt', async (t) => {
   const root = await workspace(t);

@@ -1,0 +1,28 @@
+"availability":
+  "available": true
+  "reason": null
+"coverage":
+  "attestation": "none"
+  "closed": false
+  "coverage": "partial"
+  "orderCoverage": "unknown"
+  "reasons":
+    - "no-harness-completeness-attestation"
+    - "unresolved-parent"
+"emissions":
+  -
+    "count": 1
+    "value":
+      "actor": "app"
+      "kind": "http"
+      "operation": "POST"
+      "outcome": "unknown"
+      "target": "unknown"
+"kind": "recorded-effect-observations"
+"possibleEmissions": []
+"schemaVersion": 1
+"selector":
+  "actor": "app"
+  "kind": "http"
+  "node": "selector"
+  "operation": "POST"
