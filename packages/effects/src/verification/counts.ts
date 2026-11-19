@@ -57,9 +57,14 @@ export function verifySelectedCount(
   }
   const lower = selected.definite.length;
   const upper = closed ? lower + selected.possible.length : Infinity;
+  const status = countStatus(constraint.op, constraint.n, lower, upper);
+  const interval = `${constraint.op} ${constraint.n}; observed lower=${lower}, upper=${closed ? upper : 'unbounded'}`;
   return {
-    status: countStatus(constraint.op, constraint.n, lower, upper),
-    reason: `${constraint.op} ${constraint.n}; observed lower=${lower}, upper=${upper === Infinity ? 'unbounded' : upper}`,
+    status,
+    reason:
+      !closed && status === 'inconclusive' && constraint.op !== 'atLeast'
+        ? `${interval}. Proving an upper bound requires a closed scope with complete effect coverage.`
+        : interval,
     evidence: selected.definite.map((effect) => effect.id),
   };
 }
