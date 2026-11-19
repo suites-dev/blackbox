@@ -66,7 +66,16 @@ it('rejects an in-flight capture after attempt cancellation without running late
   });
   const capture = registry.select().capture();
   registry.close();
+  let timer: NodeJS.Timeout | undefined;
+  const outcome = await Promise.race([
+    capture.then(() => 'resolved', (error: unknown) => error),
+    new Promise<'pending'>((resolve) => {
+      timer = setTimeout(() => { resolve('pending'); }, 250);
+    }),
+  ]);
+  if (timer !== undefined) { clearTimeout(timer); }
   release('done');
-  await expect(capture).rejects.toThrow('expired');
+  expect(outcome).toBeInstanceOf(Error);
+  if (outcome instanceof Error) { expect(outcome.message).toContain('expired'); }
   expect(laterReads).toBe(0);
 });

@@ -16,12 +16,20 @@ import type {
   StateValues,
 } from './types.js';
 
+const closedCapture = Symbol('state attempt closed');
+
 export class StateSelectionImpl implements StateSelection {
   private readonly snapshots = new WeakMap<StateCheckpoint, Snapshot>();
   constructor(
     readonly selected: readonly Entry[],
     private readonly active: () => void,
+    private readonly closed: Promise<void>,
   ) {}
+  private async awaitReader(value: Promise<unknown>): Promise<unknown> {
+    const outcome = await Promise.race([value, this.closed.then(() => closedCapture)]);
+    if (outcome === closedCapture) { this.active(); }
+    return outcome;
+  }
   private find(observer: object): Entry {
     this.active();
     const entry = this.selected.find((item) => item.handle === observer);
@@ -73,9 +81,10 @@ export class StateSelectionImpl implements StateSelection {
         try {
           raw = read();
           if (types.isPromise(raw)) {
-            raw = await raw;
+            raw = await this.awaitReader(raw);
           }
         } catch {
+          this.active();
           failures.push(
             Object.freeze({ observer: entry.name, reader: name, reason: 'reader-failed' }),
           );
