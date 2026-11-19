@@ -1,27 +1,38 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="960" height="504" viewBox="0 0 960 504" role="img" aria-labelledby="title desc">
-<title id="title">Agent onboarding</title><desc id="desc">The agent inspects a repository, discovers services and dependencies, derives system boundaries, then creates and validates Blackbox configuration.</desc>
-<defs><marker id="arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 8 4 0 8Z" fill="#E67189"/></marker></defs>
-<rect width="960" height="504" fill="#0F0F12"/>
-<text x="34" y="34" fill="#EF9DAB" font-family="Geist, Inter, Arial, sans-serif" font-size="13" font-weight="600" letter-spacing="1.5">SUITES / BLACKBOX</text>
-<text x="34" y="76" fill="#F4F4F5" font-family="Geist, Inter, Arial, sans-serif" font-size="27" font-weight="600">Agent onboarding</text>
-<text x="34" y="106" fill="#A1A1AA" font-family="Geist, Inter, Arial, sans-serif" font-size="16" font-weight="400">Discovery turns existing project files into a runnable system map.</text>
-<rect x="153" y="136" width="654" height="66" rx="18" fill="#17171C" stroke="#8B8B94" stroke-opacity="0.44" stroke-width="1.5"/>
-<svg x="176" y="144" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#EF9DAB" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="7" width="16" height="14" rx="4"/><path d="M12 3v4M1 12v5m22-5v5M9 16h6"/><circle cx="9" cy="12" r=".7"/><circle cx="15" cy="12" r=".7"/><circle cx="12" cy="2" r="1"/></svg>
-<text x="214" y="163" fill="#F4F4F5" font-family="Geist, Inter, Arial, sans-serif" font-size="17" font-weight="600">Your repository</text>
-<text x="214" y="187" fill="#A1A1AA" font-family="Geist, Inter, Arial, sans-serif" font-size="15" font-weight="400">Existing application and project files</text>
-<path d="M480 202 V219" fill="none" stroke="#E67189" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
-<rect x="153" y="222" width="654" height="66" rx="18" fill="#17171C" stroke="#8B8B94" stroke-opacity="0.44" stroke-width="1.5"/>
-<svg x="176" y="230" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#A1A1AA" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10" cy="10" r="7"/><path d="m15 15 7 7"/></svg>
-<text x="214" y="249" fill="#F4F4F5" font-family="Geist, Inter, Arial, sans-serif" font-size="17" font-weight="600">Discover services</text>
-<text x="214" y="273" fill="#A1A1AA" font-family="Geist, Inter, Arial, sans-serif" font-size="15" font-weight="400">Services and dependencies</text>
-<path d="M480 288 V305" fill="none" stroke="#E67189" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
-<rect x="153" y="308" width="654" height="66" rx="18" fill="#17171C" stroke="#8B8B94" stroke-opacity="0.44" stroke-width="1.5"/>
-<svg x="176" y="316" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#A1A1AA" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 9 5v9l-9 5-9-5V8l9-5ZM3 8l9 5 9-5M12 13v9M8 5l9 5"/></svg>
-<text x="214" y="335" fill="#F4F4F5" font-family="Geist, Inter, Arial, sans-serif" font-size="17" font-weight="600">Derive topology</text>
-<text x="214" y="359" fill="#A1A1AA" font-family="Geist, Inter, Arial, sans-serif" font-size="15" font-weight="400">System and subsystem boundaries</text>
-<path d="M480 374 V391" fill="none" stroke="#E67189" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
-<rect x="153" y="394" width="654" height="66" rx="18" fill="#17171C" stroke="#E67189" stroke-opacity="0.42" stroke-width="1.5"/>
-<svg x="176" y="402" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#EF9DAB" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16M4 12h16M4 19h16"/><circle cx="8" cy="5" r="2" fill="#17171C"/><circle cx="16" cy="12" r="2" fill="#17171C"/><circle cx="9" cy="19" r="2" fill="#17171C"/></svg>
-<text x="214" y="421" fill="#EF9DAB" font-family="Geist, Inter, Arial, sans-serif" font-size="17" font-weight="600">Configure Blackbox</text>
-<text x="214" y="445" fill="#A1A1AA" font-family="Geist, Inter, Arial, sans-serif" font-size="15" font-weight="400">Create and validate Blackbox configuration</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="344" viewBox="0 0 1100 344" fill="none">
+<defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="6.5" refY="4" orient="auto"><path d="M1 1L6.5 4L1 7" fill="none" stroke="#8899A7" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" /></marker></defs>
+<rect x="14" y="34" width="247" height="182" rx="14" fill="#FFFFFF" stroke="#CAD7E0" stroke-width="1.5"/>
+<rect x="14" y="34" width="247" height="43" rx="13" fill="#EDF5FB"/>
+<rect x="14" y="63" width="247" height="14" fill="#EDF5FB"/>
+<text x="30" y="61" font-family="Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, Segoe UI, Arial, sans-serif" font-size="12" font-weight="700" letter-spacing="0.95" fill="#3C7399">01 / REPOSITORY</text>
+<text x="30" y="122" font-family="Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#172A39">Inspect the application</text>
+<text x="30" y="158" font-family="Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, Segoe UI, Arial, sans-serif" font-size="13" fill="#536D7B">Services, dependencies,</text>
+<text x="30" y="179" font-family="Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, Segoe UI, Arial, sans-serif" font-size="13" fill="#536D7B">existing deployment files</text>
+<path d="M265 123H283" stroke="#8899A7" stroke-width="1.8" marker-end="url(#arrow)" stroke-linecap="round"/>
+<rect x="289" y="34" width="247" height="182" rx="14" fill="#FFFFFF" stroke="#CAD7E0" stroke-width="1.5"/>
+<rect x="289" y="34" width="247" height="43" rx="13" fill="#E9F7F4"/>
+<rect x="289" y="63" width="247" height="14" fill="#E9F7F4"/>
+<text x="305" y="61" font-family="Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, Segoe UI, Arial, sans-serif" font-size="12" font-weight="700" letter-spacing="0.95" fill="#0D9185">02 / DISCOVERY</text>
+<text x="305" y="122" font-family="Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#172A39">Choose a boundary</text>
+<text x="305" y="158" font-family="Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, Segoe UI, Arial, sans-serif" font-size="13" fill="#536D7B">Smallest real system</text>
+<text x="305" y="179" font-family="Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, Segoe UI, Arial, sans-serif" font-size="13" fill="#536D7B">needed for the rule</text>
+<path d="M540 123H558" stroke="#8899A7" stroke-width="1.8" marker-end="url(#arrow)" stroke-linecap="round"/>
+<rect x="564" y="34" width="247" height="182" rx="14" fill="#FFFFFF" stroke="#CAD7E0" stroke-width="1.5"/>
+<rect x="564" y="34" width="247" height="43" rx="13" fill="#FFF0F5"/>
+<rect x="564" y="63" width="247" height="14" fill="#FFF0F5"/>
+<text x="580" y="61" font-family="Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, Segoe UI, Arial, sans-serif" font-size="12" font-weight="700" letter-spacing="0.95" fill="#E8467A">03 / CATALOG</text>
+<text x="580" y="122" font-family="Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#172A39">Configure execution</text>
+<text x="580" y="158" font-family="Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, Segoe UI, Arial, sans-serif" font-size="13" fill="#536D7B">Clients, instrumentation,</text>
+<text x="580" y="179" font-family="Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, Segoe UI, Arial, sans-serif" font-size="13" fill="#536D7B">state readers, readiness</text>
+<path d="M815 123H833" stroke="#8899A7" stroke-width="1.8" marker-end="url(#arrow)" stroke-linecap="round"/>
+<rect x="839" y="34" width="247" height="182" rx="14" fill="#FFFFFF" stroke="#CAD7E0" stroke-width="1.5"/>
+<rect x="839" y="34" width="247" height="43" rx="13" fill="#EDF5FB"/>
+<rect x="839" y="63" width="247" height="14" fill="#EDF5FB"/>
+<text x="855" y="61" font-family="Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, Segoe UI, Arial, sans-serif" font-size="12" font-weight="700" letter-spacing="0.95" fill="#3C7399">04 / VERIFICATION</text>
+<text x="855" y="122" font-family="Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#172A39">Prepare first test</text>
+<text x="855" y="158" font-family="Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, Segoe UI, Arial, sans-serif" font-size="13" fill="#536D7B">Executable acceptance</text>
+<text x="855" y="179" font-family="Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, Segoe UI, Arial, sans-serif" font-size="13" fill="#536D7B">scenario for review</text>
+<path d="M962 216V241H550V253" stroke="#0D9185" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<rect x="190" y="264" width="720" height="68" rx="13" fill="#F7FAFC" stroke="#CAD7E0" stroke-width="1.4"/>
+<text x="550" y="290" text-anchor="middle" font-family="Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, Segoe UI, Arial, sans-serif" font-size="14" font-weight="700" fill="#172A39">Reviewable project setup</text>
+<text x="550" y="312" text-anchor="middle" font-family="Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, Segoe UI, Arial, sans-serif" font-size="13" fill="#536D7B">blackbox.config.yaml  ·  clients  ·  observers  ·  first acceptance test</text>
 </svg>

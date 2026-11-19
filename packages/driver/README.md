@@ -3,10 +3,8 @@
 `@suites/blackbox-driver` defines the command-driver contract and the current Node authoring runtime. A project driver turns a caller-supplied command plus resolved Capsule context into arguments, environment variables, telemetry propagation, and redaction declarations.
 
 This is a public alpha authoring package. Its contract may change between alpha
-releases. For the end-user workflow, read
-[Drivers and command execution](../../docs/drivers.md); this page describes the
-maintainer boundary. Until the alpha is published, install the SDK into a project from
-source as described in [installation](../../docs/installation.md#install-the-sdk-for-project-drivers).
+releases. Install `@suites/blackbox-driver@alpha` in the project that owns a custom driver.
+This page describes the authoring and execution boundary.
 
 ```text
 CLI + catalog + Capsule context
@@ -70,7 +68,7 @@ export default defineDriver({
 
 `request` is cloned and deeply frozen before project code receives it. It contains the original command, resolved target and endpoint, execution location, expected propagation, and available telemetry context. The result is schema-checked and then checked against the request.
 
-Use the working [HTTP](../../e2e/.blackbox/drivers/public-api.mjs), [PostgreSQL](../../e2e/.blackbox/drivers/postgres.mjs), and [Redis](../../e2e/.blackbox/drivers/redis.mjs) drivers for carrier injection, secret redaction, and shared-state examples. Keep full catalog and CLI instructions in the [user guide](../../docs/drivers.md), not here.
+Use the working [HTTP](../../e2e/.blackbox/drivers/public-api.mjs), [PostgreSQL](../../e2e/.blackbox/drivers/postgres.mjs), and [Redis](../../e2e/.blackbox/drivers/redis.mjs) drivers for carrier injection, secret redaction, and shared-state examples. The [Capsule package](../capsule/README.md) describes the execution boundary.
 
 ## Preparation and execution are separate
 
@@ -108,8 +106,8 @@ Redaction declarations tell Capsule which prepared values are secret, including 
 | ------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
 | [Catalog](../catalog/src/model/catalog-types.ts)        | Declares project module, target, execution location, and propagation expectation.                                      |
 | [Capsule](../capsule/src/execution/driver-execution.ts) | Builds the request, invokes preparation, enforces propagation policy, and owns command execution.                      |
-| [CLI install](../cli/src/commands/driver/install.ts)    | Prepares `.blackbox/drivers/` and verifies a project-local SDK; it does not author a driver or install protocol tools. |
-| [CLI exec](../cli/src/commands/capsule/exec.ts)         | Selects the driver and exposes the explicit `--allow-untraced` override.                                               |
+| [CLI install](src/cli/commands/driver/install.ts)       | Prepares `.blackbox/drivers/` and verifies a project-local SDK; it does not author a driver or install protocol tools. |
+| [CLI run](../capsule/src/cli/commands/capsule/run.ts)   | Selects the driver and exposes the explicit `--allow-untraced` override.                                               |
 | [Telemetry](../telemetry/src/index.ts)                  | Supplies propagation expectations/outcomes used to validate and retain the boundary record.                            |
 
 The root export in [src/index.ts](src/index.ts) exposes the authoring model, protocol helpers, schemas, runtime artifact, and Node preparation helpers. The `./node-runner` subpath is the generated child-process entrypoint. The checked-in schemas under [schema](schema/) are the versioned wire contract for tooling or a future non-Node runner; only the Node runtime is implemented today.

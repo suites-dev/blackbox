@@ -66,7 +66,7 @@ Docker Compose lifecycle.
   `runCatalogList()`](src/application/catalog-commands.ts) implement data-only
   command facades for the canonical project-root `blackbox.config.yaml`. They
   return discriminated, JSON-ready results and do not print or terminate the
-  process. The [CLI commands](../cli/src/commands/catalog/) render those results.
+  process. The [CLI commands](src/cli/commands/catalog/) render those results.
 - **Capsule:** the [manager catalog
   port](../capsule/src/manager/ports.ts) loads an explicit config file and
   resolves a requested system ID. Capsule then maps the returned plan into
