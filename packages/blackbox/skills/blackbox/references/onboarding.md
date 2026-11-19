@@ -1,27 +1,110 @@
-# Set up Blackbox for a repo
+# Set up a repository for one accepted behavior
 
-Use this route when the user asks to set Blackbox up for a repository, not for a direct catalog or Capsule request.
-It reuses the `discovery`, `catalog` and `capsule` skills; read them for procedure. Check that each is available
-first, and report a missing one as a blocker.
+Start in the application repository with its locally installed CLI.
 
-## Done means
+```sh
+blackbox onboarding start --json
+```
 
-All of these, each with its own evidence:
+The receipt lists active CLI package versions in `packages`, command availability in
+`commands`, direct selections for the live Node/Capsule route in `livePackages`, and
+the agent handoff in `instructions`. For a human-readable prompt, omit `--json`.
+The command writes to stdout. Repository discovery, config changes and test authoring
+are the agent's work.
 
-1. The system starts locally: `capsule up --json` exits 0 with `kind: capsule-started`. A failed `up` exits 125 but can
-   still return a `sessionId`; that is a retained failure, not a start.
-2. It is a fresh capsule acquired for this run.
-3. One action was issued (`capsule run`), with its `activityId`.
-4. Evidence was collected (`capsule show`, and a report written after `down`).
-5. The result was inspected against the accepted expectation, with the report status and limitations stated.
-6. Cleanup was confirmed: `capsule down --json` returns `cleanup: complete`, `capsule ls --all` shows `stopped`, and
-   Docker shows nothing left for the capsule's Compose project (below). `ls` reads recorded state, not Docker.
+## Check the installed capabilities
 
-A config file, a passing `catalog validate` or an installed package is not done.
+Use the project's package manager, configured registry and lockfile policy. Align
+Blackbox versions with the installed CLI. Blackbox declares Node.js `>=22.15`.
+Check the engine requirements of the project's resolved dependencies too.
 
-Docker check, with the project name from the `up` JSON (`composeProject`) or, after a failed `up`, from its
-`Compose configured: <project>` progress line (printed by `up --json --non-interactive`; terminal rendering omits it). Run it after `down` and after a failed `up` that got as far as `Compose configured:`; all three must be empty. A failure
-earlier (for example `manager-failed` at `manager-handshake`) created no Compose project, so there is nothing to check:
+| Task                                  | Packages and capabilities                                                                                                                                                             |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Discover and configure a boundary     | Directly select `@suites/blackbox` and `@suites/blackbox-cli`. The main package contributes Discovery, Catalog and Skills.                                                            |
+| Run a live Node/Capsule investigation | Also select `@suites/blackbox-capsule`, `@suites/blackbox-driver` and `@suites/blackbox-inst-runtime-node` as direct dependencies. Docker with Compose runs the selected system.      |
+| Author a native acceptance test       | Select the matching `@suites/blackbox-playwright` adapter and its `@playwright/test` peer (`>=1.61.0 <2`). The adapter provides library exports. Check them in the installed version. |
+
+Run `blackbox skills list --json` and use the receipt's host installation commands.
+Load the installed `blackbox`, `discovery` and `catalog` skills, plus `capsule` for a
+live investigation. If a capability is missing, identify the affected stage. Use the
+[installation reference](skill-installation.md) to distinguish a missing provider
+from a host that still needs a project-local copy.
+
+## Propose and validate the boundary
+
+1. Start with one accepted rule from a test, issue or specification the developer names.
+   If the expected outcome is open, ask the developer to define it before writing assertions.
+2. Use Discovery to inspect the existing Compose files, Dockerfiles, entrypoints, readiness
+   checks, initial state and reset procedure. Read package scripts before running them.
+3. Propose the smallest system or subsystem containing the rule. Identify the stimulus,
+   completion condition, authoritative state readers and runtime effects the rule requires.
+   Review those choices with the developer.
+4. Use Catalog and the installed schema to draft `blackbox.config.yaml` at the repo root.
+   Preserve ordered project-relative Compose paths. Moving an existing Compose file can change
+   its build, bind-mount and `env_file` paths. Use `.blackbox/catalog/` for newly authored files.
+   Each entry requires `drivers` and `observation`. An empty `drivers: {}` is valid.
+5. For a Node driver, use `blackbox driver install --runtime node`. For instrumented Node
+   participants, use `blackbox inst install --runtime node` and configure their activation.
+   Confirm the required commands appear as available in the receipt before invoking them.
+6. Run `blackbox catalog validate --json` and `blackbox catalog list --json`. Record the
+   validated catalog entry and any unresolved setup. Runtime readiness requires a live check.
+
+## Draft the native acceptance test
+
+Use `defineConfig` from `@suites/blackbox-playwright/config` in the project's
+Playwright config and set `blackboxConfigFile` to the catalog path relative to that
+config. Select the catalog ID with native `test.use`. Each physical attempt gets a
+fresh Sandbox. For example, if the accepted rule requires a valid subscription
+request to return HTTP 201, the test can express that outcome directly.
+
+```ts
+import { expect, test } from '@suites/blackbox-playwright';
+
+test.use({ blackbox: { system: 'subscription-system' } });
+
+test('accepts a subscription with a valid payment method', async ({ stimulus }) => {
+  const { result, verify } = await stimulus(
+    'When Alice subscribes with a valid payment method',
+    ({ request, headers }) =>
+      request.post('/subscriptions', {
+        headers,
+        data: { userId: 'alice', paymentMethodId: 'pm_alice_primary' },
+      }),
+  );
+  await verify('Then the subscription request succeeds', () => {
+    expect(result.status()).toBe(201);
+  });
+});
+```
+
+Use the project's actual catalog entry, route and inputs. If the rule also requires
+persistence, register a project-owned reader with `state.observe` before the action,
+check its initial value in the stimulus precondition, and assert the matching final
+record using `evidence.state(observer)`. Review bindings, assertions and any expected
+snapshots with the developer. Observations become acceptance criteria only after review.
+
+Use the project's Playwright command with `--list` to confirm discovery. After approval,
+run the selected spec and report its attempt result, evidence and cleanup. The optional
+`@suites/blackbox-playwright/reporter` and `@suites/blackbox-playwright/history` exports
+support reporting and inspection of retained attempts.
+
+## Verify a live Capsule investigation
+
+With the Capsule skill, acquire a fresh session using
+`blackbox capsule up <system> --json --non-interactive`. A successful start exits 0 with
+`kind: capsule-started`. A failed start can exit 125 and still return a session ID.
+Run one approved action using `blackbox capsule run` with the explicit `--session`.
+Keep the session and activity IDs, then inspect with `blackbox capsule show <id>`.
+
+Stop the session with `blackbox capsule down <id> --json`. A successful stop reports
+`cleanup: complete`. Inspect `blackbox capsule show <id>`, then write the final report
+with `blackbox capsule report <id>`. Stop drains the collector. A report produced while
+the session runs is provisional. Assess absence or exact counts only against final
+evidence with suitable capture coverage.
+
+Check `blackbox capsule ls --all` for the recorded `stopped` state. Use the actual
+`composeProject` from startup or the `Compose configured: <project>` progress line
+to check Docker. After cleanup, all three inventories should be empty.
 
 ```sh
 docker ps -a --filter "label=com.docker.compose.project=<project>" --format '{{.Names}}'
@@ -29,34 +112,10 @@ docker network ls --filter "label=com.docker.compose.project=<project>" --format
 docker volume ls -q --filter "label=com.docker.compose.project=<project>"
 ```
 
-## Path
-
-1. **Understand how the system runs.** Follow discovery's initial setup: inventory, Compose files, Dockerfiles,
-   readiness, state and reset. Do not run package scripts to find out.
-2. **Choose a small boundary.** The smallest system or subsystem that contains one accepted behavior.
-3. **Write `blackbox.config.yaml`** at the repo root, with ordered, project-relative Compose files. Reference the project's existing Compose files in place (moving one can
-   change its relative build, bind-mount and `env_file` paths); use `.blackbox/catalog/` only for files you create. Use the
-   catalog skill and the installed schema. `drivers` and `observation` are required on every entry (`drivers: {}`
-   is valid). For Node services add instrumentation with `blackbox inst install --runtime node` and an activation, after checking that `blackbox inst install --help` exists (the Node instrumentation integration is a separate package; if it is missing, report it as a blocker).
-4. **Validate statically.** `blackbox catalog validate --json`, then `blackbox systems`. This proves the files parse,
-   not that anything starts.
-5. **One Capsule run.** With the capsule skill: `blackbox capsule up <system> --json --non-interactive` (in a terminal, interactive rendering omits the Compose project name), one `capsule run` with an
-   explicit `--session`, then inspect.
-6. **Inspect, stop, then report.** `blackbox capsule show <id>` while it runs, then `down <id>` (`down` accepts `running`, `stop-failed` and `manager-failed` capsules; the last two retry the cleanup and end `stopped` once it completes. After a `start-failed` `up`, startup already tried its own cleanup, so skip `down` and use the Docker check),
-   then `blackbox capsule show <id>` and `blackbox capsule report <id>` again. A report written while the capsule
-   runs is `provisional` and does not draw the final evidence: `down` drains the collector, and only the report
-   after `down` can be `complete`. Judge absence and exact-count expectations only from that one.
-
-## Specification source
-
-Use an accepted spec if there is one (an existing test, issue or document the user names). Never change the spec to
-fit what the implementation does. If none exists, say the expectation is unspecified and ask; a recorded observation
-is not an expectation.
-
-Not available on this release, so do not invent commands: Features and Spec Kit flows, `feature validate|verify`,
-`spec draft`, and the Playwright-feature flow. They are planned. Native Playwright (`@suites/blackbox-playwright`,
-`test.use({ blackbox: { system } })`) exists as a package, but it is not needed for the first verification; use the discovery
-Playwright reference only if the user asks for a test.
+After `start-failed`, startup has already attempted cleanup. Check the Compose project
+if startup created one. For `stop-failed` or `manager-failed`, retry `down` as directed
+by the Capsule skill. Report the accepted expectation, observations, report status,
+coverage limitations and owned resources remaining after cleanup.
 
 ## When it fails
 

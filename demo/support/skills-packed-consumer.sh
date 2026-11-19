@@ -11,7 +11,7 @@ set -Eeuo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd -- "$SCRIPT_DIR/../.." && pwd)"
-PACKAGES=(cli-contract telemetry skills cli catalog discovery driver instrumentation otel-collector sandbox report-server blackbox)
+PACKAGES=(cli-contract telemetry skills cli catalog discovery driver instrumentation otel-collector sandbox report-server blackbox capsule instrumentation-runtime-node)
 
 for command in pnpm jq node diff; do
   command -v "$command" >/dev/null 2>&1 || {
@@ -220,5 +220,21 @@ node --input-type=module -e '
   assert.throws(() => fromCli.resolve("@suites/blackbox-skills"), {code: "MODULE_NOT_FOUND"});
   assert.throws(() => fromCli.resolve("@suites/blackbox"), {code: "MODULE_NOT_FOUND"});
 '
+
+# Install the direct packages named by the standalone CLI in a new project.
+# The archives override the registry only in this disposable consumer.
+LIVE="$WORK_ROOT/live-route"
+mkdir "$LIVE"
+node_modules/.bin/blackbox onboarding start --json >"$WORK_ROOT/onboarding.json"
+jq -e '.kind == "onboarding-start" and ([.packages[].name] == ["@suites/blackbox-cli"]) and
+  (.commands | length > 0 and all(.available == false))' "$WORK_ROOT/onboarding.json" >/dev/null ||
+  fail "standalone CLI reported an active provider"
+jq --slurpfile receipt "$WORK_ROOT/onboarding.json" '
+  .pnpm.overrides as $archives |
+  .dependencies = ($receipt[0].livePackages | map({key: ., value: $archives[.]}) | from_entries)
+' package.json >"$LIVE/package.json"
+run_setup pnpm --dir "$LIVE" install --ignore-workspace --prefer-offline --ignore-scripts \
+  ${PNPM_STORE_DIR:+--store-dir "$PNPM_STORE_DIR"}
+(cd "$LIVE" && node "$REPO_ROOT/packages/cli/scripts/verify-packed-onboarding.mjs")
 
 echo "skills-packed-consumer: passed (main plus explicit CLI, CLI-owned executable, no main launcher, all hosts, public exports, packed helpers, absent adapters, installed, unchanged, alias, conflict preserved, adopted, unselected bundle, standalone CLI)"
