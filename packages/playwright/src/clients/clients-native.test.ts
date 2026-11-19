@@ -51,7 +51,7 @@ it.each(['client-readiness-timeout', 'client-create-late'])(
   },
 );
 
-it('allows healthy client setup within a 100ms native test timeout', async () => {
+it('allows asynchronous client setup inside a finite native test timeout', async () => {
   const run = await runPlaywright({
     configFile: 'system-sandbox-declarations.config.ts',
     testFile: 'clients.spec.ts',
