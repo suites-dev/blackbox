@@ -181,11 +181,12 @@ it('blocks the action for a native soft failure while the native test remains fa
   const run = await runAssertions('stimulus-soft.spec.ts');
   expect(run.exitCode).toBe(1);
   const specs = discovered(run.report.suites);
-  expect(specs.map(({ title }) => title)).toEqual(['soft failing precondition never invokes action', 'soft failure mixed with unavailable evidence remains failed']);
+  expect(specs.map(({ title }) => title)).toEqual(['soft failing precondition never invokes action', 'soft failure mixed with unavailable evidence remains failed', 'unconsumed verification with unavailable effects records a failed claim']);
   for (const spec of specs) { expect(spec.tests[0].results[0].status).toBe('failed'); }
-  expect(run.report.stats).toMatchObject({ expected: 0, unexpected: 2, skipped: 0, flaky: 0 });
+  expect(run.report.stats).toMatchObject({ expected: 0, unexpected: 3, skipped: 0, flaky: 0 });
   expect(run.events).toContainEqual({ kind: 'soft-precondition-blocked', value: 0 });
   expect(run.events).toContainEqual({ kind: 'soft-mixed-failed', value: true });
+  expect(run.events).toContainEqual({ kind: 'structural-mixed-status', value: ['failed'] });
 }, 60_000);
 
 it('records real native timeout as interrupted and retains only initial evidence', async () => {

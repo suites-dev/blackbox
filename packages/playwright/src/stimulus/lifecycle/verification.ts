@@ -8,7 +8,7 @@ import type { ExecutionResult } from './types.js';
 
 export function failureStatus(error: unknown): LifecycleStatus {
   if (error instanceof InconclusiveAssertionError) { return 'inconclusive'; }
-  if (error instanceof AssertionScopeError && error.failures.length > 0 &&
+  if (error instanceof AssertionScopeError && error.code === 'failed' && error.failures.length > 0 &&
       error.failures.every((failure) => failureStatus(failure) === 'inconclusive')) { return 'inconclusive'; }
   return 'failed';
 }
