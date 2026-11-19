@@ -1,7 +1,7 @@
 # Maintain the Capsule Bash acceptance journey
 
 This guide is for contributors validating the Capsule implementation and package boundary.
-For a first experience with Blackbox, use the [user quickstart](../../docs/getting-started.md).
+For a first experience with Blackbox, use the [acceptance journey](../../README.md#get-started).
 
 ## Prepare a checkout
 
@@ -23,7 +23,7 @@ pnpm install --frozen-lockfile
 pnpm build
 ```
 
-The journey no longer builds or packs packages itself. It installs the ten public packages from a disposable
+The journey no longer builds or packs packages itself. It installs the selected Blackbox packages from a disposable
 Verdaccio registry, the same way CI does, so build the workspace once before preparing the consumer.
 
 Start the registry (the values below match [`.github/actions/registry`](../../.github/actions/registry/action.yml)):
@@ -82,8 +82,8 @@ pnpm run test:demo
 The terminal walkthrough opens the report viewer and waits for Enter between steps. Redirecting stdin disables those
 pauses and browser opening; `CI=true` alone does not select unattended mode.
 
-`prepare:consumer` runs [`scripts/consumer/prepare.mjs`](../../scripts/consumer/prepare.mjs). It installs the ten
-public packages from the registry into a throwaway consumer outside the workspace, then installs the project's
+`prepare:consumer` runs [`scripts/consumer/prepare.mjs`](../../scripts/consumer/prepare.mjs). It installs the selected
+Blackbox packages from the registry into a throwaway consumer outside the workspace, then installs the project's
 Node driver and instrumentation there too. It builds nothing and packs nothing. The acceptance journey,
 [`demo/acceptance/capsule-test.sh`](../../demo/acceptance/capsule-test.sh), uses that consumer's CLI and
 project-local driver SDK, so it checks the package boundary as well as runtime behavior.
@@ -126,7 +126,7 @@ cleanup. The `Capsule journey passed` banner appears before the exit cleanup fin
 
 | Location                                          | Contents                                                                                 |
 | ------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| `e2e/.blackbox/tmp/capsule-assets/`               | Package boundary checks and consumer preparation receipt.                               |
+| `e2e/.blackbox/tmp/capsule-assets/`               | Package boundary checks and consumer preparation receipt.                                |
 | `e2e/.blackbox/tmp/capsule-test.*/`               | Command outputs, telemetry proofs, report checks, cleanup evidence, and journey receipt. |
 | `e2e/.blackbox/experiments/capsule-<session-id>/` | Retained session, activities, startup progress, sandbox and collector records.           |
 | `e2e/.blackbox/reports/capsule-<session-id>/`     | Exported JSON and HTML snapshots.                                                        |
@@ -136,13 +136,13 @@ generated output, so preserve evidence you need before rerunning. Review telemet
 
 ## Diagnose a failed run
 
-| Symptom                                  | Next check                                                                                                                                 |
-| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| `prepare:consumer` fails to resolve a package | Check that the registry is running (`docker logs blackbox-test-registry`) and serves the version recorded in `lerna.json`.            |
-| Startup or readiness failure             | Inspect retained progress and sandbox records, Docker access, image builds, and fixture configuration.                                     |
-| Expected spans do not arrive             | Inspect activation and collector status, then the exact session/activity/trace. Read [observation limits](../../docs/runtime-evidence.md). |
-| Viewer port conflict                     | Check the owning viewer; the default is port `4310`. An unrelated listener is not stopped automatically.                                   |
-| Banner appears but command exits nonzero | Read cleanup output and retained ownership records. The run has not passed.                                                                |
+| Symptom                                       | Next check                                                                                                                                       |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `prepare:consumer` fails to resolve a package | Check that the registry is running (`docker logs blackbox-test-registry`) and serves the version recorded in `lerna.json`.                       |
+| Startup or readiness failure                  | Inspect retained progress and sandbox records, Docker access, image builds, and fixture configuration.                                           |
+| Expected spans do not arrive                  | Inspect activation and collector status, then the exact session/activity/trace. Read [telemetry boundaries](../../packages/telemetry/README.md). |
+| Viewer port conflict                          | Check the owning viewer; the default is port `4310`. An unrelated listener is not stopped automatically.                                         |
+| Banner appears but command exits nonzero      | Read cleanup output and retained ownership records. The run has not passed.                                                                      |
 
 For package development, run `pnpm lint`, `pnpm typecheck`, and `pnpm test` separately. Package tests and helper tests
 do not replace the Docker-backed journey. CI runs the same journey in the `demo` job of the

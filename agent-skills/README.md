@@ -1,18 +1,29 @@
 # Blackbox agent skills
 
-Blackbox is unpublished. Check the [current implementation status](../docs/alpha-status.md)
-and [CLI reference](../docs/cli.md) before executing a workflow from these references.
-Playwright and effect-evaluation references are labeled design guidance for later stages.
-See [agent skill setup](../docs/agent-skills.md) for installation with `blackbox skills install discovery` or by hand. Start with the [local quickstart](../docs/getting-started.md) to try the current implementation.
+From an application with the Blackbox CLI installed, run
+`blackbox onboarding start`. It prints the installed package and command inventory
+and a prompt for your coding agent. The command does not change the application.
+See [Get started](../README.md#get-started) for the package installation.
 
-## Installable Alpha skill
+Install the project-local entry skill for your agent host:
 
-[`packages/discovery/skills/discovery`](../packages/discovery/skills/discovery/) is the portable Alpha onboarding entrypoint, shipped in `@suites/blackbox-discovery`. Install it with `blackbox skills install discovery`, or copy the complete directory to a skill location supported by the agent host. Its `SKILL.md` and all supporting references stay together, so the installed copy has no links back to this repository or the historical source bundle.
+```sh
+blackbox skills list --json
+blackbox skills install blackbox --codex
+```
 
-The entrypoint progressively routes among references for topology and catalog authoring, runtime observation, Capsule experiments, native Playwright, asynchronous workflows, effects and baselines, evidence and reports, troubleshooting and repair, and CI. Read only the reference needed for the current task.
+Use `--claude` or `--cursor` for those hosts. The main package contributes the
+`blackbox`, `catalog`, and `discovery` skills. Install a specialist separately when
+you need it; the `capsule` skill requires the Capsule package to be selected.
+The [main package guide](../packages/blackbox/README.md#start-with-the-agent-skill)
+explains destinations, updates, and conflicts. A listed contribution is not yet a
+skill installed in the agent host.
 
-## Provenance
+## Historical sources
 
-[`source-dispositions.json`](source-dispositions.json) records the disposition and SHA-256 for every one of the 29 historical skill sources, pinned to the import inventory at commit `732ecf29e42214a4fd436889dc8898f169335bae`. It records all 22 active sources and seven deferred sources. Historical source content is provenance, not product authority or an install-time dependency.
-
-Skills are installed into a project only, never into an operator's global configuration; see [agent skill setup](../docs/agent-skills.md) for destinations and update behavior.
+This directory retains provenance for the earlier skill bundle.
+[`source-dispositions.json`](source-dispositions.json) records the disposition and
+SHA-256 for its 29 historical sources, pinned to commit
+`732ecf29e42214a4fd436889dc8898f169335bae`. Those sources are not product
+authority or an install-time dependency. The shipped entry skill lives in
+[`packages/blackbox/skills/blackbox`](../packages/blackbox/skills/blackbox/).
