@@ -1,0 +1,90 @@
+import { setImmediate as nextTurn } from 'node:timers/promises';
+import { expect as nativeExpect } from '@playwright/test';
+import { test, expect, assertionScope } from '../../index.js';
+import { completeGraph, recordedEffects } from '../../effects/testing/emissions.fixture.js';
+import { createAttemptEffects } from '../../effects/attempt-effects.js';
+import { createAttemptStep } from '../../steps/step-context.js';
+import { createStateRegistry } from '../../state/registry.js';
+import { createStimulusLifecycle } from '../../stimulus/lifecycle/runtime.js';
+import type { RunningBlackboxAttempt } from '../../runtime/acquisition.js';
+import { record } from './evidence.fixture.js';
+
+test('soft failing precondition never invokes action', async ({ request }, info) => {
+  const registry = createStateRegistry();
+  const effects = createAttemptEffects({ sessionId: 'session', executionId: 'attempt', storageDirectory: info.outputDir }).effects;
+  const attempt = { sandbox: { executionId: 'attempt' }, telemetry: { sessionId: 'session' }, effects } as RunningBlackboxAttempt;
+  const step = createAttemptStep(test.step.bind(test), attempt);
+  const lifecycle = createStimulusLifecycle({ registry, request, step: step.step });
+  let calls = 0;
+  await nativeExpect(lifecycle.stimulus('When blocked', () => { calls++; }, {
+    precondition: { name: 'Given wrong state', check: () => { expect.soft(1).toBe(2); } },
+  })).rejects.toThrow();
+  nativeExpect(calls).toBe(0);
+  nativeExpect(lifecycle.journal.events().filter((event) => event.kind === 'action')).toMatchObject([{ status: 'not-executed' }]);
+  record('soft-precondition-blocked', calls);
+  lifecycle.close(); step.revoke(); registry.close();
+});
+
+test('soft failure mixed with unavailable evidence remains failed', async ({ request }, info) => {
+  const registry = createStateRegistry();
+  const effects = createAttemptEffects({ sessionId: 'session', executionId: 'attempt', storageDirectory: info.outputDir }).effects;
+  const attempt = { sandbox: { executionId: 'attempt' }, telemetry: { sessionId: 'session' }, effects } as RunningBlackboxAttempt;
+  const step = createAttemptStep(test.step.bind(test), attempt);
+  const lifecycle = createStimulusLifecycle({ registry, request, step: step.step });
+  const graph = completeGraph([]);
+  const open = { ...graph, scope: { ...graph.scope, closed: false }, quality: { ...graph.quality, coverage: 'partial' as const, reasons: ['open'] } };
+  const selected = (await recordedEffects(open).capture()).http();
+  const outcome = await lifecycle.stimulus('When mixed claims execute', () => 1);
+  await nativeExpect(outcome.verify('Then a soft failure wins', async () => {
+    expect.soft(1).toBe(2);
+    await expect(selected).not.toHaveEmitted();
+  })).rejects.toThrow();
+  nativeExpect(lifecycle.journal.events().filter((event) => event.kind === 'claim')).toMatchObject([{ status: 'failed' }]);
+  record('soft-mixed-failed', true);
+  lifecycle.close(); step.revoke(); registry.close();
+});
+
+test('unconsumed verification with unavailable effects records a failed claim', async ({ request }, info) => {
+  const registry = createStateRegistry();
+  const effects = createAttemptEffects({ sessionId: 'session', executionId: 'attempt', storageDirectory: info.outputDir }).effects;
+  const attempt = { sandbox: { executionId: 'attempt' }, telemetry: { sessionId: 'session' }, effects } as RunningBlackboxAttempt;
+  const step = createAttemptStep(test.step.bind(test), attempt);
+  const lifecycle = createStimulusLifecycle({ registry, request, step: step.step });
+  const graph = completeGraph([]);
+  const open = { ...graph, scope: { ...graph.scope, closed: false }, quality: { ...graph.quality, coverage: 'partial' as const, reasons: ['open'] } };
+  const selected = (await recordedEffects(open).capture()).http();
+  const outcome = await lifecycle.stimulus('When structural claim executes', () => 1);
+  await nativeExpect(outcome.verify('Then missing evidence and unconsumed assertion fail', async () => {
+    try { await expect(selected).not.toHaveEmitted(); } catch { /* deliberately caught inconclusive assertion */ }
+    void expect(Promise.resolve(1)).resolves.toBe(1);
+    await nextTurn();
+  })).rejects.toThrow('unconsumed');
+  await nativeExpect(outcome.verify('And an escaping unavailable assertion still fails structurally', async () => {
+    void expect(Promise.resolve(1)).resolves.toBe(1);
+    await nextTurn();
+    await expect(selected).not.toHaveEmitted();
+  })).rejects.toThrow('unconsumed');
+  await nativeExpect(outcome.verify('And a nested unavailable assertion still fails structurally', async () => {
+    void expect(Promise.resolve(1)).resolves.toBe(1);
+    await nextTurn();
+    await assertionScope(async () => {
+      try { await expect(selected).not.toHaveEmitted(); } catch { /* deliberately caught inconclusive assertion */ }
+    });
+  })).rejects.toThrow('unconsumed');
+  await nativeExpect(outcome.verify('And ordinary failures outrank nested unavailable evidence', async () => {
+    try { expect(1).toBe(2); } catch { /* deliberately caught assertion failure */ }
+    await assertionScope(async () => {
+      try { await expect(selected).not.toHaveEmitted(); } catch { /* deliberately caught inconclusive assertion */ }
+    });
+  })).rejects.toThrow();
+  await nativeExpect(outcome.verify('And empty scopes outrank nested unavailable evidence', async () => {
+    try { await assertionScope(() => undefined); } catch { /* deliberately caught empty scope */ }
+    await assertionScope(async () => {
+      try { await expect(selected).not.toHaveEmitted(); } catch { /* deliberately caught inconclusive assertion */ }
+    });
+  })).rejects.toThrow();
+  const statuses = lifecycle.journal.events().filter((event) => event.kind === 'claim').map(({ status }) => status);
+  record('structural-mixed-status', statuses);
+  nativeExpect(statuses).toEqual(['failed', 'failed', 'failed', 'failed', 'failed']);
+  lifecycle.close(); step.revoke(); registry.close();
+});

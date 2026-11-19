@@ -535,3 +535,40 @@ Raw checkpoint payloads are limited to 1 MB. Serialized state envelopes have a s
 8 MB limit for checkpoint metadata and before/after diffs; artifact writers may impose a
 smaller limit on the combined execution report. Credential-like reader names redact their
 entire values in serialized evidence, while in-memory checkpoints retain the original values.
+
+## Stimulus and state verification
+
+Register state readers before starting the stimulus. Readers run once for each
+checkpoint; accessing `evidence.state` reads the captured values without I/O.
+
+```ts
+const payments = state.observe('payments', {
+  intents: () =>
+    clients.pg.query('SELECT id, status FROM payment_intent ORDER BY id').then(({ rows }) => rows),
+});
+const { result, evidence, verify } = await stimulus(
+  'When a payment is submitted',
+  ({ request, headers }) => request.post('/payments', { data: { user: 'alice' }, headers }),
+  {
+    precondition: {
+      name: 'Given no prior intents',
+      check: ({ initial }) => {
+        expect(initial(payments).intents).toEqual([]);
+      },
+    },
+  },
+);
+const { diff } = evidence.state(payments);
+await verify('Then one intent is retained', () => {
+  expect(result.status()).toBe(201);
+  expect(diff.intents.added).toHaveLength(1);
+});
+```
+
+Preconditions and verification callbacks must execute a tracked `expect` assertion.
+A failed or empty precondition blocks the action. A failed state capture makes the
+attempt unsuccessful even if its immediate error is caught. Each stimulus captures
+fresh checkpoints; overlapping stimuli in one attempt are rejected. `verify` is
+bound to its execution and records its outcome. Captured observations are independent
+reads rather than an atomic cross-system snapshot. Pass the supplied propagation
+headers to requests; unrelated SDKs do not automatically receive them.

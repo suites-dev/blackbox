@@ -1,3 +1,4 @@
+import { InconclusiveAssertionError } from '../../assertions/types.js';
 import type { ExpectMatcherState, MatcherReturnType } from '@playwright/test';
 import {
   assessEffectRecorder, assessEffectRecorderBefore, assessNthEffectEmission,
@@ -37,7 +38,7 @@ async function verify(input: {
     otherCapture: input.other === undefined ? null : input.other.identity,
   });
   const message = owner.describe(`Effect recorder ${input.matcher}: ${assessment.status}; ${assessment.reason}`);
-  if (assessment.status === 'inconclusive') { throw new Error(message); }
+  if (assessment.status === 'inconclusive') { throw new InconclusiveAssertionError(message); }
   return {
     pass: assessment.status === 'pass', actual: owner.describe(JSON.stringify(assessment)),
     expected: owner.describe(expected),

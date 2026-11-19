@@ -33,3 +33,11 @@ const messages = {
   ownership: 'is not active for this test attempt',
   unsupported: 'requires Playwright 1.64.1, supported native hooks and tracked Blackbox expect; raw native expect or a missing native outcome is unsupported',
 } satisfies Record<AssertionScopeErrorCode, string>;
+
+/** An instrumented assertion could not establish its required evidence. */
+export class InconclusiveAssertionError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'InconclusiveAssertionError';
+  }
+}

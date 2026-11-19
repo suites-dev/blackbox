@@ -1,3 +1,4 @@
+import { InconclusiveAssertionError } from '../assertions/types.js';
 import { accountingExpect } from '../assertions/expect.js';
 import { expect as playwrightExpect } from '@playwright/test';
 import { setTimeout as delay } from 'node:timers/promises';
@@ -35,7 +36,7 @@ export const expect = accountingExpect(playwrightExpect.extend({
         evaluation,
         negated: this.isNot,
       });
-      throw new Error(evaluation.message);
+      throw new InconclusiveAssertionError(evaluation.message);
     }
     const pass = evaluation.kind === 'satisfied';
     await reportEffectAssertion({ effects: received, contract, evaluation, negated: this.isNot });

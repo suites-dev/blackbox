@@ -14,7 +14,7 @@
     "redis": "6.3.1"
   },
   "scripts": {
-    "lint": "eslint tests/playwright tests/playwright-features tests/playwright-assertions tests/features-suites feature-cli .blackbox/clients reporters playwright.config.ts playwright-features.config.ts playwright-assertions.config.ts playwright-effects.config.ts lint",
+    "lint": "eslint tests/playwright tests/playwright-features tests/playwright-assertions tests/playwright-lifecycle tests/features-suites feature-cli .blackbox/clients reporters playwright.config.ts playwright-features.config.ts playwright-assertions.config.ts playwright-effects.config.ts playwright-lifecycle.config.ts lint",
     "test:lint": "node --test 'lint/*.test.mjs'"
   },
   "devDependencies": {
