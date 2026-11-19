@@ -154,6 +154,20 @@ async function cleanupOwnedComposeProjectUnbounded(input: {
   if (errors.length > 0) {
     throw new AggregateError(errors, `Sandbox recovery failed for ${projectName}`);
   }
+
+  const [containers, networks, volumes] = await Promise.all([
+    input.client.listContainers({ projectName }),
+    input.client.listNetworks({ projectName }),
+    input.client.listVolumes({ projectName }),
+  ]);
+  const remaining = [
+    ...containers.map((id) => `container ${id}`),
+    ...networks.map((id) => `network ${id}`),
+    ...volumes.map((id) => `volume ${id}`),
+  ];
+  if (remaining.length > 0) {
+    throw new Error(`Sandbox recovery incomplete for ${projectName}; still present: ${remaining.join(', ')}`);
+  }
 }
 
 export function cleanupOwnedComposeProject(input: {
