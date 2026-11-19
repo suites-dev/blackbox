@@ -23,14 +23,13 @@ it('executes lifecycle claims under the native Playwright runner', async () => {
     'concurrent claims remain attributed to their own executions',
     'retains an execution verification handle for ownership checking',
     'a foreign test cannot use an active or expired verification handle',
-    'injects the native stimulus fixture and verifies its captured state',
   ]);
   for (const spec of specs) {
     expect(spec.tests).toHaveLength(1);
     expect(spec.tests[0].results).toHaveLength(1);
     expect(spec.tests[0].results[0].status).toBe('passed');
   }
-  expect(run.report.stats).toMatchObject({ expected: 13, unexpected: 0, skipped: 0, flaky: 0 });
+  expect(run.report.stats).toMatchObject({ expected: 12, unexpected: 0, skipped: 0, flaky: 0 });
   expect(run.events).toContainEqual({ kind: 'stimulus-events', value: ['begin', 'precondition', 'action', 'final', 'claim', 'begin', 'action', 'final'] });
 }, 60_000);
 

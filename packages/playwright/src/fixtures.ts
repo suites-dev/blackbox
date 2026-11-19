@@ -1,5 +1,7 @@
-import { createStateRegistry, type createStimulusLifecycle, type StateRegistry } from './fixture-lifecycle/execution.js';
-import { executionFixture, executionFixtureTimeoutMs } from './fixture-lifecycle/execution-fixture.js';
+import {
+  createStateRegistry, executionFixture, executionFixtureTimeoutMs,
+  type createStimulusLifecycle, type StateRegistry,
+} from './fixture-lifecycle/execution.js';
 import { registerAssertionOwner } from './assertions/scope.js';
 import { createAttemptStep } from './steps/step-context.js';
 import { runClients } from './clients/clients.js';
