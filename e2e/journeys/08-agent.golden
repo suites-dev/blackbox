@@ -113,8 +113,10 @@ kind capsule-exec-completed
   outcome.redaction.kind
   outcome.redaction.preparedArgv
   outcome.redaction.preparedArgv.kind
+  outcome.redaction.preparedArgv.positions
   outcome.redaction.requestArgv
   outcome.redaction.requestArgv.kind
+  outcome.redaction.requestArgv.positions
 observation.status provisional
 context.kind sent
 limitations observation-provisional

@@ -307,6 +307,10 @@
         "stderr": { "$ref": "#/$defs/outputRetention" }
       }
     },
+    "streamRedactions": {
+      "type": "array",
+      "items": { "enum": ["authorization-credential", "environment-value", "sensitive-header", "sensitive-output", "private-ipc-path"] }
+    },
     "outputRetention": {
       "oneOf": [
         {
@@ -315,6 +319,7 @@
           "required": ["kind", "originalBytes"],
           "properties": {
             "kind": { "const": "complete" },
+            "redactions": { "$ref": "#/$defs/streamRedactions" },
             "originalBytes": { "type": "integer", "minimum": 0 }
           }
         },
@@ -324,6 +329,7 @@
           "required": ["kind", "originalBytes", "retainedBytes", "omittedBytes", "retained"],
           "properties": {
             "kind": { "const": "truncated" },
+            "redactions": { "$ref": "#/$defs/streamRedactions" },
             "originalBytes": { "type": "integer", "minimum": 0 },
             "retainedBytes": { "type": "integer", "minimum": 0 },
             "omittedBytes": { "type": "integer", "minimum": 1 },

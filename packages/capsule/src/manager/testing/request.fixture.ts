@@ -106,6 +106,7 @@ function sandboxFixture(input: {
 export async function requestFixture(
   stop: (input: SandboxStopInput) => Promise<void>,
   containerEnvironment: Readonly<Record<string, string>> = {},
+  redactionHeaders: readonly string[] = [],
 ) {
   const directory = await mkdtemp(join(tmpdir(), 'bb-manager-'));
   const record = recordFixture(directory);
@@ -131,6 +132,7 @@ export async function requestFixture(
       controlToken: 'test-control-token',
     },
     drivers: {},
+    redactionHeaders,
     entrypoint: { url: 'http://127.0.0.1:4567', host: '127.0.0.1', port: 4567, protocol: 'http' },
   } satisfies RunningManager;
   serveManager(bootstrap, manager);

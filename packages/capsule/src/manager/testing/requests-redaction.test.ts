@@ -36,6 +36,7 @@ type Fixture = Awaited<ReturnType<typeof requestFixture>>;
 
 async function installShiftedDriver(fixture: Fixture): Promise<void> {
   await writeFile(`${fixture.projectDirectory}/shifted-secret.mjs`, driverSource);
+  await writeFile(`${fixture.projectDirectory}/child.mjs`, source);
   Object.assign(fixture.manager.drivers, {
     'shifted-secret': {
       id: 'shifted-secret',
@@ -88,7 +89,7 @@ function execute(fixture: Fixture) {
       target: {
         kind: 'driver',
         driverId: 'shifted-secret',
-        argv: [process.execPath, '-e', source, secret],
+        argv: [process.execPath, '--no-deprecation', 'child.mjs', secret],
         untraced: { kind: 'refuse' },
       },
     },
@@ -115,7 +116,7 @@ it('keeps request and prepared redaction positions in separate coordinate spaces
       outcome: {
         kind: 'driver-completed',
         process: {
-          argv: [process.execPath, '--no-warnings', '-e', source, '[REDACTED]'],
+          argv: [process.execPath, '--no-warnings', '--no-deprecation', 'child.mjs', '[REDACTED]'],
           stdout: 'complete',
         },
       },
@@ -123,9 +124,9 @@ it('keeps request and prepared redaction positions in separate coordinate spaces
     const completed = await readCapsuleActivities(fixture);
     expect(completed[0]).toMatchObject({
       kind: 'completed',
-      argv: [process.execPath, '-e', source, '[REDACTED]'],
+      argv: [process.execPath, '--no-deprecation', 'child.mjs', '[REDACTED]'],
       outcome: {
-        process: { argv: [process.execPath, '--no-warnings', '-e', source, '[REDACTED]'] },
+        process: { argv: [process.execPath, '--no-warnings', '--no-deprecation', 'child.mjs', '[REDACTED]'] },
       },
     });
     expect(JSON.stringify(completed)).not.toContain(secret);
