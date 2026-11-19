@@ -1,12 +1,8 @@
 import { copyFile, mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
-import { pathToFileURL } from 'node:url';
+import { nodeInstrumentationFiles } from '@suites/blackbox-inst-runtime-node';
 
 const root = resolve(import.meta.dirname, '..');
-// This script runs after tsc. The compiled module does not exist during source-only dependency checks.
-const { nodeInstrumentationFiles } = await import(
-  pathToFileURL(join(root, 'dist/runtime/bootstrap/bundle.js')).href
-);
 const e2e = resolve(root, '../../e2e');
 const example = join(root, 'dist/examples/payment-system');
 const template = join(root, 'templates/payment-system');
