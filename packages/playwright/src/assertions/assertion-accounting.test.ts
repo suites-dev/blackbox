@@ -10,8 +10,8 @@ it('executes the native assertion compatibility matrix with exact discovery and 
   expect(run.exitCode, `${run.directory}\n${run.output}`).toBe(0);
   expect(run.report.errors).toEqual([]);
   const specs = discovered(run.report.suites);
-  expect(specs).toHaveLength(15);
-  expect(run.report.stats).toMatchObject({ expected: 15, unexpected: 0, skipped: 0, flaky: 0 });
+  expect(specs).toHaveLength(16);
+  expect(run.report.stats).toMatchObject({ expected: 16, unexpected: 0, skipped: 0, flaky: 0 });
   for (const spec of specs) {
     expect(spec.tests).toHaveLength(1);
     expect(spec.tests[0].expectedStatus).toBe('passed');

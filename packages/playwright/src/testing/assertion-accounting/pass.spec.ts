@@ -55,6 +55,18 @@ test('poll retries are provisional and count one terminal expectation', async ()
   accounting(result.accounting, 1);
 });
 
+test('nested polling keeps each invocation sampling context separate', async () => {
+  const result = await assertionScope(async () => {
+    await expect
+      .poll(async () => {
+        await expect.poll(() => 1, { intervals: [1], timeout: 500 }).toBe(1);
+        return 1;
+      }, { intervals: [1], timeout: 500 })
+      .toBe(1);
+  });
+  accounting(result.accounting, 1);
+});
+
 test('toPass retries are provisional and count one terminal expectation', async () => {
   let attempts = 0;
   const result = await assertionScope(async () => {

@@ -36,7 +36,10 @@ function invokeMatcher(input: {
       return call(original, input.target, input.args);
     }
     const actual = input.session.actual;
-    const callback = retryCallback((...args) => call(actual, undefined, args), invocation);
+    const callback = retryCallback(
+      (...args) => samplingContext.run(invocation, () => call(actual, undefined, args)),
+      invocation,
+    );
     const rebuilt = atPath(input.session.create(callback), input.path);
     if (typeof rebuilt !== 'object' || rebuilt === null) { throw new TypeError('Invalid native retry matcher'); }
     return call(Reflect.get(rebuilt, input.method), rebuilt, input.args);
@@ -59,12 +62,9 @@ function matcherTree(target: unknown, session: MatcherSession, path: readonly Pr
 
 function createMatcherSession(target: unknown, receiver: unknown, args: unknown[], poll: boolean): unknown {
   const actual = args[0];
-  const sampled = poll && typeof actual === 'function'
-    ? (...values: unknown[]) => samplingContext.run(true, () => call(actual, undefined, values))
-    : actual;
   const create = (value: unknown) => call(target, receiver, [value, ...args.slice(1)]);
-  const result = create(sampled);
-  return matcherTree(result, { actual: sampled, captured: scopeContext.getStore() ?? null, poll, create }, []);
+  const result = create(actual);
+  return matcherTree(result, { actual, captured: scopeContext.getStore() ?? null, poll, create }, []);
 }
 
 /** Keeps native call signatures and extension types while accounting only inside owned scopes. */
