@@ -52,3 +52,5 @@ Distinguish each result explicitly:
 - **Setup complete:** only claim the stages the user requested and that the evidence supports.
 
 A configuration diff, a Compose health response, or an empty effects list does not establish that all expected runtime operations are observable. For remaining gaps, link the missing participant, boundary, or capability and state which claim is still unanswerable.
+
+For a runnable Node/Compose reference, resolve `@suites/blackbox-inst-runtime-node/examples/payment-system` from the consumer project. The export locates the packaged `blackbox.config.yaml`; the adjacent README explains how to copy the example, install the Node bootstrap, validate its catalog, and execute its native payment test.

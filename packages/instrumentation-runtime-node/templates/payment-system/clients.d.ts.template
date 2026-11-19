@@ -1,0 +1,12 @@
+import type { RegisteredClients } from '@suites/blackbox-playwright';
+import type { postgres } from './postgres.js';
+import type { redis } from './redis.js';
+
+type PaymentClients = RegisteredClients<{ postgres: typeof postgres; redis: typeof redis }>;
+
+declare module '@suites/blackbox-playwright' {
+  interface BlackboxClients {
+    postgres: PaymentClients['postgres'];
+    redis: PaymentClients['redis'];
+  }
+}

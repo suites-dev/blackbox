@@ -15,6 +15,10 @@ catalogs under [`skills/catalog`](skills/catalog). The public
 registry when Catalog is a selected CLI plugin. Discovery can route catalog work to
 this skill when available; an unselected Catalog package contributes no skill.
 
+## Installed Node and Compose example
+
+The Node runtime package ships a complete payment system with a Catalog, Compose services, PostgreSQL and Redis clients, a native Playwright spec, and its reviewed snapshot. The public export `@suites/blackbox-inst-runtime-node/examples/payment-system` resolves to the sample's `blackbox.config.yaml`. The installed Node runtime README includes the copy and run commands.
+
 ## Where Catalog Fits
 
 ```text

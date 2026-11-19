@@ -114,6 +114,7 @@ mkdir -p "$CONSUMER_ROOT/reporters"
 cp "$E2E_ROOT/blackbox.config.yaml" "$CONSUMER_ROOT/blackbox.config.yaml"
 cp "$E2E_ROOT/blackbox-payment.yaml" "$E2E_ROOT/playwright-payment.config.ts" "$CONSUMER_ROOT/"
 cp -R "$E2E_ROOT/tests/playwright-payment" "$CONSUMER_ROOT/tests/"
+cp "$SCRIPT_DIR/playwright-payment-example.mjs" "$CONSUMER_ROOT/"
 cp "$SCRIPT_DIR/playwright-payment.mjs" "$SCRIPT_DIR/playwright-payment-proof.mjs" "$SCRIPT_DIR/playwright-payment-cleanup.mjs" "$CONSUMER_ROOT/"
 cp "$E2E_ROOT/.blackbox/catalog/"*.yml "$CONSUMER_ROOT/.blackbox/catalog/"
 cp "$E2E_ROOT/.blackbox/drivers/"*.mjs "$CONSUMER_ROOT/.blackbox/drivers/"
@@ -170,6 +171,7 @@ NPM_CONFIG_CACHE="$ASSET_ROOT/npm-cache" \
 test -s "$CONSUMER_ROOT/.blackbox/instrumentation/instrumentation.js"
 test -d "$CONSUMER_ROOT/.blackbox/instrumentation/node_modules"
 cp -R "$CONSUMER_ROOT/.blackbox/instrumentation" "$EFFECTS_ROOT/.blackbox/"
+node "$CONSUMER_ROOT/playwright-payment-example.mjs" | tee "$RUN_RESULT_ROOT/payment-example-check.txt"
 
 "$BLACKBOX_BIN" catalog validate --json >"$RUN_RESULT_ROOT/catalog-validate.json"
 jq -e '.ok == true' "$RUN_RESULT_ROOT/catalog-validate.json" >/dev/null
