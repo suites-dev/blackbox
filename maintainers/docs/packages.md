@@ -1,16 +1,22 @@
 # Workspace packages
 
-All fifteen workspace packages are public alpha packages with one fixed Lerna version.
-`pnpm exec lerna list --all` is the package source of truth, and Lerna determines
-their publication order. Alpha exports may change between releases.
+The workspace contains 17 public alpha packages with one fixed Lerna version and a private
+E2E harness. Use `pnpm exec lerna list --all --json` to inspect the package set and privacy flags.
+Lerna determines the publication order. Alpha exports may change between releases.
+
+## Public package inventory
 
 | Directory                                                                             | Package name                         | Responsibility                                                                                   |
 | ------------------------------------------------------------------------------------- | ------------------------------------ | ------------------------------------------------------------------------------------------------ |
+| [blackbox](../../packages/blackbox/README.md)                                         | `@suites/blackbox`                   | Compose the default modules and provide the agent entry skill.                                   |
 | [cli](../../packages/cli/README.md)                                                   | `@suites/blackbox-cli`               | Compose working catalog, Capsule, driver, instrumentation, observation, and report commands.     |
 | [catalog](../../packages/catalog/README.md)                                           | `@suites/blackbox-catalog`           | Validate YAML and resolve catalog selections into structural sandbox inputs.                     |
 | [cli-contract](../../packages/cli-contract/README.md)                                 | `@suites/blackbox-cli-contract`      | Define the shared protocol between the CLI and project-authored extensions.                      |
 | [sandbox](../../packages/sandbox/README.md)                                           | `@suites/blackbox-sandbox`           | Acquire Docker Compose resources, resolve endpoints, observe startup, and clean owned resources. |
 | [capsule](../../packages/capsule/README.md)                                           | `@suites/blackbox-capsule`           | Own sessions, activities, execution, retained records, and report projections.                   |
+| [discovery](../../packages/discovery/README.md)                                       | `@suites/blackbox-discovery`         | Validate and plan discovery of system boundaries.                                                |
+| [effects](../../packages/effects/README.md)                                           | `@suites/blackbox-effects`           | Model effects records, OTLP projection, and behavioral verification.                             |
+| [feature](../../packages/feature/README.md)                                           | `@suites/blackbox-feature`           | Compile Gherkin Feature files into native Blackbox Playwright suites.                            |
 | [driver](../../packages/driver/README.md)                                             | `@suites/blackbox-driver`            | Define and prepare project Node drivers, validate execution and propagation contracts.           |
 | [telemetry](../../packages/telemetry/README.md)                                       | `@suites/blackbox-telemetry`         | Model execution scopes and W3C context/propagation records.                                      |
 | [instrumentation](../../packages/instrumentation/README.md)                           | `@suites/blackbox-instrumentation`   | Install runtime instrumentation files through a provider contract.                               |
@@ -40,9 +46,9 @@ pnpm test:integration
 
 `pnpm test` and `pnpm test:integration` each include a build. `pnpm test:integration` runs the package
 `*.integration.test.ts` suites that a package's default Vitest config excludes; it needs network access to the npm
-registry but not Docker. `pnpm test:repo` runs the repository's own `node:test` files by glob after a build. The [workspace definition](../../pnpm-workspace.yaml) includes `packages/*`; `e2e/`
-is not itself a workspace package. It holds the project fixture the lanes drive: the catalog, the project-authored
-drivers, the system under test, and the golden CLI journeys. `pnpm run test:demo` and `pnpm run test:e2e:journeys`
+registry but not Docker. `pnpm test:repo` runs the repository's own `node:test` files by glob after a build. The [workspace definition](../../pnpm-workspace.yaml) includes `packages/*` and `e2e/`.
+The [private E2E harness](../../e2e/package.json) holds the fixture the lanes drive, including the catalog,
+project-authored drivers, system under test, and golden CLI journeys. `pnpm run test:demo` and `pnpm run test:e2e:journeys`
 are active entrypoints. `pnpm run test:e2e:playwright` runs the system tests against the same project fixture.
 Every lane consumes packages installed from a disposable registry.
 
@@ -119,12 +125,7 @@ The first alpha removes the temporary workspace suffix from these names:
 | `@suites/blackbox-sandbox-internal`         | `@suites/blackbox-sandbox`         |
 | `@suites/blackbox-telemetry-internal`       | `@suites/blackbox-telemetry`       |
 
-`@suites/blackbox-cli`, `@suites/blackbox-driver`, and
-`@suites/blackbox-inst-runtime-node` keep their source names. The original ten package
-names returned not found in read-only npm registry checks on 2026-09-28. The added
-`@suites/blackbox-playwright` name still needs the same registry check before first
-publication. Registry absence does not prove `@suites` scope ownership; ownership
-remains a first-publication gate.
+Check ownership and version availability for every public name in the [release runbook](releasing.md).
 
 Native Playwright test files import the Blackbox `test` fixture and
 Playwright-compatible `expect` from `@suites/blackbox-playwright`. Its initial surface

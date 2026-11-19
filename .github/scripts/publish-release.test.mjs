@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
@@ -9,8 +10,8 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 const workflow = readFileSync(path.join(root, '.github/workflows/publish-release.yml'), 'utf8');
 const version = JSON.parse(readFileSync(path.join(root, 'lerna.json'), 'utf8')).version;
 
-function runStep(name) {
-  const lines = workflow.split('\n');
+function runStep(name, workflowSource = workflow) {
+  const lines = workflowSource.split('\n');
   const start = lines.findIndex((line) => line === `      - name: ${name}`);
   assert.notEqual(start, -1, `missing workflow step: ${name}`);
   const run = lines.findIndex((line, index) => index > start && line === '        run: |');
@@ -139,3 +140,34 @@ for (const [name, mutate] of [
     assert.notEqual(result.status, 0, `unexpectedly accepted ${name}`);
   });
 }
+
+test('release preview writes the source and proposed release as literal Markdown', (t) => {
+  const preview = readFileSync(path.join(root, '.github/workflows/release-preview.yml'), 'utf8');
+  const receiptDir = mkdtempSync(path.join(tmpdir(), 'blackbox-release-preview-'));
+  t.after(() => rmSync(receiptDir, { recursive: true, force: true }));
+
+  const summary = path.join(receiptDir, 'step-summary.md');
+  const sourceRef = 'release/v0.0.1-alpha';
+  const releaseType = 'prerelease';
+  const commit = spawnSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' });
+  assert.equal(commit.status, 0, commit.stderr);
+
+  const result = spawnSync('bash', ['-e', '-c', runStep('Summarize proposed release', preview)], {
+    cwd: root,
+    encoding: 'utf8',
+    env: {
+      ...process.env,
+      PATH: path.dirname(process.execPath) + path.delimiter + process.env.PATH,
+      GITHUB_STEP_SUMMARY: summary,
+      SOURCE_REF: sourceRef,
+      RELEASE_TYPE: releaseType,
+    },
+  });
+  assert.equal(result.status, 0, result.stderr);
+  const lines = readFileSync(summary, 'utf8').split('\n');
+  assert.ok(lines.includes(`- Source ref: \`${sourceRef}\``));
+  assert.ok(lines.includes(`- Source commit: \`${commit.stdout.trim()}\``));
+  assert.ok(lines.includes(`- Transition: \`${releaseType}\``));
+  assert.ok(lines.includes(`- Proposed fixed version: \`${version}\``));
+  assert.equal(result.stderr, '');
+});
