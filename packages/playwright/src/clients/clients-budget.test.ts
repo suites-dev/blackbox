@@ -1,5 +1,7 @@
 import { expect, it, vi } from 'vitest';
+import { remainingClientSetupMs } from './client-timeouts.js';
 import { defineClient, runClients } from './clients.js';
+import { clientSetupTimeoutMs } from '../fixtures.js';
 import type { ClientSandbox } from './types.js';
 
 const sandbox = {
@@ -22,6 +24,21 @@ const sandbox = {
     ],
   ]),
 } satisfies ClientSandbox;
+
+it('uses the remaining native timeout without reserving extra setup time', () => {
+  expect(remainingClientSetupMs(100, 0)).toBe(100);
+  expect(remainingClientSetupMs(100, 20)).toBe(80);
+  expect(remainingClientSetupMs(100, 99)).toBe(1);
+  expect(remainingClientSetupMs(100, 120)).toBe(1);
+  expect(remainingClientSetupMs(0, 120)).toBe(Number.POSITIVE_INFINITY);
+});
+
+it('converts the native timeout after elapsed fixture setup', () => {
+  expect(clientSetupTimeoutMs({ timeout: 100 }, 900, 900)).toBe(100);
+  expect(clientSetupTimeoutMs({ timeout: 100 }, 900, 920)).toBe(80);
+  expect(clientSetupTimeoutMs({ timeout: 100 }, 900, 1_020)).toBe(1);
+  expect(clientSetupTimeoutMs({ timeout: 0 }, 900, 1_020)).toBe(Number.POSITIVE_INFINITY);
+});
 
 it('allows asynchronous readiness inside a finite setup budget', async () => {
   vi.useFakeTimers();

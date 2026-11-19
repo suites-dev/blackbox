@@ -3,6 +3,7 @@ import { executionFixture, executionFixtureTimeoutMs } from './fixture-lifecycle
 import { registerAssertionOwner } from './assertions/scope.js';
 import { createAttemptStep } from './steps/step-context.js';
 import { runClients } from './clients/clients.js';
+import { remainingClientSetupMs } from './clients/client-timeouts.js';
 import {
   test as playwrightTest,
   type PlaywrightTestArgs,
@@ -60,6 +61,14 @@ const defaultPolicy: BlackboxFixturePolicy = Object.freeze({
   sandboxCleanupTimeoutMs: 30_000,
 });
 
+export function clientSetupTimeoutMs(
+  testInfo: Pick<TestInfo, 'timeout'>,
+  startedAt: number,
+  now: number = performance.now(),
+): number {
+  return remainingClientSetupMs(testInfo.timeout, now - startedAt);
+}
+
 function selectedAttempt(
   fixture: AttemptFixture,
   name: keyof BlackboxTestFixtures,
@@ -70,12 +79,6 @@ function selectedAttempt(
     );
   }
   return fixture.attempt;
-}
-
-function clientSetupTimeoutMs(testInfo: TestInfo, startedAt: number): number {
-  return testInfo.timeout === 0
-    ? Number.POSITIVE_INFINITY
-    : Math.max(1, testInfo.timeout - (performance.now() - startedAt));
 }
 
 interface RunClientFixtureInput {
