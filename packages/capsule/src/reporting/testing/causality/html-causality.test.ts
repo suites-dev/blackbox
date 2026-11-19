@@ -70,7 +70,13 @@ describe('the client view states cause only by trace context', () => {
     const text = (status: object) =>
       JSON.stringify(evaluate(`statusBanner(${JSON.stringify(status)})`));
     expect(text({ status: 'provisional' })).toContain('provisional (capsule running)');
-    expect(text({ status: 'complete' })).toContain('"complete"');
+    expect(evaluate('statusBanner({ status: "complete" })')).toMatchObject({
+      children: [
+        { text: 'Observation status' },
+        { badge: 'telemetry window complete' },
+        { p: expect.stringContaining('Participant operations may emit no spans') },
+      ],
+    });
     expect(text({ status: 'incomplete', reason: 'collector interrupted' })).toContain(
       'incomplete (collector interrupted)',
     );

@@ -1,4 +1,4 @@
-capsule calm-comet-ada-000000000001  subscription-system  stopped  · complete
+capsule calm-comet-ada-000000000001  subscription-system  stopped  · telemetry window complete (participant operations may emit no spans)
   +10.3s  (no activity)  ┈┈ 16 traces before the first activity
   +25.2s  c0000001  setup  Reset fixture  ── e0000001  2 services
   +26.5s  c0000002  stimulus  Create Alice subscription  ── e0000002  4 services

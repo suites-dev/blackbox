@@ -4,7 +4,7 @@ activity c0000002  Create Alice subscription
   via       public-api → public-api (http)
   process   exit 0 on host
   context   sent (w3c, http-headers)
-  observed  1 traces · 4 services · 19 spans · complete
+  observed  1 traces · 4 services · 19 spans · telemetry window complete (participant operations may emit no spans)
   SPANS
     public-api  POST /subscriptions  201
     ├─ public-api  GET

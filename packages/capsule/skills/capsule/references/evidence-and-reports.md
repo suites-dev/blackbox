@@ -37,7 +37,7 @@ For each fact you report, keep the exact file or report identity, schema version
 
 The HTML report and the JSON export state the same causal view as `capsule show`.
 
-- **Status** comes first: `provisional` (capsule still running), `complete` (stopped and every collector run drained) or `incomplete (<reason>)`. JSON has `status` and, for `incomplete`, `reason`.
+- **Status** describes the telemetry window. The CLI and HTML show `telemetry window complete` after the capsule stops and every collector run drains. JSON records this as `status: "complete"`. A running capsule is `provisional`. An `incomplete` status includes its reason.
 - **Activities** carry `activityCausality`: per activity, the trace `context` that was carried and `causedTraces`, meaning traces whose ID matches the activity's trace context.
 - **No known cause** (`uncaused` in JSON): traces that no trace context links to any activity. The HTML labels them "no known cause".
 - **Limitations** (`limitations`, also per activity) list what Blackbox cannot say: for example `observation-provisional`, `observation-incomplete`, `causality-unknown`, `untraced`, `context-not-carried`, `context-injection-failed`, `orphan-span`, `observation-unavailable`. They are not findings; carry them into your result.

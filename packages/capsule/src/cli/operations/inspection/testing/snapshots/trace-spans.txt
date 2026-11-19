@@ -1,4 +1,4 @@
-trace e0000002000000000000000000000000 · capsule calm-comet-ada-000000000001 · 19 spans · complete
+trace e0000002000000000000000000000000 · capsule calm-comet-ada-000000000001 · 19 spans · telemetry window complete (participant operations may emit no spans)
   SPAN              PARENT            SERVICE        KIND      TITLE                          RESULT  DURATION  FAILURE
   d000008000000000  d000000200000000  public-api     server    POST /subscriptions            201     39ms
   d000007900000000  d000008000000000  public-api     client    GET                                    0ms
