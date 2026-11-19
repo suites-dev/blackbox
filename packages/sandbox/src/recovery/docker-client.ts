@@ -1,4 +1,4 @@
-import { getContainerRuntimeClient } from 'testcontainers';
+import type { getContainerRuntimeClient } from 'testcontainers';
 
 import type { ComposeRecoveryClient, RecoveryResource } from './types.js';
 
@@ -61,9 +61,4 @@ export function composeRecoveryClient(docker: Docker): ComposeRecoveryClient {
       await docker.getVolume(id).remove();
     },
   };
-}
-
-export async function createComposeRecoveryClient(): Promise<ComposeRecoveryClient> {
-  const runtime = await getContainerRuntimeClient();
-  return composeRecoveryClient(runtime.container.dockerode);
 }

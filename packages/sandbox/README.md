@@ -43,6 +43,16 @@ admission record before touching Docker. It then starts the selected Compose
 services, resolves explicitly requested endpoints, snapshots owned resources, and
 returns a [`SandboxHandle`](src/model/handle.ts).
 
+For each Compose service with a `build` definition, acquisition builds a
+session-specific image before creating containers. The generated override gives
+each build one private local tag and suppresses additional `build.tags`. Docker
+Compose still resolves the author's files, build context and dependencies.
+Image-only services retain their configured image. The generated
+`build-images.json` beside the overrides records the intended tags before build
+and the observed image IDs afterward. Stop and recovery verify each tag's
+project-specific name, owner and service labels, and recorded ID before removing
+it. A changed tag remains on the daemon and produces a cleanup failure.
+
 Startup waits, within `startupTimeoutMs`, until every container Compose started
 has its published ports listening inside the container and, when the container
 declares a Docker health check, until that check reports healthy. Neither signal

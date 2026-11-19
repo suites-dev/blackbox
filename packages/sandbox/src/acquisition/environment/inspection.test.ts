@@ -17,7 +17,7 @@ const docker = vi.hoisted(() => {
     getNetworkNames: () => ['owned_default'], getMappedPort: () => 12345,
   };
   return { inspect, down,
-    build: vi.fn(),
+    clientOptions: vi.fn(),
     defaultWaitStrategy: vi.fn<(strategy: unknown) => void>(),
     selected: vi.fn((_service: string) => container),
     lookup: vi.fn((_id: string) => ({ inspect })),
@@ -25,9 +25,13 @@ const docker = vi.hoisted(() => {
   };
 });
 
+vi.mock('docker-compose', () => ({ default: {
+  config: () => Promise.resolve({ data: { config: { services: { api: { image: 'fixture' } } } } }),
+} }));
+
 vi.mock('testcontainers', () => ({
   DockerComposeEnvironment: class {
-    withBuild() { docker.build(); return this; }
+    withClientOptions(options: unknown) { docker.clientOptions(options); return this; }
     withProjectName() { return this; }
     withEnvironment() { return this; }
     withDefaultWaitStrategy(strategy: unknown) { docker.defaultWaitStrategy(strategy); return this; }
@@ -106,7 +110,7 @@ it.each(['selected', 'all'] as const)('inspects only the exact acquired containe
       ? { kind, services: ['api'] } : { kind, declaredServices: ['api'] },
   });
   expect(docker.up).toHaveBeenCalledWith(kind === 'selected' ? ['api'] : undefined);
-  expect(docker.build).toHaveBeenCalledOnce();
+  expect(docker.clientOptions).toHaveBeenCalledExactlyOnceWith({ commandOptions: ['--no-build'] });
   expect(docker.defaultWaitStrategy).toHaveBeenCalledExactlyOnceWith(
     expect.any(SandboxReadinessWaitStrategy),
   );
