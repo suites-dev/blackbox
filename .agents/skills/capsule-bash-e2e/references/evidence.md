@@ -80,8 +80,9 @@ Prefer graceful cancellation so existing EXIT/INT/TERM handlers can run. If a
 process was killed, inspect retained ownership records before cleanup. Stop only
 the identified session via the public CLI; never choose an implicit latest
 session, kill all Node processes, prune Docker globally, or recursively delete
-`e2e/.blackbox` to hide a failure. Asset/image cleanup helpers also mutate state:
-read their ownership checks before invoking them manually.
+`e2e/.blackbox` to hide a failure. Asset cleanup helpers mutate state. The proof image helper inspects the catalog
+tag before, during, and after acquisition and verifies that Sandbox removed its
+session tag. A changed catalog tag or surviving session tag fails the proof.
 
 Report any uncertain or failed cleanup as a failure, retain diagnostics, and ask
 for direction when ownership cannot be established safely. Explain what cleanup
