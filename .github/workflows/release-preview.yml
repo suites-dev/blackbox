@@ -106,10 +106,10 @@ jobs:
           {
             echo "## Release preview"
             echo
-            echo "- Source ref: `$SOURCE_REF`"
-            echo "- Source commit: `$source_sha`"
-            echo "- Transition: `$RELEASE_TYPE`"
-            echo "- Proposed fixed version: `$version`"
+            printf -- '- Source ref: `%s`\n' "$SOURCE_REF"
+            printf -- '- Source commit: `%s`\n' "$source_sha"
+            printf -- '- Transition: `%s`\n' "$RELEASE_TYPE"
+            printf -- '- Proposed fixed version: `%s`\n' "$version"
             echo
             echo "### Changed files"
             echo
