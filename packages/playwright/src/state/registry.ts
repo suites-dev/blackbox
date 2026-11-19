@@ -14,6 +14,8 @@ function nameValid(name: string): boolean {
 
 export function createStateRegistry(): StateRegistry {
   let closed = false;
+  let signalClose!: () => void;
+  const closing = new Promise<void>((resolve) => { signalClose = resolve; });
   const entries: Entry[] = [];
   function active(): void {
     if (closed) {
@@ -45,13 +47,14 @@ export function createStateRegistry(): StateRegistry {
   } satisfies BlackboxState;
   function select(): StateSelection {
     active();
-    return new StateSelectionImpl([...entries], active);
+    return new StateSelectionImpl([...entries], active, closing);
   }
   return Object.freeze({
     state: Object.freeze(state),
     select,
     close: () => {
       closed = true;
+      signalClose();
     },
   });
 }
