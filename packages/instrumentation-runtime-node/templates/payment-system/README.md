@@ -14,7 +14,7 @@ npm exec -- playwright test
 npm exec -- playwright show-report
 ```
 
-`package.json` pins the Blackbox packages to the same version as the package that supplied the example. The Node installer prepares the dependencies for the project-local bootstrap. Catalog validation checks the Compose file, activation file, participant references, and installed adapters. The native Playwright test starts the isolated payment API, PostgreSQL and Redis. Open `playwright-report/index.html` for the steps and assertions, or inspect `test-results/results.json` for the `blackbox-execution` and `effects.json` attachments.
+`package.json` pins the Blackbox packages to the same version as the package that supplied the example. The Node installer prepares the dependencies for the project-local bootstrap. Catalog validation checks the Compose file, activation file, participant references, and installed adapters. The native Playwright test starts the isolated payment API, PostgreSQL and Redis. The terminal prints the path to each retained Blackbox report. Open its `report.html` for the response, state change, effects, and named claims. The native `playwright-report/index.html` and `test-results/results.json` retain the same Blackbox attachments.
 
 ## Connect a Node participant
 
