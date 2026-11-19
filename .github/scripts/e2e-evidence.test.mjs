@@ -9,6 +9,20 @@ import { fileURLToPath } from 'node:url';
 import { approvedCliCommand, collectEvidence, runCommand } from './ci-evidence.mjs';
 import { retainE2eEvidence } from './e2e-evidence.mjs';
 
+const paymentFiles = [
+  'payment/receipt.json',
+  'payment/cleanup.json',
+  'payment/good/results.json',
+  'payment/good/inputs.json',
+  'payment/good/receipt.json',
+  'payment/broken/results.json',
+  'payment/broken/inputs.json',
+  'payment/broken/receipt.json',
+  'payment/repaired/results.json',
+  'payment/repaired/inputs.json',
+  'payment/repaired/receipt.json',
+];
+
 async function workspace(t) {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'blackbox-evidence-'));
   t.after(() => fs.rm(root, { recursive: true, force: true }));
@@ -101,6 +115,9 @@ test('Playwright evidence uses its own transport identity and output directory',
   for (const [name, value] of Object.entries(lifecycle)) {
     await write(root, `e2e/test-results/lifecycle/${name}`, value);
   }
+  for (const name of paymentFiles) {
+    await write(root, `e2e/test-results/${name}`, JSON.stringify({ source: name }));
+  }
   const outputDir = '.blackbox/tmp/ci-playwright-e2e-transport';
   const untrustedOutput = `../${path.basename(root)}-untrusted-output`;
   const wrapper = fileURLToPath(new URL('./playwright-e2e-evidence.mjs', import.meta.url));
@@ -144,6 +161,10 @@ test('Playwright evidence uses its own transport identity and output directory',
   for (const [name, value] of Object.entries(lifecycle)) {
     assert.equal(await fs.readFile(path.join(extracted, 'e2e/test-results/lifecycle', name), 'utf8'), value);
   }
+  for (const name of paymentFiles) {
+    const actual = await fs.readFile(path.join(extracted, 'e2e/test-results', name), 'utf8');
+    assert.deepEqual(JSON.parse(actual), { source: name });
+  }
   await assert.rejects(fs.stat(path.resolve(root, untrustedOutput)), /ENOENT/);
 });
 
@@ -154,6 +175,7 @@ for (const omitted of [
   'lifecycle/discovery.txt',
   'lifecycle/execution.txt',
   'lifecycle/subscription-state.expected.txt',
+  ...paymentFiles,
 ]) {
   for (const state of ['missing', 'empty']) {
     test(`Playwright success rejects ${state} ${omitted} and retains available evidence`, async (t) => {
@@ -170,6 +192,7 @@ for (const omitted of [
         'lifecycle/discovery.txt',
         'lifecycle/execution.txt',
         'lifecycle/subscription-state.expected.txt',
+        ...paymentFiles,
       ];
       for (const name of required) {
         if (name !== omitted) await write(root, `e2e/test-results/${name}`, 'retained evidence');
@@ -178,7 +201,7 @@ for (const omitted of [
       await write(root, 'e2e/test-results/features/golden-diff.txt', '');
       const receipt = await retainE2eEvidence({ root, project: 'playwright', testOutcome: 'success' });
       assert.equal(receipt.status, 'failed');
-      assert(receipt.error.includes(omitted));
+      assert.equal(receipt.error, `Missing required Playwright reports: e2e/test-results/${omitted}`);
       assert.ok(receipt.archive.sha256, 'A missing journey artifact must not discard other evidence');
     });
   }
