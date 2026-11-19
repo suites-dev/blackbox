@@ -128,7 +128,7 @@ describe('incomplete observations', () => {
     });
   });
 
-  it('does not treat collector shutdown as proof of complete application telemetry', async () => {
+  it('explains inconclusive absence, exact and maximum counts after collector shutdown', async () => {
     await withPipeline(async ({ registry, storageDirectory, collector, exportSpans }) => {
       const action = registry.begin({ purpose: 'stimulus', name: 'one observed write' });
       await exportSpans([
@@ -144,11 +144,27 @@ describe('incomplete observations', () => {
         selection: registry.select({ kind: 'stimulus', activities: [action] }),
       });
       await expect(effects).toSatisfy((e) => [e.atLeast(1, e.db({ operation: 'INSERT' }))]);
-      const exact = compileEffectContract((e) => [e.exactly(1, e.db({ operation: 'INSERT' }))]);
-      check(await evaluateBlackboxEffects(effects, exact)).toMatchObject({ kind: 'inconclusive' });
-      await check(
-        expect(effects).not.toSatisfy((e) => [e.exactly(1, e.db({ operation: 'INSERT' }))]),
-      ).rejects.toThrow();
+      const upperBounds: EffectContractBuilder = (e) => [
+        e.absent(e.db({ operation: 'DELETE' })),
+        e.exactly(1, e.db({ operation: 'INSERT' })),
+        e.atMost(2, e.db()),
+      ];
+      const evaluation = await evaluateBlackboxEffects(effects, compileEffectContract(upperBounds));
+      check(evaluation.kind).toBe('inconclusive');
+      const explanation = 'requires a closed scope with complete effect coverage';
+      for (const [index, interval] of [
+        'exactly 0; observed lower=0, upper=unbounded',
+        'exactly 1; observed lower=1, upper=unbounded',
+        'atMost 2; observed lower=1, upper=unbounded',
+      ].entries()) {
+        check.soft(evaluation).toMatchObject({
+          message: check.stringContaining(
+            `[${index}] inconclusive: ${interval}. Proving an upper bound ${explanation}`,
+          ),
+        });
+      }
+      await check(expect(effects).not.toSatisfy(upperBounds)).rejects.toThrow(explanation);
+      await expect(effects).not.toSatisfy((e) => [e.atMost(0, e.db())]);
     });
   });
 });

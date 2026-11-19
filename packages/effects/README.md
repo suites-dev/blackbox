@@ -79,13 +79,22 @@ and `after`. The projection currently recognizes structured HTTP, RPC, database,
 cache, and messaging observations; the presence of a selector does not imply that
 the projector can infer that kind from every telemetry source.
 
-| Evidence                                                                     | Result                               |
-| ---------------------------------------------------------------------------- | ------------------------------------ |
-| A required effect is observed                                                | `pass` for that existence constraint |
-| A forbidden effect is observed                                               | `fail` for that absence constraint   |
-| A required effect has not been observed in an open capture                   | `inconclusive`                       |
-| An exact count matches observed effects, but capture completeness is unknown | `inconclusive`                       |
-| Trace parent/link relationships exist, but ordering evidence is insufficient | `inconclusive` for ordering          |
+The OTLP projector always leaves the scope open, including after the collector
+shuts down. An instrumented HTTP request can perform additional operations
+through clients that emit no spans. The table uses `k` for the number of
+definite matches in the selected scope. Possible matches do not increase `k`.
+
+| Count claim | Result in a projected OTLP scope |
+| --- | --- |
+| `exists` | Passes when `k >= 1`. Otherwise inconclusive. |
+| `atLeast(n)` | Passes when `k >= n`. Otherwise inconclusive. |
+| `absent` (equivalent to `exactly(0)`) | Fails when `k > 0`. Otherwise inconclusive. |
+| `exactly(n)` or `atMost(n)` | Fails when `k > n`. Otherwise inconclusive, even when `k == n`. |
+
+Proving absence, an exact count or a maximum requires a closed scope with
+complete coverage of the selected effects. Waiting longer can reveal another
+witness. It cannot establish that coverage. Ordering claims also remain
+inconclusive when trace parentage or links are the only ordering evidence.
 
 ## Record selected occurrences
 
