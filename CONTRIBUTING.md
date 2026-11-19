@@ -3,10 +3,9 @@
 Start with a focused issue and a pull request. Report vulnerabilities through
 [SECURITY.md](SECURITY.md), never a public bug report.
 
-Blackbox is being built in public and has not been published. The current default
-branch is `release/v0.0.1-alpha`. Start with the [current status](docs/alpha-status.md)
-and [Capsule source workflow](docs/getting-started.md); Playwright integration is
-still in progress.
+Start with the [acceptance journey](README.md) and the
+[Playwright package guide](packages/playwright/README.md). Alpha changes target
+`release/v0.0.1-alpha`; check the owning issue and actual PR base before editing.
 
 ## Set up and validate
 
