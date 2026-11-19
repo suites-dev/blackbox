@@ -13,5 +13,9 @@ export default defineConfig({
   outputDir: process.env.BLACKBOX_ASSERTION_OUTPUT,
   snapshotPathTemplate: '{testDir}/snapshots/{arg}{ext}',
   updateSnapshots: 'none',
-  reporter: [['line'], ['json', { outputFile: process.env.BLACKBOX_ASSERTION_REPORT }]],
+  reporter: [
+    ['line'],
+    [join(import.meta.dirname, '../reporter.ts')],
+    ['json', { outputFile: process.env.BLACKBOX_ASSERTION_REPORT }],
+  ],
 });
