@@ -110,7 +110,7 @@ try {
 
   const { stdout: discovery } = await run(
     playwright,
-    ['test', '--list', '--reporter=line'],
+    ['test', '--list'],
     options,
   );
   assert.match(discovery, /Scenario: Alice submits a valid payment method/u);

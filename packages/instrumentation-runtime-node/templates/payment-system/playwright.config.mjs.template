@@ -11,6 +11,7 @@ export default defineConfig({
   updateSnapshots: 'none',
   snapshotPathTemplate: '{testDir}/snapshots/{arg}{ext}',
   reporter: [
+    ['@suites/blackbox-playwright/reporter'],
     ['list', { printSteps: true }],
     ['json', { outputFile: 'test-results/results.json' }],
     ['html', { open: 'never' }],
