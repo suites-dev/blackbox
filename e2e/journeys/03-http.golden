@@ -13,8 +13,8 @@ status 0
 $ grep -c -- "$FIXTURE_CONTROL_TOKEN" reset.json reset.err
 reset.json:0
 reset.err:0
-$ node -p 'JSON.parse(require("fs").readFileSync("reset.json", "utf8")).outcome.process.argv.filter((a) => a.includes("Authorization")).join("\n")'
-Authorization: [REDACTED]
+$ node -p 'const {process: child, redaction} = JSON.parse(require("fs").readFileSync("reset.json", "utf8")).outcome; JSON.stringify(redaction.preparedArgv.positions.map(i => [child.argv[i-1], child.argv[i]]))'
+[["-H","[REDACTED]"]]
 #! volatile run-block
 $ blackbox capsule run --via public-api --name "Create Alice subscription" -- curl -fsS -X POST -H "Content-Type: application/json" -d '{"userId":"alice","paymentMethodId":"pm_capsule_alice"}' /subscriptions
 {"userId":"alice","tier":"pro","subscription":{"id":"subscription_alice","status":"active"},"paymentIntentId":"pi_alice1","orderId":"order_alice"}

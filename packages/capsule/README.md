@@ -90,11 +90,19 @@ Each session is retained below:
 └── sandbox/           # Sandbox records and collector telemetry storage
 ```
 
-Session, activity, progress, and report schemas live in [`schema/`](schema/). Readers
-validate identities and persisted shapes before projection. Reports redact known
-credentials, sensitive arguments and output, environment values, and private IPC
-paths; that redaction is a boundary, not a claim that arbitrary application payloads
-can never contain secrets.
+Capsule masks recognized credentials before writing each activity to `activities.json`.
+This covers request and prepared argv, captured stdout and stderr, driver-declared
+positions, known credential forms such as Bearer and Basic, and HTTP field values
+named by `observation.redaction.headers`. Header names are case-insensitive.
+For truncated output, the first partial line of the tail and any folded continuations
+are masked because their header name may fall in the omitted middle. Retention byte
+counts describe the original capture. `capsule run --json --raw-output` selects the
+live command output for printing. It uses the same masked activity file on disk.
+
+Older activity files keep their original contents. Arbitrary application payloads,
+session and progress metadata, and files under `sandbox/` may contain sensitive
+information. Inspect artifacts before sharing. The [schemas](schema/) describe
+the retained records and the report projection.
 
 ## Maintainer Map
 

@@ -1,3 +1,4 @@
+import { redactStructuredLines } from './structured-lines.js';
 import type { DriverArgvRedaction } from '@suites/blackbox-driver';
 
 import type { CapsuleReportRedaction } from '../types.js';
@@ -5,7 +6,7 @@ import type { CapsuleReportRedaction } from '../types.js';
 const MASK = '[REDACTED]';
 const sensitiveName =
   /(?:authorization|proxy-authorization|cookie|set-cookie|token|secret|password|passwd|api[-_]?key)/iu;
-const header = /^(authorization|proxy-authorization|cookie|set-cookie|x-api-key|api-key)\s*:/iu;
+const defaultHeaders = ['authorization', 'proxy-authorization', 'cookie', 'set-cookie', 'x-api-key', 'api-key'];
 const assignment = /^([A-Za-z_][A-Za-z0-9_]*)=(.*)$/u;
 /** An environment variable name (`API_URL`, `PGPASSWORD`): upper case, digits and `_`. */
 const environmentName = /^[A-Z_][A-Z0-9_]*$/u;
@@ -58,6 +59,8 @@ function redactAttachedFlag(argument: string): string | null {
 
 export interface RedactionContext {
   readonly entries: CapsuleReportRedaction[];
+  readonly headerPattern: RegExp;
+  readonly jsonFieldPattern: RegExp;
 }
 
 function note(
@@ -69,6 +72,18 @@ function note(
 }
 
 export function redactText(input: string, location: string, context: RedactionContext): string {
+  return redactStructuredLines(input, (value) => redactPlainText(value, location, context),
+    (value) => redactJsonFields(value, location, context), context.headerPattern);
+}
+
+function redactJsonFields(input: string, location: string, context: RedactionContext): string {
+  return input.replace(context.jsonFieldPattern, (_match, prefix: string, suffix: string) => {
+    note(context, 'sensitive-output', location);
+    return `${prefix}${MASK}${suffix}`;
+  });
+}
+
+function redactPlainText(input: string, location: string, context: RedactionContext): string {
   // `scheme://user:password@host`: the user information is a credential.
   let value = input.replace(
     /\b([a-z][a-z0-9+.-]*:\/\/)[^\s/?#@:]*:[^\s/?#@]*@/giu,
@@ -77,7 +92,7 @@ export function redactText(input: string, location: string, context: RedactionCo
       return `${scheme}${MASK}@`;
     },
   );
-  value = value.replace(/\b(Bearer|Basic)\s+[^\s,"'}]+/giu, (_match, scheme: string) => {
+  value = value.replace(/\b(Bearer|Basic)[\t ]+[^\s,"'}]+/giu, (_match, scheme: string) => {
     note(context, 'authorization-credential', location);
     return `${scheme} ${MASK}`;
   });
@@ -90,19 +105,13 @@ export function redactText(input: string, location: string, context: RedactionCo
     return MASK;
   });
   value = value.replace(
-    /\b(authorization|proxy-authorization|cookie|set-cookie|x-api-key|api-key)\s*:\s*[^\r\n,;}]+/giu,
+    context.headerPattern,
     (match: string) => {
       note(context, 'sensitive-header', location);
       return `${match.slice(0, match.indexOf(':') + 1)} ${MASK}`;
     },
   );
-  value = value.replace(
-    /("(?:authorization|token|secret|password|passwd|apiKey|api_key|cookie)"\s*:\s*")[^"]*(")/giu,
-    (_match, prefix: string, suffix: string) => {
-      note(context, 'sensitive-output', location);
-      return `${prefix}${MASK}${suffix}`;
-    },
-  );
+  value = redactJsonFields(value, location, context);
   value = value.replace(
     /([?&](?:token|secret|password|passwd|api[-_]?key|authorization)=)[^&#\s]+/giu,
     (_match, prefix: string) => {
@@ -142,9 +151,11 @@ function redactArgument(argument: string, location: string, context: RedactionCo
     note(context, envKind, location);
     return `${env[1]}=${MASK}`;
   }
-  if (header.test(argument)) {
-    note(context, 'sensitive-header', location);
-    return `${argument.slice(0, argument.indexOf(':') + 1)} ${MASK}`;
+  if (argument.search(context.headerPattern) === 0) {
+    return redactText(argument, location, context);
+  }
+  if (argument.startsWith('-H') && argument.length > 2) {
+    return `-H${redactText(argument.slice(2), location, context)}`;
   }
   const equals = argument.indexOf('=');
   if (equals > 0 && sensitiveName.test(argument.slice(0, equals))) {
@@ -200,6 +211,19 @@ export function redactArgv(input: {
   });
 }
 
-export function createRedactionContext(): RedactionContext {
-  return { entries: [] };
+export function createRedactionContext(headers: readonly string[] = []): RedactionContext {
+  const names = [...new Set([...defaultHeaders, ...headers].map((name) => name.trim().toLowerCase()))]
+    .filter(Boolean)
+    .map((name) => name.replace(/[.*+?^$(){}|[\]\\]/gu, '\\$&'));
+  // Consume the whole field, including cookie pairs, commas and folded continuation lines.
+  const headerPattern = new RegExp(
+    `(?<![A-Za-z0-9_-])(?:${names.join('|')})[\\t ]*:[^\\r\\n]*(?:\\r?\\n[\\t ]+[^\\r\\n]*)*`,
+    'giu',
+  );
+  const fields = [...names, 'token', 'secret', 'password', 'passwd', 'apiKey', 'api_key'];
+  const jsonFieldPattern = new RegExp(
+    String.raw`("(?:${fields.join('|')})"\s*:\s*")(?:(?:\\.)|[^"\\])*(")`,
+    'giu',
+  );
+  return { entries: [], headerPattern, jsonFieldPattern };
 }

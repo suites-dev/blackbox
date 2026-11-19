@@ -1,5 +1,6 @@
 import { StringDecoder } from 'node:string_decoder';
 
+import type { CapsuleOutputRetention } from '../model/execution/process-outcome.js';
 import type { RetainedOutput } from './output/retained-output.js';
 import { redactRetainedOutput } from './output/retained-redaction.js';
 
@@ -78,11 +79,27 @@ export function retainedOutputText(output: RetainedOutput): string {
   return output.kind === 'complete' ? output.text : `${output.head}${output.tail}`;
 }
 
+// The capture seam is available to the manager before JSON serialization. Retention byte
+// counts alone cannot reconstruct it after UTF-8 decoding and driver-declared redaction.
+const tailOffset = Symbol('retained tail offset');
+
+export function retainedTextForRedaction(text: string, retention: CapsuleOutputRetention): string {
+  if (!(tailOffset in retention) || typeof retention[tailOffset] !== 'number') {
+    return text;
+  }
+  const offset = retention[tailOffset];
+  // The missing middle may contain a sensitive field name. Mask the partial tail line
+  // and its folded continuations, then resume on the first independent line.
+  const tail = text.slice(offset).replace(/^[^\r\n]*(?:\r?\n[\t ]+[^\r\n]*)*/u, '[REDACTED]');
+  return `${text.slice(0, offset)}\n${tail}`;
+}
+
 export function retainedOutputMetadata(output: RetainedOutput) {
   return output.kind === 'complete'
     ? { kind: 'complete' as const, originalBytes: output.originalBytes }
     : {
         kind: 'truncated' as const,
+        [tailOffset]: output.head.length,
         originalBytes: output.originalBytes,
         retainedBytes: output.retainedBytes,
         omittedBytes: output.omittedBytes,

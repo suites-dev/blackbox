@@ -1,3 +1,4 @@
+import type { CapsuleOutputRedactionKind } from '../model/execution/process-outcome.js';
 import type { CapsuleActivityReport } from '../model/execution/activity.js';
 import type {
   CapsuleAvailability,
@@ -43,13 +44,7 @@ export type CapsuleReportFailureRecord = CapsuleFailureRecord;
 
 export type CapsuleReportActivity = CapsuleActivityReport;
 
-export type CapsuleReportRedactionKind =
-  | 'authorization-credential'
-  | 'environment-value'
-  | 'sensitive-argument'
-  | 'sensitive-header'
-  | 'sensitive-output'
-  | 'private-ipc-path';
+export type CapsuleReportRedactionKind = CapsuleOutputRedactionKind | 'sensitive-argument';
 
 export interface CapsuleReportRedaction {
   readonly kind: CapsuleReportRedactionKind;
