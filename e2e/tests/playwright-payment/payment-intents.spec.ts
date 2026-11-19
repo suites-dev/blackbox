@@ -51,5 +51,10 @@ test.describe('Rule: accepted payments are retained as succeeded intents', () =>
       }));
       expect(JSON.stringify(normalized, null, 2) + '\n').toMatchSnapshot('payment-state.txt');
     });
+    const effects = evidence.effects;
+    if (effects === undefined) { throw new Error('Stimulus effects are unavailable'); }
+    await verify('And the payment request is observed at runtime', async () => {
+      await expect(effects.http({ actor: 'payment-api', method: 'POST' })).toHaveEmitted();
+    });
   });
 });
