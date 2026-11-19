@@ -60,7 +60,10 @@ jobs:
           git merge-base --is-ancestor "$head" refs/remotes/origin/main
           test -z "$(git status --porcelain)"
 
-          if [[ "$version" == *-* ]]; then
+          if [[ "$version" =~ -alpha([.]|$) ]]; then
+            distribution_tag=alpha
+            prerelease=true
+          elif [[ "$version" == *-* ]]; then
             distribution_tag=next
             prerelease=true
           else
@@ -98,12 +101,17 @@ jobs:
           test "$(jq -r '.version' lerna.json)" = "$VERSION"
           packages="$(pnpm exec lerna list --all --json)"
           jq -e --arg version "$VERSION" '
-            length > 0 and
+            length > 1 and
+            any(.[]; .name == "@suites/blackbox" and .private == false) and
             all(.[];
-              .private == false and
-              .version == $version and
-              (.name | startswith("@suites/blackbox-")) and
-              ((.name | endswith("-internal")) | not)
+              if .name == "@suites/blackbox-e2e-harness" then
+                .private == true
+              else
+                .private == false and
+                .version == $version and
+                ((.name == "@suites/blackbox") or (.name | startswith("@suites/blackbox-"))) and
+                ((.name | endswith("-internal")) | not)
+              end
             )
           ' <<<"$packages" >/dev/null
 
