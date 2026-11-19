@@ -33,7 +33,7 @@ export interface Invocation extends Consumption {
 export const scopeContext = new AsyncLocalStorage<AssertionScopeState>();
 export const invocationContext = new AsyncLocalStorage<Invocation>();
 export const trialContext = new AsyncLocalStorage<Trial>();
-export const samplingContext = new AsyncLocalStorage<boolean>();
+export const samplingContext = new AsyncLocalStorage<Invocation>();
 export const owners = new WeakMap<TestInfo, AssertionOwner>();
 
 export function logicalRecords(input: ReadonlySet<Invocation>): Invocation[] {

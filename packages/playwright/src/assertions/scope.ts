@@ -22,7 +22,7 @@ function observeStep(owner: AssertionOwner, data: unknown) {
   const invocation = invocationContext.getStore();
   if (invocation === undefined || invocation.scope.owner !== owner || invocation.stepSeen) {
     // Native poll retries create their own internal matcher steps after the sampled callback.
-    if (invocation !== undefined && invocation.poll && !samplingContext.getStore()) { return null; }
+    if (invocation !== undefined && invocation.poll && samplingContext.getStore() !== invocation) { return null; }
     const error = scopeError(scope, 'unsupported');
     issue(scope, 'unsupported', error);
     const trial = trialContext.getStore();
