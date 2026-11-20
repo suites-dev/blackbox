@@ -4,7 +4,8 @@ import { expect, it } from 'vitest';
 import { digestBytes } from '../../envelope/index.js';
 import { buildAttemptView } from './model.js';
 
-type FailureLocation = 'initial' | 'final' | 'diff' | 'reader-without-count' | 'count-only';
+type FailureLocation = 'initial' | 'final' | 'diff' | 'reader-without-count' | 'count-only'
+  | 'count-missing' | 'count-malformed';
 
 function attemptWithFailedState(location: FailureLocation, claimStatus: 'passed' | 'failed' = 'passed') {
   const effects = Buffer.from(JSON.stringify({
@@ -18,8 +19,11 @@ function attemptWithFailedState(location: FailureLocation, claimStatus: 'passed'
   const missingCount = { version: 1, checkpointId: 'failed',
     observers: [{ name: 'payments', readers: [{ name: 'rows', status: 'failed' }] }] };
   const countOnly = { version: 1, checkpointId: 'failed', failureCount: 1, observers: [] };
+  const countMissing = { version: 1, checkpointId: 'failed', observers: [] };
+  const countMalformed = { version: 1, checkpointId: 'failed', failureCount: 'invalid', observers: [] };
   const final = location === 'final' ? failed : location === 'reader-without-count' ? missingCount
-    : location === 'count-only' ? countOnly : healthy;
+    : location === 'count-only' ? countOnly : location === 'count-missing' ? countMissing
+      : location === 'count-malformed' ? countMalformed : healthy;
   const diff = { version: 1, initialCheckpointId: 'healthy', finalCheckpointId: 'failed',
     observers: [{ name: 'payments', status: location === 'diff' ? 'failed' : 'captured', diff: {} }] };
   const events = Array<Record<string, unknown>>(
@@ -68,6 +72,15 @@ it.each(['initial', 'final', 'diff', 'reader-without-count', 'count-only'] as co
     expect(view.evidence).toMatchObject({ status: 'partial', captureHealth: { status: 'captured' } });
     expect(view.verification).toMatchObject({ status: 'unavailable', passed: 1, failed: 0 });
     expect(view.evidence.problems).toContain('State checkpoint or comparison records failed readers');
+  },
+);
+
+it.each(['count-missing', 'count-malformed'] as const)(
+  'does not verify a passed claim with a %s on a v1 checkpoint', (location) => {
+    const view = attemptWithFailedState(location);
+    expect(view.evidence.status).toBe('partial');
+    expect(view.verification).toMatchObject({ status: 'unavailable', passed: 1, failed: 0 });
+    expect(view.evidence.problems).toContain('State checkpoint has an invalid failure count');
   },
 );
 

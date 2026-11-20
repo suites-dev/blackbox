@@ -20,6 +20,13 @@ function hasFailedStateReaders(value: unknown): boolean {
   });
 }
 
+function hasInvalidFailureCount(value: unknown): boolean {
+  const state = record(value);
+  if (state === null || state.version !== 1) { return false; }
+  const count = state.failureCount;
+  return typeof count !== 'number' || !Number.isSafeInteger(count) || count < 0;
+}
+
 /** Terminal phase status and the final checkpoint must be retained for a complete execution. */
 function hasIncompleteExecution(events: readonly Record<string, unknown>[]): boolean {
   const began = events.some((event) => event.kind === 'begin');
@@ -37,6 +44,10 @@ export function recordEventHealth(events: readonly Record<string, unknown>[], pr
   if (events.some((event) => (event.kind === 'begin' && hasFailedStateReaders(event.initial)) ||
     (event.kind === 'final' && (hasFailedStateReaders(event.final) || hasFailedStateReaders(event.diff))))) {
     problems.push('State checkpoint or comparison records failed readers');
+  }
+  if (events.some((event) => (event.kind === 'begin' && hasInvalidFailureCount(event.initial)) ||
+    (event.kind === 'final' && hasInvalidFailureCount(event.final)))) {
+    problems.push('State checkpoint has an invalid failure count');
   }
   if (events.some((event) => (event.kind === 'begin' && record(event.initial) === null) ||
     (event.kind === 'final' && (record(event.final) === null || record(event.diff) === null)))) {
