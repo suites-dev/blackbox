@@ -146,6 +146,9 @@ function buildExecutions(
     }
     const events = data.events.map(record).filter((value): value is Record<string, unknown> => value !== null);
     if (events.length !== data.events.length) { problems.push('blackbox-execution has malformed events'); }
+    if (events.some((event) => event.kind === 'capture-failure')) {
+      problems.push('Execution capture failure was recorded');
+    }
     const artifacts = items(data.artifacts).map(record).filter((value): value is Record<string, unknown> => value !== null);
     const ids = [...new Set(events.map((event) => str(event.executionId)).filter((id): id is string => id !== null))];
     for (const executionId of ids) {
