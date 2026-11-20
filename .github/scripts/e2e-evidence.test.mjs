@@ -92,10 +92,10 @@ test('Playwright evidence uses its own transport identity and output directory',
     await write(root, `e2e/test-results/${name}`, value);
   }
   const lifecycle = {
-    'receipt.json': '{"kind":"playwright-lifecycle-proof","cases":["positive","blocked","capture-failed"]}',
-    'results.json': '{"stats":{"expected":3,"unexpected":0}}',
-    'discovery.txt': 'three lifecycle cases\n',
-    'execution.txt': 'two passed; one required capture failure\n',
+    'receipt.json': '{"kind":"playwright-lifecycle-proof","cases":["positive","blocked","capture-failed","subscription"]}',
+    'results.json': '{"stats":{"expected":4,"unexpected":0}}',
+    'discovery.txt': 'four lifecycle cases\n',
+    'execution.txt': 'three passed; one required capture failure\n',
     'subscription-state.expected.txt': '[{"status":"active"}]\n',
   };
   for (const [name, value] of Object.entries(lifecycle)) {

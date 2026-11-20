@@ -9,7 +9,7 @@ export type ExpectedEmission = Readonly<Partial<Record<
   'kind' | 'operation' | 'target' | 'actor' | 'outcome', unknown
 >>> & Readonly<Partial<{ attributes: Readonly<Record<string, unknown>> }>>;
 
-export interface EmissionAssertionReport {
+export type EmissionAssertionReport = {
   readonly matcher: string;
   readonly expected: string;
   readonly negated: boolean;
@@ -17,7 +17,7 @@ export interface EmissionAssertionReport {
   readonly evidence: EffectSnapshotArtifact | null;
   readonly witnesses: readonly ObservedEffect[];
   readonly otherCapture: EffectCapture['identity'] | null;
-}
+} & Readonly<Partial<{ captureReference: string }>>;
 
 export interface EmissionOwner {
   readonly unavailable: () => string | null;

@@ -132,7 +132,7 @@ it('drains a pending stimulus emission before finalization and refuses its late 
   const context = await fixture({ emitted: true, attach: async (name) => {
     if (name === 'blackbox-emissions') { entered.resolve(); await release.promise; }
   } });
-  vi.mocked(captureAttemptActivity).mockResolvedValueOnce(context.captured);
+  vi.mocked(captureAttemptActivity).mockResolvedValueOnce(context.captured).mockResolvedValueOnce(context.captured);
   try {
     const captured = await context.durable.capture({ executionId: 'execution', activityId: 'activity' });
     const pending = blackboxExpect(captured.http()).toHaveEmitted();
@@ -148,20 +148,20 @@ it('drains a pending stimulus emission before finalization and refuses its late 
     await expect(pending).rejects.toThrow('interrupted during shutdown');
     expect(await closing).toMatchObject({ message: 'Blackbox execution capture failed' });
     expect(context.report.attachedEvidence().map(({ name }) => name)).toEqual([
-      'effects.json', 'blackbox-execution',
+      'effects.json', 'effects.json', 'blackbox-execution',
     ]);
   } finally { release.resolve(); await rm(context.directory, { recursive: true, force: true }); }
 });
 
 it('retains a completed stimulus emission before terminal execution evidence', async () => {
   const context = await fixture({ emitted: true, attach: () => Promise.resolve() });
-  vi.mocked(captureAttemptActivity).mockResolvedValueOnce(context.captured);
+  vi.mocked(captureAttemptActivity).mockResolvedValueOnce(context.captured).mockResolvedValueOnce(context.captured);
   try {
     const captured = await context.durable.capture({ executionId: 'execution', activityId: 'activity' });
     await blackboxExpect(captured.http()).toHaveEmitted();
     await context.durable.finish(context.journal);
     expect(context.report.attachedEvidence().map(({ name }) => name)).toEqual([
-      'effects.json', 'blackbox-emissions', 'blackbox-execution',
+      'effects.json', 'effects.json', 'blackbox-emissions', 'blackbox-execution',
     ]);
   } finally { await rm(context.directory, { recursive: true, force: true }); }
 });

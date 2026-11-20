@@ -161,7 +161,7 @@ fixtureTest.describe('actual lifecycle fixture', () => {
       await verify('And the request was observed', async () => { await expect(recorder).toHaveEmitted(); });
       await verify('And the state matches the reviewed baseline', () => { expect(`${String(evidence.state(counter).final.value)}\n`).toMatchSnapshot('counter.txt'); });
       await concurrentClaims(verify, () => { expect(result.status()).toBe(201); }, async () => { await expect(recorder).toHaveEmitted(); });
-      await nativeExpect(expect(evidence.effects.http({ method: 'GET' })).not.toHaveEmitted()).rejects.toThrow(/inconclusive/);
+      await nativeExpect(expect.configure({ timeout: 100 })(evidence.effects.http({ method: 'GET' })).not.toHaveEmitted()).rejects.toThrow(/inconclusive/);
       nativeExpect(traceparent).toMatch(/^00-/);
     } finally { await new Promise<void>((resolve, reject) => { server.close((error) => { if (error) { reject(error); } else { resolve(); } }); }); }
 
