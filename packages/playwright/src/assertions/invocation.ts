@@ -3,6 +3,7 @@ import {
   type AssertionScopeState, type Invocation, type Trial,
 } from './context.js';
 import { consumptionPromise } from './promises.js';
+import { recordSnapshot } from './claims/context.js';
 
 export function beginInvocation(scope: AssertionScopeState, name: string, poll: boolean): Invocation {
   assertActive(scope);
@@ -38,6 +39,7 @@ function finishInvocation(invocation: Invocation): void {
     }
   }
   if (invocation.status === 'pending') { invocation.status = 'passed'; }
+  recordSnapshot(invocation.name, !invocation.stepSeen || !invocation.completionSeen ? 'unknown' : invocation.status);
 }
 
 export function invokeTracked(invocation: Invocation, invoke: () => unknown): unknown {

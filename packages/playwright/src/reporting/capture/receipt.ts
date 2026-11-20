@@ -34,7 +34,7 @@ export async function attachReceipt(input: {
   readonly recorder: ReceiptRecorder;
   readonly catalogEntryId: string;
   readonly envelope: Digest | null;
-}): Promise<AttemptReceipt> {
+} & Readonly<Partial<{ attemptFailed: boolean }>>): Promise<AttemptReceipt> {
   const { testInfo } = input;
   const receipt = input.recorder.build({
     behavior: behaviorIdentity({
@@ -47,9 +47,9 @@ export async function attachReceipt(input: {
       titlePath: testInfo.titlePath.slice(1),
     }),
     outcome: {
-      testStatus: testInfo.status ?? 'unknown',
+      testStatus: input.attemptFailed === true ? 'failed' : testInfo.status ?? 'unknown',
       expectedStatus: testInfo.expectedStatus,
-      errorCount: testInfo.errors.length,
+      errorCount: testInfo.errors.length + (input.attemptFailed === true ? 1 : 0),
     },
     interrupted: testInfo.status === 'interrupted',
     envelope: input.envelope,

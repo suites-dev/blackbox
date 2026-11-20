@@ -12,18 +12,20 @@ import {
   type IndexedExecution,
   type IndexedReceipt,
 } from './index-rows.js';
+import { verifyNativeResult, type NativeResult } from '../receipts/native-result.js';
 import { verifyReceipt, type AttemptReceipt } from '../receipts/receipt.js';
 import { verifyDelta } from './records.js';
 import { readWithReason, type ObjectKind, type ObjectStore } from './store.js';
 
 export type { CorruptObject, IndexedDelta, IndexedExecution, IndexedReceipt };
 
-export const indexVersion = 1;
+export const indexVersion = 2;
 
 export interface HistoryIndex {
   readonly indexVersion: typeof indexVersion;
   readonly executions: readonly IndexedExecution[];
   readonly receipts: readonly IndexedReceipt[];
+  readonly nativeResults: readonly NativeResult[];
   readonly aliases: readonly BehaviorAlias[];
   readonly deltas: readonly IndexedDelta[];
   readonly blobs: readonly Digest[];
@@ -137,7 +139,12 @@ export async function buildIndex(store: ObjectStore): Promise<HistoryIndex> {
   };
   const blobs = await loadBlobs(store, bad);
   const envelopes = await loadEnvelopes(store, bad);
-  const receipts = await loadRecords<AttemptReceipt>(store, 'receipt', verifyReceipt, bad);
+  const records = await loadRecords<AttemptReceipt | NativeResult>(store, 'receipt', (value) => {
+    if (value !== null && typeof value === 'object' && 'kind' in value && value.kind === 'playwright-result') { return verifyNativeResult(value); }
+    return verifyReceipt(value);
+  }, bad);
+  const receipts = records.filter((record): record is AttemptReceipt => record.kind === 'attempt-receipt');
+  const nativeResults = records.filter((record): record is NativeResult => record.kind === 'playwright-result');
   const aliases = await loadRecords<BehaviorAlias>(store, 'alias', verifyAlias, bad);
   const deltas = await loadRecords<BehavioralDelta>(store, 'delta', verifyDelta, bad);
   const snapshotIds = new Set(blobs);
@@ -148,12 +155,13 @@ export async function buildIndex(store: ObjectStore): Promise<HistoryIndex> {
     executions: rows(
       'envelope',
       envelopes,
-      (envelope) => executionOf(envelope, snapshotIds),
+      (envelope) => executionOf(envelope, snapshotIds, nativeResults),
       bad,
     ).sort((a, b) => (a.envelopeId < b.envelopeId ? -1 : 1)),
     receipts: rows('receipt', receipts, (receipt) => receiptOf(receipt, envelopeIds), bad).sort(
       byId,
     ),
+    nativeResults: nativeResults.sort((a, b) => a.digest < b.digest ? -1 : 1),
     aliases: aliases.sort((a, b) => (a.digest < b.digest ? -1 : 1)),
     deltas: rows('delta', deltas, deltaOf, bad).sort(byId),
     blobs,

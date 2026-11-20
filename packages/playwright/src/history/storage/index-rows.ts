@@ -1,6 +1,7 @@
 import type { BehavioralDelta } from '../../compare/types.js';
 import type { Digest, BehaviorEnvelope, LegacyBehaviorEnvelope } from '../../envelope/index.js';
 import { receiptStatus, type AttemptReceipt, type ReceiptStatus } from '../receipts/receipt.js';
+import type { NativeResult } from '../receipts/native-result.js';
 import type { ObjectKind } from './store.js';
 
 export interface IndexedExecution {
@@ -14,6 +15,9 @@ export interface IndexedExecution {
   readonly runnerTestId: string;
   readonly capturedAt: string;
   readonly testStatus: string;
+  readonly captureTestStatus: string;
+  readonly finalStatus: string | null;
+  readonly statusDiscrepancy: boolean;
   readonly source: {
     readonly commit: string | null;
     readonly tree: string | null;
@@ -73,10 +77,14 @@ function stimulusOf(envelope: AnyEnvelope): Digest | null {
 export function executionOf(
   envelope: AnyEnvelope,
   snapshots: ReadonlySet<Digest>,
+  results: readonly NativeResult[] = [],
 ): IndexedExecution {
   const { finalSnapshot } = envelope.observed;
   const ci = envelope.provenance.ci;
   const assertions = envelope.verification.assertions;
+  const statuses = [...new Set(results.filter((result) => result.envelope === envelope.digest && result.attemptId === envelope.identity.attempt.attemptId).map((result) => result.status))];
+  const finalStatus = statuses.length === 0 ? null : statuses.length === 1 ? statuses[0] : 'conflicting';
+  const captureTestStatus = envelope.verification.testStatus.status;
   return {
     envelopeId: envelope.digest,
     behaviorId: envelope.identity.behavior.id,
@@ -87,7 +95,10 @@ export function executionOf(
     invocation: Object.hasOwn(ci, 'invocation') ? ci.invocation : null,
     runnerTestId: envelope.provenance.test.runnerTestId,
     capturedAt: envelope.provenance.capturedAt,
-    testStatus: envelope.verification.testStatus.status,
+    testStatus: finalStatus ?? captureTestStatus,
+    captureTestStatus,
+    finalStatus,
+    statusDiscrepancy: finalStatus !== null && finalStatus !== captureTestStatus,
     source: {
       commit: envelope.source.commit,
       tree: envelope.source.tree,

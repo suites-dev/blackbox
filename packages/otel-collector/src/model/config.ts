@@ -20,4 +20,7 @@ export interface StartCollectorInput extends CollectorIdentity {
   readonly endpoint: CollectorHttpInput;
   readonly authorization: CollectorAuthorization;
   readonly limits: CollectorLimits;
+  /** Explicit protected values for redaction before fragment storage; omitted preserves legacy behavior. */
+  // eslint-disable-next-line no-restricted-syntax -- omission preserves the legacy collector API
+  readonly redaction?: { readonly kind: 'credentials-v1'; readonly secrets: readonly string[] };
 }

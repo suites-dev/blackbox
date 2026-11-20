@@ -55,3 +55,16 @@ it('validates explicit identity, storage, paths, ports, and limits before bindin
     await rm(root, { recursive: true, force: true });
   }
 });
+
+it('rejects oversized redaction policy before binding without revealing the protected values', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'blackbox-collector-redaction-validation-'));
+  try {
+    const input = validInput(root);
+    const secret = 'synthetic-secret-value';
+    const redaction = { kind: 'credentials-v1' as const, secrets: Array.from({ length: 129 }, () => secret) };
+    await expect(startCollector({ ...input, redaction })).rejects.toThrow('Invalid collector redaction configuration');
+    await expect(startCollector({ ...input, redaction })).rejects.not.toThrow(secret);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});

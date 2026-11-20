@@ -190,6 +190,9 @@ export interface EvidenceRef {
   readonly id: Digest;
   readonly kind:
     | 'assertion-evidence'
+    | 'execution-evidence'
+    | 'stimulus-effects'
+    | 'capture-health'
     | 'final-snapshot'
     | 'collector-lifecycle'
     | 'collector-fragments'

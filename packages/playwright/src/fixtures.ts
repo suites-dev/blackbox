@@ -1,4 +1,7 @@
-import { createStateRegistry, createStimulusLifecycle, type StateRegistry } from './fixture-lifecycle/execution.js';
+import {
+  createStateRegistry, executionFixture, executionFixtureTimeoutMs,
+  type createStimulusLifecycle, type StateRegistry,
+} from './fixture-lifecycle/execution.js';
 import { registerAssertionOwner } from './assertions/scope.js';
 import { createAttemptStep } from './steps/step-context.js';
 import { runClients } from './clients/clients.js';
@@ -116,14 +119,6 @@ async function stepFixture(
   }
 }
 
-async function executionFixture(
-  { _blackboxState, request, step }: Pick<PrivateFixtures, '_blackboxState'> & Pick<PlaywrightTestArgs, 'request'> & Pick<BlackboxTestFixtures, 'step'>,
-  use: (value: ReturnType<typeof createStimulusLifecycle>) => Promise<void>,
-): Promise<void> {
-  const lifecycle = createStimulusLifecycle({ registry: _blackboxState, request, step });
-  try { await use(lifecycle); } finally { lifecycle.close(); }
-}
-
 async function stimulusFixture(
   { _blackboxExecution }: Pick<PrivateFixtures, '_blackboxExecution'>,
   use: (stimulus: BlackboxTestFixtures['stimulus']) => Promise<void>,
@@ -233,7 +228,7 @@ export function createBlackboxTest(
         registry.close();
       }
     },
-    _blackboxExecution: executionFixture,
+    _blackboxExecution: [executionFixture, { timeout: executionFixtureTimeoutMs }],
     stimulus: stimulusFixture,
     state: stateFixture,
     clients: async ({ _blackboxAttempt, _blackboxClients }, use) => {

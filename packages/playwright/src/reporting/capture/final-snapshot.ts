@@ -61,10 +61,14 @@ async function finalRead(
     return null;
   }
   try {
-    return await createScopedObservationSource({
+    const read = await createScopedObservationSource({
       selection: stimuli.selection,
       storageDirectory,
     }).read();
+    if (stimuli.kind === 'partial' && read.kind === 'admitted') {
+      return { ...read, diagnostics: [...read.diagnostics, `final-aggregate-omitted:${String(stimuli.omitted)}`] };
+    }
+    return read;
   } catch {
     return { kind: 'unavailable', message: 'The final activity read failed.' };
   }
@@ -99,7 +103,7 @@ export async function collectFinalSnapshot(input: {
     stimuli:
       input.stimuli.kind === 'none'
         ? null
-        : input.stimuli.selection.activities.map(({ activityId, purpose }) => ({
+        : (input.stimuli.kind === 'partial' ? input.stimuli.activities : input.stimuli.selection.activities).map(({ activityId, purpose }) => ({
             activityId,
             purpose,
           })),

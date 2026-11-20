@@ -2,3 +2,4 @@
 export { createStateRegistry } from '../state/registry.js';
 export type { StateRegistry } from '../state/types.js';
 export { createStimulusLifecycle } from '../stimulus/lifecycle/runtime.js';
+export { executionFixture, executionFixtureTimeoutMs } from './execution-fixture.js';

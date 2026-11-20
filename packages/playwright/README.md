@@ -282,7 +282,8 @@ updates. Keep reviewed `.yaml` files beside the tests and set
 `updateSnapshots: 'none'` in CI. Creating or updating a baseline does not establish
 that its contents are correct; review the selected fields, normalization and diff.
 Actual matcher evidence remains JSON in the `blackbox-emissions` attachment.
-This does not add the planned automatic per-stimulus `effects.json` artifact.
+Each completed `stimulus` also captures its own `effects.json`; `evidence.effects`
+selects recorders from that immutable cut. An open cut does not prove absence.
 
 ## Account for assertions in a callback
 
@@ -418,13 +419,28 @@ diagnostics will be added with the effect evaluator.
 
 ## Behavioral history
 
-Each attempt also attaches three documents, on by default (`blackbox.finalSnapshot: false` turns
-this off): `blackbox-effects-final` (the attempt's effects after cleanup, also when the test
+Each attempt with final capture enabled attaches `blackbox-effects-final` (the attempt's effects after cleanup, also when the test
 failed), `blackbox-envelope` (the attempt's identity, source revision, configuration fingerprints,
 stimulus fingerprint, reported state and evidence digests) and `blackbox-receipt` (how the attempt
 ended, including attempts that never got a sandbox, which have no envelope). `EffectsRecord` v0
 and the assertion attachments are unchanged. The Blackbox reporter sets `BLACKBOX_INVOCATION_ID`
 once per Playwright invocation so retries can be grouped.
+
+A `stimulus` also attaches its execution record and per-stimulus `effects.json`, even when
+`finalSnapshot` is false. The execution record links bounded, redacted checkpoints, diffs,
+output and claim outcomes to that attempt. It records instrumented snapshot matcher outcomes
+without inventing a file-level reference, and links emission assertions to their evidence digests.
+Retention copies these artifacts with the sandbox.
+Response body capture supports UTF-8 decoded bodies of at most 256 KiB, including chunked
+and compressed responses. The limit bounds retained evidence, not transport memory: Playwright
+buffers the response before returning it, and reading its body can make another copy.
+Unsupported or failed capture fails the attempt;
+JSON values are also limited to 16,384 characters per string, 10,000 nodes and 1 MiB.
+The native response object remains available in memory. Redaction covers credential-named
+fields and configured credential values; it cannot identify every secret in arbitrary data.
+Each live cut selects one stimulus. The current supplemental final capture can select at most
+the eight most recent completed stimuli. Earlier activities are explicitly counted as omitted;
+their individual cuts remain retained, and the supplemental aggregate stays incomplete.
 
 Declare which behavior a test exercises, and optionally report authoritative state, from the test:
 
@@ -496,8 +512,14 @@ Storage semantics:
 - The index is a cache built from the objects and can be deleted at any time. Records that fail
   verification, or have a valid digest and the wrong shape, are listed by `verifyStore()` and never
   served. Every read re-verifies the record against the identity it is stored under.
+- Playwright result ingestion stores final runner status as a versioned observation linked to the
+  exact envelope and attempt. Index and history entries expose `captureTestStatus`, `finalStatus`,
+  and `statusDiscrepancy`; `status` uses the final result when available. Conflicting final reports
+  produce `conflicting`. `execution()` also returns the verified `nativeResults` and `finalStatus`.
+  The immutable envelope and fixture receipt keep their original capture-time facts.
 - `compare()` checks comparability first. Spans alone never refute a limit; reported state does.
-  Nothing in the history marks an observation as accepted.
+  Comparison verification fields describe the envelopes at capture time; use `execution().finalStatus`
+  for the runner outcome. Nothing in the history marks an observation as accepted.
 - Aliases are recorded claims that two behavior ids are the same. Ambiguity and cycles are
   reported; nothing is inferred from names or rewritten.
 

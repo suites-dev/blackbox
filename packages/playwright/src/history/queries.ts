@@ -12,6 +12,9 @@ export interface HistoryEntry {
   readonly retry: number;
   readonly invocation: string | null;
   readonly status: string;
+  readonly captureTestStatus: string | null;
+  readonly finalStatus: string | null;
+  readonly statusDiscrepancy: boolean;
   readonly envelopeId: Digest | null;
   readonly receiptId: Digest | null;
   readonly receiptStatus: ReceiptStatus | null;
@@ -82,6 +85,9 @@ function executionEntry(
     retry: run.retry,
     invocation: run.invocation,
     status: run.testStatus,
+    captureTestStatus: run.captureTestStatus,
+    finalStatus: run.finalStatus,
+    statusDiscrepancy: run.statusDiscrepancy,
     envelopeId: run.envelopeId,
     receiptId: receipt === undefined ? null : receipt.id,
     receiptStatus: receipt === undefined ? null : receipt.status,
@@ -110,6 +116,9 @@ function attemptEntry(
     retry: receipt.retry,
     invocation: receipt.invocation,
     status: receipt.status,
+    captureTestStatus: null,
+    finalStatus: null,
+    statusDiscrepancy: false,
     envelopeId: null,
     receiptId: receipt.id,
     receiptStatus: receipt.status,

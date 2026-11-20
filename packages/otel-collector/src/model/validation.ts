@@ -5,6 +5,32 @@ const IDENTITY_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/u;
 const PATH_PATTERN = /^\/[A-Za-z0-9._~!$&'()*+,;=:@/-]*$/u;
 export const MAX_COLLECTOR_SHUTDOWN_TIMEOUT_MS = 60_000;
 
+function validateRedaction(input: unknown): void {
+  if (input === undefined) {
+    return;
+  }
+  if (
+    typeof input !== 'object' ||
+    input === null ||
+    !('kind' in input) ||
+    input.kind !== 'credentials-v1' ||
+    !('secrets' in input) ||
+    !Array.isArray(input.secrets)
+  ) {
+    throw new Error('Invalid collector redaction configuration.');
+  }
+  const secrets: unknown[] = input.secrets;
+  if (
+    secrets.length > 128 ||
+    secrets.some((value) => typeof value !== 'string' || value.length > 4096)
+  ) {
+    throw new Error('Invalid collector redaction configuration.');
+  }
+  if ((secrets as string[]).reduce((total, value) => total + value.length, 0) > 32768) {
+    throw new Error('Invalid collector redaction configuration.');
+  }
+}
+
 function validatePath(input: { readonly name: string; readonly value: string }): void {
   if (!PATH_PATTERN.test(input.value) || input.value.includes('//') || input.value.endsWith('/')) {
     throw new Error(
@@ -28,6 +54,7 @@ export function validateIdentity(input: {
 // eslint-disable-next-line complexity -- validates every StartCollectorInput field (identity, storage, endpoint host, port and paths) with a specific message per field
 export function validateStartInput(input: StartCollectorInput): void {
   validateIdentity(input);
+  validateRedaction(input.redaction);
   if (!isAbsolute(input.storageDirectory)) {
     throw new Error('storageDirectory must be an absolute path.');
   }
