@@ -28,7 +28,7 @@ function attempt(lostPersistence: boolean, outputDir = ''): { test: TestCase; re
         initial: { observers: [{ name: 'subscriptions', readers: [{ name: 'rows', value: [] }] }] } },
       { kind: 'precondition', executionId: 'execution-1', title: 'Given no subscriptions exist', status: 'passed' },
       { kind: 'action', executionId: 'execution-1', status: 'completed',
-        captured: { output: { kind: 'response', status: 201, body: { subscription } }, effects: digestBytes(effects) } },
+        captured: { output: { kind: 'response', status: 201, headers: {}, body: { subscription } }, effects: digestBytes(effects) } },
       { kind: 'final', executionId: 'execution-1',
         final: { observers: [{ name: 'subscriptions', readers: [{ name: 'rows', value: lostPersistence ? [] : [subscription] }] }] },
         diff: { observers: [{ name: 'subscriptions', diff: { rows: { added: lostPersistence ? [] : [subscription] } } }] } },
@@ -36,7 +36,7 @@ function attempt(lostPersistence: boolean, outputDir = ''): { test: TestCase; re
       { kind: 'claim', executionId: 'execution-1', title: 'And exactly that subscription is retained',
         status: lostPersistence ? 'failed' : 'passed', evidence: [] },
     ],
-    artifacts: [{ executionId: 'execution-1', output: { kind: 'response', status: 201, body: { subscription } },
+    artifacts: [{ executionId: 'execution-1', output: { kind: 'response', status: 201, headers: {}, body: { subscription } },
       effects: digestBytes(effects),
       effectCaptures: [{ captureId: 'capture-initial', reference: digestBytes(effects), purpose: 'initial' }] }],
   }));

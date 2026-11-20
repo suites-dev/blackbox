@@ -55,6 +55,23 @@ export function recordEventHealth(events: readonly Record<string, unknown>[], pr
   }
 }
 
-export function recordExecutionHealth(events: readonly Record<string, unknown>[], problems: string[]): void {
+function validOutput(value: unknown): boolean {
+  const output = record(value);
+  if (output === null) { return false; }
+  return (output.kind === 'response' && Number.isInteger(output.status) &&
+    record(output.headers) !== null && Object.hasOwn(output, 'body')) ||
+    (output.kind === 'json' && Object.hasOwn(output, 'value')) || output.kind === 'undefined';
+}
+
+export function recordExecutionHealth(
+  events: readonly Record<string, unknown>[],
+  artifact: Record<string, unknown> | null,
+  problems: string[],
+): void {
   if (hasIncompleteExecution(events)) { problems.push('Execution did not complete successfully'); }
+  if (!events.some((event) => event.kind === 'action' && event.status === 'completed')) { return; }
+  if (artifact === null || !validOutput(artifact.output) ||
+    typeof artifact.effects !== 'string' || artifact.effects.length === 0) {
+    problems.push('Completed execution artifact is missing or invalid');
+  }
 }

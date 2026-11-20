@@ -43,7 +43,8 @@ function attemptWithFailedState(location: FailureLocation, claimStatus: 'passed'
   }
   const execution = Buffer.from(JSON.stringify({
     schemaVersion: 1, kind: 'stimulus-executions', events,
-    artifacts: [{ executionId: 'successful', effects: digestBytes(effects), output: { status: 201 } }],
+    artifacts: [{ executionId: 'successful', effects: digestBytes(effects),
+      output: { kind: 'response', status: 201, headers: {}, body: { id: 'first' } } }],
   }));
   const test = {
     id: 'payment-contract', title: 'Scenario: two payments', expectedStatus: 'passed',

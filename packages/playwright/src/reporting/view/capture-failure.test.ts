@@ -17,7 +17,8 @@ function failedCaptureAfterClaim(claimStatus: 'passed' | 'failed') {
       { kind: 'claim', executionId: 'successful', title: 'Then it is retained', status: claimStatus, evidence: [] },
       { kind: 'capture-failure', executionId: 'failed', phase: 'initial', error: 'initial capture interrupted' },
     ],
-    artifacts: [{ executionId: 'successful', effects: digestBytes(effects), output: { kind: 'response', status: 201 } }],
+    artifacts: [{ executionId: 'successful', effects: digestBytes(effects),
+      output: { kind: 'response', status: 201, headers: {}, body: { id: 'first' } } }],
   }));
   const test = {
     id: 'subscription-contract', title: 'Scenario: a subscription is created', expectedStatus: 'passed',

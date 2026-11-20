@@ -152,11 +152,11 @@ function buildExecutions(
     const ids = [...new Set(events.map((event) => str(event.executionId)).filter((id): id is string => id !== null))];
     for (const executionId of ids) {
       const ownEvents = events.filter((event) => event.executionId === executionId);
-      recordExecutionHealth(ownEvents, problems);
       validateClaimEvidence(ownEvents, availableDigests, problems);
       const begin = ownEvents.find((event) => event.kind === 'begin');
       const final = ownEvents.find((event) => event.kind === 'final');
       const artifact = artifacts.find((item) => item.executionId === executionId) ?? null;
+      recordExecutionHealth(ownEvents, artifact, problems);
       const ranked = ownEvents.filter((event) => event.kind !== 'begin').map((event, index) => ({ event, index }));
       const rank = (kind: unknown): number => kind === 'precondition' ? 0 : kind === 'action' ? 1 : kind === 'final' ? 2 : kind === 'claim' ? 3 : 4;
       ranked.sort((left, right) => rank(left.event.kind) - rank(right.event.kind) || left.index - right.index);
