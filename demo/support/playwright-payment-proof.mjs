@@ -52,6 +52,19 @@ function state(checkpoint, rows, cachedIntent) {
   }
 }
 
+export function claimedPaymentEffectCut(cuts, claim) {
+  assert.ok(cuts.length > 1, 'effects matcher did not retain a later cut');
+  assert.ok(Array.isArray(claim.evidence), 'effects claim has no evidence links');
+  const linked = cuts.slice(1).filter(({ digest }) => claim.evidence.includes(digest));
+  assert.equal(linked.length, 1, 'effects claim must reference exactly one later cut');
+  const [observed] = linked;
+  assert.notEqual(observed.digest, cuts[0].digest, 'later effects cut repeated the initial digest');
+  assert.ok(observed.data.graph.effects.some((effect) =>
+    effect.kind === 'http' && effect.actor === 'payment-api' && effect.operation === 'POST'),
+  'claim-linked later cut omitted the payment HTTP effect');
+  return observed;
+}
+
 export function verifyPaymentReport(report, broken) {
   const expectedStatus = broken ? 'failed' : 'passed';
   assert.deepEqual(report.errors, []);
@@ -132,11 +145,7 @@ export function verifyPaymentReport(report, broken) {
   } else {
     assert.deepEqual(result.errors, []);
     assert.deepEqual(claims[2].snapshots, [{ matcher: 'toMatchSnapshot', status: 'passed' }]);
-    assert.ok(cuts.length > 1, 'effects matcher did not retain a later cut');
-    const observed = cuts.find(({ data }) => data.graph.effects.some((effect) =>
-      effect.kind === 'http' && effect.actor === 'payment-api' && effect.operation === 'POST'));
-    assert.ok(observed, 'later cut omitted the payment HTTP effect');
-    assert.ok(claims[3].evidence.includes(observed.digest), 'effects claim omitted its evidence cut');
+    claimedPaymentEffectCut(cuts, claims[3]);
   }
   const view = rendered.data;
   assert.equal(view.kind, 'blackbox-attempt-view');
