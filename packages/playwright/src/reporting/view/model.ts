@@ -3,6 +3,7 @@ import type { TestCase, TestResult } from '@playwright/test/reporter';
 import { digestBytes } from '../../envelope/index.js';
 import { reportText } from '../text.js';
 import type { ArtifactView, AttemptView, EffectCutView, EffectsView, ExecutionView, Json, StepView } from './types.js';
+import { recordEventHealth, recordExecutionHealth } from './execution-health.js';
 
 function record(value: unknown): Record<string, unknown> | null {
   return value !== null && typeof value === 'object' && !Array.isArray(value)
@@ -146,13 +147,12 @@ function buildExecutions(
     }
     const events = data.events.map(record).filter((value): value is Record<string, unknown> => value !== null);
     if (events.length !== data.events.length) { problems.push('blackbox-execution has malformed events'); }
-    if (events.some((event) => event.kind === 'capture-failure')) {
-      problems.push('Execution capture failure was recorded');
-    }
+    recordEventHealth(events, problems);
     const artifacts = items(data.artifacts).map(record).filter((value): value is Record<string, unknown> => value !== null);
     const ids = [...new Set(events.map((event) => str(event.executionId)).filter((id): id is string => id !== null))];
     for (const executionId of ids) {
       const ownEvents = events.filter((event) => event.executionId === executionId);
+      recordExecutionHealth(ownEvents, problems);
       validateClaimEvidence(ownEvents, availableDigests, problems);
       const begin = ownEvents.find((event) => event.kind === 'begin');
       const final = ownEvents.find((event) => event.kind === 'final');
