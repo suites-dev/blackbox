@@ -67,7 +67,7 @@ async function sandboxRecords() {
   return records;
 }
 
-async function dockerResources(projectName) {
+export async function dockerResources(projectName) {
   const commands = [
     ['ps', '--all', '--quiet', '--filter', `label=com.docker.compose.project=${projectName}`],
     ['network', 'ls', '--quiet', '--filter', `label=com.docker.compose.project=${projectName}`],

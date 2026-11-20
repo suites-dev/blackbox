@@ -24,11 +24,12 @@
       "import": "./dist/index.js",
       "default": "./dist/index.js"
     },
+    "./examples/payment-system": "./dist/examples/payment-system/blackbox.config.yaml",
     "./schema/node-instrumentation-package-v1.json": "./dist/runtime/schema/node-instrumentation-package-v1.json"
   },
   "scripts": {
     "prebuild": "rimraf dist",
-    "build": "tsc --project tsconfig.build.json",
+    "build": "tsc --project tsconfig.build.json && node scripts/build-payment-example.mjs",
     "prepack": "pnpm build",
     "lint": "eslint .",
     "test": "vitest run --config vitest.config.ts",

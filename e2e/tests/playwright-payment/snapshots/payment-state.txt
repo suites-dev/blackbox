@@ -1,0 +1,6 @@
+[
+  {
+    "id": "<created-intent>",
+    "status": "succeeded"
+  }
+]

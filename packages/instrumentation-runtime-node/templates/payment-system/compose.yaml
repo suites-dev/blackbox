@@ -1,0 +1,33 @@
+services:
+  payment-api:
+    build: ../../app
+    init: true
+    environment:
+      DATABASE_URL: postgres://fixture:fixture@postgres:5432/payments
+      REDIS_URL: redis://redis:6379
+      NODE_OPTIONS: --enable-source-maps
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: payments
+      POSTGRES_PASSWORD: fixture
+      POSTGRES_USER: fixture
+    healthcheck:
+      test: ['CMD', 'pg_isready', '-U', 'fixture', '-d', 'payments']
+      interval: 1s
+      timeout: 3s
+      retries: 60
+    volumes:
+      - ../../app/init.sql:/docker-entrypoint-initdb.d/payment.sql:ro
+  redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 1s
+      timeout: 3s
+      retries: 60

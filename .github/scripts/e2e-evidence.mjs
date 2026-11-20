@@ -178,7 +178,17 @@ export async function retainE2eEvidence({
           'e2e/test-results/lifecycle/discovery.txt',
           'e2e/test-results/lifecycle/execution.txt',
           'e2e/test-results/lifecycle/subscription-state.expected.txt',
+          'e2e/test-results/payment/receipt.json',
+          'e2e/test-results/payment/cleanup.json',
         );
+        for (const phase of ['good', 'broken', 'repaired']) {
+          const directory = `e2e/test-results/payment/${phase}`;
+          required.push(
+            `${directory}/results.json`,
+            `${directory}/inputs.json`,
+            `${directory}/receipt.json`,
+          );
+        }
       }
       const missing = required.filter(
         (name) =>

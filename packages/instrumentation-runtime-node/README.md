@@ -20,6 +20,21 @@ blackbox capsule up
         `-> CLI adapter -> read-only Capsule mount -> NODE_OPTIONS -> collector
 ```
 
+## Copy the runnable payment example
+
+From a project with `@suites/blackbox-inst-runtime-node` installed, copy the packaged example into a new directory:
+
+```sh
+node --input-type=module -e "import { cpSync, mkdirSync } from 'node:fs'; import { dirname } from 'node:path'; import { fileURLToPath } from 'node:url'; mkdirSync('payment-example'); cpSync(dirname(fileURLToPath(import.meta.resolve('@suites/blackbox-inst-runtime-node/examples/payment-system'))), 'payment-example', { recursive: true })"
+cd payment-example
+npm install
+npm exec -- blackbox inst install --runtime node
+npm exec -- blackbox catalog validate --json
+npm exec -- playwright test
+```
+
+The public example export resolves to `blackbox.config.yaml`. Its `payment-api` participant references the `payment-node` activation. The activation's `ref` points to the bootstrap file installed at `.blackbox/instrumentation/instrumentation.js`. Blackbox appends the preload or ESM loader flags to the application's existing `NODE_OPTIONS`. The copied README describes the approved payment rule, its persistence fault, and the retained report.
+
 ## What This Package Owns
 
 - [`nodeRuntimeProvider`](src/runtime/bootstrap/provider.ts), which adapts the Node

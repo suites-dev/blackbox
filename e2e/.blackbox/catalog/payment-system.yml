@@ -1,0 +1,38 @@
+services:
+  payment-api:
+    image: sut-payment-mock-dist:local
+    build:
+      context: ../../sut
+      dockerfile: payment-mock-dist.Dockerfile
+    init: true
+    command: ['node', 'payment-api.cjs']
+    volumes:
+      - ../../sut/payment-acceptance/server.cjs:/app/payment-api.cjs:ro
+    environment:
+      DATABASE_URL: postgres://fixture:fixture@postgres:5432/payments
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: payments
+      POSTGRES_PASSWORD: fixture
+      POSTGRES_USER: fixture
+    healthcheck:
+      test: ['CMD', 'pg_isready', '-U', 'fixture', '-d', 'payments']
+      interval: 1s
+      timeout: 3s
+      retries: 60
+    volumes:
+      - ../../sut/payment-acceptance/init.sql:/docker-entrypoint-initdb.d/payment.sql:ro
+  redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 1s
+      timeout: 3s
+      retries: 60
