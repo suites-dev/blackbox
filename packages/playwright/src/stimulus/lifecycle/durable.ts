@@ -36,7 +36,8 @@ async function captureEffects(context: DurableContext, cut: Cut, lease: CaptureL
     ...boundedEffectGraph(captured.graph),
   }, lease);
   lease.check();
-  return { reference, capture: bindCapturedEffects(context.effects, captured) };
+  return { reference, capture: bindCapturedEffects(context.effects, captured,
+    (report) => context.operations.run((captureLease) => context.report.emissionAssertion(report, captureLease))) };
 }
 
 function captureExecution(context: DurableContext, cut: Cut): Promise<EffectCapture> {

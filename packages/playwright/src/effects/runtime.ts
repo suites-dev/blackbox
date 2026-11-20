@@ -38,7 +38,11 @@ const evidence = new WeakMap<EffectEvaluation, EffectEvidenceArtifact>();
 const reporters = new WeakMap<BlackboxEffects, EffectAssertionReporter>();
 const closeCallbacks = new WeakMap<BlackboxEffects, () => void>();
 
-export function bindCapturedEffects(effects: BlackboxEffects, captured: CapturedEffects) {
+export function bindCapturedEffects(
+  effects: BlackboxEffects,
+  captured: CapturedEffects,
+  reportEmission: (report: EmissionAssertionReport) => Promise<void>,
+) {
   const ownerUnavailable = effectAttemptOwner();
   return ownEffectCapture(captured.capture, {
     unavailable: () => expiredEffects.has(effects)
@@ -46,7 +50,7 @@ export function bindCapturedEffects(effects: BlackboxEffects, captured: Captured
     evidence: captured.evidence,
     describe: (text) => { const reporter = reporters.get(effects); return reporter !== undefined && reporter.describe !== undefined ? reporter.describe(text) : text; },
     redactSnapshot: (yaml) => { const reporter = reporters.get(effects); return reporter !== undefined && reporter.redactEffectSnapshot !== undefined ? reporter.redactEffectSnapshot(yaml) : yaml; },
-    report: async (report) => { const reporter = reporters.get(effects); if (reporter !== undefined && reporter.emissionAssertion !== undefined) { await reporter.emissionAssertion(report); } },
+    report: reportEmission,
   });
 }
 

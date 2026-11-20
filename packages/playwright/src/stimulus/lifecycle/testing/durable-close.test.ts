@@ -5,8 +5,9 @@ import type { APIRequestContext, TestInfo } from '@playwright/test';
 import { createEffectCapture } from '@suites/blackbox-effects';
 import { expect, it, vi } from 'vitest';
 import { captureAttemptActivity } from '../../../effects/attempt-effects.js';
+import { expect as blackboxExpect } from '../../../effects/expect.js';
 import { bindEffectAssertionReporter, createBlackboxEffects } from '../../../effects/runtime.js';
-import { completeGraph } from '../../../effects/testing/emissions.fixture.js';
+import { completeGraph, emission } from '../../../effects/testing/emissions.fixture.js';
 import { AttemptReport } from '../../../reporting/attempt.js';
 import { createExecutionJournal, type ExecutionEvent } from '../journal.js';
 import { durableExecution } from '../durable.js';
@@ -19,17 +20,23 @@ function deferred() {
   return { promise, resolve };
 }
 
-async function fixture() {
+async function fixture(options: {
+  readonly emitted: boolean;
+  readonly attach: (name: string) => Promise<void>;
+} = { emitted: false, attach: () => Promise.resolve() }) {
   const directory = await mkdtemp(join(tmpdir(), 'blackbox-durable-close-'));
   const attachments: { name: string; body: string }[] = [];
   const report = new AttemptReport({
     outputPath: (...parts: string[]) => join(directory, ...parts),
-    attach: (name: string, { body }: { body: string }) => { attachments.push({ name, body }); return Promise.resolve(); },
+    attach: async (name: string, { body }: { body: string }) => {
+      await options.attach(name);
+      attachments.push({ name, body });
+    },
   } as TestInfo);
   const effects = createBlackboxEffects({ sessionId: 'session', executionId: 'attempt',
     evaluator: { evaluate: () => Promise.resolve({ kind: 'satisfied' }) } });
   bindEffectAssertionReporter(effects, report);
-  const graph = completeGraph([]);
+  const graph = completeGraph(options.emitted ? [emission('one')] : []);
   const captured = { graph, evidence: null, capture: createEffectCapture({ graph,
     identity: { sessionId: 'session', executionId: 'attempt', captureId: 'capture', scopeId: graph.scope.id, activityIds: ['activity'] } }) };
   const durable = durableExecution({ effects, request: {} as APIRequestContext, captureTimeoutMs: 100 });
@@ -117,4 +124,44 @@ it('bounds terminal execution persistence and prevents its delayed attachment af
     expect(context.report.attachedEvidence()).toEqual([]);
     expect(vi.getTimerCount()).toBe(0);
   } finally { release.resolve(); vi.useRealTimers(); await rm(context.directory, { recursive: true, force: true }); }
+});
+
+it('drains a pending stimulus emission before finalization and refuses its late evidence registration', async () => {
+  const entered = deferred();
+  const release = deferred();
+  const context = await fixture({ emitted: true, attach: async (name) => {
+    if (name === 'blackbox-emissions') { entered.resolve(); await release.promise; }
+  } });
+  vi.mocked(captureAttemptActivity).mockResolvedValueOnce(context.captured);
+  try {
+    const captured = await context.durable.capture({ executionId: 'execution', activityId: 'activity' });
+    const pending = blackboxExpect(captured.http()).toHaveEmitted();
+    await entered.promise;
+    let finished = false;
+    const closing = context.durable.finish(context.journal).then(
+      () => { finished = true; return null; },
+      (error: unknown) => { finished = true; return error; },
+    );
+    await Promise.resolve();
+    expect(finished).toBe(false);
+    release.resolve();
+    await expect(pending).rejects.toThrow('interrupted during shutdown');
+    expect(await closing).toMatchObject({ message: 'Blackbox execution capture failed' });
+    expect(context.report.attachedEvidence().map(({ name }) => name)).toEqual([
+      'effects.json', 'blackbox-execution',
+    ]);
+  } finally { release.resolve(); await rm(context.directory, { recursive: true, force: true }); }
+});
+
+it('retains a completed stimulus emission before terminal execution evidence', async () => {
+  const context = await fixture({ emitted: true, attach: () => Promise.resolve() });
+  vi.mocked(captureAttemptActivity).mockResolvedValueOnce(context.captured);
+  try {
+    const captured = await context.durable.capture({ executionId: 'execution', activityId: 'activity' });
+    await blackboxExpect(captured.http()).toHaveEmitted();
+    await context.durable.finish(context.journal);
+    expect(context.report.attachedEvidence().map(({ name }) => name)).toEqual([
+      'effects.json', 'blackbox-emissions', 'blackbox-execution',
+    ]);
+  } finally { await rm(context.directory, { recursive: true, force: true }); }
 });
