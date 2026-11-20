@@ -411,6 +411,19 @@ The Blackbox reporter also adds a readable `blackbox-diagnostics` attachment.
 Container health polling and detailed startup events stay in these attachments,
 not the live console. Native reporters may display attachments for failed tests.
 
+For each Blackbox attempt, the reporter writes `report.html` and `report.json`
+under `<project outputDir>/blackbox-report/<scenario>-<test id>/retry-<n>-worker-<n>/`.
+It prints a short attempt summary and the HTML path after the run, and attaches
+both files to the Playwright result. Configure the Blackbox reporter before a
+native HTML or JSON reporter so those reporters receive the attachments.
+The view reads the retained execution, effects, and capture-health records. It
+shows output, initial and final state, the diff, named claims, and evidence
+availability. An empty effects cut with open or unknown coverage is reported as
+an observation limit, not proof that no effect occurred. Missing evidence and
+failed report persistence cannot produce a successful report. The original
+`blackbox-execution`, `effects.json`, and capture-health attachments remain the
+canonical records; `report.json` is their inspection view.
+
 Playwright clears `test-results/` and its HTML report on every run. To keep
 attempt evidence across runs, enable retention in the Playwright configuration:
 

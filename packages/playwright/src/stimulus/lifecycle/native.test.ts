@@ -67,6 +67,23 @@ function assertReceiptEvidence(successfulDetails: Awaited<ReturnType<BehaviorHis
 function assertExecutionArtifacts(specs: ReturnType<typeof discovered>, detail: NonNullable<Awaited<ReturnType<BehaviorHistory['execution']>>>): void {
   const native = specs.find(({ title }) => title === 'injects the native stimulus fixture and verifies its captured state');
   if (native === undefined) { throw new Error('native execution was not discovered'); }
+  const viewAttachment = native.tests[0].results[0].attachments.find(({ name }) => name === 'blackbox-report-json');
+  const htmlAttachment = native.tests[0].results[0].attachments.find(({ name }) => name === 'blackbox-report-html');
+  if (viewAttachment === undefined || viewAttachment.body === undefined || htmlAttachment === undefined || htmlAttachment.body === undefined) {
+    throw new Error('native Blackbox report attachments missing');
+  }
+  const view = JSON.parse(Buffer.from(viewAttachment.body, 'base64').toString('utf8')) as Record<string, unknown>;
+  expect(view).toMatchObject({
+    kind: 'blackbox-attempt-view',
+    attempt: { nativeStatus: 'passed' },
+    verification: { status: 'verified' },
+    evidence: { status: 'available', captureHealth: { status: 'captured' } },
+    executions: [{ output: { status: 201 }, effects: { status: 'captured' } }],
+  });
+  const html = Buffer.from(htmlAttachment.body, 'base64').toString('utf8');
+  expect(html).toContain('Download adapted JSON');
+  expect(html).toContain('pi_created');
+  expect(html).not.toContain('synthetic-password');
   const attachment = native.tests[0].results[0].attachments.find(({ name }) => name === 'blackbox-execution');
   if (attachment === undefined || attachment.body === undefined) { throw new Error('execution attachment missing'); }
   const body = Buffer.from(attachment.body, 'base64').toString('utf8');

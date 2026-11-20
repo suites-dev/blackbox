@@ -16,6 +16,14 @@ it('waits for real delayed exports and reopens exact immutable assertion cuts', 
     expect(spec.tests[0].results).toHaveLength(1);
     expect(spec.tests[0].results[0].status).toBe('passed');
   }
+  const retainedView = specs[0].tests[0].results[0].attachments.find(({ name }) => name === 'blackbox-report-json');
+  if (retainedView === undefined || retainedView.body === undefined) { throw new Error('Missing lazy effects report'); }
+  expect(JSON.parse(Buffer.from(retainedView.body, 'base64').toString('utf8'))).toMatchObject({
+    verification: { status: 'verified' }, evidence: { status: 'available' },
+    executions: [{ effects: { status: 'captured', captures: expect.arrayContaining([
+      expect.objectContaining({ purpose: 'assertion' }),
+    ]) } }],
+  });
   expect(run.report.stats).toMatchObject({ expected: 2, unexpected: 0, skipped: 0, flaky: 0 });
   const delayedEvent = run.events.find(({ kind }) => kind === 'lazy-delayed-proof');
   const isolationEvent = run.events.find(({ kind }) => kind === 'lazy-isolation-proof');
