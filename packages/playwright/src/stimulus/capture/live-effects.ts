@@ -75,7 +75,8 @@ export function liveStimulusEffects(input: Input) {
       return input.operations.run(async (lease) => {
         const captured = await captureAttemptActivity(input.effects, input.activityId);
         lease.check();
-        const bound = bindCapturedEffects(input.effects, captured);
+        const bound = bindCapturedEffects(input.effects, captured,
+          (report) => input.operations.run((reportLease) => input.report.emissionAssertion(report, reportLease)));
         const capture = ownEffectCapture(captured.capture, {
           ...recorderOwner(bound.span()),
           report: (report) => input.operations.run(async (reportLease) => {
