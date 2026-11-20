@@ -4,7 +4,8 @@ import { expect, it } from 'vitest';
 import { digestBytes } from '../../envelope/index.js';
 import { buildAttemptView } from './model.js';
 
-type Failure = 'precondition-failed' | 'precondition-interrupted' | 'action-failed' | 'action-interrupted' | 'missing-final';
+type Failure = 'precondition-failed' | 'precondition-interrupted' | 'action-failed' | 'action-interrupted'
+  | 'missing-final' | 'missing-action' | 'missing-initial-object' | 'missing-final-object' | 'missing-diff-object';
 
 function attemptWithIncompleteExecution(failure: Failure, claimStatus: 'passed' | 'failed' = 'passed') {
   const effects = Buffer.from(JSON.stringify({
@@ -18,15 +19,23 @@ function attemptWithIncompleteExecution(failure: Failure, claimStatus: 'passed' 
     { kind: 'action', executionId: 'successful', status: 'completed' },
     { kind: 'final', executionId: 'successful', final: checkpoint, diff: { version: 1, observers: [] } },
     { kind: 'claim', executionId: 'successful', title: 'Then it is accepted', status: claimStatus, evidence: [] },
-    { kind: 'begin', executionId: 'incomplete', title: 'When another payment is accepted', initial: checkpoint },
+    { kind: 'begin', executionId: 'incomplete', title: 'When another payment is accepted',
+      initial: failure === 'missing-initial-object' ? undefined : checkpoint },
   );
   if (failure.startsWith('precondition-')) {
     events.push({ kind: 'precondition', executionId: 'incomplete', title: 'Given the account is active',
       status: failure.slice('precondition-'.length) });
     events.push({ kind: 'action', executionId: 'incomplete', status: 'not-executed' });
   } else {
-    events.push({ kind: 'action', executionId: 'incomplete',
-      status: failure === 'missing-final' ? 'completed' : failure.slice('action-'.length) });
+    if (failure !== 'missing-action') {
+      events.push({ kind: 'action', executionId: 'incomplete',
+        status: failure.startsWith('action-') ? failure.slice('action-'.length) : 'completed' });
+    }
+    if (failure === 'missing-action' || failure.endsWith('-object')) {
+      events.push({ kind: 'final', executionId: 'incomplete',
+        final: failure === 'missing-final-object' ? undefined : checkpoint,
+        diff: failure === 'missing-diff-object' ? undefined : { version: 1, observers: [] } });
+    }
   }
   const execution = Buffer.from(JSON.stringify({
     schemaVersion: 1, kind: 'stimulus-executions', events,
@@ -53,12 +62,21 @@ function attemptWithIncompleteExecution(failure: Failure, claimStatus: 'passed' 
   return buildAttemptView(test, result);
 }
 
-it.each(['precondition-failed', 'precondition-interrupted', 'action-failed', 'action-interrupted', 'missing-final'] as const)(
+it.each(['precondition-failed', 'precondition-interrupted', 'action-failed', 'action-interrupted', 'missing-final', 'missing-action'] as const)(
   'does not verify a passed claim after another execution has %s', (failure) => {
     const view = attemptWithIncompleteExecution(failure);
     expect(view.evidence).toMatchObject({ status: 'partial', captureHealth: { status: 'captured' } });
     expect(view.verification).toMatchObject({ status: 'unavailable', passed: 1, failed: 0 });
     expect(view.evidence.problems).toContain('Execution did not complete successfully');
+  },
+);
+
+it.each(['missing-initial-object', 'missing-final-object', 'missing-diff-object'] as const)(
+  'does not verify a passed claim when another execution has %s', (failure) => {
+    const view = attemptWithIncompleteExecution(failure);
+    expect(view.evidence.status).toBe('partial');
+    expect(view.verification).toMatchObject({ status: 'unavailable', passed: 1, failed: 0 });
+    expect(view.evidence.problems).toContain('Execution state evidence is missing or invalid');
   },
 );
 

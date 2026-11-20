@@ -24,7 +24,8 @@ function hasFailedStateReaders(value: unknown): boolean {
 function hasIncompleteExecution(events: readonly Record<string, unknown>[]): boolean {
   const began = events.some((event) => event.kind === 'begin');
   const finished = events.some((event) => event.kind === 'final');
-  return (began && !finished) || events.some((event) =>
+  const acted = events.some((event) => event.kind === 'action');
+  return (began && (!finished || !acted)) || events.some((event) =>
     (event.kind === 'precondition' && event.status !== 'passed') ||
     (event.kind === 'action' && event.status !== 'completed'));
 }
@@ -36,6 +37,10 @@ export function recordEventHealth(events: readonly Record<string, unknown>[], pr
   if (events.some((event) => (event.kind === 'begin' && hasFailedStateReaders(event.initial)) ||
     (event.kind === 'final' && (hasFailedStateReaders(event.final) || hasFailedStateReaders(event.diff))))) {
     problems.push('State checkpoint or comparison records failed readers');
+  }
+  if (events.some((event) => (event.kind === 'begin' && record(event.initial) === null) ||
+    (event.kind === 'final' && (record(event.final) === null || record(event.diff) === null)))) {
+    problems.push('Execution state evidence is missing or invalid');
   }
 }
 
